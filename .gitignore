@@ -1,0 +1,5 @@
+.*
+!.gitignore
+
+backend/target/
+backend/**/*.rs.bk
