@@ -5,6 +5,7 @@ use crate::auction::Auction;
 
 pub mod auction;
 pub mod handlers;
+pub mod pokemon;
 
 #[derive(Clone)]
 pub struct ServerState {
