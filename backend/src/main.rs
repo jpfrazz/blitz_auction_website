@@ -22,8 +22,8 @@ async fn main() {
 
     let app = Router::new()
         .route("/", get(|| async {"blitz auction api"}))
-        .route("/create_auction", post(handlers::create_auction))
-        .route("/join_auction/{auction_id}", get(handlers::join_auction))
+        .route("/create_auction", post(handlers::create_lobby))
+        .route("/join_auction/{auction_id}", get(handlers::join_lobby))
         .with_state(state)
     ;
 

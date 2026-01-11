@@ -5,16 +5,23 @@ use std::{
 
 use axum::extract::ws::WebSocket;
 use serde::{Deserialize, Serialize};
+use sqlx::PgPool;
+use tokio::sync::broadcast;
+use nanoid::nanoid;
 
-#[derive(Clone, Debug, Serialize)]
+use crate::messages::ServerMessage;
+
+#[derive(Debug)]
 pub struct AuctionDraft{
     draft_id: String,
     host: String,
+    players: HashMap<String, WebSocket>,
     spectators: HashMap<String, WebSocket>,
     state: DraftState,
     settings: DraftSettings,
     current_auction: u32,
-    auctions: Vec<Auction>
+    auctions: Vec<Auction>,
+    broadcast: broadcast::Sender<ServerMessage>
 }
 
 #[derive(Clone, Debug, Serialize)]
@@ -25,10 +32,11 @@ pub struct Auction{
 }
 
 #[derive(Clone, Debug, Serialize)]
-enum DraftState {
+pub enum DraftState {
     PENDING,
-    RUNNING,
-    PAUSED,
+    SELECTING,
+    BIDDING,
+    PAUSED(u32),
     COMPLETED,
 }
 
@@ -40,15 +48,39 @@ pub struct DraftSettings {
 }
 
 impl AuctionDraft {
-    pub fn new(draft_id: String, host: String, settings: DraftSettings) -> AuctionDraft {
+    fn new(draft_id: String, host: String, settings: DraftSettings) -> AuctionDraft{
+        let (tx, _rx) = broadcast::channel(1_000);
         AuctionDraft {
             draft_id: draft_id,
             host: host,
-            spectators: HashMap<String, WebSocket>,
+            players: HashMap::<String, WebSocket>::new(),
+            spectators: HashMap::<String, WebSocket>::new(),
             state: DraftState::PENDING,
             settings: settings,
             current_auction: 0,
             auctions: vec![],
+            broadcast: tx,
         }
     }
+
+    pub async fn build(host: String, settings: DraftSettings, pool: PgPool) -> Result<AuctionDraft, String> {
+        for _ in 0..3 {
+            let draft_id = nanoid!(12);
+            let draft = sqlx::query_as!(
+                AuctionDraft,
+                r#"
+                INSERT INTO auctions (id, )
+                "#,
+            )
+            .fetch_one(pool)
+            .await;
+
+            if draft.is_ok() {
+                
+            }
+        }
+
+        Err("Couldn't create auction in db".to_string())
+    }
 }
+
