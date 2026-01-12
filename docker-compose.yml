@@ -1,6 +1,7 @@
 services:
     app:
-        image: ./frontend/
+        build:
+            context: ./frontend
         container_name: auction_app
         restart: always
         networks:

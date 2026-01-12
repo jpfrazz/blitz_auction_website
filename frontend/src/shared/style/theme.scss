@@ -1,0 +1,87 @@
+// Emerald Blitz Custom Dark Theme inspired by Shoelace dark theme
+
+$eb-bg: #18191a;
+$eb-surface: #232527;
+$eb-border: #2a2d31;
+$eb-primary: #7CB946;
+$eb-primary-hover: #FF7D86;
+$eb-text: #f1f1f1;
+$eb-text-muted: #b0b0b0;
+$eb-accent: #4fc3f7;
+$eb-shadow: 0 2px 8px #0006;
+
+body, html {
+  background: $eb-bg;
+  color: $eb-text;
+  font-family: 'Segoe UI', 'Arial', sans-serif;
+  margin: 0;
+  padding: 0;
+}
+
+header, .header {
+  background: $eb-surface;
+  color: $eb-text;
+  border-bottom: 3px solid $eb-primary;
+}
+
+footer, .footer {
+  background: $eb-surface;
+  color: $eb-text;
+  border-top: 3px solid $eb-primary;
+}
+
+button, .navButton, .footerButton {
+  background: $eb-primary;
+  color: #111;
+  border: none;
+  border-radius: 4px;
+  box-shadow: $eb-shadow;
+  font-weight: 600;
+  font-size: 1.1rem;
+  font-family: inherit;
+  letter-spacing: 1px;
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s;
+}
+button:hover, .navButton:hover, .footerButton:hover {
+  background: $eb-primary-hover;
+  color: #fff;
+}
+
+input, textarea, select {
+  background: $eb-bg;
+  color: $eb-text;
+  border: 1px solid $eb-border;
+  border-radius: 4px;
+  padding: 8px;
+}
+
+::-webkit-scrollbar {
+  width: 8px;
+  background: $eb-surface;
+}
+::-webkit-scrollbar-thumb {
+  background: $eb-border;
+  border-radius: 4px;
+}
+
+::selection {
+  background: $eb-primary;
+  color: #fff;
+}
+
+a {
+  color: $eb-accent;
+  text-decoration: none;
+}
+a:hover {
+  text-decoration: underline;
+}
+
+// Utility classes
+.text-muted {
+  color: $eb-text-muted;
+}
+.bg-surface {
+  background: $eb-surface;
+}

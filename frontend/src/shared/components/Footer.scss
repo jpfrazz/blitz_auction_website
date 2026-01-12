@@ -1,0 +1,31 @@
+.footer {
+  margin-top: 40px;
+  width: 100vw;
+  min-height: 64px;
+  position: fixed;
+  left: 0;
+  bottom: 0;
+  z-index: 100;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+.footerInner {
+  display: flex;
+  flex-direction: row;
+  gap: 14px;
+}
+.footerButton {
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
+}
+.footerIcon {
+  width: 22px;
+  height: 22px;
+  filter: invert(1);
+  pointer-events: none;
+}
