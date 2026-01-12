@@ -2,11 +2,11 @@ import React from 'react';
 import Header from '../../shared/components/Header';
 import Footer from '../../shared/components/Footer';
 
-const Home = () => (
+const PatchNotes = () => (
   <>
     <Header />
     <main style={{
-      minHeight: 'calc(96vh - 180px)', // adjust for header/footer
+      minHeight: 'calc(100vh - 180px)',
       display: 'flex',
       flexDirection: 'column',
       alignItems: 'center',
@@ -20,11 +20,10 @@ const Home = () => (
           maxWidth: '600px',
           width: '100%',
           height: 'auto',
-          marginBottom: '16px',
-          marginTop: '16px',
+          marginBottom: '32px',
+          marginTop: '32px',
         }}
         onError={e => {
-          // fallback to png if bps fails
           (e.currentTarget as HTMLImageElement).src = '/blitzlogo.png';
         }}
       />
@@ -45,4 +44,4 @@ const Home = () => (
   </>
 );
 
-export default Home;
+export default PatchNotes;

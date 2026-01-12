@@ -4,12 +4,12 @@ import './Header.scss';
 const navButtons = [
   { label: "Auction Setup", link: "/AuctionSetup" },
   { label: "Team Planner", link: "/TeamPlanner" },
-  { label: "FAQ", link: "/FAQ" },
   { label: "Pokédex", link: "/Pokedex" },
-  { label: "Blitz Info", link: "/Info" },
   { label: "Boss Battles", link: "/BossBattles" },
-  { label: "Pokemon Speed Test", link: "/SpeedTest" },
+  { label: "Blitz Info", link: "/Info" },
+  { label: "FAQ", link: "/FAQ" },
   { label: "Patch Notes", link: "/PatchNotes" },
+  { label: "Pokemon Speed Test", link: "/SpeedTest" },
 ];
 
 function Header() {
@@ -17,9 +17,9 @@ function Header() {
     <header className="header">
       <div className="headerInner">
         <a href="/" className="logoLink">
-          <img 
-            src="/blitzlogo.png" 
-            alt="Emerald Blitz Logo" 
+          <img
+            src="/blitzlogo.png"
+            alt="Emerald Blitz Logo"
             className="logoImg"
           />
         </a>
