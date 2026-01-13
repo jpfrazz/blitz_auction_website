@@ -1,0 +1,42 @@
+.header {
+  margin-bottom: 40px;
+  width: 100vw;
+  min-height: 80px;
+  position: fixed;
+  left: 0;
+  top: 0;
+  z-index: 101;
+}
+.headerInner {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  box-sizing: border-box;
+  gap: 32px;
+}
+.logoLink {
+  display: flex;
+  align-items: center;
+  height: 60px;
+}
+.logoImg {
+  height: 60px;
+  width: auto;
+  display: block;
+  filter: drop-shadow(1px 2px 8px #000);
+}
+.nav {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 18px;
+  padding-top: 10px;
+}
+.navButton {
+  min-width: 150px;
+  padding: 12px 18px;
+  display: block;
+  text-align: center;
+}

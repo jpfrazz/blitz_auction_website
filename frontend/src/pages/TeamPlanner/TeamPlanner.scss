@@ -1,0 +1,66 @@
+@import '../../shared/style/theme.scss';
+
+.teamplanner-main {
+  min-height: calc(91vh - 180px);
+  padding: 2rem 0;
+}
+
+.teamplanner-title {
+  margin-bottom: 2rem;
+  text-align: center;
+}
+
+.teamplanner-modal-overlay {
+  position: fixed;
+  z-index: 1000;
+  left: 0; top: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.teamplanner-modal-content {
+  background: $eb-surface;
+  color: $eb-text;
+  border-radius: 6px;
+  padding: 2rem 2.5rem 2rem 2rem;
+  min-width: 400px;
+  max-width: 95vw;
+  box-shadow: $eb-shadow;
+  position: relative;
+}
+
+.teamplanner-modal-close {
+  position: absolute;
+  top: 1.2rem;
+  right: 1.5rem;
+  cursor: pointer;
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  color: $eb-text-muted;
+}
+
+.teamplanner-modal-label {
+  font-weight: bold;
+  display: block;
+  margin: 1.5rem 0 0.5rem 0;
+}
+
+.teamplanner-modal-select {
+  width: 100%;
+  padding: 0.75rem;
+  background: $eb-bg;
+  color: $eb-text;
+  border: 1px solid $eb-border;
+  border-radius: 6px;
+  font-size: 1rem;
+  margin-bottom: 2rem;
+}
+
+.teamplanner-modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 1rem;
+}

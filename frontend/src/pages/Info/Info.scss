@@ -1,0 +1,244 @@
+@import '../../shared/style/theme.scss';
+
+.info-main {
+  min-height: calc(100vh - 180px);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 16px 16px 0 16px; // Increased top padding to clear header
+  background: transparent;
+}
+
+.info-title {
+  color: $eb-text;
+  margin-top: 0; // Remove margin-top since padding is on .info-main
+  margin-bottom: 24px;
+  font-size: 2.2rem;
+  font-weight: bold;
+  text-align: center;
+}
+
+.info-toc {
+  width: 100%;
+  max-width: 600px;
+  margin-bottom: 32px;
+}
+
+.info-toc-card {
+  background: $eb-surface;
+  border: 1px solid $eb-border;
+  border-radius: 10px;
+  box-shadow: $eb-shadow;
+  padding: 32px 32px 24px 32px;
+  width: 100%;
+  max-width: 1100px;
+  margin-bottom: 48px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.info-toc-heading {
+  color: $eb-text;
+  font-size: 2rem;
+  font-weight: bold;
+  margin: 0 0 8px 0;
+}
+
+.info-toc-card hr {
+  border: none;
+  border-top: 2px solid $eb-border;
+  margin: 12px 0 24px 0;
+}
+
+.info-toc-list {
+  color: $eb-accent;
+  font-size: 1.2rem;
+  list-style-type: disc;
+  padding-left: 24px;
+  text-align: left;
+}
+
+.info-toc-list li {
+  margin-bottom: 12px;
+}
+
+.info-toc-list a {
+  color: $eb-accent;
+  text-decoration: underline;
+  font-weight: 500;
+}
+
+.info-toc-list a:hover {
+  color: $eb-primary;
+}
+
+.info-section {
+  width: 100%;
+  max-width: 1100px;
+  margin: 0 auto 48px auto;
+  color: $eb-text;
+}
+
+.info-question {
+  font-size: 2rem;
+  font-weight: bold;
+  margin-bottom: 8px;
+  margin-top: 0;
+}
+
+.info-section hr {
+  border: none;
+  border-top: 2px solid $eb-border;
+  margin-bottom: 24px;
+}
+
+.info-answer {
+  font-size: 1.25rem;
+  line-height: 1.5;
+  margin: 0;
+}
+
+// Add to frontend/src/pages/Info/Info.scss
+
+.location-scale-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 24px;
+  margin-top: 24px;
+  margin-bottom: 32px;
+}
+
+.location-scale-card {
+  background: $eb-surface;
+  border-radius: 8px;
+  box-shadow: $eb-shadow;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.location-scale-card img {
+  width: 100%;
+  max-width: 220px;
+  border-radius: 6px;
+  margin-bottom: 8px;
+  box-shadow: 0 2px 8px #0006;
+}
+
+.location-scale-caption {
+  color: $eb-text;
+  font-size: 1.1rem;
+  font-weight: 500;
+  text-align: center;
+  margin-top: 4px;
+}
+
+// Add to frontend/src/pages/Info/Info.scss
+
+.slateport-market-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 32px;
+  margin-top: 24px;
+  margin-bottom: 32px;
+}
+
+.slateport-market-card {
+  background: $eb-surface;
+  border-radius: 8px;
+  box-shadow: $eb-shadow;
+  padding: 18px 24px 16px 24px;
+  min-width: 220px;
+  max-width: 260px;
+  flex: 1 1 220px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  border: 1px solid $eb-border;
+}
+
+.slateport-market-title {
+  color: $eb-text;
+  font-size: 1.15rem;
+  font-weight: bold;
+  margin-bottom: 12px;
+  border-bottom: 2px solid $eb-border;
+  width: 100%;
+  padding-bottom: 4px;
+}
+
+.slateport-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.tm-list li {
+  font-size: 1.08rem;
+  margin-bottom: 6px;
+  font-weight: 500;
+}
+
+.tm-normal   { color: $color-normal; }
+.tm-fire     { color: $color-fire; }
+.tm-water    { color: $color-water; }
+.tm-grass    { color: $color-grass; }
+.tm-electric { color: $color-electric; }
+.tm-ice      { color: $color-ice; }
+.tm-fighting { color: $color-fighting; }
+.tm-poison   { color: $color-poison; }
+.tm-ground   { color: $color-ground; }
+.tm-flying   { color: $color-flying; }
+.tm-psychic  { color: $color-psychic; }
+.tm-bug      { color: $color-bug; }
+.tm-rock     { color: $color-rock; }
+.tm-ghost    { color: $color-ghost; }
+.tm-dragon   { color: $color-dragon; }
+.tm-dark     { color: $color-dark; }
+.tm-steel    { color: $color-steel; }
+.tm-fairy    { color: $color-fairy; }
+
+.slateport-market-dropdown {
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin-bottom: 15px;
+  cursor: pointer;
+}
+
+.evo-icons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+
+.evo-icons img {
+  width: 28px;
+  height: 28px;
+  object-fit: contain;
+  border-radius: 4px;
+}
+
+.info-table-wrapper {
+  overflow-x: auto;
+  margin-bottom: 2rem;
+}
+.info-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: $eb-bg;
+  color: $eb-text;
+  margin: 0 auto 1rem auto;
+}
+.info-table th,
+.info-table td {
+  border: 1px solid $eb-border;
+  padding: 0.5rem 1rem;
+  text-align: left;
+}
+.info-table th {
+  background: $eb-bg;
+  color: $eb-text;
+  font-weight: bold;
+}

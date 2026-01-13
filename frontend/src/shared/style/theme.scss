@@ -1,0 +1,110 @@
+// Emerald Blitz Custom Dark Theme inspired by Shoelace dark theme
+
+$eb-bg: #18191a;
+$eb-surface: #232527;
+$eb-border: #2a2d31;
+$eb-primary: #7CB946;
+$eb-primary-hover: #FF7D86;
+$eb-text: #f1f1f1;
+$eb-text-black: #111;
+$eb-text-muted: #b0b0b0;
+$eb-accent: #4fc3f7;
+$eb-shadow: 0 2px 8px #0006;
+
+// Pokémon Type Colors
+$color-normal:   #A8A77A; // Light Tan / Beige
+$color-fire:     #EE8130; // Orange-Red
+$color-water:    #6390F0; // Blue
+$color-grass:    #7AC74C; // Green
+$color-electric: #F7D02C; // Yellow
+$color-ice:      #96D9D6; // Light Cyan
+$color-fighting: #C22E28; // Red-Brown
+$color-poison:   #A33EA1; // Purple
+$color-ground:   #E2BF65; // Sandy Brown
+$color-flying:   #A98FF3; // Sky Blue
+$color-psychic:  #F95587; // Pink
+$color-bug:      #A6B91A; // Yellow-Green
+$color-rock:     #B6A136; // Brown
+$color-ghost:    #735797; // Dark Purple
+$color-dragon:   #6F35FC; // Indigo
+$color-dark:     #705746; // Near-Black
+$color-steel:    #B7B7CE; // Silver-Gray
+$color-fairy:    #D685AD; // Light Pink
+
+body, html {
+  background: $eb-bg;
+  color: $eb-text;
+  font-family: 'Segoe UI', 'Arial', sans-serif;
+  margin: 0;
+  padding: 0;
+}
+
+header, .header {
+  background: $eb-surface;
+  color: $eb-text;
+  border-bottom: 3px solid $eb-primary;
+  position: static;
+}
+
+footer, .footer {
+  background: $eb-surface;
+  color: $eb-text;
+  border-top: 3px solid $eb-primary;
+  position: static;
+}
+
+button, .navButton, .footerButton {
+  background: $eb-primary;
+  color: $eb-text-black;
+  border: none;
+  border-radius: 4px;
+  box-shadow: $eb-shadow;
+  font-weight: 600;
+  font-size: 1.1rem;
+  font-family: inherit;
+  letter-spacing: 1px;
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s;
+}
+button:hover, .navButton:hover, .footerButton:hover {
+  background: $eb-primary-hover;
+  color: $eb-text-black;
+}
+
+input, textarea, select {
+  background: $eb-bg;
+  color: $eb-text;
+  border: 1px solid $eb-border;
+  border-radius: 4px;
+  padding: 8px;
+}
+
+::-webkit-scrollbar {
+  width: 8px;
+  background: $eb-surface;
+}
+::-webkit-scrollbar-thumb {
+  background: $eb-border;
+  border-radius: 4px;
+}
+
+::selection {
+  background: $eb-primary;
+  color: $eb-text;
+}
+
+a {
+  color: $eb-accent;
+  text-decoration: none;
+}
+a:hover {
+  text-decoration: underline;
+}
+
+// Utility classes
+.text-muted {
+  color: $eb-text-muted;
+}
+.bg-surface {
+  background: $eb-surface;
+}

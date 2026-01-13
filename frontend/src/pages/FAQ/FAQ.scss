@@ -1,0 +1,100 @@
+@import '../../shared/style/theme.scss';
+
+.faq-main {
+  min-height: calc(100vh - 180px);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 16px 16px 0 16px; // Increased top padding to clear header
+  background: transparent;
+}
+
+.faq-title {
+  color: $eb-text;
+  margin-top: 0; // Remove margin-top since padding is on .faq-main
+  margin-bottom: 24px;
+  font-size: 2.2rem;
+  font-weight: bold;
+  text-align: center;
+}
+
+.faq-toc {
+  width: 100%;
+  max-width: 600px;
+  margin-bottom: 32px;
+}
+
+.faq-toc-card {
+  background: $eb-surface;
+  border: 1px solid $eb-border;
+  border-radius: 10px;
+  box-shadow: $eb-shadow;
+  padding: 32px 32px 24px 32px;
+  width: 100%;
+  max-width: 1100px;
+  margin-bottom: 48px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.faq-toc-heading {
+  color: $eb-text;
+  font-size: 2rem;
+  font-weight: bold;
+  margin: 0 0 8px 0;
+}
+
+.faq-toc-card hr {
+  border: none;
+  border-top: 2px solid $eb-border;
+  margin: 12px 0 24px 0;
+}
+
+.faq-toc-list {
+  color: $eb-accent;
+  font-size: 1.2rem;
+  list-style-type: disc;
+  padding-left: 24px;
+  text-align: left;
+}
+
+.faq-toc-list li {
+  margin-bottom: 12px;
+}
+
+.faq-toc-list a {
+  color: $eb-accent;
+  text-decoration: underline;
+  font-weight: 500;
+}
+
+.faq-toc-list a:hover {
+  color: $eb-primary;
+}
+
+.faq-section {
+  width: 100%;
+  max-width: 1100px;
+  margin: 0 auto 48px auto;
+  color: $eb-text;
+}
+
+.faq-question {
+  font-size: 2rem;
+  font-weight: bold;
+  margin-bottom: 8px;
+  margin-top: 0;
+}
+
+.faq-section hr {
+  border: none;
+  border-top: 2px solid $eb-border;
+  margin-bottom: 24px;
+}
+
+.faq-answer {
+  font-size: 1.25rem;
+  line-height: 1.5;
+  margin: 0;
+}
+
