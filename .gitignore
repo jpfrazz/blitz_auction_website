@@ -1,5 +1,6 @@
 .*
 !.gitignore
+!.sqlx
 
 backend/target/
 backend/**/*.rs.bk

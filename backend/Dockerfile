@@ -1,28 +1,35 @@
-FROM rust:1.92 AS builder
+FROM rust:1.92 AS chef
 WORKDIR /app
-
-COPY Cargo.toml Cargo.lock ./
-
 RUN cargo install cargo-chef sccache --locked
 
-ENV RUSTC_WRAPPER=sccache \
-    SCCACHE_DIR=/sccache
+FROM chef AS planner
 
-WORKDIR /app
-
-COPY Cargo.toml Cargo.lock src ./
+COPY Cargo.toml Cargo.lock .
+COPY src ./src
 
 RUN cargo chef prepare --recipe-path recipe.json
+
+FROM chef AS builder
+
+COPY --from=planner /app/recipe.json recipe.json
+
+ENV RUSTC_WRAPPER=sccache \
+    SCCACHE_DIR=/sccache \
+    SQLX_OFFLINE=true
 
 RUN --mount=type=cache,target=/usr/local/cargo/registry,sharing=locked \
     --mount=type=cache,target=/usr/local/cargo/git,sharing=locked \
     --mount=type=cache,target=$SCCACHE_DIR,sharing=locked \
     cargo chef cook --release --recipe-path recipe.json
 
+COPY Cargo.toml Cargo.lock .
+COPY src ./src
+COPY .sqlx ./.sqlx
+
 RUN --mount=type=cache,target=/usr/local/cargo/registry,sharing=locked \
     --mount=type=cache,target=/usr/local/cargo/git,sharing=locked \
     --mount=type=cache,target=$SCCACHE_DIR,sharing=locked \
-    cargo build --release --bin backend
+    cargo build --release --bin blitz-auction-backend
 
 FROM debian:13-slim AS runner
 WORKDIR /app
@@ -32,7 +39,7 @@ RUN apt-get update -y \
     && apt-get clean -y \
     && rm -rf /var/lib/apt/lists/*
 
-COPY --from=builder /app/target/release/app /app/backend
+COPY --from=builder /app/target/release/blitz-auction-backend /app/blitz-auction-backend
 
-CMD ["./backend"]
+ENTRYPOINT ["./blitz-auction-backend"]
 

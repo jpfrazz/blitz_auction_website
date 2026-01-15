@@ -1,0 +1,49 @@
+services:
+    # nginx + react
+    frontend:
+        image: ghcr.io/jpfrazz/blitz-auction-frontend:latest
+        build: ./frontend/
+        container_name: auction-frontend
+        restart: always
+        ports:
+            - "80:80"
+        depends_on:
+            - backend
+        networks:
+            - auction_net
+
+    # rust axum
+    backend:
+        image: ghcr.io/jpfrazz/blitz-auction-backend:latest
+        build: ./backend/
+        container_name: auction-backend
+        restart: always
+        depends_on:
+            - db
+        environment:
+            - DATABASE_URL=postgres://postgres:password@db:5432/auction_db
+        networks:
+            - auction_net
+
+    # postgres db
+    db:
+        image: postgres:18-trixie
+        container_name: auction-db
+        restart: always
+        ports:
+            - "5432:5432"
+        environment:
+            - POSTGRES_USER=postgres
+            - POSTGRES_PASSWORD=password
+            - POSTGRES_DB=auction_db
+        volumes:
+            - db_data:/var/lib/postgresql
+        networks:
+            - auction_net
+
+networks:
+    auction_net:
+        driver: bridge
+
+volumes:
+    db_data:

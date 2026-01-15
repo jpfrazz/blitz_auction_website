@@ -1,0 +1,15 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n                INSERT INTO auctions (draft_id, pokemon_id)\n                VALUES ($1, $2)\n                ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Text",
+        "Int4"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "278b6f6f6fd6ec86ad03ff0d70035f4b16a0cd70bfa95d686fd2ccb1303921d2"
+}

@@ -1,15 +1,15 @@
 use moka::future::Cache;
-use sqlx::{Pool, Postgres};
+use sqlx::PgPool;
 
-use crate::auction::Auction;
+use crate::auction::{Draft};
 
-pub mod auction;
+mod auction;
 pub mod handlers;
-pub mod pokemon;
-pub mod messages;
+mod pokemon;
+mod messages;
 
 #[derive(Clone)]
 pub struct ServerState {
-    pub db_pool: Pool<Postgres>,
-    pub auctions: Cache<String, Auction>,
+    pub db_pool: PgPool,
+    pub drafts: Cache<String, Draft>,
 }
