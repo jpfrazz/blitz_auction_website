@@ -1,11 +1,27 @@
-use serde::{Deserialize, Serialize};
+use std::{collections::HashMap,sync::OnceLock};
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
+use serde::{Deserialize, Serialize};
+use sqlx::{PgPool, prelude::FromRow};
+
+type PokemonData = HashMap<String, HashMap<u32, Pokemon>>;
+static POKEMON_DATA: OnceLock<PokemonData> = OnceLock::new();
+
+pub async fn init_pokemon_data(pool: &PgPool) {
+    let query =
+        r#"
+        SELECT * FROM pokemon
+        "#;
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, FromRow)]
 pub struct Pokemon {
+    pub pokedex_id: u32,
     pub name: String,
+    pub form: Option<String>,
     pub type1: PokemonType,
     pub type2: Option<PokemonType>,
     pub stats: PokemonStats,
+    pub key_moves: Vec<(PokemonMove, u8)>,
     pub description: String,
 }
 
