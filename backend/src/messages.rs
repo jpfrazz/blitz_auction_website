@@ -1,6 +1,9 @@
+use serde::{Deserialize, Serialize};
+
 use crate::auction::DraftState;
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Serialize)]
+#[serde(tag = "type", content = "data")]
 pub enum ServerMessage {
     AuctionStarted {
         pokemon_name: String,
@@ -23,4 +26,24 @@ pub enum ServerMessage {
     DraftStarted,
     DraftEnded,
     DraftState(DraftState),
+}
+
+#[derive(Clone, Debug, Deserialize)]
+pub enum ClientMessage {
+    CreateDraft {
+        default_funds: u32,
+        draft_name: String,
+        excluded_pokemon: Vec<u32>,
+        num_auctions: u32,
+        num_teams: u8,
+        password: Option<String>,
+        ranked: bool,
+        auction_length: u8,
+    },
+    JoinDraft {
+        team_name: Option<String>,
+    },
+    Bid {
+        value: u32,
+    },
 }
