@@ -13,16 +13,44 @@ pub async fn init_pokemon_data(pool: &PgPool) {
         "#;
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize, FromRow)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct Pokemon {
     pub pokedex_id: u32,
     pub name: String,
     pub form: Option<String>,
+    pub patch_version: String,
     pub type1: PokemonType,
     pub type2: Option<PokemonType>,
+    pub ability1: String,
+    pub ability2: Option<String>,
+    pub hidden_ability: Option<String>,
     pub stats: PokemonStats,
-    pub key_moves: Vec<(PokemonMove, u8)>,
+    pub key_moves: Vec<KeyMoveRow>,
     pub description: String,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct PokemonRow {
+    pub pokedex_id: i32,
+    pub name: String,
+    pub form: Option<String>,
+    pub patch_version: String,
+    pub type1: PokemonType,
+    pub type2: Option<PokemonType>,
+    pub ability1: String,
+    pub ability2: Option<String>,
+    pub hidden_ability: Option<String>,
+    pub stats: PokemonStats,
+    pub description: String,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct KeyMoveRow {
+    pub pokedex_id: i32,
+    pub form: Option<String>,
+    pub patch_version: String,
+    pub move_name: String,
+    pub learn_method: String,
 }
 
 #[derive(Clone, Copy, Debug, Serialize, Deserialize)]
