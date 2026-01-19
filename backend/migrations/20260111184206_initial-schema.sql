@@ -28,6 +28,30 @@ CREATE TABLE pokemon (
     PRIMARY KEY (pokedex_id, form, patch_version)
 );
 
+CREATE TABLE key_moves (
+    pokedex_id INT NOT NULL,
+    form TEXT,
+    patch_version TEXT NOT NULL,
+    move_name TEXT NOT NULL REFERENCES moves(move_name),
+    learn_method TEXT NOT NULL,
+
+    FOREIGN KEY (pokedex_id, form, patch_version)
+        REFERENCES pokemon(pokedex_id, form, patch_version)
+        ON DELETE CASCADE
+);
+
+CREATE TABLE moves (
+    move_name TEXT NOT NULL
+    move_description TEXT,
+    move_type TEXT NOT NULL,
+    move_category TEXT NOT NULL,
+    power INT NOT NULL,
+    accuracy INT NOT NULL,
+    pp INT NOT NULL,
+    effect TEXT NOT NULL,
+    probability INT,
+);
+
 CREATE TABLE drafts (
     draft_id TEXT NOT NULL PRIMARY KEY,
     starting_money INT NOT NULL DEFAULT 20000,
@@ -53,7 +77,7 @@ CREATE TABLE auctions (
 );
 
 CREATE UNIQUE INDEX auction_order
-ON auctions (draft_id, draft_order);
+    ON auctions (draft_id, draft_order);
 
 CREATE TABLE teams (
     user_id UUID NOT NULL REFERENCES users(user_id) ON DELETE CASCADE,
