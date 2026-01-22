@@ -27,6 +27,8 @@ async fn main() {
         .route("/", get(|| async { "blitz auction api" }))
         .route("/drafts", post(handlers::create_draft))
         .route("/drafts/{draft_id}/join", post(handlers::join_draft))
+        .route("/ranked/drafts", post(handlers::create_draft))
+        .route("/ranked/drafts/{draft_id}/join", post(handlers::join_draft))
         .route("/drafts/{draft_id}", get(handlers::get_draft))
         .route("/drafts/{draft_id}/bid", post(handlers::bid))
         .route("/ws/{draft_id}", any(handlers::websocket_handler))
