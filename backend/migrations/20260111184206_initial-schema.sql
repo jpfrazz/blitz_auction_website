@@ -10,7 +10,8 @@ CREATE TABLE pokemon (
     pokedex_id INT NOT NULL,
     name TEXT NOT NULL,
     patch_version TEXT NOT NULL,
-    form TEXT, /* most pokemon will not be a regional_variant */
+    form TEXT NOT NULL DEFAULT '',
+    description TEXT,
     type1 TEXT NOT NULL,
     type2 TEXT,
     ability1 TEXT NOT NULL,
@@ -23,25 +24,13 @@ CREATE TABLE pokemon (
     defense INT NOT NULL,
     sp_attack INT NOT NULL,
     sp_defense INT NOT NULL,
-    speed INT NOT NULL
+    speed INT NOT NULL,
 
     PRIMARY KEY (pokedex_id, form, patch_version)
 );
 
-CREATE TABLE key_moves (
-    pokedex_id INT NOT NULL,
-    form TEXT,
-    patch_version TEXT NOT NULL,
-    move_name TEXT NOT NULL REFERENCES moves(move_name),
-    learn_method TEXT NOT NULL,
-
-    FOREIGN KEY (pokedex_id, form, patch_version)
-        REFERENCES pokemon(pokedex_id, form, patch_version)
-        ON DELETE CASCADE
-);
-
 CREATE TABLE moves (
-    move_name TEXT NOT NULL
+    move_name TEXT NOT NULL PRIMARY KEY,
     move_description TEXT,
     move_type TEXT NOT NULL,
     move_category TEXT NOT NULL,
@@ -49,7 +38,19 @@ CREATE TABLE moves (
     accuracy INT NOT NULL,
     pp INT NOT NULL,
     effect TEXT NOT NULL,
-    probability INT,
+    probability INT
+);
+
+CREATE TABLE key_moves (
+    pokedex_id INT NOT NULL,
+    form TEXT NOT NULL DEFAULT '',
+    patch_version TEXT NOT NULL,
+    move_name TEXT NOT NULL REFERENCES moves(move_name),
+    learn_method TEXT NOT NULL,
+
+    FOREIGN KEY (pokedex_id, form, patch_version)
+        REFERENCES pokemon(pokedex_id, form, patch_version)
+        ON DELETE CASCADE
 );
 
 CREATE TABLE drafts (
@@ -65,7 +66,8 @@ CREATE TABLE drafts (
 
 CREATE TABLE auctions (
     auction_id BIGSERIAL NOT NULL PRIMARY KEY,
-    pokemon_id INT NOT NULL REFERENCES pokemon(pokemon_id),
+    pokedex_id INT NOT NULL,
+    form TEXT NOT NULL,
     patch_version TEXT NOT NULL,
     draft_id TEXT NOT NULL REFERENCES drafts(draft_id) ON DELETE CASCADE,
     draft_order INT NOT NULL,
@@ -73,7 +75,10 @@ CREATE TABLE auctions (
     winning_bid INT,
     drafted_by UUID REFERENCES users(user_id),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-    created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+
+    FOREIGN KEY (pokedex_id, form, patch_version)
+        REFERENCES pokemon(pokedex_id, form, patch_version)
 );
 
 CREATE UNIQUE INDEX auction_order
@@ -96,7 +101,7 @@ CREATE TABLE bids (
     value INT NOT NULL,
     accepted BOOLEAN NOT NULL,
     winning BOOLEAN NOT NULL,
-    updated_at TIMESTAMPTZ
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
     created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
@@ -104,7 +109,7 @@ CREATE OR REPLACE FUNCTION update_updated_at()
     RETURNS TRIGGER AS $$
     BEGIN
         NEW.updated_at = now();
-        RETURN NEW;\
+        RETURN NEW;
     END;
     $$ language 'plpgsql';
 
