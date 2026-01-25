@@ -2,7 +2,7 @@ use crate::{
     ServerState,
     auction::Auction,
     draft::{Draft, DraftResponse, DraftSettings},
-    messages::ServerMessage,
+    messages::{ClientBidRequest, ClientBidResponse, ServerMessage},
 };
 use axum::{
     Json,
@@ -15,7 +15,8 @@ use axum::{
     http::StatusCode,
     response::{Response},
 };
-use tokio::sync::broadcast;
+use tokio::sync::{broadcast, RwLock};
+use std::sync::Arc;
 
 #[debug_handler]
 pub async fn create_draft(
@@ -30,7 +31,9 @@ pub async fn create_draft(
         )
         .await
         {
-            return Ok(draft.draft_id);
+            let draft_id = draft.draft_id.clone();
+            state.drafts.insert(draft_id.clone(), Arc::new(RwLock::new(draft)));
+            return Ok(draft_id);
         }
     }
 
@@ -45,16 +48,14 @@ pub async fn get_draft(
     State(state): State<ServerState>,
     Path(draft_id): Path<String>,
 ) -> Result<Json<DraftResponse>, (StatusCode, String)> {
-    let Some(draft) = state.drafts.get(&draft_id) else {
-        return Err((
-            StatusCode::NOT_FOUND,
-            format!("draft {} not found", draft_id),
-        ));
-    };
+    let draft_lock = state.drafts
+        .get(&draft_id)
+        .map(|d| d.value().clone())
+        .ok_or((StatusCode::NOT_FOUND, "draft not found".to_string()))?;
 
-    let draft_response: DraftResponse = draft.into();
+    let draft = draft_lock.read().await.clone();
 
-    Ok(Json(draft_response))
+    Ok(Json(draft.into()))
 }
 
 #[debug_handler]
@@ -70,8 +71,41 @@ pub async fn join_draft(
 }
 
 #[debug_handler]
-pub async fn bid() {
-    todo!("implement bid")
+pub async fn bid(
+    State(state): State<ServerState>,
+    Path(draft_id): Path<String>,
+    Json(bid_request): Json<ClientBidRequest>
+) -> Result<Json<ClientBidResponse>, (StatusCode, String)> {
+    let draft_lock = state.drafts
+        .get(&draft_id)
+        .map(|d| d.value().clone())
+        .ok_or((StatusCode::FORBIDDEN, "user does not have access to requested draft".to_string()))?;
+
+
+    {
+        let mut draft = draft_lock.write().await;
+        let auction = &draft.auctions[draft.current_auction.clone() as usize];
+        if auction.auction_id != bid_request.auction_id {
+            let error_msg = format!("auction is not active");
+            return Ok(Json(ClientBidResponse { accepted: false, error: Some(error_msg) }))
+        }
+        if auction.highest_bid >= bid_request.value {
+            let error_msg = format!("bid is not higher than current highest bid");
+            return Ok(Json(ClientBidResponse { accepted: false, error: Some(error_msg) }))
+        }
+        if auction.highest_bidder == todo!() {
+            let error_msg = format!("user is already the highest bidder");
+            return Ok(Json(ClientBidResponse { accepted: false, error: Some(error_msg) }))
+        }
+        // check user has team in draft
+
+    }
+
+
+    Ok(Json(ClientBidResponse{
+        accepted: true,
+        error: None
+    }))
 }
 
 #[debug_handler]

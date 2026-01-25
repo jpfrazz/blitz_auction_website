@@ -5,7 +5,7 @@ use sqlx::{PgPool, Postgres, Transaction};
 use tokio::sync::broadcast;
 use uuid::Uuid;
 
-use crate::{auction::Auction, messages::ServerMessage, pokemon::Pokemon};
+use crate::{auction::Auction, messages::ServerMessage, pokemon::{self, Pokemon}};
 
 #[derive(Clone, Debug)]
 pub struct Draft {
@@ -15,7 +15,7 @@ pub struct Draft {
     settings: DraftSettings,
     pub current_auction: u32,
     pokemon: Vec<&'static Pokemon>,
-    auctions: Vec<Auction>,
+    pub auctions: Vec<Auction>,
     pub teams: Vec<String>,
     pub spectators: Vec<Uuid>,
     pub tx: broadcast::Sender<ServerMessage>,
@@ -29,20 +29,20 @@ pub struct DraftResponse {
     teams: Vec<String>,
     draft_state: DraftState,
     completed_auctions: Vec<Auction>,
-    pokemon: Vec<Pokemon>,
+    pokemon: Vec<&'static Pokemon>,
     patch_version: String,
 }
 
-impl From<&Draft> for DraftResponse {
-    fn from(draft: &Draft) -> DraftResponse {
+impl From<Draft> for DraftResponse {
+    fn from(draft: Draft) -> DraftResponse {
         DraftResponse {
-            draft_id: draft.draft_id.clone(),
-            host: draft.host.clone(),
-            teams: draft.teams.clone(),
-            draft_state: draft.draft_state.clone(),
-            completed_auctions: draft.auctions.iter().take(draft.current_auction as usize).cloned().collect(),
-            pokemon: vec![],
-            patch_version: draft.settings.patch_version.clone(),
+            draft_id: draft.draft_id,
+            host: draft.host,
+            teams: draft.teams,
+            draft_state: draft.draft_state,
+            completed_auctions: draft.auctions.into_iter().take(draft.current_auction as usize).collect(),
+            pokemon: draft.pokemon,
+            patch_version: draft.settings.patch_version,
         }
     }
 }
@@ -65,12 +65,12 @@ impl Default for DraftState {
 pub struct DraftSettings {
     num_players: i32,
     starting_money: i32,
-    pokemon_ids: Vec<i32>,
+    excluded_pokemon: Vec<(i32, String)>,
     patch_version: String,
 }
 
 impl Draft {
-    fn new(draft_id: String, host: String, settings: DraftSettings, pool: PgPool) -> Draft {
+    fn new(draft_id: String, host: String, settings: DraftSettings, pokemon: Vec<&Pokemon>, pool: PgPool) -> Draft {
         let (tx, _rx) = broadcast::channel(1_000);
         Draft {
             draft_id: draft_id,
@@ -78,7 +78,8 @@ impl Draft {
             db_pool: pool,
             teams: vec![],
             spectators: vec![],
-            state: DraftState::PENDING,
+            draft_state: DraftState::PENDING,
+            pokemon: pokemon,
             settings: settings,
             current_auction: 0,
             auctions: vec![],
@@ -96,10 +97,14 @@ impl Draft {
             let Some(draft_id) = petname(2, "_") else {
                 continue;
             };
+            let Some(pokemon) = pokemon::get_pokemon_data(&settings.patch_version, &settings.excluded_pokemon) else {
+                return Err(format!("requested patch_version does not exist: {}", settings.patch_version));
+            };
+
 
             let Ok(_) = sqlx::query!(
                 r#"
-                INSERT INTO drafts (draft_id, num_players, starting_money, patch_version)
+                INSERT INTO drafts (draft_id, num_teams, starting_money, patch_version)
                 VALUES ($1, $2, $3, $4)
                 "#,
                 draft_id,
@@ -113,9 +118,7 @@ impl Draft {
                 continue;
             };
 
-            // randomize draft order
-            settings.pokemon_ids.shuffle(&mut rng());
-            let draft = Draft::new(draft_id, host, settings, pool);
+            let draft = Draft::new(draft_id, host, settings, pokemon, pool);
             draft.add_auctions_to_db(&mut tx).await;
 
             tx.commit().await.unwrap();
@@ -124,17 +127,22 @@ impl Draft {
         Err("Couldn't create auction in db".to_string())
     }
 
+    async fn create_auctions(&self, tx: &mut Transaction<'_, Postgres>) -> Result<(), String> {
+        todo!()
+    }
+
     async fn add_auctions_to_db(&self, tx: &mut Transaction<'_, Postgres>) {
-        for (i, id) in self.settings.pokemon_ids.iter().enumerate() {
+        for (i, pokemon) in self.pokemon.iter().enumerate() {
             let _res = sqlx::query!(
                 r#"
-                INSERT INTO auctions (draft_id, pokemon_id, draft_order, patch_version)
-                VALUES ($1, $2, $3, $4)
+                INSERT INTO auctions (draft_id, pokedex_id, draft_order, patch_version, form)
+                VALUES ($1, $2, $3, $4, $5)
                 "#,
                 self.draft_id,
-                id,
+                pokemon.pokedex_id as i32,
                 i as i32,
-                self.settings.patch_version,
+                pokemon.patch_version,
+                pokemon.form,
             )
             .execute(&mut **tx)
             .await

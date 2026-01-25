@@ -1,4 +1,5 @@
 use serde::{Deserialize, Serialize};
+use uuid::Uuid;
 
 use crate::auction::DraftState;
 
@@ -46,4 +47,18 @@ pub enum ClientMessage {
     Bid {
         value: u32,
     },
+}
+
+#[derive(Clone, Debug, Deserialize)]
+pub struct ClientBidRequest {
+    pub user_id: Uuid,
+    pub auction_id: u32,
+    pub value: u32,
+}
+
+#[derive(Clone, Debug, Serialize)]
+pub struct ClientBidResponse {
+    pub accepted: bool,
+    #[serde(skip_serializing_if = "Options::is_none")]
+    pub error: Option<String>,
 }
