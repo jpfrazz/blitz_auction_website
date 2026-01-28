@@ -5,23 +5,17 @@ use axum::{
     routing::{any, get, post},
 };
 
-use backend::{ServerState, handlers};
-use moka::future::Cache;
-use sqlx::PgPool;
+use backend::{handlers, pokemon};
 
 #[tokio::main]
-async fn main() {
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let db_connection_string = env::var("DATABASE_URL").unwrap_or_else(|_| {
         return "postgres://postgres:password@localhost:5432/auction_db".to_string();
     });
     println!("{db_connection_string}");
-    let db_pool = PgPool::connect(&db_connection_string).await.unwrap();
-    let drafts = Cache::new(10_000);
 
-    let state = ServerState {
-        db_pool: db_pool,
-        drafts: drafts,
-    };
+    let state = backend::init_server_state(&"".to_string()).await;
+    pokemon::init_pokemon_data(&state.db_pool).await?;
 
     let app = Router::new()
         .route("/", get(|| async { "blitz auction api" }))
@@ -39,5 +33,6 @@ async fn main() {
         .await
         .unwrap();
     println!("listening on {}", address);
-    axum::serve(listener, app).await.unwrap()
+    axum::serve(listener, app).await?;
+    Ok(())
 }

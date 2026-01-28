@@ -1,7 +1,8 @@
+use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
-use crate::auction::DraftState;
+use crate::draft::DraftState;
 
 #[derive(Clone, Debug, Serialize)]
 #[serde(tag = "type", content = "data")]
@@ -9,18 +10,20 @@ pub enum ServerMessage {
     AuctionStarted {
         pokemon_name: String,
         starting_bid: u32,
-        ms_remaining: u64,
+        expires_at: DateTime<Utc>,
     },
     AuctionUpdate {
-        pokemon_name: String,
+        pokedex_id: u32,
+        form: Option<String>,
         current_bid: u32,
-        high_bidder: Option<String>,
-        ms_remaining: u64,
+        high_bidder: Option<Uuid>,
+        expires_at: DateTime<Utc>,
     },
     AuctionResult {
-        pokemon_name: String,
+        pokedex_id: u32,
+        form: Option<String>,
         winning_bid: u32,
-        winner: String,
+        winner: Uuid,
     },
     PlayerJoined(String),
     PlayerLeft(String),
@@ -51,14 +54,15 @@ pub enum ClientMessage {
 
 #[derive(Clone, Debug, Deserialize)]
 pub struct ClientBidRequest {
+    #[serde(skip)]
     pub user_id: Uuid,
-    pub auction_id: u32,
+    pub auction_id: i64,
     pub value: u32,
 }
 
 #[derive(Clone, Debug, Serialize)]
 pub struct ClientBidResponse {
     pub accepted: bool,
-    #[serde(skip_serializing_if = "Options::is_none")]
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub error: Option<String>,
 }

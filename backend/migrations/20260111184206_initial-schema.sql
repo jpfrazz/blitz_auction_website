@@ -18,7 +18,10 @@ CREATE TABLE pokemon (
     ability2 TEXT,
     hidden_ability TEXT,
     evolution_method TEXT,
+    evolves_from_id INT,
+    evolves_from_form TEXT,
     mega TEXT,
+    is_baby BOOLEAN NOT NULL DEFAULT,
     hp INT NOT NULL,
     attack INT NOT NULL,
     defense INT NOT NULL,
@@ -27,6 +30,8 @@ CREATE TABLE pokemon (
     speed INT NOT NULL,
 
     PRIMARY KEY (pokedex_id, form, patch_version)
+    FOREIGN KEY (evolves_from_id, evolves_from_form, patch_version)
+        REFERENCES pokemon(pokedex_id, form, patch_version)
 );
 
 CREATE TABLE moves (
