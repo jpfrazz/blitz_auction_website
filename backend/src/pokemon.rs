@@ -1,11 +1,12 @@
-use std::{collections::HashMap,sync::OnceLock};
+use std::{collections::HashMap, sync::OnceLock};
+use strum::{Display, EnumString};
 
+use dashmap::DashMap;
 use serde::{Deserialize, Serialize};
-use sqlx::{PgPool, prelude::FromRow, types::Json, FromRow};
-use tokio::sync::RwLock;
+use sqlx::{PgPool, prelude::FromRow, types::Json};
 
-type PokemonData = HashMap<String, HashMap<u32, HashMap<Option<String>, Pokemon>>>;
-static POKEMON_DATA: OnceLock<RwLock<PokemonData>> = OnceLock::new();
+type PokemonData = DashMap<String, HashMap<u32, HashMap<Option<String>, &'static Pokemon>>>;
+static POKEMON_DATA: OnceLock<PokemonData> = OnceLock::new();
 
 pub async fn init_pokemon_data(pool: &PgPool) -> Result<(), sqlx::Error> {
     let pokemon_list = sqlx::query!(
@@ -31,68 +32,104 @@ pub async fn init_pokemon_data(pool: &PgPool) -> Result<(), sqlx::Error> {
     )
     .map(|row| Pokemon {
         pokedex_id: u32::try_from(row.pokedex_id).unwrap_or_else(|_| {
-            panic!("Pokemon {} {} has invalid pokedex_id: {}", row.name, row.form, row.pokedex_id)
+            panic!(
+                "Pokemon {} {} has invalid pokedex_id: {}",
+                row.name, row.form, row.pokedex_id
+            )
         }),
-        name: row.name,
-        form: if row.form.is_empty() { None } else { Some(row.form) },
+        name: row.name.clone(),
+        form: if row.form.is_empty() {
+            None
+        } else {
+            Some(row.form.clone())
+        },
         patch_version: row.patch_version,
-        type1: row.type1.into(),
-        type2: row.type2.map(|t| t.into()),
+        type1: row.type1.parse().unwrap(),
+        type2: row.type2.map(|t| t.parse().unwrap()),
         ability1: row.ability1,
         ability2: row.ability2,
         hidden_ability: row.hidden_ability,
         stats: PokemonStats {
             hp: u8::try_from(row.hp).unwrap_or_else(|_| {
-                panic!("Pokemon {} {} has invalid hp: {}", row.name, row.form, row.hp)
+                panic!(
+                    "Pokemon {} {} has invalid hp: {}",
+                    row.name, row.form, row.hp
+                )
             }),
             attack: u8::try_from(row.attack).unwrap_or_else(|_| {
-                panic!("Pokemon {} {} has invalid attack: {}", row.name, row.form, row.attack)
+                panic!(
+                    "Pokemon {} {} has invalid attack: {}",
+                    row.name, row.form, row.attack
+                )
             }),
             defense: u8::try_from(row.defense).unwrap_or_else(|_| {
-                panic!("Pokemon {} {} has invalid defense: {}", row.name, row.form, row.defense)
+                panic!(
+                    "Pokemon {} {} has invalid defense: {}",
+                    row.name, row.form, row.defense
+                )
             }),
             sp_attack: u8::try_from(row.sp_attack).unwrap_or_else(|_| {
-                panic!("Pokemon {} {} has invalid sp_attack: {}", row.name, row.form, row.sp_attack)
+                panic!(
+                    "Pokemon {} {} has invalid sp_attack: {}",
+                    row.name, row.form, row.sp_attack
+                )
             }),
             sp_defense: u8::try_from(row.sp_defense).unwrap_or_else(|_| {
-                panic!("Pokemon {} {} has invalid sp_defense: {}", row.name, row.form, row.sp_defense)
+                panic!(
+                    "Pokemon {} {} has invalid sp_defense: {}",
+                    row.name, row.form, row.sp_defense
+                )
             }),
             speed: u8::try_from(row.speed).unwrap_or_else(|_| {
-                panic!("Pokemon {} {} has invalid speed: {}", row.name, row.form, row.speed)
+                panic!(
+                    "Pokemon {} {} has invalid speed: {}",
+                    row.name, row.form, row.speed
+                )
             }),
         },
         key_moves: row.key_moves,
         description: row.description,
-
     })
     .fetch_all(pool)
     .await?;
 
-    let cache: PokemonData = HashMap::new();
+    let cache: PokemonData = DashMap::new();
 
-    for pokemon in pokemon_list{
+    for pokemon in pokemon_list.into_iter() {
         cache
             .entry(pokemon.patch_version.clone())
             .or_default()
-            .entry(pokemon.pokedex_id)
+            .entry(pokemon.pokedex_id.clone())
             .or_default()
-            .insert(pokemon.form.clone(), pokemon);
+            .insert(pokemon.form.clone(), Box::leak(Box::new(pokemon)));
     }
 
-    POKEMON_DATA.set(RwLock::new(cache)).expect("POKEMON_DATA already initialized");
+    POKEMON_DATA
+        .set(cache)
+        .expect("POKEMON_DATA already initialized");
+    Ok(())
 }
 
-pub fn get_pokemon_data(patch_version: &str, excluded_pokemon: &Vec<(i32, String)>) -> Option<Vec<&'static Pokemon>> {
+pub fn get_pokemon_data(
+    patch_version: &str,
+    excluded_pokemon: &Vec<(u32, Option<String>)>,
+) -> Option<Vec<&'static Pokemon>> {
     let cache = POKEMON_DATA.get().expect("POKEMON_DATA not initialized");
 
-    let Some(id_map) = cache.get(&patch_version) else {
-        return None()
-    };
+    let id_map = cache.get(patch_version)?;
 
-    id_map.values()
-        .flat_map(|form_map| form_map.values())
-        .filter(|p| !excluded_pokemon.contains(&(p.pokedex_id, p.form)))
-        .collect()
+    Some(
+        id_map
+            .values()
+            .flat_map(|form_map| form_map.values())
+            .copied()
+            .filter(|p| {
+                !excluded_pokemon
+                    .iter()
+                    .any(|(ex_id, ex_form)| *ex_id == p.pokedex_id && ex_form == &p.form)
+            })
+            .collect(),
+    )
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -145,7 +182,7 @@ pub struct KeyMoveRow {
 //     }
 // }
 
-#[derive(Clone, Copy, Debug, Serialize, Deserialize)]
+#[derive(EnumString, Display, Clone, Copy, Debug, Serialize, Deserialize)]
 pub enum PokemonType {
     Normal,
     Fighting,
