@@ -1,5 +1,5 @@
 use crate::{
-    ServerState,
+    server::ServerState,
     auction::Auction,
     draft::{Draft, DraftResponse, DraftSettings},
     messages::{ClientBidRequest, ClientBidResponse, ServerMessage}, users::{AuthBackend, Credentials},

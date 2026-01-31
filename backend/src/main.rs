@@ -1,40 +1,8 @@
-use std::env;
-
-use axum::{
-    Router,
-    routing::{any, get, post},
-};
-
-use blitz_auction_backend::{handlers, pokemon};
+use blitz_auction_backend::server::Server;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let db_connection_string = env::var("DATABASE_URL").unwrap_or_else(|_| {
-        return "postgres://postgres:password@localhost:5432/auction_db".to_string();
-    });
-    println!("{db_connection_string}");
-
-    let state = blitz_auction_backend::init_server_state(&"".to_string()).await;
-    pokemon::init_pokemon_data(&state.db_pool).await?;
-
-    let app = Router::new()
-        .route("/", get(|| async { "blitz auction api" }))
-        .route("/drafts", post(handlers::create_draft))
-        .route("/drafts/{draft_id}/join", post(handlers::join_draft))
-        .route("/ranked/drafts", post(handlers::create_draft))
-        .route("/ranked/drafts/{draft_id}/join", post(handlers::join_draft))
-        .route("/drafts/{draft_id}", get(handlers::get_draft))
-        .route("/drafts/{draft_id}/bid", post(handlers::bid))
-        .route("/ws/{draft_id}", any(handlers::websocket_handler))
-        .route("/login/guest", get(handlers::guest_login))
-        .route("/login/discord", get(handlers::discord_login))
-        .with_state(state);
-
-    let address = env::var("AXUM_SERVER_ADDR").unwrap_or_else(|_| "0.0.0.0:3000".into());
-    let listener = tokio::net::TcpListener::bind(address.clone())
-        .await
-        .unwrap();
-    println!("listening on {}", address);
-    axum::serve(listener, app.into_make_service()).await?;
+    let server = Server::build().await?;
+    server.serve().await?;
     Ok(())
 }

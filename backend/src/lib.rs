@@ -16,28 +16,7 @@ pub mod handlers;
 pub mod messages;
 pub mod pokemon;
 pub mod users;
-pub mod app;
-
-#[derive(Clone)]
-pub struct ServerState {
-    pub db_pool: PgPool,
-    pub drafts: Arc<DashMap<String, Arc<RwLock<Draft>>>>,
-    pub draft_runner: Arc<DraftRunner>,
-}
-
-pub async fn init_server_state(connection_string: &String) -> ServerState {
-    let db_pool = PgPool::connect(connection_string)
-        .await
-        .expect("could not connect to db");
-    let drafts = Arc::new(DashMap::<String, Arc<RwLock<Draft>>>::new());
-    let draft_runner = Arc::new(DraftRunner::new(drafts.clone()));
-
-    ServerState {
-        db_pool,
-        drafts,
-        draft_runner,
-    }
-}
+pub mod server;
 
 pub fn init_auth_layer(pool: PgPool) {
     let session_store = MemoryStore::default();
@@ -45,8 +24,7 @@ pub fn init_auth_layer(pool: PgPool) {
         .with_expiry(Expiry::OnInactivity(Duration::hours(1)))
         .with_always_save(true);
 
-    let backend = AuthBackend::new(pool, BasicClient::new());
-
+    // let backend = AuthBackend::new(pool, BasicClient::new());
 }
 
 pub fn get_expiry_time_from_instant(instant: Instant) -> chrono::DateTime<chrono::Utc> {
