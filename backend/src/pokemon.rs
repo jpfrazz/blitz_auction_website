@@ -5,6 +5,8 @@ use dashmap::DashMap;
 use serde::{Deserialize, Serialize};
 use sqlx::{PgPool, prelude::FromRow, types::Json};
 
+use crate::draft::ExcludedPokemon;
+
 type PokemonData = DashMap<String, HashMap<u32, HashMap<Option<String>, &'static Pokemon>>>;
 static POKEMON_DATA: OnceLock<PokemonData> = OnceLock::new();
 
@@ -112,7 +114,7 @@ pub async fn init_pokemon_data(pool: &PgPool) -> Result<(), sqlx::Error> {
 
 pub fn get_pokemon_data(
     patch_version: &str,
-    excluded_pokemon: &Vec<(u32, Option<String>)>,
+    excluded_pokemon: &Vec<ExcludedPokemon>,
 ) -> Option<Vec<&'static Pokemon>> {
     let cache = POKEMON_DATA.get().expect("POKEMON_DATA not initialized");
 
@@ -126,7 +128,7 @@ pub fn get_pokemon_data(
             .filter(|p| {
                 !excluded_pokemon
                     .iter()
-                    .any(|(ex_id, ex_form)| *ex_id == p.pokedex_id && ex_form == &p.form)
+                    .any(|e| e.pokedex_id == p.pokedex_id && e.form == p.form)
             })
             .collect(),
     )

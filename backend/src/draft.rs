@@ -13,7 +13,7 @@ use crate::{
     auction::Auction,
     draft_runner::DraftRunner,
     messages::ServerMessage,
-    pokemon::{self, Pokemon},
+    pokemon::{self, Pokemon}, users::User,
 };
 
 #[derive(Clone, Debug)]
@@ -39,17 +39,27 @@ pub struct DraftResponse {
     teams: Vec<String>,
     draft_state: DraftState,
     completed_auctions: Vec<Auction>,
+    current_auction: Option<Auction>,
     pokemon: Vec<&'static Pokemon>,
     patch_version: String,
 }
 
 impl From<Draft> for DraftResponse {
     fn from(draft: Draft) -> DraftResponse {
+        let current_auction = {
+            match draft.draft_state {
+                DraftState::BIDDING(_) | DraftState::PAUSED(_) => {
+                    Some(draft.auctions[draft.current_auction as usize].clone())
+                }
+                _ => None
+            }
+        };
         DraftResponse {
             draft_id: draft.draft_id,
             host: draft.host,
             teams: draft.teams,
             draft_state: draft.draft_state,
+            current_auction,
             completed_auctions: draft
                 .auctions
                 .into_iter()
@@ -76,13 +86,25 @@ impl Default for DraftState {
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
+pub struct ExcludedPokemon {
+    pub pokedex_id: u32,
+    pub form: Option<String>,
+}
+
+#[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct DraftSettings {
     num_teams: u32,
     starting_money: u32,
-    excluded_pokemon: Vec<(u32, Option<String>)>,
+    excluded_pokemon: Vec<ExcludedPokemon>,
     patch_version: String,
     num_auctions: u32,
     auction_length: Duration,
+}
+
+pub struct Team<'a> {
+    user: User,
+    budget_remaining: u32,
+    auctions_won: Vec<&'a Auction>,
 }
 
 impl Draft {
@@ -208,6 +230,7 @@ impl Draft {
                 winning_bid: completed_auction.highest_bid,
                 winner: completed_auction
                     .highest_bidder
+                    .clone()
                     .expect("No one won this auction"),
             })
             .map_err(|e| e.to_string())?;
@@ -229,7 +252,7 @@ impl Draft {
         Ok(())
     }
 
-    pub async fn add_player(&mut self, player_id: Uuid) -> Result<(), String> {
+    pub async fn add_player(&mut self, user: User) -> Result<(), String> {
         todo!("add player func")
     }
 }

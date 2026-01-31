@@ -16,14 +16,14 @@ pub enum ServerMessage {
         pokedex_id: u32,
         form: Option<String>,
         current_bid: u32,
-        high_bidder: Option<Uuid>,
+        high_bidder: Option<String>,
         expires_at: DateTime<Utc>,
     },
     AuctionResult {
         pokedex_id: u32,
         form: Option<String>,
         winning_bid: u32,
-        winner: Uuid,
+        winner: String,
     },
     PlayerJoined(String),
     PlayerLeft(String),
@@ -55,8 +55,8 @@ pub enum ClientMessage {
 #[derive(Clone, Debug, Deserialize)]
 pub struct ClientBidRequest {
     #[serde(skip)]
-    pub user_id: Uuid,
-    pub auction_id: i64,
+    pub user_id: String,
+    pub auction_id: String,
     pub value: u32,
 }
 

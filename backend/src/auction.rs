@@ -9,13 +9,13 @@ use crate::pokemon::Pokemon;
 
 #[derive(Clone, Debug, Serialize)]
 pub struct Auction {
-    pub auction_id: i64,
+    pub auction_id: String,
     pub draft_id: String,
     pub draft_order: u32,
     pub status: AuctionState,
     pub pokemon: &'static Pokemon,
     pub highest_bid: u32,
-    pub highest_bidder: Option<Uuid>,
+    pub highest_bidder: Option<String>,
     #[serde(skip)]
     pub expires_at: Option<Instant>,
 }
@@ -23,7 +23,7 @@ pub struct Auction {
 #[derive(Clone, Debug, Display, Serialize, Deserialize)]
 pub enum AuctionState {
     PENDING,
-    BIDDING,
+    OPEN,
     CLOSED,
 }
 
@@ -31,7 +31,7 @@ impl Auction {
     fn new(
         draft_id: String,
         draft_order: u32,
-        auction_id: i64,
+        auction_id: String,
         pokemon: &'static Pokemon,
     ) -> Auction {
         Auction {
@@ -69,7 +69,7 @@ impl Auction {
         .await?
         .auction_id;
 
-        Ok(Auction::new(draft_id, draft_order, auction_id, pokemon))
+        Ok(Auction::new(draft_id, draft_order, auction_id.to_string(), pokemon))
     }
 
     pub async fn resolve(&self, tx: &mut Transaction<'_, Postgres>) -> Result<(), sqlx::Error> {
@@ -82,7 +82,7 @@ impl Auction {
             &AuctionState::CLOSED.to_string(),
             self.highest_bid as i32,
             self.highest_bidder,
-            self.auction_id,
+            self.auction_id.parse::<i64>().expect("auction_id should parse to i64"),
         )
         .execute(&mut **tx)
         .await?;

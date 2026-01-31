@@ -1,12 +1,12 @@
 use dashmap::DashMap;
 use futures_util::StreamExt;
-use std::sync::Arc;
+use std::{collections::HashMap, sync::Arc};
 use tokio::{
     sync::{RwLock, mpsc, oneshot},
     task,
     time::Instant,
 };
-use tokio_util::time::DelayQueue;
+use tokio_util::time::{DelayQueue, delay_queue::{self, Key}};
 use uuid::Uuid;
 
 use crate::draft::Draft;
@@ -22,7 +22,7 @@ enum Command {
         draft_id: String,
         expires_at: Instant,
     },
-    Stop(u32),
+    Stop(String),
 }
 
 enum BidResult {
@@ -44,17 +44,18 @@ impl DraftRunner {
         Self { cmd_tx: tx }
     }
 
-    // runs auction manager forever
+    // runs draft runner forever
     async fn runner(
         mut rx: mpsc::Receiver<Command>,
         drafts: Arc<DashMap<String, Arc<RwLock<Draft>>>>,
     ) {
         let mut timer_queue: DelayQueue<String> = DelayQueue::new();
+        let mut draft_keys: HashMap<String, delay_queue::Key> = HashMap::new();
 
         loop {
             tokio::select! {
                 Some(cmd) = rx.recv() => {
-                    Self::handle_command(cmd, drafts.clone(), &mut timer_queue);
+                    Self::handle_command(cmd, &mut timer_queue, &mut draft_keys);
                 },
                 Some(auction_key) = timer_queue.next() => {
                     Self::handle_expiration(auction_key.into_inner(), drafts.clone(), &mut timer_queue).await;
@@ -65,18 +66,22 @@ impl DraftRunner {
 
     fn handle_command(
         cmd: Command,
-        drafts: Arc<DashMap<String, Arc<RwLock<Draft>>>>,
         queue: &mut DelayQueue<String>,
+        draft_keys: &mut HashMap<String, Key>,
     ) {
         match cmd {
             Command::Start {
                 draft_id,
                 expires_at,
             } => {
-                todo!()
+                let key = queue.insert_at(draft_id.clone(), expires_at);
+                draft_keys.insert(draft_id, key);
             }
             Command::Stop(draft_id) => {
-                todo!()
+                let Some(key )= draft_keys.get(&draft_id) else {
+                    return;
+                };
+                queue.remove(key);
             }
         }
     }

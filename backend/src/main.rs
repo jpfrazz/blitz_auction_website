@@ -5,7 +5,7 @@ use axum::{
     routing::{any, get, post},
 };
 
-use backend::{handlers, pokemon};
+use blitz_auction_backend::{handlers, pokemon};
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -14,7 +14,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     });
     println!("{db_connection_string}");
 
-    let state = backend::init_server_state(&"".to_string()).await;
+    let state = blitz_auction_backend::init_server_state(&"".to_string()).await;
     pokemon::init_pokemon_data(&state.db_pool).await?;
 
     let app = Router::new()
@@ -26,6 +26,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .route("/drafts/{draft_id}", get(handlers::get_draft))
         .route("/drafts/{draft_id}/bid", post(handlers::bid))
         .route("/ws/{draft_id}", any(handlers::websocket_handler))
+        .route("/login/guest", get(handlers::guest_login))
+        .route("/login/discord", get(handlers::discord_login))
         .with_state(state);
 
     let address = env::var("AXUM_SERVER_ADDR").unwrap_or_else(|_| "0.0.0.0:3000".into());
@@ -33,6 +35,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .await
         .unwrap();
     println!("listening on {}", address);
-    axum::serve(listener, app).await?;
+    axum::serve(listener, app.into_make_service()).await?;
     Ok(())
 }

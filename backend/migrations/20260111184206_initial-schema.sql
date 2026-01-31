@@ -1,7 +1,24 @@
 CREATE TABLE users (
-    user_id UUID NOT NULL PRIMARY KEY,
+    user_id TEXT NOT NULL PRIMARY KEY,
     user_name TEXT NOT NULL,
-    password_hash TEXT NOT NULL,
+    discriminator TEXT NOT NULL,
+    global_name TEXT,
+    avatar TEXT,
+    role_hash TEXT NOT NULL,
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE TABLE user_roles (
+    user_id TEXT NOT NULL REFERENCES users(user_id),
+    role TEXT NOT NULL,
+    PRIMARY KEY (user_id, role)
+);
+
+CREATE TABLE guests (
+    user_id TEXT NOT NULL PRIMARY KEY,
+    user_name TEXT NOT NULL,
+    discord_user_id TEXT REFERENCES users(user_id),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
     created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
@@ -21,7 +38,7 @@ CREATE TABLE pokemon (
     evolves_from_id INT,
     evolves_from_form TEXT,
     mega TEXT,
-    is_baby BOOLEAN NOT NULL DEFAULT,
+    is_baby BOOLEAN NOT NULL DEFAULT FALSE,
     hp INT NOT NULL,
     attack INT NOT NULL,
     defense INT NOT NULL,
@@ -29,7 +46,7 @@ CREATE TABLE pokemon (
     sp_defense INT NOT NULL,
     speed INT NOT NULL,
 
-    PRIMARY KEY (pokedex_id, form, patch_version)
+    PRIMARY KEY (pokedex_id, form, patch_version),
     FOREIGN KEY (evolves_from_id, evolves_from_form, patch_version)
         REFERENCES pokemon(pokedex_id, form, patch_version)
 );
@@ -78,7 +95,7 @@ CREATE TABLE auctions (
     draft_order INT NOT NULL,
     status TEXT NOT NULL DEFAULT 'PENDING',
     winning_bid INT,
-    drafted_by UUID REFERENCES users(user_id),
+    drafted_by TEXT REFERENCES users(user_id),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
     created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
 
@@ -90,9 +107,10 @@ CREATE UNIQUE INDEX auction_order
     ON auctions (draft_id, draft_order);
 
 CREATE TABLE teams (
-    user_id UUID NOT NULL REFERENCES users(user_id) ON DELETE CASCADE,
+    user_id TEXT NOT NULL REFERENCES users(user_id) ON DELETE CASCADE,
     draft_id TEXT NOT NULL REFERENCES drafts(draft_id) ON DELETE CASCADE,
     money_remaining INT NOT NULL,
+    pokemon_drafted INT NOT NULL DEFAULT 0,
     updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
     created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
 
@@ -102,7 +120,7 @@ CREATE TABLE teams (
 CREATE TABLE bids (
     bid_id BIGSERIAL NOT NULL PRIMARY KEY,
     auction_id BIGINT NOT NULL REFERENCES auctions(auction_id),
-    user_id UUID NOT NULL REFERENCES users(user_id),
+    user_id TEXT NOT NULL REFERENCES users(user_id),
     value INT NOT NULL,
     accepted BOOLEAN NOT NULL,
     winning BOOLEAN NOT NULL,
@@ -136,4 +154,8 @@ CREATE TRIGGER update_teams_updated_at
 
 CREATE TRIGGER update_bids_updated_at
     BEFORE UPDATE ON bids
+    FOR EACH ROW EXECUTE PROCEDURE update_updated_at();
+
+CREATE TRIGGER update_guests_updated_at
+    BEFORE UPDATE ON guests
     FOR EACH ROW EXECUTE PROCEDURE update_updated_at();

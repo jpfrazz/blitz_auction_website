@@ -2,7 +2,7 @@ use crate::{
     ServerState,
     auction::Auction,
     draft::{Draft, DraftResponse, DraftSettings},
-    messages::{ClientBidRequest, ClientBidResponse, ServerMessage},
+    messages::{ClientBidRequest, ClientBidResponse, ServerMessage}, users::{AuthBackend, Credentials},
 };
 use axum::{
     Json,
@@ -15,6 +15,7 @@ use axum::{
     http::StatusCode,
     response::Response,
 };
+use axum_login::AuthSession;
 use std::{sync::Arc, time::Duration};
 use tokio::{
     sync::{RwLock, broadcast},
@@ -104,6 +105,7 @@ pub async fn bid(
             )
         })?;
 
+        let user_id: String = todo!("get user from extractor");
         // update auction in db
         let _ = sqlx::query!(
             r#"
@@ -112,8 +114,8 @@ pub async fn bid(
             WHERE auction_id = $3
             "#,
             bid_request.value as i32,
-            uuid::Uuid::new_v4(),
-            bid_request.auction_id as i32,
+            user_id,
+            bid_request.auction_id.parse::<i64>().expect("auction id should be i64"),
         )
         .execute(&mut *tx)
         .await
@@ -152,7 +154,7 @@ pub async fn bid(
         })?;
 
         //update auction in memory
-        auction.highest_bidder = Some(todo!());
+        auction.highest_bidder = Some("Test".to_string());
         auction.highest_bid = bid_request.value;
         auction.expires_at = Some(std::cmp::max(
             auction.expires_at.unwrap(),
@@ -196,6 +198,22 @@ fn validate_bid_request(
         return Err(format!("user is not assigned to a team"));
     }
 
+    Ok(())
+}
+
+pub async fn guest_login(mut auth: AuthSession<AuthBackend>) -> Result<(), String> {
+    match auth.authenticate(Credentials::Guest).await {
+        Ok(Some(user)) => {
+            if let Err(e) = auth.login(&user).await {
+                return Err(format!("failed to login to guest account: {}", e));
+            }
+        }
+        _ => return Err("failed to create guest account".to_string())
+    }
+    Ok(())
+}
+
+pub async fn discord_login() -> Result<(), String> {
     Ok(())
 }
 
