@@ -1,0 +1,58 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n                        SELECT u.user_id, u.user_name, u.discriminator, u.global_name, u.avatar, u.role_hash,\n                            COALESCE(\n                                array_agg(r.role) FILTER (WHERE r.role IS NOT NULL),\n                                '{}'\n                            ) as \"roles!: Vec<String>\"\n                        FROM users as u\n                        LEFT JOIN user_roles r ON r.user_id = u.user_id\n                        WHERE u.user_id = $1\n                        GROUP BY u.user_id\n                    ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "user_id",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 1,
+        "name": "user_name",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 2,
+        "name": "discriminator",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 3,
+        "name": "global_name",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 4,
+        "name": "avatar",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 5,
+        "name": "role_hash",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 6,
+        "name": "roles!: Vec<String>",
+        "type_info": "TextArray"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Text"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      true,
+      true,
+      false,
+      null
+    ]
+  },
+  "hash": "2d90926068125912d27440d4ebe649cf3a99441cd4791027e7ef599199ae2828"
+}

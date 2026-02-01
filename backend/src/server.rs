@@ -44,7 +44,7 @@ impl Server {
 
     pub async fn build() -> Result<Self, Error> {
         let db_conn_string = env::var("DB_CONN_STRING").map_err(|e| {
-            ServerError::MissingEnv(e.to_string())
+            ServerError::MissingEnv(format!("missing DB_CONN_STRING: {}",e.to_string()))
         })?;
         let db_pool = PgPool::connect(&db_conn_string).await.map_err(|e| {
             ServerError::PgConnection(e.to_string())

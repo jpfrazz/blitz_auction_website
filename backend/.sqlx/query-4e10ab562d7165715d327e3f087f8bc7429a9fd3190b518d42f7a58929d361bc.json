@@ -1,0 +1,146 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        SELECT\n            p.*,\n            COALESCE(\n                (\n                    SELECT json_agg(\n                        json_build_object(\n                            'move_name', km.move_name,\n                            'learn_method', km.learn_method\n                        )\n                    )\n                    FROM key_moves km\n                    WHERE (km.pokedex_id, km.form, km.patch_version) =\n                        (p.pokedex_id, p.form, p.patch_version)\n                ),\n                '[]'::json\n            ) as \"key_moves!: Json<Vec<KeyMoveRow>>\"\n        FROM pokemon p\n        ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "pokedex_id",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 1,
+        "name": "name",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 2,
+        "name": "patch_version",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 3,
+        "name": "form",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 4,
+        "name": "description",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 5,
+        "name": "type1",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 6,
+        "name": "type2",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 7,
+        "name": "ability1",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 8,
+        "name": "ability2",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 9,
+        "name": "hidden_ability",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 10,
+        "name": "evolution_method",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 11,
+        "name": "evolves_from_id",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 12,
+        "name": "evolves_from_form",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 13,
+        "name": "mega",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 14,
+        "name": "is_baby",
+        "type_info": "Bool"
+      },
+      {
+        "ordinal": 15,
+        "name": "hp",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 16,
+        "name": "attack",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 17,
+        "name": "defense",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 18,
+        "name": "sp_attack",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 19,
+        "name": "sp_defense",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 20,
+        "name": "speed",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 21,
+        "name": "key_moves!: Json<Vec<KeyMoveRow>>",
+        "type_info": "Json"
+      }
+    ],
+    "parameters": {
+      "Left": []
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      true,
+      false,
+      true,
+      false,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      null
+    ]
+  },
+  "hash": "4e10ab562d7165715d327e3f087f8bc7429a9fd3190b518d42f7a58929d361bc"
+}
