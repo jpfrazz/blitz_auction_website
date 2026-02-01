@@ -1,8 +1,5 @@
 use crate::{
-    server::ServerState,
-    auction::Auction,
-    draft::{Draft, DraftResponse, DraftSettings},
-    messages::{ClientBidRequest, ClientBidResponse, ServerMessage}, users::{AuthBackend, Credentials},
+    auction::Auction, draft::{Draft, DraftResponse, DraftSettings}, messages::{ClientBidRequest, ClientBidResponse, ServerMessage}, server::ServerState, users::{AuthBackend, Credentials, User}
 };
 use axum::{
     Json,
@@ -15,7 +12,7 @@ use axum::{
     http::StatusCode,
     response::Response,
 };
-use axum_login::AuthSession;
+use axum_login::{AuthSession, AuthUser};
 use std::{sync::Arc, time::Duration};
 use tokio::{
     sync::{RwLock, broadcast},
@@ -25,11 +22,13 @@ use tokio::{
 #[debug_handler]
 pub async fn create_draft(
     State(state): State<ServerState>,
+    auth_session: AuthSession<AuthBackend>,
     Json(draft_settings): Json<DraftSettings>,
 ) -> Result<String, (StatusCode, String)> {
+    let host = auth_session.user.expect("user should exist").id().to_string();
     for _ in 0..3 {
         if let Ok(draft) = Draft::build(
-            String::from("test host"),
+            host.clone(),
             draft_settings.clone(),
             state.db_pool.clone(),
             state.draft_runner.clone(),
@@ -70,27 +69,38 @@ pub async fn get_draft(
 pub async fn join_draft(
     State(state): State<ServerState>,
     Path(draft_id): Path<String>,
-) -> (StatusCode, Json<Auction>) {
-    todo!()
+    auth_session: AuthSession<AuthBackend>,
+) -> Result<(), (StatusCode, String)> {
+    let user = auth_session.user.expect("user should exist");
+    let user_id = user.get_user_id_string();
+    let Some(draft_lock) = state.drafts.get(&draft_id) else {
+        return Err((StatusCode::NOT_FOUND, "draft does not exist".to_string()));
+    };
+
+    let mut draft = draft_lock.write().await;
+    draft.join_draft(user_id);
+
+    Ok(())
 }
 
 #[debug_handler]
 pub async fn bid(
     State(state): State<ServerState>,
     Path(draft_id): Path<String>,
+    auth_session: AuthSession<AuthBackend>,
     Json(bid_request): Json<ClientBidRequest>,
 ) -> Result<Json<ClientBidResponse>, (StatusCode, String)> {
+    let user_id = auth_session.user.expect("user should exist").get_user_id_string();
     let draft_lock = state.drafts.get(&draft_id).ok_or((
         StatusCode::FORBIDDEN,
         "user does not have access to requested draft".to_string(),
     ))?;
 
     {
-        let draft = draft_lock.write().await;
-        let auction = &draft.auctions[draft.current_auction.clone() as usize];
+        let mut draft = draft_lock.write().await;
 
-        validate_bid_request(auction, &draft, &bid_request).map_err(|e| {
-            eprintln!("Error starting db transaction: {}", e);
+        validate_bid_request(draft.current_auction, &draft, &bid_request).map_err(|e| {
+            eprintln!("Bid not valid: {}", e);
             (
                 StatusCode::INTERNAL_SERVER_ERROR,
                 "Couldn't process bid".to_string(),
@@ -105,7 +115,6 @@ pub async fn bid(
             )
         })?;
 
-        let user_id: String = todo!("get user from extractor");
         // update auction in db
         let _ = sqlx::query!(
             r#"
@@ -153,23 +162,31 @@ pub async fn bid(
             )
         })?;
 
-        //update auction in memory
-        auction.highest_bidder = Some("Test".to_string());
-        auction.highest_bid = bid_request.value;
-        auction.expires_at = Some(std::cmp::max(
-            auction.expires_at.unwrap(),
-            Instant::now() + Duration::from_secs(10),
-        ));
-        let pokemon = auction.pokemon;
+        let (pokedex_id, form, current_bid, high_bidder, expires_at) = {
+            let current_auction = draft.current_auction as usize;
+            let auction = &mut draft.auctions[current_auction];
+            //update auction in memory
+            auction.highest_bidder = Some("Test".to_string());
+            auction.highest_bid = bid_request.value;
+            auction.expires_at = Some(std::cmp::max(
+                auction.expires_at.unwrap(),
+                Instant::now() + Duration::from_secs(10),
+            ));
+            (
+                auction.pokemon.pokedex_id,
+                auction.pokemon.form.clone(),
+                auction.highest_bid,
+                auction.highest_bidder.clone(),
+                crate::get_expiry_time_from_instant(auction.expires_at.unwrap()),
+            )
+        };
 
         let _ = draft.tx.send(ServerMessage::AuctionUpdate {
-            pokedex_id: pokemon.pokedex_id,
-            form: pokemon.form,
-            current_bid: auction.highest_bid,
-            high_bidder: auction.highest_bidder,
-            expires_at: crate::get_expiry_time_from_instant(
-                auction.expires_at.expect("auction expiry not set"),
-            ),
+            pokedex_id,
+            form,
+            current_bid,
+            high_bidder,
+            expires_at,
         });
     }
 
@@ -180,21 +197,22 @@ pub async fn bid(
 }
 
 fn validate_bid_request(
-    auction: &Auction,
+    auction_num: u32,
     draft: &Draft,
     bid_request: &ClientBidRequest,
 ) -> Result<(), String> {
+    let auction = &draft.auctions[auction_num as usize];
     if auction.auction_id != bid_request.auction_id {
         return Err(format!("auction is not active"));
     }
     if auction.highest_bid >= bid_request.value {
         return Err(format!("bid is not higher than current highest bid"));
     }
-    if auction.highest_bidder == todo!() {
+    if auction.highest_bidder == Some(bid_request.user_id.clone()) {
         return Err(format!("user is already the highest bidder"));
     }
     // check user has team in draft
-    if !draft.teams.contains(todo!()) {
+    if !draft.teams.iter().any(|t| t.user_id == bid_request.user_id) {
         return Err(format!("user is not assigned to a team"));
     }
 

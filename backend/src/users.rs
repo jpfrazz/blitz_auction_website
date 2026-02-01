@@ -38,10 +38,19 @@ pub enum User {
     GuestUser(GuestUser)
 }
 
+impl User {
+    pub fn get_user_id_string(&self) -> String {
+        match self {
+            Self::GuestUser(user) => user.user_id.clone(),
+            Self::DiscordUser(user) => user.user_id.clone(),
+        }
+    }
+}
+
 // https://discord.com/developers/docs/resources/user
 #[derive(Clone, Debug, Deserialize, FromRow)]
 pub struct DiscordUser {
-    user_id: String,
+    pub user_id: String,
     user_name: String,
     discriminator: String,
     global_name: Option<String>,
@@ -53,11 +62,11 @@ pub struct DiscordUser {
 
 #[derive(Clone, Debug, Deserialize)]
 pub struct GuestUser {
-    user_id: String,
+    pub user_id: String,
     user_name: String,
 }
 
-#[derive(strum::Display, Clone, Debug, Serialize, Deserialize)]
+#[derive(strum::Display, Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
 pub enum UserId {
     DiscordId(String),
     GuestId(String),

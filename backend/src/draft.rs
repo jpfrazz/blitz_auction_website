@@ -1,4 +1,5 @@
 use petname::petname;
+use axum_login::AuthUser;
 use rand::seq::SliceRandom;
 use serde::{Deserialize, Serialize};
 use sqlx::PgPool;
@@ -13,7 +14,7 @@ use crate::{
     auction::Auction,
     draft_runner::DraftRunner,
     messages::ServerMessage,
-    pokemon::{self, Pokemon}, users::User,
+    pokemon::{self, Pokemon},
 };
 
 #[derive(Clone, Debug)]
@@ -25,7 +26,7 @@ pub struct Draft {
     pub current_auction: u32,
     pub pokemon: Vec<&'static Pokemon>,
     pub auctions: Vec<Auction>,
-    pub teams: Vec<String>,
+    pub teams: Vec<Team>,
     pub spectators: Vec<Uuid>,
     pub tx: broadcast::Sender<ServerMessage>,
     pub db_pool: PgPool,
@@ -36,7 +37,7 @@ pub struct Draft {
 pub struct DraftResponse {
     draft_id: String,
     host: String,
-    teams: Vec<String>,
+    teams:  Vec<Team>,
     draft_state: DraftState,
     completed_auctions: Vec<Auction>,
     current_auction: Option<Auction>,
@@ -101,10 +102,11 @@ pub struct DraftSettings {
     auction_length: Duration,
 }
 
-pub struct Team<'a> {
-    user: User,
+#[derive(Clone, Debug, Serialize, PartialEq)]
+pub struct Team {
+    pub user_id: String,
     budget_remaining: u32,
-    auctions_won: Vec<&'a Auction>,
+    auctions_won: Vec<String>,
 }
 
 impl Draft {
@@ -252,7 +254,22 @@ impl Draft {
         Ok(())
     }
 
-    pub async fn add_player(&mut self, user: User) -> Result<(), String> {
-        todo!("add player func")
+    pub async fn join_draft(&mut self, user_id: String) -> Result<(), String> {
+        if self.teams.len() >= self.settings.num_teams as usize {
+            return Err("Draft is already full".to_string());
+        }
+
+        if self.teams.iter().map(|e| &e.user_id).any(|e| *e == user_id) {
+            return Err("User is already in draft".to_string());
+        }
+
+        let team = Team {
+            user_id: user_id,
+            budget_remaining: self.settings.starting_money,
+            auctions_won : vec![],
+        };
+
+        self.teams.push(team);
+        Ok(())
     }
 }
