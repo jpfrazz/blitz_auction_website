@@ -1,15 +1,33 @@
-use moka::future::Cache;
+use axum_login::{AuthManagerLayer, tower_sessions::{MemoryStore, SessionManagerLayer}};
+use chrono;
+use dashmap::DashMap;
+use oauth2::basic::BasicClient;
 use sqlx::PgPool;
+use tower_sessions::{Expiry, cookie::time::Duration};
+use std::{sync::Arc};
+use tokio::{sync::RwLock, time::Instant};
 
-use crate::auction::{Draft};
+use crate::{draft::Draft, draft_runner::DraftRunner, users::AuthBackend};
 
-mod auction;
+pub mod auction;
+pub mod draft;
+pub mod draft_runner;
 pub mod handlers;
-mod pokemon;
-mod messages;
+pub mod messages;
+pub mod pokemon;
+pub mod users;
+pub mod server;
 
-#[derive(Clone)]
-pub struct ServerState {
-    pub db_pool: PgPool,
-    pub drafts: Cache<String, Draft>,
+pub fn init_auth_layer(pool: PgPool) {
+    let session_store = MemoryStore::default();
+    let session_layer = SessionManagerLayer::new(session_store)
+        .with_expiry(Expiry::OnInactivity(Duration::hours(1)))
+        .with_always_save(true);
+
+    // let backend = AuthBackend::new(pool, BasicClient::new());
+}
+
+pub fn get_expiry_time_from_instant(instant: Instant) -> chrono::DateTime<chrono::Utc> {
+    let time_remaining = instant - Instant::now();
+    chrono::Utc::now() + time_remaining
 }

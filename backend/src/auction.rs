@@ -1,122 +1,105 @@
+use sqlx::{Postgres, Transaction};
+use strum::Display;
+
 use serde::{Deserialize, Serialize};
-use sqlx::PgPool;
-use tokio::sync::broadcast;
-use petname::petname;
+use tokio::time::Instant;
 use uuid::Uuid;
 
-use crate::messages::ServerMessage;
-
-#[derive(Clone, Debug, Serialize, Deserialize)]
-pub struct Draft{
-    pub draft_id: String,
-    pub host: String,
-    pub state: DraftState,
-    settings: DraftSettings,
-    pub current_auction: u32,
-
-    #[serde(skip)]
-    auctions: Vec<Auction>,
-    #[serde(skip)]
-    pub players: Vec<Uuid>,
-    #[serde(skip)]
-    spectators: Vec<Uuid>,
-    #[serde(skip)]
-    broadcast: Option<broadcast::Sender<ServerMessage>>,
-    #[serde(skip)]
-    db_pool: Option<PgPool>,
-}
+use crate::pokemon::Pokemon;
 
 #[derive(Clone, Debug, Serialize)]
-pub struct Auction{
-    pokemon_name: String,
-    highest_bid: u32,
-    highest_bidder: String,
+pub struct Auction {
+    pub auction_id: String,
+    pub draft_id: String,
+    pub draft_order: u32,
+    pub status: AuctionState,
+    pub pokemon: &'static Pokemon,
+    pub highest_bid: u32,
+    pub highest_bidder: Option<String>,
+    #[serde(skip)]
+    pub expires_at: Option<Instant>,
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
-pub enum DraftState {
+#[derive(Clone, Debug, Display, Serialize, Deserialize)]
+pub enum AuctionState {
     PENDING,
-    SELECTING,
-    BIDDING,
-    PAUSED(u32),
-    COMPLETED,
+    OPEN,
+    CLOSED,
 }
 
-impl Default for DraftState {
-    fn default() -> DraftState {
-        DraftState::PENDING
-    }
-}
-
-#[derive(Debug, Clone, Deserialize, Serialize)]
-pub struct DraftSettings {
-    num_players: i32,
-    starting_money: i32,
-    pokemon_ids: Vec<i32>,
-    patch_version: String,
-}
-
-impl Draft {
-    fn new(draft_id: String, host: String, settings: DraftSettings, pool: PgPool) -> Draft{
-        let (tx, _rx) = broadcast::channel(1_000);
-        Draft {
-            draft_id: draft_id,
-            host: host,
-            db_pool: Some(pool),
-            players: vec![],
-            spectators: vec![],
-            state: DraftState::PENDING,
-            settings: settings,
-            current_auction: 0,
-            auctions: vec![],
-            broadcast: Some(tx),
+impl Auction {
+    fn new(
+        draft_id: String,
+        draft_order: u32,
+        auction_id: String,
+        pokemon: &'static Pokemon,
+    ) -> Auction {
+        Auction {
+            auction_id,
+            draft_id,
+            draft_order,
+            status: AuctionState::PENDING,
+            pokemon,
+            highest_bid: 0,
+            highest_bidder: None,
+            expires_at: None,
         }
     }
 
-    pub async fn build(host: String, settings: DraftSettings, pool: PgPool) -> Result<Draft, String> {
-        for _ in 0..3 {
-            let Some(draft_id) = petname(2, "_") else { continue };
+    pub async fn build(
+        draft_id: String,
+        draft_order: u32,
+        pokemon: &'static Pokemon,
+        tx: &mut Transaction<'_, Postgres>,
+    ) -> Result<Auction, sqlx::Error> {
+        let auction_id = sqlx::query!(
+            r#"
+            INSERT INTO auctions
+            (pokedex_id, form, patch_version, draft_id, draft_order)
+            VALUES ($1, $2, $3, $4, $5)
+            RETURNING auction_id
+            "#,
+            pokemon.pokedex_id as i32,
+            pokemon.form,
+            pokemon.patch_version,
+            draft_id,
+            draft_order as i32,
+        )
+        .fetch_one(&mut **tx)
+        .await?
+        .auction_id;
 
-            let Ok(_) = sqlx::query!(
-                r#"
-                INSERT INTO drafts (draft_id, num_players, starting_money, patch_version)
-                VALUES ($1, $2, $3, $4)
-                "#,
-                draft_id,
-                settings.num_players,
-                settings.starting_money,
-                settings.patch_version,
-            ).execute(&pool).await
-            else {
-                continue
-            };
-
-            let draft = Draft::new(draft_id, host, settings, pool);
-            draft.add_auctions_to_db().await;
-            return Ok(draft);
-        }
-        Err("Couldn't create auction in db".to_string())
+        Ok(Auction::new(draft_id, draft_order, auction_id.to_string(), pokemon))
     }
 
-    async fn add_auctions_to_db(&self) {
-        let mut tx = self.db_pool.as_ref().expect("Draft created without db_pool").begin().await.unwrap();
-        for id in &self.settings.pokemon_ids {
-            let _res = sqlx::query!(
-                r#"
-                INSERT INTO auctions (draft_id, pokemon_id)
-                VALUES ($1, $2)
-                "#,
-                self.draft_id,
-                id
-            )
-            .execute(&mut *tx)
-            .await
-            .unwrap();
-        }
-        tx.commit().await.unwrap();
-    }
+    pub async fn resolve(&self, tx: &mut Transaction<'_, Postgres>) -> Result<(), sqlx::Error> {
+        let _res = sqlx::query!(
+            r#"
+            UPDATE auctions
+            SET (status, winning_bid, drafted_by) = ($1, $2, $3)
+            WHERE auction_id = $4
+            "#,
+            &AuctionState::CLOSED.to_string(),
+            self.highest_bid as i32,
+            self.highest_bidder,
+            self.auction_id.parse::<i64>().expect("auction_id should parse to i64"),
+        )
+        .execute(&mut **tx)
+        .await?;
 
-    pub async fn add_player_to_db(self, player_id: Uuid) {
-        todo!()
+        let _res = sqlx::query!(
+            r#"
+            UPDATE teams
+            SET money_remaining = money_remaining - $1
+            WHERE user_id = $2 AND draft_id = $3
+            "#,
+            self.highest_bid as i32,
+            self.highest_bidder,
+            self.draft_id,
+        )
+        .execute(&mut **tx)
+        .await?;
+
+        Ok(())
     }
 }
