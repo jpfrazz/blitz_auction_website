@@ -21,7 +21,9 @@ services:
         depends_on:
             - db
         environment:
-            - DATABASE_URL=postgres://postgres:password@db:5432/auction_db
+            - DB_CONN_STRING=$DB_CONN_STRING
+            - OAUTH_CLIENT_ID=$OAUTH_CLIENT_ID
+            - OAUTH_CLIENT_SECRET=$OAUTH_CLIENT_SECRET
         networks:
             - auction_net
 
@@ -33,9 +35,9 @@ services:
         ports:
             - "5432:5432"
         environment:
-            - POSTGRES_USER=postgres
-            - POSTGRES_PASSWORD=password
-            - POSTGRES_DB=auction_db
+            - POSTGRES_USER=$POSTGRES_USER
+            - POSTGRES_PASSWORD=$POSTGRES_PASSWORD
+            - POSTGRES_DB=$POSTGRES_DB
         volumes:
             - db_data:/var/lib/postgresql
         networks:

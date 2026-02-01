@@ -1,0 +1,16 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            UPDATE auctions\n            SET (winning_bid, drafted_by) = ($1, $2)\n            WHERE auction_id = $3\n            ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Int4",
+        "Text",
+        "Int8"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "8ecf5d5cb618901c432647d90982583c04e9533ede71794671c8e2c7ebe0e099"
+}

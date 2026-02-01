@@ -1,0 +1,16 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            UPDATE teams\n            SET money_remaining = money_remaining - $1\n            WHERE user_id = $2 AND draft_id = $3\n            ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Int4",
+        "Text",
+        "Text"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "51ada8677a2f2ef0444c232b85926280ff0455237d30000f28b61f536f6a358c"
+}
