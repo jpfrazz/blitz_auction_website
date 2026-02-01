@@ -1,6 +1,18 @@
-import React from 'react';
+// Auction setup form logic
+import React, { useState } from 'react';
+import { useEffect } from 'react';
+import { fetchPokemonList } from '../../shared/api/pokemon';
+import { Pokemon } from '../../types';
+import { useNavigate } from 'react-router-dom';
+// import { AuthContext } from '../../shared/AuthContext';
 import Header from '../../shared/components/Header';
 import Footer from '../../shared/components/Footer';
+import './AuctionSetup.scss';
+import '../../shared/style/theme.scss';
+import { createDraft } from '../../shared/api/draft';
+
+const MIN_TEAM_SIZE = 6;
+const MAX_TEAM_SIZE = 8;
 
 const AuctionSetup = () => (
   <>
@@ -13,35 +25,231 @@ const AuctionSetup = () => (
       justifyContent: 'center',
       padding: '0 16px',
     }}>
-      <img
-        src="/emeraldblitz.bps"
-        alt="Pokemon Emerald Blitz Logo"
-        style={{
-          maxWidth: '600px',
-          width: '100%',
-          height: 'auto',
-          marginBottom: '32px',
-          marginTop: '32px',
-        }}
-        onError={e => {
-          (e.currentTarget as HTMLImageElement).src = '/blitzlogo.png';
-        }}
-      />
-      <a
-        href="/Download"
-        className='navButton'
-      >
-        Download Patch
-      </a>
-      <div style={{ color: '#fff', fontSize: '1.1rem', marginBottom: '8px' }}>
-        Current Release: v7.6
-      </div>
-      <div style={{ color: '#ccc', fontSize: '1rem', marginBottom: '8px' }}>
-        Once downloaded, apply the patch online using <a href="https://www.marcrobledo.com/RomPatcher.js/" target="_blank" rel="noopener noreferrer" style={{ color: '#4fc3f7' }}>this ROM Patcher</a>
-      </div>
+      <AuctionSetupForm />
     </main>
     <Footer />
   </>
 );
+
+const AuctionSetupForm: React.FC = () => {
+  // Replace with actual auth context
+  const isLoggedIn = true; // Example: useContext(AuthContext)?.isLoggedIn;
+  const navigate = useNavigate();
+
+  const [numTeams, setNumTeams] = useState(8);
+  const [defaultFunds, setDefaultFunds] = useState(20000);
+  const [numPokemon, setNumPokemon] = useState(64);
+  const [draftName, setDraftName] = useState('');
+  const [password, setPassword] = useState('');
+  const [secondsToDraft, setSecondsToDraft] = useState(10);
+  const [ranked, setRanked] = useState(false);
+
+  React.useEffect(() => {
+    if (ranked) {
+      setDefaultFunds(20000);
+      setNumPokemon(8 * numTeams);
+      setExcludedPokemon(new Set());
+    }
+  }, [ranked, defaultFunds, numTeams]);
+
+  const [submitError, setSubmitError] = useState<string | null>(null);
+  const [createdAuctionId, setCreatedAuctionId] = useState<string | null>(null);
+  const [showModal, setShowModal] = useState(false);
+  const [pokemonList, setPokemonList] = useState<Pokemon[]>([]);
+  const [excludedPokemon, setExcludedPokemon] = useState<Set<number>>(new Set());
+
+  // Load Pokémon list from API
+  useEffect(() => {
+    fetchPokemonList().then(setPokemonList);
+  }, []);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSubmitError(null);
+    setCreatedAuctionId(null);
+
+    // Validate required fields (userId and password are optional)
+    if (
+      !numTeams ||
+      !defaultFunds ||
+      !numPokemon ||
+      !draftName.trim() ||
+      !secondsToDraft
+    ) {
+      setSubmitError('Please fill out all required fields.');
+      return;
+    }
+
+    try {
+      // Compose the data object to send
+      const data: any = {
+        num_teams: numTeams,
+        default_funds: defaultFunds,
+        num_pokemon: numPokemon,
+        draft_name: draftName,
+        password,
+        seconds_to_draft: secondsToDraft,
+        ranked,
+        excluded_pokemon: Array.from(excludedPokemon),
+      };
+      // POST to backend (update URL as needed)
+      const response = await createDraft(data);
+      console.log(response)
+      // Redirect to /auction?{auctionId}
+      if (response) {
+        navigate(`/Auction?${response}`);
+      }
+    } catch (err: any) {
+      setSubmitError(err?.response?.data || 'Failed to create auction.');
+    }
+  };
+
+  return (
+    <div className="auction-setup-card">
+      <h2 className="auction-setup-title">Set Up Auction</h2>
+      <form className="auction-setup-form" onSubmit={handleSubmit}>
+        {submitError && <div style={{ color: 'red', marginBottom: 8 }}>{submitError}</div>}
+        {createdAuctionId && <div style={{ color: 'lime', marginBottom: 8 }}>Auction Created! ID: {createdAuctionId}</div>}
+        <div className="auction-setup-field">
+          <label className="auction-setup-label">Number of Teams:
+            <input
+              className="auction-setup-input"
+              type="number"
+              min={ranked ? MIN_TEAM_SIZE : 2}
+              max={ranked ? MAX_TEAM_SIZE : 16}
+              value={numTeams}
+              onChange={e => setNumTeams(Number(e.target.value))}
+              required
+            />
+          </label>
+        </div>
+        <div className="auction-setup-field">
+          <label className="auction-setup-label">Default Funds:
+            <input
+              className="auction-setup-input"
+              type="number"
+              min={5000}
+              max={30000}
+              value={defaultFunds}
+              onChange={e => setDefaultFunds(Number(e.target.value))}
+              required
+              disabled={ranked}
+            />
+          </label>
+        </div>
+        <div className="auction-setup-field">
+          <label className="auction-setup-label">Number of Pokémon Drafted:
+            <input
+              className="auction-setup-input"
+              type="number"
+              min={1}
+              max={256}
+              value={numPokemon}
+              onChange={e => setNumPokemon(Number(e.target.value))}
+              required
+              disabled={ranked}
+            />
+          </label>
+        </div>
+        <div className="auction-setup-field">
+          <label className="auction-setup-label">Draft Name:
+            <input
+              className="auction-setup-input"
+              type="text"
+              value={draftName}
+              onChange={e => setDraftName(e.target.value)}
+              required
+            />
+          </label>
+        </div>
+        <div className="auction-setup-field">
+          <label className="auction-setup-label">Password (optional):
+            <input
+              className="auction-setup-input"
+              type="text"
+              value={password}
+              onChange={e => setPassword(e.target.value)}
+            />
+          </label>
+        </div>
+        <div className="auction-setup-field">
+          <label className="auction-setup-label">Seconds to Draft:
+            <input
+              className="auction-setup-input"
+              type="number"
+              min={5}
+              max={20}
+              value={secondsToDraft}
+              onChange={e => setSecondsToDraft(Number(e.target.value))}
+              required
+            />
+          </label>
+        </div>
+        {isLoggedIn && (
+          <div className="auction-setup-field auction-setup-checkbox-row">
+            <label className="auction-setup-label auction-setup-checkbox-label">
+              <input
+                type="checkbox"
+                checked={ranked}
+                onChange={e => setRanked(e.target.checked)}
+              />
+              Ranked Draft
+            </label>
+          </div>
+        )}
+        <div className="auction-setup-field auction-setup-btn-row">
+          <button
+            type="button"
+            className="auction-setup-btn navButton"
+            onClick={() => setShowModal(true)}
+            disabled={ranked}
+          >
+            Select Pokémon
+          </button>
+          <button type="submit" className="auction-setup-btn navButton">Create Auction</button>
+          
+        </div>
+
+        {/* Modal for selecting Pokémon */}
+        {showModal && (
+          <div className="auction-modal-overlay" onClick={() => setShowModal(false)}>
+            <div className="auction-modal" onClick={e => e.stopPropagation()}>
+              <div className="auction-modal-header">
+                <span>Select Pokémon</span>
+                <button className="auction-modal-close" onClick={() => setShowModal(false)}>&times;</button>
+              </div>
+              <div className="auction-modal-grid">
+                {pokemonList.map((pokemon) => {
+                  const isExcluded = excludedPokemon.has(pokemon.id);
+                  return (
+                    <div
+                      className={`auction-modal-grid-item${isExcluded ? ' auction-modal-grid-item-excluded' : ''}`}
+                      key={pokemon.id}
+                      title={pokemon.name}
+                      onClick={() => {
+                        setExcludedPokemon(prev => {
+                          const next = new Set(prev);
+                          if (next.has(pokemon.id)) next.delete(pokemon.id); else next.add(pokemon.id);
+                          return next;
+                        });
+                      }}
+                    >
+                      <img
+                        src={`/baseforms/${pokemon.name}.png`}
+                        alt={pokemon.name}
+                        className="auction-modal-pokemon-img"
+                      />
+                      <div className="auction-modal-pokemon-name">{pokemon.name}</div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+        )}
+      </form>
+    </div>
+  );
+};
 
 export default AuctionSetup;
