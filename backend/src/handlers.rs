@@ -25,7 +25,7 @@ pub async fn create_draft(
     auth_session: AuthSession<AuthBackend>,
     Json(draft_settings): Json<DraftSettings>,
 ) -> Result<String, (StatusCode, String)> {
-    let host = auth_session.user.expect("user should exist").id().to_string();
+    let host = auth_session.user.expect("user should exist").get_user_id_string();
     for _ in 0..3 {
         if let Ok(draft) = Draft::build(
             host.clone(),
