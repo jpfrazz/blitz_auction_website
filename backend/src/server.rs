@@ -135,7 +135,7 @@ impl Server {
 
 async fn auto_login_guest(
     mut auth: AuthSession<AuthBackend>,
-    request: Request,
+    mut request: Request,
     next: Next,
 ) -> Result<Response, StatusCode> {
     if auth.user.is_some() {
@@ -154,6 +154,8 @@ async fn auto_login_guest(
     auth.login(&guest_user)
         .await
         .map_err(|_e| StatusCode::INTERNAL_SERVER_ERROR)?;
+
+    request.extensions_mut().insert(auth);
 
     Ok(next.run(request).await)
 }

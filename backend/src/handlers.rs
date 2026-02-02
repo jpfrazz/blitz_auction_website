@@ -224,8 +224,11 @@ pub async fn discord_login() -> Result<(), String> {
 }
 
 #[debug_handler]
-pub async fn me() -> Result<Json<User>, String> {
-    todo!("implement me endpoint")
+pub async fn me(auth_session: AuthSession<AuthBackend>) -> Result<Json<User>, String> {
+    match auth_session.user {
+        Some(user) => Ok(Json(user)),
+        None => return Err("user is not logged in".to_string()),
+    }
 }
 
 #[debug_handler]
