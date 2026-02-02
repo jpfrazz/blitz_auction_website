@@ -66,3 +66,11 @@ pub struct ClientBidResponse {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub error: Option<String>,
 }
+
+#[derive(Clone, Debug, Serialize)]
+pub struct ClientJoinResponse {
+    pub joined: bool,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub error: Option<String>,
+}
+

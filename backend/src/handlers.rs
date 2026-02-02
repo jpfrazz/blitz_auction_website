@@ -1,5 +1,5 @@
 use crate::{
-    auction::Auction, draft::{Draft, DraftResponse, DraftSettings}, messages::{ClientBidRequest, ClientBidResponse, ServerMessage}, server::ServerState, users::{AuthBackend, Credentials, User}
+    auction::Auction, draft::{Draft, DraftResponse, DraftSettings}, messages::{ClientBidRequest, ClientBidResponse, ClientJoinRequest, ClientJoinResponse, ServerMessage}, server::ServerState, users::{AuthBackend, Credentials, User}
 };
 use axum::{
     Json,
@@ -70,7 +70,7 @@ pub async fn join_draft(
     State(state): State<ServerState>,
     Path(draft_id): Path<String>,
     auth_session: AuthSession<AuthBackend>,
-) -> Result<(), (StatusCode, String)> {
+) -> Result<Json<ClientJoinResponse>, (StatusCode, String)> {
     let user = auth_session.user.expect("user should exist");
     let user_id = user.get_user_id_string();
     let Some(draft_lock) = state.drafts.get(&draft_id) else {
@@ -78,9 +78,17 @@ pub async fn join_draft(
     };
 
     let mut draft = draft_lock.write().await;
-    draft.join_draft(user_id);
+    if let Err(e) = draft.join_draft(user_id).await {
+        return Ok(Json(ClientJoinResponse{
+            joined: false,
+            error: Some(e)
+        }));
+    }
 
-    Ok(())
+    Ok(Json(ClientJoinResponse {
+        joined: true,
+        error: None,
+    }))
 }
 
 #[debug_handler]
