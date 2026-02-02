@@ -6,7 +6,10 @@ use tokio::{
     task,
     time::Instant,
 };
-use tokio_util::time::{DelayQueue, delay_queue::{self, Key}};
+use tokio_util::time::{
+    DelayQueue,
+    delay_queue::{self, Key},
+};
 use uuid::Uuid;
 
 use crate::draft::Draft;
@@ -78,7 +81,7 @@ impl DraftRunner {
                 draft_keys.insert(draft_id, key);
             }
             Command::Stop(draft_id) => {
-                let Some(key )= draft_keys.get(&draft_id) else {
+                let Some(key) = draft_keys.get(&draft_id) else {
                     return;
                 };
                 queue.remove(key);

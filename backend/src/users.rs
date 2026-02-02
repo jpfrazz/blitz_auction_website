@@ -1,19 +1,17 @@
 // github discord oauth example: https://github.com/maxcountryman/axum-login/tree/main/examples/oauth2
 
 use axum::http::header::{AUTHORIZATION, USER_AGENT};
-use oauth2::{AuthorizationCode, TokenResponse};
-use petname::petname;
-use sqlx::{PgPool, sqlx_macros::FromRow};
-use uuid::Uuid;
-use serde::{Deserialize, Serialize};
-use strum;
-use axum_login::{AuthUser, AuthnBackend};
 use axum_login;
+use axum_login::{AuthUser, AuthnBackend};
+use oauth2::{AuthorizationCode, TokenResponse};
 use oauth2::{CsrfToken, EndpointNotSet, EndpointSet, basic::BasicClient, reqwest};
+use petname::petname;
+use serde::{Deserialize, Serialize};
+use sqlx::{PgPool, sqlx_macros::FromRow};
+use strum;
 
 const DISCORD_AUTH_URL: &str = "https://discord.com/oauth2/authorize";
 const DISCORD_TOKEN_URL: &str = "https://discord.com/api/oauth2/token";
-
 
 #[derive(Clone, Debug)]
 pub enum AuthError {
@@ -35,7 +33,7 @@ impl std::error::Error for AuthError {}
 #[derive(Clone, Debug, Deserialize, Serialize)]
 pub enum User {
     DiscordUser(DiscordUser),
-    GuestUser(GuestUser)
+    GuestUser(GuestUser),
 }
 
 impl User {
@@ -143,9 +141,7 @@ impl AuthBackend {
                 )
                 .execute(&self.db_pool)
                 .await
-                .map_err(|_e| {
-                    AuthError::SqlxError
-                })?;
+                .map_err(|_e| AuthError::SqlxError)?;
             }
             User::DiscordUser(user) => {
                 let role_hash = self.get_discord_roles(user);
@@ -160,9 +156,7 @@ impl AuthBackend {
                 )
                 .execute(&self.db_pool)
                 .await
-                .map_err(|_e| {
-                    AuthError::SqlxError
-                })?;
+                .map_err(|_e| AuthError::SqlxError)?;
             }
         }
 
@@ -189,10 +183,7 @@ impl AuthnBackend for AuthBackend {
                 let user_id = uuid::Uuid::new_v4().to_string();
                 let petname = petname(3, "-").expect("petname should be generated");
                 let user_name = format!("guest:{}", petname);
-                user = User::GuestUser(GuestUser {
-                    user_id,
-                    user_name
-                });
+                user = User::GuestUser(GuestUser { user_id, user_name });
             }
             Credentials::Discord(creds) => {
                 if creds.old_state.secret() != creds.new_state.secret() {
@@ -220,8 +211,8 @@ impl AuthnBackend for AuthBackend {
                     .await
                     .map_err(|_| Self::Error::ReqwestError)?;
 
-                user = serde_json::from_str(&user_info_text)
-                    .map_err(|_| Self::Error::ReqwestError)?;
+                user =
+                    serde_json::from_str(&user_info_text).map_err(|_| Self::Error::ReqwestError)?;
             }
         }
 
@@ -249,9 +240,7 @@ impl AuthnBackend for AuthBackend {
                 )
                 .fetch_one(&self.db_pool)
                 .await
-                .map_err(|_e| {
-                    Self::Error::SqlxError
-                })?;
+                .map_err(|_e| Self::Error::SqlxError)?;
 
                 User::GuestUser(guest_user)
             }
@@ -295,9 +284,4 @@ pub struct AuthzResp {
     state: CsrfToken,
 }
 
-pub async fn discord_oauth_callback(
-    auth_session: AuthSession,
-    
-) {
-
-}
+pub async fn discord_oauth_callback(auth_session: AuthSession) {}

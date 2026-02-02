@@ -1,6 +1,5 @@
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
-use uuid::Uuid;
 
 use crate::draft::DraftState;
 
@@ -73,4 +72,3 @@ pub struct ClientJoinResponse {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub error: Option<String>,
 }
-

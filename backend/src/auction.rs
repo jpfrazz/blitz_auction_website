@@ -3,7 +3,6 @@ use strum::Display;
 
 use serde::{Deserialize, Serialize};
 use tokio::time::Instant;
-use uuid::Uuid;
 
 use crate::pokemon::Pokemon;
 
@@ -69,7 +68,12 @@ impl Auction {
         .await?
         .auction_id;
 
-        Ok(Auction::new(draft_id, draft_order, auction_id.to_string(), pokemon))
+        Ok(Auction::new(
+            draft_id,
+            draft_order,
+            auction_id.to_string(),
+            pokemon,
+        ))
     }
 
     pub async fn resolve(&self, tx: &mut Transaction<'_, Postgres>) -> Result<(), sqlx::Error> {
@@ -82,7 +86,9 @@ impl Auction {
             &AuctionState::CLOSED.to_string(),
             self.highest_bid as i32,
             self.highest_bidder,
-            self.auction_id.parse::<i64>().expect("auction_id should parse to i64"),
+            self.auction_id
+                .parse::<i64>()
+                .expect("auction_id should parse to i64"),
         )
         .execute(&mut **tx)
         .await?;

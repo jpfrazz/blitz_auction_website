@@ -1,5 +1,4 @@
 use petname::petname;
-use axum_login::AuthUser;
 use rand::seq::SliceRandom;
 use serde::{Deserialize, Serialize};
 use sqlx::PgPool;
@@ -37,7 +36,7 @@ pub struct Draft {
 pub struct DraftResponse {
     draft_id: String,
     host: String,
-    teams:  Vec<Team>,
+    teams: Vec<Team>,
     draft_state: DraftState,
     completed_auctions: Vec<Auction>,
     current_auction: Option<Auction>,
@@ -49,10 +48,10 @@ impl From<Draft> for DraftResponse {
     fn from(draft: Draft) -> DraftResponse {
         let current_auction = {
             match draft.draft_state {
-                DraftState::BIDDING(_) | DraftState::PAUSED(_) => {
+                DraftState::BIDDING | DraftState::PAUSED(_) => {
                     Some(draft.auctions[draft.current_auction as usize].clone())
                 }
-                _ => None
+                _ => None,
             }
         };
         DraftResponse {
@@ -72,10 +71,10 @@ impl From<Draft> for DraftResponse {
     }
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
 pub enum DraftState {
     PENDING,
-    BIDDING(u32),
+    BIDDING,
     PAUSED(u32),
     COMPLETED,
 }
@@ -266,10 +265,22 @@ impl Draft {
         let team = Team {
             user_id: user_id,
             budget_remaining: self.settings.starting_money,
-            auctions_won : vec![],
+            auctions_won: vec![],
         };
 
         self.teams.push(team);
+        Ok(())
+    }
+
+    pub async fn start_draft(&mut self) -> Result<(), String> {
+        self.draft_state = DraftState::BIDDING;
+        self.draft_runner
+            .register_draft(
+                self.draft_id.clone(),
+                Instant::now() + self.settings.auction_length,
+            )
+            .await?;
+
         Ok(())
     }
 }
