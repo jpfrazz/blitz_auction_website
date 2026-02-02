@@ -219,20 +219,13 @@ fn validate_bid_request(
     Ok(())
 }
 
-pub async fn guest_login(mut auth: AuthSession<AuthBackend>) -> Result<(), String> {
-    match auth.authenticate(Credentials::Guest).await {
-        Ok(Some(user)) => {
-            if let Err(e) = auth.login(&user).await {
-                return Err(format!("failed to login to guest account: {}", e));
-            }
-        }
-        _ => return Err("failed to create guest account".to_string())
-    }
-    Ok(())
+pub async fn discord_login() -> Result<(), String> {
+    todo!("implement oauth endpoint")
 }
 
-pub async fn discord_login() -> Result<(), String> {
-    Ok(())
+#[debug_handler]
+pub async fn me() -> Result<Json<User>, String> {
+    todo!("implement me endpoint")
 }
 
 #[debug_handler]

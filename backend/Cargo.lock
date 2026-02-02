@@ -230,6 +230,7 @@ dependencies = [
  "strum",
  "tokio",
  "tokio-util",
+ "tower-http",
  "tower-sessions",
  "uuid",
 ]

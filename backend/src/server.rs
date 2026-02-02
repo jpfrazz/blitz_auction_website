@@ -1,11 +1,12 @@
 use crate::{Draft, DraftRunner, PgPool, handlers, server, users::{AuthBackend, Credentials}};
-use std::{env, sync::Arc};
-use axum::{Router, extract::Request, http::StatusCode, middleware::{self, Next}, response::Response, routing::{any, get, post}};
+use std::{env, net::SocketAddr, sync::Arc};
+use axum::{Router, extract::Request, http::{Method, StatusCode}, middleware::{self, Next}, response::Response, routing::{any, get, post}};
 use axum_login::{AuthManagerLayer, AuthManagerLayerBuilder, AuthSession, AuthnBackend};
 use oauth2::{AuthUrl, ClientId, ClientSecret, TokenUrl, basic::BasicClient};
 use tokio::sync::RwLock;
 use dashmap::DashMap;
 use tower_sessions::{Expiry, MemoryStore, SessionManagerLayer};
+use tower_http::cors::{Any, CorsLayer};
 
 
 type DraftCache = Arc<DashMap<String, Arc<RwLock<Draft>>>>;
@@ -88,35 +89,42 @@ impl Server {
         AuthManagerLayerBuilder::new(auth_backend, session_layer).build()
     }
 
-    fn create_router(self, auth_layer: AuthManagerLayer<AuthBackend, MemoryStore>) -> Router {
+    fn create_router(self, auth_layer: AuthManagerLayer<AuthBackend, MemoryStore>, cors_layer: CorsLayer) -> Router {
         let public_routes = Router::new()
             .route("/", get(|| async { "blitz auction api" }))
             .route("/drafts/{draft_id}", get(handlers::get_draft))
             .route("/ws/{draft_id}", any(handlers::websocket_handler))
-            .route("/login/guest", get(handlers::guest_login))
-            .route("/login/discord", get(handlers::discord_login))
-            .route_layer(middleware::from_fn(auto_login_guest));
+            .route("/login", get(handlers::discord_login));
 
         let private_routes = Router::new()
             .route("/drafts", post(handlers::create_draft))
             .route("/drafts/{draft_id}/join", post(handlers::join_draft))
-            .route("/drafts/{draft_id}/bid", post(handlers::bid));
+            .route("/drafts/{draft_id}/bid", post(handlers::bid))
+            .route("/me", get(handlers::me))
+            .route_layer(middleware::from_fn(auto_login_guest));
 
         Router::new()
             .merge(public_routes)
             .merge(private_routes)
             .with_state(self.server_state)
             .layer(auth_layer)
+            .layer(cors_layer)
     }
 
     pub async fn serve(self) -> Result<(), Error>{
         let session_layer = self.create_session_layer();
         let auth_layer = self.create_auth_layer(session_layer);
-        let router = self.create_router(auth_layer);
-        let address = env::var("AXUM_SERVER_ADDR").unwrap_or_else(|_| "0.0.0.0:3000".into());
+        let cors_layer = CorsLayer::new()
+            .allow_methods([Method::GET, Method::POST])
+            .allow_origin(Any);
+        let router = self.create_router(auth_layer, cors_layer);
+        let port = env::var("AXUM_SERVER_PORT").unwrap_or_else(|_| "3001".into());
+        let address = format!("[::]:{}", port);
         let listener = tokio::net::TcpListener::bind(address.clone())
             .await
-            .unwrap();
+            .map_err(|_e| {
+                ServerError::CannotServe(format!("unable to bind to {}", address))
+            })?;
         println!("listening on {}", address);
         axum::serve(listener, router.into_make_service()).await.map_err(|e| {
             ServerError::CannotServe(e.to_string())

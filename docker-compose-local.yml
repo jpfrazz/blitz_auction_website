@@ -18,12 +18,15 @@ services:
         build: ./backend/
         container_name: auction-backend
         restart: always
+        ports:
+            - "3000:3000"
         depends_on:
             - db
         environment:
             - DB_CONN_STRING=$DB_CONN_STRING
             - OAUTH_CLIENT_ID=$OAUTH_CLIENT_ID
             - OAUTH_CLIENT_SECRET=$OAUTH_CLIENT_SECRET
+            - AXUM_SERVER_ADDR=0.0.0.0:3000
         networks:
             - auction_net
 
