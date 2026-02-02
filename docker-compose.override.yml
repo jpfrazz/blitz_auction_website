@@ -1,0 +1,16 @@
+services:
+    frontend:
+        ports:
+            - "${NGINX_SERVER_PORT}:${NGINX_SERVER_PORT}"
+        env_file:
+            - .env.dev
+    backend:
+        ports:
+            - "${AXUM_SERVER_PORT}:${AXUM_SERVER_PORT}"
+        env_file:
+            - .env.dev
+    db:
+        ports:
+            - "5432:5432"
+        env_file:
+            - .env.dev
