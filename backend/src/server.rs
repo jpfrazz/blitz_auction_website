@@ -118,8 +118,7 @@ impl Server {
             .allow_methods([Method::GET, Method::POST])
             .allow_origin(Any);
         let router = self.create_router(auth_layer, cors_layer);
-        let port = env::var("AXUM_SERVER_PORT").unwrap_or_else(|_| "3001".into());
-        let address = format!("[::]:{}", port);
+        let address = "[::]:3001".to_string();
         let listener = tokio::net::TcpListener::bind(address.clone())
             .await
             .map_err(|_e| {
