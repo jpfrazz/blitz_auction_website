@@ -118,8 +118,7 @@ impl Server {
             .allow_methods([Method::GET, Method::POST])
             .allow_origin(Any);
         let router = self.create_router(auth_layer, cors_layer);
-        let port = env::var("AXUM_SERVER_PORT").unwrap_or_else(|_| "3001".into());
-        let address = format!("[::]:{}", port);
+        let address = "[::]:3001".to_string();
         let listener = tokio::net::TcpListener::bind(address.clone())
             .await
             .map_err(|_e| {
@@ -135,7 +134,7 @@ impl Server {
 
 async fn auto_login_guest(
     mut auth: AuthSession<AuthBackend>,
-    request: Request,
+    mut request: Request,
     next: Next,
 ) -> Result<Response, StatusCode> {
     if auth.user.is_some() {
@@ -154,6 +153,8 @@ async fn auto_login_guest(
     auth.login(&guest_user)
         .await
         .map_err(|_e| StatusCode::INTERNAL_SERVER_ERROR)?;
+
+    request.extensions_mut().insert(auth);
 
     Ok(next.run(request).await)
 }

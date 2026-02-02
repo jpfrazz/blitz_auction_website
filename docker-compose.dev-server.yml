@@ -1,0 +1,36 @@
+services:
+    # react dev server
+    dev-server:
+        image: ghcr.io/jpfrazz/blitz-auction-frontend-dev-server:latest
+        build:
+            context: ./frontend/
+            dockerfile: ../dockerfiles/frontend-dev-server.Dockerfile
+        ports:
+            - "3000:3000"
+        env_file:
+            - .env
+        volumes:
+            - ./frontend:/app
+        networks:
+            - auction_net
+
+    frontend:
+        ports:
+            - "80:80"
+        volumes:
+            - ./nginx/nginx-dev.conf:/etc/nginx/nginx.conf:ro
+        env_file:
+            - .env.dev
+        depends_on:
+            - dev-server
+
+    backend:
+        ports:
+            - "3001:3001"
+        env_file:
+            - .env.dev
+    db:
+        ports:
+            - "5432:5432"
+        env_file:
+            - .env.dev
