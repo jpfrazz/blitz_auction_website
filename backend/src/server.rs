@@ -1,4 +1,4 @@
-use crate::{Draft, DraftRunner, PgPool, handlers, server, users::{AuthBackend, Credentials}};
+use crate::{Draft, DraftRunner, PgPool, handlers, pokemon, server, users::{AuthBackend, Credentials}};
 use std::{env, net::SocketAddr, sync::Arc};
 use axum::{Router, extract::Request, http::{Method, StatusCode}, middleware::{self, Next}, response::Response, routing::{any, get, post}};
 use axum_login::{AuthManagerLayer, AuthManagerLayerBuilder, AuthSession, AuthnBackend};
@@ -26,6 +26,7 @@ pub enum ServerError {
     PgConnection(String),
     CannotServe(String),
     MissingEnv(String),
+    PokemonData(String),
 }
 
 impl std::error::Error for ServerError {}
@@ -50,6 +51,9 @@ impl Server {
         let db_pool = PgPool::connect(&db_conn_string).await.map_err(|e| {
             ServerError::PgConnection(e.to_string())
         })?;
+        if let Err(e) = pokemon::init_pokemon_data(&db_pool).await {
+            return Err(ServerError::PokemonData(format!("failed to init pokemon data, {}", e.to_string())));
+        };
         let drafts = DraftCache::new(DashMap::new());
         let draft_runner = Arc::new(DraftRunner::new(drafts.clone()));
         let server_state = ServerState {
@@ -58,7 +62,6 @@ impl Server {
             draft_runner,
         };
         let server = Self::new(server_state);
-
 
         Ok(server)
     }
