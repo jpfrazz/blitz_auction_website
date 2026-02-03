@@ -237,14 +237,12 @@ impl Draft {
             .map_err(|e| e.to_string())?;
 
         if self.current_auction < self.settings.num_auctions {
-            self.auctions[self.current_auction as usize].expires_at =
-                Some(Instant::now() + self.settings.auction_length);
-            self.draft_runner
+            let expires_at = Instant::now() + self.settings.auction_length;
+            let draft_runner = self.draft_runner.clone();
+            draft_runner
                 .register_draft(
-                    self.draft_id.clone(),
-                    self.auctions[self.current_auction as usize]
-                        .expires_at
-                        .expect("auction expiry not given"),
+                    self,
+                    expires_at,
                 )
                 .await
                 .map_err(|e| e.to_string())?;
@@ -274,9 +272,10 @@ impl Draft {
 
     pub async fn start_draft(&mut self) -> Result<(), String> {
         self.draft_state = DraftState::BIDDING;
-        self.draft_runner
+        let draft_runner = self.draft_runner.clone();
+        draft_runner
             .register_draft(
-                self.draft_id.clone(),
+                self,
                 Instant::now() + self.settings.auction_length,
             )
             .await?;

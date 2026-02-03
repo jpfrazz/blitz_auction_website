@@ -119,13 +119,14 @@ impl DraftRunner {
 
     pub async fn register_draft(
         &self,
-        draft_id: String,
+        draft: &mut Draft,
         expires_at: Instant,
     ) -> Result<(), String> {
+        draft.auctions[draft.current_auction as usize].expires_at = Some(expires_at.clone());
         let _ = self
             .cmd_tx
             .send(Command::Start {
-                draft_id: draft_id,
+                draft_id: draft.draft_id.clone(),
                 expires_at,
             })
             .await
