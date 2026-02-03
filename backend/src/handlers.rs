@@ -1,5 +1,8 @@
 use crate::{
-    auction::Auction, draft::{Draft, DraftResponse, DraftSettings}, messages::{ClientBidRequest, ClientBidResponse, ClientJoinRequest, ClientJoinResponse, ServerMessage}, server::ServerState, users::{AuthBackend, Credentials, User}
+    draft::{Draft, DraftResponse, DraftSettings, DraftState},
+    messages::{ClientBidRequest, ClientBidResponse, ClientJoinResponse, ServerMessage},
+    server::ServerState,
+    users::{AuthBackend, User},
 };
 use axum::{
     Json,
@@ -12,7 +15,7 @@ use axum::{
     http::StatusCode,
     response::Response,
 };
-use axum_login::{AuthSession, AuthUser};
+use axum_login::AuthSession;
 use std::{sync::Arc, time::Duration};
 use tokio::{
     sync::{RwLock, broadcast},
@@ -25,7 +28,10 @@ pub async fn create_draft(
     auth_session: AuthSession<AuthBackend>,
     Json(draft_settings): Json<DraftSettings>,
 ) -> Result<String, (StatusCode, String)> {
-    let host = auth_session.user.expect("user should exist").get_user_id_string();
+    let host = auth_session
+        .user
+        .expect("user should exist")
+        .get_user_id_string();
     for _ in 0..3 {
         if let Ok(draft) = Draft::build(
             host.clone(),
@@ -79,9 +85,9 @@ pub async fn join_draft(
 
     let mut draft = draft_lock.write().await;
     if let Err(e) = draft.join_draft(user_id).await {
-        return Ok(Json(ClientJoinResponse{
+        return Ok(Json(ClientJoinResponse {
             joined: false,
-            error: Some(e)
+            error: Some(e),
         }));
     }
 
@@ -98,7 +104,10 @@ pub async fn bid(
     auth_session: AuthSession<AuthBackend>,
     Json(bid_request): Json<ClientBidRequest>,
 ) -> Result<Json<ClientBidResponse>, (StatusCode, String)> {
-    let user_id = auth_session.user.expect("user should exist").get_user_id_string();
+    let user_id = auth_session
+        .user
+        .expect("user should exist")
+        .get_user_id_string();
     let draft_lock = state.drafts.get(&draft_id).ok_or((
         StatusCode::FORBIDDEN,
         "user does not have access to requested draft".to_string(),
@@ -132,7 +141,10 @@ pub async fn bid(
             "#,
             bid_request.value as i32,
             user_id,
-            bid_request.auction_id.parse::<i64>().expect("auction id should be i64"),
+            bid_request
+                .auction_id
+                .parse::<i64>()
+                .expect("auction id should be i64"),
         )
         .execute(&mut *tx)
         .await
@@ -222,6 +234,43 @@ fn validate_bid_request(
     // check user has team in draft
     if !draft.teams.iter().any(|t| t.user_id == bid_request.user_id) {
         return Err(format!("user is not assigned to a team"));
+    }
+
+    Ok(())
+}
+
+pub async fn start_draft(
+    auth_session: AuthSession<AuthBackend>,
+    Path(draft_id): Path<String>,
+    State(state): State<ServerState>,
+) -> Result<(), (StatusCode, String)> {
+    let Some(user) = auth_session.user else {
+        return Err((StatusCode::FORBIDDEN, "user is not logged in".to_string()));
+    };
+
+    let Some(draft_lock) = state.drafts.get(&draft_id) else {
+        return Err((StatusCode::NOT_FOUND, "draft does not exist".to_string()));
+    };
+
+    {
+        let mut draft = draft_lock.write().await;
+        if draft.host != user.get_user_id_string() {
+            return Err((StatusCode::FORBIDDEN, "user is not host".to_string()));
+        }
+
+        if draft.draft_state != DraftState::PENDING {
+            return Err((
+                StatusCode::PRECONDITION_FAILED,
+                "draft must be in PENDING state".to_string(),
+            ));
+        }
+
+        let Ok(_) = draft.start_draft().await else {
+            return Err((
+                StatusCode::INTERNAL_SERVER_ERROR,
+                "draft failed to start".to_string(),
+            ));
+        };
     }
 
     Ok(())
