@@ -3,6 +3,7 @@
 use axum::http::header::{AUTHORIZATION, USER_AGENT};
 use axum_login;
 use axum_login::{AuthUser, AuthnBackend};
+use oauth2::url::Url;
 use oauth2::{AuthorizationCode, TokenResponse};
 use oauth2::{CsrfToken, EndpointNotSet, EndpointSet, basic::BasicClient, reqwest};
 use petname::petname;
@@ -165,6 +166,10 @@ impl AuthBackend {
 
     fn get_discord_roles(&self, user: &DiscordUser) -> String {
         todo!("set up roles with discord bot")
+    }
+
+    pub fn authorize_url(&self) -> (Url, CsrfToken) {
+        self.client.authorize_url(CsrfToken::new_random).url()
     }
 }
 

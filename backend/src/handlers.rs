@@ -2,20 +2,21 @@ use crate::{
     draft::{Draft, DraftResponse, DraftSettings, DraftState},
     messages::{ClientBidRequest, ClientBidResponse, ClientJoinResponse, ServerMessage},
     server::ServerState,
-    users::{AuthBackend, User},
+    users::{AuthBackend, CSRF_STATE_KEY, Credentials, DiscordCreds, User},
 };
 use axum::{
     Json,
     body::Body,
     debug_handler,
     extract::{
-        Path, State, WebSocketUpgrade,
-        ws::{Message, WebSocket},
+        Path, Query, State, WebSocketUpgrade, ws::{Message, WebSocket}
     },
     http::StatusCode,
-    response::Response,
+    response::{Redirect, Response},
 };
 use axum_login::AuthSession;
+use oauth2::CsrfToken;
+use tower_sessions::Session;
 use std::{sync::Arc, time::Duration};
 use tokio::{
     sync::{RwLock, broadcast},
@@ -276,8 +277,51 @@ pub async fn start_draft(
     Ok(())
 }
 
-pub async fn discord_login() -> Result<(), String> {
-    todo!("implement oauth endpoint")
+pub async fn discord_oauth_redirect(
+    auth_session: AuthSession<AuthBackend>,
+    session: Session,
+) -> Redirect {
+    let (auth_url, csrf_state) = auth_session.backend.authorize_url();
+
+    session
+        .insert(CSRF_STATE_KEY, csrf_state.secret())
+        .await
+        .expect("serialization should not fail");
+
+    Redirect::to(auth_url.as_str())
+}
+struct AuthResponse {
+    code: String,
+    state: CsrfToken,
+}
+
+pub async fn discord_callback(
+    mut auth_session: AuthSession<AuthBackend>,
+    session: Session,
+    Query(AuthResponse {
+        code,
+        state: new_state,
+    }): Query<AuthResponse>
+) -> Result<Redirect, String> {
+    let Ok(Some(old_state)) = session.get(CSRF_STATE_KEY).await else {
+        return Err("missing csrf state".to_string());
+    };
+
+    let creds = Credentials::Discord(DiscordCreds{
+        code,
+        old_state,
+        new_state
+    });
+
+    let Ok(Some(user)) = auth_session.authenticate(creds).await else {
+        return Err("failed to authenticate".to_string());
+    };
+
+    if auth_session.login(&user).await.is_err() {
+        return Err("failed to login".to_string());
+    }
+
+    Ok(Redirect::to("/"))
 }
 
 #[debug_handler]

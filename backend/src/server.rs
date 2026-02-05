@@ -85,7 +85,7 @@ impl Server {
         let auth_url = AuthUrl::new("https://discord.com/oauth2/authorize".to_string())
             .expect("auth_url should be created");
         let token_url = TokenUrl::new("https://discord.com/api/oauth2/token".to_string())
-            .expect("auth_url should be created");
+            .expect("token_url should be created");
         let client_id = env::var("OAUTH_CLIENT_ID")
             .map(ClientId::new)
             .expect("CLIENT_ID should be provided.");
@@ -109,7 +109,8 @@ impl Server {
             .route("/", get(|| async { "blitz auction api" }))
             .route("/drafts/{draft_id}", get(handlers::get_draft))
             .route("/ws/{draft_id}", any(handlers::websocket_handler))
-            .route("/login", get(handlers::discord_login));
+            .route("/login", get(handlers::discord_oauth_redirect))
+            .route("/auth/discord/callback", get(handlers::discord_callback));
 
         let private_routes = Router::new()
             .route("/drafts", post(handlers::create_draft))
