@@ -150,7 +150,6 @@ def transform_row(
         speed=to_int(row["speed"]),
     )
 
-
 # ---------- SQL ----------
 
 INSERT_SQL = """

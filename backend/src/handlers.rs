@@ -18,6 +18,7 @@ use axum_login::AuthSession;
 use oauth2::CsrfToken;
 use tower_sessions::Session;
 use std::{sync::Arc, time::Duration};
+use serde::Deserialize;
 use tokio::{
     sync::{RwLock, broadcast},
     time::Instant,
@@ -290,11 +291,14 @@ pub async fn discord_oauth_redirect(
 
     Redirect::to(auth_url.as_str())
 }
-struct AuthResponse {
+
+#[derive(Clone, Debug, Deserialize)]
+pub struct AuthResponse {
     code: String,
     state: CsrfToken,
 }
 
+#[debug_handler]
 pub async fn discord_callback(
     mut auth_session: AuthSession<AuthBackend>,
     session: Session,
