@@ -31,7 +31,7 @@ impl std::fmt::Display for AuthError {
 
 impl std::error::Error for AuthError {}
 
-#[derive(Clone, Debug, Deserialize, Serialize)]
+#[derive(Clone, Debug, Deserialize, Serialize, PartialEq, Eq)]
 pub enum User {
     DiscordUser(DiscordUser),
     GuestUser(GuestUser),
@@ -47,10 +47,10 @@ impl User {
 }
 
 // https://discord.com/developers/docs/resources/user
-#[derive(Clone, Debug, Deserialize, FromRow, Serialize)]
+#[derive(Clone, Debug, Deserialize, FromRow, Serialize, PartialEq, Eq)]
 pub struct DiscordUser {
     pub user_id: String,
-    user_name: String,
+    pub user_name: String,
     discriminator: String,
     global_name: Option<String>,
     avatar: Option<String>,
@@ -59,10 +59,10 @@ pub struct DiscordUser {
     role_hash: Vec<u8>,
 }
 
-#[derive(Clone, Debug, Deserialize, Serialize)]
+#[derive(Clone, Debug, Deserialize, Serialize, PartialEq, Eq)]
 pub struct GuestUser {
     pub user_id: String,
-    user_name: String,
+    pub user_name: String,
 }
 
 #[derive(strum::Display, Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]

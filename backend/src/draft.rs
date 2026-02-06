@@ -231,8 +231,9 @@ impl Draft {
                 winning_bid: completed_auction.highest_bid,
                 winner: completed_auction
                     .highest_bidder
-                    .clone()
-                    .expect("No one won this auction"),
+                    .as_ref()
+                    .expect("No one won this auction")
+                    .get_user_id_string(),
             })
             .map_err(|e| e.to_string())?;
 
@@ -240,10 +241,7 @@ impl Draft {
             let expires_at = Instant::now() + self.settings.auction_length;
             let draft_runner = self.draft_runner.clone();
             draft_runner
-                .register_draft(
-                    self,
-                    expires_at,
-                )
+                .register_draft(self, expires_at)
                 .await
                 .map_err(|e| e.to_string())?;
         }
@@ -274,10 +272,7 @@ impl Draft {
         self.draft_state = DraftState::BIDDING;
         let draft_runner = self.draft_runner.clone();
         draft_runner
-            .register_draft(
-                self,
-                Instant::now() + self.settings.auction_length,
-            )
+            .register_draft(self, Instant::now() + self.settings.auction_length)
             .await?;
 
         Ok(())

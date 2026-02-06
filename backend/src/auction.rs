@@ -4,7 +4,7 @@ use strum::Display;
 use serde::{Deserialize, Serialize};
 use tokio::time::Instant;
 
-use crate::pokemon::Pokemon;
+use crate::{pokemon::Pokemon, users::User};
 
 #[derive(Clone, Debug, Serialize)]
 pub struct Auction {
@@ -14,7 +14,7 @@ pub struct Auction {
     pub status: AuctionState,
     pub pokemon: &'static Pokemon,
     pub highest_bid: u32,
-    pub highest_bidder: Option<String>,
+    pub highest_bidder: Option<User>,
     #[serde(skip)]
     pub expires_at: Option<Instant>,
 }
@@ -77,34 +77,38 @@ impl Auction {
     }
 
     pub async fn resolve(&self, tx: &mut Transaction<'_, Postgres>) -> Result<(), sqlx::Error> {
-        let _res = sqlx::query!(
-            r#"
-            UPDATE auctions
-            SET (status, winning_bid, drafted_by) = ($1, $2, $3)
-            WHERE auction_id = $4
-            "#,
-            &AuctionState::CLOSED.to_string(),
-            self.highest_bid as i32,
-            self.highest_bidder,
-            self.auction_id
-                .parse::<i64>()
-                .expect("auction_id should parse to i64"),
-        )
-        .execute(&mut **tx)
-        .await?;
+        let winning_user = self.highest_bidder.as_ref().expect("someone should win auctions");
+        let user_field = match winning_user {
+            User::DiscordUser(_) => "winning_user_id",
+            User::GuestUser(_) => "winning_guest_id",
+        };
+        let user_id = winning_user.get_user_id_string();
+        let winning_bid = self.highest_bid as i32;
+        let query_string = format!(
+            "
+                UPDATE auctions
+                SET (status, winning_bid, {}) = ({}, {}, {})
+                WHERE auction_id = {}
+            ",
+            user_field,
+            AuctionState::CLOSED,
+            winning_bid,
+            user_id,
+            self.auction_id,
+        );
 
-        let _res = sqlx::query!(
-            r#"
-            UPDATE teams
-            SET money_remaining = money_remaining - $1
-            WHERE user_id = $2 AND draft_id = $3
-            "#,
-            self.highest_bid as i32,
-            self.highest_bidder,
-            self.draft_id,
-        )
-        .execute(&mut **tx)
-        .await?;
+        let _res = sqlx::query(&query_string).execute(&mut **tx).await?;
+
+        let query_string = format!(
+            "
+                UPDATE teams
+                SET (money_remaining, pokemon_drafted) = (money_remaining - {}, pokemon_drafted + 1)
+                WHERE {} = {} AND draft_id = {}
+            ",
+            winning_bid, user_field, user_id, self.draft_id,
+        );
+
+        let _res = sqlx::query(&query_string).execute(&mut **tx).await?;
 
         Ok(())
     }
