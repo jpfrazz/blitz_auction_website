@@ -1,0 +1,92 @@
+@import '../../../../shared/style/theme.scss';
+
+// Pokémon table image in name column
+.pokemon-table-img {
+    width: 24px;
+    height: 24px;
+    object-fit: contain;
+    margin-right: 10px;
+    vertical-align: middle;
+}
+
+// Type pill color classes using SCSS variables from theme.scss
+.type-pill-normal   { background: $color-normal; }
+.type-pill-fire     { background: $color-fire; }
+.type-pill-water    { background: $color-water; }
+.type-pill-grass    { background: $color-grass; }
+.type-pill-electric { background: $color-electric;}
+.type-pill-ice      { background: $color-ice; }
+.type-pill-fighting { background: $color-fighting; }
+.type-pill-poison   { background: $color-poison; }
+.type-pill-ground   { background: $color-ground; }
+.type-pill-flying   { background: $color-flying; }
+.type-pill-psychic  { background: $color-psychic; }
+.type-pill-bug      { background: $color-bug; }
+.type-pill-rock     { background: $color-rock; }
+.type-pill-ghost    { background: $color-ghost; }
+.type-pill-dragon   { background: $color-dragon; }
+.type-pill-dark     { background: $color-dark; }
+.type-pill-steel    { background: $color-steel; }
+.type-pill-fairy    { background: $color-fairy; }
+
+.type-pill {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 6px;
+    border-radius: 999px;
+    color: $eb-text;
+    font-size: 0.78em;
+    font-weight: 600;
+    margin: 0;
+    letter-spacing: 0.5px;
+    min-width: 32px;
+    text-align: center;
+    height: 18px;
+    margin-left: 5px;
+}
+.all-pokemon-table-wrapper {
+    width: 100%;
+    overflow-x: auto;
+}
+
+.all-pokemon-table {
+    width: 100%;
+    border-collapse: collapse;
+    background: $eb-bg;
+    color: $eb-text;
+    font-size: 0.92rem;
+}
+
+.all-pokemon-table th, .all-pokemon-table td {
+    border: 1px solid $eb-border;
+    padding: 4px 8px;
+    text-align: left;
+    font-size: 0.92rem;
+    line-height: 1.2;
+}
+
+.all-pokemon-table th {
+    background: $eb-primary;
+    color: $eb-text-black;
+    font-weight: 700;
+    position: sticky;
+    top: 0;
+    z-index: 1;
+}
+
+.all-pokemon-table tr:nth-child(even) {
+    background: $eb-surface;
+}
+
+.all-pokemon-table tr:hover {
+    background: $eb-accent;
+    color: $eb-text-black;
+}
+
+h3 {
+    margin: 0 0 8px 0;
+    font-size: 32px;
+    color: $eb-text;
+    text-align: center;
+}

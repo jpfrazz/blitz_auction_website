@@ -1,0 +1,67 @@
+@import '../../../../shared/style/theme.scss';
+
+.auction-pokemon-table-box {
+	background: $eb-surface;
+	border: $eb-border;
+	border-radius: 4px;
+	display: flex;
+	align-items: flex-start;
+	justify-content: stretch;
+	width: 100%;
+	flex: 1;
+	min-height: 0;
+	overflow: auto;
+}
+
+.pokemon-table-panel-outer {
+	width: 100%;
+	display: flex;
+	flex-direction: column;
+	align-items: stretch;
+	flex: 1;
+	min-height: 0;
+}
+
+.pokemon-table-tabs {
+	display: flex;
+	gap: 8px;
+	padding: 0 0 0 0;
+	border-bottom: 1px solid $eb-border;
+	margin-bottom: 0;
+	position: relative;
+	z-index: 2;
+
+	button {
+		background: $eb-primary;
+		border: none;
+		color: $eb-text-black;
+		font-size: 1rem;
+		padding: 8px 16px;
+		cursor: pointer;
+		border-radius: 4px 4px 0 0;
+		transition: background 0.15s, color 0.15s;
+		&.active {
+			background: $eb-surface;
+			color: $eb-text;
+			border-bottom: 2px solid $eb-primary;
+			font-weight: bold;
+			z-index: 3;
+		}
+		&:hover:not(.active) {
+			background: $eb-primary-hover;
+			color: $eb-text;
+		}
+	}
+}
+
+.pokemon-table-tab-content {
+	width: 100%;
+	padding: 8px 0 0 0;
+}
+
+.auction-team-planner-placeholder {
+	color: $eb-text-muted;
+	font-size: 1.1rem;
+	text-align: center;
+	margin-top: 16px;
+}

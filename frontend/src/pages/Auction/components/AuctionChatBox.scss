@@ -1,0 +1,20 @@
+@import '../../../shared/style/theme.scss';
+
+.auction-chat-box {
+  background: $eb-surface;
+  border: $eb-border;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  flex: 0 1 25%;
+  min-height: 0;
+}
+
+.auction-chat-title{
+    margin: 0 0 8px 0;
+    font-size: 32px;
+    color: $eb-text;
+    text-align: center;
+}
