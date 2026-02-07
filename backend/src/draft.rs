@@ -167,19 +167,20 @@ impl Draft {
             pokemon.shuffle(&mut rand::rng());
 
             let query_string = format!(
-                "
+                r#"
                 INSERT INTO drafts (draft_id, num_teams, starting_money, patch_version, {})
-                VALUES ({}, {}, {}, {}, {})
-                ",
+                VALUES ($1, $2, $3, $4, $5)
+                "#,
                 host_field,
-                draft_id,
-                settings.num_teams as i32,
-                settings.starting_money as i32,
-                settings.patch_version,
-                host_id,
             );
 
-            let Ok(_) = sqlx::query(&query_string).execute(&mut *tx).await else {
+            let Ok(_) = sqlx::query(&query_string)
+                .bind(&draft_id)
+                .bind(settings.num_teams as i32)
+                .bind(settings.starting_money as i32)
+                .bind(&settings.patch_version)
+                .bind(&host_id)
+                .execute(&mut *tx).await else {
                 tx.rollback().await.expect("failed to abort transaction");
                 continue;
             };

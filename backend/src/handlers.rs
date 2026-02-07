@@ -245,7 +245,7 @@ fn validate_bid_request(
         return Err(format!("user is already the highest bidder"));
     }
     // check user has team in draft
-    if !draft.teams.iter().any(|t| t.user_id == bid_request.user_id) {
+    if !draft.teams.iter().any(|t| t.user_id == user.get_user_id_string()) {
         return Err(format!("user is not assigned to a team"));
     }
 

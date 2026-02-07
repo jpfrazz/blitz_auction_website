@@ -494,9 +494,7 @@ dex_number,name,type,stage,ability1,ability2,hidden_ability,hp,attack,defense,sp
 41,Zubat,Poison/Flying,base,Inner Focus,,Infiltrator,40,45,35,30,40,55,,,
 42,Golbat,Poison/Flying,evo,Inner Focus,,Infiltrator,75,80,70,65,75,90,Level 22,,
 169,Crobat,Poison/Flying,evo,Inner Focus,,Infiltrator,85,90,80,70,80,130,Soothe Bell,,
--1,Egg,???,base,,,,,,,,,,,,
--1,Egg,???,base,,,,,,,,,,,,
--1,Egg,???,base,,,,,,,,,,,,
+65536,Egg,Egg,base,,,,,,,,,,,,
 298,Azurill,Normal/Fairy,base,Thick Fat,Huge Power,Sap Sipper,50,20,40,20,40,20,,,TRUE
 183,Marill,Water/Fairy,evo,Thick Fat,Huge Power,Sap Sipper,70,20,50,20,50,40,Level 10,,TRUE
 184,Azumarill,Water/Fairy,evo,Thick Fat,Huge Power,Sap Sipper,100,50,80,60,80,50,Level 18,,TRUE

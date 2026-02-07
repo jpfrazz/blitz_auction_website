@@ -59,7 +59,7 @@ impl Auction {
             RETURNING auction_id
             "#,
             pokemon.pokedex_id as i32,
-            pokemon.form,
+            pokemon.form.clone().unwrap_or_else(|| "".to_string()),
             pokemon.patch_version,
             draft_id,
             draft_order as i32,

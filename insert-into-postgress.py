@@ -232,5 +232,5 @@ if __name__ == "__main__":
     load_csv(
         csv_path=Path("pokemon-7.91.csv"),
         dsn="postgresql://postgres:password@localhost:5432/auction_db",
-        patch_version="7.9.1",
+        patch_version="7.91",
     )
