@@ -1,12 +1,17 @@
+
 services:
     # nginx + react
     frontend:
         image: ghcr.io/jpfrazz/blitz-auction-frontend:latest
-        build: ./frontend/
+        build: 
+            context: ./frontend/
+            dockerfile: ../dockerfiles/frontend-nginx.Dockerfile
         container_name: auction-frontend
         restart: always
-        ports:
-            - "80:80"
+        volumes:
+            - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+        env_file:
+            - .env
         depends_on:
             - backend
         networks:
@@ -15,9 +20,15 @@ services:
     # rust axum
     backend:
         image: ghcr.io/jpfrazz/blitz-auction-backend:latest
-        build: ./backend/
+        build: 
+            context: ./backend/
+            dockerfile: ../dockerfiles/backend.Dockerfile
         container_name: auction-backend
         restart: always
+        environment:
+            - DB_CONN_STRING=postgres://$POSTGRES_USER:$POSTGRES_PASSWORD@db:5432/$POSTGRES_DB
+        env_file:
+            - .env
         depends_on:
             - db
         networks:
@@ -40,10 +51,8 @@ services:
         image: postgres:18-trixie
         container_name: auction-db
         restart: always
-        environment:
-            - POSTGRES_USER=postgres
-            - POSTGRES_PASSWORD=password
-            - POSTGRES_DB=auction_db
+        env_file:
+            - .env
         volumes:
             - db_data:/var/lib/postgresql
         networks:

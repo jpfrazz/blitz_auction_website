@@ -76,6 +76,8 @@ def read_csv(path: Path) -> Iterator[CsvRow]:
 # ---------- Transform ----------
 
 def to_int(value: str) -> int:
+    if value == '':
+        return 0
     return int(value.strip())
 
 def parse_types(value: str) -> tuple[str, Optional[str]]:
@@ -147,7 +149,6 @@ def transform_row(
         sp_defense=to_int(row["sp_defense"]),
         speed=to_int(row["speed"]),
     )
-
 
 # ---------- SQL ----------
 
@@ -229,7 +230,7 @@ def load_csv(
 
 if __name__ == "__main__":
     load_csv(
-        csv_path=Path("pokemon-791.csv"),
-        dsn="postgresql://test_user:test_pass@localhost:5432/pokedex_test",
+        csv_path=Path("pokemon-7.91.csv"),
+        dsn="postgresql://postgres:password@localhost:5432/auction_db",
         patch_version="7.9.1",
     )

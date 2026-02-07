@@ -1,5 +1,4 @@
 use petname::petname;
-use axum_login::AuthUser;
 use rand::seq::SliceRandom;
 use serde::{Deserialize, Serialize};
 use sqlx::PgPool;
@@ -8,26 +7,26 @@ use tokio::{
     sync::broadcast,
     time::{Duration, Instant},
 };
-use uuid::Uuid;
 
 use crate::{
     auction::Auction,
     draft_runner::DraftRunner,
     messages::ServerMessage,
     pokemon::{self, Pokemon},
+    users::User,
 };
 
 #[derive(Clone, Debug)]
 pub struct Draft {
     pub draft_id: String,
-    pub host: String,
+    pub host: User,
     pub draft_state: DraftState,
     settings: DraftSettings,
     pub current_auction: u32,
     pub pokemon: Vec<&'static Pokemon>,
     pub auctions: Vec<Auction>,
     pub teams: Vec<Team>,
-    pub spectators: Vec<Uuid>,
+    pub spectators: Vec<User>,
     pub tx: broadcast::Sender<ServerMessage>,
     pub db_pool: PgPool,
     draft_runner: Arc<DraftRunner>,
@@ -37,7 +36,7 @@ pub struct Draft {
 pub struct DraftResponse {
     draft_id: String,
     host: String,
-    teams:  Vec<Team>,
+    teams: Vec<Team>,
     draft_state: DraftState,
     completed_auctions: Vec<Auction>,
     current_auction: Option<Auction>,
@@ -49,15 +48,15 @@ impl From<Draft> for DraftResponse {
     fn from(draft: Draft) -> DraftResponse {
         let current_auction = {
             match draft.draft_state {
-                DraftState::BIDDING(_) | DraftState::PAUSED(_) => {
+                DraftState::BIDDING | DraftState::PAUSED(_) => {
                     Some(draft.auctions[draft.current_auction as usize].clone())
                 }
-                _ => None
+                _ => None,
             }
         };
         DraftResponse {
             draft_id: draft.draft_id,
-            host: draft.host,
+            host: draft.host.get_user_id_string(),
             teams: draft.teams,
             draft_state: draft.draft_state,
             current_auction,
@@ -72,10 +71,10 @@ impl From<Draft> for DraftResponse {
     }
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
 pub enum DraftState {
     PENDING,
-    BIDDING(u32),
+    BIDDING,
     PAUSED(u32),
     COMPLETED,
 }
@@ -112,7 +111,7 @@ pub struct Team {
 impl Draft {
     fn new(
         draft_id: String,
-        host: String,
+        host: User,
         settings: DraftSettings,
         pokemon: Vec<&'static Pokemon>,
         pool: PgPool,
@@ -136,11 +135,16 @@ impl Draft {
     }
 
     pub async fn build(
-        host: String,
+        host: User,
         settings: DraftSettings,
         pool: PgPool,
         draft_runner: Arc<DraftRunner>,
     ) -> Result<Draft, String> {
+        let host_field = match host {
+            User::DiscordUser(_) => "host_user_id",
+            User::GuestUser(_) => "host_guest_id",
+        };
+        let host_id = host.get_user_id_string();
         for _ in 0..3 {
             let mut tx = pool.begin().await.map_err(|e| {
                 let error_string = format!("failed to begin transaction: {}", e);
@@ -162,19 +166,21 @@ impl Draft {
             // always randomize order
             pokemon.shuffle(&mut rand::rng());
 
-            let Ok(_) = sqlx::query!(
-                r#"
-                INSERT INTO drafts (draft_id, num_teams, starting_money, patch_version)
-                VALUES ($1, $2, $3, $4)
-                "#,
+            let query_string = format!(
+                "
+                INSERT INTO drafts (draft_id, num_teams, starting_money, patch_version, {})
+                VALUES ({}, {}, {}, {}, {})
+                ",
+                host_field,
                 draft_id,
                 settings.num_teams as i32,
                 settings.starting_money as i32,
                 settings.patch_version,
-            )
-            .execute(&mut *tx)
-            .await
-            else {
+                host_id,
+            );
+
+            let Ok(_) = sqlx::query(&query_string).execute(&mut *tx).await else {
+                tx.rollback().await.expect("failed to abort transaction");
                 continue;
             };
 
@@ -232,21 +238,17 @@ impl Draft {
                 winning_bid: completed_auction.highest_bid,
                 winner: completed_auction
                     .highest_bidder
-                    .clone()
-                    .expect("No one won this auction"),
+                    .as_ref()
+                    .expect("No one won this auction")
+                    .get_user_id_string(),
             })
             .map_err(|e| e.to_string())?;
 
         if self.current_auction < self.settings.num_auctions {
-            self.auctions[self.current_auction as usize].expires_at =
-                Some(Instant::now() + self.settings.auction_length);
-            self.draft_runner
-                .register_draft(
-                    self.draft_id.clone(),
-                    self.auctions[self.current_auction as usize]
-                        .expires_at
-                        .expect("auction expiry not given"),
-                )
+            let expires_at = Instant::now() + self.settings.auction_length;
+            let draft_runner = self.draft_runner.clone();
+            draft_runner
+                .register_draft(self, expires_at)
                 .await
                 .map_err(|e| e.to_string())?;
         }
@@ -266,10 +268,20 @@ impl Draft {
         let team = Team {
             user_id: user_id,
             budget_remaining: self.settings.starting_money,
-            auctions_won : vec![],
+            auctions_won: vec![],
         };
 
         self.teams.push(team);
+        Ok(())
+    }
+
+    pub async fn start_draft(&mut self) -> Result<(), String> {
+        self.draft_state = DraftState::BIDDING;
+        let draft_runner = self.draft_runner.clone();
+        draft_runner
+            .register_draft(self, Instant::now() + self.settings.auction_length)
+            .await?;
+
         Ok(())
     }
 }

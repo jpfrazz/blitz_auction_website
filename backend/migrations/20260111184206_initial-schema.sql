@@ -77,6 +77,8 @@ CREATE TABLE key_moves (
 
 CREATE TABLE drafts (
     draft_id TEXT NOT NULL PRIMARY KEY,
+    host_user_id TEXT REFERENCES users(user_id),
+    host_guest_id TEXT REFERENCES guests(user_id),
     starting_money INT NOT NULL DEFAULT 20000,
     num_teams INT NOT NULL DEFAULT 8,
     status TEXT NOT NULL DEFAULT 'PENDING',
@@ -84,6 +86,10 @@ CREATE TABLE drafts (
     pokemon_drafted INT NOT NULL DEFAULT 0,
     updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
     created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+
+    CONSTRAINT at_least_one_host_id CHECK (
+        host_user_id IS NOT NULL OR host_guest_id IS NOT NULL
+    )
 );
 
 CREATE TABLE auctions (
@@ -95,37 +101,51 @@ CREATE TABLE auctions (
     draft_order INT NOT NULL,
     status TEXT NOT NULL DEFAULT 'PENDING',
     winning_bid INT,
-    drafted_by TEXT REFERENCES users(user_id),
+    winning_user_id TEXT REFERENCES users(user_id),
+    winning_guest_id TEXT REFERENCES guests(user_id),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
     created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
 
     FOREIGN KEY (pokedex_id, form, patch_version)
-        REFERENCES pokemon(pokedex_id, form, patch_version)
+        REFERENCES pokemon(pokedex_id, form, patch_version),
+
+    CONSTRAINT at_least_one_winner CHECK (
+        winning_bid IS NULL OR (winning_user_id IS NOT NULL OR winning_guest_id IS NOT NULL)
+    )
 );
 
 CREATE UNIQUE INDEX auction_order
     ON auctions (draft_id, draft_order);
 
 CREATE TABLE teams (
-    user_id TEXT NOT NULL REFERENCES users(user_id) ON DELETE CASCADE,
+    team_id BIGSERIAL NOT NULL PRIMARY KEY,
+    user_id TEXT REFERENCES users(user_id) ON DELETE CASCADE,
+    guest_id TEXT REFERENCES guests(user_id) ON DELETE CASCADE,
     draft_id TEXT NOT NULL REFERENCES drafts(draft_id) ON DELETE CASCADE,
     money_remaining INT NOT NULL,
     pokemon_drafted INT NOT NULL DEFAULT 0,
     updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
     created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
 
-    PRIMARY KEY (user_id, draft_id)
+    CONSTRAINT at_least_one_acct_id CHECK (
+        user_id IS NOT NULL OR guest_id IS NOT NULL
+    )
 );
 
 CREATE TABLE bids (
     bid_id BIGSERIAL NOT NULL PRIMARY KEY,
     auction_id BIGINT NOT NULL REFERENCES auctions(auction_id),
-    user_id TEXT NOT NULL REFERENCES users(user_id),
+    user_id TEXT REFERENCES users(user_id),
+    guest_id TEXT REFERENCES guests(user_id),
     value INT NOT NULL,
     accepted BOOLEAN NOT NULL,
     winning BOOLEAN NOT NULL,
     updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
     created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+
+    CONSTRAINT at_least_one_acct_id CHECK (
+        user_id IS NOT NULL OR guest_id IS NOT NULL
+    )
 );
 
 CREATE OR REPLACE FUNCTION update_updated_at()

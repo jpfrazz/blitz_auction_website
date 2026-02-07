@@ -1,13 +1,10 @@
-use axum_login::{AuthManagerLayer, tower_sessions::{MemoryStore, SessionManagerLayer}};
+use axum_login::tower_sessions::{MemoryStore, SessionManagerLayer};
 use chrono;
-use dashmap::DashMap;
-use oauth2::basic::BasicClient;
 use sqlx::PgPool;
+use tokio::time::Instant;
 use tower_sessions::{Expiry, cookie::time::Duration};
-use std::{sync::Arc};
-use tokio::{sync::RwLock, time::Instant};
 
-use crate::{draft::Draft, draft_runner::DraftRunner, users::AuthBackend};
+use crate::{draft::Draft, draft_runner::DraftRunner};
 
 pub mod auction;
 pub mod draft;
@@ -15,8 +12,8 @@ pub mod draft_runner;
 pub mod handlers;
 pub mod messages;
 pub mod pokemon;
-pub mod users;
 pub mod server;
+pub mod users;
 
 pub fn init_auth_layer(pool: PgPool) {
     let session_store = MemoryStore::default();

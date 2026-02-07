@@ -33,11 +33,12 @@ pub async fn init_pokemon_data(pool: &PgPool) -> Result<(), sqlx::Error> {
         "#,
     )
     .map(|row| Pokemon {
-        pokedex_id: u32::try_from(row.pokedex_id).unwrap_or_else(|_| {
-            panic!(
+        pokedex_id: u32::try_from(row.pokedex_id).unwrap_or_else(|_| match row.pokedex_id {
+            -1 => u32::pow(2, 16),
+            _ => panic!(
                 "Pokemon {} {} has invalid pokedex_id: {}",
                 row.name, row.form, row.pokedex_id
-            )
+            ),
         }),
         name: row.name.clone(),
         form: if row.form.is_empty() {
@@ -46,7 +47,13 @@ pub async fn init_pokemon_data(pool: &PgPool) -> Result<(), sqlx::Error> {
             Some(row.form.clone())
         },
         patch_version: row.patch_version,
-        type1: row.type1.parse().unwrap(),
+        type1: row
+            .type1
+            .parse()
+            .unwrap_or_else(|_e| match row.type1.as_str() {
+                "???" => PokemonType::Egg,
+                _ => panic!("pokemon_type not valid, {}", row.type1),
+            }),
         type2: row.type2.map(|t| t.parse().unwrap()),
         ability1: row.ability1,
         ability2: row.ability2,
@@ -204,6 +211,7 @@ pub enum PokemonType {
     Dragon,
     Dark,
     Fairy,
+    Egg,
 }
 
 #[derive(Clone, Copy, Debug, Serialize, Deserialize, FromRow)]

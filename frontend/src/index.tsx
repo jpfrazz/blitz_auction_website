@@ -11,6 +11,7 @@ import BossBattles from './pages/BossBattles/BossBattles';
 import SpeedTest from './pages/SpeedTest/SpeedTest';
 import './shared/style/theme.scss';
 import PatchNotes from './pages/PatchNotes/PatchNotes';
+import AuctionPage from './pages/Auction/AuctionPage';
 
 const container = document.getElementById('root');
 if (container) {
@@ -21,6 +22,7 @@ if (container) {
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/AuctionSetup" element={<AuctionSetup />} />
+          <Route path="/Auction" element={<AuctionPage />} />
           <Route path="/TeamPlanner" element={<TeamPlanner />} />
           <Route path="/FAQ" element={<FAQ />} />
           <Route path="/Pokedex" element={<Pokedex />} />
