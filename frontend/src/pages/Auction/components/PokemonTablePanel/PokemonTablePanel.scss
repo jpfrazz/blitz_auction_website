@@ -8,8 +8,9 @@
 	align-items: flex-start;
 	justify-content: stretch;
 	width: 100%;
-	flex: 1 1 67%;
+	flex: 1;
 	min-height: 0;
+	overflow: auto;
 }
 
 .pokemon-table-panel-outer {
@@ -17,7 +18,7 @@
 	display: flex;
 	flex-direction: column;
 	align-items: stretch;
-    flex: 1 1 67%;
+	flex: 1;
 	min-height: 0;
 }
 

@@ -2,6 +2,7 @@
 
 export interface Pokemon {
   id: number;
+  pokedex_id?: number;
   name: string;
   type1?: string;
   type2?: string;
@@ -18,36 +19,31 @@ export interface Pokemon {
   form?: string;
 }
 
-// Types for stubbed draft data
-export type DraftState = 'PENDING' | 'SELECTING' | 'BIDDING' | { PAUSED: number } | 'COMPLETED';
-
-export interface DraftSettings {
-  num_players: number;
-  starting_money: number;
-  pokemon_ids: number[];
-  patch_version: string;
-}
+// Types for draft data
+export type DraftState = 'PENDING' | 'BIDDING' | 'PAUSED' | 'COMPLETED' | { BIDDING: number } | { PAUSED: number };
 
 export interface Auction {
-  auction_id: number;
-  pokemon: {
-    pokedex_id: number;
-    name: string;
-    form: string;
-  };
+  auction_id: string;
+  pokemon: Pokemon;
   status: 'BIDDING' | 'COMPLETED' | 'PENDING';
   highest_bid: number;
   highest_bidder: string;
   expires_at?: string;
 }
 
+export interface Team {
+  user_id: string;
+  money: number;
+  pokemon: Pokemon[];
+}
+
 export interface Draft {
   draft_id: string;
   host: string;
-  state: DraftState;
-  settings: DraftSettings;
-  current_auction: Auction;
+  teams: Team[];
+  draft_state: DraftState;
   completed_auctions: Auction[];
-  players: string[];
-  spectators: string[];
+  current_auction: Auction | null;
+  pokemon: Pokemon[];
+  patch_version: string;
 }

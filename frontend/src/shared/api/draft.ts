@@ -1,11 +1,39 @@
-// Stub for creating a draft (to be replaced with real API call)
-export async function createDraft(data: any): Promise<string> {
-  // Simulate network delay
-  await new Promise(res => setTimeout(res, 300));
-  // Return a fake auction id that looks like a Postgres bigserial (19 digits, 64-bit integer)
-  // Range: 1 to 9223372036854775807
-  const min = 1_000_000_000_000_000_000;
-  const max = 9_223_372_036_854_775_807;
-  const id = BigInt(Math.floor(Math.random() * Number(max - min))) + BigInt(min);
-  return id.toString();
+// Types for create draft request
+export interface ExcludedPokemon {
+  pokedex_id: number;
+  form: string | null;
+}
+
+export interface CreateDraftRequest {
+  num_teams: number;
+  starting_money: number;
+  excluded_pokemon: ExcludedPokemon[];
+  patch_version: string;
+  num_auctions: number;
+  auction_length: {
+    secs: number;
+    nanos: number;
+  };
+}
+
+// Create a draft via POST /drafts (proxied to backend)
+export async function createDraft(data: CreateDraftRequest): Promise<string> {
+  const response = await fetch(`/api/drafts`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    credentials: 'include', // Include auth cookies
+    body: JSON.stringify(data),
+  });
+
+  if (!response.ok) {
+    throw new Error(`Failed to create draft: ${response.statusText}`);
+  }
+
+  console.log("Draft created successfully");
+
+  // Backend returns just the draft_id as a string, not JSON
+  const draft_id = await response.text();
+  return draft_id;
 }

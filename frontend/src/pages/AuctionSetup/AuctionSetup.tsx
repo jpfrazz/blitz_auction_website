@@ -9,7 +9,7 @@ import Header from '../../shared/components/Header';
 import Footer from '../../shared/components/Footer';
 import './AuctionSetup.scss';
 import '../../shared/style/theme.scss';
-import { createDraft } from '../../shared/api/draft';
+import { createDraft, CreateDraftRequest } from '../../shared/api/draft';
 
 const MIN_TEAM_SIZE = 6;
 const MAX_TEAM_SIZE = 8;
@@ -81,18 +81,22 @@ const AuctionSetupForm: React.FC = () => {
     }
 
     try {
-      // Compose the data object to send
-      const data: any = {
+      // Compose the data object to match API expectations
+      const data: CreateDraftRequest = {
         num_teams: numTeams,
-        default_funds: defaultFunds,
-        num_pokemon: numPokemon,
-        draft_name: draftName,
-        password,
-        seconds_to_draft: secondsToDraft,
-        ranked,
-        excluded_pokemon: Array.from(excludedPokemon),
+        starting_money: defaultFunds,
+        excluded_pokemon: Array.from(excludedPokemon).map(id => ({
+          pokedex_id: id,
+          form: null, // Default to empty form, update if you have form data
+        })),
+        patch_version: '7.91', // Update with actual version if available
+        num_auctions: numPokemon,
+        auction_length: {
+          secs: secondsToDraft,
+          nanos: 0,
+        },
       };
-      // POST to backend (update URL as needed)
+      // POST to backend
       const response = await createDraft(data);
       console.log(response)
       // Redirect to /auction?{auctionId}
@@ -100,7 +104,7 @@ const AuctionSetupForm: React.FC = () => {
         navigate(`/Auction?${response}`);
       }
     } catch (err: any) {
-      setSubmitError(err?.response?.data || 'Failed to create auction.');
+      setSubmitError(err?.message || 'Failed to create auction.');
     }
   };
 

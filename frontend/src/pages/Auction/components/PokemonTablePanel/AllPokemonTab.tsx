@@ -1,6 +1,5 @@
 
 import React, { useEffect, useState, useMemo } from 'react';
-import { fetchPokemonList } from '../../../../shared/api/pokemon';
 import { Pokemon, Auction } from '../../../../types';
 import './AllPokemonTab.scss';
 import {
@@ -14,47 +13,38 @@ import {
 } from '@tanstack/react-table';
 
 interface AllPokemonTabProps {
-  pokemonIds: number[];
+  pokemon: Pokemon[];
   auctions: Auction[];
 }
 
-const AllPokemonTab: React.FC<AllPokemonTabProps> = ({ pokemonIds, auctions }) => {
-  const [pokemonList, setPokemonList] = useState<Pokemon[]>([]);
-
-  useEffect(() => {
-    fetchPokemonList().then(setPokemonList);
-  }, []);
-
-
-
-  // Filter to only Pokémon in the draft
-  const filtered = useMemo(() => pokemonList.filter(p => pokemonIds.includes(p.id)), [pokemonList, pokemonIds]);
-
+const AllPokemonTab: React.FC<AllPokemonTabProps> = ({ pokemon, auctions }) => {
   // Add auction info to each row for table use
   const data = useMemo(() =>
-    filtered.map(p => {
-      const auction = auctions.find(a => a.pokemon.name === p.name);
-      const hp = p.stats?.hp ?? 0;
-      const attack = p.stats?.attack ?? 0;
-      const defense = p.stats?.defense ?? 0;
-      const specialAttack = p.stats?.specialAttack ?? 0;
-      const specialDefense = p.stats?.specialDefense ?? 0;
-      const speed = p.stats?.speed ?? 0;
-      const baseStatTotal = hp + attack + defense + specialAttack + specialDefense + speed;
-      return {
-        ...p,
-        hp,
-        attack,
-        defense,
-        specialAttack,
-        specialDefense,
-        speed,
-        baseStatTotal,
-        cost: auction ? auction.highest_bid : '',
-        draftedBy: auction ? auction.highest_bidder : '',
-      };
-    }),
-    [filtered, auctions]
+    pokemon
+      .filter(p => p.form === 'base')
+      .map(p => {
+        const auction = auctions.find(a => a.pokemon.pokedex_id === p.id);
+        const hp = p.stats?.hp ?? 0;
+        const attack = p.stats?.attack ?? 0;
+        const defense = p.stats?.defense ?? 0;
+        const specialAttack = p.stats?.specialAttack ?? 0;
+        const specialDefense = p.stats?.specialDefense ?? 0;
+        const speed = p.stats?.speed ?? 0;
+        const baseStatTotal = hp + attack + defense + specialAttack + specialDefense + speed;
+        return {
+          ...p,
+          hp,
+          attack,
+          defense,
+          specialAttack,
+          specialDefense,
+          speed,
+          baseStatTotal,
+          cost: auction ? auction.highest_bid : '',
+          draftedBy: auction ? auction.highest_bidder : '',
+        };
+      }),
+    [pokemon, auctions]
   );
 
   const columns = useMemo<ColumnDef<any, any>[]>(

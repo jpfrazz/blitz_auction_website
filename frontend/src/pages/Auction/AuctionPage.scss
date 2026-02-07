@@ -20,13 +20,25 @@ html, body, #root {
   width: 100%;
   max-width: 100vw;
   margin: 0 auto;
-  align-items: flex-start;
+  align-items: stretch;
+  flex: 1;
+  min-height: 0;
 }
 .auction-left-panel {
   display: flex;
   flex-direction: column;
   gap: 16px;
   margin-left: 24px;
+  height: 100%;
+  min-height: 0;
+}
+.auction-right-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-right: 24px;
+  height: 100%;
+  min-height: 0;
 }
 .auction-current-pokemon-placeholder {
   color: $eb-text-muted;
@@ -38,30 +50,6 @@ html, body, #root {
   width: 100%;
   text-align: center;
   margin-top: 16px;
-}
-.auction-content-grid {
-  display: grid;
-  grid-template-columns: 2fr 1fr;
-  gap: 24px;
-  width: 100%;
-  max-width: 100vw;
-  margin: 0 auto;
-  align-items: stretch;
-  height: 100%;
-}
-.auction-left-panel {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-  margin-left: 24px;
-  height: 100%;
-}
-.auction-right-panel {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-  margin-right: 24px;
-  height: 100%;
 }
 .auction-current-info-placeholder {
   color: $eb-text-muted;

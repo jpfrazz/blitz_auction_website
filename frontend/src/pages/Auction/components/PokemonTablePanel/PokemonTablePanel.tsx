@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import AllPokemonTab from './AllPokemonTab';
 import TeamPlannerTab from './TeamPlannerTab';
 import DraftHistoryTab from './DraftHistoryTab';
-import { Auction } from '../../../../types';
+import { Auction, Pokemon } from '../../../../types';
 import './PokemonTablePanel.scss';
 
 const TAB_ALL = 'all';
@@ -12,10 +12,10 @@ const TAB_HISTORY = 'history';
 
 interface PokemonTablePanelProps {
   auctions: Auction[];
-  pokemonIds: number[];
+  pokemon: Pokemon[];
 }
 
-const PokemonTablePanel: React.FC<PokemonTablePanelProps> = ({ auctions, pokemonIds }) => {
+const PokemonTablePanel: React.FC<PokemonTablePanelProps> = ({ auctions, pokemon }) => {
   const [tab, setTab] = useState<string>(TAB_ALL);
 
   return (
@@ -42,7 +42,7 @@ const PokemonTablePanel: React.FC<PokemonTablePanelProps> = ({ auctions, pokemon
       </div>
       <div className="auction-pokemon-table-box">
         <div className="pokemon-table-tab-content">
-          {tab === TAB_ALL && <AllPokemonTab pokemonIds={pokemonIds} auctions={auctions} />}
+          {tab === TAB_ALL && <AllPokemonTab pokemon={pokemon} auctions={auctions} />}
           {tab === TAB_TEAM && <TeamPlannerTab />}
           {tab === TAB_HISTORY && <DraftHistoryTab auctions={auctions} />}
         </div>

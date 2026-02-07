@@ -1,7 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { Auction } from '../../../types';
-import { fetchPokemonList } from '../../../shared/api/pokemon';
-import { Pokemon } from '../../../types';
+import React from 'react';
+import { Auction, Pokemon } from '../../../types';
 import './CurrentPokemonPanel.scss';
 
 interface CurrentPokemonPanelProps {
@@ -9,20 +7,7 @@ interface CurrentPokemonPanelProps {
 }
 
 const CurrentPokemonPanel: React.FC<CurrentPokemonPanelProps> = ({ current_auction }) => {
-  const [pokemonData, setPokemonData] = useState<Pokemon | null>(null);
-
-  useEffect(() => {
-    fetchPokemonList().then(list => {
-      const pokemon = list.find(p => p.id === current_auction.pokemon.pokedex_id);
-      if (pokemon) {
-        setPokemonData(pokemon);
-      }
-    });
-  }, [current_auction.pokemon.pokedex_id]);
-
-  if (!pokemonData) {
-    return <div className="auction-current-pokemon-box">Loading...</div>;
-  }
+  const pokemonData: Pokemon = current_auction.pokemon;
 
   const typeClass = pokemonData.type1 
     ? `type-badge-${pokemonData.type1.toLowerCase()}` 

@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import Header from '../../shared/components/Header';
 import Footer from '../../shared/components/Footer';
-import { fetchDraftById } from '../../shared/api/draftData';
+import { fetchDraftById, startDraft, joinDraft, fetchCurrentUser } from '../../shared/api/draftData';
 import './AuctionPage.scss';
 import '../../shared/style/theme.scss';
 import PlayerRow from './components/PlayerRow';
@@ -21,25 +21,61 @@ const AuctionPage: React.FC = () => {
   const auctionId = useAuctionId();
   const [draft, setDraft] = useState<Draft | null>(null);
   const [loading, setLoading] = useState(false);
+  const [startingDraft, setStartingDraft] = useState(false);
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
 
   useEffect(() => {
     if (!auctionId) return;
-    
+
     // Initial fetch
     setLoading(true);
     fetchDraftById(auctionId)
-      .then(setDraft)
+      .then(data => {
+        console.log("Fetched draft successfully", data);
+        setDraft(data);
+        // Join the draft
+        return joinDraft(auctionId);
+      })
+      .then(updatedDraft => {
+        console.log("Joined draft successfully", updatedDraft);
+        setDraft(updatedDraft);
+      })
+      .then(() => {
+        fetchCurrentUser()
+          .then(user => {
+            console.log("Fetched current user:", user);
+            setCurrentUserId(user.user_id);
+          })
+          .catch(error => console.error('Error fetching current user:', error));
+      })
+      .catch(error => console.error('Error fetching draft on initial load:', error))
       .finally(() => setLoading(false));
     
     // Set up interval to fetch every second
     const interval = setInterval(() => {
       fetchDraftById(auctionId)
-        .then(setDraft)
-        .catch(error => console.error('Error fetching draft:', error));
+        .then(data => {
+          setDraft(data);
+          console.log("Interval draft_state:", data?.draft_state, "current_auction:", data?.current_auction);
+        })
+        .catch(error => console.error('Error fetching draft in interval:', error));
     }, 1000);
     
     return () => clearInterval(interval);
   }, [auctionId]);
+
+  const handleStartDraft = async () => {
+    if (!draft) return;
+    setStartingDraft(true);
+    try {
+      const updated = await startDraft(draft.draft_id);
+      setDraft(updated);
+    } catch (error) {
+      console.error('Error starting draft:', error);
+    } finally {
+      setStartingDraft(false);
+    }
+  };
 
   return (
     <>
@@ -51,21 +87,30 @@ const AuctionPage: React.FC = () => {
             {/* Top: Player boxes */}
             <div>
               <PlayerRow
-                players={draft.players}
-                numPlayers={draft.settings.num_players}
-                startingMoney={draft.settings.starting_money}
+                players={draft.teams.map(t => t.user_id)}
+                numPlayers={draft.teams.length}
+                startingMoney={draft.teams[0]?.money || 20000}
               />
             </div>
             {/* Main content grid */}
             <div className="auction-content-grid">
               {/* Left: Current auctioned Pokémon and table */}
               <div className="auction-left-panel">
-                <CurrentPokemonPanel current_auction={draft.current_auction} />
-                <PokemonTablePanel auctions={draft.completed_auctions} pokemonIds={draft.settings.pokemon_ids} />
+                {draft.draft_state === "PENDING" && currentUserId === draft.host && (
+                  <button
+                    onClick={handleStartDraft}
+                    disabled={startingDraft}
+                    className="button"
+                  >
+                    {startingDraft ? 'Starting Draft...' : 'Start Draft'}
+                  </button>
+                )}
+                {draft.current_auction && <CurrentPokemonPanel current_auction={draft.current_auction} />}
+                <PokemonTablePanel auctions={draft.completed_auctions} pokemon={draft.pokemon} />
               </div>
               {/* Right: Current auction info */}
               <div className="auction-right-panel">
-                <AuctionInfoPanel current_auction={draft.current_auction} />
+                {draft.current_auction && <AuctionInfoPanel current_auction={draft.current_auction} draft_id={draft.draft_id} />}
                 <AuctionChatBox />
               </div>
             </div>

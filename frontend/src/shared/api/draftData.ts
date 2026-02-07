@@ -1,60 +1,51 @@
+import axios from 'axios';
 import { Draft } from "../../types";
 
-// Create a static expiration time that doesn't change on each call
-const auctionStartTime = Date.now();
-const auctionExpiresAt = new Date(auctionStartTime + 10000).toISOString();
+// Fetch current user info
+export async function fetchCurrentUser(): Promise<{user_id: string, username: string}> {
+  const response = await axios.get('/api/me');
+  // Response can be {GuestUser: {...}} or {DiscordUser: {...}}
+  const data = response.data;
+  if (data.GuestUser) {
+    return {
+      user_id: data.GuestUser.user_id,
+      username: data.GuestUser.user_name,
+    };
+  } else if (data.DiscordUser) {
+    return {
+      user_id: data.DiscordUser.user_id,
+      username: data.DiscordUser.user_name,
+    };
+  }
+  throw new Error('Unknown user type');
+}
 
-// Stub for fetching a draft by id
+// Fetch a draft by id from the backend
 export async function fetchDraftById(draft_id: string): Promise<Draft> {
-  // Simulate network delay
-  await new Promise(res => setTimeout(res, 300));
-  return {
-    draft_id,
-    host: 'Ash',
-    state: 'PENDING',
-    settings: {
-      num_players: 8,
-      starting_money: 20000,
-      pokemon_ids: [1, 4, 7, 25, 133],
-      patch_version: 'v1.0',
-    },
-    current_auction: {
-      auction_id: 3,
-      pokemon: {
-        pokedex_id: 1,
-        name: 'Bulbasaur',
-        form: 'Base',
-      },
-      status: 'BIDDING',
-      highest_bid: 3500,
-      highest_bidder: 'Ash',
-      expires_at: auctionExpiresAt,
-    },
-    completed_auctions: [
-      {
-        auction_id: 1,
-        pokemon: {
-          pokedex_id: 4,
-          name: 'Charmander',
-          form: 'Base',
-        },
-        status: 'COMPLETED',
-        highest_bid: 2000,
-        highest_bidder: 'Misty',
-      },
-      {
-        auction_id: 2,
-        pokemon: {
-          pokedex_id: 7,
-          name: 'Squirtle',
-          form: 'Base',
-        },
-        status: 'COMPLETED',
-        highest_bid: 1800,
-        highest_bidder: 'Brock',
-      },
-    ],
-    players: ['Ash', 'Misty', 'Brock'],
-    spectators: [],
-  };
+  const response = await axios.get(`/api/drafts/${draft_id}`);
+  return response.data;
+}
+
+// Start a draft
+export async function startDraft(draft_id: string): Promise<Draft> {
+  await axios.post(`/api/drafts/${draft_id}/start`);
+  const response = await axios.get(`/api/drafts/${draft_id}`);
+  return response.data;
+}
+
+// Join a draft
+export async function joinDraft(draft_id: string): Promise<Draft> {
+  await axios.post(`/api/drafts/${draft_id}/join`);
+  // Fetch and return the updated draft after joining
+  const response = await axios.get(`/api/drafts/${draft_id}`);
+  return response.data;
+}
+
+// Place a bid on the current auction
+export async function placeBid(draft_id: string, auction_id: string, value: number): Promise<{accepted: boolean, error?: string}> {
+  const response = await axios.post(`/api/drafts/${draft_id}/bid`, {
+    auction_id,
+    value
+  });
+  return response.data;
 }

@@ -1,12 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { Auction } from '../../../types';
+import { placeBid } from '../../../shared/api/draftData';
 import './AuctionInfoPanel.scss';
 
 interface AuctionInfoPanelProps {
   current_auction: Auction;
+  draft_id: string;
 }
 
-const AuctionInfoPanel: React.FC<AuctionInfoPanelProps> = ({ current_auction }) => {
+const AuctionInfoPanel: React.FC<AuctionInfoPanelProps> = ({ current_auction, draft_id }) => {
   const [secondsRemaining, setSecondsRemaining] = useState(0);
   const [initialSeconds, setInitialSeconds] = useState(0);
   const [customBidAmount, setCustomBidAmount] = useState('');
@@ -41,15 +43,33 @@ const AuctionInfoPanel: React.FC<AuctionInfoPanelProps> = ({ current_auction }) 
     ringColor = '#ff8800'; // dark orange
   }
 
-  const handleBid100 = () => {
-    console.log('Bid $100');
-    // TODO: Implement bidding logic
+  const handleBid100 = async () => {
+    const newBid = current_auction.highest_bid + 100;
+    try {
+      const response = await placeBid(draft_id, current_auction.auction_id, newBid);
+      if (!response.accepted) {
+        console.error('Bid rejected:', response.error);
+      }
+    } catch (error) {
+      console.error('Error placing bid:', error);
+    }
   };
 
-  const handleCustomBid = () => {
-    if (customBidAmount) {
-      console.log(`Custom bid: $${customBidAmount}`);
-      // TODO: Implement custom bid logic
+  const handleCustomBid = async () => {
+    const bidValue = parseInt(customBidAmount);
+    if (!bidValue || bidValue <= 0) {
+      console.error('Invalid bid amount');
+      return;
+    }
+    try {
+      const response = await placeBid(draft_id, current_auction.auction_id, bidValue);
+      if (response.accepted) {
+        setCustomBidAmount('');
+      } else {
+        console.error('Bid rejected:', response.error);
+      }
+    } catch (error) {
+      console.error('Error placing bid:', error);
     }
   };
 
