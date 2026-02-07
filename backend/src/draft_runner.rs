@@ -2,7 +2,7 @@ use dashmap::DashMap;
 use futures_util::StreamExt;
 use std::{collections::HashMap, sync::Arc};
 use tokio::{
-    sync::{RwLock, mpsc, oneshot},
+    sync::{RwLock, mpsc},
     task,
     time::Instant,
 };
@@ -10,27 +10,15 @@ use tokio_util::time::{
     DelayQueue,
     delay_queue::{self, Key},
 };
-use uuid::Uuid;
 
 use crate::draft::Draft;
 
-struct BidStruct {
-    auction_id: u32,
-    user_id: Uuid,
-    amount: u32,
-    result_tx: oneshot::Sender<BidResult>,
-}
 enum Command {
     Start {
         draft_id: String,
         expires_at: Instant,
     },
     Stop(String),
-}
-
-enum BidResult {
-    ACCEPTED,
-    DENIED(String),
 }
 
 #[derive(Clone, Debug)]

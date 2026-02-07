@@ -9,20 +9,21 @@ use axum::{
     body::Body,
     debug_handler,
     extract::{
-        Path, Query, State, WebSocketUpgrade, ws::{Message, WebSocket}
+        Path, Query, State, WebSocketUpgrade,
+        ws::{Message, WebSocket},
     },
     http::StatusCode,
     response::{Redirect, Response},
 };
 use axum_login::AuthSession;
 use oauth2::CsrfToken;
-use tower_sessions::Session;
-use std::{sync::Arc, time::Duration};
 use serde::Deserialize;
+use std::{sync::Arc, time::Duration};
 use tokio::{
     sync::{RwLock, broadcast},
     time::Instant,
 };
+use tower_sessions::Session;
 
 #[debug_handler]
 pub async fn create_draft(
@@ -30,10 +31,7 @@ pub async fn create_draft(
     auth_session: AuthSession<AuthBackend>,
     Json(draft_settings): Json<DraftSettings>,
 ) -> Result<String, (StatusCode, String)> {
-    let host = auth_session
-        .user
-        .expect("user should exist")
-        .get_user_id_string();
+    let host = auth_session.user.clone().expect("user should exist");
     for _ in 0..3 {
         if let Ok(draft) = Draft::build(
             host.clone(),
@@ -106,10 +104,8 @@ pub async fn bid(
     auth_session: AuthSession<AuthBackend>,
     Json(bid_request): Json<ClientBidRequest>,
 ) -> Result<Json<ClientBidResponse>, (StatusCode, String)> {
-    let user_id = auth_session
-        .user
-        .expect("user should exist")
-        .get_user_id_string();
+    let user = auth_session.user.expect("user should exist");
+    let user_id = user.get_user_id_string();
     let draft_lock = state.drafts.get(&draft_id).ok_or((
         StatusCode::FORBIDDEN,
         "user does not have access to requested draft".to_string(),
@@ -118,13 +114,16 @@ pub async fn bid(
     {
         let mut draft = draft_lock.write().await;
 
-        validate_bid_request(draft.current_auction, &draft, &bid_request).map_err(|e| {
-            eprintln!("Bid not valid: {}", e);
-            (
-                StatusCode::INTERNAL_SERVER_ERROR,
-                "Couldn't process bid".to_string(),
-            )
-        })?;
+        let (user_field, auction_id, bid_value) =
+            validate_bid_request(draft.current_auction, &draft, &bid_request, &user).map_err(
+                |e| {
+                    eprintln!("Bid not valid: {}", e);
+                    (
+                        StatusCode::INTERNAL_SERVER_ERROR,
+                        "Couldn't process bid".to_string(),
+                    )
+                },
+            )?;
 
         let mut tx = state.db_pool.begin().await.map_err(|e| {
             eprintln!("Error starting db transaction: {}", e);
@@ -135,46 +134,49 @@ pub async fn bid(
         })?;
 
         // update auction in db
-        let _ = sqlx::query!(
-            r#"
+        let query_string = &format!(
+            "
             UPDATE auctions
-            SET (winning_bid, drafted_by) = ($1, $2)
-            WHERE auction_id = $3
-            "#,
-            bid_request.value as i32,
-            user_id,
-            bid_request
-                .auction_id
-                .parse::<i64>()
-                .expect("auction id should be i64"),
-        )
-        .execute(&mut *tx)
-        .await
-        .map_err(|e| {
-            eprintln!("failed writing to db: {}", e);
-            (
-                StatusCode::INTERNAL_SERVER_ERROR,
-                "failed to write to db".to_string(),
-            )
-        })?;
+            SET (winning_bid, {}) = ({}, {})
+            WHERE auction_id = {}
+            ",
+            user_field, bid_value, user_id, auction_id,
+        );
+
+        let _ = sqlx::query(query_string)
+            .execute(&mut *tx)
+            .await
+            .map_err(|e| {
+                eprintln!(
+                    "failed writing to db: {}\nquery_string: {}",
+                    e, query_string
+                );
+                (
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    "failed to write to db".to_string(),
+                )
+            })?;
+
+        let query_string = &format!(
+            "
+            UPDATE bids
+            SET (auction_id, {}, value, accepted, winning) = ({}, {}, {}, true, true)
+            WHERE auction_id = ($3)
+            ",
+            user_field, auction_id, user_id, bid_value
+        );
 
         // update bid in db, maybe later
-        // let _ = sqlx::query!(
-        //     r#"
-        //     UPDATE bids
-        //     SET (auction_id, value) = ($1, $2)
-        //     WHERE auction_id = ($3)
-        //     "#,
-        //     bid_request.value as i32,
-        //     uuid::Uuid::new_v4(),
-        //     bid_request.auction_id as i32,
-        // )
-        // .execute(&mut *tx)
-        // .await
-        // .map_err(|e| {
-        //     eprintln!("failed writing to db: {}", e);
-        //     return (StatusCode::INTERNAL_SERVER_ERROR, "failed to write to db".to_string());
-        // })?;
+        let _ = sqlx::query(query_string)
+            .execute(&mut *tx)
+            .await
+            .map_err(|e| {
+                eprintln!("failed writing to db: {}", e);
+                return (
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    "failed to write to db".to_string(),
+                );
+            })?;
 
         tx.commit().await.map_err(|e| {
             eprintln!("failed commiting transaction to db: {}", e);
@@ -184,11 +186,11 @@ pub async fn bid(
             )
         })?;
 
-        let (pokedex_id, form, current_bid, high_bidder, expires_at) = {
+        let (pokedex_id, form, winning_bid, winning_bidder, expires_at) = {
             let current_auction = draft.current_auction as usize;
             let auction = &mut draft.auctions[current_auction];
             //update auction in memory
-            auction.highest_bidder = Some("Test".to_string());
+            auction.highest_bidder = Some(user.clone());
             auction.highest_bid = bid_request.value;
             auction.expires_at = Some(std::cmp::max(
                 auction.expires_at.unwrap(),
@@ -198,7 +200,7 @@ pub async fn bid(
                 auction.pokemon.pokedex_id,
                 auction.pokemon.form.clone(),
                 auction.highest_bid,
-                auction.highest_bidder.clone(),
+                user,
                 crate::get_expiry_time_from_instant(auction.expires_at.unwrap()),
             )
         };
@@ -206,8 +208,8 @@ pub async fn bid(
         let _ = draft.tx.send(ServerMessage::AuctionUpdate {
             pokedex_id,
             form,
-            current_bid,
-            high_bidder,
+            winning_bid,
+            winning_bidder: Some(winning_bidder.get_user_id_string()),
             expires_at,
         });
     }
@@ -222,7 +224,12 @@ fn validate_bid_request(
     auction_num: u32,
     draft: &Draft,
     bid_request: &ClientBidRequest,
-) -> Result<(), String> {
+    user: &User,
+) -> Result<(String, i64, i32), String> {
+    if draft.draft_state != DraftState::BIDDING {
+        return Err("draft is not accepting bids".to_string());
+    }
+
     let auction = &draft.auctions[auction_num as usize];
     if auction.auction_id != bid_request.auction_id {
         return Err(format!("auction is not active"));
@@ -230,7 +237,7 @@ fn validate_bid_request(
     if auction.highest_bid >= bid_request.value {
         return Err(format!("bid is not higher than current highest bid"));
     }
-    if auction.highest_bidder == Some(bid_request.user_id.clone()) {
+    if auction.highest_bidder == Some(user.clone()) {
         return Err(format!("user is already the highest bidder"));
     }
     // check user has team in draft
@@ -238,7 +245,19 @@ fn validate_bid_request(
         return Err(format!("user is not assigned to a team"));
     }
 
-    Ok(())
+    let user_field = match user {
+        User::DiscordUser(_) => "winning_user_id",
+        User::GuestUser(_) => "winning_guest_id",
+    };
+
+    let auction_id = bid_request
+        .auction_id
+        .parse::<i64>()
+        .expect(format!("auction id should be i64, is {}", bid_request.auction_id).as_str());
+
+    let bid_value = bid_request.value as i32;
+
+    Ok((user_field.to_string(), auction_id, bid_value))
 }
 
 pub async fn start_draft(
@@ -256,7 +275,7 @@ pub async fn start_draft(
 
     {
         let mut draft = draft_lock.write().await;
-        if draft.host != user.get_user_id_string() {
+        if draft.host != user {
             return Err((StatusCode::FORBIDDEN, "user is not host".to_string()));
         }
 
@@ -305,16 +324,16 @@ pub async fn discord_callback(
     Query(AuthResponse {
         code,
         state: new_state,
-    }): Query<AuthResponse>
+    }): Query<AuthResponse>,
 ) -> Result<Redirect, String> {
     let Ok(Some(old_state)) = session.get(CSRF_STATE_KEY).await else {
         return Err("missing csrf state".to_string());
     };
 
-    let creds = Credentials::Discord(DiscordCreds{
+    let creds = Credentials::Discord(DiscordCreds {
         code,
         old_state,
-        new_state
+        new_state,
     });
 
     let Ok(Some(user)) = auth_session.authenticate(creds).await else {

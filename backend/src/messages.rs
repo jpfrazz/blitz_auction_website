@@ -14,8 +14,8 @@ pub enum ServerMessage {
     AuctionUpdate {
         pokedex_id: u32,
         form: Option<String>,
-        current_bid: u32,
-        high_bidder: Option<String>,
+        winning_bid: u32,
+        winning_bidder: Option<String>,
         expires_at: DateTime<Utc>,
     },
     AuctionResult {
