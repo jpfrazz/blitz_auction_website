@@ -27,19 +27,23 @@ pub async fn create_draft(
 ) -> Result<String, (StatusCode, String)> {
     let host = auth_session.user.expect("user should exist").id().to_string();
     for _ in 0..3 {
-        if let Ok(draft) = Draft::build(
+        match Draft::build(
             host.clone(),
             draft_settings.clone(),
             state.db_pool.clone(),
             state.draft_runner.clone(),
         )
-        .await
-        {
-            let draft_id = draft.draft_id.clone();
-            state
-                .drafts
-                .insert(draft_id.clone(), Arc::new(RwLock::new(draft)));
-            return Ok(draft_id);
+        .await {
+            Ok(draft) => {
+                let draft_id = draft.draft_id.clone();
+                state
+                    .drafts
+                    .insert(draft_id.clone(), Arc::new(RwLock::new(draft)));
+                return Ok(draft_id);
+            },
+            Err(e) => {
+                eprintln!("failed to create draft: {}", e);
+            }
         }
     }
 
