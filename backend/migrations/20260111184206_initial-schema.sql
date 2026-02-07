@@ -87,7 +87,7 @@ CREATE TABLE drafts (
     updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
     created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 
-    CONSTRAINT at_least_one_acct_id CHECK (
+    CONSTRAINT at_least_one_host_id CHECK (
         host_user_id IS NOT NULL OR host_guest_id IS NOT NULL
     )
 );

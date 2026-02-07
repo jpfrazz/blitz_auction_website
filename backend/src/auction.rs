@@ -77,7 +77,10 @@ impl Auction {
     }
 
     pub async fn resolve(&self, tx: &mut Transaction<'_, Postgres>) -> Result<(), sqlx::Error> {
-        let winning_user = self.highest_bidder.as_ref().expect("someone should win auctions");
+        let winning_user = self
+            .highest_bidder
+            .as_ref()
+            .expect("someone should win auctions");
         let user_field = match winning_user {
             User::DiscordUser(_) => "winning_user_id",
             User::GuestUser(_) => "winning_guest_id",

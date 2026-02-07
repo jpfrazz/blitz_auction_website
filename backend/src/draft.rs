@@ -7,26 +7,26 @@ use tokio::{
     sync::broadcast,
     time::{Duration, Instant},
 };
-use uuid::Uuid;
 
 use crate::{
     auction::Auction,
     draft_runner::DraftRunner,
     messages::ServerMessage,
     pokemon::{self, Pokemon},
+    users::User,
 };
 
 #[derive(Clone, Debug)]
 pub struct Draft {
     pub draft_id: String,
-    pub host: String,
+    pub host: User,
     pub draft_state: DraftState,
     settings: DraftSettings,
     pub current_auction: u32,
     pub pokemon: Vec<&'static Pokemon>,
     pub auctions: Vec<Auction>,
     pub teams: Vec<Team>,
-    pub spectators: Vec<Uuid>,
+    pub spectators: Vec<User>,
     pub tx: broadcast::Sender<ServerMessage>,
     pub db_pool: PgPool,
     draft_runner: Arc<DraftRunner>,
@@ -56,7 +56,7 @@ impl From<Draft> for DraftResponse {
         };
         DraftResponse {
             draft_id: draft.draft_id,
-            host: draft.host,
+            host: draft.host.get_user_id_string(),
             teams: draft.teams,
             draft_state: draft.draft_state,
             current_auction,
@@ -111,7 +111,7 @@ pub struct Team {
 impl Draft {
     fn new(
         draft_id: String,
-        host: String,
+        host: User,
         settings: DraftSettings,
         pokemon: Vec<&'static Pokemon>,
         pool: PgPool,
@@ -135,11 +135,16 @@ impl Draft {
     }
 
     pub async fn build(
-        host: String,
+        host: User,
         settings: DraftSettings,
         pool: PgPool,
         draft_runner: Arc<DraftRunner>,
     ) -> Result<Draft, String> {
+        let host_field = match host {
+            User::DiscordUser(_) => "host_user_id",
+            User::GuestUser(_) => "host_guest_id",
+        };
+        let host_id = host.get_user_id_string();
         for _ in 0..3 {
             let mut tx = pool.begin().await.map_err(|e| {
                 let error_string = format!("failed to begin transaction: {}", e);
@@ -161,19 +166,21 @@ impl Draft {
             // always randomize order
             pokemon.shuffle(&mut rand::rng());
 
-            let Ok(_) = sqlx::query!(
-                r#"
-                INSERT INTO drafts (draft_id, num_teams, starting_money, patch_version)
-                VALUES ($1, $2, $3, $4)
-                "#,
+            let query_string = format!(
+                "
+                INSERT INTO drafts (draft_id, num_teams, starting_money, patch_version, {})
+                VALUES ({}, {}, {}, {}, {})
+                ",
+                host_field,
                 draft_id,
                 settings.num_teams as i32,
                 settings.starting_money as i32,
                 settings.patch_version,
-            )
-            .execute(&mut *tx)
-            .await
-            else {
+                host_id,
+            );
+
+            let Ok(_) = sqlx::query(&query_string).execute(&mut *tx).await else {
+                tx.rollback().await.expect("failed to abort transaction");
                 continue;
             };
 
