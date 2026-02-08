@@ -2,7 +2,7 @@ use crate::{
     draft::{Draft, DraftResponse, DraftSettings, DraftState},
     messages::{ClientBidRequest, ClientBidResponse, ClientJoinResponse, ServerMessage},
     server::ServerState,
-    users::{AuthBackend, CSRF_STATE_KEY, Credentials, DiscordCreds, User},
+    users::{AuthBackend, CSRF_STATE_KEY, Credentials, DiscordCreds, User, UserId},
 };
 use axum::{
     Json,
@@ -40,8 +40,9 @@ pub async fn create_draft(
             state.draft_runner.clone(),
         )
         .await {
-            Ok(draft) => {
+            Ok(mut draft) => {
                 let draft_id = draft.draft_id.clone();
+                draft.join_draft(host.get_user_id_string()).await.expect("host should be able to join draft");
                 state
                     .drafts
                     .insert(draft_id.clone(), Arc::new(RwLock::new(draft)));
@@ -141,7 +142,7 @@ pub async fn bid(
         let query_string = &format!(
             "
             UPDATE auctions
-            SET (winning_bid, {}) = ({}, {})
+            SET (winning_bid, {}) = ({}, '{}')
             WHERE auction_id = {}
             ",
             user_field, bid_value, user_id, auction_id,
@@ -161,13 +162,18 @@ pub async fn bid(
                 )
             })?;
 
+        let bid_user_field = match user {
+            User::DiscordUser(_) => "user_id",
+            User::GuestUser(_) => "guest_id",
+        };
+
         let query_string = &format!(
             "
             UPDATE bids
-            SET (auction_id, {}, value, accepted, winning) = ({}, {}, {}, true, true)
-            WHERE auction_id = ($3)
+            SET (auction_id, {}, value, accepted, winning) = ({}, '{}', {}, true, true)
+            WHERE auction_id = {}
             ",
-            user_field, auction_id, user_id, bid_value
+            bid_user_field, auction_id, user_id, bid_value, auction_id
         );
 
         // update bid in db, maybe later

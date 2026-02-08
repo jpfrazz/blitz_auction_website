@@ -99,8 +99,8 @@ impl DraftRunner {
             return;
         }
 
-        let Ok(_) = draft.resolve_auction().await else {
-            eprintln!("failed to resolve auction for {}", &draft_id);
+        if let Err(e) = draft.resolve_auction().await {
+            eprintln!("failed to resolve auction for {}: {}", &draft_id, e);
             return;
         };
     }

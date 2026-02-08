@@ -232,18 +232,23 @@ impl Draft {
         tx.commit().await.map_err(|e| e.to_string())?;
 
         self.current_auction += 1;
-        self.tx
-            .send(ServerMessage::AuctionResult {
-                pokedex_id: completed_auction.pokemon.pokedex_id,
-                form: completed_auction.pokemon.form.clone(),
-                winning_bid: completed_auction.highest_bid,
-                winner: completed_auction
-                    .highest_bidder
-                    .as_ref()
-                    .expect("No one won this auction")
-                    .get_user_id_string(),
-            })
-            .map_err(|e| e.to_string())?;
+
+        // update websocket
+        // self.tx
+        //     .send(ServerMessage::AuctionResult {
+        //         pokedex_id: completed_auction.pokemon.pokedex_id,
+        //         form: completed_auction.pokemon.form.clone(),
+        //         winning_bid: completed_auction.highest_bid,
+        //         winner: completed_auction
+        //             .highest_bidder
+        //             .as_ref()
+        //             .expect("No one won this auction")
+        //             .get_user_id_string(),
+        //     })
+        //     .map_err(|e| {
+        //         eprintln!("failed sending result to channel");
+        //         e.to_string()
+        //     })?;
 
         if self.current_auction < self.settings.num_auctions {
             let expires_at = Instant::now() + self.settings.auction_length;

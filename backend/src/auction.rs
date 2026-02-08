@@ -90,11 +90,11 @@ impl Auction {
         let query_string = format!(
             "
                 UPDATE auctions
-                SET (status, winning_bid, {}) = ({}, {}, {})
+                SET (status, winning_bid, {}) = ('{}', {}, '{}')
                 WHERE auction_id = {}
             ",
             user_field,
-            AuctionState::CLOSED,
+            AuctionState::CLOSED.to_string(),
             winning_bid,
             user_id,
             self.auction_id,
@@ -102,11 +102,16 @@ impl Auction {
 
         let _res = sqlx::query(&query_string).execute(&mut **tx).await?;
 
+        let user_field = match winning_user {
+            User::DiscordUser(_) => "user_id",
+            User::GuestUser(_) => "guest_id",
+        };
+
         let query_string = format!(
             "
                 UPDATE teams
                 SET (money_remaining, pokemon_drafted) = (money_remaining - {}, pokemon_drafted + 1)
-                WHERE {} = {} AND draft_id = {}
+                WHERE {} = '{}' AND draft_id = '{}'
             ",
             winning_bid, user_field, user_id, self.draft_id,
         );
