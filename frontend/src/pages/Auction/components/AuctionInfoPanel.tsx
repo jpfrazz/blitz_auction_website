@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Auction } from '../../../types';
 import { placeBid } from '../../../shared/api/draftData';
+import { getUserLabel } from '../../../shared/utils/user';
 import './AuctionInfoPanel.scss';
 
 interface AuctionInfoPanelProps {
@@ -99,7 +100,9 @@ const AuctionInfoPanel: React.FC<AuctionInfoPanelProps> = ({ current_auction, dr
         />
         <div className="bid-info">
           <p className="current-bid">${current_auction.highest_bid}</p>
-          <p className="bidder-label">High Bidder: {current_auction.highest_bidder || 'No bids yet'}</p>
+          <p className="bidder-label">
+            High Bidder: {getUserLabel(current_auction.highest_bidder) || 'No bids yet'}
+          </p>
         </div>
       </div>
 

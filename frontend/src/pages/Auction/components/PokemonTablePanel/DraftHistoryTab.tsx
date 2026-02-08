@@ -1,5 +1,6 @@
 import React from 'react';
 import { Auction } from '../../../../types';
+import { getUserLabel } from '../../../../shared/utils/user';
 import './DraftHistoryTab.scss';
 
 interface DraftHistoryTabProps {
@@ -20,7 +21,7 @@ const DraftHistoryTab: React.FC<DraftHistoryTabProps> = ({ auctions }) => {
             />
             <strong>{auction.pokemon.name}</strong>: 
             {auction.highest_bid > 0
-              ? ` ${auction.highest_bidder} won for $${auction.highest_bid}`
+              ? ` ${getUserLabel(auction.highest_bidder)} won for $${auction.highest_bid}`
               : ' No bids yet'}
           </li>
         ))}
