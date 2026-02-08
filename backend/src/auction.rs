@@ -19,7 +19,7 @@ pub struct Auction {
     pub expires_at: Option<Instant>,
 }
 
-#[derive(Clone, Debug, Display, Serialize, Deserialize)]
+#[derive(Clone, Debug, Display, Serialize, Deserialize, PartialEq, Eq)]
 pub enum AuctionState {
     PENDING,
     OPEN,
@@ -76,7 +76,7 @@ impl Auction {
         ))
     }
 
-    pub async fn resolve(&self, tx: &mut Transaction<'_, Postgres>) -> Result<(), sqlx::Error> {
+    pub async fn resolve(&mut self, tx: &mut Transaction<'_, Postgres>) -> Result<(), sqlx::Error> {
         let winning_user = self
             .highest_bidder
             .as_ref()
@@ -117,6 +117,8 @@ impl Auction {
         );
 
         let _res = sqlx::query(&query_string).execute(&mut **tx).await?;
+
+        self.status = AuctionState::CLOSED;
 
         Ok(())
     }

@@ -1,17 +1,18 @@
+use axum::http::StatusCode;
 use petname::petname;
 use rand::seq::SliceRandom;
 use serde::{Deserialize, Serialize};
 use sqlx::PgPool;
-use std::sync::Arc;
+use std::{collections::HashMap, sync::Arc};
 use tokio::{
     sync::broadcast,
     time::{Duration, Instant},
 };
 
 use crate::{
-    auction::Auction,
-    draft_runner::DraftRunner,
-    messages::ServerMessage,
+    auction::{Auction, AuctionState},
+    draft_runner::{self, DraftRunner},
+    messages::{ClientBidRequest, ClientBidResponse, ServerMessage},
     pokemon::{self, Pokemon},
     users::User,
 };
@@ -21,11 +22,11 @@ pub struct Draft {
     pub draft_id: String,
     pub host: User,
     pub draft_state: DraftState,
-    settings: DraftSettings,
+    pub settings: DraftSettings,
     pub current_auction: u32,
     pub pokemon: Vec<&'static Pokemon>,
     pub auctions: Vec<Auction>,
-    pub teams: Vec<Team>,
+    pub teams: HashMap<String, Team>,
     pub spectators: Vec<User>,
     pub tx: broadcast::Sender<ServerMessage>,
     pub db_pool: PgPool,
@@ -57,7 +58,7 @@ impl From<Draft> for DraftResponse {
         DraftResponse {
             draft_id: draft.draft_id,
             host: draft.host.get_user_id_string(),
-            teams: draft.teams,
+            teams: draft.teams.into_values().collect(),
             draft_state: draft.draft_state,
             current_auction,
             completed_auctions: draft
@@ -98,14 +99,14 @@ pub struct DraftSettings {
     excluded_pokemon: Vec<ExcludedPokemon>,
     patch_version: String,
     num_auctions: u32,
-    auction_length: Duration,
+    pub auction_length: Duration,
 }
 
 #[derive(Clone, Debug, Serialize, PartialEq)]
 pub struct Team {
     pub user_id: String,
     budget_remaining: u32,
-    auctions_won: Vec<String>,
+    auctions_won: Vec<i64>,
 }
 
 impl Draft {
@@ -122,7 +123,7 @@ impl Draft {
             draft_id: draft_id,
             host: host,
             db_pool: pool,
-            teams: Vec::with_capacity(settings.num_teams as usize),
+            teams: HashMap::new(),
             spectators: vec![],
             draft_state: DraftState::PENDING,
             pokemon,
@@ -209,7 +210,7 @@ impl Draft {
     }
 
     pub async fn resolve_auction(&mut self) -> Result<(), String> {
-        let completed_auction = &self.auctions[self.current_auction as usize];
+        let completed_auction = &mut self.auctions[self.current_auction as usize];
 
         let mut tx = self.db_pool.begin().await.map_err(|e| e.to_string())?;
 
@@ -229,7 +230,10 @@ impl Draft {
             .resolve(&mut tx)
             .await
             .map_err(|e| e.to_string())?;
+
         tx.commit().await.map_err(|e| e.to_string())?;
+
+        
 
         self.current_auction += 1;
 
@@ -267,27 +271,189 @@ impl Draft {
             return Err("Draft is already full".to_string());
         }
 
-        if self.teams.iter().map(|e| &e.user_id).any(|e| *e == user_id) {
+        if self.teams.contains_key(&user_id) {
             return Err("User is already in draft".to_string());
         }
 
         let team = Team {
-            user_id: user_id,
+            user_id: user_id.clone(),
             budget_remaining: self.settings.starting_money,
             auctions_won: vec![],
         };
 
-        self.teams.push(team);
+        self.teams.insert(user_id, team);
         Ok(())
     }
 
+    pub async fn bid(&mut self, bid_request: &ClientBidRequest, user: &User) -> Result<ClientBidResponse, (StatusCode, String)> {
+        let (user_field, auction_id, bid_value) = match
+            self.validate_bid_request(bid_request, user) {
+                Ok(res) => res,
+                Err(e) => {
+                    eprintln!("Bid not valid: {}", e);
+                    return Ok(ClientBidResponse{
+                        accepted: false,
+                        error: Some(e)
+                    });
+                },
+            };
+        let user_id = user.get_user_id_string();
+
+        let mut tx = self.db_pool.begin().await.map_err(|e| {
+            eprintln!("Error starting db transaction: {}", e);
+            (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                "Couldn't process bid".to_string(),
+            )
+        })?;
+
+        // update auction in db
+        let query_string = &format!(
+            "
+            UPDATE auctions
+            SET (winning_bid, {}, status) = ({}, '{}', '{}')
+            WHERE auction_id = {}
+            ",
+            user_field, bid_value, user_id, AuctionState::OPEN.to_string(), auction_id
+            );
+
+        let _ = sqlx::query(query_string)
+            .execute(&mut *tx)
+            .await
+            .map_err(|e| {
+                eprintln!(
+                    "failed writing to db: {}\nquery_string: {}",
+                    e, query_string
+                );
+                (
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    "failed to write to db".to_string(),
+                )
+            })?;
+
+        let user_field = match user {
+            User::DiscordUser(_) => "user_id",
+            User::GuestUser(_) => "guest_id",
+        };
+
+        // insert bid in db
+        let query_string = &format!(
+            "
+            INSERT INTO bids (auction_id, {}, value, accepted, winning)
+            VALUES ({}, '{}', {}, true, true)
+            ",
+            user_field, auction_id, user_id, bid_value
+        );
+
+        let _ = sqlx::query(query_string)
+            .execute(&mut *tx)
+            .await
+            .map_err(|e| {
+                eprintln!("failed writing to db: {}", e);
+                return (
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    "failed to write to db".to_string(),
+                );
+            })?;
+
+        tx.commit().await.map_err(|e| {
+            eprintln!("failed commiting transaction to db: {}", e);
+            (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                "failed to write to db".to_string(),
+            )
+        })?;
+
+        // register draft if this is the first bid
+        if self.auctions[self.current_auction as usize].status == AuctionState::PENDING {
+            let draft_runner = self.draft_runner.clone();
+            let expires_at = Instant::now() + self.settings.auction_length;
+            draft_runner.register_draft(self, expires_at).await.map_err(|e| {
+                eprintln!("failed to register draft: {}", e);
+                (
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    "failed to process bid".to_string(),
+                )
+            })?;
+        }
+
+        // update auction in memory
+        let (pokedex_id, form, winning_bid, winning_bidder, expires_at) = {
+            let current_auction = self.current_auction as usize;
+            let auction = &mut self.auctions[current_auction];
+            auction.highest_bidder = Some(user.clone());
+            auction.highest_bid = bid_request.value;
+            auction.expires_at = Some(std::cmp::max(
+                auction.expires_at.unwrap(),
+                Instant::now() + Duration::from_secs(10),
+            ));
+            if auction.status == AuctionState::PENDING {
+                auction.status = AuctionState::OPEN;
+            }
+            (
+                auction.pokemon.pokedex_id,
+                auction.pokemon.form.clone(),
+                auction.highest_bid,
+                user,
+                crate::get_expiry_time_from_instant(auction.expires_at.unwrap()),
+            )
+        };
+
+        // send update to ws
+        // let _ = draft.tx.send(ServerMessage::AuctionUpdate {
+        //     pokedex_id,
+        //     form,
+        //     winning_bid,
+        //     winning_bidder: Some(winning_bidder.get_user_id_string()),
+        //     expires_at,
+        // });
+
+        Ok(ClientBidResponse {
+            accepted: true,
+            error: None,
+        })
+    }
+
+    fn validate_bid_request(
+        &self,
+        bid_request: &ClientBidRequest,
+        user: &User,
+    ) -> Result<(String, i64, i32), String> {
+        if self.draft_state != DraftState::BIDDING {
+            return Err("draft is not accepting bids".to_string());
+        }
+
+        let auction = &self.auctions[self.current_auction as usize];
+        if auction.auction_id != bid_request.auction_id {
+            return Err(format!("auction is not active"));
+        }
+        if auction.highest_bid >= bid_request.value {
+            return Err(format!("bid is not higher than current highest bid"));
+        }
+        if auction.highest_bidder == Some(user.clone()) {
+            return Err(format!("user is already the highest bidder"));
+        }
+        // check user has team in draft
+        if !self.teams.contains_key(&user.get_user_id_string()) {
+            return Err(format!("user is not assigned to a team"));
+        }
+
+        let user_field = match user {
+            User::DiscordUser(_) => "winning_user_id",
+            User::GuestUser(_) => "winning_guest_id",
+        };
+
+        let auction_id = bid_request
+            .auction_id
+            .parse::<i64>()
+            .expect(format!("auction id should be i64, is {}", bid_request.auction_id).as_str());
+
+        let bid_value = bid_request.value as i32;
+
+        Ok((user_field.to_string(), auction_id, bid_value))
+    }
     pub async fn start_draft(&mut self) -> Result<(), String> {
         self.draft_state = DraftState::BIDDING;
-        let draft_runner = self.draft_runner.clone();
-        draft_runner
-            .register_draft(self, Instant::now() + self.settings.auction_length)
-            .await?;
-
         Ok(())
     }
 }
