@@ -1,6 +1,7 @@
 
 import React, { useEffect, useState, useMemo } from 'react';
 import { Pokemon, Auction } from '../../../../types';
+import { getUserLabel } from '../../../../shared/utils/user';
 import './AllPokemonTab.scss';
 import {
   useReactTable,
@@ -41,7 +42,7 @@ const AllPokemonTab: React.FC<AllPokemonTabProps> = ({ pokemon, auctions }) => {
           speed,
           baseStatTotal,
           cost: auction ? auction.highest_bid : '',
-          draftedBy: auction ? auction.highest_bidder : '',
+          draftedBy: auction ? getUserLabel(auction.highest_bidder) : '',
         };
       }),
     [pokemon, auctions]

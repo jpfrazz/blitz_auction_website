@@ -56,7 +56,7 @@ const AuctionPage: React.FC = () => {
       fetchDraftById(auctionId)
         .then(data => {
           setDraft(data);
-          console.log("Interval draft_state:", data?.draft_state, "current_auction:", data?.current_auction);
+          console.log("Interval draft_state:", data);
         })
         .catch(error => console.error('Error fetching draft in interval:', error));
     }, 1000);

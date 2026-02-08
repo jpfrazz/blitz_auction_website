@@ -19,6 +19,10 @@ export interface Pokemon {
   form?: string;
 }
 
+export type SerializedUser =
+  | { GuestUser: { user_id: string; user_name: string } }
+  | { DiscordUser: { user_id: string; user_name: string } };
+
 // Types for draft data
 export type DraftState = 'PENDING' | 'BIDDING' | 'PAUSED' | 'COMPLETED' | { BIDDING: number } | { PAUSED: number };
 
@@ -27,7 +31,7 @@ export interface Auction {
   pokemon: Pokemon;
   status: 'BIDDING' | 'COMPLETED' | 'PENDING';
   highest_bid: number;
-  highest_bidder: string;
+  highest_bidder: string | SerializedUser | null;
   expires_at?: string;
 }
 
