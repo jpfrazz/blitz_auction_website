@@ -11,7 +11,12 @@ use tokio::{
 };
 
 use crate::{
-    auction::{Auction, AuctionState}, draft_runner::{self, DraftRunner}, get_expiry_time_from_instant, messages::{ClientBidRequest, ClientBidResponse, ServerMessage}, pokemon::{self, Pokemon}, users::User
+    auction::{Auction, AuctionState},
+    draft_runner::{self, DraftRunner},
+    get_expiry_time_from_instant,
+    messages::{ClientBidRequest, ClientBidResponse, ServerMessage},
+    pokemon::{self, Pokemon},
+    users::User,
 };
 
 #[derive(Clone, Debug)]
@@ -55,14 +60,12 @@ impl From<Draft> for DraftResponse {
         };
 
         let current_auction_expires_at = match current_auction {
-            Some(ref auction) => {
-                match auction.expires_at {
-                    Some(expires_instant) => {
-                        let expires_at = get_expiry_time_from_instant(expires_instant);
-                        Some(expires_at)
-                    },
-                    None => None,
+            Some(ref auction) => match auction.expires_at {
+                Some(expires_instant) => {
+                    let expires_at = get_expiry_time_from_instant(expires_instant);
+                    Some(expires_at)
                 }
+                None => None,
             },
             None => None,
         };
@@ -115,11 +118,11 @@ pub struct DraftSettings {
     pub auction_length: Duration,
 }
 
-#[derive(Clone, Debug, Serialize, PartialEq)]
+#[derive(Clone, Debug, Serialize)]
 pub struct Team {
     pub user_id: String,
     budget_remaining: u32,
-    auctions_won: Vec<i64>,
+    auctions_won: Vec<&'static Pokemon>,
 }
 
 impl Draft {
@@ -194,7 +197,9 @@ impl Draft {
                 .bind(settings.starting_money as i32)
                 .bind(&settings.patch_version)
                 .bind(&host_id)
-                .execute(&mut *tx).await else {
+                .execute(&mut *tx)
+                .await
+            else {
                 tx.rollback().await.expect("failed to abort transaction");
                 continue;
             };
@@ -244,9 +249,37 @@ impl Draft {
             .await
             .map_err(|e| e.to_string())?;
 
+        // change state to closed if all auctions are finished
+        if self.current_auction + 1 >= self.settings.num_auctions {
+            let _ = sqlx::query!(
+                r#"
+                UPDATE drafts
+                SET status = 'COMPLETED'
+                WHERE draft_id = $1
+                "#,
+                self.draft_id,
+            )
+            .execute(&mut *tx)
+            .await
+            .map_err(|e| e.to_string())?;
+
+            self.draft_state = DraftState::COMPLETED;
+        }
+
         tx.commit().await.map_err(|e| e.to_string())?;
 
         self.current_auction += 1;
+        let teams: &mut Team = self.teams
+            .get_mut(
+                &completed_auction
+                    .highest_bidder
+                    .clone()
+                    .expect("auction should have winner")
+                    .get_user_id_string(),
+            )
+            .expect("auction winner should be on a team");
+
+        teams.auctions_won.push(completed_auction.pokemon);
 
         // update websocket
         // self.tx
@@ -264,6 +297,7 @@ impl Draft {
         //         eprintln!("failed sending result to channel");
         //         e.to_string()
         //     })?;
+
         Ok(())
     }
 
@@ -286,18 +320,22 @@ impl Draft {
         Ok(())
     }
 
-    pub async fn bid(&mut self, bid_request: &ClientBidRequest, user: &User) -> Result<ClientBidResponse, (StatusCode, String)> {
-        let (user_field, auction_id, bid_value) = match
-            self.validate_bid_request(bid_request, user) {
-                Ok(res) => res,
-                Err(e) => {
-                    eprintln!("Bid not valid: {}", e);
-                    return Ok(ClientBidResponse{
-                        accepted: false,
-                        error: Some(e)
-                    });
-                },
-            };
+    pub async fn bid(
+        &mut self,
+        bid_request: &ClientBidRequest,
+        user: &User,
+    ) -> Result<ClientBidResponse, (StatusCode, String)> {
+        let (user_field, auction_id, bid_value) = match self.validate_bid_request(bid_request, user)
+        {
+            Ok(res) => res,
+            Err(e) => {
+                eprintln!("Bid not valid: {}", e);
+                return Ok(ClientBidResponse {
+                    accepted: false,
+                    error: Some(e),
+                });
+            }
+        };
         let user_id = user.get_user_id_string();
 
         let mut tx = self.db_pool.begin().await.map_err(|e| {
@@ -315,8 +353,12 @@ impl Draft {
             SET (winning_bid, {}, status) = ({}, '{}', '{}')
             WHERE auction_id = {}
             ",
-            user_field, bid_value, user_id, AuctionState::OPEN.to_string(), auction_id
-            );
+            user_field,
+            bid_value,
+            user_id,
+            AuctionState::OPEN.to_string(),
+            auction_id
+        );
 
         let _ = sqlx::query(query_string)
             .execute(&mut *tx)
@@ -369,13 +411,16 @@ impl Draft {
         if self.auctions[self.current_auction as usize].status == AuctionState::PENDING {
             let draft_runner = self.draft_runner.clone();
             let expires_at = Instant::now() + self.settings.auction_length;
-            draft_runner.register_draft(self, expires_at).await.map_err(|e| {
-                eprintln!("failed to register draft: {}", e);
-                (
-                    StatusCode::INTERNAL_SERVER_ERROR,
-                    "failed to process bid".to_string(),
-                )
-            })?;
+            draft_runner
+                .register_draft(self, expires_at)
+                .await
+                .map_err(|e| {
+                    eprintln!("failed to register draft: {}", e);
+                    (
+                        StatusCode::INTERNAL_SERVER_ERROR,
+                        "failed to process bid".to_string(),
+                    )
+                })?;
         }
 
         // update auction in memory

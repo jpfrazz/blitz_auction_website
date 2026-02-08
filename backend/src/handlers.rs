@@ -39,15 +39,19 @@ pub async fn create_draft(
             state.db_pool.clone(),
             state.draft_runner.clone(),
         )
-        .await {
+        .await
+        {
             Ok(mut draft) => {
                 let draft_id = draft.draft_id.clone();
-                draft.join_draft(host.get_user_id_string()).await.expect("host should be able to join draft");
+                draft
+                    .join_draft(host.get_user_id_string())
+                    .await
+                    .expect("host should be able to join draft");
                 state
                     .drafts
                     .insert(draft_id.clone(), Arc::new(RwLock::new(draft)));
                 return Ok(draft_id);
-            },
+            }
             Err(e) => {
                 eprintln!("failed to create draft: {}", e);
             }
