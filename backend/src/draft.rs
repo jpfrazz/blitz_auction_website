@@ -1,4 +1,5 @@
 use axum::http::StatusCode;
+use chrono::Utc;
 use petname::petname;
 use rand::seq::SliceRandom;
 use serde::{Deserialize, Serialize};
@@ -10,11 +11,7 @@ use tokio::{
 };
 
 use crate::{
-    auction::{Auction, AuctionState},
-    draft_runner::{self, DraftRunner},
-    messages::{ClientBidRequest, ClientBidResponse, ServerMessage},
-    pokemon::{self, Pokemon},
-    users::User,
+    auction::{Auction, AuctionState}, draft_runner::{self, DraftRunner}, get_expiry_time_from_instant, messages::{ClientBidRequest, ClientBidResponse, ServerMessage}, pokemon::{self, Pokemon}, users::User
 };
 
 #[derive(Clone, Debug)]
@@ -41,6 +38,7 @@ pub struct DraftResponse {
     draft_state: DraftState,
     completed_auctions: Vec<Auction>,
     current_auction: Option<Auction>,
+    current_auction_expires_at: Option<chrono::DateTime<Utc>>,
     pokemon: Vec<&'static Pokemon>,
     patch_version: String,
 }
@@ -55,12 +53,27 @@ impl From<Draft> for DraftResponse {
                 _ => None,
             }
         };
+
+        let current_auction_expires_at = match current_auction {
+            Some(ref auction) => {
+                match auction.expires_at {
+                    Some(expires_instant) => {
+                        let expires_at = get_expiry_time_from_instant(expires_instant);
+                        Some(expires_at)
+                    },
+                    None => None,
+                }
+            },
+            None => None,
+        };
+
         DraftResponse {
             draft_id: draft.draft_id,
             host: draft.host.get_user_id_string(),
             teams: draft.teams.into_values().collect(),
             draft_state: draft.draft_state,
             current_auction,
+            current_auction_expires_at,
             completed_auctions: draft
                 .auctions
                 .into_iter()
@@ -233,8 +246,6 @@ impl Draft {
 
         tx.commit().await.map_err(|e| e.to_string())?;
 
-        
-
         self.current_auction += 1;
 
         // update websocket
@@ -253,16 +264,6 @@ impl Draft {
         //         eprintln!("failed sending result to channel");
         //         e.to_string()
         //     })?;
-
-        if self.current_auction < self.settings.num_auctions {
-            let expires_at = Instant::now() + self.settings.auction_length;
-            let draft_runner = self.draft_runner.clone();
-            draft_runner
-                .register_draft(self, expires_at)
-                .await
-                .map_err(|e| e.to_string())?;
-        }
-
         Ok(())
     }
 
