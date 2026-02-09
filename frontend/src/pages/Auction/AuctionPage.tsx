@@ -29,24 +29,23 @@ const AuctionPage: React.FC = () => {
 
     // Initial fetch
     setLoading(true);
-    fetchDraftById(auctionId)
-      .then(data => {
-        console.log("Fetched draft successfully", data);
-        setDraft(data);
-        // Join the draft
-        return joinDraft(auctionId);
+    fetchCurrentUser()
+      .then(user => {
+        console.log("Fetched current user:", user);
+        setCurrentUserId(user.user_id);
+        return fetchDraftById(auctionId).then(draftData => ({ user, draftData }));
       })
-      .then(updatedDraft => {
-        console.log("Joined draft successfully", updatedDraft);
-        setDraft(updatedDraft);
-      })
-      .then(() => {
-        fetchCurrentUser()
-          .then(user => {
-            console.log("Fetched current user:", user);
-            setCurrentUserId(user.user_id);
-          })
-          .catch(error => console.error('Error fetching current user:', error));
+      .then(({ user, draftData }) => {
+        console.log("Fetched draft successfully", draftData);
+        setDraft(draftData);
+
+        const alreadyOnTeam = draftData.teams.some(team => team.user_id === user.user_id);
+        if (draftData.draft_state === 'PENDING' && !alreadyOnTeam) {
+          return joinDraft(auctionId).then(updatedDraft => {
+            console.log("Joined draft successfully", updatedDraft);
+            setDraft(updatedDraft);
+          });
+        }
       })
       .catch(error => console.error('Error fetching draft on initial load:', error))
       .finally(() => setLoading(false));
@@ -87,7 +86,7 @@ const AuctionPage: React.FC = () => {
             {/* Top: Player boxes */}
             <div>
               <PlayerRow
-                players={draft.teams.map(t => t.user_id)}
+                teams={draft.teams}
                 numPlayers={draft.teams.length}
                 startingMoney={draft.teams[0]?.money || 20000}
               />
@@ -110,7 +109,17 @@ const AuctionPage: React.FC = () => {
               </div>
               {/* Right: Current auction info */}
               <div className="auction-right-panel">
-                {draft.current_auction && <AuctionInfoPanel current_auction={draft.current_auction} draft_id={draft.draft_id} />}
+                {draft.current_auction && (
+                  <AuctionInfoPanel
+                    current_auction={draft.current_auction}
+                    draft_id={draft.draft_id}
+                    currentAuctionExpiresAt={draft.current_auction_expires_at}
+                    canBid={Boolean(
+                      currentUserId &&
+                      draft.teams.some(team => team.user_id === currentUserId)
+                    )}
+                  />
+                )}
                 <AuctionChatBox />
               </div>
             </div>

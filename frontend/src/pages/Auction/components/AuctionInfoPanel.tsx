@@ -7,16 +7,23 @@ import './AuctionInfoPanel.scss';
 interface AuctionInfoPanelProps {
   current_auction: Auction;
   draft_id: string;
+  currentAuctionExpiresAt?: string;
+  canBid: boolean;
 }
 
-const AuctionInfoPanel: React.FC<AuctionInfoPanelProps> = ({ current_auction, draft_id }) => {
+const AuctionInfoPanel: React.FC<AuctionInfoPanelProps> = ({
+  current_auction,
+  draft_id,
+  currentAuctionExpiresAt,
+  canBid,
+}) => {
   const [secondsRemaining, setSecondsRemaining] = useState(0);
   const [initialSeconds, setInitialSeconds] = useState(0);
   const [customBidAmount, setCustomBidAmount] = useState('');
 
   useEffect(() => {
     const updateCountdown = () => {
-      const expiresAt = new Date(current_auction.expires_at ?? 0).getTime();
+      const expiresAt = new Date(currentAuctionExpiresAt ?? 0).getTime();
       const now = Date.now();
       const remaining = Math.max(0, Math.floor((expiresAt - now) / 1000));
       setSecondsRemaining(remaining);
@@ -30,7 +37,7 @@ const AuctionInfoPanel: React.FC<AuctionInfoPanelProps> = ({ current_auction, dr
     updateCountdown();
     const interval = setInterval(updateCountdown, 1000);
     return () => clearInterval(interval);
-  }, [current_auction.expires_at, initialSeconds]);
+  }, [currentAuctionExpiresAt, initialSeconds]);
 
   const circumference = 2 * Math.PI * 45;
   const progress = initialSeconds > 0 ? secondsRemaining / initialSeconds : 0;
@@ -74,6 +81,8 @@ const AuctionInfoPanel: React.FC<AuctionInfoPanelProps> = ({ current_auction, dr
     }
   };
 
+  const showBidNow = !currentAuctionExpiresAt;
+
   return (
     <div className="auction-info-box">
       <div className="auction-countdown-ring">
@@ -88,7 +97,9 @@ const AuctionInfoPanel: React.FC<AuctionInfoPanelProps> = ({ current_auction, dr
             style={{ strokeDashoffset, stroke: ringColor }}
           />
         </svg>
-        <div className="countdown-text" style={{ color: ringColor }}>{secondsRemaining}s</div>
+        <div className="countdown-text" style={{ color: ringColor }}>
+          {showBidNow ? 'Bid!' : `${secondsRemaining}s`}
+        </div>
       </div>
 
       <div className="auction-pokemon-section">
@@ -107,7 +118,7 @@ const AuctionInfoPanel: React.FC<AuctionInfoPanelProps> = ({ current_auction, dr
       </div>
 
       <div className="bid-buttons-section">
-        <button className="bid-button" onClick={handleBid100}>
+        <button className="bid-button" onClick={handleBid100} disabled={!canBid}>
           ▲ $100
         </button>
         <input
@@ -117,8 +128,9 @@ const AuctionInfoPanel: React.FC<AuctionInfoPanelProps> = ({ current_auction, dr
           value={customBidAmount}
           onChange={e => setCustomBidAmount(e.target.value)}
           autoComplete="off"
+          disabled={!canBid}
         />
-        <button className="bid-button" onClick={handleCustomBid}>
+        <button className="bid-button" onClick={handleCustomBid} disabled={!canBid}>
           Custom Bid
         </button>
       </div>

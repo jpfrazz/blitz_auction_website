@@ -22,14 +22,15 @@ const AllPokemonTab: React.FC<AllPokemonTabProps> = ({ pokemon, auctions }) => {
   // Add auction info to each row for table use
   const data = useMemo(() =>
     pokemon
-      .filter(p => p.form === 'base')
+      .filter(p => !p.form || p.form === 'base')
       .map(p => {
-        const auction = auctions.find(a => a.pokemon.pokedex_id === p.id);
+        const pokedexId = p.pokedex_id ?? p.id;
+        const auction = auctions.find(a => a.pokemon.pokedex_id === pokedexId);
         const hp = p.stats?.hp ?? 0;
         const attack = p.stats?.attack ?? 0;
         const defense = p.stats?.defense ?? 0;
-        const specialAttack = p.stats?.specialAttack ?? 0;
-        const specialDefense = p.stats?.specialDefense ?? 0;
+        const specialAttack = p.stats?.sp_attack ?? p.stats?.specialAttack ?? 0;
+        const specialDefense = p.stats?.sp_defense ?? p.stats?.specialDefense ?? 0;
         const speed = p.stats?.speed ?? 0;
         const baseStatTotal = hp + attack + defense + specialAttack + specialDefense + speed;
         return {
@@ -156,7 +157,7 @@ const AllPokemonTab: React.FC<AllPokemonTabProps> = ({ pokemon, auctions }) => {
                   return (
                     <td key={cell.id}>
                       <img
-                        src={`/MiniIcons/${name}.png`}
+                        src={`/MiniIcons/${name.toLowerCase()}.png`}
                         alt={name}
                           className="pokemon-table-img"
                           onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }}

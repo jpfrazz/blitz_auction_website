@@ -1,18 +1,22 @@
 import React from 'react';
+import { Team } from '../../../types';
 import './PlayerRow.scss';
 
 interface PlayerRowProps {
-  players: string[];
+  teams: Team[];
   numPlayers: number;
   startingMoney: number;
 }
 
-const PlayerRow: React.FC<PlayerRowProps> = ({ players, numPlayers, startingMoney }) => {
+const PlayerRow: React.FC<PlayerRowProps> = ({ teams, numPlayers, startingMoney }) => {
   return (
     <div className="auction-players-row">
       {Array.from({ length: numPlayers }).map((_, idx) => {
-        const playerName = players[idx];
-        const isFilled = Boolean(playerName);
+        const team = teams[idx];
+        const playerName = team?.user_id;
+        const isFilled = Boolean(team);
+        const teamMoney = team?.money ?? startingMoney;
+        const wonPokemon = team?.auctions_won ?? team?.pokemon ?? [];
         return (
           <div
             key={idx}
@@ -21,7 +25,18 @@ const PlayerRow: React.FC<PlayerRowProps> = ({ players, numPlayers, startingMone
             <div className="auction-player-name">
               {playerName || 'Open Slot'}
             </div>
-            <div className="auction-player-money">${startingMoney.toLocaleString()}</div>
+            <div className="auction-player-money">${teamMoney.toLocaleString()}</div>
+            <div className="auction-player-icons">
+              {wonPokemon.map(pokemon => (
+                <img
+                  key={`${pokemon.name}-${pokemon.form ?? 'base'}`}
+                  src={`/MiniIcons/${pokemon.name.toLowerCase()}.png`}
+                  alt={pokemon.name}
+                  className="auction-player-icon"
+                  loading="lazy"
+                />
+              ))}
+            </div>
           </div>
         );
       })}
