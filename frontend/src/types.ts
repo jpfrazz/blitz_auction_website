@@ -11,6 +11,8 @@ export interface Pokemon {
     hp: number;
     attack: number;
     defense: number;
+    sp_attack?: number;
+    sp_defense?: number;
     specialAttack: number;
     specialDefense: number;
     speed: number;
@@ -39,6 +41,7 @@ export interface Team {
   user_id: string;
   money: number;
   pokemon: Pokemon[];
+  auctions_won?: Pokemon[];
 }
 
 export interface Draft {
@@ -48,6 +51,7 @@ export interface Draft {
   draft_state: DraftState;
   completed_auctions: Auction[];
   current_auction: Auction | null;
+  current_auction_expires_at?: string;
   pokemon: Pokemon[];
   patch_version: string;
 }

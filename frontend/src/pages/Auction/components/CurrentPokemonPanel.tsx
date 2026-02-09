@@ -86,26 +86,42 @@ const CurrentPokemonPanel: React.FC<CurrentPokemonPanelProps> = ({ current_aucti
             </div>
             <div className="stat-row">
               <span className="stat-label">SpA</span>
-              <span className="stat-value">{pokemonData.stats.specialAttack}</span>
+              <span className="stat-value">
+                {pokemonData.stats.sp_attack ?? pokemonData.stats.specialAttack}
+              </span>
               <div
                 className="stat-bar"
-                style={{ width: getStatWidth(pokemonData.stats.specialAttack) }}
+                style={{
+                  width: getStatWidth(
+                    pokemonData.stats.sp_attack ?? pokemonData.stats.specialAttack
+                  ),
+                }}
               >
                 <div 
-                  className={`stat-bar-fill ${getStatColorClass(pokemonData.stats.specialAttack)}`}
+                  className={`stat-bar-fill ${getStatColorClass(
+                    pokemonData.stats.sp_attack ?? pokemonData.stats.specialAttack
+                  )}`}
                   style={{ width: '100%' }}
                 />
               </div>
             </div>
             <div className="stat-row">
               <span className="stat-label">SpD</span>
-              <span className="stat-value">{pokemonData.stats.specialDefense}</span>
+              <span className="stat-value">
+                {pokemonData.stats.sp_defense ?? pokemonData.stats.specialDefense}
+              </span>
               <div
                 className="stat-bar"
-                style={{ width: getStatWidth(pokemonData.stats.specialDefense) }}
+                style={{
+                  width: getStatWidth(
+                    pokemonData.stats.sp_defense ?? pokemonData.stats.specialDefense
+                  ),
+                }}
               >
                 <div 
-                  className={`stat-bar-fill ${getStatColorClass(pokemonData.stats.specialDefense)}`}
+                  className={`stat-bar-fill ${getStatColorClass(
+                    pokemonData.stats.sp_defense ?? pokemonData.stats.specialDefense
+                  )}`}
                   style={{ width: '100%' }}
                 />
               </div>
