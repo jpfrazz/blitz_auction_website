@@ -269,7 +269,7 @@ impl Draft {
         tx.commit().await.map_err(|e| e.to_string())?;
 
         self.current_auction += 1;
-        let teams: &mut Team = self.teams
+        let team: &mut Team = self.teams
             .get_mut(
                 &completed_auction
                     .highest_bidder
@@ -279,7 +279,8 @@ impl Draft {
             )
             .expect("auction winner should be on a team");
 
-        teams.auctions_won.push(completed_auction.pokemon);
+        team.auctions_won.push(completed_auction.pokemon);
+        team.budget_remaining -= completed_auction.highest_bid;
 
         // update websocket
         // self.tx
@@ -476,12 +477,19 @@ impl Draft {
         if auction.highest_bid >= bid_request.value {
             return Err(format!("bid is not higher than current highest bid"));
         }
+        if bid_request.value % 100 != 0 {
+            return Err(format!("bid must be multiple of 100"));
+        }
         if auction.highest_bidder == Some(user.clone()) {
             return Err(format!("user is already the highest bidder"));
         }
         // check user has team in draft
-        if !self.teams.contains_key(&user.get_user_id_string()) {
+        let Some(team) = self.teams.get(&user.get_user_id_string()) else {
             return Err(format!("user is not assigned to a team"));
+        };
+
+        if team.budget_remaining < bid_request.value {
+            return Err(format!("user is too brokie"));
         }
 
         let user_field = match user {
@@ -498,6 +506,7 @@ impl Draft {
 
         Ok((user_field.to_string(), auction_id, bid_value))
     }
+
     pub async fn start_draft(&mut self) -> Result<(), String> {
         self.draft_state = DraftState::BIDDING;
         Ok(())
