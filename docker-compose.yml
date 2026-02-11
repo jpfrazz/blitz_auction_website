@@ -55,6 +55,7 @@ services:
             - .env
         volumes:
             - db_data:/var/lib/postgresql
+            - ./backend/migrations:/docker-entrypoint-initdb.d
         networks:
             - auction_net
 
