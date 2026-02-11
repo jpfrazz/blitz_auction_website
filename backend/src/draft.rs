@@ -4,6 +4,7 @@ use petname::petname;
 use rand::seq::SliceRandom;
 use serde::{Deserialize, Serialize};
 use sqlx::PgPool;
+use strum::Display;
 use std::{collections::HashMap, sync::Arc};
 use tokio::{
     sync::broadcast,
@@ -88,7 +89,7 @@ impl From<Draft> for DraftResponse {
     }
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq, Display)]
 pub enum DraftState {
     PENDING,
     BIDDING,
@@ -508,6 +509,21 @@ impl Draft {
     }
 
     pub async fn start_draft(&mut self) -> Result<(), String> {
+        let _ = sqlx::query!(
+            r#"
+            UPDATE drafts
+            SET status = $1
+            WHERE draft_id = $2
+            "#,
+            DraftState::BIDDING.to_string(),
+            self.draft_id
+        )
+        .execute(&self.db_pool)
+        .await
+        .map_err(|e| {
+            e.to_string()
+        })?;
+
         self.draft_state = DraftState::BIDDING;
         Ok(())
     }
