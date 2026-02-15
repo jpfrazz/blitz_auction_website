@@ -3,7 +3,7 @@ services:
     # nginx + react
     frontend:
         image: ghcr.io/jpfrazz/blitz-auction-frontend:latest
-        build: 
+        build:
             context: ./frontend/
             dockerfile: ../dockerfiles/frontend-nginx.Dockerfile
         container_name: auction-frontend
@@ -20,7 +20,7 @@ services:
     # rust axum
     backend:
         image: ghcr.io/jpfrazz/blitz-auction-backend:latest
-        build: 
+        build:
             context: ./backend/
             dockerfile: ../dockerfiles/backend.Dockerfile
         container_name: auction-backend
@@ -58,6 +58,21 @@ services:
             - ./backend/migrations:/docker-entrypoint-initdb.d
         networks:
             - auction_net
+
+    discord_bot:
+        image: ghcr.io/jpfrazz/blitz-discord-bot:latest
+        build:
+            context: ./discord_bot/
+            dockerfile: ../dockerfiles/discord-bot.Dockerfile
+        container_name: discord-bot
+        restart: always
+        env_file:
+            - .env
+        depends_on:
+            - db
+        networks:
+            - auction_net
+
 
 networks:
     auction_net:
