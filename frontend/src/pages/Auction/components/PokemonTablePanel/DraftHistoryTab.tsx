@@ -8,11 +8,12 @@ interface DraftHistoryTabProps {
 }
 
 const DraftHistoryTab: React.FC<DraftHistoryTabProps> = ({ auctions }) => {
+  const sortedAuctions = [...auctions].reverse();
   return (
     <div className="auction-draft-history-list">
       <h3>Draft History</h3>
       <ul>
-        {auctions.map((auction, idx) => (
+        {sortedAuctions.map((auction, idx) => (
           <li key={idx}>
             <img
               src={`/baseforms/${auction.pokemon.name}.png`}
