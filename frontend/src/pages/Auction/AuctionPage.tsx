@@ -117,6 +117,7 @@ const AuctionPage: React.FC = () => {
                       currentUserId &&
                       draft.teams.some(team => team.user_id === currentUserId)
                     )}
+                    userBudgetRemaining={draft.teams.find(team => team.user_id === currentUserId)?.budget_remaining || 0}
                   />
                 )}
                 <AuctionChatBox />
