@@ -9,10 +9,12 @@ interface CurrentPokemonPanelProps {
 const CurrentPokemonPanel: React.FC<CurrentPokemonPanelProps> = ({ current_auction }) => {
   const pokemonData: Pokemon = current_auction.pokemon;
 
-  const typeClass = pokemonData.type1 
+  const typeClass1 = pokemonData.type1 
     ? `type-badge-${pokemonData.type1.toLowerCase()}` 
     : '';
-
+  const typeClass2 = pokemonData.type2 
+    ? `type-badge-${pokemonData.type2.toLowerCase()}` 
+    : '';
   const getStatColorClass = (value: number) => {
     if (value < 30) return 'stat-bar-red';
     if (value <= 49) return 'stat-bar-orange';
@@ -155,8 +157,13 @@ const CurrentPokemonPanel: React.FC<CurrentPokemonPanelProps> = ({ current_aucti
 
         <div className="pokemon-type-ability">
           {pokemonData.type1 && (
-            <span className={`type-badge ${typeClass}`}>
+            <span className={`type-badge ${typeClass1}`}>
               {pokemonData.type1.toUpperCase()}
+            </span>
+          )}
+          {pokemonData.type2 && (
+            <span className={`type-badge ${typeClass2}`}>
+              {pokemonData.type2.toUpperCase()}
             </span>
           )}
         </div>
