@@ -12,6 +12,11 @@
   width: 100%;
   flex: 0 1 75%;
   min-height: 0;
+  max-height: 100%;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 12px 8px 0;
+  box-sizing: border-box;
 }
 
 .auction-countdown-ring {
@@ -94,16 +99,21 @@
   width: 90%;
   align-items: center;
   padding-bottom: 16px;
+  flex-wrap: wrap;
 
   .bid-button {
     @extend button;
-    flex: 100%;
+    flex: 0 0 30%;
+    max-width: 30%;
     padding: 12px;
     font-size: 16px;
   }
 
   .custom-bid-input {
     @extend input;
+    flex: 0 0 30%;
+    max-width: 30%;
+    min-width: 0;
     padding: 14px;
     font-size: 16px;
 

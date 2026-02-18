@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import Header from '../../shared/components/Header';
-import Footer from '../../shared/components/Footer';
 import { fetchDraftById, startDraft, joinDraft, fetchCurrentUser } from '../../shared/api/draftData';
 import './AuctionPage.scss';
 import '../../shared/style/theme.scss';
@@ -88,7 +87,7 @@ const AuctionPage: React.FC = () => {
               <PlayerRow
                 teams={draft.teams}
                 numPlayers={draft.teams.length}
-                startingMoney={draft.teams[0]?.money || 20000}
+                budgetRemaining={draft.teams[0]?.budget_remaining || 20000}
               />
             </div>
             {/* Main content grid */}
@@ -128,7 +127,6 @@ const AuctionPage: React.FC = () => {
               
         {!loading && !draft && <div>No draft found.</div>}
       </main>
-      <Footer />
     </>
   );
 };
