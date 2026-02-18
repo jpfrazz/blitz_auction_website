@@ -6,9 +6,10 @@ interface PlayerRowProps {
   teams: Team[];
   numPlayers: number;
   budgetRemaining: number;
+  highestBidderId?: string | null;
 }
 
-const PlayerRow: React.FC<PlayerRowProps> = ({ teams, numPlayers, budgetRemaining }) => {
+const PlayerRow: React.FC<PlayerRowProps> = ({ teams, numPlayers, budgetRemaining, highestBidderId }) => {
   return (
     <div className="auction-players-row">
       {Array.from({ length: numPlayers }).map((_, idx) => {
@@ -20,7 +21,7 @@ const PlayerRow: React.FC<PlayerRowProps> = ({ teams, numPlayers, budgetRemainin
         return (
           <div
             key={idx}
-            className={`auction-player-box ${isFilled ? 'player-filled' : 'player-open'}`}
+            className={`auction-player-box ${isFilled ? 'player-filled' : 'player-open'} ${team?.user_id === highestBidderId ? 'highest-bidder' : ''}`}
           >
             <div className="auction-player-name">
               {playerName || 'Open Slot'}

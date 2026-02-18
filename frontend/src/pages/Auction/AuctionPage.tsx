@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import Header from '../../shared/components/Header';
 import { fetchDraftById, startDraft, joinDraft, fetchCurrentUser } from '../../shared/api/draftData';
+import { getUserId } from '../../shared/utils/user';
 import './AuctionPage.scss';
 import '../../shared/style/theme.scss';
 import PlayerRow from './components/PlayerRow';
@@ -88,6 +89,7 @@ const AuctionPage: React.FC = () => {
                 teams={draft.teams}
                 numPlayers={draft.teams.length}
                 budgetRemaining={draft.teams[0]?.budget_remaining || 20000}
+                highestBidderId={draft.current_auction ? getUserId(draft.current_auction.highest_bidder) : null}
               />
             </div>
             {/* Main content grid */}

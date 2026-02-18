@@ -53,11 +53,13 @@
 }
 
 .player-filled {
-    background: #a0521d; // orange
+    background: $eb-primary; // orange
 }
 
-.player-open {
-    background: #a62d45; // red
+
+
+.highest-bidder {
+    border: 3px solid $eb-primary-hover;
 }
 
 .auction-player-name {
