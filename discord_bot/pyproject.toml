@@ -1,0 +1,12 @@
+[project]
+name = "discord-bot"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "discord>=2.3.2",
+    "dotenv>=0.9.9",
+    "psycopg>=3.3.2",
+    "psycopg-binary>=3.3.2",
+]
