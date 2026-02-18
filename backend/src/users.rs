@@ -49,13 +49,16 @@ impl User {
 // https://discord.com/developers/docs/resources/user
 #[derive(Clone, Debug, Deserialize, FromRow, Serialize, PartialEq, Eq)]
 pub struct DiscordUser {
+    #[serde(rename = "id")]
     pub user_id: String,
+    #[serde(rename = "username")]
     pub user_name: String,
     discriminator: String,
     global_name: Option<String>,
     avatar: Option<String>,
     #[sqlx(default)]
     roles: Option<Vec<String>>,
+    #[serde(skip)]
     role_hash: Vec<u8>,
 }
 
@@ -87,11 +90,6 @@ impl AuthUser for User {
             User::DiscordUser(user) => &user.role_hash,
         }
     }
-}
-
-#[derive(Clone, Debug, Deserialize)]
-pub struct DiscordInfo {
-    login: String,
 }
 
 pub enum Credentials {
@@ -148,11 +146,14 @@ impl AuthBackend {
                 let role_hash = self.get_discord_roles(user);
                 let _res = sqlx::query!(
                     "
-                    INSERT INTO users (user_id, user_name, role_hash)
-                    VALUES ($1, $2, $3);
+                    INSERT INTO users (user_id, user_name, discriminator, global_name, avatar, role_hash)
+                    VALUES ($1, $2, $3, $4, $5, $6);
                     ",
                     user.user_id,
                     user.user_name,
+                    user.discriminator,
+                    user.global_name,
+                    user.avatar,
                     role_hash,
                 )
                 .execute(&self.db_pool)
@@ -165,7 +166,7 @@ impl AuthBackend {
     }
 
     fn get_discord_roles(&self, user: &DiscordUser) -> String {
-        todo!("set up roles with discord bot")
+        "".to_string()
     }
 
     pub fn authorize_url(&self) -> (Url, CsrfToken) {
@@ -203,21 +204,33 @@ impl AuthnBackend for AuthBackend {
                     .map_err(|_| Self::Error::OAuthError)?;
 
                 let user_info_text = reqwest::Client::new()
-                    .get("https://api.github.com/user")
+                    .get("https://discord.com/api/users/@me")
                     .header(USER_AGENT.as_str(), "blitz-auction-backend")
                     .header(
                         AUTHORIZATION.as_str(),
-                        format!("Bearer: {}", token_res.access_token().secret()),
+                        format!("Bearer {}", token_res.access_token().secret()),
                     )
                     .send()
                     .await
-                    .map_err(|_| Self::Error::ReqwestError)?
+                    .map_err(|e| {
+                        println!("{}", e);
+                        Self::Error::ReqwestError
+                    })?
                     .text()
                     .await
-                    .map_err(|_| Self::Error::ReqwestError)?;
+                    .map_err(|e| {
+                        println!("{}", e);
+                        Self::Error::ReqwestError
+                    })?;
 
-                user =
-                    serde_json::from_str(&user_info_text).map_err(|_| Self::Error::ReqwestError)?;
+                let discord_user: DiscordUser =
+                    serde_json::from_str(&user_info_text)
+                    .map_err(|e| {
+                        println!("{}", e);
+                        Self::Error::ReqwestError
+                    })?;
+
+                user = User::DiscordUser(discord_user);
             }
         }
 

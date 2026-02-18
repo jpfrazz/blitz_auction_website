@@ -199,7 +199,7 @@ pub async fn discord_callback(
         new_state,
     });
 
-    let Ok(Some(user)) = auth_session.authenticate(creds).await else {
+    let Some(user) = auth_session.authenticate(creds).await.map_err(|e| e.to_string())? else {
         return Err("failed to authenticate".to_string());
     };
 
