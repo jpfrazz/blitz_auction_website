@@ -46,6 +46,7 @@ pub async fn init_pokemon_data(pool: &PgPool) -> Result<(), sqlx::Error> {
         } else {
             Some(row.form.clone())
         },
+        stage: row.stage,
         patch_version: row.patch_version,
         type1: row
             .type1
@@ -146,6 +147,7 @@ pub struct Pokemon {
     pub pokedex_id: u32,
     pub name: String,
     pub form: Option<String>,
+    pub stage: String,
     pub patch_version: String,
     pub type1: PokemonType,
     pub type2: Option<PokemonType>,
@@ -162,6 +164,7 @@ pub struct PokemonRow {
     pub pokedex_id: i32,
     pub name: String,
     pub form: Option<String>,
+    pub stage: String,
     pub patch_version: String,
     pub type1: PokemonType,
     pub type2: Option<PokemonType>,

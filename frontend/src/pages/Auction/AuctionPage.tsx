@@ -106,7 +106,7 @@ const AuctionPage: React.FC = () => {
                   </button>
                 )}
                 {draft.current_auction && <CurrentPokemonPanel current_auction={draft.current_auction} />}
-                <PokemonTablePanel auctions={draft.completed_auctions} pokemon={draft.pokemon} />
+                <PokemonTablePanel auctions={draft.completed_auctions} pokemon={draft.pokemon.filter((p: any) => p.stage === 'base')} />
               </div>
               {/* Right: Current auction info */}
               <div className="auction-right-panel">

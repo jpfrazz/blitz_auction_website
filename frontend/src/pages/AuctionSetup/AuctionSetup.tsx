@@ -89,7 +89,7 @@ const AuctionSetupForm: React.FC = () => {
           pokedex_id: id,
           form: null, // Default to empty form, update if you have form data
         })),
-        patch_version: '7.91', // Update with actual version if available
+        patch_version: '8.2', // Update with actual version if available
         num_auctions: numPokemon,
         auction_length: {
           secs: secondsToDraft,

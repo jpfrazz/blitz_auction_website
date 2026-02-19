@@ -9,7 +9,7 @@ $eb-text: #f1f1f1;
 $eb-text-black: #111;
 $eb-text-muted: #b0b0b0;
 $eb-accent: #4fc3f7;
-$eb-shadow: 0 2px 8px #0006;
+$eb-shadow: 0 0.125rem 0.5rem #0006;
 
 // Pokémon Type Colors
 $color-normal:   #A8A77A; // Light Tan / Beige
@@ -37,19 +37,24 @@ body, html {
   font-family: 'Segoe UI', 'Arial', sans-serif;
   margin: 0;
   padding: 0;
+  font-size: 67%;
+}
+
+main {
+  font-size: 1.5rem;
 }
 
 header, .header {
   background: $eb-surface;
   color: $eb-text;
-  border-bottom: 3px solid $eb-primary;
+  border-bottom: 0.1875rem solid $eb-primary;
   position: static;
 }
 
 footer, .footer {
   background: $eb-surface;
   color: $eb-text;
-  border-top: 3px solid $eb-primary;
+  border-top: 0.1875rem solid $eb-primary;
   position: static;
 }
 
@@ -57,12 +62,12 @@ button, .navButton, .footerButton {
   background: $eb-primary;
   color: $eb-text-black;
   border: none;
-  border-radius: 4px;
+  border-radius: 0.25rem;
   box-shadow: $eb-shadow;
   font-weight: 600;
   font-size: 1.1rem;
   font-family: inherit;
-  letter-spacing: 1px;
+  letter-spacing: 0.0625rem;
   cursor: pointer;
   transition: background 0.2s, color 0.2s;
 }
@@ -74,18 +79,18 @@ button:hover, .navButton:hover, .footerButton:hover {
 input, textarea, select {
   background: $eb-bg;
   color: $eb-text;
-  border: 1px solid $eb-border;
-  border-radius: 4px;
-  padding: 8px;
+  border: 0.0625rem solid $eb-border;
+  border-radius: 0.25rem;
+  padding: 0.5rem;
 }
 
 ::-webkit-scrollbar {
-  width: 8px;
+  width: 0.5rem;
   background: $eb-surface;
 }
 ::-webkit-scrollbar-thumb {
   background: $eb-border;
-  border-radius: 4px;
+  border-radius: 0.25rem;
 }
 
 ::selection {

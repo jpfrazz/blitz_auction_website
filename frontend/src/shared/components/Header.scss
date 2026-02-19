@@ -1,7 +1,7 @@
 .header {
-  margin-bottom: 40px;
+  margin-bottom: 2.5rem;
   width: 100vw;
-  min-height: 80px;
+  min-height: 5rem;
   position: fixed;
   left: 0;
   top: 0;
@@ -14,29 +14,29 @@
   justify-content: center;
   width: 100%;
   box-sizing: border-box;
-  gap: 32px;
+  gap: 2rem;
 }
 .logoLink {
   display: flex;
   align-items: center;
-  height: 60px;
+  height: 3.75rem;
 }
 .logoImg {
-  height: 60px;
+  height: 3.75rem;
   width: auto;
   display: block;
-  filter: drop-shadow(1px 2px 8px #000);
+  filter: drop-shadow(0.0625rem 0.125rem 0.5rem #000);
 }
 .nav {
   display: flex;
   flex-direction: row;
   align-items: center;
-  gap: 18px;
-  padding-top: 10px;
+  gap: 1.125rem;
+  padding-top: 0.625rem;
 }
 .navButton {
-  min-width: 150px;
-  padding: 12px 18px;
+  min-width: 9.375rem;
+  padding: 0.75rem 1.125rem;
   display: block;
   text-align: center;
 }

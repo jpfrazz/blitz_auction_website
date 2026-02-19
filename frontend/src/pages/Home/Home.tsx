@@ -6,7 +6,7 @@ const Home = () => (
   <>
     <Header />
     <main style={{
-      minHeight: 'calc(96vh - 180px)', // adjust for header/footer
+      minHeight: 'calc(100vh - 180px)', // adjust for header/footer
       display: 'flex',
       flexDirection: 'column',
       alignItems: 'center',
@@ -14,28 +14,24 @@ const Home = () => (
       padding: '0 16px',
     }}>
       <img
-        src="/emeraldblitz.bps"
+        src="/blitzlogo.png"
         alt="Pokemon Emerald Blitz Logo"
         style={{
-          maxWidth: '600px',
-          width: '100%',
+          width: '30vw',
           height: 'auto',
           marginBottom: '16px',
           marginTop: '16px',
         }}
-        onError={e => {
-          // fallback to png if bps fails
-          (e.currentTarget as HTMLImageElement).src = '/blitzlogo.png';
-        }}
       />
       <a
-        href="/Download"
+        href="/emeraldblitz.bps"
         className='navButton'
+        download
       >
         Download Patch
       </a>
       <div style={{ color: '#fff', fontSize: '1.1rem', marginBottom: '8px' }}>
-        Current Release: v7.6
+        Current Release: v8.3
       </div>
       <div style={{ color: '#ccc', fontSize: '1rem', marginBottom: '8px' }}>
         Once downloaded, apply the patch online using <a href="https://www.marcrobledo.com/RomPatcher.js/" target="_blank" rel="noopener noreferrer" style={{ color: '#4fc3f7' }}>this ROM Patcher</a>

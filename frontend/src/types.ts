@@ -7,6 +7,9 @@ export interface Pokemon {
   type1?: string;
   type2?: string;
   ability?: string;
+  ability1?: string;
+  ability2?: string;
+  hidden_ability?: string;
   stats?: {
     hp: number;
     attack: number;
@@ -19,6 +22,11 @@ export interface Pokemon {
   };
   description?: string;
   form?: string;
+  stage?: string;
+  evolves_from_id?: string;
+  evolves_from_form?: string;
+  mega?: string;
+  is_baby?: boolean;
 }
 
 export type SerializedUser =

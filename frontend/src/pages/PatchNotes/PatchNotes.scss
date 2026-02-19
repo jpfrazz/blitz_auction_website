@@ -1,0 +1,59 @@
+.patch-notes-page {
+  padding: 1rem;
+  min-height: calc(100vh - 180px);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.page-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin-bottom: 1rem;
+  color: #fff;
+  text-align: center;
+}
+
+.patch-container {
+  display: flex;
+  justify-content: center;
+  width: 100%;
+  padding-bottom: 3.5rem;
+}
+
+.patch-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  max-width: 900px;
+  width: 100%;
+}
+
+.patch-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: #1f2933;
+  color: #ffffff;
+  padding: 0.6rem 0.8rem;
+  border-radius: 6px;
+  cursor: pointer;
+  user-select: none;
+}
+
+.patch-date {
+  font-weight: 600;
+  color: #cfe7ff;
+}
+
+.patch-content {
+  background: #071014;
+  color: #dfeffb;
+  padding: 0.8rem;
+  border-radius: 6px;
+  white-space: pre-wrap;
+  font-family: Consolas, 'Courier New', monospace;
+  margin-top: 0.25rem;
+  font-size: 1.5rem;
+  line-height: 1.5;
+}
