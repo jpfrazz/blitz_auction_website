@@ -39,7 +39,7 @@ export interface Auction {
 
 export interface Team {
   user_id: string;
-  money: number;
+  budget_remaining: number;
   pokemon: Pokemon[];
   auctions_won?: Pokemon[];
 }

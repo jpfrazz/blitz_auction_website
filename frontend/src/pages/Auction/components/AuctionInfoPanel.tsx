@@ -9,6 +9,7 @@ interface AuctionInfoPanelProps {
   draft_id: string;
   currentAuctionExpiresAt?: string;
   canBid: boolean;
+  userBudgetRemaining: number;
 }
 
 const AuctionInfoPanel: React.FC<AuctionInfoPanelProps> = ({
@@ -16,6 +17,7 @@ const AuctionInfoPanel: React.FC<AuctionInfoPanelProps> = ({
   draft_id,
   currentAuctionExpiresAt,
   canBid,
+  userBudgetRemaining,
 }) => {
   const [secondsRemaining, setSecondsRemaining] = useState(0);
   const [initialSeconds, setInitialSeconds] = useState(0);
@@ -53,6 +55,10 @@ const AuctionInfoPanel: React.FC<AuctionInfoPanelProps> = ({
 
   const handleBid100 = async () => {
     const newBid = current_auction.highest_bid + 100;
+    if (newBid > userBudgetRemaining) {
+      console.error('Bid exceeds remaining budget');
+      return;
+    }
     try {
       const response = await placeBid(draft_id, current_auction.auction_id, newBid);
       if (!response.accepted) {
@@ -67,6 +73,14 @@ const AuctionInfoPanel: React.FC<AuctionInfoPanelProps> = ({
     const bidValue = parseInt(customBidAmount);
     if (!bidValue || bidValue <= 0) {
       console.error('Invalid bid amount');
+      return;
+    }
+    if (bidValue % 100 !== 0) {
+      console.error('Bid must be a multiple of 100');
+      return;
+    }
+    if (bidValue > userBudgetRemaining) {
+      console.error('Bid exceeds remaining budget');
       return;
     }
     try {
