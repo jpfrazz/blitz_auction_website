@@ -16,7 +16,7 @@ use crate::{
     draft_runner::{self, DraftRunner},
     get_expiry_time_from_instant,
     messages::{ClientBidRequest, ClientBidResponse, ServerMessage},
-    pokemon::{self, Pokemon},
+    pokemon::{self, Pokemon, PokemonStage},
     users::User,
 };
 
@@ -206,7 +206,7 @@ impl Draft {
             };
 
             let mut draft = Draft::new(draft_id, host, settings, pokemon, pool, draft_runner);
-            for (i, p) in draft.pokemon.iter().enumerate() {
+            for (i, p) in draft.pokemon.iter().filter(|p| p.stage == PokemonStage::Base && !p.is_baby).enumerate() {
                 let auction = Auction::build(draft.draft_id.clone(), i as u32, p, &mut tx)
                     .await
                     .map_err(|e| {

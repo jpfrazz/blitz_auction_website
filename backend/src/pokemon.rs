@@ -33,19 +33,20 @@ pub async fn init_pokemon_data(pool: &PgPool) -> Result<(), sqlx::Error> {
         "#,
     )
     .map(|row| Pokemon {
-        pokedex_id: u32::try_from(row.pokedex_id).unwrap_or_else(|_| match row.pokedex_id {
-            -1 => u32::pow(2, 16),
-            _ => panic!(
+        pokedex_id: u32::try_from(row.pokedex_id).unwrap_or_else(|_|
+            panic!(
                 "Pokemon {} {} has invalid pokedex_id: {}",
                 row.name, row.form, row.pokedex_id
-            ),
-        }),
+            )
+        ),
         name: row.name.clone(),
         form: if row.form.is_empty() {
             None
         } else {
             Some(row.form.clone())
         },
+        stage: row.stage.parse().expect("stage not valid"),
+        is_baby: row.is_baby,
         patch_version: row.patch_version,
         type1: row
             .type1
@@ -146,6 +147,8 @@ pub struct Pokemon {
     pub pokedex_id: u32,
     pub name: String,
     pub form: Option<String>,
+    pub stage: PokemonStage,
+    pub is_baby: bool,
     pub patch_version: String,
     pub type1: PokemonType,
     pub type2: Option<PokemonType>,
@@ -158,21 +161,6 @@ pub struct Pokemon {
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
-pub struct PokemonRow {
-    pub pokedex_id: i32,
-    pub name: String,
-    pub form: Option<String>,
-    pub patch_version: String,
-    pub type1: PokemonType,
-    pub type2: Option<PokemonType>,
-    pub ability1: String,
-    pub ability2: Option<String>,
-    pub hidden_ability: Option<String>,
-    pub stats: PokemonStats,
-    pub description: String,
-}
-
-#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct KeyMoveRow {
     pub pokedex_id: i32,
     pub form: Option<String>,
@@ -180,16 +168,6 @@ pub struct KeyMoveRow {
     pub move_name: String,
     pub learn_method: String,
 }
-
-// impl TryFrom<(PokemonRow, Vec<KeyMoveRow>)> for Pokemon {
-//     type Error = String;
-//     fn try_from(pokemon_tuple: (PokemonRow, Vec<KeyMoveRow>)) -> Result<Pokemon, Self::Error> {
-//         let (pokemon_row, key_moves) = pokemon_tuple;
-//         Ok(Pokemon {
-//
-//         })
-//     }
-// }
 
 #[derive(EnumString, Display, Clone, Copy, Debug, Serialize, Deserialize)]
 pub enum PokemonType {
@@ -212,6 +190,13 @@ pub enum PokemonType {
     Dark,
     Fairy,
     Egg,
+}
+
+#[derive(EnumString, Display, Clone, Copy, Debug, Serialize, Deserialize, PartialEq)]
+pub enum PokemonStage {
+    Base,
+    Evo,
+    Mega
 }
 
 #[derive(Clone, Copy, Debug, Serialize, Deserialize, FromRow)]
