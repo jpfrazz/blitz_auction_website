@@ -1,3 +1,4 @@
+dex_number,name,form,evolves_from_id,evolves_from_form,type1,type2,stage,ability1,ability2,hidden_ability,hp,attack,defense,sp_attack,sp_defense,speed,evolution_method,mega,is_baby
 dex_number,name,type,stage,ability1,ability2,hidden_ability,hp,attack,defense,sp_attack,sp_defense,speed,evolution_method,mega,is_baby
 359,Absol,Dark,base,Pressure,Super Luck,Justified,65,130,60,75,60,75,,Stage 1,
 359,Mega Absol,Dark,mega,Magic Bounce,,,65,150,60,115,60,115,Absolite,Stage 1,
