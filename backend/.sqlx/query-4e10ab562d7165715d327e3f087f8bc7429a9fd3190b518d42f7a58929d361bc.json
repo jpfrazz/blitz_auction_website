@@ -25,91 +25,96 @@
       },
       {
         "ordinal": 4,
-        "name": "description",
+        "name": "stage",
         "type_info": "Text"
       },
       {
         "ordinal": 5,
-        "name": "type1",
+        "name": "description",
         "type_info": "Text"
       },
       {
         "ordinal": 6,
-        "name": "type2",
+        "name": "type1",
         "type_info": "Text"
       },
       {
         "ordinal": 7,
-        "name": "ability1",
+        "name": "type2",
         "type_info": "Text"
       },
       {
         "ordinal": 8,
-        "name": "ability2",
+        "name": "ability1",
         "type_info": "Text"
       },
       {
         "ordinal": 9,
-        "name": "hidden_ability",
+        "name": "ability2",
         "type_info": "Text"
       },
       {
         "ordinal": 10,
-        "name": "evolution_method",
+        "name": "hidden_ability",
         "type_info": "Text"
       },
       {
         "ordinal": 11,
+        "name": "evolution_method",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 12,
         "name": "evolves_from_id",
         "type_info": "Int4"
       },
       {
-        "ordinal": 12,
+        "ordinal": 13,
         "name": "evolves_from_form",
         "type_info": "Text"
       },
       {
-        "ordinal": 13,
+        "ordinal": 14,
         "name": "mega",
         "type_info": "Text"
       },
       {
-        "ordinal": 14,
+        "ordinal": 15,
         "name": "is_baby",
         "type_info": "Bool"
       },
       {
-        "ordinal": 15,
+        "ordinal": 16,
         "name": "hp",
         "type_info": "Int4"
       },
       {
-        "ordinal": 16,
+        "ordinal": 17,
         "name": "attack",
         "type_info": "Int4"
       },
       {
-        "ordinal": 17,
+        "ordinal": 18,
         "name": "defense",
         "type_info": "Int4"
       },
       {
-        "ordinal": 18,
+        "ordinal": 19,
         "name": "sp_attack",
         "type_info": "Int4"
       },
       {
-        "ordinal": 19,
+        "ordinal": 20,
         "name": "sp_defense",
         "type_info": "Int4"
       },
       {
-        "ordinal": 20,
+        "ordinal": 21,
         "name": "speed",
         "type_info": "Int4"
       },
       {
-        "ordinal": 21,
+        "ordinal": 22,
         "name": "key_moves!: Json<Vec<KeyMoveRow>>",
         "type_info": "Json"
       }
@@ -118,6 +123,7 @@
       "Left": []
     },
     "nullable": [
+      false,
       false,
       false,
       false,

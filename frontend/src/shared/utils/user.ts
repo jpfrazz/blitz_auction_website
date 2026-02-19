@@ -17,3 +17,19 @@ export function getUserLabel(user: string | SerializedUser | null | undefined): 
   }
   return '';
 }
+
+export function getUserId(user: string | SerializedUser | null | undefined): string | null {
+  if (!user) {
+    return null;
+  }
+  if (typeof user === 'string') {
+    return user;
+  }
+  if ('GuestUser' in user) {
+    return user.GuestUser.user_id;
+  }
+  if ('DiscordUser' in user) {
+    return user.DiscordUser.user_id;
+  }
+  return null;
+}

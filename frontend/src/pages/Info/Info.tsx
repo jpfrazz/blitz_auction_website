@@ -8,7 +8,7 @@ const Info = () => (
     <Header />
     <main className="info-main">
       <h1 className="info-title">
-        Frequently Asked Questions
+        Blitz Info
       </h1>
       <nav className="info-toc-card">
         <h2 className="info-toc-heading">Blitz Index</h2>

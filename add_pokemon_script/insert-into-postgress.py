@@ -22,9 +22,12 @@ from psycopg import Connection
 class CsvRow(TypedDict):
     dex_number: str
     name: str
-    type: str
+    form: str
+    evolves_from_id: str
+    evolves_from_form: str
+    type1: str
+    type2: str
     stage: str
-    evolves_from: str
     ability1: str
     ability2: str
     hidden_ability: str
@@ -44,12 +47,15 @@ class DbRow(TypedDict):
     name: str
     patch_version: str
     form: str
+    stage: str
     description: Optional[str]
     type1: str
     type2: Optional[str]
     ability1: str
     ability2: Optional[str]
     hidden_ability: Optional[str]
+    evolves_from_id: Optional[int]
+    evolves_from_form: Optional[str]
     evolution_method: Optional[str]
     mega: Optional[str]
     is_baby: bool
@@ -80,26 +86,6 @@ def to_int(value: str) -> int:
         return 0
     return int(value.strip())
 
-def parse_types(value: str) -> tuple[str, Optional[str]]:
-    """
-    Parse a CSV 'type' field into (type1, type2).
-
-    Examples:
-        "Dark" -> ("Dark", None)
-        "Dark/Fairy" -> ("Dark", "Fairy")
-        "Dark / Fairy" -> ("Dark", "Fairy")
-    """
-    parts = [part.strip() for part in value.split("/") if part.strip()]
-
-    if not parts:
-        raise ValueError("Type column cannot be empty")
-
-    type1: str = parts[0]
-    type2: Optional[str] = parts[1] if len(parts) > 1 else None
-
-    return type1, type2
-
-
 def to_optional_str(value: str) -> Optional[str]:
     value = value.strip()
     return value if value else None
@@ -124,21 +110,21 @@ def transform_row(
     row: CsvRow,
     *,
     patch_version: str,
-    default_form: str = "",
 ) -> DbRow:
-    type1, type2 = parse_types(row["type"])
-
     return DbRow(
         pokedex_id=to_int(row["dex_number"]),
         name=row["name"].strip(),
         patch_version=patch_version,
-        form=default_form,
+        form=row["form"].strip(),
+        stage=row["stage"].strip(),
         description=None,
-        type1=type1,
-        type2=type2,
+        type1=row["type1"].strip(),
+        type2=to_optional_str(row["type2"]),
         ability1=row["ability1"].strip(),
         ability2=to_optional_str(row["ability2"]),
         hidden_ability=to_optional_str(row["hidden_ability"]),
+        evolves_from_id=to_int(row["evolves_from_id"]) if row["evolves_from_id"] else None,
+        evolves_from_form=to_optional_str(row["evolves_from_form"]),
         evolution_method=to_optional_str(row["evolution_method"]),
         mega=to_optional_str(row["mega"]),
         is_baby=to_bool(row["is_baby"]),
@@ -158,12 +144,15 @@ INSERT INTO pokemon (
     name,
     patch_version,
     form,
+    stage,
     description,
     type1,
     type2,
     ability1,
     ability2,
     hidden_ability,
+    evolves_from_id,
+    evolves_from_form,
     evolution_method,
     mega,
     is_baby,
@@ -179,12 +168,15 @@ VALUES (
     %(name)s,
     %(patch_version)s,
     %(form)s,
+    %(stage)s,
     %(description)s,
     %(type1)s,
     %(type2)s,
     %(ability1)s,
     %(ability2)s,
     %(hidden_ability)s,
+    %(evolves_from_id)s,
+    %(evolves_from_form)s,
     %(evolution_method)s,
     %(mega)s,
     %(is_baby)s,
@@ -211,6 +203,16 @@ def insert_rows(
     conn.commit()
 
 
+def reset_database(dsn: str) -> None:
+    """Truncates the pokemon table to clear old data."""
+    with psycopg.connect(dsn) as conn:
+        with conn.cursor() as cur:
+            print("Resetting database...")
+            cur.execute("TRUNCATE TABLE pokemon RESTART IDENTITY CASCADE;")
+        conn.commit()
+    print("Database reset complete.")
+
+
 def load_csv(
     *,
     csv_path: Path,
@@ -229,8 +231,10 @@ def load_csv(
 # ---------- Entry ----------
 
 if __name__ == "__main__":
+    dsn = "postgresql://postgres:password@localhost:5432/auction_db"
+    reset_database(dsn)
     load_csv(
-        csv_path=Path("pokemon-7.91.csv"),
-        dsn="postgresql://postgres:password@localhost:5432/auction_db",
-        patch_version="7.91",
+        csv_path=Path("pokemon-8.2.csv"),
+        dsn=dsn,
+        patch_version="8.2",
     )

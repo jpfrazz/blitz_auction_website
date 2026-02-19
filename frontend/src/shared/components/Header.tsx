@@ -1,5 +1,6 @@
 import React from 'react';
 import './Header.scss';
+import { Link } from 'react-router-dom';
 
 const navButtons = [
   { label: "Auction Setup", link: "/AuctionSetup" },
@@ -9,29 +10,28 @@ const navButtons = [
   { label: "Blitz Info", link: "/Info" },
   { label: "FAQ", link: "/FAQ" },
   { label: "Patch Notes", link: "/PatchNotes" },
-  { label: "Pokemon Speed Test", link: "/SpeedTest" },
 ];
 
 function Header() {
   return (
     <header className="header">
       <div className="headerInner">
-        <a href="/" className="logoLink">
+        <Link to="/" className="logoLink">
           <img
             src="/blitzlogo.png"
             alt="Emerald Blitz Logo"
             className="logoImg"
           />
-        </a>
+        </Link>
         <nav className="nav">
           {navButtons.map(btn => (
-            <a
+            <Link
               key={btn.label}
-              href={btn.link}
+              to={btn.link}
               className="navButton"
             >
               {btn.label}
-            </a>
+            </Link>
           ))}
         </nav>
       </div>

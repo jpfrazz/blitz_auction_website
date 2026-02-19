@@ -22,7 +22,7 @@ const AllPokemonTab: React.FC<AllPokemonTabProps> = ({ pokemon, auctions }) => {
   // Add auction info to each row for table use
   const data = useMemo(() =>
     pokemon
-      .filter(p => !p.form || p.form === 'base')
+      .filter((p: any) => p.stage === 'base')
       .map(p => {
         const pokedexId = p.pokedex_id ?? p.id;
         const auction = auctions.find(a => a.pokemon.pokedex_id === pokedexId);
@@ -33,6 +33,7 @@ const AllPokemonTab: React.FC<AllPokemonTabProps> = ({ pokemon, auctions }) => {
         const specialDefense = p.stats?.sp_defense ?? p.stats?.specialDefense ?? 0;
         const speed = p.stats?.speed ?? 0;
         const baseStatTotal = hp + attack + defense + specialAttack + specialDefense + speed;
+        const ability = (p as any).ability || [(p as any).ability1, (p as any).ability2, (p as any).hidden_ability].filter(Boolean).join('/');
         return {
           ...p,
           hp,
@@ -42,6 +43,7 @@ const AllPokemonTab: React.FC<AllPokemonTabProps> = ({ pokemon, auctions }) => {
           specialDefense,
           speed,
           baseStatTotal,
+          ability,
           cost: auction ? auction.highest_bid : '',
           draftedBy: auction ? getUserLabel(auction.highest_bidder) : '',
         };
@@ -52,6 +54,7 @@ const AllPokemonTab: React.FC<AllPokemonTabProps> = ({ pokemon, auctions }) => {
   const columns = useMemo<ColumnDef<any, any>[]>(
     () => [
       { accessorKey: 'name', header: 'Name' },
+      { accessorKey: 'ability', header: 'Ability' },
       {
         accessorKey: 'type1',
         header: 'Type',

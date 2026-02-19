@@ -110,7 +110,7 @@ const FAQ = () => (
         <h2 className="faq-question">So, what's changed from vanilla Emerald?</h2>
         <hr />
         <div className="faq-answer">
-          <h3>Roguelike Randomization</h3>
+          <h3 style={{ textAlign: 'left' }}>Roguelike Randomization</h3>
           <ul>
             <li>
               <b>Randomized Gyms:</b> Gyms are randomized; upon entering a gym, you'll be warped to any of Hoenn's eight gyms at random. Leader teams are adjusted to your current strength.
@@ -120,7 +120,7 @@ const FAQ = () => (
             </li>
           </ul>
 
-          <h3>Quality of Life Improvements</h3>
+          <h3 style={{ textAlign: 'left' }}>Quality of Life Improvements</h3>
           <ul>
             <li>
               <b>Pokemon Catalog:</b> The notebook on the player's desk now comes stocked with every Pokémon in the draft. Simply scroll through, select your Pokemon, and get racing.
@@ -139,7 +139,7 @@ const FAQ = () => (
             </li>
           </ul>
 
-          <h3>Built for Speed</h3>
+          <h3 style={{ textAlign: 'left' }}>Built for Speed</h3>
           <ul>
             <li>
               <b>Level Cap Candy:</b> Instantly jumps your Pokémon to the level it next learns a move, evolves, or hits the current cap (whichever of the three comes first). The evolution animation is shortened. Asking to learn a move only asks once, not twice.
@@ -155,7 +155,7 @@ const FAQ = () => (
             </li>
           </ul>
 
-          <h3>Difficulty Boosts</h3>
+          <h3 style={{ textAlign: 'left' }}>Difficulty Boosts</h3>
           <ul>
             <li>
               <b>Nuzlocke Mechanics:</b> Your Pokémon can’t overlevel the most powerful Pokémon of the next major boss trainer. You can’t use items in battle.
@@ -174,7 +174,7 @@ const FAQ = () => (
             </li>
           </ul>
 
-          <h3>Reworked Shop</h3>
+          <h3 style={{ textAlign: 'left' }}>Reworked Shop</h3>
           <ul>
             <li>
               <b>Fixed Money Supply:</b> Players are no longer able to sell items, and non-boss battles no longer award money. The player has 62,000 to spend, and every purchase has an opportunity cost.
@@ -187,7 +187,7 @@ const FAQ = () => (
             </li>
           </ul>
 
-          <h3>Modern Mechanics</h3>
+          <h3 style={{ textAlign: 'left' }}>Modern Mechanics</h3>
           <ul>
             <li>
               <b>Mega Evolution:</b> Mega Stones are here! Click Fight in battle and then press Start before selecting your move to mega evolve. Mega-evolved Pokemon revert to their base form after three turns.
@@ -206,7 +206,7 @@ const FAQ = () => (
             </li>
           </ul>
 
-          <h3>New Unique Tools</h3>
+          <h3 style={{ textAlign: 'left' }}>New Unique Tools</h3>
           <ul>
             <li>
               <b>Milk Drink:</b> Skiddo and Mareep’s Milk Drink can now be used in the overworld to increase a Pokemon’s level by one, ignoring the level cap. Choose carefully--you can only use it once!
