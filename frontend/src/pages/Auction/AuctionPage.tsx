@@ -24,7 +24,7 @@ const AuctionPage: React.FC = () => {
   const [startingDraft, setStartingDraft] = useState(false);
   const [joiningDraft, setJoiningDraft] = useState(false);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
-  const [showPasswordModal, setShowPasswordModal] = useState(false);
+  const [showJoinModal, setShowJoinModal] = useState(false);
   const [joinPassword, setJoinPassword] = useState('');
   const [joinError, setJoinError] = useState<string | null>(null);
 
@@ -37,7 +37,7 @@ const AuctionPage: React.FC = () => {
     try {
       const updatedDraft = await joinDraft(auctionId, password);
       setDraft(updatedDraft);
-      setShowPasswordModal(false);
+      setShowJoinModal(false);
       setJoinPassword('');
     } catch (error: any) {
       setJoinError(error?.response?.data?.error || error?.message || 'Failed to join draft.');
@@ -63,12 +63,7 @@ const AuctionPage: React.FC = () => {
 
         const alreadyOnTeam = draftData.teams.some(team => team.user_id === user.user_id);
         if (draftData.draft_state === 'PENDING' && !alreadyOnTeam) {
-          if (draftData.has_password) {
-            setShowPasswordModal(true);
-            return;
-          }
-
-          return attemptJoinDraft();
+          setShowJoinModal(true);
         }
       })
       .catch(error => console.error('Error fetching draft on initial load:', error))
@@ -107,33 +102,45 @@ const AuctionPage: React.FC = () => {
         {loading && <div>Loading draft...</div>}
         {!loading && draft && (
           <>
-            {showPasswordModal && (
+            {showJoinModal && (
               <div className="auction-password-modal-overlay">
                 <div className="auction-password-modal" onClick={e => e.stopPropagation()}>
-                  <h3 className="auction-password-modal-title">Enter Draft Password</h3>
-                  <input
-                    className="auction-password-modal-input"
-                    type="password"
-                    value={joinPassword}
-                    onChange={e => setJoinPassword(e.target.value)}
-                    placeholder="Password"
-                    autoFocus
-                  />
+                  <h3 className="auction-password-modal-title">Join Draft</h3>
+                  {draft.has_password && (
+                    <input
+                      className="auction-password-modal-input"
+                      type="password"
+                      value={joinPassword}
+                      onChange={e => setJoinPassword(e.target.value)}
+                      placeholder="Password"
+                      autoFocus
+                    />
+                  )}
                   {joinError && <div className="auction-password-modal-error">{joinError}</div>}
                   <div className="auction-password-modal-actions">
+                    <button
+                      className="button"
+                      onClick={() => {
+                        setShowJoinModal(false);
+                        setJoinError(null);
+                      }}
+                      disabled={joiningDraft}
+                    >
+                      Join as Spectator
+                    </button>
                     <button
                       className="button"
                       onClick={() => attemptJoinDraft(joinPassword)}
                       disabled={joiningDraft}
                     >
-                      {joiningDraft ? 'Joining...' : 'Join Draft'}
+                      {joiningDraft ? 'Joining...' : 'Join as Racer'}
                     </button>
                   </div>
                 </div>
               </div>
             )}
             {/* Top: Player boxes */}
-            <div>
+            <div className="auction-top-row-wrapper">
               <PlayerRow
                 teams={draft.teams}
                 numPlayers={draft.teams.length}

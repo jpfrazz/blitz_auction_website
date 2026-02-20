@@ -110,7 +110,7 @@ const AuctionSetupForm: React.FC = () => {
   return (
     <div className="auction-setup-card">
       <h2 className="auction-setup-title">Set Up Auction</h2>
-      <form className="auction-setup-form" onSubmit={handleSubmit}>
+      <form className="auction-setup-form" onSubmit={handleSubmit} autoComplete="off">
         {submitError && <div style={{ color: 'red', marginBottom: 8 }}>{submitError}</div>}
         {createdAuctionId && <div style={{ color: 'lime', marginBottom: 8 }}>Auction Created! ID: {createdAuctionId}</div>}
         <div className="auction-setup-field">
@@ -145,6 +145,8 @@ const AuctionSetupForm: React.FC = () => {
             <input
               className="auction-setup-input"
               type="text"
+              name="draft-name"
+              autoComplete="off"
               value={draftName}
               onChange={e => setDraftName(e.target.value)}
               required
@@ -155,7 +157,9 @@ const AuctionSetupForm: React.FC = () => {
           <label className="auction-setup-label">Password (optional):
             <input
               className="auction-setup-input"
-              type="text"
+              type="password"
+              name="draft-password"
+              autoComplete="new-password"
               value={password}
               onChange={e => setPassword(e.target.value)}
             />
