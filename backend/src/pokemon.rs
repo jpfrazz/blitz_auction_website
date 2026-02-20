@@ -45,7 +45,9 @@ pub async fn init_pokemon_data(pool: &PgPool) -> Result<(), sqlx::Error> {
         } else {
             Some(row.form.clone())
         },
-        stage: row.stage.parse().expect("stage not valid"),
+        stage: row.stage.parse().unwrap_or_else(|e| {
+            panic!("stage not valid: {}, {}", row.stage, row.pokedex_id)
+        }),
         is_baby: row.is_baby,
         patch_version: row.patch_version,
         type1: row
@@ -194,9 +196,9 @@ pub enum PokemonType {
 
 #[derive(EnumString, Display, Clone, Copy, Debug, Serialize, Deserialize, PartialEq)]
 pub enum PokemonStage {
-    Base,
-    Evo,
-    Mega
+    base,
+    evo,
+    mega
 }
 
 #[derive(Clone, Copy, Debug, Serialize, Deserialize, FromRow)]

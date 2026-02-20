@@ -28,7 +28,7 @@ CREATE TABLE pokemon (
     name TEXT NOT NULL,
     patch_version TEXT NOT NULL,
     form TEXT NOT NULL DEFAULT '',
-    stage TEXT NOT NULL,
+    stage TEXT NOT NULL DEFAULT 'Base',
     description TEXT,
     type1 TEXT NOT NULL,
     type2 TEXT,
