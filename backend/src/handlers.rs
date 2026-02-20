@@ -49,7 +49,7 @@ pub async fn create_draft(
             Ok(mut draft) => {
                 let draft_id = draft.draft_id.clone();
                 draft
-                    .join_draft(host.get_user_id_string(), None)
+                    .join_draft(host.clone(), None)
                     .await
                     .expect("host should be able to join draft");
                 state
@@ -93,14 +93,13 @@ pub async fn join_draft(
     join_request: Option<Json<JoinDraftRequest>>,
 ) -> Result<Json<ClientJoinResponse>, (StatusCode, String)> {
     let user = auth_session.user.expect("user should exist");
-    let user_id = user.get_user_id_string();
     let password = join_request.and_then(|Json(req)| req.password);
     let Some(draft_lock) = state.drafts.get(&draft_id) else {
         return Err((StatusCode::NOT_FOUND, "draft does not exist".to_string()));
     };
 
     let mut draft = draft_lock.write().await;
-    if let Err(e) = draft.join_draft(user_id, password).await {
+    if let Err(e) = draft.join_draft(user, password).await {
         return Ok(Json(ClientJoinResponse {
             joined: false,
             error: Some(e),

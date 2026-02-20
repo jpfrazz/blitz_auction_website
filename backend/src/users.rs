@@ -44,6 +44,13 @@ impl User {
             Self::DiscordUser(user) => user.user_id.clone(),
         }
     }
+
+    pub fn get_user_name_string(&self) -> String {
+        match self {
+            Self::GuestUser(user) => user.user_name.clone(),
+            Self::DiscordUser(user) => user.user_name.clone(),
+        }
+    }
 }
 
 // https://discord.com/developers/docs/resources/user

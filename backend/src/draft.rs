@@ -131,6 +131,7 @@ pub struct DraftSettings {
 #[derive(Clone, Debug, Serialize)]
 pub struct Team {
     pub user_id: String,
+    pub username: String,
     budget_remaining: u32,
     auctions_won: Vec<&'static Pokemon>,
 }
@@ -338,7 +339,8 @@ impl Draft {
         Ok(())
     }
 
-    pub async fn join_draft(&mut self, user_id: String, password: Option<String>) -> Result<(), String> {
+    pub async fn join_draft(&mut self, user: User, password: Option<String>) -> Result<(), String> {
+        let user_id = user.get_user_id_string();
         if self.teams.len() >= self.settings.num_teams as usize {
             return Err("Draft is already full".to_string());
         }
@@ -366,6 +368,7 @@ impl Draft {
 
         let team = Team {
             user_id: user_id.clone(),
+            username: user.get_user_name_string(),
             budget_remaining: self.settings.starting_money,
             auctions_won: vec![],
         };
