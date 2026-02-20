@@ -5,6 +5,20 @@
   padding: 2rem 0;
 }
 
+.teamplanner-team-section {
+  margin-top: 2rem;
+}
+
+.teamplanner-team-title {
+  margin: 0 0 1rem 0;
+}
+
+.teamplanner-team-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
 .teamplanner-title {
   margin-bottom: 2rem;
   text-align: center;

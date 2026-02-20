@@ -49,7 +49,7 @@ export interface Team {
   user_id: string;
   username: string;
   budget_remaining: number;
-  pokemon: Pokemon[];
+  pokemon?: Pokemon[];
   auctions_won?: Pokemon[];
 }
 
