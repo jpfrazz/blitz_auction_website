@@ -45,9 +45,16 @@
     height: 18px;
     margin-left: 5px;
 }
+.all-pokemon-container {
+    position: relative;
+    width: 100%;
+    height: 100%;
+}
+
 .all-pokemon-table-wrapper {
     width: 100%;
-    overflow-x: auto;
+    overflow: auto;
+    max-height: 600px;
 }
 
 .all-pokemon-table {
@@ -82,6 +89,50 @@
 .all-pokemon-table tr:hover {
     background: $eb-accent;
     color: $eb-text-black;
+}
+
+.pokemon-name-button {
+    background: transparent;
+    border: none;
+    color: inherit;
+    font: inherit;
+    padding: 0;
+    cursor: pointer;
+    text-decoration: underline;
+}
+
+.all-pokemon-modal-overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.72);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1200;
+}
+
+.all-pokemon-modal {
+    position: relative;
+    width: min(1024px, 95vw);
+    max-height: 92vh;
+    overflow: auto;
+    background: $eb-surface;
+    border: 1px solid $eb-border;
+    border-radius: 12px;
+    padding: 12px;
+}
+
+.all-pokemon-modal-close {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    border: none;
+    font-size: 22px;
+    line-height: 1;
+    cursor: pointer;
 }
 
 h3 {

@@ -3,6 +3,7 @@ import React, { useEffect, useState, useMemo } from 'react';
 import { Pokemon, Auction } from '../../../../types';
 import { getUserLabel } from '../../../../shared/utils/user';
 import './AllPokemonTab.scss';
+import CurrentPokemonPanel from '../CurrentPokemonPanel';
 import {
   useReactTable,
   getCoreRowModel,
@@ -19,6 +20,8 @@ interface AllPokemonTabProps {
 }
 
 const AllPokemonTab: React.FC<AllPokemonTabProps> = ({ pokemon, auctions }) => {
+  const [selectedPokemon, setSelectedPokemon] = useState<Pokemon | null>(null);
+
   // Add auction info to each row for table use
   const data = useMemo(() =>
     pokemon
@@ -81,6 +84,22 @@ const AllPokemonTab: React.FC<AllPokemonTabProps> = ({ pokemon, auctions }) => {
   const [sorting, setSorting] = useState<SortingState>([{ id: 'name', desc: false }]);
   const [columnFilters, setColumnFilters] = useState<any[]>([]);
 
+  const selectedPokemonAuction = useMemo<Auction | null>(() => {
+    if (!selectedPokemon) {
+      return null;
+    }
+
+    return {
+      auction_id: 'preview',
+      draft_id: 'preview',
+      draft_order: 0,
+      status: 'PENDING',
+      pokemon: selectedPokemon,
+      highest_bid: 0,
+      highest_bidder: null,
+    };
+  }, [selectedPokemon]);
+
   const table = useReactTable({
     data,
     columns,
@@ -94,29 +113,30 @@ const AllPokemonTab: React.FC<AllPokemonTabProps> = ({ pokemon, auctions }) => {
   });
 
   return (
-    <div className="all-pokemon-table-wrapper">
-      <table className="all-pokemon-table">
-        <thead>
-          {table.getHeaderGroups().map(headerGroup => (
-            <tr key={headerGroup.id}>
-              {headerGroup.headers.map(header => (
-                <th key={header.id}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                    {flexRender(header.column.columnDef.header, header.getContext())}
-                    {header.column.getCanSort() && (
-                      <span
-                        onClick={header.column.getToggleSortingHandler()}
-                        style={{ cursor: 'pointer', userSelect: 'none', marginLeft: 2 }}
-                        tabIndex={0}
-                        role="button"
-                        aria-label="Toggle sort"
-                      >
-                          {header.column.getIsSorted() ? (
-                            header.column.getIsSorted() === 'desc' ? '↓' : '↑'
-                        ) : '⇅'}
-                      </span>
-                    )}
-                  </div>
+    <div className="all-pokemon-container">
+      <div className="all-pokemon-table-wrapper">
+        <table className="all-pokemon-table">
+          <thead>
+            {table.getHeaderGroups().map(headerGroup => (
+              <tr key={headerGroup.id}>
+                {headerGroup.headers.map(header => (
+                  <th key={header.id}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                      {flexRender(header.column.columnDef.header, header.getContext())}
+                      {header.column.getCanSort() && (
+                        <span
+                          onClick={header.column.getToggleSortingHandler()}
+                          style={{ cursor: 'pointer', userSelect: 'none', marginLeft: 2 }}
+                          tabIndex={0}
+                          role="button"
+                          aria-label="Toggle sort"
+                        >
+                            {header.column.getIsSorted() ? (
+                              header.column.getIsSorted() === 'desc' ? '↓' : '↑'
+                          ) : '⇅'}
+                        </span>
+                      )}
+                    </div>
                   <div>
                     {header.column.getCanFilter() ? (
                       <input
@@ -165,7 +185,13 @@ const AllPokemonTab: React.FC<AllPokemonTabProps> = ({ pokemon, auctions }) => {
                           className="pokemon-table-img"
                           onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }}
                         />
-                      <span>{name}</span>
+                      <button
+                        className="pokemon-name-button"
+                        type="button"
+                        onClick={() => setSelectedPokemon(cell.row.original as Pokemon)}
+                      >
+                        {name}
+                      </button>
                     </td>
                   );
                 }
@@ -190,8 +216,24 @@ const AllPokemonTab: React.FC<AllPokemonTabProps> = ({ pokemon, auctions }) => {
               })}
             </tr>
           ))}
-        </tbody>
-      </table>
+          </tbody>
+        </table>
+      </div>
+
+      {selectedPokemonAuction && (
+        <div className="all-pokemon-modal-overlay" onClick={() => setSelectedPokemon(null)}>
+          <div className="all-pokemon-modal" onClick={e => e.stopPropagation()}>
+            <button
+              type="button"
+              className="all-pokemon-modal-close"
+              onClick={() => setSelectedPokemon(null)}
+            >
+              ×
+            </button>
+            <CurrentPokemonPanel current_auction={selectedPokemonAuction} />
+          </div>
+        </div>
+      )}
     </div>
   );
 };
