@@ -1,8 +1,8 @@
 import axios from 'axios';
-import { Draft, DraftLobby } from "../../types";
+import { ChatMessage, Draft, DraftLobby } from "../../types";
 
 // Fetch current user info
-export async function fetchCurrentUser(): Promise<{user_id: string, username: string}> {
+export async function fetchCurrentUser(): Promise<{user_id: string, username: string, is_guest: boolean}> {
   const response = await axios.get('/api/me');
   // Response can be {GuestUser: {...}} or {DiscordUser: {...}}
   const data = response.data;
@@ -10,11 +10,13 @@ export async function fetchCurrentUser(): Promise<{user_id: string, username: st
     return {
       user_id: data.GuestUser.user_id,
       username: data.GuestUser.user_name,
+      is_guest: true,
     };
   } else if (data.DiscordUser) {
     return {
       user_id: data.DiscordUser.user_id,
       username: data.DiscordUser.user_name,
+      is_guest: false,
     };
   }
   throw new Error('Unknown user type');
@@ -68,5 +70,17 @@ export async function claimEeveelution(draft_id: string, pokedex_id: number, for
     pokedex_id,
     form
   });
+  return response.data;
+}
+
+// Fetch chat messages for a draft
+export async function fetchDraftChats(draft_id: string): Promise<ChatMessage[]> {
+  const response = await axios.get(`/api/drafts/${draft_id}/chats`);
+  return response.data;
+}
+
+// Create a new chat message for a draft
+export async function createDraftChat(draft_id: string, message: string): Promise<ChatMessage> {
+  const response = await axios.post(`/api/drafts/${draft_id}/chats`, { message });
   return response.data;
 }

@@ -18,7 +18,7 @@ use axum::{
 };
 use axum_login::AuthSession;
 use oauth2::CsrfToken;
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 use sqlx::Row;
 use std::{sync::Arc, time::Duration};
 use tokio::{
@@ -36,6 +36,21 @@ pub struct JoinDraftRequest {
 pub struct ClaimEeveelutionRequest {
     pub pokedex_id: i32,
     pub form: Option<String>,
+}
+
+#[derive(Clone, Debug, Serialize)]
+pub struct ChatMessage {
+    pub chat_id: i64,
+    pub draft_id: String,
+    pub user_id: String,
+    pub user_name: String,
+    pub message: String,
+    pub created_at: chrono::DateTime<chrono::Utc>,
+}
+
+#[derive(Clone, Debug, Deserialize)]
+pub struct CreateChatRequest {
+    pub message: String,
 }
 
 #[debug_handler]
@@ -280,6 +295,108 @@ pub async fn claim_eeveelution(
     } else {
         Err((StatusCode::NOT_FOUND, "team not found".to_string()))
     }
+}
+
+#[debug_handler]
+pub async fn get_draft_chats(
+    State(state): State<ServerState>,
+    Path(draft_id): Path<String>,
+) -> Result<Json<Vec<ChatMessage>>, (StatusCode, String)> {
+    let rows = sqlx::query(
+        "SELECT c.chat_id, c.draft_id, c.user_id, COALESCE(u.user_name, c.user_id) AS user_name, c.message, c.created_at\
+         FROM chats c\
+         LEFT JOIN users u ON u.user_id = c.user_id\
+         WHERE c.draft_id = $1\
+         ORDER BY c.created_at ASC",
+    )
+    .bind(&draft_id)
+    .fetch_all(&state.db_pool)
+    .await
+    .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    let chats = rows
+        .into_iter()
+        .map(|row| {
+            Ok(ChatMessage {
+                chat_id: row.try_get("chat_id")?,
+                draft_id: row.try_get("draft_id")?,
+                user_id: row.try_get("user_id")?,
+                user_name: row.try_get("user_name")?,
+                message: row.try_get("message")?,
+                created_at: row.try_get("created_at")?,
+            })
+        })
+        .collect::<Result<Vec<_>, sqlx::Error>>()
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    Ok(Json(chats))
+}
+
+#[debug_handler]
+pub async fn create_draft_chat(
+    State(state): State<ServerState>,
+    Path(draft_id): Path<String>,
+    auth_session: AuthSession<AuthBackend>,
+    Json(request): Json<CreateChatRequest>,
+) -> Result<Json<ChatMessage>, (StatusCode, String)> {
+    let user = auth_session
+        .user
+        .ok_or((StatusCode::UNAUTHORIZED, "user not authenticated".to_string()))?;
+
+    if matches!(user, User::GuestUser(_)) {
+        return Err((StatusCode::FORBIDDEN, "guests cannot send messages".to_string()));
+    }
+
+    let message = request.message.trim();
+    if message.is_empty() {
+        return Err((StatusCode::BAD_REQUEST, "message cannot be empty".to_string()));
+    }
+
+    let user_id = user.get_user_id_string();
+    let row = sqlx::query(
+        "WITH inserted AS (\
+            INSERT INTO chats (draft_id, user_id, message)\
+            VALUES ($1, $2, $3)\
+            RETURNING chat_id, draft_id, user_id, message, created_at\
+        )\
+        SELECT i.chat_id, i.draft_id, i.user_id, COALESCE(u.user_name, i.user_id) AS user_name, i.message, i.created_at\
+        FROM inserted i\
+        LEFT JOIN users u ON u.user_id = i.user_id",
+    )
+    .bind(&draft_id)
+    .bind(&user_id)
+    .bind(message)
+    .fetch_one(&state.db_pool)
+    .await
+    .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    let chat_id = row
+        .try_get("chat_id")
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let draft_id = row
+        .try_get("draft_id")
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let user_id = row
+        .try_get("user_id")
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let user_name = row
+        .try_get("user_name")
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let message = row
+        .try_get("message")
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let created_at = row
+        .try_get("created_at")
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    Ok(Json(ChatMessage {
+        chat_id,
+        draft_id,
+        user_id,
+        user_name,
+        message,
+        created_at,
+    }))
 }
 pub async fn discord_oauth_redirect(
     auth_session: AuthSession<AuthBackend>,

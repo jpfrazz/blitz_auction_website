@@ -67,6 +67,15 @@ export interface Draft {
   patch_version: string;
 }
 
+export interface ChatMessage {
+  chat_id: number;
+  draft_id: string;
+  user_id: string;
+  user_name: string;
+  message: string;
+  created_at: string;
+}
+
 export interface DraftLobby {
   draft_id: string;
   draft_name: string;

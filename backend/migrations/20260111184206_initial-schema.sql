@@ -154,6 +154,14 @@ CREATE TABLE bids (
     )
 );
 
+CREATE TABLE chats (
+    chat_id BIGSERIAL NOT NULL PRIMARY KEY,
+    draft_id TEXT NOT NULL REFERENCES drafts(draft_id) ON DELETE CASCADE,
+    user_id TEXT NOT NULL,
+    message TEXT NOT NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
 CREATE OR REPLACE FUNCTION update_updated_at()
     RETURNS TRIGGER AS $$
     BEGIN

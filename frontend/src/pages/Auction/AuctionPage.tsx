@@ -25,6 +25,7 @@ const AuctionPage: React.FC = () => {
   const [startingDraft, setStartingDraft] = useState(false);
   const [joiningDraft, setJoiningDraft] = useState(false);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  const [isGuest, setIsGuest] = useState(false);
   const [showJoinModal, setShowJoinModal] = useState(false);
   const [joinPassword, setJoinPassword] = useState('');
   const [joinError, setJoinError] = useState<string | null>(null);
@@ -57,6 +58,7 @@ const AuctionPage: React.FC = () => {
       .then(user => {
         console.log("Fetched current user:", user);
         setCurrentUserId(user.user_id);
+        setIsGuest(user.is_guest);
         return fetchDraftById(auctionId).then(draftData => ({ user, draftData }));
       })
       .then(({ user, draftData }) => {
@@ -211,7 +213,7 @@ const AuctionPage: React.FC = () => {
                         userBudgetRemaining={draft.teams.find(team => team.user_id === currentUserId)?.budget_remaining || 0}
                       />
                     )}
-                    <AuctionChatBox />
+                    <AuctionChatBox draftId={draft.draft_id} isGuest={isGuest} />
                   </>
                 )}
               </div>
