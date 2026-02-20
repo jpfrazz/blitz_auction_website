@@ -52,6 +52,16 @@ pub struct DraftResponse {
     patch_version: String,
 }
 
+#[derive(Clone, Debug, Serialize)]
+pub struct DraftLobbyResponse {
+    draft_id: String,
+    draft_name: String,
+    has_password: bool,
+    teams_joined: u32,
+    total_teams: u32,
+    draft_state: DraftState,
+}
+
 impl From<Draft> for DraftResponse {
     fn from(draft: Draft) -> DraftResponse {
         let current_auction = {
@@ -90,6 +100,19 @@ impl From<Draft> for DraftResponse {
                 .collect(),
             pokemon: draft.pokemon,
             patch_version: draft.settings.patch_version,
+        }
+    }
+}
+
+impl From<Draft> for DraftLobbyResponse {
+    fn from(draft: Draft) -> DraftLobbyResponse {
+        DraftLobbyResponse {
+            draft_id: draft.draft_id,
+            draft_name: draft.draft_name,
+            has_password: draft.settings.password.is_some(),
+            teams_joined: draft.teams.len() as u32,
+            total_teams: draft.settings.num_teams,
+            draft_state: draft.draft_state,
         }
     }
 }

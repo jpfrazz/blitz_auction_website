@@ -66,3 +66,12 @@ export interface Draft {
   pokemon: Pokemon[];
   patch_version: string;
 }
+
+export interface DraftLobby {
+  draft_id: string;
+  draft_name: string;
+  has_password: boolean;
+  teams_joined: number;
+  total_teams: number;
+  draft_state: DraftState;
+}

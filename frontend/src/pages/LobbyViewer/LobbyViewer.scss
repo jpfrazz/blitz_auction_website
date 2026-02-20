@@ -1,0 +1,110 @@
+@import '../../shared/style/theme.scss';
+
+.lobby-viewer-main {
+  min-height: calc(91vh - 180px);
+  padding: 2rem 1rem;
+  font-size: 14px;
+}
+
+.lobby-viewer-title {
+  margin-bottom: 1.5rem;
+  text-align: center;
+  color: $eb-text;
+}
+
+.lobby-viewer-table-wrapper {
+  width: 100%;
+  overflow-x: auto;
+  max-height: 600px;
+  border: 1px solid $eb-border;
+}
+
+.lobby-viewer-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: $eb-bg;
+  color: $eb-text;
+  font-size: 14px;
+
+  th,
+  td {
+    border: 1px solid $eb-border;
+    padding: 8px 12px;
+    text-align: left;
+    font-size: 14px;
+    line-height: 1.2;
+  }
+
+  th {
+    background: $eb-primary;
+    color: $eb-text-black;
+    font-weight: 700;
+    position: sticky;
+    top: 0;
+    z-index: 1;
+  }
+
+  tr:nth-child(even) {
+    background: $eb-surface;
+  }
+
+  tr:hover {
+    background: $eb-accent;
+    color: $eb-text-black;
+  }
+}
+
+.lobby-header-container {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.lobby-header-title {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-weight: 700;
+}
+
+.lobby-filter-input {
+  width: 100%;
+  padding: 4px;
+  border: 1px solid $eb-border;
+  background: $eb-surface;
+  color: $eb-text;
+  border-radius: 3px;
+  font-size: 14px;
+
+  &::placeholder {
+    color: $eb-text-muted;
+  }
+}
+
+.lobby-viewer-join-button {
+  display: inline-block;
+  text-decoration: none;
+  background: $eb-primary;
+  color: $eb-text-black;
+  padding: 6px 12px;
+  border-radius: 4px;
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+  border: none;
+
+  &:hover {
+    background: $eb-primary-hover;
+  }
+
+  &:active {
+    background: darken($eb-primary, 5%);
+  }
+}
+
+.lobby-viewer-empty {
+  text-align: center;
+  padding: 2rem;
+  color: $eb-text-muted;
+}

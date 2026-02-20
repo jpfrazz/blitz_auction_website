@@ -3,7 +3,6 @@ import './Header.scss';
 import { Link } from 'react-router-dom';
 
 const navButtons = [
-  { label: "Auction Setup", link: "/AuctionSetup" },
   { label: "Team Planner", link: "/TeamPlanner" },
   { label: "Pokédex", link: "/Pokedex" },
   { label: "Boss Battles", link: "/BossBattles" },
@@ -24,6 +23,19 @@ function Header() {
           />
         </Link>
         <nav className="nav">
+          <div className="navDropdown">
+            <button className="navButton navDropdownTrigger" type="button">
+              Auctions
+            </button>
+            <div className="navDropdownMenu">
+              <Link to="/AuctionSetup" className="navButton navDropdownItem">
+                Auction Setup
+              </Link>
+              <Link to="/LobbyViewer" className="navButton navDropdownItem">
+                Lobby Viewer
+              </Link>
+            </div>
+          </div>
           {navButtons.map(btn => (
             <Link
               key={btn.label}

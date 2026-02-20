@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { Draft } from "../../types";
+import { Draft, DraftLobby } from "../../types";
 
 // Fetch current user info
 export async function fetchCurrentUser(): Promise<{user_id: string, username: string}> {
@@ -23,6 +23,12 @@ export async function fetchCurrentUser(): Promise<{user_id: string, username: st
 // Fetch a draft by id from the backend
 export async function fetchDraftById(draft_id: string): Promise<Draft> {
   const response = await axios.get(`/api/drafts/${draft_id}`);
+  return response.data;
+}
+
+// Fetch all open drafts for lobby viewer
+export async function fetchOpenDrafts(): Promise<DraftLobby[]> {
+  const response = await axios.get('/api/drafts');
   return response.data;
 }
 

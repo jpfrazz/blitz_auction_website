@@ -115,7 +115,7 @@ impl Server {
             .route("/auth/discord/callback", get(handlers::discord_callback));
 
         let private_routes = Router::new()
-            .route("/drafts", post(handlers::create_draft))
+            .route("/drafts", get(handlers::list_open_drafts).post(handlers::create_draft))
             .route("/drafts/{draft_id}/join", post(handlers::join_draft))
             .route("/drafts/{draft_id}/bid", post(handlers::bid))
             .route("/drafts/{draft_id}/start", post(handlers::start_draft))

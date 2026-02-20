@@ -1,5 +1,5 @@
 use crate::{
-    draft::{Draft, DraftResponse, DraftSettings, DraftState},
+    draft::{Draft, DraftLobbyResponse, DraftResponse, DraftSettings, DraftState},
     messages::{ClientBidRequest, ClientBidResponse, ClientJoinResponse, ServerMessage},
     server::ServerState,
     users::{AuthBackend, CSRF_STATE_KEY, Credentials, DiscordCreds, User, UserId},
@@ -67,6 +67,24 @@ pub async fn create_draft(
         StatusCode::INTERNAL_SERVER_ERROR,
         "Could not create draft!".to_string(),
     ))
+}
+
+#[debug_handler]
+pub async fn list_open_drafts(
+    State(state): State<ServerState>,
+) -> Result<Json<Vec<DraftLobbyResponse>>, (StatusCode, String)> {
+    let mut open_drafts: Vec<DraftLobbyResponse> = vec![];
+
+    for draft_ref in state.drafts.iter() {
+        let draft_lock = draft_ref.value().clone();
+        let draft = draft_lock.read().await.clone();
+        if draft.draft_state == DraftState::COMPLETED {
+            continue;
+        }
+        open_drafts.push(draft.into());
+    }
+
+    Ok(Json(open_drafts))
 }
 
 #[debug_handler]
