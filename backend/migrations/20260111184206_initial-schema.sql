@@ -5,6 +5,9 @@ CREATE TABLE users (
     global_name TEXT,
     avatar TEXT,
     role_hash TEXT NOT NULL,
+    wins INT NOT NULL DEFAULT 0,
+    losses INT NOT NULL DEFAULT 0,
+    mmr INT NOT NULL DEFAULT 1500,
     updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
     created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );

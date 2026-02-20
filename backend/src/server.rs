@@ -120,6 +120,7 @@ impl Server {
             .route("/drafts/{draft_id}/join", post(handlers::join_draft))
             .route("/drafts/{draft_id}/bid", post(handlers::bid))
             .route("/drafts/{draft_id}/start", post(handlers::start_draft))
+            .route("/drafts/{draft_id}/claim-eeveelution", post(handlers::claim_eeveelution))
             .route("/me", get(handlers::me))
             .route_layer(middleware::from_fn(auto_login_guest));
 

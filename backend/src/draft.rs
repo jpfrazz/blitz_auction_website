@@ -156,7 +156,7 @@ pub struct Team {
     pub user_id: String,
     pub username: String,
     budget_remaining: u32,
-    auctions_won: Vec<&'static Pokemon>,
+    pub auctions_won: Vec<&'static Pokemon>,
 }
 
 impl Draft {

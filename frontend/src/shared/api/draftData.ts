@@ -62,3 +62,11 @@ export async function placeBid(draft_id: string, auction_id: string, value: numb
   });
   return response.data;
 }
+// Claim an eeveelution after draft completes
+export async function claimEeveelution(draft_id: string, pokedex_id: number, form: string | null): Promise<any> {
+  const response = await axios.post(`/api/drafts/${draft_id}/claim-eeveelution`, {
+    pokedex_id,
+    form
+  });
+  return response.data;
+}
