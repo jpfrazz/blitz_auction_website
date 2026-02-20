@@ -25,6 +25,11 @@ use tokio::{
 };
 use tower_sessions::Session;
 
+#[derive(Clone, Debug, Deserialize)]
+pub struct JoinDraftRequest {
+    pub password: Option<String>,
+}
+
 #[debug_handler]
 pub async fn create_draft(
     State(state): State<ServerState>,
@@ -44,7 +49,7 @@ pub async fn create_draft(
             Ok(mut draft) => {
                 let draft_id = draft.draft_id.clone();
                 draft
-                    .join_draft(host.get_user_id_string())
+                    .join_draft(host.get_user_id_string(), None)
                     .await
                     .expect("host should be able to join draft");
                 state
@@ -85,15 +90,17 @@ pub async fn join_draft(
     State(state): State<ServerState>,
     Path(draft_id): Path<String>,
     auth_session: AuthSession<AuthBackend>,
+    join_request: Option<Json<JoinDraftRequest>>,
 ) -> Result<Json<ClientJoinResponse>, (StatusCode, String)> {
     let user = auth_session.user.expect("user should exist");
     let user_id = user.get_user_id_string();
+    let password = join_request.and_then(|Json(req)| req.password);
     let Some(draft_lock) = state.drafts.get(&draft_id) else {
         return Err((StatusCode::NOT_FOUND, "draft does not exist".to_string()));
     };
 
     let mut draft = draft_lock.write().await;
-    if let Err(e) = draft.join_draft(user_id).await {
+    if let Err(e) = draft.join_draft(user_id, password).await {
         return Ok(Json(ClientJoinResponse {
             joined: false,
             error: Some(e),

@@ -54,6 +54,8 @@ export interface Team {
 
 export interface Draft {
   draft_id: string;
+  draft_name: string;
+  has_password: boolean;
   host: string;
   teams: Team[];
   draft_state: DraftState;

@@ -34,8 +34,15 @@ export async function startDraft(draft_id: string): Promise<Draft> {
 }
 
 // Join a draft
-export async function joinDraft(draft_id: string): Promise<Draft> {
-  await axios.post(`/api/drafts/${draft_id}/join`);
+export async function joinDraft(draft_id: string, password?: string): Promise<Draft> {
+  const trimmedPassword = password?.trim();
+  if (trimmedPassword) {
+    await axios.post(`/api/drafts/${draft_id}/join`, {
+      password: trimmedPassword,
+    });
+  } else {
+    await axios.post(`/api/drafts/${draft_id}/join`);
+  }
   // Fetch and return the updated draft after joining
   const response = await axios.get(`/api/drafts/${draft_id}`);
   return response.data;

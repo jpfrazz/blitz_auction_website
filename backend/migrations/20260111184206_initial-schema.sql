@@ -78,6 +78,8 @@ CREATE TABLE key_moves (
 
 CREATE TABLE drafts (
     draft_id TEXT NOT NULL PRIMARY KEY,
+    draft_name TEXT NOT NULL DEFAULT '',
+    password TEXT,
     host_user_id TEXT REFERENCES users(user_id),
     host_guest_id TEXT REFERENCES guests(user_id),
     starting_money INT NOT NULL DEFAULT 20000,

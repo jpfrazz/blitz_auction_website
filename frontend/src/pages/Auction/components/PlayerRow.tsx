@@ -5,18 +5,17 @@ import './PlayerRow.scss';
 interface PlayerRowProps {
   teams: Team[];
   numPlayers: number;
-  budgetRemaining: number;
   highestBidderId?: string | null;
 }
 
-const PlayerRow: React.FC<PlayerRowProps> = ({ teams, numPlayers, budgetRemaining, highestBidderId }) => {
+const PlayerRow: React.FC<PlayerRowProps> = ({ teams, numPlayers, highestBidderId }) => {
   return (
     <div className="auction-players-row">
       {Array.from({ length: numPlayers }).map((_, idx) => {
         const team = teams[idx];
         const playerName = team?.user_id;
         const isFilled = Boolean(team);
-        const teamMoney = budgetRemaining;
+        const teamMoney = team?.budget_remaining ?? 0;
         const wonPokemon = team?.auctions_won ?? team?.pokemon ?? [];
         return (
           <div
