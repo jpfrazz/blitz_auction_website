@@ -1,6 +1,7 @@
 use crate::{
     draft::{Draft, DraftLobbyResponse, DraftResponse, DraftSettings, DraftState},
     messages::{ClientBidRequest, ClientBidResponse, ClientJoinResponse, ServerMessage},
+    pokemon,
     server::ServerState,
     users::{AuthBackend, CSRF_STATE_KEY, Credentials, DiscordCreds, User, UserId},
 };
@@ -101,6 +102,19 @@ pub async fn get_draft(
     let draft = draft_lock.read().await.clone();
 
     Ok(Json(draft.into()))
+}
+
+#[debug_handler]
+pub async fn get_highest_patch_pokemon(
+) -> Result<Json<Vec<&'static pokemon::Pokemon>>, (StatusCode, String)> {
+    let Some(pokemon) = pokemon::get_highest_patch_pokemon_data() else {
+        return Err((
+            StatusCode::NOT_FOUND,
+            "no pokemon data available".to_string(),
+        ));
+    };
+
+    Ok(Json(pokemon))
 }
 
 #[debug_handler]

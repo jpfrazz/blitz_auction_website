@@ -70,12 +70,6 @@ const AllPokemonTab: React.FC<AllPokemonTabProps> = ({ pokemon, auctions }) => {
       },
       { accessorKey: 'cost', header: 'Cost' },
       { accessorKey: 'draftedBy', header: 'Drafted By' },
-      { accessorKey: 'hp', header: 'HP' },
-      { accessorKey: 'attack', header: 'Atk' },
-      { accessorKey: 'defense', header: 'Def' },
-      { accessorKey: 'specialAttack', header: 'SpA' },
-      { accessorKey: 'specialDefense', header: 'SpD' },
-      { accessorKey: 'speed', header: 'Spe' },
       { accessorKey: 'baseStatTotal', header: 'BST' },
     ],
     []

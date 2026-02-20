@@ -53,6 +53,7 @@ const LobbyViewer: React.FC = () => {
       header: 'Password',
       accessorKey: 'has_password',
       cell: info => (info.getValue<boolean>() ? '🔒' : '🔓'),
+      enableColumnFilter: false,
     },
     {
       header: 'Teams',

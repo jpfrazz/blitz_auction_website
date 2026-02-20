@@ -3,7 +3,7 @@ import './Header.scss';
 import { Link } from 'react-router-dom';
 
 const navButtons = [
-  { label: "Team Planner", link: "/TeamPlanner" },
+  // { label: "Team Planner", link: "/TeamPlanner" },
   { label: "Pokédex", link: "/Pokedex" },
   { label: "Boss Battles", link: "/BossBattles" },
   { label: "Blitz Info", link: "/Info" },
