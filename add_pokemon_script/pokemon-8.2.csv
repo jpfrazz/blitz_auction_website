@@ -82,13 +82,13 @@ dex_number,name,form,evolves_from_id,evolves_from_form,type1,type2,stage,ability
 341,Corphish,,,,Water,,base,Hyper Cutter,Shell Armor,Adaptability,43,80,65,50,35,35,,,
 342,Crawdaunt,,341,,Water,Dark,evo,Hyper Cutter,Shell Armor,Adaptability,63,120,85,90,55,55,"Level 30",,
 222,Corsola,,,,Water,Rock,base,Hustle,Natural Cure,Regenerator,65,55,95,65,95,35,,,
-222,Corsola-Galar,Galar,222,,Ghost,,evo,Weak Armor,,Cursed Body,60,55,100,65,100,30,"on death",,
+222,Corsola,Galar,222,,Ghost,,evo,Weak Armor,,Cursed Body,60,55,100,65,100,30,"on death",,
 864,Cursola,,222,Galar,Ghost,,evo,Weak Armor,,Perish Body,60,95,50,145,130,30,"Level 38 (Oracle)",,
 453,Croagunk,,,,Poison,Fighting,base,Anticipation,Dry Skin,Poison Touch,48,61,40,61,40,50,,,
 454,Toxicroak,,453,,Poison,Fighting,evo,Anticipation,Dry Skin,Poison Touch,83,106,65,86,65,85,"Level 37 (Oracle)",,
 104,Cubone,,,,Ground,,base,Rock Head,Lightning Rod,Battle Armor,50,50,95,40,50,35,,,
 105,Marowak,,104,,Ground,,evo,Rock Head,Lightning Rod,Battle Armor,60,80,110,50,80,45,"Level 28 at day",,
-105,Marowak-Alola,Alola,104,,Fire,Ghost,evo,Cursed Body,Lightning Rod,Rock Head,60,80,110,50,80,45,"Level 28 at night",,
+105,Marowak,Alola,104,,Fire,Ghost,evo,Cursed Body,Lightning Rod,Rock Head,60,80,110,50,80,45,"Level 28 at night",,
 878,Cufant,,,,Steel,,base,Sheer Force,,Heavy Metal,72,80,49,40,49,40,,,
 879,Copperajah,,878,,Steel,,evo,Sheer Force,,Heavy Metal,122,130,69,80,69,30,"Level 34",,
 742,Cutiefly,,,,Bug,Fairy,base,Honey Gather,Shield Dust,Sweet Veil,40,45,40,55,40,84,,,
@@ -116,7 +116,7 @@ dex_number,name,form,evolves_from_id,evolves_from_form,type1,type2,stage,ability
 678,Mega Meowstic,Mega,678,,Psychic,,mega,Keen Eye,Infiltrator,,74,48,76,143,101,124,Meowsticite,"Stage 1",
 102,Exeggcute,,,,Grass,Psychic,base,Chlorophyll,,Harvest,60,40,80,60,45,40,,,
 103,Exeggutor,,102,,Grass,Psychic,evo,Chlorophyll,,Harvest,95,95,85,125,75,55,"Leaf Stone",,
-103,Exeggutor-Alola,Alola,102,,Grass,Dragon,evo,Frisk,,Harvest,95,105,85,125,75,45,"Sun Stone",,
+103,Exeggutor,Alola,102,,Grass,Dragon,evo,Frisk,,Harvest,95,105,85,125,75,45,"Sun Stone",,
 870,Falinks,,,,Fighting,,base,Battle Armor,,Defiant,65,100,100,70,60,75,,"Stage 1",
 870,Mega Falinks,Mega,870,,Fighting,,mega,Battle Armor,,Defiant,65,135,135,70,65,100,Falinksite,"Stage 1",
 349,Feebas,,,,Water,,base,Swift Swim,Oblivious,Adaptability,20,15,20,10,55,80,,,
@@ -156,8 +156,8 @@ dex_number,name,form,evolves_from_id,evolves_from_form,type1,type2,stage,ability
 704,Goomy,,,,Dragon,,base,Sap Sipper,Hydration,Gooey,45,50,35,55,75,40,,,
 705,Sliggoo,,704,,Dragon,,evo,Sap Sipper,Hydration,Gooey,68,75,53,83,113,60,"Level 40 (Guru)",,
 706,Goodra,,705,,Dragon,,evo,Sap Sipper,Hydration,Gooey,90,100,70,110,150,80,"Level 50 in Rain",,
-705,Sliggoo-Hisui,Hisui,704,,Steel,Dragon,evo,Sap Sipper,Shell Armor,Gooey,58,75,83,83,113,40,"Metal Coat",,
-706,Goodra-Hisui,Hisui,705,Hisui,Steel,Dragon,evo,Sap Sipper,Shell Armor,Gooey,80,100,100,110,150,60,"Level 50 in Rain",,
+705,Sliggoo,Hisui,704,,Steel,Dragon,evo,Sap Sipper,Shell Armor,Gooey,58,75,83,83,113,40,"Metal Coat",,
+706,Goodra,Hisui,705,Hisui,Steel,Dragon,evo,Sap Sipper,Shell Armor,Gooey,80,100,100,110,150,60,"Level 50 in Rain",,
 829,Gossifleur,,,,Grass,,base,Cotton Down,Regenerator,Effect Spore,40,40,60,40,60,10,,,
 830,Eldegoss,,829,,Grass,,evo,Cotton Down,Regenerator,Effect Spore,60,50,90,80,120,60,"Level 20",,
 574,Gothita,,,,Psychic,,base,Frisk,Competitive,Shadow Tag,45,30,50,55,65,45,,,
@@ -241,8 +241,8 @@ dex_number,name,form,evolves_from_id,evolves_from_form,type1,type2,stage,ability
 307,Meditite,,,,Fighting,Psychic,base,Pure Power,,Telepathy,30,40,55,40,55,60,,"Stage 1",
 308,Medicham,,307,,Fighting,Psychic,evo,Pure Power,,Telepathy,60,60,75,60,75,80,"Level 37 (Oracle)","Stage 1",
 308,Mega Medicham,Mega,308,,Fighting,Psychic,mega,Pure Power,,,60,100,85,80,85,100,Medichamite,"Stage 1",
-52,Meowth,,,,Steel,,base,Pickup,Tough Claws,Unnerve,50,65,55,40,40,40,,,
-863,Perrserker,,52,,Steel,,evo,Battle Armor,Tough Claws,Steely Spirit,70,110,100,50,60,50,"Level 28",,
+52,Meowth,Galar,,,Steel,,base,Pickup,Tough Claws,Unnerve,50,65,55,40,40,40,,,
+863,Perrserker,Galar,52,Galar,Steel,,evo,Battle Armor,Tough Claws,Steely Spirit,70,110,100,50,60,50,"Level 28",,
 241,Miltank,,,,Normal,,base,Thick Fat,Scrappy,Sap Sipper,95,80,105,40,70,100,,,
 198,Murkrow,,,,Dark,Flying,base,Insomnia,Super Luck,Prankster,60,85,42,85,42,91,,,
 430,Honchkrow,,198,,Dark,Flying,evo,Insomnia,Super Luck,Moxie,100,125,52,105,52,71,"Dusk Stone",,
@@ -335,7 +335,7 @@ dex_number,name,form,evolves_from_id,evolves_from_form,type1,type2,stage,ability
 722,Rowlet,,,,Grass,Flying,base,Overgrow,,Long Reach,68,55,55,50,50,42,,,
 723,Dartrix,,722,,Grass,Flying,evo,Overgrow,,Long Reach,78,75,75,70,70,52,"Level 17",,
 724,Decidueye,,723,,Grass,Ghost,evo,Overgrow,,Long Reach,78,107,75,100,100,70,"Level 34 at night",,
-724,Decidueye-Hisui,Hisui,723,,Grass,Fighting,evo,Overgrow,,Scrappy,88,112,80,95,95,60,"Level 34 at day",,
+724,Decidueye,Hisui,723,,Grass,Fighting,evo,Overgrow,,Scrappy,88,112,80,95,95,60,"Level 34 at day",,
 302,Sableye,,,,Dark,Ghost,base,Keen Eye,Stall,Prankster,50,75,75,65,65,50,,"Basic",
 302,Mega Sableye,Mega,302,,Dark,Ghost,mega,Magic Bounce,,,50,85,125,85,115,20,Sablenite,"Basic",
 757,Salandit,,,,Poison,Fire,base,Corrosion,,Oblivious,48,44,40,71,40,77,,,
@@ -343,8 +343,8 @@ dex_number,name,form,evolves_from_id,evolves_from_form,type1,type2,stage,ability
 551,Sandile,,,,Ground,Dark,base,Intimidate,Moxie,Anger Point,50,72,35,35,35,65,,,
 552,Krokorok,,551,,Ground,Dark,evo,Intimidate,Moxie,Anger Point,60,82,45,45,45,74,"Level 29",,
 553,Krookodile,,552,,Ground,Dark,evo,Intimidate,Moxie,Anger Point,95,117,80,65,70,92,"Level 40",,
-27,Sandshrew,,,,Ice,Steel,base,Snow Cloak,,Slush Rush,50,75,90,10,35,40,,,
-28,Sandslash-Alola,Alola,27,,Ice,Steel,evo,Snow Cloak,,Slush Rush,75,100,120,25,65,65,"Level 22",,
+27,Sandshrew,Alola,,,Ice,Steel,base,Snow Cloak,,Slush Rush,50,75,90,10,35,40,,,
+28,Sandslash,Alola,27,Alola,Ice,Steel,evo,Snow Cloak,,Slush Rush,75,100,120,25,65,65,"Level 22",,
 769,Sandygast,,,,Ghost,Ground,base,Water Compaction,,Sand Veil,55,55,80,70,45,15,,,
 770,Palossand,,769,,Ghost,Ground,evo,Water Compaction,,Sand Veil,85,75,110,100,75,35,"Level 42 (Oracle)",,
 664,Scatterbug,,,,Bug,,base,Shield Dust,Compound Eyes,Friend Guard,38,35,40,27,25,35,,,
@@ -379,9 +379,9 @@ dex_number,name,form,evolves_from_id,evolves_from_form,type1,type2,stage,ability
 287,Slakoth,,,,Normal,,base,Truant,,,60,60,60,35,35,30,,,
 288,Vigoroth,,287,,Normal,,evo,Vital Spirit,,,80,80,80,55,55,90,"Level 18",,
 289,Slaking,,288,,Normal,,evo,Truant,,,150,160,100,95,65,100,"Level 36",,
-79,Slowpoke,,,,Psychic,,base,Gluttony,Own Tempo,Regenerator,90,65,65,40,40,15,,,
-80,Slowbro-Galar,Galar,79,,Poison,Psychic,evo,Quick Draw,Own Tempo,Regenerator,95,100,95,100,70,30,"Level 37 (Oracle)",,
-199,Slowking-Galar,Galar,79,,Poison,Psychic,evo,Curious Medicine,Own Tempo,Regenerator,95,65,80,110,110,30,"King's Rock",,
+79,Slowpoke,Galar,,,Psychic,,base,Gluttony,Own Tempo,Regenerator,90,65,65,40,40,15,,,
+80,Slowbro,Galar,79,Galar,Poison,Psychic,evo,Quick Draw,Own Tempo,Regenerator,95,100,95,100,70,30,"Level 37 (Oracle)",,
+199,Slowking,Galar,79,Galar,Poison,Psychic,evo,Curious Medicine,Own Tempo,Regenerator,95,65,80,110,110,30,"King's Rock",,
 850,Sizzlipede,,,,Fire,Bug,base,Flash Fire,White Smoke,Flame Body,50,65,45,50,50,45,,,
 851,Centiskorch,,850,,Fire,Bug,evo,Flash Fire,White Smoke,Flame Body,100,115,65,90,90,65,"Level 28",,
 928,Smoliv,,,,Grass,Normal,base,Early Bird,,Harvest,41,35,45,58,51,30,,,
@@ -485,10 +485,10 @@ dex_number,name,form,evolves_from_id,evolves_from_form,type1,type2,stage,ability
 544,Whirlipede,,543,,Bug,Poison,evo,Poison Point,Swarm,Speed Boost,40,55,99,40,79,47,"Level 22","Stage 2",
 545,Scolipede,,544,,Bug,Poison,evo,Poison Point,Swarm,Speed Boost,60,100,89,55,69,112,"Level 30","Stage 2",
 545,Mega Scolipede,Mega,545,,Bug,Poison,mega,Poison Point,Swarm,Speed Boost,60,140,149,75,99,62,Scolipedite,"Stage 2",
-100,Voltorb,,,,Electric,Grass,base,Soundproof,Static,Aftermath,40,30,50,55,55,100,,,
-101,Electrode,,100,,Electric,Grass,evo,Soundproof,Static,Aftermath,60,50,70,80,80,150,"Leaf Stone",,
-37,Vulpix,,,,Ice,,base,Snow Cloak,,Snow Warning,38,41,40,50,65,65,,,
-38,Ninetales-Alola,Alola,37,,Ice,Fairy,evo,Snow Cloak,,Snow Warning,73,67,75,81,100,109,"Ice Stone",,
+100,Voltorb,Hisui,,,Electric,Grass,base,Soundproof,Static,Aftermath,40,30,50,55,55,100,,,
+101,Electrode,Hisui,100,Hisui,Electric,Grass,evo,Soundproof,Static,Aftermath,60,50,70,80,80,150,"Leaf Stone",,
+37,Vulpix,Alola,,,Ice,,base,Snow Cloak,,Snow Warning,38,41,40,50,65,65,,,
+38,Ninetales,Alola,37,Alola,Ice,Fairy,evo,Snow Cloak,,Snow Warning,73,67,75,81,100,109,"Ice Stone",,
 940,Wattrel,,,,Electric,Flying,base,Wind Power,Volt Absorb,Competitive,40,40,35,55,40,70,,,
 941,Kilowattrel,,940,,Electric,Flying,evo,Wind Power,Volt Absorb,Competitive,70,70,60,105,60,125,"Level 25",,
 13,Weedle,,,,Bug,Poison,base,Shield Dust,,Run Away,40,35,30,20,20,50,,"Stage 2",
@@ -499,14 +499,14 @@ dex_number,name,form,evolves_from_id,evolves_from_form,type1,type2,stage,ability
 279,Pelipper,,278,,Water,Flying,evo,Keen Eye,Drizzle,Rain Dish,60,50,100,95,70,65,"Level 25",,
 746,Wishiwashi,,,,Water,,base,Schooling,,,45,20,20,25,25,40,,,
 746,Wishiwashi-School,School,746,,Water,,evo,Schooling,,,45,140,130,140,135,30,"Schooling Level 20",,
-194,Wooper,,,,Poison,Ground,base,Poison Point,Water Absorb,Unaware,55,45,45,25,25,15,,,
-980,Clodsire,,194,,Poison,Ground,evo,Poison Point,Water Absorb,Unaware,130,75,60,45,100,20,"Level 20",,
+194,Wooper,Paldea,,,Poison,Ground,base,Poison Point,Water Absorb,Unaware,55,45,45,25,25,15,,,
+980,Clodsire,Paldea,194,Paldea,Poison,Ground,evo,Poison Point,Water Absorb,Unaware,130,75,60,45,100,20,"Level 20",,
 835,Yamper,,,,Electric,,base,Ball Fetch,,Rattled,59,45,50,40,50,26,,,
 836,Boltund,,835,,Electric,,evo,Strong Jaw,,Competitive,69,90,60,90,60,121,"Level 25",,
 193,Yanma,,,,Bug,Flying,base,Speed Boost,Compound Eyes,Frisk,65,65,45,75,45,95,,,
 469,Yanmega,,193,,Bug,Flying,evo,Speed Boost,Tinted Lens,Frisk,86,76,86,116,56,95,"Learn Ancient Power",,
 263,Zigzagoon,,,,Dark,Normal,base,Pickup,Gluttony,Quick Feet,38,30,41,30,41,60,,,
-264,Linoone-Galar,Galar,263,,Dark,Normal,evo,Pickup,Gluttony,Quick Feet,78,70,61,50,61,100,"Level 20",,
+264,Linoone,Galar,263,,Dark,Normal,evo,Pickup,Gluttony,Quick Feet,78,70,61,50,61,100,"Level 20",,
 862,Obstagoon,,264,Galar,Dark,Normal,evo,Reckless,Guts,Defiant,93,90,101,60,81,95,"Level 35",,
 570,Zorua,,,,Dark,,base,Illusion,,,40,65,40,80,40,65,,,
 571,Zoroark,,570,,Dark,,evo,Illusion,,,60,105,60,120,60,105,"Level 30",,
@@ -547,7 +547,7 @@ dex_number,name,form,evolves_from_id,evolves_from_form,type1,type2,stage,ability
 226,Mantine,,458,,Water,Flying,evo,Swift Swim,Water Absorb,Water Veil,85,40,70,80,140,70,"Level 20",,TRUE
 439,Mime Jr,,,,Psychic,Fairy,base,Soundproof,Filter,Technician,20,25,45,70,90,60,,,TRUE
 122,Mr. Mime,,439,,Psychic,Fairy,evo,Soundproof,Filter,Technician,40,45,65,100,120,90,"Level 20 at day",,TRUE
-122,Mr. Mime-Galar,Galar,439,,Ice,Psychic,evo,Vital Spirit,Screen Cleaner,Ice Body,50,65,65,90,90,100,"Level 20 at night",,TRUE
+122,Mr. Mime,Galar,439,,Ice,Psychic,evo,Vital Spirit,Screen Cleaner,Ice Body,50,65,65,90,90,100,"Level 20 at night",,TRUE
 866,Mr. Rime,,122,Galar,Ice,Psychic,evo,Tangled Feet,Screen Cleaner,Ice Body,80,85,75,110,100,70,"Level 42",,TRUE
 446,Munchlax,,,,Normal,,base,Pickup,Thick Fat,Gluttony,135,85,40,40,85,5,,,TRUE
 143,Snorlax,,446,,Normal,,evo,Immunity,Thick Fat,Gluttony,160,110,65,65,110,30,"Level 30",,TRUE
@@ -555,7 +555,7 @@ dex_number,name,form,evolves_from_id,evolves_from_form,type1,type2,stage,ability
 25,Pikachu,,172,,Electric,,evo,Static,,Lightning Rod,35,55,40,50,50,90,"Level 10","Stage 2",TRUE
 26,Raichu,,25,,Electric,,evo,Static,,Lightning Rod,60,90,55,90,80,110,"Thunder Stone","Stage 2",TRUE
 26,Mega Raichu X,Mega X,26,,Electric,,evo,Static,,Lightning Rod,60,135,95,90,95,110,"Raichunite X","Stage 2",TRUE
-26,Raichu-Alola,Alola,25,,Electric,Psychic,evo,Surge Surfer,,,60,85,50,95,85,110,"Water Stone",,TRUE
+26,Raichu,Alola,25,,Electric,Psychic,evo,Surge Surfer,,,60,85,50,95,85,110,"Water Stone",,TRUE
 447,Riolu,,,,Fighting,,base,Steadfast,Inner Focus,Prankster,40,70,40,35,40,60,,"Stage 1",TRUE
 448,Lucario,,447,,Fighting,Steel,evo,Steadfast,Inner Focus,Justified,70,110,70,115,70,90,"Level 30","Stage 1",TRUE
 448,Mega Lucario,Mega,448,,Fighting,Steel,mega,Adaptability,,,70,145,88,140,70,112,Lucarionite,"Stage 1",TRUE
