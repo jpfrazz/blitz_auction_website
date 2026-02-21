@@ -1,5 +1,14 @@
 @import '../../shared/style/theme.scss';
 // Auction Setup Modern Styles
+.auction-setup-main {
+	min-height: calc(100vh - 180px);
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: flex-start;
+	padding: 7.5rem 16px 0;
+}
+
 .auction-setup-card {
 	background: $eb-surface;
 	border-radius: 12px;
@@ -39,6 +48,11 @@
 	color: $eb-text;
 	font-size: 1.08rem;
 	font-weight: 500;
+	display: flex;
+	flex-direction: column;
+	align-items: flex-start;
+	gap: 5px;
+	width: 100%;
 }
 
 .auction-setup-input {
@@ -55,11 +69,43 @@
 	border: 1.5px solid $eb-primary;
 	outline: none;
 }
+.auction-setup-input[type="number"] {
+	color-scheme: dark;
+}
 
 .auction-setup-checkbox-row {
 	flex-direction: row;
 	align-items: center;
 	gap: 10px;
+}
+.auction-setup-checkbox-row input[type="checkbox"] {
+  -webkit-appearance: none;
+  appearance: none;
+  background-color: $eb-bg;
+  margin: 0;
+  font: inherit;
+  color: currentColor;
+  width: 1.15em;
+  height: 1.15em;
+  border: 0.1em solid $eb-text-muted;
+  border-radius: 0.15em;
+  transform: translateY(-0.075em);
+  display: grid;
+  place-content: center;
+  cursor: pointer;
+}
+.auction-setup-checkbox-row input[type="checkbox"]::before {
+  content: "";
+  width: 0.65em;
+  height: 0.65em;
+  transform: scale(0);
+  transition: 120ms transform ease-in-out;
+  box-shadow: inset 1em 1em $eb-primary;
+  transform-origin: bottom left;
+  clip-path: polygon(14% 44%, 0 65%, 50% 100%, 100% 16%, 80% 0%, 43% 62%);
+}
+.auction-setup-checkbox-row input[type="checkbox"]:checked::before {
+  transform: scale(1);
 }
 .auction-setup-checkbox-label {
 	font-size: 1rem;

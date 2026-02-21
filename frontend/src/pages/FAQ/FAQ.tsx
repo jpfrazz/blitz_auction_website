@@ -6,7 +6,7 @@ import './FAQ.scss';
 const FAQ = () => (
   <>
     <Header />
-    <main className="faq-main">
+    <main className="faq-main" style={{ padding: '7.5rem 16px 0' }}>
       <h1 className="faq-title">
         Frequently Asked Questions
       </h1>

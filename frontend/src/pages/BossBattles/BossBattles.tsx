@@ -254,7 +254,7 @@ const BossBattles = () => {
   return (
     <>
       <Header />
-      <main className="boss-battles-page">
+      <main className="boss-battles-page" style={{ padding: '7.5rem 16px 0' }}>
         <h1 className="page-title">Boss Battles</h1>
         
         <div className="controls-container">

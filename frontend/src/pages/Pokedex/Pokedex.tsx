@@ -24,6 +24,7 @@ const Pokedex: React.FC = () => {
       <Header />
       <main
         className="pokedex-main"
+        style={{ padding: '7.5rem 16px 0' }}
       >
         {loading ? (
           <div>Loading Pokédex...</div>

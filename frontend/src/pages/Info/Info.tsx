@@ -387,7 +387,6 @@ const Info = () => (
                 <img src="/MiniIcons/corsola-galar.png" alt="Corsola-Galar" />
                 <img src="/MiniIcons/croagunk.png" alt="Croagunk" />
                 <img src="/MiniIcons/elgyem.png" alt="Elgyem" />
-                <img src="/MiniIcons/larvesta.png" alt="Larvesta" />
                 <img src="/MiniIcons/meditite.png" alt="Meditite" />
                 <img src="/MiniIcons/ponyta.png" alt="Ponyta" />
                 <img src="/MiniIcons/sandygast.png" alt="Sandygast" />
@@ -407,7 +406,6 @@ const Info = () => (
                 <li>Corsola-Galar &gt; Cursola</li>
                 <li>Croagunk &gt; Toxicroak</li>
                 <li>Elgyem &gt; Beheeyem</li>
-                <li>Larvesta &gt; Volcarona</li>
                 <li>Meditite &gt; Medicham</li>
                 <li>Ponyta &gt; Rapidash</li>
                 <li>Sandygast &gt; Palossand</li>
