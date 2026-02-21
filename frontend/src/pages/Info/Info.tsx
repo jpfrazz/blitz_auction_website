@@ -11,7 +11,7 @@ const Info = () => (
         Blitz Info
       </h1>
       <nav className="info-toc-card">
-        <h2 className="info-toc-heading">Blitz Index</h2>
+        <h2 className="info-toc-heading">Contents</h2>
         <hr />
         <ul className="info-toc-list">
           <li><a href="#heart-scale-locations">Heart Scale Locations</a></li>

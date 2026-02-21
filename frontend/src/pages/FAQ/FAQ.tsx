@@ -2,18 +2,19 @@ import React from 'react';
 import Header from '../../shared/components/Header';
 import Footer from '../../shared/components/Footer';
 import './FAQ.scss';
+import '../Info/Info.scss';
 
 const FAQ = () => (
   <>
     <Header />
-    <main className="faq-main" style={{ padding: '7.5rem 16px 0' }}>
+    <main className="faq-main">
       <h1 className="faq-title">
         Frequently Asked Questions
       </h1>
-      <nav className="faq-toc-card">
-        <h2 className="faq-toc-heading">Contents</h2>
+      <nav className="info-toc-card">
+        <h2 className="info-toc-heading">Contents</h2>
         <hr />
-        <ul className="faq-toc-list">
+        <ul className="info-toc-list">
           <li><a href="#what-is-emerald-blitz">What's Emerald Blitz?</a></li>
           <li><a href="#how-do-i-play">How do I play?</a></li>
           <li><a href="#what-are-the-rules">What are the rules?</a></li>

@@ -48,7 +48,7 @@ interface TrainerData {
   trainerKey: string;
   stage: string;
   color?: string;
-  infoLines: string[];
+  infoLines: (string | React.ReactNode)[];
   pokemon: PokemonData[];
 }
 
@@ -132,7 +132,7 @@ const BossBattles = () => {
       }
 
       const pokemonList: PokemonData[] = [];
-      const infoLines: string[] = [];
+      const infoLines: (string | React.ReactNode)[] = [];
       let currentPokemon: Partial<PokemonData> | null = null;
       const prefixesToIgnore = ['Class:', 'Pic:', 'Gender:', 'Music:', 'Double Battle:', 'IVs:', 'Nature:', 'AI:', 'Mugshot:'];
       const nonPokemonPrefixes = ['Name:', 'Items:', 'Level:', 'Ability:', '-'];
@@ -190,6 +190,23 @@ const BossBattles = () => {
         }
       }
       if (currentPokemon) pokemonList.push(currentPokemon as PokemonData);
+
+      const trainerIdUpper = lines[0].trim().replace(/_/g, ' ').replace(/===/g, '').trim().toUpperCase();
+      const match = trainerIdUpper.match(/^(.*?)(?:\s+(\d+))?$/);
+      if (match) {
+        const baseName = match[1];
+        const gymNum = match[2];
+        if (baseName.includes('JUAN')) {
+          infoLines.push(
+            <span>In Blitz, when Tatsugiri becomes a Commander, he disappears inside the mouth of his ally, raising their Attack, SpAtk, and Speed, but preventing them from landing critical hits.</span>
+          );
+          if (['6', '7', '8'].includes(gymNum)) {
+            infoLines.push(
+              <span style={{ fontWeight: 'bold' }}>Heads Up! Tatsugiri can command Dondozo <i>and</i> Whiscash!</span>
+            );
+          }
+        }
+      }
 
       trainers.push({
         id: `trainer-${index}`,
@@ -308,7 +325,13 @@ const BossBattles = () => {
               style={{ borderBottomColor: trainer.color || '#444' }}
             >
               <h2>{trainer.displayName}</h2>
-              {trainer.infoLines.map((line, i) => <div key={i}>{line}</div>)}
+              {trainer.infoLines.length > 0 && (
+                <div className="trainer-info-container">
+                  {trainer.infoLines.map((line, i) => (
+                    <div key={i} style={{ marginBottom: i < trainer.infoLines.length - 1 ? '0.5rem' : 0 }}>{line}</div>
+                  ))}
+                </div>
+              )}
               
               <div className="pokemon-row">
                 {trainer.pokemon.map((poke, i) => (

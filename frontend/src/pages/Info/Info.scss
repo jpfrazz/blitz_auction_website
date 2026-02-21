@@ -5,7 +5,7 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 7.5rem 16px 0; // Set top padding to account for fixed header
+  padding: 7.5rem 1rem 0; // Increased top padding to clear header
   background: transparent;
 }
 
@@ -52,14 +52,14 @@
 
 .info-toc-list {
   color: $eb-accent;
-  font-size: 1.6rem;
+  font-size: 1.5rem;
   list-style-type: disc;
   padding-left: 24px;
   text-align: left;
 }
 
 .info-toc-list li {
-  margin-bottom: 12px;
+  margin-bottom: 4px;
 }
 
 .info-toc-list a {
@@ -93,7 +93,7 @@
 }
 
 .info-answer {
-  font-size: 1.25rem;
+  font-size: 1.5rem;
   line-height: 1.5;
   margin: 0;
 }
@@ -128,7 +128,7 @@
 
 .location-scale-caption {
   color: $eb-text;
-  font-size: 1.1rem;
+  font-size: 1.5rem;
   font-weight: 500;
   text-align: center;
   margin-top: 4px;
@@ -241,4 +241,8 @@
   background: $eb-bg;
   color: $eb-text;
   font-weight: bold;
+}
+
+.slateport-market-card details ul {
+  padding-left: 20px;
 }

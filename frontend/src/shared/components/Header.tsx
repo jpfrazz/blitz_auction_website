@@ -12,10 +12,14 @@ const navButtons = [
 ];
 
 function Header() {
+  const scrollToTop = () => {
+    window.scrollTo(0, 0);
+  };
+
   return (
     <header className="header">
       <div className="headerInner">
-        <Link to="/" className="logoLink">
+        <Link to="/" className="logoLink" onClick={scrollToTop}>
           <img
             src="/blitzlogo.png"
             alt="Emerald Blitz Logo"
@@ -28,10 +32,10 @@ function Header() {
               Auctions
             </button>
             <div className="navDropdownMenu">
-              <Link to="/AuctionSetup" className="navButton navDropdownItem">
+              <Link to="/AuctionSetup" className="navButton navDropdownItem" onClick={scrollToTop}>
                 Auction Setup
               </Link>
-              <Link to="/LobbyViewer" className="navButton navDropdownItem">
+              <Link to="/LobbyViewer" className="navButton navDropdownItem" onClick={scrollToTop}>
                 Lobby Viewer
               </Link>
             </div>
@@ -41,6 +45,7 @@ function Header() {
               key={btn.label}
               to={btn.link}
               className="navButton"
+              onClick={scrollToTop}
             >
               {btn.label}
             </Link>

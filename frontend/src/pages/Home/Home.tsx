@@ -149,13 +149,14 @@ const Home = () => (
         href="/emeraldblitz.bps"
         className='navButton'
         download
+        style={{ fontSize: '1.5rem', width: '15rem' }}
       >
         Download Patch
       </a>
-      <div style={{ color: '#fff', fontSize: '1.1rem', marginBottom: '8px' }}>
+      <div style={{ color: '#fff', fontSize: '1.5rem', marginBottom: '8px' }}>
         Current Release: v8.3
       </div>
-      <div style={{ color: '#ccc', fontSize: '1rem', marginBottom: '8px' }}>
+      <div style={{ color: '#ccc', fontSize: '1.5rem', marginBottom: '8px' }}>
         Once downloaded, apply the patch online using <a href="https://www.marcrobledo.com/RomPatcher.js/" target="_blank" rel="noopener noreferrer" style={{ color: '#4fc3f7' }}>this ROM Patcher</a>
       </div>
     </main>
