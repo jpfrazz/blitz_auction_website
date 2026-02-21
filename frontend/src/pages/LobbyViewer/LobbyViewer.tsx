@@ -11,7 +11,7 @@ import {
 } from '@tanstack/react-table';
 import Header from '../../shared/components/Header';
 import Footer from '../../shared/components/Footer';
-import { fetchOpenDrafts } from '../../shared/api/draftData';
+import { fetchOpenDrafts, fetchCurrentUser } from '../../shared/api/draftData';
 import { DraftLobby, DraftState } from '../../types';
 import './LobbyViewer.scss';
 
@@ -31,17 +31,22 @@ function formatDraftState(draftState: DraftState): string {
   return 'UNKNOWN';
 }
 
+
 const LobbyViewer: React.FC = () => {
   const [drafts, setDrafts] = useState<DraftLobby[]>([]);
   const [loading, setLoading] = useState(true);
   const [sorting, setSorting] = useState<SortingState>([{ id: 'draft_name', desc: false }]);
   const [columnFilters, setColumnFilters] = useState<any[]>([]);
+  const [isGuest, setIsGuest] = useState<boolean | null>(null);
 
   useEffect(() => {
     fetchOpenDrafts()
       .then(setDrafts)
       .catch(error => console.error('Error fetching open drafts:', error))
       .finally(() => setLoading(false));
+    fetchCurrentUser()
+      .then(user => setIsGuest(user.is_guest))
+      .catch(() => setIsGuest(null));
   }, []);
 
   const columns = useMemo<ColumnDef<DraftLobby>[]>(() => [
@@ -56,6 +61,12 @@ const LobbyViewer: React.FC = () => {
       enableColumnFilter: false,
     },
     {
+      header: 'Ranked',
+      accessorKey: 'ranked',
+      cell: info => (info.getValue<boolean>() ? '✓' : '✗'),
+      enableColumnFilter: false,
+    },
+    {
       header: 'Teams',
       cell: info => `${info.row.original.teams_joined}/${info.row.original.total_teams}`,
     },
@@ -65,14 +76,27 @@ const LobbyViewer: React.FC = () => {
     },
     {
       header: 'Join',
-      cell: info => (
-        <Link className="button lobby-viewer-join-button" to={`/Auction?${info.row.original.draft_id}`}>
-          Join
-        </Link>
-      ),
+      cell: info => {
+        const ranked = info.row.original.ranked;
+        const disableJoin = ranked && isGuest;
+        return (
+          <Link
+            className={`button lobby-viewer-join-button${disableJoin ? ' disabled' : ''}`}
+            to={disableJoin ? '#' : `/Auction?${info.row.original.draft_id}`}
+            tabIndex={disableJoin ? -1 : 0}
+            aria-disabled={disableJoin ? 'true' : undefined}
+            onClick={e => {
+              if (disableJoin) e.preventDefault();
+            }}
+            style={disableJoin ? { pointerEvents: 'none', opacity: 0.5 } : {}}
+          >
+            Join
+          </Link>
+        );
+      },
       enableSorting: false,
     },
-  ], []);
+  ], [isGuest]);
 
   const table = useReactTable({
     data: drafts,
@@ -151,7 +175,7 @@ const LobbyViewer: React.FC = () => {
               <tbody>
                 {table.getRowModel().rows.length === 0 && (
                   <tr>
-                    <td colSpan={5} className="lobby-viewer-empty">
+                    <td colSpan={6} className="lobby-viewer-empty">
                       No active drafts found.
                     </td>
                   </tr>

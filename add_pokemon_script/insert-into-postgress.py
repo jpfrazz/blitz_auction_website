@@ -67,7 +67,16 @@ class DbRow(TypedDict):
     speed: int
 
 
+class KeyMoveRow(TypedDict):
+    pokedex_id: int
+    form: str
+    patch_version: str
+    move_name: str
+    learn_method: str
+
+
 Rows = Iterable[DbRow]
+KeyMoveRows = Iterable[KeyMoveRow]
 
 
 # ---------- CSV ----------
@@ -136,6 +145,16 @@ def transform_row(
         speed=to_int(row["speed"]),
     )
 
+
+def transform_key_move_row(row: Mapping[str, str]) -> KeyMoveRow:
+    return KeyMoveRow(
+        pokedex_id=to_int(row.get("pokedex_id", "")),
+        form=row.get("form", "").strip(),
+        patch_version=row.get("patch_version", "").strip(),
+        move_name=row.get("move_name", "").strip(),
+        learn_method=row.get("learn_method", "").strip(),
+    )
+
 # ---------- SQL ----------
 
 INSERT_SQL = """
@@ -191,6 +210,24 @@ ON CONFLICT (pokedex_id, form, patch_version)
 DO NOTHING;
 """
 
+INSERT_KEY_MOVES_SQL = """
+INSERT INTO key_moves (
+    pokedex_id,
+    form,
+    patch_version,
+    move_name,
+    learn_method
+)
+VALUES (
+    %(pokedex_id)s,
+    %(form)s,
+    %(patch_version)s,
+    %(move_name)s,
+    %(learn_method)s
+)
+ON CONFLICT DO NOTHING;
+"""
+
 
 # ---------- Loader ----------
 
@@ -200,6 +237,15 @@ def insert_rows(
 ) -> None:
     with conn.cursor() as cur:
         cur.executemany(INSERT_SQL, rows)
+    conn.commit()
+
+
+def insert_key_moves(
+    conn: Connection[Any],
+    rows: KeyMoveRows,
+) -> None:
+    with conn.cursor() as cur:
+        cur.executemany(INSERT_KEY_MOVES_SQL, rows)
     conn.commit()
 
 
@@ -228,6 +274,20 @@ def load_csv(
         insert_rows(conn, transformed_rows)
 
 
+def load_key_moves_csv(
+    *,
+    csv_path: Path,
+    dsn: str,
+) -> None:
+    transformed_rows = (
+        transform_key_move_row(row)
+        for row in read_csv(csv_path)
+    )
+
+    with psycopg.connect(dsn) as conn:
+        insert_key_moves(conn, transformed_rows)
+
+
 # ---------- Entry ----------
 
 if __name__ == "__main__":
@@ -237,4 +297,8 @@ if __name__ == "__main__":
         csv_path=Path("pokemon-8.2.csv"),
         dsn=dsn,
         patch_version="8.2",
+    )
+    load_key_moves_csv(
+        csv_path=Path("pokemon_moves.csv"),
+        dsn=dsn,
     )

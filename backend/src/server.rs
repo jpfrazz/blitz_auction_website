@@ -118,6 +118,7 @@ impl Server {
         let private_routes = Router::new()
             .route("/drafts", get(handlers::list_open_drafts).post(handlers::create_draft))
             .route("/drafts/{draft_id}/join", post(handlers::join_draft))
+            .route("/drafts/{draft_id}/ready", post(handlers::ready_up))
             .route("/drafts/{draft_id}/bid", post(handlers::bid))
             .route("/drafts/{draft_id}/start", post(handlers::start_draft))
             .route("/drafts/{draft_id}/claim-eeveelution", post(handlers::claim_eeveelution))

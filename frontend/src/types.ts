@@ -20,6 +20,7 @@ export interface Pokemon {
     specialDefense: number;
     speed: number;
   };
+  key_moves?: KeyMove[];
   description?: string;
   form?: string;
   stage?: string;
@@ -27,6 +28,11 @@ export interface Pokemon {
   evolves_from_form?: string;
   mega?: string;
   is_baby?: boolean;
+}
+
+export interface KeyMove {
+  move_name: string;
+  learn_method: string;
 }
 
 export type SerializedUser =
@@ -48,6 +54,7 @@ export interface Auction {
 export interface Team {
   user_id: string;
   username: string;
+  ready?: boolean;
   budget_remaining: number;
   pokemon?: Pokemon[];
   auctions_won?: Pokemon[];
@@ -58,6 +65,8 @@ export interface Draft {
   draft_name: string;
   has_password: boolean;
   host: string;
+  ranked: boolean;
+  total_teams: number;
   teams: Team[];
   draft_state: DraftState;
   completed_auctions: Auction[];
@@ -80,6 +89,7 @@ export interface DraftLobby {
   draft_id: string;
   draft_name: string;
   has_password: boolean;
+  ranked: boolean;
   teams_joined: number;
   total_teams: number;
   draft_state: DraftState;

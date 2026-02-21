@@ -1,10 +1,9 @@
 // Auction setup form logic
-import React, { useState } from 'react';
-import { useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { fetchPokemonList } from '../../shared/api/pokemon';
 import { Pokemon } from '../../types';
 import { useNavigate } from 'react-router-dom';
-// import { AuthContext } from '../../shared/AuthContext';
+import { fetchCurrentUser } from '../../shared/api/draftData';
 import Header from '../../shared/components/Header';
 import Footer from '../../shared/components/Footer';
 import './AuctionSetup.scss';
@@ -27,9 +26,13 @@ const AuctionSetup = () => (
 );
 
 const AuctionSetupForm: React.FC = () => {
-  // Replace with actual auth context
-  const isLoggedIn = true; // Example: useContext(AuthContext)?.isLoggedIn;
+  const [isGuest, setIsGuest] = useState<boolean | null>(null);
   const navigate = useNavigate();
+  useEffect(() => {
+    fetchCurrentUser()
+      .then(user => setIsGuest(user.is_guest))
+      .catch(() => setIsGuest(null));
+  }, []);
 
   const [numTeams, setNumTeams] = useState(8);
   const [numPokemon, setNumPokemon] = useState(64);
@@ -76,6 +79,7 @@ const AuctionSetupForm: React.FC = () => {
         num_teams: numTeams,
         starting_money: DEFAULT_STARTING_MONEY,
         draft_name: draftName.trim(),
+        ranked,
         password: password.trim() || null,
         excluded_pokemon: Array.from(excludedPokemon).map(id => ({
           pokedex_id: id,
@@ -165,19 +169,19 @@ const AuctionSetupForm: React.FC = () => {
               />
             </label>
           </div>
-          {isLoggedIn && (
-            <div className="auction-setup-field" style={{ flex: 0.5 }}>
-              <label className="auction-setup-label">Ranked Race
-                <div className="auction-setup-checkbox-row" style={{ marginLeft: '12px' }}>
-                  <input
-                    type="checkbox"
-                    checked={ranked}
-                    onChange={e => setRanked(e.target.checked)}
-                  />
-                </div>
-              </label>
-            </div>
-          )}
+          <div className="auction-setup-field" style={{ flex: 0.5 }}>
+            <label className="auction-setup-label">Ranked Race
+              <div className="auction-setup-checkbox-row" style={{ marginLeft: '12px' }}>
+                <input
+                  type="checkbox"
+                  checked={ranked}
+                  onChange={e => setRanked(e.target.checked)}
+                  disabled={isGuest === true}
+                  title={isGuest === true ? 'You must be logged in to enable ranked' : ''}
+                />
+              </div>
+            </label>
+          </div>
         </div>
         <div className="auction-setup-field auction-setup-btn-row">
           <button

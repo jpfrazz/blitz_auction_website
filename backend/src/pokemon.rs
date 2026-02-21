@@ -19,6 +19,9 @@ pub async fn init_pokemon_data(pool: &PgPool) -> Result<(), sqlx::Error> {
                 (
                     SELECT json_agg(
                         json_build_object(
+                            'pokedex_id', km.pokedex_id,
+                            'form', km.form,
+                            'patch_version', km.patch_version,
                             'move_name', km.move_name,
                             'learn_method', km.learn_method
                         )

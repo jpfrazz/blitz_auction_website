@@ -55,16 +55,17 @@ CREATE TABLE pokemon (
         REFERENCES pokemon(pokedex_id, form, patch_version)
 );
 
-CREATE TABLE moves (
-    move_name TEXT NOT NULL PRIMARY KEY,
-    move_description TEXT,
-    move_type TEXT NOT NULL,
-    move_category TEXT NOT NULL,
-    power INT NOT NULL,
-    accuracy INT NOT NULL,
-    pp INT NOT NULL,
-    effect TEXT NOT NULL,
-    probability INT
+CREATE TABLE IF NOT EXISTS moves (
+    id INT PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    description TEXT,
+    effect VARCHAR(255),
+    power INT DEFAULT 0,
+    type VARCHAR(50),
+    accuracy INT DEFAULT 100,
+    pp INT,
+    category VARCHAR(50),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE TABLE key_moves (

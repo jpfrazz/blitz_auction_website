@@ -29,6 +29,42 @@ const CurrentPokemonPanel: React.FC<CurrentPokemonPanelProps> = ({ current_aucti
     return `${Math.min(100, (value / max) * 100)}%`;
   };
 
+  const keyMoves = pokemonData.key_moves ?? [];
+
+  const normalizeLearnMethod = (method?: string) => {
+    if (!method) return '';
+    return method.toLowerCase().replace(/\s+/g, '_');
+  };
+
+  const getLearnMethodRank = (method?: string) => {
+    const normalizedMethod = normalizeLearnMethod(method);
+
+    if (/^\d+$/.test(normalizedMethod)) return 0;
+    if (normalizedMethod === 'move_reminder') return 1;
+    if (normalizedMethod === 'move_tutor') return 2;
+    if (normalizedMethod === 'egg') return 4;
+    return 3;
+  };
+
+  const sortedKeyMoves = [...keyMoves].sort((a, b) => {
+    const rankDiff = getLearnMethodRank(a.learn_method) - getLearnMethodRank(b.learn_method);
+    if (rankDiff !== 0) return rankDiff;
+
+    const methodA = normalizeLearnMethod(a.learn_method);
+    const methodB = normalizeLearnMethod(b.learn_method);
+
+    if (/^\d+$/.test(methodA) && /^\d+$/.test(methodB)) {
+      return Number(methodA) - Number(methodB);
+    }
+
+    return a.move_name.localeCompare(b.move_name);
+  });
+
+  const formatLearnMethod = (method?: string) => {
+    if (!method) return '';
+    return method.replace(/_/g, ' ');
+  };
+
   return (
     <div className="auction-current-pokemon-box">
       <div className="pokemon-left-column">
@@ -45,8 +81,8 @@ const CurrentPokemonPanel: React.FC<CurrentPokemonPanelProps> = ({ current_aucti
         </div>
 
         <div className="pokemon-stats">
-        {pokemonData.stats && (
-          <>
+          {pokemonData.stats && (
+            <>
             <div className="stat-row">
               <span className="stat-label">HP</span>
               <span className="stat-value">{pokemonData.stats.hp}</span>
@@ -141,9 +177,29 @@ const CurrentPokemonPanel: React.FC<CurrentPokemonPanelProps> = ({ current_aucti
                 />
               </div>
             </div>
-          </>
-        )}
+            </>
+          )}
         </div>
+
+        {keyMoves.length > 0 && (
+          <div className="pokemon-key-moves">
+            <div className="key-moves-title">Key Moves</div>
+            <div className="key-moves-list">
+              {sortedKeyMoves.map((move, index) => (
+                <div
+                  className="key-move-row"
+                  key={`${move.move_name}-${index}`}
+                >
+                  {move.learn_method ? (
+                    <>{move.move_name} ({formatLearnMethod(move.learn_method)})</>
+                  ) : (
+                    move.move_name
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
 
       <div className="pokemon-right-column">

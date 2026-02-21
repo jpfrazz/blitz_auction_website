@@ -1,0 +1,2010 @@
+pokedex_id,pokemon_name,form,move_name,patch_version,learn_method
+359,Absol,,Pursuit,8.2,10
+359,Absol,,Bite,8.2,16
+359,Absol,,Night Slash,8.2,29
+359,Absol,,Snarl,8.2,TM
+359,Absol,,Flamethrower,8.2,TM
+359,Absol,,Ice Beam,8.2,TM
+359,Absol,,Thunderbolt,8.2,TM
+359,Absol,,X Scissor,8.2,TM
+359,Absol,,Water Pulse,8.2,TM
+359,Absol,,Detect,8.2,33
+359,Absol,,Psycho Cut,8.2,37
+359,Absol,,Perish Song,8.2,MOVE_REMINDER
+359,Absol,,Punishment,8.2,EGG
+698,Amaura,,Rock Throw,8.2,10
+698,Amaura,,Icy Wind,8.2,13
+698,Amaura,,Aurora Beam,8.2,20
+698,Amaura,,Ancient Power,8.2,26
+698,Amaura,,Freeze Dry,8.2,EVOLUTION
+698,Amaura,,Ice Beam,8.2,56
+698,Amaura,,Thunderbolt,8.2,TM
+698,Amaura,,Thunder,8.2,TM
+698,Amaura,,Calm Mind,8.2,TM
+698,Amaura,,Water Pulse,8.2,TM
+698,Amaura,,Discharge,8.2,EGG
+840,Applin,,Bullet Seed,8.2,TM
+840,Applin,,Giga Drain,8.2,TM
+840,Applin,,Wing Attack,8.2,EVOLUTION
+840,Applin,,Headbutt,8.2,EVOLUTION
+840,Applin,,Double Hit,8.2,EVOLUTION
+840,Applin,,Growth,8.2,MOVE_REMINDER
+840,Applin,,Acrobatics,8.2,MOVE_REMINDER
+840,Applin,,Dragon Dance,8.2,24
+840,Applin,,Grav Apple,8.2,32
+840,Applin,,Dragon Rush,8.2,44
+840,Applin,,Leech Seed,8.2,MOVE_REMINDER
+840,Applin,,Apple Acid,8.2,28
+840,Applin,,Syrup Bomb,8.2,28
+840,Applin,,Fickle Beam,8.2,EVOLUTION
+840,Applin,,Sucker Punch,8.2,EGG
+566,Archen,,Pluck,8.2,15
+566,Archen,,Taunt,8.2,TM
+566,Archen,,Ancient Power,8.2,22
+566,Archen,,Rock Slide,8.2,25
+566,Archen,,Acrobatics,8.2,28
+566,Archen,,Hone Claws,8.2,TM
+566,Archen,,Earthquake,8.2,TM
+566,Archen,,Crunch,8.2,35
+566,Archen,,U-Turn,8.2,45
+566,Archen,,Knock Off,8.2,EGG
+304,Aron,,Protect,8.2,16
+304,Aron,,Iron Head,8.2,22
+304,Aron,,Rock Slide,8.2,25
+304,Aron,,Hone Claws,8.2,TM
+304,Aron,,Earthquake,8.2,TM
+304,Aron,,Heavy Slam,8.2,57
+304,Aron,,Dragon Rush,8.2,EGG
+298,Azurill,,Charm,8.2,10
+298,Azurill,,Aqua Tail,8.2,21
+298,Azurill,,Play Rough,8.2,25
+298,Azurill,,Brick Break,8.2,TM
+298,Azurill,,Dig,8.2,TM
+298,Azurill,,Iron Tail,8.2,TM
+298,Azurill,,Encore,8.2,EGG
+371,Bagon,,Bite,8.2,10
+371,Bagon,,Dragon Breath,8.2,13
+371,Bagon,,Headbutt,8.2,17
+371,Bagon,,Dragon Claw,8.2,29
+371,Bagon,,Protect,8.2,30
+371,Bagon,,Hone Claws,8.2,TM
+371,Bagon,,Earthquake,8.2,TM
+371,Bagon,,Fly,8.2,HM
+371,Bagon,,Facade,8.2,TM
+371,Bagon,,Steel Wing,8.2,TM
+371,Bagon,,Hydro Pump,8.2,EGG
+374,Beldum,,Take Down,8.2,1
+374,Beldum,,Metal Claw,8.2,EVOLUTION
+374,Beldum,,Bullet Punch,8.2,26
+374,Beldum,,Hone Claws,8.2,TM
+374,Beldum,,Brick Break,8.2,TM
+374,Beldum,,Earthquake,8.2,TM
+374,Beldum,,Zen Headbutt,8.2,32
+374,Beldum,,Meteor Mash,8.2,44
+522,Blitzle,,Charge,8.2,8
+522,Blitzle,,Shock Wave,8.2,11
+522,Blitzle,,Flame Charge,8.2,18
+522,Blitzle,,Spark,8.2,25
+522,Blitzle,,Stomp,8.2,EVOLUTION
+522,Blitzle,,Thunder,8.2,TM
+522,Blitzle,,Discharge,8.2,36
+522,Blitzle,,Overheat,8.2,TM
+522,Blitzle,,Wild Charge,8.2,47
+522,Blitzle,,Double Kick,8.2,EGG
+824,Blipbug,,Struggle Bug,8.2,1
+824,Blipbug,,Confusion,8.2,EVOLUTION
+824,Blipbug,,Light Screen,8.2,EVOLUTION
+824,Blipbug,,Reflect,8.2,EVOLUTION
+824,Blipbug,,Bug Buzz,8.2,EVOLUTION
+824,Blipbug,,Giga Drain,8.2,TM
+824,Blipbug,,Mirror Coat,8.2,32
+824,Blipbug,,Psychic,8.2,36
+824,Blipbug,,Calm Mind,8.2,44
+824,Blipbug,,Recover,8.2,EGG
+962,Bombirdier,,Peck,8.2,1
+962,Bombirdier,,Thief,8.2,7
+962,Bombirdier,,Rock Throw,8.2,11
+962,Bombirdier,,Steel Wing,8.2,TM
+962,Bombirdier,,Pluck,8.2,20
+962,Bombirdier,,Rock Tomb,8.2,29
+962,Bombirdier,,Hone Claws,8.2,MOVE_REMINDER
+962,Bombirdier,,Snarl,8.2,TM
+962,Bombirdier,,Fly,8.2,HM
+962,Bombirdier,,Dual Wingbeat,8.2,42
+962,Bombirdier,,Rock Slide,8.2,47
+962,Bombirdier,,Knock Off,8.2,53
+962,Bombirdier,,Parting Shot,8.2,MOVE_REMINDER
+962,Bombirdier,,Roost,8.2,EGG
+438,Bonsly,,Rock Throw,8.2,12
+438,Bonsly,,Rock Tomb,8.2,26
+438,Bonsly,,Earthquake,8.2,TM
+438,Bonsly,,Rock Slide,8.2,33
+438,Bonsly,,Counter,8.2,36
+438,Bonsly,,Sucker Punch,8.2,40
+438,Bonsly,,Curse,8.2,EGG
+761,Bounsweet,,Rapid Spin,8.2,9
+761,Bounsweet,,Razor Leaf,8.2,13
+761,Bounsweet,,Stomp,8.2,29
+761,Bounsweet,,Trop Kick,8.2,EVOLUTION
+761,Bounsweet,,High Jump Kick,8.2,49
+761,Bounsweet,,Play Rough,8.2,EGG
+406,Budew,,Growth,8.2,4
+406,Budew,,Giga Drain,8.2,25
+406,Budew,,Toxic Spikes,8.2,28
+406,Budew,,Leech Seed,8.2,MOVE_REMINDER
+406,Budew,,Mortal Spin,8.2,MOVE_REMINDER
+406,Budew,,Sludge Bomb,8.2,TM
+406,Budew,,Dazzling Gleam,8.2,TM
+406,Budew,,Spikes,8.2,EGG
+418,Buizel,,Water Sport,8.2,7
+418,Buizel,,Water Gun,8.2,15
+418,Buizel,,Taunt,8.2,TM
+418,Buizel,,Aqua Jet,8.2,24
+418,Buizel,,Brick Break,8.2,TM
+418,Buizel,,Ice Fang,8.2,MOVE_REMINDER
+418,Buizel,,Crunch,8.2,MOVE_REMINDER
+418,Buizel,,Waterfall,8.2,HM
+418,Buizel,,Aqua Tail,8.2,EGG
+427,Buneary,,Quick Attack,8.2,16
+427,Buneary,,Jump Kick,8.2,23
+427,Buneary,,Facade,8.2,TM
+427,Buneary,,Dizzy Punch,8.2,36
+427,Buneary,,Charm,8.2,46
+427,Buneary,,Bounce,8.2,56
+427,Buneary,,High Jump Kick,8.2,MOVE_REMINDER
+427,Buneary,,Sky Uppercut,8.2,EGG
+1,Bulbasaur,,Leech Seed,8.2,7
+1,Bulbasaur,,Vide Whip,8.2,9
+1,Bulbasaur,,Razor Leaf,8.2,19
+1,Bulbasaur,,Growth,8.2,28
+1,Bulbasaur,,Sludge Bomb,8.2,TM
+1,Bulbasaur,,Earthquake,8.2,TM
+1,Bulbasaur,,Petal Dance,8.2,EVOLUTION
+1,Bulbasaur,,Synthesis,8.2,45
+1,Bulbasaur,,Giga Drain,8.2,TM
+659,Bunnelby,,Take Down,8.2,15
+659,Bunnelby,,Mud Shot,8.2,18
+659,Bunnelby,,Bulldoze,8.2,EVOLUTION
+659,Bunnelby,,Dig,8.2,37
+659,Bunnelby,,Earthquake,8.2,57
+659,Bunnelby,,Bulk Up,8.2,TM
+659,Bunnelby,,Spikes,8.2,EGG
+412,Burmy,,Protect,8.2,1
+412,Burmy,,Bug Bite,8.2,15
+412,Burmy,,Hidden Power,8.2,20
+412,Burmy,,Quiver Dance,8.2,EVOLUTION
+412,Burmy,,Giga Drain,8.2,TM
+412,Burmy,,Metal Sound,8.2,29
+412,Burmy,,Bug Buzz,8.2,50
+351,Castform,,Water Gun,8.2,10
+351,Castform,,Ember,8.2,10
+351,Castform,,Powder Snow,8.2,10
+351,Castform,,Headbutt,8.2,15
+351,Castform,,Weather Ball,8.2,25
+351,Castform,,Blizzard,8.2,35
+351,Castform,,Hydro Pump,8.2,35
+351,Castform,,Fire Blast,8.2,35
+351,Castform,,Solar Beam,8.2,TM
+351,Castform,,Thunder,8.2,TM
+351,Castform,,Hurricane,8.2,45
+351,Castform,,Ominous Wind,8.2,EGG
+331,Cacnea,,Leech Seed,8.2,10
+331,Cacnea,,Needle Arm,8.2,16
+331,Cacnea,,Spiky Shield,8.2,32
+331,Cacnea,,Giga Drain,8.2,TM
+331,Cacnea,,Sucker Punch,8.2,35
+331,Cacnea,,Destiny Bond,8.2,MOVE_REMINDER
+331,Cacnea,,Counter,8.2,EGG
+318,Carvanha,,Aqua Jet,8.2,11
+318,Carvanha,,Flip Turn,8.2,20
+318,Carvanha,,Ice Fang,8.2,25
+318,Carvanha,,Snarl,8.2,TM
+318,Carvanha,,Poison Fang,8.2,34
+318,Carvanha,,Crunch,8.2,40
+318,Carvanha,,Waterfall,8.2,HM
+318,Carvanha,,Night Slash,8.2,MOVE_REMINDER
+318,Carvanha,,Psychic Fangs,8.2,EGG
+974,Cetoddle,,Ice Shard,8.2,12
+974,Cetoddle,,Avalanche,8.2,27
+974,Cetoddle,,Bounce,8.2,31
+974,Cetoddle,,Earthquake,8.2,TM
+974,Cetoddle,,Ice Spinner,8.2,44
+974,Cetoddle,,Icicle Crash,8.2,EGG
+833,Chewtle,,Protect,8.2,14
+833,Chewtle,,Rock Tomb,8.2,22
+833,Chewtle,,Earthquake,8.2,TM
+833,Chewtle,,Iron Tail,8.2,TM
+833,Chewtle,,Razor Shell,8.2,MOVE_REMINDER
+833,Chewtle,,Crunch,8.2,MOVE_REMINDER
+833,Chewtle,,Waterfall,8.2,HM
+833,Chewtle,,Jaw Lock,8.2,39
+833,Chewtle,,Liquidation,8.2,48
+833,Chewtle,,Dragon Tail,8.2,EGG
+390,Chimchar,,Ember,8.2,7
+390,Chimchar,,Taunt,8.2,9
+390,Chimchar,,Mach Punch,8.2,EVOLUTION
+390,Chimchar,,Flame Wheel,8.2,19
+390,Chimchar,,Brick Break,8.2,TM
+390,Chimchar,,Earthquake,8.2,TM
+390,Chimchar,,Iron Tail,8.2,TM
+390,Chimchar,,Close Combat,8.2,EVOLUTION
+390,Chimchar,,Bulk Up,8.2,TM
+390,Chimchar,,Acrobatics,8.2,52
+390,Chimchar,,Flare Blitz,8.2,MOVE_REMINDER
+390,Chimchar,,Thunder Punch,8.2,EGG
+170,Chinchou,,Bubble,8.2,1
+170,Chinchou,,Bubble Beam,8.2,20
+170,Chinchou,,Spark,8.2,23
+170,Chinchou,,Stockpile,8.2,EVOLUTION
+170,Chinchou,,Eerie Impulse,8.2,MOVE_REMINDER
+170,Chinchou,,Thunderbolt,8.2,TM
+170,Chinchou,,Ice Beam,8.2,TM
+170,Chinchou,,Surf,8.2,HM
+170,Chinchou,,Water Pulse,8.2,TM
+170,Chinchou,,Discharge,8.2,37
+170,Chinchou,,Charge,8.2,58
+170,Chinchou,,Psybeam,8.2,EGG
+433,Chingling,,Confusion,8.2,10
+433,Chingling,,Psychic,8.2,TM
+433,Chingling,,Shadow Ball,8.2,TM
+433,Chingling,,Dazzling Gleam,8.2,TM
+433,Chingling,,Calm Mind,8.2,TM
+433,Chingling,,Wish,8.2,EGG
+366,Clamperl,,Water Gun,8.2,1
+366,Clamperl,,Water Pulse,8.2,TM
+366,Clamperl,,Ice Fang,8.2,MOVE_REMINDER
+366,Clamperl,,Sucker Punch,8.2,MOVE_REMINDER
+366,Clamperl,,Draining Kiss,8.2,MOVE_REMINDER
+366,Clamperl,,Dive,8.2,26
+366,Clamperl,,Baton Pass,8.2,29
+366,Clamperl,,Ice Beam,8.2,TM
+366,Clamperl,,Blizzard,8.2,TM
+366,Clamperl,,Psychic,8.2,34
+366,Clamperl,,Shadow Ball,8.2,34
+366,Clamperl,,Surf,8.2,HM
+366,Clamperl,,Crunch,8.2,34
+366,Clamperl,,Waterfall,8.2,HM
+366,Clamperl,,Rock Tomb,8.2,TM
+366,Clamperl,,Aqua Tail,8.2,39
+366,Clamperl,,Coil,8.2,45
+366,Clamperl,,Hydro Pump,8.2,50
+366,Clamperl,,Muddy Water,8.2,EGG
+692,Clauncher,,Water Sport,8.2,7
+692,Clauncher,,Bubble,8.2,12
+692,Clauncher,,Bubble Beam,8.2,20
+692,Clauncher,,Aura Sphere,8.2,EVOLUTION
+692,Clauncher,,Dark Pulse,8.2,MOVE_REMINDER
+692,Clauncher,,Dragon Pulse,8.2,MOVE_REMINDER
+692,Clauncher,,Ice Beam,8.2,TM
+692,Clauncher,,Shadow Ball,8.2,TM
+692,Clauncher,,Sludge Bomb,8.2,TM
+692,Clauncher,,Surf,8.2,HM
+692,Clauncher,,Water Pulse,8.2,34
+692,Clauncher,,Aqua Jet,8.2,49
+173,Cleffa,,Charm,8.2,1
+173,Cleffa,,Thunderbolt,8.2,TM
+173,Cleffa,,Shadow Ball,8.2,TM
+173,Cleffa,,Psychic,8.2,TM
+173,Cleffa,,Flamethrower,8.2,TM
+173,Cleffa,,Ice Beam,8.2,TM
+173,Cleffa,,Dazzling Gleam,8.2,TM
+173,Cleffa,,Water Pulse,8.2,TM
+173,Cleffa,,Moonblast,8.2,MOVE_REMINDER
+173,Cleffa,,Moonlight,8.2,MOVE_REMINDER
+173,Cleffa,,Wish,8.2,EGG
+852,Clobbopus,,Rock Smash,8.2,1
+852,Clobbopus,,Detect,8.2,15
+852,Clobbopus,,Brick Break,8.2,20
+852,Clobbopus,,Bulk Up,8.2,25
+852,Clobbopus,,Octolock,8.2,EVOLUTION
+852,Clobbopus,,Dig,8.2,TM
+852,Clobbopus,,Waterfall,8.2,HM
+852,Clobbopus,,Power-Up Punch,8.2,EGG
+341,Corphish,,Bubblebeam,8.2,14
+341,Corphish,,Protect,8.2,17
+341,Corphish,,Knock Off,8.2,23
+341,Corphish,,Snarl,8.2,TM
+341,Corphish,,X-Scissor,8.2,TM
+341,Corphish,,Razor Shell,8.2,32
+341,Corphish,,Waterfall,8.2,HM
+341,Corphish,,Swords Dance,8.2,37
+341,Corphish,,Crunch,8.2,43
+341,Corphish,,Dragon Dance,8.2,EGG
+222,Corsola,,Recover,8.2,8
+222,Corsola,,Bubblebeam,8.2,10
+222,Corsola,,Ancientpower,8.2,17
+222,Corsola,,Shadow Ball,8.2,TM
+222,Corsola,,Ice Beam,8.2,TM
+222,Corsola,,Giga Drain,8.2,TM
+222,Corsola,,Surf,8.2,HM
+222,Corsola,,Strength Sap,8.2,35
+222,Corsola,,Calm Mind,8.2,TM
+222,Corsola,,Perish Song,8.2,MOVE_REMINDER
+222,Corsola,,Liquidation,8.2,EGG
+222,Corsola,,Destiny Bond,8.2,EGG
+453,Croagunk,,Taunt,8.2,10
+453,Croagunk,,Rock Smash,8.2,HM
+453,Croagunk,,Thief,8.2,TM
+453,Croagunk,,Brick Break,8.2,TM
+453,Croagunk,,Earthquake,8.2,TM
+453,Croagunk,,Sucker Punch,8.2,31
+453,Croagunk,,Venoshock,8.2,36
+453,Croagunk,,Poison Jab,8.2,49
+453,Croagunk,,Bulk Up,8.2,TM
+453,Croagunk,,Drain Punch,8.2,EGG
+104,Cubone,,Bone Club,8.2,7
+104,Cubone,,Bonemerang,8.2,21
+104,Cubone,,Shadow Bone,8.2,EVOLUTION
+104,Cubone,,Earthquake,8.2,TM
+104,Cubone,,Flare Blitz,8.2,53
+104,Cubone,,Iron Head,8.2,EGG
+878,Cufant,,Bulldoze,8.2,15
+878,Cufant,,Heavy Slam,8.2,EVOLUTION
+878,Cufant,,Brick Break,8.2,TM
+878,Cufant,,Earthquake,8.2,TM
+878,Cufant,,Iron Head,8.2,44
+878,Cufant,,Play Rough,8.2,51
+878,Cufant,,High Horsepower,8.2,58
+878,Cufant,,Curse,8.2,EGG
+742,Cutiefly,,Draining Kiss,8.2,16
+742,Cutiefly,,Bug Buzz,8.2,28
+742,Cutiefly,,Calm Mind,8.2,TM
+742,Cutiefly,,Quiver Dance,8.2,49
+742,Cutiefly,,Powder,8.2,EGG
+751,Dewpider,,Bug Bite,8.2,13
+751,Dewpider,,Bubble Beam,8.2,16
+751,Dewpider,,Leech Life,8.2,33
+751,Dewpider,,Surf,8.2,HM
+751,Dewpider,,Water Pulse,8.2,TM
+751,Dewpider,,Waterfall,8.2,HM
+751,Dewpider,,Lunge,8.2,45
+751,Dewpider,,Mirror Coat,8.2,50
+751,Dewpider,,Liquidation,8.2,57
+751,Dewpider,,Sticky Web,8.2,EGG
+50,Diglett,,Bulldoze,8.2,18
+50,Diglett,,Thief,8.2,TM
+50,Diglett,,Hone Claws,8.2,TM
+50,Diglett,,Dig,8.2,35
+50,Diglett,,Rock Tomb,8.2,TM
+50,Diglett,,Earthquake,8.2,47
+50,Diglett,,Reversal,8.2,EGG
+425,Drifloon,,Gust,8.2,8
+425,Drifloon,,Ominous Wind,8.2,20
+425,Drifloon,,Strength Sap,8.2,MOVE_REMINDER
+425,Drifloon,,Thunderbolt,8.2,TM
+425,Drifloon,,Shadow Ball,8.2,40
+425,Drifloon,,Fly,8.2,HM
+425,Drifloon,,Weather Ball,8.2,EGG
+529,Drilbur,,Rapid Spin,8.2,5
+529,Drilbur,,Metal Claw,8.2,15
+529,Drilbur,,Dig,8.2,19
+529,Drilbur,,Hone Claws,8.2,22
+529,Drilbur,,Rock Slide,8.2,29
+529,Drilbur,,Earthquake,8.2,36
+529,Drilbur,,X-Scissor,8.2,TM
+529,Drilbur,,Iron Defense,8.2,EGG
+133,Eevee,,Tail Whip,8.2,1
+133,Eevee,,Helping Hand,8.2,1
+133,Eevee,,Baby-Doll Eyes,8.2,9
+133,Eevee,,Quick Attack,8.2,13
+133,Eevee,,Bite,8.2,17
+133,Eevee,,Charm,8.2,29
+133,Eevee,,Iron Tail,8.2,TM
+133,Eevee,,Shadow Ball,8.2,TM
+133,Eevee,,Rest,8.2,TM
+133,Eevee,,Baton Pass,8.2,33
+133,Eevee,,Wish,8.2,EGG
+133,Eevee,,Blue: Water Pulse,8.2,MOVE_REMINDER
+133,Eevee,,Blue: Ice Beam,8.2,TM
+133,Eevee,,Blue: Surf,8.2,HM
+133,Eevee,,Yellow: Thunderbolt,8.2,TM
+133,Eevee,,Yellow: Thunder,8.2,45
+133,Eevee,,Yellow: Discharge,8.2,37
+133,Eevee,,Red: Fire Fang,8.2,MOVE_REMINDER
+133,Eevee,,Red: Overheat,8.2,TM
+133,Eevee,,Red: Flare Blitz,8.2,45
+133,Eevee,,Purple: Psychic,8.2,TM
+133,Eevee,,Purple: Dazzling Gleam,8.2,TM
+133,Eevee,,Purple: Morning Sun,8.2,33
+133,Eevee,,Purple: Calm Mind,8.2,TM
+133,Eevee,,Black: Snarl,8.2,TM
+133,Eevee,,Black: Assurance,8.2,MOVE_REMINDER
+133,Eevee,,Black: Screech,8.2,29
+133,Eevee,,Black: Moonlight,8.2,33
+133,Eevee,,Black: Mean Look,8.2,37
+133,Eevee,,Green: Razor Leaf,8.2,EVOLUTION
+133,Eevee,,Green: Leech Seed,8.2,MOVE_REMINDER
+133,Eevee,,Green: Swords Dance,8.2,29
+133,Eevee,,Green: X-Scissor,8.2,TM
+133,Eevee,,Green: Giga Drain,8.2,MOVE_REMINDER
+133,Eevee,,Green: Leaf Blade,8.2,45
+133,Eevee,,LightBlue: Ice Beam,8.2,TM
+133,Eevee,,LightBlue: Freeze Dry,8.2,40
+133,Eevee,,LightBlue: Water Pulse,8.2,TM
+133,Eevee,,Pink: Draining Kiss,8.2,MOVE_REMINDER
+133,Eevee,,Pink: Moonblast,8.2,37
+133,Eevee,,Pink: Calm Mind,8.2,TM
+23,Ekans,,Bite,8.2,9
+23,Ekans,,Glare,8.2,12
+23,Ekans,,Crunch,8.2,EVOLUTION
+23,Ekans,,Dig,8.2,TM
+23,Ekans,,Earthquake,8.2,TM
+23,Ekans,,Iron Tail,8.2,TM
+23,Ekans,,Ice Fang,8.2,MOVE_REMINDER
+23,Ekans,,Fire Fang,8.2,MOVE_REMINDER
+23,Ekans,,Thunder Fang,8.2,MOVE_REMINDER
+23,Ekans,,Acid Spray,8.2,32
+23,Ekans,,Leech Life,8.2,33
+23,Ekans,,Coil,8.2,56
+23,Ekans,,Gunk Shot,8.2,MOVE_REMINDER
+23,Ekans,,Poison Fang,8.2,EGG
+309,Electrike,,Thunder Fang,8.2,19
+309,Electrike,,Discharge,8.2,30
+309,Electrike,,Snarl,8.2,TM
+309,Electrike,,Flamethrower,8.2,TM
+309,Electrike,,Overheat,8.2,TM
+309,Electrike,,Flame Burst,8.2,EGG
+239,Elekid,,Shock Wave,8.2,15
+239,Elekid,,Thunder Punch,8.2,29
+239,Elekid,,Discharge,8.2,36
+239,Elekid,,Brick Break,8.2,TM
+239,Elekid,,Psychic,8.2,TM
+239,Elekid,,Earthquake,8.2,TM
+239,Elekid,,Screech,8.2,42
+239,Elekid,,Ice Punch,8.2,EGG
+605,Elgyem,,Psybeam,8.2,15
+605,Elgyem,,Hidden Power,8.2,22
+605,Elgyem,,Psychic,8.2,39
+605,Elgyem,,Thunderbolt,8.2,TM
+605,Elgyem,,Shadow Ball,8.2,TM
+605,Elgyem,,Calm Mind,8.2,45
+605,Elgyem,,Recover,8.2,50
+605,Elgyem,,Skill Swap,8.2,EGG
+587,Emolga,,Charge,8.2,10
+587,Emolga,,Spark,8.2,13
+587,Emolga,,Nuzzle,8.2,15
+587,Emolga,,Acrobatics,8.2,30
+587,Emolga,,Encore,8.2,38
+587,Emolga,,Volt Switch,8.2,42
+587,Emolga,,Discharge,8.2,50
+587,Emolga,,Roost,8.2,EGG
+677,Espurr,,Confusion,8.2,9
+677,Espurr,,Light Screen,8.2,13
+677,Espurr,,Psybeam,8.2,17
+677,Espurr,,Fake Out,8.2,19
+677,Espurr,,Psyshock,8.2,25
+677,Espurr,,Charm,8.2,28
+677,Espurr,,Moonblast,8.2,MOVE_REMINDER
+677,Espurr,,Charge Beam,8.2,28
+677,Espurr,,Shadow Ball,8.2,31
+677,Espurr,,Signal Beam,8.2,45
+677,Espurr,,Thunderbolt,8.2,TM
+677,Espurr,,Calm Mind,8.2,TM
+677,Espurr,,Psychic,8.2,40
+677,Espurr,,Assist,8.2,EGG
+102,Exeggcute,,Leech Seed,8.2,11
+102,Exeggcute,,Mega Drain,8.2,15
+102,Exeggcute,,Bullet Seed,8.2,TM
+102,Exeggcute,,Trick Room,8.2,TM
+102,Exeggcute,,Psychic,8.2,TM
+102,Exeggcute,,Giga Drain,8.2,TM
+102,Exeggcute,,Flamethrower,8.2,TM
+102,Exeggcute,,Sludge Bomb,8.2,TM
+102,Exeggcute,,Moonlight,8.2,EGG
+870,Falinks,,Protect,8.2,1
+870,Falinks,,Rock Smash,8.2,5
+870,Falinks,,Bulk Up,8.2,20
+870,Falinks,,Brick Break,8.2,TM
+870,Falinks,,First Impression,8.2,35
+870,Falinks,,No Retreat,8.2,40
+870,Falinks,,Close Combat,8.2,50
+870,Falinks,,Megahorn,8.2,55
+349,Feebas,,Water Pulse,8.2,EVOLUTION
+349,Feebas,,Aqua Ring,8.2,17
+349,Feebas,,Captivate,8.2,21
+349,Feebas,,Recover,8.2,27
+349,Feebas,,Ice Beam,8.2,TM
+349,Feebas,,Blizzard,8.2,TM
+349,Feebas,,Surf,8.2,HM
+349,Feebas,,Coil,8.2,41
+349,Feebas,,Hydro Pump,8.2,44
+349,Feebas,,Mirror Coat,8.2,EGG
+653,Fennekin,,Flame Charge,8.2,14
+653,Fennekin,,Psybeam,8.2,18
+653,Fennekin,,Flamethrower,8.2,45
+653,Fennekin,,Dazzling Gleam,8.2,TM
+653,Fennekin,,Shadow Ball,8.2,TM
+653,Fennekin,,Psychic,8.2,57
+653,Fennekin,,Calm Mind,8.2,TM
+653,Fennekin,,Overheat,8.2,TM
+653,Fennekin,,Hypnosis,8.2,EGG
+926,Fidough,,Play Rough,8.2,18
+926,Fidough,,Work Up,8.2,22
+926,Fidough,,Baton Pass,8.2,26
+926,Fidough,,Snarl,8.2,TM
+926,Fidough,,Dig,8.2,TM
+926,Fidough,,Charm,8.2,42
+926,Fidough,,Crunch,8.2,47
+926,Fidough,,Wish,8.2,EGG
+669,Flabebe,,Fairy Wind,8.2,6
+669,Flabebe,,Wish,8.2,20
+669,Flabebe,,Giga Drain,8.2,TM
+669,Flabebe,,Moonblast,8.2,MOVE_REMINDER
+669,Flabebe,,Petal Dance,8.2,MOVE_REMINDER
+669,Flabebe,,Calm Mind,8.2,TM
+669,Flabebe,,Captivate,8.2,EGG
+661,Fletchling,,Peck,8.2,10
+661,Fletchling,,Flame Charge,8.2,EVOLUTION
+661,Fletchling,,Steel Wing,8.2,TM
+661,Fletchling,,Taunt,8.2,TM
+661,Fletchling,,Aerial Ace,8.2,TM
+661,Fletchling,,Overheat,8.2,TM
+661,Fletchling,,Hone Claws,8.2,TM
+661,Fletchling,,Flare Blitz,8.2,MOVE_REMINDER
+661,Fletchling,,Fly,8.2,HM
+661,Fletchling,,Acrobatics,8.2,44
+661,Fletchling,,Bulk Up,8.2,TM
+661,Fletchling,,Brave Bird,8.2,MOVE_REMINDER
+661,Fletchling,,Tailwind,8.2,EGG
+592,Frillish,,Water Sport,8.2,1
+592,Frillish,,Bubble Beam,8.2,13
+592,Frillish,,Recover,8.2,17
+592,Frillish,,Water Pulse,8.2,22
+592,Frillish,,Ominous Wind,8.2,27
+592,Frillish,,Dazzling Gleam,8.2,TM
+592,Frillish,,Giga Drain,8.2,TM
+592,Frillish,,Shadow Ball,8.2,TM
+592,Frillish,,Ice Beam,8.2,TM
+592,Frillish,,Sludge Bomb,8.2,TM
+592,Frillish,,Surf,8.2,HM
+592,Frillish,,Shock Wave,8.2,TM
+592,Frillish,,Water Spout,8.2,MOVE_REMINDER
+592,Frillish,,Pain Split,8.2,EGG
+656,Froakie,,Lick,8.2,10
+656,Froakie,,Water Pulse,8.2,14
+656,Froakie,,Taunt,8.2,TM
+656,Froakie,,Fling,8.2,28
+656,Froakie,,Ice Beam,8.2,TM
+656,Froakie,,Surf,8.2,HM
+656,Froakie,,Aerial Ace,8.2,TM
+656,Froakie,,Extrasensory,8.2,49
+656,Froakie,,Night Slash,8.2,MOVE_REMINDER
+656,Froakie,,Toxic Spikes,8.2,EGG
+909,Fuecoco,,Incinerate,8.2,15
+909,Fuecoco,,Snarl,8.2,24
+909,Fuecoco,,Flamethrower,8.2,32
+909,Fuecoco,,Torch Song,8.2,36
+909,Fuecoco,,Shadow Ball,8.2,38
+909,Fuecoco,,Overheat,8.2,TM
+909,Fuecoco,,Slack Off,8.2,EGG
+92,Gastly,,Mean Look,8.2,8
+92,Gastly,,Night Shade,8.2,15
+92,Gastly,,Taunt,8.2,TM
+92,Gastly,,Sucker Punch,8.2,22
+92,Gastly,,Shadow Ball,8.2,EVOLUTION
+92,Gastly,,Dazzling Gleam,8.2,TM
+92,Gastly,,Thunderbolt,8.2,TM
+92,Gastly,,Sludge Bomb,8.2,TM
+92,Gastly,,Dark Pulse,8.2,44
+92,Gastly,,Scary Face,8.2,EGG
+74,Geodude,,Rock Throw,8.2,16
+74,Geodude,,Bulldoze,8.2,22
+74,Geodude,,Stealth Rock,8.2,30
+74,Geodude,,Earthquake,8.2,40
+74,Geodude,,Stone Edge,8.2,54
+74,Geodude,,Heavy Slam,8.2,MOVE_REMINDER
+74,Geodude,,Curse,8.2,EGG
+443,Gible,,Dragon Breath,8.2,7
+443,Gible,,Dual Chop,8.2,24
+443,Gible,,Hone Claws,8.2,TM
+443,Gible,,Earthquake,8.2,TM
+443,Gible,,Crunch,8.2,EVOLUTION
+443,Gible,,Dragon Rush,8.2,55
+443,Gible,,Iron Head,8.2,EGG
+704,Goomy,,Protect,8.2,9
+704,Goomy,,Dragon Breath,8.2,18
+704,Goomy,,Water Pulse,8.2,25
+704,Goomy,,Rain Dance,8.2,25
+704,Goomy,,Acid Spray,8.2,EVOLUTION
+704,Goomy,,Thunderbolt,8.2,TM
+704,Goomy,,Ice Beam,8.2,TM
+704,Goomy,,Earthquake,8.2,TM
+704,Goomy,,Outrage,8.2,55
+704,Goomy,,Iron Head,8.2,MOVE_REMINDER
+704,Goomy,,Muddy Water,8.2,58
+704,Goomy,,Heavy Slam,8.2,MOVE_REMINDER
+704,Goomy,,Curse,8.2,EGG
+829,Gossifleur,,Leafage,8.2,1
+829,Gossifleur,,Rapid Spin,8.2,4
+829,Gossifleur,,Razor Leaf,8.2,12
+829,Gossifleur,,Leaf Tornado,8.2,23
+829,Gossifleur,,Synthesis,8.2,EVOLUTION
+829,Gossifleur,,Giga Drain,8.2,TM
+829,Gossifleur,,Light Screen,8.2,TM
+829,Gossifleur,,Leaf Storm,8.2,46
+829,Gossifleur,,Growth,8.2,EGG
+574,Gothita,,Confusion,8.2,3
+574,Gothita,,Psybeam,8.2,16
+574,Gothita,,Trick Room,8.2,TM
+574,Gothita,,Psyshock,8.2,25
+574,Gothita,,Thunderbolt,8.2,TM
+574,Gothita,,Shadow Ball,8.2,TM
+574,Gothita,,Calm Mind,8.2,TM
+574,Gothita,,Psychic,8.2,39
+574,Gothita,,Charm,8.2,54
+574,Gothita,,Dark Pulse,8.2,EGG
+971,Greavard,,Dig,8.2,16
+971,Greavard,,Rest,8.2,24
+971,Greavard,,Crunch,8.2,28
+971,Greavard,,Last Respects,8.2,EVOLUTION
+971,Greavard,,Snarl,8.2,TM
+971,Greavard,,Play Rough,8.2,32
+971,Greavard,,Charm,8.2,51
+971,Greavard,,Yawn,8.2,EGG
+58,Growlithe,,Bite,8.2,1
+58,Growlithe,,Flame Wheel,8.2,17
+58,Growlithe,,Fire Fang,8.2,21
+58,Growlithe,,Snarl,8.2,TM
+58,Growlithe,,Dig,8.2,TM
+58,Growlithe,,Flamethrower,8.2,TM
+58,Growlithe,,Play Rough,8.2,MOVE_REMINDER
+58,Growlithe,,Thunder Fang,8.2,MOVE_REMINDER
+58,Growlithe,,Overheat,8.2,TM
+58,Growlithe,,Morning Sun,8.2,EGG
+736,Grubbin,,Bug Bite,8.2,13
+736,Grubbin,,Spark,8.2,16
+736,Grubbin,,Acrobatics,8.2,19
+736,Grubbin,,Thunderbolt,8.2,EVOLUTION
+736,Grubbin,,Bug Buzz,8.2,31
+736,Grubbin,,Thunder,8.2,TM
+736,Grubbin,,Electroweb,8.2,EGG
+440,Happiny,,Charm,8.2,1
+440,Happiny,,Double Edge,8.2,MOVE_REMINDER
+440,Happiny,,Seismic Toss,8.2,EGG
+856,Hatenna,,Confusion,8.2,1
+856,Hatenna,,Life Dew,8.2,5
+856,Hatenna,,Trick Room,8.2,TM
+856,Hatenna,,Psybeam,8.2,20
+856,Hatenna,,Dazzling Gleam,8.2,30
+856,Hatenna,,Psychic,8.2,TM
+856,Hatenna,,Giga Drain,8.2,TM
+856,Hatenna,,Calm Mind,8.2,TM
+856,Hatenna,,Nuzzle,8.2,EGG
+701,Hawlucha,,Hone Claws,8.2,1
+701,Hawlucha,,Karate Chop,8.2,4
+701,Hawlucha,,Wing Attack,8.2,8
+701,Hawlucha,,Roost,8.2,12
+701,Hawlucha,,Aerial Ace,8.2,16
+701,Hawlucha,,Encore,8.2,20
+701,Hawlucha,,Fling,8.2,24
+701,Hawlucha,,Flying Press,8.2,28
+701,Hawlucha,,Bulk Up,8.2,TM
+701,Hawlucha,,High Jump Kick,8.2,44
+701,Hawlucha,,Agility,8.2,EGG
+694,Helioptile,,Mud Slap,8.2,13
+694,Helioptile,,Parabolic Charge,8.2,25
+694,Helioptile,,Breaking Swipe,8.2,30
+694,Helioptile,,Thunderbolt,8.2,TM
+694,Helioptile,,Thunder,8.2,TM
+694,Helioptile,,Eerie Impulse,8.2,MOVE_REMINDER
+694,Helioptile,,Thunderbolt,8.2,MOVE_REMINDER
+694,Helioptile,,Volt Switch,8.2,MOVE_REMINDER
+694,Helioptile,,Surf,8.2,HM
+694,Helioptile,,Camouflage,8.2,EGG
+449,Hippopotas,,Bite,8.2,7
+449,Hippopotas,,Yawn,8.2,13
+449,Hippopotas,,Dig,8.2,19
+449,Hippopotas,,Crunch,8.2,31
+449,Hippopotas,,Iron Tail,8.2,TM
+449,Hippopotas,,Ice Fang,8.2,MOVE_REMINDER
+449,Hippopotas,,Fire Fang,8.2,MOVE_REMINDER
+449,Hippopotas,,Thunder Fang,8.2,MOVE_REMINDER
+449,Hippopotas,,Earthquake,8.2,40
+449,Hippopotas,,Slack Off,8.2,EGG
+679,Honedge,,Swords Dance,8.2,1
+679,Honedge,,Fury Cutter,8.2,5
+679,Honedge,,Shadow Sneak,8.2,20
+679,Honedge,,Aerial Ace,8.2,22
+679,Honedge,,Slash,8.2,29
+679,Honedge,,Kings Shield,8.2,EVOLUTION
+679,Honedge,,Iron Head,8.2,MOVE_REMINDER
+679,Honedge,,Sacred Sword,8.2,MOVE_REMINDER
+679,Honedge,,Night Slash,8.2,MOVE_REMINDER
+679,Honedge,,Shadow Ball,8.2,TM
+679,Honedge,,Wide Guard,8.2,EGG
+116,Horsea,,Water Gun,8.2,13
+116,Horsea,,Bubble Beam,8.2,21
+116,Horsea,,Ice Beam,8.2,TM
+116,Horsea,,Yawn,8.2,MOVE_REMINDER
+116,Horsea,,Surf,8.2,HM
+116,Horsea,,Waterfall,8.2,HM
+116,Horsea,,Dragon Pulse,8.2,45
+116,Horsea,,Dragon Dance,8.2,52
+116,Horsea,,Hydro Pump,8.2,MOVE_REMINDER
+116,Horsea,,Dragon Breath,8.2,EGG
+228,Houndour,,Ember,8.2,1
+228,Houndour,,Bite,8.2,16
+228,Houndour,,Incinerate,8.2,20
+228,Houndour,,Snarl,8.2,TM
+228,Houndour,,Flamethrower,8.2,50
+228,Houndour,,Nasty Plot,8.2,MOVE_REMINDER
+228,Houndour,,Thunder Fang,8.2,MOVE_REMINDER
+228,Houndour,,Inferno,8.2,MOVE_REMINDER
+228,Houndour,,Overheat,8.2,TM
+228,Houndour,,Sucker Punch,8.2,EGG
+859,Impidimp,,Fake Out,8.2,1
+859,Impidimp,,Bite,8.2,4
+859,Impidimp,,Thief,8.2,TM
+859,Impidimp,,Assurance,8.2,16
+859,Impidimp,,False Surrender,8.2,EVOLUTION
+859,Impidimp,,Sucker Punch,8.2,24
+859,Impidimp,,Spirit Break,8.2,EVOLUTION
+859,Impidimp,,Bulk Up,8.2,MOVE_REMINDER
+859,Impidimp,,Power Up Punch,8.2,MOVE_REMINDER
+859,Impidimp,,Play Rough,8.2,48
+859,Impidimp,,Hammer Arm,8.2,MOVE_REMINDER
+174,Igglybuff,,Charm,8.2,1
+174,Igglybuff,,Defense Curl,8.2,3
+174,Igglybuff,,Rollout,8.2,20
+174,Igglybuff,,Play Rough,8.2,MOVE_REMINDER
+174,Igglybuff,,Dazzling Gleam,8.2,TM
+174,Igglybuff,,Shadow Ball,8.2,TM
+174,Igglybuff,,Flamethrower,8.2,TM
+174,Igglybuff,,Perish Song,8.2,EGG
+782,Jangmo-o,,Protect,8.2,13
+782,Jangmo-o,,Dragon Tail,8.2,17
+782,Jangmo-o,,Sky Uppercut,8.2,EVOLUTION
+782,Jangmo-o,,Work Up,8.2,29
+782,Jangmo-o,,Rock Tomb,8.2,TM
+782,Jangmo-o,,X-Scissor,8.2,TM
+782,Jangmo-o,,Dragon Claw,8.2,43
+782,Jangmo-o,,Earthquake,8.2,TM
+782,Jangmo-o,,Flamethrower,8.2,TM
+782,Jangmo-o,,Dragon Dance,8.2,MOVE_REMINDER
+782,Jangmo-o,,Outrage,8.2,MOVE_REMINDER
+782,Jangmo-o,,Close Combat,8.2,MOVE_REMINDER
+782,Jangmo-o,,Reversal,8.2,EGG
+595,Joltik,,Electroweb,8.2,15
+595,Joltik,,Bug Bite,8.2,18
+595,Joltik,,Signal Beam,8.2,34
+595,Joltik,,Sticky Web,8.2,EVOLUTION
+595,Joltik,,Giga Drain,8.2,TM
+595,Joltik,,Thunderbolt,8.2,TM
+595,Joltik,,Thunder,8.2,TM
+595,Joltik,,Bug Buzz,8.2,MOVE_REMINDER
+595,Joltik,,Cross Poison,8.2,EGG
+950,Klawf,,Rock Tomb,8.2,13
+950,Klawf,,Protect,8.2,21
+950,Klawf,,Rock Blast,8.2,24
+950,Klawf,,X Scissor,8.2,29
+950,Klawf,,Brick Break,8.2,TM
+950,Klawf,,Rock Slide,8.2,42
+950,Klawf,,High Horsepower,8.2,47
+950,Klawf,,Crabhammer,8.2,EGG
+246,Larvitar,,Bite,8.2,1
+246,Larvitar,,Rock Throw,8.2,3
+246,Larvitar,,Screech,8.2,10
+246,Larvitar,,Rock Slide,8.2,19
+246,Larvitar,,Fire Fang,8.2,MOVE_REMINDER
+246,Larvitar,,Ice Fang,8.2,MOVE_REMINDER
+246,Larvitar,,Thunder Fang,8.2,MOVE_REMINDER
+246,Larvitar,,Earthquake,8.2,54
+246,Larvitar,,Snarl,8.2,TM
+246,Larvitar,,Crunch,8.2,47
+246,Larvitar,,Hone Claws,8.2,TM
+246,Larvitar,,Stone Edge,8.2,MOVE_REMINDER
+246,Larvitar,,Outrage,8.2,EGG
+506,Lillipup,,Bite,8.2,8
+506,Lillipup,,Take Down,8.2,15
+506,Lillipup,,Work Up,8.2,20
+506,Lillipup,,Crunch,8.2,24
+506,Lillipup,,Fire Fang,8.2,MOVE_REMINDER
+506,Lillipup,,Ice Fang,8.2,MOVE_REMINDER
+506,Lillipup,,Thunder Fang,8.2,MOVE_REMINDER
+506,Lillipup,,Snarl,8.2,TM
+506,Lillipup,,Retaliate,8.2,36
+506,Lillipup,,Play Rough,8.2,MOVE_REMINDER
+506,Lillipup,,Psychic Fangs,8.2,EGG
+667,Litleo,,Ember,8.2,5
+667,Litleo,,Work Up,8.2,8
+667,Litleo,,Flamethower,8.2,38
+667,Litleo,,Snarl,8.2,TM
+667,Litleo,,Hyper Beam,8.2,MOVE_REMINDER
+667,Litleo,,Hyper Voice,8.2,48
+667,Litleo,,Overheat,8.2,57
+667,Litleo,,Flare Blitz,8.2,EGG
+725,Litten,,Work Up,8.2,8
+725,Litten,,Fire Fang,8.2,14
+725,Litten,,Double Kick,8.2,16
+725,Litten,,Taunt,8.2,TM
+725,Litten,,Earthquake,8.2,TM
+725,Litten,,Darkest Lariat,8.2,34
+725,Litten,,Snarl,8.2,TM
+725,Litten,,Bulk Up,8.2,TM
+725,Litten,,Overheat,8.2,TM
+725,Litten,,Flare Blitz,8.2,55
+725,Litten,,Outrage,8.2,MOVE_REMINDER
+725,Litten,,Fake Out,8.2,EGG
+607,Litwick,,Will-o-Wisp,8.2,16
+607,Litwick,,Taunt,8.2,TM
+607,Litwick,,Flame Burst,8.2,20
+607,Litwick,,Hex,8.2,28
+607,Litwick,,Overheat,8.2,TM
+607,Litwick,,Shadow Ball,8.2,TM
+607,Litwick,,Flamethrower,8.2,TM
+607,Litwick,,Calm Mind,8.2,TM
+607,Litwick,,Captivate,8.2,EGG
+270,Lotad,,Mega Drain,8.2,18
+270,Lotad,,Fake Out,8.2,16
+270,Lotad,,Bullet Seed,8.2,TM
+270,Lotad,,Bubblebeam,8.2,24
+270,Lotad,,Leech Seed,8.2,30
+270,Lotad,,Surf,8.2,HM
+270,Lotad,,Giga Drain,8.2,TM
+270,Lotad,,Ice Beam,8.2,TM
+270,Lotad,,Teeter Dance,8.2,EGG
+686,Inkay,,Reflect,8.2,4
+686,Inkay,,Foul Play,8.2,8
+686,Inkay,,Thief,8.2,TM
+686,Inkay,,Psybeam,8.2,21
+686,Inkay,,Light Screen,8.2,31
+686,Inkay,,Pluck,8.2,35
+686,Inkay,,Psycho Cut,8.2,39
+686,Inkay,,Night Slash,8.2,46
+686,Inkay,,Superpower,8.2,48
+686,Inkay,,Camouflage,8.2,EGG
+66,Machop,,Low Sweep,8.2,13
+66,Machop,,Knock Off,8.2,21
+66,Machop,,Earthquake,8.2,TM
+66,Machop,,Bulk Up,8.2,43
+66,Machop,,Cross Chop,8.2,47
+66,Machop,,Ice Punch,8.2,EGG
+81,Magnemite,,Thunder Shock,8.2,5
+81,Magnemite,,Mirror Shot,8.2,23
+81,Magnemite,,Thunderbolt,8.2,TM
+81,Magnemite,,Flash Cannon,8.2,33
+81,Magnemite,,Discharge,8.2,43
+240,Magby,,Fire Spin,8.2,15
+240,Magby,,Flame Burst,8.2,22
+240,Magby,,Fire Punch,8.2,29
+240,Magby,,Overheat,8.2,TM
+240,Magby,,Flamethrower,8.2,49
+240,Magby,,Earthquake,8.2,TM
+240,Magby,,Thunderbolt,8.2,TM
+240,Magby,,Psychic,8.2,TM
+240,Magby,,Thunder Punch,8.2,MOVE_REMINDER
+240,Magby,,Mach Punch,8.2,EGG
+296,Makuhita,,Knock Off,8.2,19
+296,Makuhita,,Vital Throw,8.2,22
+296,Makuhita,,Brick Break,8.2,TM
+296,Makuhita,,Earthquake,8.2,TM
+296,Makuhita,,Surf,8.2,HM
+296,Makuhita,,Bulk Up,8.2,TM
+296,Makuhita,,Close Combat,8.2,46
+296,Makuhita,,Heavy Slam,8.2,54
+296,Makuhita,,Detect,8.2,EGG
+56,Mankey,,Karate Chop,8.2,8
+56,Mankey,,Cross Chop,8.2,22
+56,Mankey,,Rest,8.2,TM
+56,Mankey,,Earthquake,8.2,TM
+56,Mankey,,Fling,8.2,MOVE_REMINDER
+56,Mankey,,Bulk Up,8.2,TM
+56,Mankey,,Rage Fist,8.2,35
+56,Mankey,,Close Combat,8.2,39
+56,Mankey,,Screech,8.2,44
+56,Mankey,,Stomping Tantrum,8.2,48
+56,Mankey,,Outrage,8.2,53
+56,Mankey,,Encore,8.2,EGG
+179,Mareep,,Thundershock,8.2,8
+179,Mareep,,Thunder Punch,8.2,EVOLUTION
+179,Mareep,,Fire Punch,8.2,MOVE_REMINDER
+179,Mareep,,Thunder,8.2,TM
+179,Mareep,,Thunderbolt,8.2,TM
+179,Mareep,,Power Gem,8.2,35
+179,Mareep,,Discharge,8.2,40
+179,Mareep,,Dragon Pulse,8.2,MOVE_REMINDER
+179,Mareep,,Milk Drink,8.2,EGG
+458,Mantyke,,Bubblebeam,8.2,7
+458,Mantyke,,Water Pulse,8.2,19
+458,Mantyke,,Ice Beam,8.2,TM
+458,Mantyke,,Surf,8.2,HM
+458,Mantyke,,Air Slash,8.2,36
+458,Mantyke,,Tailwind,8.2,EGG
+303,Mawile,,Bite,8.2,9
+303,Mawile,,Crunch,8.2,29
+303,Mawile,,Rock Tomb,8.2,TM
+303,Mawile,,Sucker Punch,8.2,37
+303,Mawile,,Iron Head,8.2,45
+303,Mawile,,Play Rough,8.2,49
+303,Mawile,,Thunder Fang,8.2,EGG
+307,Meditite,,Confusion,8.2,7
+307,Meditite,,Force Palm,8.2,17
+307,Meditite,,High Jump Kick,8.2,28
+307,Meditite,,Zen Headbutt,8.2,MOVE_REMINDER
+307,Meditite,,Fire Punch,8.2,MOVE_REMINDER
+307,Meditite,,Ice Punch,8.2,MOVE_REMINDER
+307,Meditite,,Thunder Punch,8.2,MOVE_REMINDER
+307,Meditite,,Brick Break,8.2,TM
+307,Meditite,,Recover,8.2,47
+307,Meditite,,Bullet Punch,8.2,EGG
+52,Meowth,Galar,Fake Out,8.2,1
+52,Meowth,Galar,Hone Claws,8.2,4
+52,Meowth,Galar,Pay Day,8.2,12
+52,Meowth,Galar,Metal Claw,8.2,16
+52,Meowth,Galar,Taunt,8.2,20
+52,Meowth,Galar,Iron Head,8.2,EVOLUTION
+52,Meowth,Galar,Aerial Ace,8.2,TM
+52,Meowth,Galar,Screech,8.2,36
+52,Meowth,Galar,Night Slash,8.2,EGG
+241,Miltank,,Defense Curl,8.2,5
+241,Miltank,,Stomp,8.2,8
+241,Miltank,,Milk Drink,8.2,11
+241,Miltank,,Rollout,8.2,19
+241,Miltank,,Body Slam,8.2,24
+241,Miltank,,Zen Headbutt,8.2,29
+241,Miltank,,Brick Break,8.2,TM
+241,Miltank,,Earthquake,8.2,TM
+241,Miltank,,High Horsepower,8.2,55
+241,Miltank,,Heart Stamp,8.2,EGG
+439,Mime Jr,,Confusion,8.2,4
+439,Mime Jr,,Encore,8.2,18
+439,Mime Jr,,Ice Beam,8.2,TM
+439,Mime Jr,,Calm Mind,8.2,TM
+439,Mime Jr,,Freeze Dry,8.2,44
+439,Mime Jr,,Charm,8.2,EGG
+572,Minccino,,Tickle,8.2,9
+572,Minccino,,Double Slap,8.2,13
+572,Minccino,,Encore,8.2,15
+572,Minccino,,Bullet Seed,8.2,TM
+572,Minccino,,Tail Slap,8.2,25
+572,Minccino,,Charm,8.2,27
+572,Minccino,,Rock Blast,8.2,MOVE_REMINDER
+572,Minccino,,Aqua Tail,8.2,EGG
+774,Minior,,Defense Curl,8.2,3
+774,Minior,,Rollout,8.2,8
+774,Minior,,Ancient Power,8.2,17
+774,Minior,,Stealth Rock,8.2,24
+774,Minior,,Power Gem,8.2,38
+774,Minior,,Explosion,8.2,Move_Tutor
+755,Morelull,,Moonlight,8.2,11
+755,Morelull,,Mega Drain,8.2,15
+755,Morelull,,Giga Drain,8.2,31
+755,Morelull,,Strength Sap,8.2,35
+755,Morelull,,Dazzling Gleam,8.2,TM
+755,Morelull,,Spore,8.2,40
+755,Morelull,,Leech Seed,8.2,EGG
+749,Mudbray,,Bulldoze,8.2,10
+749,Mudbray,,Double Kick,8.2,15
+749,Mudbray,,High Horsepower,8.2,24
+749,Mudbray,,Rock Tomb,8.2,TM
+749,Mudbray,,Heavy Slam,8.2,34
+749,Mudbray,,Earthquake,8.2,47
+749,Mudbray,,Body Slam,8.2,EGG
+198,Murkrow,,Wing Attack,8.2,15
+198,Murkrow,,Steel Wing,8.2,TM
+198,Murkrow,,Assurance,8.2,25
+198,Murkrow,,Snarl,8.2,TM
+198,Murkrow,,Sucker Punch,8.2,MOVE_REMINDER
+198,Murkrow,,Taunt,8.2,31
+198,Murkrow,,Fly,8.2,HM
+198,Murkrow,,Night Slash,8.2,55
+198,Murkrow,,Dark Pulse,8.2,MOVE_REMINDER
+198,Murkrow,,Drill Peck,8.2,EGG
+258,Mudkip,,Water Gun,8.2,4
+258,Mudkip,,Mud Shot,8.2,EVOLUTION
+258,Mudkip,,Water Pulse,8.2,18
+258,Mudkip,,Mud Bomb,8.2,22
+258,Mudkip,,Rock Slide,8.2,28
+258,Mudkip,,Protect,8.2,32
+258,Mudkip,,Ice Beam,8.2,TM
+258,Mudkip,,Dig,8.2,TM
+258,Mudkip,,Surf,8.2,HM
+258,Mudkip,,Waterfall,8.2,HM
+258,Mudkip,,Earthquake,8.2,51
+258,Mudkip,,Hammer Arm,8.2,MOVE_REMINDER
+258,Mudkip,,Sludge,8.2,EGG
+446,Munchlax,,Last Resort,8.2,MOVE_REMINDER
+446,Munchlax,,Body Slam,8.2,25
+446,Munchlax,,Rest,8.2,TM
+446,Munchlax,,Earthquake,8.2,TM
+446,Munchlax,,Surf,8.2,HM
+446,Munchlax,,Crunch,8.2,49
+446,Munchlax,,Heavy Slam,8.2,50
+446,Munchlax,,High Horsepower,8.2,57
+446,Munchlax,,Charm,8.2,EGG
+290,Nincada,,Fury Cutter,8.2,EVOLUTION
+290,Nincada,,Screech,8.2,EVOLUTION
+290,Nincada,,Aerial Ace,8.2,TM
+290,Nincada,,Bug Bite,8.2,MOVE_REMINDER
+290,Nincada,,Dig,8.2,TM
+290,Nincada,,Baton Pass,8.2,35
+290,Nincada,,Swords Dance,8.2,41
+290,Nincada,,X-Scissor,8.2,47
+290,Nincada,,Shadow Ball,8.2,33
+290,Nincada,,Night Slash,8.2,EGG
+714,Noibat,,Screech,8.2,1
+714,Noibat,,Wing Attack,8.2,16
+714,Noibat,,Air Cutter,8.2,23
+714,Noibat,,Leech Life,8.2,24
+714,Noibat,,Roost,8.2,27
+714,Noibat,,Dragon Pulse,8.2,EVOLUTION
+714,Noibat,,Hone Claws,8.2,TM
+714,Noibat,,X-Scissor,8.2,TM
+714,Noibat,,Moonlight,8.2,MOVE_REMINDER
+714,Noibat,,Tailwind,8.2,35
+714,Noibat,,Hurricane,8.2,MOVE_REMINDER
+714,Noibat,,Outrage,8.2,EGG
+299,Nosepass,,Rock Throw,8.2,10
+299,Nosepass,,Spark,8.2,19
+299,Nosepass,,Rock Slide,8.2,22
+299,Nosepass,,Power Gem,8.2,25
+299,Nosepass,,Dazzling Gleam,8.2,TM
+299,Nosepass,,Thunder,8.2,TM
+299,Nosepass,,Thunderbolt,8.2,TM
+299,Nosepass,,Magnet Bomb,8.2,MOVE_REMINDER
+299,Nosepass,,Discharge,8.2,31
+299,Nosepass,,Earth Power,8.2,37
+299,Nosepass,,Stealth Rock,8.2,EGG
+322,Numel,,Magnitude,8.2,12
+322,Numel,,Incinerate,8.2,15
+322,Numel,,Lava Plume,8.2,22
+322,Numel,,Curse,8.2,29
+322,Numel,,Overheat,8.2,TM
+322,Numel,,Rock Slide,8.2,EVOLUTION
+322,Numel,,Earthquake,8.2,46
+322,Numel,,Eruption,8.2,52
+322,Numel,,Heavy Slam,8.2,EGG
+919,Nymble,,Struggle Bug,8.2,4
+919,Nymble,,Assurance,8.2,9
+919,Nymble,,Screech,8.2,14
+919,Nymble,,Bug Bite,8.2,22
+919,Nymble,,Lunge,8.2,EVOLUTION
+919,Nymble,,X Scissor,8.2,TM
+919,Nymble,,Detect,8.2,MOVE_REMINDER
+919,Nymble,,Sucker Punch,8.2,40
+919,Nymble,,First Impression,8.2,44
+919,Nymble,,Axe Kick,8.2,53
+919,Nymble,,Skitter Smack,8.2,EGG
+43,Oddish,,Growth,8.2,1
+43,Oddish,,Mega Drain,8.2,19
+43,Oddish,,Moonblast,8.2,MOVE_REMINDER
+43,Oddish,,Moonlight,8.2,MOVE_REMINDER
+43,Oddish,,Dazzling Gleam,8.2,TM
+43,Oddish,,Sludge Bomb,8.2,TM
+43,Oddish,,Giga Drain,8.2,34
+43,Oddish,,Quiver Dance,8.2,39
+43,Oddish,,Strength Sap,8.2,EGG
+95,Onix,,Rock Tomb,8.2,10
+95,Onix,,Stealth Rock,8.2,16
+95,Onix,,Breaking Swipe,8.2,22
+95,Onix,,Ice Fang,8.2,MOVE_REMINDER
+95,Onix,,Fire Fang,8.2,MOVE_REMINDER
+95,Onix,,Thunder Fang,8.2,MOVE_REMINDER
+95,Onix,,Earthquake,8.2,TM
+95,Onix,,Screech,8.2,31
+95,Onix,,Rock Slide,8.2,34
+95,Onix,,Crunch,8.2,37
+95,Onix,,Heavy Slam,8.2,EGG
+674,Pancham,,Karate Chop,8.2,12
+674,Pancham,,Bullet Punch,8.2,EVOLUTION
+674,Pancham,,Snarl,8.2,TM
+674,Pancham,,Brick Break,8.2,TM
+674,Pancham,,Earthquake,8.2,TM
+674,Pancham,,Crunch,8.2,42
+674,Pancham,,Bulk Up,8.2,TM
+674,Pancham,,Sky Uppercut,8.2,52
+674,Pancham,,Storm Throw,8.2,EGG
+513,Pansear,,Incinerate,8.2,10
+513,Pansear,,Yawn,8.2,16
+513,Pansear,,Bite,8.2,19
+513,Pansear,,Flame Burst,8.2,22
+513,Pansear,,Fling,8.2,28
+513,Pansear,,Acrobatics,8.2,EVOLUTION
+513,Pansear,,Brick Break,8.2,TM
+513,Pansear,,Flamethrower,8.2,TM
+513,Pansear,,Overheat,8.2,TM
+513,Pansear,,Heat Wave,8.2,EGG
+46,Paras,,Absorb,8.2,11
+46,Paras,,Bullet Seed,8.2,TM
+46,Paras,,Fury Cutter,8.2,17
+46,Paras,,Spore,8.2,22
+46,Paras,,X Scissor,8.2,TM
+46,Paras,,Cross Poison,8.2,MOVE_REMINDER
+46,Paras,,Growth,8.2,37
+46,Paras,,Giga Drain,8.2,44
+46,Paras,,Leech Seed,8.2,EGG
+708,Phantump,,Branch Poke,8.2,4
+708,Phantump,,Growth,8.2,8
+708,Phantump,,Bullet Seed,8.2,TM
+708,Phantump,,Thief,8.2,TM
+708,Phantump,,Feint Attack,8.2,19
+708,Phantump,,Leech Seed,8.2,23
+708,Phantump,,Shadow Claw,8.2,EVOLUTION
+708,Phantump,,Phantom Force,8.2,45
+708,Phantump,,Horn Leech,8.2,54
+708,Phantump,,Grudge,8.2,EGG
+172,Pichu,,Charm,8.2,5
+172,Pichu,,Nasty Plot,8.2,13
+172,Pichu,,Thunder Punch,8.2,EVOLUTION
+172,Pichu,,Thunderbolt,8.2,TM
+172,Pichu,,Psychic,8.2,TM
+172,Pichu,,Fake Out,8.2,EGG
+731,Pikipek,,Pluck,8.2,15
+731,Pikipek,,Bullet Seed,8.2,TM
+731,Pikipek,,Steel Wing,8.2,TM
+731,Pikipek,,Beak Blast,8.2,EVOLUTION
+731,Pikipek,,Screech,8.2,EVOLUTION
+731,Pikipek,,Rock Blast,8.2,MOVE_REMINDER
+731,Pikipek,,Screech,8.2,30
+731,Pikipek,,Aerial Ace,8.2,TM
+731,Pikipek,,Facade,8.2,TM
+731,Pikipek,,Tailwind,8.2,EGG
+393,Piplup,,Bubble,8.2,8
+393,Piplup,,Metal Claw,8.2,EVOLUTION
+393,Piplup,,Bubble Beam,8.2,19
+393,Piplup,,Surf,8.2,HM
+393,Piplup,,Ice Beam,8.2,TM
+393,Piplup,,Steel Wing,8.2,TM
+393,Piplup,,Swords Dance,8.2,MOVE_REMINDER
+393,Piplup,,Water Pulse,8.2,TM
+393,Piplup,,Drill Peck,8.2,52
+393,Piplup,,Icy Wind,8.2,EGG
+311,Plusle and Minun,,Thunder Wave,8.2,1
+311,Plusle and Minun,,Helping Hand,8.2,4
+311,Plusle and Minun,,Spark,8.2,7
+311,Plusle and Minun,,Encore,8.2,10
+311,Plusle and Minun,,Electro Ball,8.2,19
+311,Plusle and Minun,,Charm,8.2,25
+311,Plusle and Minun,,Fake Tears,8.2,25
+311,Plusle and Minun,,Thunderbolt,8.2,TM
+311,Plusle and Minun,,Discharge,8.2,31
+311,Plusle and Minun,,Nuzzle,8.2,MOVE_REMINDER
+311,Plusle and Minun,,Wish,8.2,EGG
+311,Plusle and Minun,,Tearful Look,8.2,EGG
+60,Poliwag,,Water Sport,8.2,1
+60,Poliwag,,Bubble,8.2,11
+60,Poliwag,,Rain Dance,8.2,18
+60,Poliwag,,Mud Shot,8.2,EVOLUTION
+60,Poliwag,,Dynamic Punch,8.2,32
+60,Poliwag,,Brick Break,8.2,TM
+60,Poliwag,,Bulk Up,8.2,TM
+60,Poliwag,,Perish Song,8.2,MOVE_REMINDER
+60,Poliwag,,Ice Beam,8.2,TM
+60,Poliwag,,Surf,8.2,HM
+60,Poliwag,,Waterfall,8.2,HM
+60,Poliwag,,Encore,8.2,EGG
+77,Ponyta,,Flame Wheel,8.2,13
+77,Ponyta,,Stomp,8.2,17
+77,Ponyta,,Flame Charge,8.2,21
+77,Ponyta,,Smart Strike,8.2,EVOLUTION
+77,Ponyta,,Flamethrower,8.2,TM
+77,Ponyta,,Overheat,8.2,TM
+77,Ponyta,,Megahorn,8.2,MOVE_REMINDER
+77,Ponyta,,Poison Jab,8.2,MOVE_REMINDER
+77,Ponyta,,Bounce,8.2,45
+77,Ponyta,,Flare Blitz,8.2,49
+77,Ponyta,,High Horsepower,8.2,EGG
+261,Poochyena,,Bite,8.2,10
+261,Poochyena,,Taunt,8.2,TM
+261,Poochyena,,Thief,8.2,TM
+261,Poochyena,,Snarl,8.2,18
+261,Poochyena,,Fire Fang,8.2,MOVE_REMINDER
+261,Poochyena,,Ice Fang,8.2,MOVE_REMINDER
+261,Poochyena,,Thunder Fang,8.2,MOVE_REMINDER
+261,Poochyena,,Crunch,8.2,40
+261,Poochyena,,Play Rough,8.2,56
+261,Poochyena,,Poison Fang,8.2,EGG
+728,Popplio,,Disarming Voice,8.2,8
+728,Popplio,,Aqua Jet,8.2,14
+728,Popplio,,Bubble Beam,8.2,24
+728,Popplio,,Ice Beam,8.2,TM
+728,Popplio,,Surf,8.2,HM
+728,Popplio,,Water Pulse,8.2,TM
+728,Popplio,,Moonblast,8.2,44
+728,Popplio,,Captivate,8.2,49
+728,Popplio,,Perish Song,8.2,EGG
+137,Porygon,,Psybeam,8.2,7
+137,Porygon,,Recover,8.2,18
+137,Porygon,,Ice Beam,8.2,TM
+137,Porygon,,Discharge,8.2,40
+137,Porygon,,Tri-Attack,8.2,50
+137,Porygon,,Nasty Plot,8.2,MOVE_REMINDER
+280,Ralts,,Draining Kiss,8.2,23
+280,Ralts,,Calm Mind,8.2,26
+280,Ralts,,Psychic,8.2,30
+280,Ralts,,Dazzling Gleam,8.2,TM
+280,Ralts,,Thunderbolt,8.2,TM
+280,Ralts,,Shadow Ball,8.2,TM
+280,Ralts,,Hyper Beam,8.2,TM
+280,Ralts,,Moonblast,8.2,MOVE_REMINDER
+280,Ralts,,Psycho Cut,8.2,31
+280,Ralts,,Aqua Cutter,8.2,MOVE_REMINDER
+280,Ralts,,Leaf Blade,8.2,MOVE_REMINDER
+280,Ralts,,Night Slash,8.2,MOVE_REMINDER
+280,Ralts,,Bulk Up,8.2,TM
+280,Ralts,,Close Combat,8.2,53
+280,Ralts,,Shadow Sneak,8.2,EGG
+223,Remoraid,,Water Gun,8.2,1
+223,Remoraid,,Psybeam,8.2,10
+223,Remoraid,,Aurora Beam,8.2,14
+223,Remoraid,,Bullet Seed,8.2,TM
+223,Remoraid,,Octazooka,8.2,EVOLUTION
+223,Remoraid,,Flamethrower,8.2,TM
+223,Remoraid,,Psychic,8.2,TM
+223,Remoraid,,Sludge Bomb,8.2,TM
+223,Remoraid,,Signal Beam,8.2,34
+223,Remoraid,,Surf,8.2,HM
+223,Remoraid,,Ice Beam,8.2,40
+223,Remoraid,,Mud Shot,8.2,EGG
+447,Riolu,,Force Palm,8.2,15
+447,Riolu,,Aura Sphere,8.2,EVOLUTION
+447,Riolu,,Bone Rush,8.2,MOVE_REMINDER
+447,Riolu,,Power Up Punch,8.2,MOVE_REMINDER
+447,Riolu,,Bulk Up,8.2,TM
+447,Riolu,,Water Pulse,8.2,TM
+447,Riolu,,Psychic,8.2,TM
+447,Riolu,,Shadow Ball,8.2,TM
+447,Riolu,,Earthquake,8.2,TM
+447,Riolu,,Iron Tail,8.2,TM
+447,Riolu,,Calm Mind,8.2,42
+447,Riolu,,Meteor Mash,8.2,48
+447,Riolu,,Dragon Pulse,8.2,MOVE_REMINDER
+447,Riolu,,Meteor Mash,8.2,EGG
+744,Rockruff,,Rock Tomb,8.2,TM
+744,Rockruff,,Accelerock,8.2,25
+744,Rockruff,,Taunt,8.2,TM
+744,Rockruff,,Stealth Rock,8.2,29
+744,Rockruff,,Snarl,8.2,TM
+744,Rockruff,,Brick Break,8.2,TM
+744,Rockruff,,Bulk Up,8.2,TM
+744,Rockruff,,Crunch,8.2,40
+744,Rockruff,,Stone Edge,8.2,48
+744,Rockruff,,Fire Fang,8.2,EGG
+524,Roggenrola,,Rock Blast,8.2,14
+524,Roggenrola,,Smack Down,8.2,23
+524,Roggenrola,,Rock Slide,8.2,30
+524,Roggenrola,,Earthquake,8.2,TM
+524,Roggenrola,,Stealth Rock,8.2,36
+524,Roggenrola,,Stone Edge,8.2,48
+524,Roggenrola,,Heavy Slam,8.2,EGG
+837,Rolycoly,,Rapid Spin,8.2,5
+837,Rolycoly,,Smack Down,8.2,10
+837,Rolycoly,,Ancient Power,8.2,20
+837,Rolycoly,,Incinerate,8.2,27
+837,Rolycoly,,Rock Tomb,8.2,TM
+837,Rolycoly,,Overheat,8.2,TM
+837,Rolycoly,,Stealth Rock,8.2,EVOLUTION
+837,Rolycoly,,Heat Crash,8.2,45
+837,Rolycoly,,Mud Slap,8.2,EGG
+821,Rookidee,,Peck,8.2,1
+821,Rookidee,,Hone Claws,8.2,8
+821,Rookidee,,Pluck,8.2,16
+821,Rookidee,,Taunt,8.2,TM
+821,Rookidee,,Steel Wing,8.2,TM
+821,Rookidee,,Drill Peck,8.2,34
+821,Rookidee,,Brave Bird,8.2,50
+821,Rookidee,,Roost,8.2,EGG
+479,Rotom,,Shock Wave,8.2,22
+479,Rotom,,Ominous Wind,8.2,29
+479,Rotom,,Shadow Ball,8.2,TM
+479,Rotom,,Thunderbolt,8.2,TM
+479,Rotom,,Thunder,8.2,TM
+479,Rotom,,Discharge,8.2,MOVE_REMINDER
+479,Rotom,,Charge,8.2,MOVE_REMINDER
+479,Rotom,,Blizzard,8.2,FORM
+479,Rotom,,Air Slash,8.2,FORM
+479,Rotom,,Overheat,8.2,FORM
+479,Rotom,,Leaf Storm,8.2,FORM
+479,Rotom,,Hydro Pump,8.2,FORM
+722,Rowlet,,Razor Leaf,8.2,14
+722,Rowlet,,Ominous Wind,8.2,16
+722,Rowlet,,Pluck,8.2,24
+722,Rowlet,,Giga Drain,8.2,TM
+722,Rowlet,,Spirit Shackle,8.2,34
+722,Rowlet,,Triple Arrows,8.2,34
+722,Rowlet,,Bulk Up,8.2,TM
+722,Rowlet,,U-turn,8.2,MOVE_REMINDER
+722,Rowlet,,Leaf Storm,8.2,MOVE_REMINDER
+722,Rowlet,,Leaf Blade,8.2,44
+722,Rowlet,,Feather Dance,8.2,49
+722,Rowlet,,Brave Bird,8.2,55
+722,Rowlet,,Curse,8.2,EGG
+302,Sableye,,Detect,8.2,14
+302,Sableye,,Shadow Sneak,8.2,16
+302,Sableye,,Faint Attack,8.2,19
+302,Sableye,,Taunt,8.2,TM
+302,Sableye,,Knock Off,8.2,26
+302,Sableye,,Hone Claws,8.2,TM
+302,Sableye,,Snarl,8.2,TM
+302,Sableye,,Shadow Ball,8.2,39
+302,Sableye,,Foul Play,8.2,41
+302,Sableye,,Moonlight,8.2,EGG
+757,Salandit,,Thief,8.2,1
+757,Salandit,,Dragon Breath,8.2,13
+757,Salandit,,Taunt,8.2,TM
+757,Salandit,,Flame Burst,8.2,24
+757,Salandit,,Toxic,8.2,29
+757,Salandit,,Incinerate,8.2,30
+757,Salandit,,Captivate,8.2,EVOLUTION
+757,Salandit,,Sludge Bomb,8.2,TM
+757,Salandit,,Flamethrower,8.2,44
+757,Salandit,,Encore,8.2,MOVE_REMINDER
+757,Salandit,,Overheat,8.2,TM
+757,Salandit,,Dragon Pulse,8.2,56
+757,Salandit,,Fake Out,8.2,EGG
+551,Sandile,,Sand Tomb,8.2,13
+551,Sandile,,Crunch,8.2,28
+551,Sandile,,Snarl,8.2,TM
+551,Sandile,,Dig,8.2,32
+551,Sandile,,Breaking Swipe,8.2,EVOLUTION
+551,Sandile,,Bulk Up,8.2,TM
+551,Sandile,,Earthquake,8.2,54
+551,Sandile,,Outrage,8.2,MOVE_REMINDER
+551,Sandile,,Fire Fang,8.2,EGG
+27,Sandshrew,Alola,Rapid Spin,8.2,9
+27,Sandshrew,Alola,Metal Claw,8.2,14
+27,Sandshrew,Alola,Icicle Spear,8.2,EVOLUTION
+27,Sandshrew,Alola,Earthquake,8.2,TM
+27,Sandshrew,Alola,Brick Break,8.2,TM
+27,Sandshrew,Alola,Night Slash,8.2,EGG
+769,Sandygast,,Sand Tomb,8.2,14
+769,Sandygast,,Mega Drain,8.2,18
+769,Sandygast,,Bulldoze,8.2,23
+769,Sandygast,,Psychic,8.2,TM
+769,Sandygast,,Sludge Bomb,8.2,TM
+769,Sandygast,,Giga Drain,8.2,36
+769,Sandygast,,Shadow Ball,8.2,41
+769,Sandygast,,Earth Power,8.2,47
+769,Sandygast,,Shore Up,8.2,54
+664,Scatterbug,,Protect,8.2,9
+664,Scatterbug,,Bug Bite,8.2,15
+664,Scatterbug,,Gust,8.2,17
+664,Scatterbug,,Draining Kiss,8.2,25
+664,Scatterbug,,Sleep Powder,8.2,MOVE_REMINDER
+664,Scatterbug,,Giga Drain,8.2,TM
+664,Scatterbug,,Bug Buzz,8.2,35
+664,Scatterbug,,Quiver Dance,8.2,45
+664,Scatterbug,,Hurricane,8.2,50
+664,Scatterbug,,Rage Powder,8.2,EGG
+123,Scyther,,Steel Wing,8.2,TM
+123,Scyther,,Rock Smash,8.2,HM
+123,Scyther,,Wing Attack,8.2,21
+123,Scyther,,Fury Cutter,8.2,25
+123,Scyther,,Bullet Punch,8.2,EVOLUTION
+123,Scyther,,Stone Axe,8.2,EVOLUTION
+123,Scyther,,X-Scissor,8.2,41
+123,Scyther,,Night Slash,8.2,45
+123,Scyther,,Iron Head,8.2,50
+123,Scyther,,Swords Dance,8.2,57
+123,Scyther,,Brick Break,8.2,TM
+123,Scyther,,Bug Buzz,8.2,EGG
+540,Sewaddle,,Bug Bite,8.2,8
+540,Sewaddle,,Razor Leaf,8.2,15
+540,Sewaddle,,Struggle Bug,8.2,22
+540,Sewaddle,,Protect,8.2,EVOLUTION
+540,Sewaddle,,Struggle Bug,8.2,EVOLUTION
+540,Sewaddle,,X-Scissor,8.2,39
+540,Sewaddle,,Aerial Ace,8.2,TM
+540,Sewaddle,,Steel Wing,8.2,TM
+540,Sewaddle,,Sticky Web,8.2,31
+540,Sewaddle,,Struggle Bug,8.2,MOVE_REMINDER
+540,Sewaddle,,Leaf Blade,8.2,36
+540,Sewaddle,,Screech,8.2,EGG
+90,Shellder,,Icicle Spear,8.2,13
+90,Shellder,,Protect,8.2,16
+90,Shellder,,Ice Beam,8.2,TM
+90,Shellder,,Razor Shell,8.2,MOVE_REMINDER
+90,Shellder,,Shell Smash,8.2,MOVE_REMINDER
+90,Shellder,,Surf,8.2,HM
+90,Shellder,,Icicle Crash,8.2,50
+90,Shellder,,Rapid Spin,8.2,EGG
+403,Shinx,,Spark,8.2,13
+403,Shinx,,Thief,8.2,TM
+403,Shinx,,Snarl,8.2,TM
+403,Shinx,,Volt Switch,8.2,30
+403,Shinx,,Thunder Fang,8.2,35
+403,Shinx,,Facade,8.2,TM
+403,Shinx,,Crunch,8.2,42
+403,Shinx,,Ice Fang,8.2,EGG
+948,Shroodle,,Acid Spray,8.2,5
+948,Shroodle,,Poison Fang,8.2,14
+948,Shroodle,,Taunt,8.2,TM
+948,Shroodle,,Slash,8.2,21
+948,Shroodle,,U Turn,8.2,25
+948,Shroodle,,Doodle,8.2,EVOLUTION
+948,Shroodle,,Poison Jab,8.2,EVOLUTION
+948,Shroodle,,Dig,8.2,TM
+948,Shroodle,,Knock Off,8.2,45
+948,Shroodle,,Gunk Shot,8.2,51
+948,Shroodle,,Parting Shot,8.2,EGG
+285,Shroomish,,Leech Seed,8.2,8
+285,Shroomish,,Bullet Seed,8.2,TM
+285,Shroomish,,Mach Punch,8.2,23
+285,Shroomish,,Force Palm,8.2,28
+285,Shroomish,,Protect,8.2,TM
+285,Shroomish,,Facade,8.2,TM
+285,Shroomish,,Sky Uppercut,8.2,39
+285,Shroomish,,Seed Bomb,8.2,44
+285,Shroomish,,Wake-Up Slap,8.2,EGG
+672,Skiddo,,Leech Seed,8.2,12
+672,Skiddo,,Razor Leaf,8.2,13
+672,Skiddo,,Bulldoze,8.2,26
+672,Skiddo,,Seed Bomb,8.2,30
+672,Skiddo,,Aerial Ace,8.2,32
+672,Skiddo,,Bulk Up,8.2,34
+672,Skiddo,,Brick Break,8.2,TM
+672,Skiddo,,Earthquake,8.2,TM
+672,Skiddo,,Horn Leech,8.2,47
+672,Skiddo,,Milk Drink,8.2,EGG
+690,Skrelp,,Bubble,8.2,12
+690,Skrelp,,Water Pulse,8.2,25
+690,Skrelp,,Shadow Ball,8.2,TM
+690,Skrelp,,Sludge Bomb,8.2,38
+690,Skrelp,,Thunderbolt,8.2,TM
+690,Skrelp,,Surf,8.2,HM
+690,Skrelp,,Dragon Pulse,8.2,53
+690,Skrelp,,Acid Armor,8.2,EGG
+287,Slakoth,,Yawn,8.2,1
+287,Slakoth,,Encore,8.2,6
+287,Slakoth,,Slack Off,8.2,9
+287,Slakoth,,Feint Attack,8.2,14
+287,Slakoth,,Slash,8.2,23
+287,Slakoth,,Brick Break,8.2,TM
+287,Slakoth,,Ice Beam,8.2,TM
+287,Slakoth,,Earthquake,8.2,TM
+287,Slakoth,,Shadow Ball,8.2,TM
+287,Slakoth,,X Scissor,8.2,TM
+287,Slakoth,,Aerial Ace,8.2,TM
+287,Slakoth,,Hammer Arm,8.2,MOVE_REMINDER
+287,Slakoth,,Night Slash,8.2,EGG
+79,Slowpoke,Galar,Yawn,8.2,9
+79,Slowpoke,Galar,Confusion,8.2,12
+79,Slowpoke,Galar,Zen Headbutt,8.2,24
+79,Slowpoke,Galar,Shell Side Arm,8.2,EVOLUTION
+79,Slowpoke,Galar,Eerie Spell,8.2,EVOLUTION
+79,Slowpoke,Galar,Power Gem,8.2,MOVE_REMINDER
+79,Slowpoke,Galar,Chilly Reception,8.2,MOVE_REMINDER
+79,Slowpoke,Galar,Surf,8.2,30
+79,Slowpoke,Galar,Slack Off,8.2,33
+79,Slowpoke,Galar,Psychic,8.2,36
+79,Slowpoke,Galar,Sludge Bomb,8.2,TM
+79,Slowpoke,Galar,Flamethrower,8.2,TM
+79,Slowpoke,Galar,Shadow Ball,8.2,TM
+79,Slowpoke,Galar,Ice Beam,8.2,TM
+79,Slowpoke,Galar,Calm Mind,8.2,TM
+79,Slowpoke,Galar,Belch,8.2,EGG
+235,Smeargle,,Sketch,8.2,1
+235,Smeargle,,Sketch,8.2,11
+235,Smeargle,,Sketch,8.2,21
+235,Smeargle,,Sketch,8.2,31
+235,Smeargle,,Sketch,8.2,41
+235,Smeargle,,Sketch,8.2,51
+928,Smoliv,,Growth,8.2,7
+928,Smoliv,,Razor Leaf,8.2,10
+928,Smoliv,,Mega Drain,8.2,20
+928,Smoliv,,Giga Drain,8.2,TM
+928,Smoliv,,Dazzling Gleam,8.2,TM
+928,Smoliv,,Reflect,8.2,TM
+928,Smoliv,,Protect,8.2,TM
+928,Smoliv,,Mirror Coat,8.2,MOVE_REMINDER
+928,Smoliv,,Weather Ball,8.2,EGG
+238,Smoochum,,Powder Snow,8.2,11
+238,Smoochum,,Confusion,8.2,15
+238,Smoochum,,Psychic,8.2,TM
+238,Smoochum,,Ice Beam,8.2,TM
+238,Smoochum,,Draining Kiss,8.2,MOVE_REMINDER
+238,Smoochum,,Perish Song,8.2,55
+238,Smoochum,,Calm Mind,8.2,TM
+238,Smoochum,,Fake Out,8.2,EGG
+215,Sneasel,,Taunt,8.2,1
+215,Sneasel,,Feight Attack,8.2,10
+215,Sneasel,,Hone Claws,8.2,25
+215,Sneasel,,Snarl,8.2,TM
+215,Sneasel,,Screech,8.2,32
+215,Sneasel,,Night Slash,8.2,35
+215,Sneasel,,Ice Punch,8.2,EGG
+495,Snivy,,Vine Whip,8.2,7
+495,Snivy,,Growth,8.2,13
+495,Snivy,,Leaf Tornado,8.2,16
+495,Snivy,,Leech Seed,8.2,20
+495,Snivy,,Mega Drain,8.2,24
+495,Snivy,,Iron Tail,8.2,TM
+495,Snivy,,Protect,8.2,TM
+495,Snivy,,Leaf Blade,8.2,32
+495,Snivy,,Coil,8.2,36
+495,Snivy,,Giga Drain,8.2,44
+495,Snivy,,Leaf Storm,8.2,MOVE_REMINDER
+495,Snivy,,Glare,8.2,EGG
+361,Snorunt,,Ice Shard,8.2,10
+361,Snorunt,,Icy Wind,8.2,14
+361,Snorunt,,Ice Beam,8.2,TM
+361,Snorunt,,Thunderbolt,8.2,TM
+361,Snorunt,,Psychic,8.2,TM
+361,Snorunt,,Thunder,8.2,TM
+361,Snorunt,,Captivate,8.2,41
+361,Snorunt,,Shadow Ball,8.2,42
+361,Snorunt,,Draining Kiss,8.2,MOVE_REMINDER
+361,Snorunt,,Fake Tears,8.2,EGG
+459,Snover,,Razor Leaf,8.2,5
+459,Snover,,Icy Wind,8.2,9
+459,Snover,,Ice Punch,8.2,EVOLUTION
+459,Snover,,Giga Drain,8.2,TM
+459,Snover,,Earthquake,8.2,TM
+459,Snover,,Leech Seed,8.2,35
+459,Snover,,Blizzard,8.2,47
+459,Snover,,Avalanche,8.2,EGG
+209,Snubbull,,Charm,8.2,1
+209,Snubbull,,Headbutt,8.2,19
+209,Snubbull,,Rock Smash,8.2,HM
+209,Snubbull,,Fire Fang,8.2,MOVE_REMINDER
+209,Snubbull,,Ice Fang,8.2,MOVE_REMINDER
+209,Snubbull,,Thunder Fang,8.2,MOVE_REMINDER
+209,Snubbull,,Snarl,8.2,TM
+209,Snubbull,,Brick Break,8.2,TM
+209,Snubbull,,Earthquake,8.2,TM
+209,Snubbull,,Bulk Up,8.2,TM
+209,Snubbull,,Play Rough,8.2,43
+209,Snubbull,,Outrage,8.2,MOVE_REMINDER
+209,Snubbull,,Fake Tears,8.2,EGG
+577,Solosis,,Hidden Power,8.2,14
+577,Solosis,,Charm,8.2,19
+577,Solosis,,Trick Room,8.2,TM
+577,Solosis,,Recover,8.2,24
+577,Solosis,,Psyshock,8.2,25
+577,Solosis,,Shadow Ball,8.2,TM
+577,Solosis,,Thunder,8.2,TM
+577,Solosis,,Psychic,8.2,39
+577,Solosis,,Calm Mind,8.2,TM
+577,Solosis,,Acid Armor,8.2,EGG
+353,Shuppet,,Knock Off,8.2,1
+353,Shuppet,,Will O Wisp,8.2,16
+353,Shuppet,,Knock Off,8.2,MOVE_REMINDER
+353,Shuppet,,Shadow Ball,8.2,30
+353,Shuppet,,Psychic,8.2,TM
+353,Shuppet,,Dazzling Gleam,8.2,TM
+353,Shuppet,,Sucker Punch,8.2,40
+353,Shuppet,,Phantom Force,8.2,MOVE_REMINDER
+353,Shuppet,,Gunk Shot,8.2,EGG
+850,Sizzlipede,,Flame Wheel,8.2,15
+850,Sizzlipede,,Bug Bite,8.2,20
+850,Sizzlipede,,Coil,8.2,25
+850,Sizzlipede,,X Scissor,8.2,TM
+850,Sizzlipede,,Overheat,8.2,TM
+850,Sizzlipede,,Crunch,8.2,46
+850,Sizzlipede,,Fire Lash,8.2,53
+850,Sizzlipede,,Lunge,8.2,MOVE_REMINDER
+451,Skorupi,,Knock Off,8.2,5
+451,Skorupi,,Bug Bite,8.2,20
+451,Skorupi,,Poison Fang,8.2,23
+451,Skorupi,,Hone Claws,8.2,30
+451,Skorupi,,Fire Fang,8.2,MOVE_REMINDER
+451,Skorupi,,Ice Fang,8.2,MOVE_REMINDER
+451,Skorupi,,Thunder Fang,8.2,MOVE_REMINDER
+451,Skorupi,,Earthquake,8.2,TM
+451,Skorupi,,X Scissor,8.2,TM
+451,Skorupi,,Brick Break,8.2,TM
+451,Skorupi,,Iron Tail,8.2,TM
+451,Skorupi,,Snarl,8.2,TM
+451,Skorupi,,Toxic Spikes,8.2,34
+451,Skorupi,,Night Slash,8.2,38
+451,Skorupi,,Fell Stinger,8.2,53
+451,Skorupi,,Cross Poison,8.2,57
+451,Skorupi,,Screech,8.2,EGG
+363,Spheal,,Water Gun,8.2,1
+363,Spheal,,Encore,8.2,9
+363,Spheal,,Aurora Beam,8.2,21
+363,Spheal,,Ice Beam,8.2,TM
+363,Spheal,,Earthquake,8.2,TM
+363,Spheal,,Surf,8.2,HM
+363,Spheal,,Water Pulse,8.2,TM
+363,Spheal,,Crunch,8.2,MOVE_REMINDER
+363,Spheal,,Stockpile,8.2,EGG
+325,Spoink,,Psybeam,8.2,14
+325,Spoink,,Trick Room,8.2,TM
+325,Spoink,,Shock Wave,8.2,TM
+325,Spoink,,Shadow Ball,8.2,TM
+325,Spoink,,Psychic,8.2,52
+325,Spoink,,Calm Mind,8.2,TM
+325,Spoink,,Belch,8.2,MOVE_REMINDER
+325,Spoink,,Mirror Coat,8.2,EGG
+682,Spritzee,,Fairy Wind,8.2,1
+682,Spritzee,,Echoed Voice,8.2,13
+682,Spritzee,,Calm Mind,8.2,17
+682,Spritzee,,Draining Kiss,8.2,21
+682,Spritzee,,Moonblast,8.2,31
+682,Spritzee,,Charm,8.2,35
+682,Spritzee,,Psychic,8.2,48
+682,Spritzee,,Reflect,8.2,57
+682,Spritzee,,Wish,8.2,EGG
+234,Stantler,,Stomp,8.2,13
+234,Stantler,,Take Down,8.2,21
+234,Stantler,,Calm Mind,8.2,27
+234,Stantler,,Psyshield Bash,8.2,EVOLUTION
+234,Stantler,,Psychic,8.2,TM
+234,Stantler,,Zen Headbutt,8.2,37
+234,Stantler,,Jump Kick,8.2,43
+234,Stantler,,Megahorn,8.2,MOVE_REMINDER
+234,Stantler,,Double Kick,8.2,EGG
+396,Starly,,Wing Attack,8.2,9
+396,Starly,,Steel Wing,8.2,TM
+396,Starly,,Thief,8.2,TM
+396,Starly,,Aerial Ace,8.2,28
+396,Starly,,Close Combat,8.2,EVOLUTION
+396,Starly,,Fly,8.2,HM
+396,Starly,,Brave Bird,8.2,49
+396,Starly,,Detect,8.2,EGG
+7,Squirtle,,Bubble,8.2,13
+7,Squirtle,,Bite,8.2,16
+7,Squirtle,,Rapid Spin,8.2,21
+7,Squirtle,,Protect,8.2,25
+7,Squirtle,,Water Pulse,8.2,29
+7,Squirtle,,Ice Beam,8.2,TM
+7,Squirtle,,Earthquake,8.2,TM
+7,Squirtle,,Surf,8.2,HM
+7,Squirtle,,Flash Cannon,8.2,EVOLUTION
+7,Squirtle,,Aura Sphere,8.2,EGG
+120,Staryu,,Rapid Spin,8.2,7
+120,Staryu,,Bubble Beam,8.2,18
+120,Staryu,,Water Pulse,8.2,TM
+120,Staryu,,Psychic,8.2,TM
+120,Staryu,,Ice Beam,8.2,TM
+120,Staryu,,Dazzling Gleam,8.2,TM
+120,Staryu,,Thunderbolt,8.2,TM
+120,Staryu,,Thunder,8.2,TM
+120,Staryu,,Rest,8.2,TM
+120,Staryu,,Surf,8.2,HM
+120,Staryu,,Waterfall,8.2,HM
+874,Stonjourner,,Rock Tomb,8.2,12
+874,Stonjourner,,Earthquake,8.2,TM
+874,Stonjourner,,Stealth Rock,8.2,30
+874,Stonjourner,,Rock Slide,8.2,36
+874,Stonjourner,,Heavy Slam,8.2,54
+874,Stonjourner,,Stone Edge,8.2,60
+874,Stonjourner,,Curse,8.2,EGG
+759,Stufful,,Baby-Doll Eyes,8.2,10
+759,Stufful,,Brutal Swing,8.2,14
+759,Stufful,,Brick Break,8.2,TM
+759,Stufful,,Earthquake,8.2,TM
+759,Stufful,,Hammer Arm,8.2,32
+759,Stufful,,Bulk Up,8.2,TM
+759,Stufful,,Force Palm,8.2,EGG
+283,Surskit,,Water Sport,8.2,14
+283,Surskit,,Air Cutter,8.2,22
+283,Surskit,,Ice Beam,8.2,TM
+283,Surskit,,Water Pulse,8.2,TM
+283,Surskit,,Silver Wind,8.2,32
+283,Surskit,,Bug Buzz,8.2,42
+283,Surskit,,Quiver Dance,8.2,52
+283,Surskit,,Lunge,8.2,EGG
+220,Swinub,,Powder Snow,8.2,8
+220,Swinub,,Mud Slap,8.2,11
+220,Swinub,,Mud Bomb,8.2,18
+220,Swinub,,Ice Fang,8.2,24
+220,Swinub,,Ancient Power,8.2,MOVE_REMINDER
+220,Swinub,,Dig,8.2,TM
+220,Swinub,,Earthquake,8.2,46
+220,Swinub,,Avalanche,8.2,EGG
+684,Swirlix,,Fairy Wind,8.2,5
+684,Swirlix,,Draining Kiss,8.2,31
+684,Swirlix,,Dazzling Gleam,8.2,TM
+684,Swirlix,,Flamethrower,8.2,TM
+684,Swirlix,,Psychic,8.2,TM
+684,Swirlix,,Thunderbolt,8.2,TM
+684,Swirlix,,Surf,8.2,HM
+684,Swirlix,,Energy Ball,8.2,36
+684,Swirlix,,Calm Mind,8.2,TM
+684,Swirlix,,Wish,8.2,45
+684,Swirlix,,Sticky Web,8.2,EGG
+216,Teddiursa,,Fury Swipes,8.2,8
+216,Teddiursa,,Slash,8.2,29
+216,Teddiursa,,Play Rough,8.2,29
+216,Teddiursa,,Bulk Up,8.2,TM
+216,Teddiursa,,Facade,8.2,TM
+216,Teddiursa,,Earthquake,8.2,TM
+216,Teddiursa,,Headlong Rush,8.2,EVOLUTION
+216,Teddiursa,,Crunch,8.2,EGG
+72,Tentacool,,Toxic Spikes,8.2,13
+72,Tentacool,,Water Pulse,8.2,16
+72,Tentacool,,Sludge Bomb,8.2,TM
+72,Tentacool,,Dazzling Gleam,8.2,TM
+72,Tentacool,,Ice Beam,8.2,TM
+72,Tentacool,,Giga Drain,8.2,TM
+72,Tentacool,,Surf,8.2,HM
+72,Tentacool,,Screech,8.2,40
+72,Tentacool,,Mirror Coat,8.2,EGG
+532,Timburr,,Low Kick,8.2,12
+532,Timburr,,Wake-Up Slap,8.2,20
+532,Timburr,,Bulk Up,8.2,29
+532,Timburr,,Rock Slide,8.2,33
+532,Timburr,,Earthquake,8.2,TM
+532,Timburr,,Rock Tomb,8.2,TM
+532,Timburr,,Facade,8.2,TM
+532,Timburr,,Hammer Arm,8.2,45
+532,Timburr,,Stone Edge,8.2,49
+532,Timburr,,Power-Up Punch,8.2,EGG
+957,Tinkatink,,Metal Claw,8.2,8
+957,Tinkatink,,Draining Kiss,8.2,17
+957,Tinkatink,,Brutal Swing,8.2,24
+957,Tinkatink,,Protect,8.2,TM
+957,Tinkatink,,Play Rough,8.2,35
+957,Tinkatink,,Gigaton Hammer,8.2,EVOLUTION
+957,Tinkatink,,Skitter Smack,8.2,47
+957,Tinkatink,,Knock Off,8.2,52
+957,Tinkatink,,Ice Hammer,8.2,EGG
+564,Tirtouga,,Rollout,8.2,5
+564,Tirtouga,,Protect,8.2,11
+564,Tirtouga,,Aqua Jet,8.2,15
+564,Tirtouga,,Ancient Power,8.2,18
+564,Tirtouga,,Crunch,8.2,21
+564,Tirtouga,,Earthquake,8.2,TM
+564,Tirtouga,,Iron Tail,8.2,TM
+564,Tirtouga,,Smack Down,8.2,31
+564,Tirtouga,,Curse,8.2,35
+564,Tirtouga,,Waterfall,8.2,HM
+564,Tirtouga,,Rock Slide,8.2,51
+564,Tirtouga,,Liquidation,8.2,EGG
+175,Togepi,,Yawn,8.2,13
+175,Togepi,,Encore,8.2,17
+175,Togepi,,Wish,8.2,29
+175,Togepi,,Ancient Power,8.2,33
+175,Togepi,,Dazzling Gleam,8.2,TM
+175,Togepi,,Aura Sphere,8.2,MOVE_REMINDER
+175,Togepi,,Future Sight,8.2,EGG
+255,Torchic,,Double Kick,8.2,16
+255,Torchic,,Flame Charge,8.2,20
+255,Torchic,,Bulk Up,8.2,31
+255,Torchic,,Blaze Kick,8.2,36
+255,Torchic,,Brick Break,8.2,TM
+255,Torchic,,Hone Claws,8.2,TM
+255,Torchic,,High Jump Kick,8.2,MOVE_REMINDER
+255,Torchic,,Overheat,8.2,TM
+255,Torchic,,Brave Bird,8.2,50
+255,Torchic,,Sky Uppercut,8.2,57
+255,Torchic,,Night Slash,8.2,EGG
+848,Toxel,,Nuzzle,8.2,1
+848,Toxel,,Acid,8.2,1
+848,Toxel,,Sludge Bomb,8.2,TM
+848,Toxel,,Thunder,8.2,TM
+848,Toxel,,Thunderbolt,8.2,TM
+848,Toxel,,Snarl,8.2,TM
+848,Toxel,,Eerie Impulse,8.2,MOVE_REMINDER
+848,Toxel,,Boomburst,8.2,48
+848,Toxel,,Metal Sound,8.2,EGG
+158,Totodile,,Water Gun,8.2,6
+158,Totodile,,Ice Fang,8.2,21
+158,Totodile,,Breaking Swipe,8.2,26
+158,Totodile,,Crunch,8.2,30
+158,Totodile,,Dragon Claw,8.2,TM
+158,Totodile,,Earthquake,8.2,TM
+158,Totodile,,Brick Break,8.2,TM
+158,Totodile,,Iron Tail,8.2,TM
+158,Totodile,,Hone Claws,8.2,TM
+158,Totodile,,Surf,8.2,HM
+158,Totodile,,Waterfall,8.2,HM
+158,Totodile,,Water Pulse,8.2,EGG
+328,Trapinch,,Bulldoze,8.2,8
+328,Trapinch,,Rock Slide,8.2,15
+328,Trapinch,,Dig,8.2,19
+328,Trapinch,,Crunch,8.2,22
+328,Trapinch,,Screech,8.2,22
+328,Trapinch,,Steel Wing,8.2,TM
+328,Trapinch,,Bug Buzz,8.2,29
+328,Trapinch,,Earthquake,8.2,33
+328,Trapinch,,Dragon Claw,8.2,EVOLUTION
+328,Trapinch,,Flamethrower,8.2,TM
+328,Trapinch,,Dragon Dance,8.2,MOVE_REMINDER
+328,Trapinch,,Bug Bite,8.2,EGG
+252,Treecko,,Mega Drain,8.2,13
+252,Treecko,,Leech Seed,8.2,15
+252,Treecko,,Giga Drain,8.2,21
+252,Treecko,,Leaf Blade,8.2,23
+252,Treecko,,Hone Claws,8.2,TM
+252,Treecko,,Dual Chop,8.2,36
+252,Treecko,,Detect,8.2,39
+252,Treecko,,X-Scissor,8.2,45
+252,Treecko,,Leaf Storm,8.2,MOVE_REMINDER
+252,Treecko,,Screech,8.2,MOVE_REMINDER
+252,Treecko,,Grass Whistle,8.2,EGG
+568,Trubbish,,Toxic Spikes,8.2,7
+568,Trubbish,,Sludge,8.2,18
+568,Trubbish,,Stockpile,8.2,23
+568,Trubbish,,Sludge Bomb,8.2,29
+568,Trubbish,,Thunderbolt,8.2,TM
+568,Trubbish,,Giga Drain,8.2,TM
+568,Trubbish,,Explosion,8.2,MOVE_REMINDER
+568,Trubbish,,Self Destruct,8.2,EGG
+387,Turtwig,,Razor Leaf,8.2,13
+387,Turtwig,,Curse,8.2,17
+387,Turtwig,,Leech Seed,8.2,32
+387,Turtwig,,Earthquake,8.2,32
+387,Turtwig,,Wood Hammer,8.2,MOVE_REMINDER
+387,Turtwig,,Crunch,8.2,45
+387,Turtwig,,Leaf Storm,8.2,57
+387,Turtwig,,Growth,8.2,EGG
+776,Turtonator,,Protect,8.2,9
+776,Turtonator,,Incinerate,8.2,13
+776,Turtonator,,Flamethrower,8.2,29
+776,Turtonator,,Shock Wave,8.2,TM
+776,Turtonator,,Dragon Pulse,8.2,41
+776,Turtonator,,Overheat,8.2,49
+776,Turtonator,,Fire Spin,8.2,EGG
+535,Tympole,,Bubble Beam,8.2,12
+535,Tympole,,Mud Shot,8.2,16
+535,Tympole,,Muddy Water,8.2,28
+535,Tympole,,Earthquake,8.2,TM
+535,Tympole,,Ice Beam,8.2,TM
+535,Tympole,,Sludge Bomb,8.2,TM
+535,Tympole,,Surf,8.2,HM
+535,Tympole,,Waterfall,8.2,HM
+535,Tympole,,Drain Punch,8.2,44
+535,Tympole,,Hydro Pump,8.2,53
+535,Tympole,,Earth Power,8.2,EGG
+602,Tynamo,,Spark,8.2,1
+602,Tynamo,,Charge Beam,8.2,1
+602,Tynamo,,Crunch,8.2,EVOLUTION
+602,Tynamo,,Discharge,8.2,29
+602,Tynamo,,Brick Break,8.2,TM
+602,Tynamo,,Dragon Claw,8.2,TM
+602,Tynamo,,Flamethrower,8.2,TM
+602,Tynamo,,Giga Drain,8.2,TM
+602,Tynamo,,Iron Tail,8.2,TM
+602,Tynamo,,Hone Claws,8.2,TM
+602,Tynamo,,Thunder,8.2,TM
+602,Tynamo,,Thunderbolt,8.2,TM
+602,Tynamo,,Coil,8.2,MOVE_REMINDER
+602,Tynamo,,Waterfall,8.2,HM
+236,Tyrogue,,High Jump Kick,8.2,29
+236,Tyrogue,,Brick Break,8.2,MOVE_REMINDER
+236,Tyrogue,,Blaze Kick,8.2,45
+236,Tyrogue,,Drain Punch,8.2,EVOLUTION
+236,Tyrogue,,Vacuum Wave,8.2,26
+236,Tyrogue,,Rolling Kick,8.2,20
+236,Tyrogue,,Dig,8.2,32
+236,Tyrogue,,Bulk Up,8.2,TM
+236,Tyrogue,,Close Combat,8.2,57
+236,Tyrogue,,Bullet Punch,8.2,EGG
+696,Tyrunt,,Rock Throw,8.2,8
+696,Tyrunt,,Stealth Rock,8.2,15
+696,Tyrunt,,Bite,8.2,17
+696,Tyrunt,,Charm,8.2,20
+696,Tyrunt,,Hone Claws,8.2,TM
+696,Tyrunt,,Crunch,8.2,34
+696,Tyrunt,,Rock Tomb,8.2,TM
+696,Tyrunt,,Dragon Claw,8.2,37
+696,Tyrunt,,Rock Slide,8.2,EVOLUTION
+696,Tyrunt,,Breaking Swipe,8.2,MOVE_REMINDER
+696,Tyrunt,,Earthquake,8.2,47
+696,Tyrunt,,Head Smash,8.2,58
+696,Tyrunt,,Fire Fang,8.2,EGG
+965,Varoom,,Assurance,8.2,10
+965,Varoom,,Sludge,8.2,13
+965,Varoom,,Screech,8.2,25
+965,Varoom,,Iron Head,8.2,28
+965,Varoom,,Shift Gear,8.2,EVOLUTION
+965,Varoom,,Poison Jab,8.2,36
+965,Varoom,,Toxic,8.2,EGG
+543,Venipede,,Screech,8.2,8
+543,Venipede,,Protect,8.2,15
+543,Venipede,,Poison Tail,8.2,19
+543,Venipede,,Bug Bite,8.2,22
+543,Venipede,,Venoshock,8.2,28
+543,Venipede,,Fury Cutter,8.2,Move_Tutor
+543,Venipede,,X-Scissor,8.2,TM
+543,Venipede,,Earthquake,8.2,TM
+543,Venipede,,Mortal Spin,8.2,MOVE_REMINDER
+543,Venipede,,Megahorn,8.2,MOVE_REMINDER
+543,Venipede,,Toxic Spikes,8.2,EGG
+100,Voltorb,Hisui,Thundershock,8.2,4
+100,Voltorb,Hisui,Screech,8.2,13
+100,Voltorb,Hisui,Taunt,8.2,TM
+100,Voltorb,Hisui,Charge Beam,8.2,16
+100,Voltorb,Hisui,Electro Ball,8.2,22
+100,Voltorb,Hisui,Giga Drain,8.2,TM
+100,Voltorb,Hisui,Discharge,8.2,34
+37,Vulpix,Alola,Ice Shard,8.2,10
+37,Vulpix,Alola,Icy Wind,8.2,15
+37,Vulpix,Alola,Dazzling Gleam,8.2,EVOLUTION
+37,Vulpix,Alola,Ice Beam,8.2,TM
+37,Vulpix,Alola,Blizzard,8.2,TM
+37,Vulpix,Alola,Calm Mind,8.2,TM
+37,Vulpix,Alola,Freeze Dry,8.2,EGG
+940,Wattrel,,Thunder Shock,8.2,4
+940,Wattrel,,Pluck,8.2,11
+940,Wattrel,,Roost,8.2,23
+940,Wattrel,,Dual Wingbeat,8.2,EVOLUTION
+940,Wattrel,,Thunderbolt,8.2,TM
+940,Wattrel,,Thunder,8.2,TM
+940,Wattrel,,Shock Wave,8.2,TM
+940,Wattrel,,Volt Switch,8.2,43
+940,Wattrel,,Discharge,8.2,48
+940,Wattrel,,Hurricane,8.2,55
+940,Wattrel,,Feather Dance,8.2,EGG
+13,Weedle,,Bug Bite,8.2,9
+13,Weedle,,Thief,8.2,TM
+13,Weedle,,Toxic Spikes,8.2,29
+13,Weedle,,Brick Break,8.2,TM
+13,Weedle,,X Scissor,8.2,TM
+13,Weedle,,Poison Jab,8.2,35
+13,Weedle,,Fell Stinger,8.2,44
+278,Wingull,,Water Pulse,8.2,15
+278,Wingull,,Air Cutter,8.2,22
+278,Wingull,,Protect,8.2,EVOLUTION
+278,Wingull,,Ice Beam,8.2,TM
+278,Wingull,,Stockpile,8.2,33
+278,Wingull,,Surf,8.2,HM
+278,Wingull,,Shock Wave,8.2,TM
+278,Wingull,,Hurricane,8.2,55
+278,Wingull,,Knock Off,8.2,EGG
+360,Wynaut,,Counter,8.2,15
+360,Wynaut,,Mirror Coat,8.2,15
+360,Wynaut,,Destiny Bond,8.2,15
+360,Wynaut,,Charm,8.2,MOVE_REMINDER
+746,Wishiwashi,,Brine,8.2,14
+746,Wishiwashi,,Aqua Ring,8.2,17
+746,Wishiwashi,,Tearful Look,8.2,22
+746,Wishiwashi,,Dive,8.2,30
+746,Wishiwashi,,Ice Beam,8.2,TM
+746,Wishiwashi,,Earthquake,8.2,TM
+746,Wishiwashi,,Surf,8.2,HM
+746,Wishiwashi,,Muddy Water,8.2,EGG
+194,Wooper,Paldea,Mud Shot,8.2,1
+194,Wooper,Paldea,Toxic Spikes,8.2,12
+194,Wooper,Paldea,Yawn,8.2,21
+194,Wooper,Paldea,Poison Jab,8.2,24
+194,Wooper,Paldea,Dig,8.2,TM
+194,Wooper,Paldea,Surf,8.2,HM
+194,Wooper,Paldea,Waterfall,8.2,HM
+194,Wooper,Paldea,Earthquake,8.2,48
+194,Wooper,Paldea,Acid Spray,8.2,EGG
+835,Yamper,,Nuzzle,8.2,5
+835,Yamper,,Bite,8.2,10
+835,Yamper,,Spark,8.2,20
+835,Yamper,,Charm,8.2,26
+835,Yamper,,Dig,8.2,TM
+835,Yamper,,Snarl,8.2,TM
+835,Yamper,,Crunch,8.2,34
+835,Yamper,,Charge,8.2,41
+835,Yamper,,Bulk Up,8.2,TM
+835,Yamper,,Play Rough,8.2,55
+835,Yamper,,Flame Charge,8.2,EGG
+193,Yanma,,Air Cutter,8.2,14
+193,Yanma,,Sonicboom,8.2,14
+193,Yanma,,Ancient Power,8.2,33
+193,Yanma,,Giga Drain,8.2,TM
+193,Yanma,,Psychic,8.2,TM
+193,Yanma,,Shadow Ball,8.2,TM
+193,Yanma,,U Turn,8.2,49
+193,Yanma,,Bug Buzz,8.2,54
+193,Yanma,,Air Slash,8.2,57
+193,Yanma,,Signal Beam,8.2,EGG
+263,Zigzagoon,,Snarl,8.2,9
+263,Zigzagoon,,Headbutt,8.2,12
+263,Zigzagoon,,Taunt,8.2,TM
+263,Zigzagoon,,Night Slash,8.2,EVOLUTION
+263,Zigzagoon,,Hone Claws,8.2,MOVE_REMINDER
+263,Zigzagoon,,Obstruct,8.2,EVOLUTION
+263,Zigzagoon,,Facade,8.2,TM
+263,Zigzagoon,,Bulk Up,8.2,TM
+263,Zigzagoon,,Knock Off,8.2,EGG
+570,Zorua,,Pursuit,8.2,5
+570,Zorua,,Thief,8.2,TM
+570,Zorua,,Taunt,8.2,25
+570,Zorua,,Snarl,8.2,TM
+570,Zorua,,Shadow Ball,8.2,TM
+570,Zorua,,Flamethrower,8.2,TM
+570,Zorua,,U-Turn,8.2,MOVE_REMINDER
+570,Zorua,,Calm Mind,8.2,TM
+570,Zorua,,Nasty Plot,8.2,54
+570,Zorua,,Night Daze,8.2,MOVE_REMINDER
+570,Zorua,,Dark Pulse,8.2,EGG
+41,Zubat,,Wing Attack,8.2,13
+41,Zubat,,Air Cutter,8.2,19
+41,Zubat,,Steel Wing,8.2,TM
+41,Zubat,,Poison Fang,8.2,27
+41,Zubat,,Cross Poison,8.2,EVOLUTION
+41,Zubat,,Giga Drain,8.2,TM
+41,Zubat,,Screech,8.2,MOVE_REMINDER
+41,Zubat,,Leech Life,8.2,35
+41,Zubat,,Fly,8.2,HM
+41,Zubat,,Venoshock,8.2,43
+41,Zubat,,Feint Attack,8.2,EGG

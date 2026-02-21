@@ -32,6 +32,22 @@ pub struct JoinDraftRequest {
     pub password: Option<String>,
 }
 
+#[derive(Clone, Debug, Deserialize)]
+pub struct ReadyUpRequest {
+    #[serde(default = "default_ready_true")]
+    pub ready: bool,
+}
+
+#[derive(Clone, Debug, Serialize)]
+pub struct ReadyUpResponse {
+    pub ready: bool,
+    pub draft_started: bool,
+}
+
+fn default_ready_true() -> bool {
+    true
+}
+
 #[derive(Clone, Debug, Deserialize, serde::Serialize)]
 pub struct ClaimEeveelutionRequest {
     pub pokedex_id: i32,
@@ -163,6 +179,56 @@ pub async fn join_draft(
     Ok(Json(ClientJoinResponse {
         joined: true,
         error: None,
+    }))
+}
+
+#[debug_handler]
+pub async fn ready_up(
+    State(state): State<ServerState>,
+    Path(draft_id): Path<String>,
+    auth_session: AuthSession<AuthBackend>,
+    ready_request: Option<Json<ReadyUpRequest>>,
+) -> Result<Json<ReadyUpResponse>, (StatusCode, String)> {
+    let user = auth_session.user.expect("user should exist");
+    let ready = ready_request.map(|Json(req)| req.ready).unwrap_or(true);
+
+    let Some(draft_lock) = state.drafts.get(&draft_id) else {
+        return Err((StatusCode::NOT_FOUND, "draft does not exist".to_string()));
+    };
+
+    let mut draft = draft_lock.write().await;
+
+    if draft.draft_state != DraftState::PENDING {
+        return Err((
+            StatusCode::PRECONDITION_FAILED,
+            "draft is no longer pending".to_string(),
+        ));
+    }
+
+    let user_id = user.get_user_id_string();
+    let Some(team) = draft.teams.get_mut(&user_id) else {
+        return Err((
+            StatusCode::FORBIDDEN,
+            "user is not assigned to a team".to_string(),
+        ));
+    };
+
+    team.ready = ready;
+
+    let mut draft_started = false;
+    if draft.all_teams_ready() {
+        draft.start_draft().await.map_err(|e| {
+            (
+                StatusCode::PRECONDITION_FAILED,
+                format!("draft failed to start: {}", e),
+            )
+        })?;
+        draft_started = true;
+    }
+
+    Ok(Json(ReadyUpResponse {
+        ready,
+        draft_started,
     }))
 }
 

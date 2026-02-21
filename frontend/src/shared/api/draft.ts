@@ -8,6 +8,7 @@ export interface CreateDraftRequest {
   num_teams: number;
   starting_money: number;
   draft_name: string;
+  ranked: boolean;
   password?: string | null;
   excluded_pokemon: ExcludedPokemon[];
   patch_version: string;

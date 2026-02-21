@@ -75,6 +75,37 @@ button:hover, .navButton:hover, .footerButton:hover {
   color: $eb-text-black;
 }
 
+
+button:disabled,
+button[disabled],
+.button:disabled,
+.button[disabled],
+.navButton:disabled,
+.navButton[disabled],
+.footerButton:disabled,
+.footerButton[disabled] {
+  background: #4d6632 !important;
+  color: #111 !important;
+  border-radius: 8px !important;
+  opacity: 1 !important;
+  cursor: not-allowed !important;
+  border: none !important;
+  box-shadow: none !important;
+  pointer-events: none !important;
+}
+
+button:disabled:hover,
+button[disabled]:hover,
+.button:disabled:hover,
+.button[disabled]:hover,
+.navButton:disabled:hover,
+.navButton[disabled]:hover,
+.footerButton:disabled:hover,
+.footerButton[disabled]:hover {
+  background: $eb-border;
+  color: $eb-text-muted;
+}
+
 input, textarea, select {
   background: $eb-bg;
   color: $eb-text;
