@@ -19,14 +19,7 @@ const DEFAULT_AUCTION_SECONDS = 10;
 const AuctionSetup = () => (
   <>
     <Header />
-    <main style={{
-      minHeight: 'calc(100vh - 180px)',
-      display: 'flex',
-      flexDirection: 'column',
-      alignItems: 'center',
-      justifyContent: 'center',
-      padding: '0 16px',
-    }}>
+    <main className="auction-setup-main">
       <AuctionSetupForm />
     </main>
     <Footer />
@@ -109,74 +102,83 @@ const AuctionSetupForm: React.FC = () => {
 
   return (
     <div className="auction-setup-card">
-      <h2 className="auction-setup-title">Set Up Auction</h2>
+      <h2 className="auction-setup-title">Auction Setup</h2>
       <form className="auction-setup-form" onSubmit={handleSubmit} autoComplete="off">
         {submitError && <div style={{ color: 'red', marginBottom: 8 }}>{submitError}</div>}
         {createdAuctionId && <div style={{ color: 'lime', marginBottom: 8 }}>Auction Created! ID: {createdAuctionId}</div>}
-        <div className="auction-setup-field">
-          <label className="auction-setup-label">Number of Teams:
-            <input
-              className="auction-setup-input"
-              type="number"
-              min={ranked ? MIN_TEAM_SIZE : 2}
-              max={ranked ? MAX_TEAM_SIZE : 16}
-              value={numTeams}
-              onChange={e => setNumTeams(Number(e.target.value))}
-              required
-            />
-          </label>
-        </div>
-        <div className="auction-setup-field">
-          <label className="auction-setup-label">Number of Pokémon Drafted:
-            <input
-              className="auction-setup-input"
-              type="number"
-              min={1}
-              max={256}
-              value={numPokemon}
-              onChange={e => setNumPokemon(Number(e.target.value))}
-              required
-              disabled={ranked}
-            />
-          </label>
-        </div>
-        <div className="auction-setup-field">
-          <label className="auction-setup-label">Draft Name:
-            <input
-              className="auction-setup-input"
-              type="text"
-              name="draft-name"
-              autoComplete="off"
-              value={draftName}
-              onChange={e => setDraftName(e.target.value)}
-              required
-            />
-          </label>
-        </div>
-        <div className="auction-setup-field">
-          <label className="auction-setup-label">Password (optional):
-            <input
-              className="auction-setup-input"
-              type="password"
-              name="draft-password"
-              autoComplete="new-password"
-              value={password}
-              onChange={e => setPassword(e.target.value)}
-            />
-          </label>
-        </div>
-        {isLoggedIn && (
-          <div className="auction-setup-field auction-setup-checkbox-row">
-            <label className="auction-setup-label auction-setup-checkbox-label">
+        <div style={{ display: 'flex', gap: '10px', width: '100%' }}>
+          <div className="auction-setup-field" style={{ flex: 1 }}>
+            <label className="auction-setup-label">Draft Name:
               <input
-                type="checkbox"
-                checked={ranked}
-                onChange={e => setRanked(e.target.checked)}
+                className="auction-setup-input"
+                type="text"
+                name="draft-name"
+                autoComplete="off"
+                value={draftName}
+                onChange={e => setDraftName(e.target.value)}
+                required
               />
-              Ranked Draft
             </label>
           </div>
-        )}
+          <div className="auction-setup-field" style={{ flex: 1 }}>
+            <label className="auction-setup-label">Password (optional):
+              <input
+                className="auction-setup-input"
+                type="password"
+                name="draft-password"
+                autoComplete="new-password"
+                value={password}
+                onChange={e => setPassword(e.target.value)}
+              />
+            </label>
+          </div>
+        </div>
+        <div style={{ display: 'flex', gap: '10px', width: '100%', alignItems: 'flex-end' }}>
+          <div className="auction-setup-field" style={{ flex: 1 }}>
+            <label className="auction-setup-label">Number of Teams:
+              <input
+                className="auction-setup-input"
+                type="number"
+                min={ranked ? MIN_TEAM_SIZE : 2}
+                max={ranked ? MAX_TEAM_SIZE : 16}
+                value={numTeams}
+                onChange={e => {
+                  const val = Number(e.target.value);
+                  setNumTeams(val);
+                  setNumPokemon(val * 8);
+                }}
+                required
+              />
+            </label>
+          </div>
+          <div className="auction-setup-field" style={{ flex: 1 }}>
+            <label className="auction-setup-label">Total Pokémon:
+              <input
+                className="auction-setup-input"
+                type="number"
+                min={1}
+                max={256}
+                value={numPokemon}
+                onChange={e => setNumPokemon(Number(e.target.value))}
+                required
+                disabled={ranked}
+              />
+            </label>
+          </div>
+          {isLoggedIn && (
+            <div className="auction-setup-field" style={{ flex: 0.5 }}>
+              <label className="auction-setup-label">Ranked Race
+                <div className="auction-setup-checkbox-row" style={{ marginLeft: '12px' }}>
+                  <input
+                    type="checkbox"
+                    checked={ranked}
+                    onChange={e => setRanked(e.target.checked)}
+                  />
+                </div>
+              </label>
+            </div>
+          )}
+        </div>
         <div className="auction-setup-field auction-setup-btn-row">
           <button
             type="button"
@@ -199,7 +201,10 @@ const AuctionSetupForm: React.FC = () => {
                 <button className="auction-modal-close" onClick={() => setShowModal(false)}>&times;</button>
               </div>
               <div className="auction-modal-grid">
-                {pokemonList.map((pokemon) => {
+                {pokemonList
+                  .filter(p => (p as any).stage === 'base')
+                  .sort((a, b) => a.name.localeCompare(b.name))
+                  .map((pokemon) => {
                   const isExcluded = excludedPokemon.has(pokemon.id);
                   return (
                     <div

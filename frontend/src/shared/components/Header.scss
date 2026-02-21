@@ -1,6 +1,6 @@
 .header {
   margin-bottom: 2.5rem;
-  width: 100vw;
+  width: 100%;
   min-height: 5rem;
   position: fixed;
   left: 0;
@@ -35,10 +35,11 @@
   padding-top: 0.625rem;
 }
 .navButton {
-  min-width: 9.375rem;
+  width: 10.25rem;
   padding: 0.75rem 1.125rem;
   display: block;
   text-align: center;
+  box-sizing: border-box;
 }
 
 .navDropdown {
@@ -48,22 +49,43 @@
 .navDropdownTrigger {
   cursor: pointer;
   border: none;
+  background: transparent;
+  font: inherit;
+  color: inherit;
+  margin: 0;
 }
 
 .navDropdownMenu {
-  display: none;
+  display: flex;
   position: absolute;
   top: 100%;
   left: 0;
   z-index: 120;
   flex-direction: column;
   gap: 0.375rem;
+  padding-top: 0.375rem;
+  pointer-events: none;
 }
 
 .navDropdown:hover .navDropdownMenu {
-  display: flex;
+  pointer-events: auto;
 }
 
 .navDropdownItem {
   text-decoration: none;
+  opacity: 0;
+  transform: translateY(-15px);
+  visibility: hidden;
+  transition: opacity 0.2s ease, transform 0.2s ease, visibility 0s 0.2s;
+}
+
+.navDropdown:hover .navDropdownItem {
+  opacity: 1;
+  transform: translateY(0);
+  visibility: visible;
+  transition: opacity 0.2s ease-out, transform 0.2s ease-out;
+}
+
+.navDropdown:hover .navDropdownItem:nth-child(2) {
+  transition-delay: 0.08s;
 }

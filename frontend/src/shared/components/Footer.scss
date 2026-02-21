@@ -1,8 +1,8 @@
 .footer {
   margin-top: 40px;
-  width: 100vw;
+  width: 100%;
   min-height: 64px;
-  position: fixed;
+  position: relative;
   left: 0;
   bottom: 0;
   z-index: 100;
@@ -28,4 +28,5 @@
   height: 22px;
   filter: invert(1);
   pointer-events: none;
+  object-fit: contain;
 }
