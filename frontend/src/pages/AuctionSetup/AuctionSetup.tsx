@@ -13,6 +13,8 @@ import { createDraft, CreateDraftRequest } from '../../shared/api/draft';
 
 const MIN_TEAM_SIZE = 6;
 const MAX_TEAM_SIZE = 8;
+const DEFAULT_STARTING_MONEY = 20000;
+const DEFAULT_AUCTION_SECONDS = 10;
 
 const AuctionSetup = () => (
   <>
@@ -37,20 +39,17 @@ const AuctionSetupForm: React.FC = () => {
   const navigate = useNavigate();
 
   const [numTeams, setNumTeams] = useState(8);
-  const [defaultFunds, setDefaultFunds] = useState(20000);
   const [numPokemon, setNumPokemon] = useState(64);
   const [draftName, setDraftName] = useState('');
   const [password, setPassword] = useState('');
-  const [secondsToDraft, setSecondsToDraft] = useState(10);
   const [ranked, setRanked] = useState(false);
 
   React.useEffect(() => {
     if (ranked) {
-      setDefaultFunds(20000);
       setNumPokemon(8 * numTeams);
       setExcludedPokemon(new Set());
     }
-  }, [ranked, defaultFunds, numTeams]);
+  }, [ranked, numTeams]);
 
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [createdAuctionId, setCreatedAuctionId] = useState<string | null>(null);
@@ -71,10 +70,8 @@ const AuctionSetupForm: React.FC = () => {
     // Validate required fields (userId and password are optional)
     if (
       !numTeams ||
-      !defaultFunds ||
       !numPokemon ||
-      !draftName.trim() ||
-      !secondsToDraft
+      !draftName.trim()
     ) {
       setSubmitError('Please fill out all required fields.');
       return;
@@ -84,7 +81,9 @@ const AuctionSetupForm: React.FC = () => {
       // Compose the data object to match API expectations
       const data: CreateDraftRequest = {
         num_teams: numTeams,
-        starting_money: defaultFunds,
+        starting_money: DEFAULT_STARTING_MONEY,
+        draft_name: draftName.trim(),
+        password: password.trim() || null,
         excluded_pokemon: Array.from(excludedPokemon).map(id => ({
           pokedex_id: id,
           form: null, // Default to empty form, update if you have form data
@@ -92,7 +91,7 @@ const AuctionSetupForm: React.FC = () => {
         patch_version: '8.2', // Update with actual version if available
         num_auctions: numPokemon,
         auction_length: {
-          secs: secondsToDraft,
+          secs: DEFAULT_AUCTION_SECONDS,
           nanos: 0,
         },
       };
@@ -111,7 +110,7 @@ const AuctionSetupForm: React.FC = () => {
   return (
     <div className="auction-setup-card">
       <h2 className="auction-setup-title">Set Up Auction</h2>
-      <form className="auction-setup-form" onSubmit={handleSubmit}>
+      <form className="auction-setup-form" onSubmit={handleSubmit} autoComplete="off">
         {submitError && <div style={{ color: 'red', marginBottom: 8 }}>{submitError}</div>}
         {createdAuctionId && <div style={{ color: 'lime', marginBottom: 8 }}>Auction Created! ID: {createdAuctionId}</div>}
         <div className="auction-setup-field">
@@ -124,20 +123,6 @@ const AuctionSetupForm: React.FC = () => {
               value={numTeams}
               onChange={e => setNumTeams(Number(e.target.value))}
               required
-            />
-          </label>
-        </div>
-        <div className="auction-setup-field">
-          <label className="auction-setup-label">Default Funds:
-            <input
-              className="auction-setup-input"
-              type="number"
-              min={5000}
-              max={30000}
-              value={defaultFunds}
-              onChange={e => setDefaultFunds(Number(e.target.value))}
-              required
-              disabled={ranked}
             />
           </label>
         </div>
@@ -160,6 +145,8 @@ const AuctionSetupForm: React.FC = () => {
             <input
               className="auction-setup-input"
               type="text"
+              name="draft-name"
+              autoComplete="off"
               value={draftName}
               onChange={e => setDraftName(e.target.value)}
               required
@@ -170,22 +157,11 @@ const AuctionSetupForm: React.FC = () => {
           <label className="auction-setup-label">Password (optional):
             <input
               className="auction-setup-input"
-              type="text"
+              type="password"
+              name="draft-password"
+              autoComplete="new-password"
               value={password}
               onChange={e => setPassword(e.target.value)}
-            />
-          </label>
-        </div>
-        <div className="auction-setup-field">
-          <label className="auction-setup-label">Seconds to Draft:
-            <input
-              className="auction-setup-input"
-              type="number"
-              min={5}
-              max={20}
-              value={secondsToDraft}
-              onChange={e => setSecondsToDraft(Number(e.target.value))}
-              required
             />
           </label>
         </div>

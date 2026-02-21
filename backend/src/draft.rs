@@ -23,6 +23,7 @@ use crate::{
 #[derive(Clone, Debug)]
 pub struct Draft {
     pub draft_id: String,
+    pub draft_name: String,
     pub host: User,
     pub draft_state: DraftState,
     pub settings: DraftSettings,
@@ -39,6 +40,8 @@ pub struct Draft {
 #[derive(Clone, Debug, Serialize)]
 pub struct DraftResponse {
     draft_id: String,
+    draft_name: String,
+    has_password: bool,
     host: String,
     teams: Vec<Team>,
     draft_state: DraftState,
@@ -47,6 +50,16 @@ pub struct DraftResponse {
     current_auction_expires_at: Option<chrono::DateTime<Utc>>,
     pokemon: Vec<&'static Pokemon>,
     patch_version: String,
+}
+
+#[derive(Clone, Debug, Serialize)]
+pub struct DraftLobbyResponse {
+    draft_id: String,
+    draft_name: String,
+    has_password: bool,
+    teams_joined: u32,
+    total_teams: u32,
+    draft_state: DraftState,
 }
 
 impl From<Draft> for DraftResponse {
@@ -73,6 +86,8 @@ impl From<Draft> for DraftResponse {
 
         DraftResponse {
             draft_id: draft.draft_id,
+            draft_name: draft.draft_name,
+            has_password: draft.settings.password.is_some(),
             host: draft.host.get_user_id_string(),
             teams: draft.teams.into_values().collect(),
             draft_state: draft.draft_state,
@@ -85,6 +100,19 @@ impl From<Draft> for DraftResponse {
                 .collect(),
             pokemon: draft.pokemon,
             patch_version: draft.settings.patch_version,
+        }
+    }
+}
+
+impl From<Draft> for DraftLobbyResponse {
+    fn from(draft: Draft) -> DraftLobbyResponse {
+        DraftLobbyResponse {
+            draft_id: draft.draft_id,
+            draft_name: draft.draft_name,
+            has_password: draft.settings.password.is_some(),
+            teams_joined: draft.teams.len() as u32,
+            total_teams: draft.settings.num_teams,
+            draft_state: draft.draft_state,
         }
     }
 }
@@ -113,6 +141,10 @@ pub struct ExcludedPokemon {
 pub struct DraftSettings {
     num_teams: u32,
     starting_money: u32,
+    #[serde(default)]
+    draft_name: String,
+    #[serde(default)]
+    password: Option<String>,
     excluded_pokemon: Vec<ExcludedPokemon>,
     patch_version: String,
     num_auctions: u32,
@@ -122,13 +154,15 @@ pub struct DraftSettings {
 #[derive(Clone, Debug, Serialize)]
 pub struct Team {
     pub user_id: String,
+    pub username: String,
     budget_remaining: u32,
-    auctions_won: Vec<&'static Pokemon>,
+    pub auctions_won: Vec<&'static Pokemon>,
 }
 
 impl Draft {
     fn new(
         draft_id: String,
+        draft_name: String,
         host: User,
         settings: DraftSettings,
         pokemon: Vec<&'static Pokemon>,
@@ -138,6 +172,7 @@ impl Draft {
         let (tx, _rx) = broadcast::channel(1_000);
         Draft {
             draft_id: draft_id,
+            draft_name,
             host: host,
             db_pool: pool,
             teams: HashMap::new(),
@@ -154,7 +189,7 @@ impl Draft {
 
     pub async fn build(
         host: User,
-        settings: DraftSettings,
+        mut settings: DraftSettings,
         pool: PgPool,
         draft_runner: Arc<DraftRunner>,
     ) -> Result<Draft, String> {
@@ -173,6 +208,20 @@ impl Draft {
             let Some(draft_id) = petname(2, "_") else {
                 continue;
             };
+            let draft_name = if settings.draft_name.trim().is_empty() {
+                draft_id.clone()
+            } else {
+                settings.draft_name.trim().to_string()
+            };
+            settings.password = settings.password.as_ref().and_then(|p| {
+                let trimmed = p.trim();
+                if trimmed.is_empty() {
+                    None
+                } else {
+                    Some(trimmed.to_string())
+                }
+            });
+
             let Some(mut pokemon) =
                 pokemon::get_pokemon_data(&settings.patch_version, &settings.excluded_pokemon)
             else {
@@ -186,14 +235,16 @@ impl Draft {
 
             let query_string = format!(
                 r#"
-                INSERT INTO drafts (draft_id, num_teams, starting_money, patch_version, {})
-                VALUES ($1, $2, $3, $4, $5)
+                INSERT INTO drafts (draft_id, draft_name, password, num_teams, starting_money, patch_version, {})
+                VALUES ($1, $2, $3, $4, $5, $6, $7)
                 "#,
                 host_field,
             );
 
             let Ok(_) = sqlx::query(&query_string)
                 .bind(&draft_id)
+                .bind(&draft_name)
+                .bind(&settings.password)
                 .bind(settings.num_teams as i32)
                 .bind(settings.starting_money as i32)
                 .bind(&settings.patch_version)
@@ -205,7 +256,15 @@ impl Draft {
                 continue;
             };
 
-            let mut draft = Draft::new(draft_id, host, settings, pokemon, pool, draft_runner);
+            let mut draft = Draft::new(
+                draft_id,
+                draft_name,
+                host,
+                settings,
+                pokemon,
+                pool,
+                draft_runner,
+            );
             for (i, p) in draft.pokemon.iter().filter(|p| p.stage == PokemonStage::base && !p.is_baby).enumerate() {
                 let auction = Auction::build(draft.draft_id.clone(), i as u32, p, &mut tx)
                     .await
@@ -303,7 +362,8 @@ impl Draft {
         Ok(())
     }
 
-    pub async fn join_draft(&mut self, user_id: String) -> Result<(), String> {
+    pub async fn join_draft(&mut self, user: User, password: Option<String>) -> Result<(), String> {
+        let user_id = user.get_user_id_string();
         if self.teams.len() >= self.settings.num_teams as usize {
             return Err("Draft is already full".to_string());
         }
@@ -312,8 +372,26 @@ impl Draft {
             return Err("User is already in draft".to_string());
         }
 
+        let host_user_id = self.host.get_user_id_string();
+        if user_id != host_user_id {
+            if let Some(draft_password) = self.settings.password.as_ref() {
+                let Some(password) = password
+                    .as_ref()
+                    .map(|p| p.trim().to_string())
+                    .filter(|p| !p.is_empty())
+                else {
+                    return Err("draft password required".to_string());
+                };
+
+                if password != *draft_password {
+                    return Err("draft password is incorrect".to_string());
+                }
+            }
+        }
+
         let team = Team {
             user_id: user_id.clone(),
+            username: user.get_user_name_string(),
             budget_remaining: self.settings.starting_money,
             auctions_won: vec![],
         };

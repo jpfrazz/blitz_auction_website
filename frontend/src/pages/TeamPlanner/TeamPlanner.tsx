@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import Select, { MultiValue, ActionMeta } from 'react-select';
 import Header from '../../shared/components/Header';
 import Footer from '../../shared/components/Footer';
+import CurrentPokemonPanel from '../Auction/components/CurrentPokemonPanel';
+import { Auction, Pokemon } from '../../types';
 import './TeamPlanner.scss';
 
 type PokemonOption = {
@@ -18,6 +20,21 @@ const pokemonOptions: PokemonOption[] = [
 const TeamPlanner = () => {
   const [modalOpen, setModalOpen] = useState(false);
   const [selectedPokemon, setSelectedPokemon] = useState<readonly PokemonOption[]>([]);
+
+  const teamAuctions: Auction[] = selectedPokemon.map((pokemon, index) => {
+    const panelPokemon: Pokemon = {
+      id: index,
+      name: pokemon.label,
+    };
+
+    return {
+      auction_id: `team-planner-${pokemon.value}-${index}`,
+      pokemon: panelPokemon,
+      status: 'PENDING',
+      highest_bid: 0,
+      highest_bidder: null,
+    };
+  });
 
   const handleOpenModal = () => setModalOpen(true);
   const handleCloseModal = () => setModalOpen(false);
@@ -100,6 +117,20 @@ const TeamPlanner = () => {
               </div>
             </div>
           </div>
+        )}
+
+        {teamAuctions.length > 0 && (
+          <section className="teamplanner-team-section">
+            <h2 className="teamplanner-team-title">Your Team</h2>
+            <div className="teamplanner-team-grid">
+              {teamAuctions.map((teamAuction) => (
+                <CurrentPokemonPanel
+                  key={teamAuction.auction_id}
+                  current_auction={teamAuction}
+                />
+              ))}
+            </div>
+          </section>
         )}
       </main>
       <Footer />

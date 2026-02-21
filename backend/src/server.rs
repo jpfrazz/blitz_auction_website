@@ -109,16 +109,22 @@ impl Server {
     ) -> Router {
         let public_routes = Router::new()
             .route("/", get(|| async { "blitz auction api" }))
+            .route("/pokemon/highest-patch", get(handlers::get_highest_patch_pokemon))
             .route("/drafts/{draft_id}", get(handlers::get_draft))
             .route("/ws/{draft_id}", any(handlers::websocket_handler))
             .route("/login", get(handlers::discord_oauth_redirect))
             .route("/auth/discord/callback", get(handlers::discord_callback));
 
         let private_routes = Router::new()
-            .route("/drafts", post(handlers::create_draft))
+            .route("/drafts", get(handlers::list_open_drafts).post(handlers::create_draft))
             .route("/drafts/{draft_id}/join", post(handlers::join_draft))
             .route("/drafts/{draft_id}/bid", post(handlers::bid))
             .route("/drafts/{draft_id}/start", post(handlers::start_draft))
+            .route("/drafts/{draft_id}/claim-eeveelution", post(handlers::claim_eeveelution))
+            .route(
+                "/drafts/{draft_id}/chats",
+                get(handlers::get_draft_chats).post(handlers::create_draft_chat),
+            )
             .route("/me", get(handlers::me))
             .route_layer(middleware::from_fn(auto_login_guest));
 

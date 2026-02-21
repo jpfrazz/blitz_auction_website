@@ -7,6 +7,8 @@ export interface ExcludedPokemon {
 export interface CreateDraftRequest {
   num_teams: number;
   starting_money: number;
+  draft_name: string;
+  password?: string | null;
   excluded_pokemon: ExcludedPokemon[];
   patch_version: string;
   num_auctions: number;

@@ -5,6 +5,9 @@ CREATE TABLE users (
     global_name TEXT,
     avatar TEXT,
     role_hash TEXT NOT NULL,
+    wins INT NOT NULL DEFAULT 0,
+    losses INT NOT NULL DEFAULT 0,
+    mmr INT NOT NULL DEFAULT 1500,
     updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
     created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
@@ -78,6 +81,8 @@ CREATE TABLE key_moves (
 
 CREATE TABLE drafts (
     draft_id TEXT NOT NULL PRIMARY KEY,
+    draft_name TEXT NOT NULL DEFAULT '',
+    password TEXT,
     host_user_id TEXT REFERENCES users(user_id),
     host_guest_id TEXT REFERENCES guests(user_id),
     starting_money INT NOT NULL DEFAULT 20000,
@@ -147,6 +152,14 @@ CREATE TABLE bids (
     CONSTRAINT at_least_one_acct_id CHECK (
         user_id IS NOT NULL OR guest_id IS NOT NULL
     )
+);
+
+CREATE TABLE chats (
+    chat_id BIGSERIAL NOT NULL PRIMARY KEY,
+    draft_id TEXT NOT NULL REFERENCES drafts(draft_id) ON DELETE CASCADE,
+    user_id TEXT NOT NULL,
+    message TEXT NOT NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
 CREATE OR REPLACE FUNCTION update_updated_at()

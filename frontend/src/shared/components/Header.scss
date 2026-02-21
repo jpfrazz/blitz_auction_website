@@ -40,3 +40,30 @@
   display: block;
   text-align: center;
 }
+
+.navDropdown {
+  position: relative;
+}
+
+.navDropdownTrigger {
+  cursor: pointer;
+  border: none;
+}
+
+.navDropdownMenu {
+  display: none;
+  position: absolute;
+  top: 100%;
+  left: 0;
+  z-index: 120;
+  flex-direction: column;
+  gap: 0.375rem;
+}
+
+.navDropdown:hover .navDropdownMenu {
+  display: flex;
+}
+
+.navDropdownItem {
+  text-decoration: none;
+}

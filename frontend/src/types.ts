@@ -47,13 +47,16 @@ export interface Auction {
 
 export interface Team {
   user_id: string;
+  username: string;
   budget_remaining: number;
-  pokemon: Pokemon[];
+  pokemon?: Pokemon[];
   auctions_won?: Pokemon[];
 }
 
 export interface Draft {
   draft_id: string;
+  draft_name: string;
+  has_password: boolean;
   host: string;
   teams: Team[];
   draft_state: DraftState;
@@ -62,4 +65,22 @@ export interface Draft {
   current_auction_expires_at?: string;
   pokemon: Pokemon[];
   patch_version: string;
+}
+
+export interface ChatMessage {
+  chat_id: number;
+  draft_id: string;
+  user_id: string;
+  user_name: string;
+  message: string;
+  created_at: string;
+}
+
+export interface DraftLobby {
+  draft_id: string;
+  draft_name: string;
+  has_password: boolean;
+  teams_joined: number;
+  total_teams: number;
+  draft_state: DraftState;
 }

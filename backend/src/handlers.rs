@@ -1,6 +1,7 @@
 use crate::{
-    draft::{Draft, DraftResponse, DraftSettings, DraftState},
+    draft::{Draft, DraftLobbyResponse, DraftResponse, DraftSettings, DraftState},
     messages::{ClientBidRequest, ClientBidResponse, ClientJoinResponse, ServerMessage},
+    pokemon,
     server::ServerState,
     users::{AuthBackend, CSRF_STATE_KEY, Credentials, DiscordCreds, User, UserId},
 };
@@ -17,13 +18,40 @@ use axum::{
 };
 use axum_login::AuthSession;
 use oauth2::CsrfToken;
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
+use sqlx::Row;
 use std::{sync::Arc, time::Duration};
 use tokio::{
     sync::{RwLock, broadcast},
     time::Instant,
 };
 use tower_sessions::Session;
+
+#[derive(Clone, Debug, Deserialize)]
+pub struct JoinDraftRequest {
+    pub password: Option<String>,
+}
+
+#[derive(Clone, Debug, Deserialize, serde::Serialize)]
+pub struct ClaimEeveelutionRequest {
+    pub pokedex_id: i32,
+    pub form: Option<String>,
+}
+
+#[derive(Clone, Debug, Serialize)]
+pub struct ChatMessage {
+    pub chat_id: i64,
+    pub draft_id: String,
+    pub user_id: String,
+    pub user_name: String,
+    pub message: String,
+    pub created_at: chrono::DateTime<chrono::Utc>,
+}
+
+#[derive(Clone, Debug, Deserialize)]
+pub struct CreateChatRequest {
+    pub message: String,
+}
 
 #[debug_handler]
 pub async fn create_draft(
@@ -44,7 +72,7 @@ pub async fn create_draft(
             Ok(mut draft) => {
                 let draft_id = draft.draft_id.clone();
                 draft
-                    .join_draft(host.get_user_id_string())
+                    .join_draft(host.clone(), None)
                     .await
                     .expect("host should be able to join draft");
                 state
@@ -65,6 +93,24 @@ pub async fn create_draft(
 }
 
 #[debug_handler]
+pub async fn list_open_drafts(
+    State(state): State<ServerState>,
+) -> Result<Json<Vec<DraftLobbyResponse>>, (StatusCode, String)> {
+    let mut open_drafts: Vec<DraftLobbyResponse> = vec![];
+
+    for draft_ref in state.drafts.iter() {
+        let draft_lock = draft_ref.value().clone();
+        let draft = draft_lock.read().await.clone();
+        if draft.draft_state == DraftState::COMPLETED {
+            continue;
+        }
+        open_drafts.push(draft.into());
+    }
+
+    Ok(Json(open_drafts))
+}
+
+#[debug_handler]
 pub async fn get_draft(
     State(state): State<ServerState>,
     Path(draft_id): Path<String>,
@@ -81,19 +127,33 @@ pub async fn get_draft(
 }
 
 #[debug_handler]
+pub async fn get_highest_patch_pokemon(
+) -> Result<Json<Vec<&'static pokemon::Pokemon>>, (StatusCode, String)> {
+    let Some(pokemon) = pokemon::get_highest_patch_pokemon_data() else {
+        return Err((
+            StatusCode::NOT_FOUND,
+            "no pokemon data available".to_string(),
+        ));
+    };
+
+    Ok(Json(pokemon))
+}
+
+#[debug_handler]
 pub async fn join_draft(
     State(state): State<ServerState>,
     Path(draft_id): Path<String>,
     auth_session: AuthSession<AuthBackend>,
+    join_request: Option<Json<JoinDraftRequest>>,
 ) -> Result<Json<ClientJoinResponse>, (StatusCode, String)> {
     let user = auth_session.user.expect("user should exist");
-    let user_id = user.get_user_id_string();
+    let password = join_request.and_then(|Json(req)| req.password);
     let Some(draft_lock) = state.drafts.get(&draft_id) else {
         return Err((StatusCode::NOT_FOUND, "draft does not exist".to_string()));
     };
 
     let mut draft = draft_lock.write().await;
-    if let Err(e) = draft.join_draft(user_id).await {
+    if let Err(e) = draft.join_draft(user, password).await {
         return Ok(Json(ClientJoinResponse {
             joined: false,
             error: Some(e),
@@ -160,6 +220,184 @@ pub async fn start_draft(
     Ok(())
 }
 
+#[debug_handler]
+pub async fn claim_eeveelution(
+    State(state): State<ServerState>,
+    Path(draft_id): Path<String>,
+    auth_session: AuthSession<AuthBackend>,
+    Json(claim_request): Json<ClaimEeveelutionRequest>,
+) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
+    let user = auth_session
+        .user
+        .ok_or((StatusCode::UNAUTHORIZED, "user not authenticated".to_string()))?;
+
+    let Some(draft_lock) = state.drafts.get(&draft_id) else {
+        return Err((StatusCode::NOT_FOUND, "draft not found".to_string()));
+    };
+
+    let mut draft = draft_lock.write().await;
+    if draft.draft_state != DraftState::COMPLETED {
+        return Err((
+            StatusCode::PRECONDITION_FAILED,
+            "draft must be completed".to_string(),
+        ));
+    }
+
+    // Check if the pokemon exists in the draft
+    let target_pokemon = draft
+        .pokemon
+        .iter()
+        .find(|p| {
+            p.pokedex_id == claim_request.pokedex_id as u32
+                && p.form == claim_request.form
+        })
+        .copied()
+        .ok_or((StatusCode::NOT_FOUND, "pokemon not found in draft".to_string()))?;
+
+    // Check if this pokemon was already claimed by someone else
+    let already_claimed_by = draft
+        .teams
+        .values()
+        .find_map(|team| {
+            if team
+                .auctions_won
+                .iter()
+                .any(|p| p.pokedex_id == target_pokemon.pokedex_id && p.form == target_pokemon.form)
+            {
+                Some(team.username.clone())
+            } else {
+                None
+            }
+        });
+
+    if let Some(claimer_name) = already_claimed_by {
+        return Ok(Json(serde_json::json!({
+            "success": false,
+            "error": format!("Already claimed by {}", claimer_name),
+            "claimed_by": claimer_name
+        })));
+    }
+
+    // Add the eeveelution to the user's team
+    let user_id = user.get_user_id_string();
+    if let Some(team) = draft.teams.get_mut(&user_id) {
+        team.auctions_won.push(target_pokemon);
+
+        Ok(Json(serde_json::json!({
+            "success": true,
+            "claimed_by": user_id,
+            "pokemon": {
+                "pokedex_id": target_pokemon.pokedex_id,
+                "name": target_pokemon.name,
+                "form": target_pokemon.form
+            }
+        })))
+    } else {
+        Err((StatusCode::NOT_FOUND, "team not found".to_string()))
+    }
+}
+
+#[debug_handler]
+pub async fn get_draft_chats(
+    State(state): State<ServerState>,
+    Path(draft_id): Path<String>,
+) -> Result<Json<Vec<ChatMessage>>, (StatusCode, String)> {
+    let rows = sqlx::query(
+        "SELECT c.chat_id, c.draft_id, c.user_id, COALESCE(u.user_name, c.user_id) AS user_name, c.message, c.created_at\
+         FROM chats c\
+         LEFT JOIN users u ON u.user_id = c.user_id\
+         WHERE c.draft_id = $1\
+         ORDER BY c.created_at ASC",
+    )
+    .bind(&draft_id)
+    .fetch_all(&state.db_pool)
+    .await
+    .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    let chats = rows
+        .into_iter()
+        .map(|row| {
+            Ok(ChatMessage {
+                chat_id: row.try_get("chat_id")?,
+                draft_id: row.try_get("draft_id")?,
+                user_id: row.try_get("user_id")?,
+                user_name: row.try_get("user_name")?,
+                message: row.try_get("message")?,
+                created_at: row.try_get("created_at")?,
+            })
+        })
+        .collect::<Result<Vec<_>, sqlx::Error>>()
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    Ok(Json(chats))
+}
+
+#[debug_handler]
+pub async fn create_draft_chat(
+    State(state): State<ServerState>,
+    Path(draft_id): Path<String>,
+    auth_session: AuthSession<AuthBackend>,
+    Json(request): Json<CreateChatRequest>,
+) -> Result<Json<ChatMessage>, (StatusCode, String)> {
+    let user = auth_session
+        .user
+        .ok_or((StatusCode::UNAUTHORIZED, "user not authenticated".to_string()))?;
+
+    if matches!(user, User::GuestUser(_)) {
+        return Err((StatusCode::FORBIDDEN, "guests cannot send messages".to_string()));
+    }
+
+    let message = request.message.trim();
+    if message.is_empty() {
+        return Err((StatusCode::BAD_REQUEST, "message cannot be empty".to_string()));
+    }
+
+    let user_id = user.get_user_id_string();
+    let row = sqlx::query(
+        "WITH inserted AS (\
+            INSERT INTO chats (draft_id, user_id, message)\
+            VALUES ($1, $2, $3)\
+            RETURNING chat_id, draft_id, user_id, message, created_at\
+        )\
+        SELECT i.chat_id, i.draft_id, i.user_id, COALESCE(u.user_name, i.user_id) AS user_name, i.message, i.created_at\
+        FROM inserted i\
+        LEFT JOIN users u ON u.user_id = i.user_id",
+    )
+    .bind(&draft_id)
+    .bind(&user_id)
+    .bind(message)
+    .fetch_one(&state.db_pool)
+    .await
+    .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    let chat_id = row
+        .try_get("chat_id")
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let draft_id = row
+        .try_get("draft_id")
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let user_id = row
+        .try_get("user_id")
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let user_name = row
+        .try_get("user_name")
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let message = row
+        .try_get("message")
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let created_at = row
+        .try_get("created_at")
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    Ok(Json(ChatMessage {
+        chat_id,
+        draft_id,
+        user_id,
+        user_name,
+        message,
+        created_at,
+    }))
+}
 pub async fn discord_oauth_redirect(
     auth_session: AuthSession<AuthBackend>,
     session: Session,

@@ -1,8 +1,8 @@
 import axios from 'axios';
-import { Draft } from "../../types";
+import { ChatMessage, Draft, DraftLobby } from "../../types";
 
 // Fetch current user info
-export async function fetchCurrentUser(): Promise<{user_id: string, username: string}> {
+export async function fetchCurrentUser(): Promise<{user_id: string, username: string, is_guest: boolean}> {
   const response = await axios.get('/api/me');
   // Response can be {GuestUser: {...}} or {DiscordUser: {...}}
   const data = response.data;
@@ -10,11 +10,13 @@ export async function fetchCurrentUser(): Promise<{user_id: string, username: st
     return {
       user_id: data.GuestUser.user_id,
       username: data.GuestUser.user_name,
+      is_guest: true,
     };
   } else if (data.DiscordUser) {
     return {
       user_id: data.DiscordUser.user_id,
       username: data.DiscordUser.user_name,
+      is_guest: false,
     };
   }
   throw new Error('Unknown user type');
@@ -26,6 +28,12 @@ export async function fetchDraftById(draft_id: string): Promise<Draft> {
   return response.data;
 }
 
+// Fetch all open drafts for lobby viewer
+export async function fetchOpenDrafts(): Promise<DraftLobby[]> {
+  const response = await axios.get('/api/drafts');
+  return response.data;
+}
+
 // Start a draft
 export async function startDraft(draft_id: string): Promise<Draft> {
   await axios.post(`/api/drafts/${draft_id}/start`);
@@ -34,8 +42,15 @@ export async function startDraft(draft_id: string): Promise<Draft> {
 }
 
 // Join a draft
-export async function joinDraft(draft_id: string): Promise<Draft> {
-  await axios.post(`/api/drafts/${draft_id}/join`);
+export async function joinDraft(draft_id: string, password?: string): Promise<Draft> {
+  const trimmedPassword = password?.trim();
+  if (trimmedPassword) {
+    await axios.post(`/api/drafts/${draft_id}/join`, {
+      password: trimmedPassword,
+    });
+  } else {
+    await axios.post(`/api/drafts/${draft_id}/join`);
+  }
   // Fetch and return the updated draft after joining
   const response = await axios.get(`/api/drafts/${draft_id}`);
   return response.data;
@@ -47,5 +62,25 @@ export async function placeBid(draft_id: string, auction_id: string, value: numb
     auction_id,
     value
   });
+  return response.data;
+}
+// Claim an eeveelution after draft completes
+export async function claimEeveelution(draft_id: string, pokedex_id: number, form: string | null): Promise<any> {
+  const response = await axios.post(`/api/drafts/${draft_id}/claim-eeveelution`, {
+    pokedex_id,
+    form
+  });
+  return response.data;
+}
+
+// Fetch chat messages for a draft
+export async function fetchDraftChats(draft_id: string): Promise<ChatMessage[]> {
+  const response = await axios.get(`/api/drafts/${draft_id}/chats`);
+  return response.data;
+}
+
+// Create a new chat message for a draft
+export async function createDraftChat(draft_id: string, message: string): Promise<ChatMessage> {
+  const response = await axios.post(`/api/drafts/${draft_id}/chats`, { message });
   return response.data;
 }

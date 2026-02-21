@@ -144,6 +144,33 @@ pub fn get_pokemon_data(
     )
 }
 
+fn parse_patch_version(version: &str) -> Vec<u32> {
+    version
+        .trim_start_matches(['v', 'V'])
+        .split('.')
+        .map(|part| part.parse::<u32>().unwrap_or(0))
+        .collect()
+}
+
+pub fn get_highest_patch_pokemon_data() -> Option<Vec<&'static Pokemon>> {
+    let cache = POKEMON_DATA.get().expect("POKEMON_DATA not initialized");
+
+    let highest_patch = cache
+        .iter()
+        .map(|entry| entry.key().clone())
+        .max_by(|a, b| parse_patch_version(a).cmp(&parse_patch_version(b)))?;
+
+    let id_map = cache.get(&highest_patch)?;
+
+    Some(
+        id_map
+            .values()
+            .flat_map(|form_map| form_map.values())
+            .copied()
+            .collect(),
+    )
+}
+
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct Pokemon {
     pub pokedex_id: u32,
