@@ -43,6 +43,7 @@ pub struct DraftResponse {
     draft_name: String,
     has_password: bool,
     host: String,
+    ranked: bool,
     total_teams: u32,
     teams: Vec<Team>,
     draft_state: DraftState,
@@ -58,6 +59,7 @@ pub struct DraftLobbyResponse {
     draft_id: String,
     draft_name: String,
     has_password: bool,
+    ranked: bool,
     teams_joined: u32,
     total_teams: u32,
     draft_state: DraftState,
@@ -90,6 +92,7 @@ impl From<Draft> for DraftResponse {
             draft_name: draft.draft_name,
             has_password: draft.settings.password.is_some(),
             host: draft.host.get_user_id_string(),
+            ranked: draft.settings.ranked,
             total_teams: draft.settings.num_teams,
             teams: draft.teams.into_values().collect(),
             draft_state: draft.draft_state,
@@ -112,6 +115,7 @@ impl From<Draft> for DraftLobbyResponse {
             draft_id: draft.draft_id,
             draft_name: draft.draft_name,
             has_password: draft.settings.password.is_some(),
+            ranked: draft.settings.ranked,
             teams_joined: draft.teams.len() as u32,
             total_teams: draft.settings.num_teams,
             draft_state: draft.draft_state,
@@ -145,6 +149,8 @@ pub struct DraftSettings {
     starting_money: u32,
     #[serde(default)]
     draft_name: String,
+    #[serde(default)]
+    ranked: bool,
     #[serde(default)]
     password: Option<String>,
     excluded_pokemon: Vec<ExcludedPokemon>,
@@ -238,8 +244,8 @@ impl Draft {
 
             let query_string = format!(
                 r#"
-                INSERT INTO drafts (draft_id, draft_name, password, num_teams, starting_money, patch_version, {})
-                VALUES ($1, $2, $3, $4, $5, $6, $7)
+                INSERT INTO drafts (draft_id, draft_name, password, num_teams, starting_money, patch_version, ranked, {})
+                VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
                 "#,
                 host_field,
             );
@@ -251,6 +257,7 @@ impl Draft {
                 .bind(settings.num_teams as i32)
                 .bind(settings.starting_money as i32)
                 .bind(&settings.patch_version)
+                .bind(settings.ranked)
                 .bind(&host_id)
                 .execute(&mut *tx)
                 .await

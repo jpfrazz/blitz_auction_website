@@ -65,6 +65,7 @@ export interface Draft {
   draft_name: string;
   has_password: boolean;
   host: string;
+  ranked: boolean;
   total_teams: number;
   teams: Team[];
   draft_state: DraftState;
@@ -88,6 +89,7 @@ export interface DraftLobby {
   draft_id: string;
   draft_name: string;
   has_password: boolean;
+  ranked: boolean;
   teams_joined: number;
   total_teams: number;
   draft_state: DraftState;
