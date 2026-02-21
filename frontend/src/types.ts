@@ -20,6 +20,7 @@ export interface Pokemon {
     specialDefense: number;
     speed: number;
   };
+  key_moves?: KeyMove[];
   description?: string;
   form?: string;
   stage?: string;
@@ -27,6 +28,11 @@ export interface Pokemon {
   evolves_from_form?: string;
   mega?: string;
   is_baby?: boolean;
+}
+
+export interface KeyMove {
+  move_name: string;
+  learn_method: string;
 }
 
 export type SerializedUser =

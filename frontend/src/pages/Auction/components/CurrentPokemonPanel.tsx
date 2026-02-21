@@ -29,6 +29,12 @@ const CurrentPokemonPanel: React.FC<CurrentPokemonPanelProps> = ({ current_aucti
     return `${Math.min(100, (value / max) * 100)}%`;
   };
 
+  const keyMoves = pokemonData.key_moves ?? [];
+  const formatLearnMethod = (method?: string) => {
+    if (!method) return '';
+    return method.replace(/_/g, ' ');
+  };
+
   return (
     <div className="auction-current-pokemon-box">
       <div className="pokemon-left-column">
@@ -45,8 +51,8 @@ const CurrentPokemonPanel: React.FC<CurrentPokemonPanelProps> = ({ current_aucti
         </div>
 
         <div className="pokemon-stats">
-        {pokemonData.stats && (
-          <>
+          {pokemonData.stats && (
+            <>
             <div className="stat-row">
               <span className="stat-label">HP</span>
               <span className="stat-value">{pokemonData.stats.hp}</span>
@@ -141,9 +147,30 @@ const CurrentPokemonPanel: React.FC<CurrentPokemonPanelProps> = ({ current_aucti
                 />
               </div>
             </div>
-          </>
-        )}
+            </>
+          )}
         </div>
+
+        {keyMoves.length > 0 && (
+          <div className="pokemon-key-moves">
+            <div className="key-moves-title">Key Moves</div>
+            <div className="key-moves-list">
+              {keyMoves.map((move, index) => (
+                <span
+                  className="key-move-chip"
+                  key={`${move.move_name}-${index}`}
+                >
+                  <span className="move-name">{move.move_name}</span>
+                  {move.learn_method && (
+                    <span className="move-method">
+                      {formatLearnMethod(move.learn_method)}
+                    </span>
+                  )}
+                </span>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
 
       <div className="pokemon-right-column">
