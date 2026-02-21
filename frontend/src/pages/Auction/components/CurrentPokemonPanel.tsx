@@ -1,4 +1,6 @@
 import React from 'react';
+import { TbArrowRight, TbArrowsSplit } from "react-icons/tb";
+import { VscArrowBoth } from "react-icons/vsc";
 import { Auction, Pokemon } from '../../../types';
 import './CurrentPokemonPanel.scss';
 
@@ -92,7 +94,14 @@ const EvolutionTree: React.FC<{ node: EvoNode }> = ({ node }) => {
             <React.Fragment key={child.pokemon.id + '-' + (child.pokemon.form ?? '')}>
               <div className="evo-arrow-block-horizontal">
                 <div className="evo-arrow-container-horizontal">
-                  <div className={child.isMega ? 'evo-arrow-both-horizontal' : 'evo-arrow-horizontal'} />
+                  {/* Use react-icons for arrows */}
+                  {node.children.length > 1 ? (
+                    <TbArrowsSplit size={32} color="#888" />
+                  ) : child.isMega ? (
+                    <VscArrowBoth size={32} color="#888" />
+                  ) : (
+                    <TbArrowRight size={32} color="#888" />
+                  )}
                   <div className="evo-method-label-horizontal">{child.methodFromParent}</div>
                 </div>
                 <EvolutionTree node={child} />
