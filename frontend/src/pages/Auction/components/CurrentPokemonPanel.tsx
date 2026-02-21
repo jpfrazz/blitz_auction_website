@@ -4,17 +4,111 @@ import './CurrentPokemonPanel.scss';
 
 interface CurrentPokemonPanelProps {
   current_auction: Auction;
+  all_pokemon: Pokemon[];
 }
 
-const CurrentPokemonPanel: React.FC<CurrentPokemonPanelProps> = ({ current_auction }) => {
-  const pokemonData: Pokemon = current_auction.pokemon;
 
-  const typeClass1 = pokemonData.type1 
-    ? `type-badge-${pokemonData.type1.toLowerCase()}` 
-    : '';
-  const typeClass2 = pokemonData.type2 
-    ? `type-badge-${pokemonData.type2.toLowerCase()}` 
-    : '';
+// Helper to build the evolution tree for a given Pokémon
+interface EvoNode {
+  pokemon: Pokemon;
+  children: EvoNode[];
+  methodFromParent?: string;
+  isMega?: boolean;
+}
+
+function buildEvolutionTree(
+  root: Pokemon,
+  allPokemon: Pokemon[],
+  visited: Set<string> = new Set()
+): EvoNode {
+  // Unique key for a Pokémon (pokedex_id + form)
+  const key = `${root.pokedex_id ?? root.id}-${root.form ?? ''}`;
+  if (visited.has(key)) return { pokemon: root, children: [] };
+  visited.add(key);
+
+  // Find all Pokémon that evolve from this one (children)
+  const children = allPokemon
+    .filter(
+      (p) =>
+        p.evolves_from_id?.toString() === (root.pokedex_id ?? root.id).toString() &&
+        (p.evolves_from_form ?? '') === (root.form ?? '')
+    )
+    .map((child) => {
+      const isMega = (child.evolution_method || '').toLowerCase().includes('ite');
+      return {
+        ...buildEvolutionTree(child, allPokemon, visited),
+        methodFromParent: child.evolution_method,
+        isMega,
+      };
+    });
+
+  return { pokemon: root, children };
+}
+
+
+// Render the evolution tree recursively (horizontal)
+const EvolutionTree: React.FC<{ node: EvoNode }> = ({ node }) => {
+  // Use evolutions folder for all images
+  const getImageSrc = (pokemon: Pokemon) => {
+      if (pokemon.evolves_from_id && pokemon.form !== 'Mega') {
+        console.log(`Evolution detected for ${pokemon.name} with no mega`);
+        return `/evolutions/${pokemon.name}.png`;
+      } else if (pokemon.form === 'Mega') {
+        // If name starts with 'Mega ', strip it and format as 'name-Mega'
+        let baseName = pokemon.name.startsWith('Mega ')
+          ? pokemon.name.slice(5)
+          : pokemon.name;
+        console.log(`Mega form detected for ${baseName}-Mega.png`);
+        return `/evolutions/${baseName}-Mega.png`;
+      } else {
+        return `/baseforms/${pokemon.name}.png`;
+      }
+  };
+  return (
+    <div className="evo-tree-node-horizontal">
+      <div className="evo-pokemon-block-horizontal">
+        <img
+          src={getImageSrc(node.pokemon)}
+          alt={node.pokemon.name}
+          className="evo-pokemon-img"
+        />
+        <div className="evo-pokemon-name">{node.pokemon.name}</div>
+        <div className="pokemon-type-ability">
+          {node.pokemon.type1 && (
+            <span className={`type-badge type-badge-${node.pokemon.type1.toLowerCase()}`}>
+              {node.pokemon.type1.toUpperCase()}
+            </span>
+          )}
+          {node.pokemon.type2 && (
+            <span className={`type-badge type-badge-${node.pokemon.type2.toLowerCase()}`}>
+              {node.pokemon.type2.toUpperCase()}
+            </span>
+          )}
+        </div>
+      </div>
+      {node.children.length > 0 && (
+        <div className="evo-children-block-horizontal">
+          {node.children.map((child, idx) => (
+            <React.Fragment key={child.pokemon.id + '-' + (child.pokemon.form ?? '')}>
+              <div className="evo-arrow-block-horizontal">
+                <div className="evo-arrow-container-horizontal">
+                  <div className={child.isMega ? 'evo-arrow-both-horizontal' : 'evo-arrow-horizontal'} />
+                  <div className="evo-method-label-horizontal">{child.methodFromParent}</div>
+                </div>
+                <EvolutionTree node={child} />
+              </div>
+            </React.Fragment>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
+
+const CurrentPokemonPanel: React.FC<CurrentPokemonPanelProps> = ({ current_auction, all_pokemon }) => {
+  const pokemonData: Pokemon = current_auction.pokemon;
+  // Build the evolution tree for the current Pokémon
+  const evoTree = buildEvolutionTree(pokemonData, all_pokemon);
   const getStatColorClass = (value: number) => {
     if (value < 30) return 'stat-bar-red';
     if (value <= 49) return 'stat-bar-orange';
@@ -203,25 +297,8 @@ const CurrentPokemonPanel: React.FC<CurrentPokemonPanelProps> = ({ current_aucti
       </div>
 
       <div className="pokemon-right-column">
-        <div className="pokemon-image-section">
-          <img 
-            src={`/baseforms/${pokemonData.name}.png`} 
-            alt={pokemonData.name}
-            className="pokemon-large-image"
-          />
-        </div>
-
-        <div className="pokemon-type-ability">
-          {pokemonData.type1 && (
-            <span className={`type-badge ${typeClass1}`}>
-              {pokemonData.type1.toUpperCase()}
-            </span>
-          )}
-          {pokemonData.type2 && (
-            <span className={`type-badge ${typeClass2}`}>
-              {pokemonData.type2.toUpperCase()}
-            </span>
-          )}
+        <div className="pokemon-evolution-tree-section">
+          <EvolutionTree node={evoTree} />
         </div>
       </div>
     </div>

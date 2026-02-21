@@ -196,10 +196,15 @@ const AuctionPage: React.FC = () => {
             <div className="auction-content-grid">
               {/* Left: Current auctioned Pokémon and table */}
               <div className="auction-left-panel">
-                {draft.current_auction && <CurrentPokemonPanel current_auction={draft.current_auction} />}
+                {draft.current_auction && (
+                  <CurrentPokemonPanel 
+                    current_auction={draft.current_auction}
+                    all_pokemon={draft.pokemon}
+                  />
+                )}
                 <PokemonTablePanel
                   auctions={draft.completed_auctions}
-                  pokemon={draft.pokemon.filter((p: any) => p.stage === 'base')}
+                  pokemon={draft.pokemon}
                   teams={draft.teams}
                   currentUserId={currentUserId}
                 />

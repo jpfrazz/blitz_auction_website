@@ -104,6 +104,9 @@ pub async fn init_pokemon_data(pool: &PgPool) -> Result<(), sqlx::Error> {
         },
         key_moves: row.key_moves,
         description: row.description,
+        evolves_from_id: row.evolves_from_id,
+        evolves_from_form: row.evolves_from_form,
+        evolution_method: row.evolution_method,
     })
     .fetch_all(pool)
     .await?;
@@ -190,6 +193,9 @@ pub struct Pokemon {
     pub stats: PokemonStats,
     pub key_moves: Json<Vec<KeyMoveRow>>,
     pub description: Option<String>,
+    pub evolves_from_id: Option<i32>,
+    pub evolves_from_form: Option<String>,
+    pub evolution_method: Option<String>,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]

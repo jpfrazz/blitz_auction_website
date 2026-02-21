@@ -123,12 +123,12 @@ const TeamPlanner = () => {
           <section className="teamplanner-team-section">
             <h2 className="teamplanner-team-title">Your Team</h2>
             <div className="teamplanner-team-grid">
-              {teamAuctions.map((teamAuction) => (
-                <CurrentPokemonPanel
-                  key={teamAuction.auction_id}
-                  current_auction={teamAuction}
-                />
-              ))}
+              {/* {teamAuctions.map((teamAuction) => (
+                // <CurrentPokemonPanel
+                //   key={teamAuction.auction_id}
+                //   current_auction={teamAuction}
+                // />
+              ))} */}
             </div>
           </section>
         )}
