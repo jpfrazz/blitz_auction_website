@@ -45,7 +45,7 @@ const PokemonTablePanel: React.FC<PokemonTablePanelProps> = ({ auctions, pokemon
       <div className="auction-pokemon-table-box">
         <div className="pokemon-table-tab-content">
           {tab === TAB_ALL && <AllPokemonTab pokemon={pokemon} auctions={auctions} />}
-          {tab === TAB_TEAM && <TeamPlannerTab teams={teams} currentUserId={currentUserId} />}
+          {tab === TAB_TEAM && <TeamPlannerTab teams={teams} currentUserId={currentUserId} allPokemon={pokemon} />}
           {tab === TAB_HISTORY && <DraftHistoryTab auctions={auctions} />}
         </div>
       </div>

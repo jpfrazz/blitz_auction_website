@@ -21,6 +21,7 @@ interface AllPokemonTabProps {
 
 const AllPokemonTab: React.FC<AllPokemonTabProps> = ({ pokemon, auctions }) => {
   const [selectedPokemon, setSelectedPokemon] = useState<Pokemon | null>(null);
+  const allPokemon = useMemo(() => pokemon, [pokemon]);
 
   // Add auction info to each row for table use
   const data = useMemo(() =>
@@ -224,7 +225,7 @@ const AllPokemonTab: React.FC<AllPokemonTabProps> = ({ pokemon, auctions }) => {
             >
               ×
             </button>
-            <CurrentPokemonPanel current_auction={selectedPokemonAuction} />
+            <CurrentPokemonPanel current_auction={selectedPokemonAuction} all_pokemon={allPokemon} />
           </div>
         </div>
       )}

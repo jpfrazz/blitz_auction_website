@@ -1,5 +1,115 @@
 @import '../../../shared/style/theme.scss';
 
+.pokemon-evolution-tree-section {
+	margin-top: 16px;
+	display: flex;
+	flex-direction: row;
+	align-items: flex-start;
+}
+
+.evo-tree-node-horizontal {
+	display: flex;
+	flex-direction: row;
+	align-items: center;
+}
+
+.evo-pokemon-block-horizontal {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	margin-right: 8px;
+}
+
+.evo-children-block-horizontal {
+	display: flex;
+	flex-direction: row;
+	align-items: center;
+	gap: 24px;
+	margin-left: 8px;
+}
+
+.evo-arrow-block-horizontal {
+	display: flex;
+	flex-direction: row;
+	align-items: center;
+}
+
+.evo-arrow-container-horizontal {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	margin-right: 8px;
+}
+
+.evo-arrow-horizontal {
+	width: 40px;
+	height: 0;
+	border-top: 3px solid #888;
+	position: relative;
+	margin-bottom: 2px;
+	margin-top: 2px;
+	&::after {
+		content: '';
+		position: absolute;
+		right: -6px;
+		top: -6px;
+		border: solid transparent;
+		border-width: 6px 0 6px 6px;
+		border-left-color: #888;
+	}
+}
+
+.evo-arrow-both-horizontal {
+	width: 40px;
+	height: 0;
+	border-top: 3px solid #888;
+	position: relative;
+	margin-bottom: 2px;
+	margin-top: 2px;
+	&::after {
+		content: '';
+		position: absolute;
+		right: -6px;
+		top: -6px;
+		border: solid transparent;
+		border-width: 6px 0 6px 6px;
+		border-left-color: #888;
+	}
+	&::before {
+		content: '';
+		position: absolute;
+		left: -6px;
+		top: -6px;
+		border: solid transparent;
+		border-width: 6px 6px 6px 0;
+		border-right-color: #888;
+	}
+}
+
+.evo-method-label-horizontal {
+	font-size: 13px;
+	color: $eb-text;
+	margin-bottom: 2px;
+	margin-top: 2px;
+	text-align: center;
+	max-width: 80px;
+	word-break: break-word;
+}
+
+.evo-pokemon-img {
+	width: 150px;
+	height: 150px;
+	object-fit: contain;
+	margin-bottom: 4px;
+}
+
+.evo-pokemon-name {
+	font-size: 16px;
+	font-weight: bold;
+	color: $eb-text;
+	margin-bottom: 2px;
+}
+
 .auction-current-pokemon-box {
 	background: $eb-surface;
 	border: $eb-border;
@@ -32,7 +142,7 @@
 	flex: 1;
 	min-width: 0;
 	overflow-y: auto;
-	overflow-x: hidden;
+	overflow-x: auto;
 	max-height: 100%;
 }
 

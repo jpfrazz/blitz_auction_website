@@ -26,6 +26,7 @@ export interface Pokemon {
   stage?: string;
   evolves_from_id?: string;
   evolves_from_form?: string;
+  evolution_method?: string;
   mega?: string;
   is_baby?: boolean;
 }

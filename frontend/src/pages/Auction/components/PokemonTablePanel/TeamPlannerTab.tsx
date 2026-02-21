@@ -1,13 +1,14 @@
 import React from 'react';
 import CurrentPokemonPanel from '../CurrentPokemonPanel';
-import { Auction, Team } from '../../../../types';
+import { Auction, Pokemon, Team } from '../../../../types';
 
 interface TeamPlannerTabProps {
   teams: Team[];
   currentUserId: string | null;
+  allPokemon: Pokemon[];
 }
 
-const TeamPlannerTab: React.FC<TeamPlannerTabProps> = ({ teams, currentUserId }) => {
+const TeamPlannerTab: React.FC<TeamPlannerTabProps> = ({ teams, currentUserId, allPokemon }) => {
   if (!currentUserId) {
     return <div className="auction-team-planner-placeholder">Loading your team...</div>;
   }
@@ -38,6 +39,7 @@ const TeamPlannerTab: React.FC<TeamPlannerTabProps> = ({ teams, currentUserId })
         <CurrentPokemonPanel
           key={teamPokemonAuction.auction_id}
           current_auction={teamPokemonAuction}
+          all_pokemon={allPokemon}
         />
       ))}
     </div>
