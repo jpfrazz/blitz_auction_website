@@ -43,6 +43,7 @@ pub struct DraftResponse {
     draft_name: String,
     has_password: bool,
     host: String,
+    total_teams: u32,
     teams: Vec<Team>,
     draft_state: DraftState,
     completed_auctions: Vec<Auction>,
@@ -89,6 +90,7 @@ impl From<Draft> for DraftResponse {
             draft_name: draft.draft_name,
             has_password: draft.settings.password.is_some(),
             host: draft.host.get_user_id_string(),
+            total_teams: draft.settings.num_teams,
             teams: draft.teams.into_values().collect(),
             draft_state: draft.draft_state,
             current_auction,
@@ -155,6 +157,7 @@ pub struct DraftSettings {
 pub struct Team {
     pub user_id: String,
     pub username: String,
+    pub ready: bool,
     budget_remaining: u32,
     pub auctions_won: Vec<&'static Pokemon>,
 }
@@ -392,6 +395,7 @@ impl Draft {
         let team = Team {
             user_id: user_id.clone(),
             username: user.get_user_name_string(),
+            ready: user_id == host_user_id,
             budget_remaining: self.settings.starting_money,
             auctions_won: vec![],
         };
@@ -587,6 +591,14 @@ impl Draft {
     }
 
     pub async fn start_draft(&mut self) -> Result<(), String> {
+        if self.teams.len() < self.settings.num_teams as usize {
+            return Err("all teams must join before the draft can start".to_string());
+        }
+
+        if self.teams.values().any(|team| !team.ready) {
+            return Err("all teams must ready up before the draft can start".to_string());
+        }
+
         let _ = sqlx::query!(
             r#"
             UPDATE drafts
@@ -604,5 +616,10 @@ impl Draft {
 
         self.draft_state = DraftState::BIDDING;
         Ok(())
+    }
+
+    pub fn all_teams_ready(&self) -> bool {
+        self.teams.len() == self.settings.num_teams as usize
+            && self.teams.values().all(|team| team.ready)
     }
 }

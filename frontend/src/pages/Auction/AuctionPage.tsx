@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import Header from '../../shared/components/Header';
-import { fetchDraftById, startDraft, joinDraft, fetchCurrentUser, claimEeveelution } from '../../shared/api/draftData';
+import { fetchDraftById, readyUpDraft, joinDraft, fetchCurrentUser, claimEeveelution, startDraft } from '../../shared/api/draftData';
 import { getUserId } from '../../shared/utils/user';
 import './AuctionPage.scss';
 import '../../shared/style/theme.scss';
@@ -23,6 +23,7 @@ const AuctionPage: React.FC = () => {
   const [draft, setDraft] = useState<Draft | null>(null);
   const [loading, setLoading] = useState(false);
   const [startingDraft, setStartingDraft] = useState(false);
+  const [readyingUp, setReadyingUp] = useState(false);
   const [joiningDraft, setJoiningDraft] = useState(false);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [isGuest, setIsGuest] = useState(false);
@@ -72,7 +73,7 @@ const AuctionPage: React.FC = () => {
       })
       .catch(error => console.error('Error fetching draft on initial load:', error))
       .finally(() => setLoading(false));
-    
+
     // Set up interval to fetch every second
     const interval = setInterval(() => {
       fetchDraftById(auctionId)
@@ -82,12 +83,30 @@ const AuctionPage: React.FC = () => {
         })
         .catch(error => console.error('Error fetching draft in interval:', error));
     }, 1000);
-    
+
     return () => clearInterval(interval);
   }, [auctionId]);
 
+  const handleReadyUp = async () => {
+    if (!draft) return;
+    setReadyingUp(true);
+    try {
+      const updated = await readyUpDraft(draft.draft_id);
+      setDraft(updated);
+    } catch (error) {
+      console.error('Error readying up:', error);
+    } finally {
+      setReadyingUp(false);
+    }
+  };
+
   const handleStartDraft = async () => {
     if (!draft) return;
+    const requiredTeams = Number(draft.total_teams ?? 0);
+    const joinedTeams = draft.teams.length;
+    const readyTeams = draft.teams.filter(team => team.ready === true).length;
+    const canStart = requiredTeams > 0 && joinedTeams >= requiredTeams && readyTeams >= requiredTeams;
+    if (!canStart) return;
     setStartingDraft(true);
     try {
       const updated = await startDraft(draft.draft_id);
@@ -98,6 +117,15 @@ const AuctionPage: React.FC = () => {
       setStartingDraft(false);
     }
   };
+
+  const currentUserTeam = draft?.teams.find(team => team.user_id === currentUserId);
+  const currentUserReady = Boolean(currentUserTeam?.ready);
+  const requiredTeams = Number(draft?.total_teams ?? 0);
+  const joinedTeams = draft?.teams.length ?? 0;
+  const readyTeams = draft?.teams.filter(team => team.ready === true).length ?? 0;
+  const allTeamsReady = Boolean(
+    draft && requiredTeams > 0 && joinedTeams >= requiredTeams && readyTeams >= requiredTeams
+  );
 
   const handleClaimEeveelution = async (pokedexId: number, form: string | null) => {
     if (!draft) return;
@@ -168,15 +196,6 @@ const AuctionPage: React.FC = () => {
             <div className="auction-content-grid">
               {/* Left: Current auctioned Pokémon and table */}
               <div className="auction-left-panel">
-                {draft.draft_state === "PENDING" && currentUserId === draft.host && (
-                  <button
-                    onClick={handleStartDraft}
-                    disabled={startingDraft}
-                    className="button"
-                  >
-                    {startingDraft ? 'Starting Draft...' : 'Start Draft'}
-                  </button>
-                )}
                 {draft.current_auction && <CurrentPokemonPanel current_auction={draft.current_auction} />}
                 <PokemonTablePanel
                   auctions={draft.completed_auctions}
@@ -201,6 +220,31 @@ const AuctionPage: React.FC = () => {
                   </div>
                 ) : (
                   <>
+                    {draft.draft_state === "PENDING" && (
+                      <div className="draft-completed-panel">
+                        <h3 className="draft-completed-title">Ready Up!</h3>
+                        <div className="draft-completed-buttons">
+                          {currentUserId === draft.host && (
+                            <button
+                              onClick={handleStartDraft}
+                              disabled={startingDraft || !allTeamsReady}
+                              className="button"
+                            >
+                              {startingDraft ? 'Starting Draft...' : 'Start Draft'}
+                            </button>
+                          )}
+                          {currentUserTeam && !currentUserReady && (
+                            <button
+                              onClick={handleReadyUp}
+                              disabled={readyingUp}
+                              className="button"
+                            >
+                              {readyingUp ? 'Readying Up...' : 'Ready Up'}
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    )}
                     {draft.current_auction && (
                       <AuctionInfoPanel
                         current_auction={draft.current_auction}
@@ -231,14 +275,14 @@ const AuctionPage: React.FC = () => {
                   { pokedex_id: 470, name: 'Leafeon', form: null },
                   { pokedex_id: 471, name: 'Glaceon', form: null },
                   { pokedex_id: 700, name: 'Sylveon', form: null },
-                ]}                teams={draft.teams}                currentUserId={currentUserId}
+                ]} teams={draft.teams} currentUserId={currentUserId}
                 onClaim={handleClaimEeveelution}
                 onClose={() => setShowEeveelutionModal(false)}
               />
             )}
           </>
         )}
-              
+
         {!loading && !draft && <div>No draft found.</div>}
       </main>
     </>

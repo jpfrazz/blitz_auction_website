@@ -51,11 +51,13 @@
     word-break: break-word;
 }
 
-.player-filled {
-    background: $eb-primary; // orange
+.player-ready {
+    background: $eb-primary;
 }
 
-
+.player-not-ready {
+    background: $eb-primary-hover;
+}
 
 .highest-bidder {
     border: 3px solid $eb-primary-hover;

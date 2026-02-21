@@ -54,6 +54,7 @@ export interface Auction {
 export interface Team {
   user_id: string;
   username: string;
+  ready?: boolean;
   budget_remaining: number;
   pokemon?: Pokemon[];
   auctions_won?: Pokemon[];
@@ -64,6 +65,7 @@ export interface Draft {
   draft_name: string;
   has_password: boolean;
   host: string;
+  total_teams: number;
   teams: Team[];
   draft_state: DraftState;
   completed_auctions: Auction[];
