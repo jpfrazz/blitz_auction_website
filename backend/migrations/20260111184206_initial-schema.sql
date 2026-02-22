@@ -72,7 +72,7 @@ CREATE TABLE key_moves (
     pokedex_id INT NOT NULL,
     form TEXT NOT NULL DEFAULT '',
     patch_version TEXT NOT NULL,
-    move_name TEXT NOT NULL REFERENCES moves(move_name),
+    name TEXT NOT NULL REFERENCES moves(name),
     learn_method TEXT NOT NULL,
 
     FOREIGN KEY (pokedex_id, form, patch_version)
