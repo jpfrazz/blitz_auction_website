@@ -36,7 +36,7 @@ function buildEvolutionTree(
         (p.evolves_from_form ?? '') === (root.form ?? '')
     )
     .map((child) => {
-      const isMega = (child.evolution_method || '').toLowerCase().includes('ite');
+      const isMega = child.form === 'Mega';
       return {
         ...buildEvolutionTree(child, allPokemon, visited),
         methodFromParent: child.evolution_method,
@@ -52,16 +52,16 @@ function buildEvolutionTree(
 const EvolutionTree: React.FC<{ node: EvoNode }> = ({ node }) => {
   // Use evolutions folder for all images
   const getImageSrc = (pokemon: Pokemon) => {
-      if (pokemon.evolves_from_id && pokemon.form !== 'Mega') {
-        console.log(`Evolution detected for ${pokemon.name} with no mega`);
+      if (pokemon.evolves_from_id && (pokemon.form !== 'Mega' && pokemon.form !== 'Mega X')) {
         return `/evolutions/${pokemon.name}.png`;
-      } else if (pokemon.form === 'Mega') {
-        // If name starts with 'Mega ', strip it and format as 'name-Mega'
+      } else if (pokemon.form === 'Mega' || (pokemon.form === 'Mega X' && !pokemon.name.includes('Charizard'))) {
         let baseName = pokemon.name.startsWith('Mega ')
           ? pokemon.name.slice(5)
           : pokemon.name;
-        console.log(`Mega form detected for ${baseName}-Mega.png`);
         return `/evolutions/${baseName}-Mega.png`;
+      } else if (pokemon.name.includes('Charizard') && pokemon.form === 'Mega X'){ 
+          pokemon.name = 'Mega Charizard X';
+          return `/evolutions/Charizard X-Mega.png`;
       } else {
         return `/baseforms/${pokemon.name}.png`;
       }

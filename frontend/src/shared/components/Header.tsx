@@ -18,10 +18,16 @@ function Header() {
   };
 
   type UserState =
-    | { is_guest: boolean; user_id: string; username: string; avatar?: string };
+    | { is_guest: boolean; user_id: string | null; username: string | null; avatar?: string };
   const [user, setUser] = useState<UserState | null>(null);
   useEffect(() => {
-    fetchCurrentUser().then(user => setUser(user)).catch(() => setUser(null));
+    fetchCurrentUser().then(user => {
+      if(user.user_id && user.username) {
+        setUser(user);
+      } else {
+        setUser(null);
+      }
+    }).catch(() => setUser(null));
   }, []);
 
   return (

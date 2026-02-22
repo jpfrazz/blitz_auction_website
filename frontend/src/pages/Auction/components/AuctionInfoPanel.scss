@@ -96,23 +96,31 @@
 .bid-buttons-section {
   display: flex;
   gap: 8px;
-  width: 90%;
+  width: 100%;
   align-items: center;
+  justify-content: center;
   padding-bottom: 16px;
   flex-wrap: wrap;
 
   .bid-button {
     @extend button;
-    flex: 0 0 30%;
-    max-width: 30%;
+    flex: 0 0 25%;
+    max-width: 25%;
+    min-width: 0;
     padding: 12px;
     font-size: 1.5rem;
+
+    display: flex; 
+    align-items: center; 
+    justify-content: center;
+    flex-wrap: nowrap;
+    flex: 1 1 0;
   }
 
   .custom-bid-input {
     @extend input;
-    flex: 0 0 30%;
-    max-width: 30%;
+    flex: 0 0 25%;
+    max-width: 25%;
     min-width: 0;
     padding: 14px;
     font-size: 1.5rem;

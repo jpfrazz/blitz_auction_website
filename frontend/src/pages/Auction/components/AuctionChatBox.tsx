@@ -6,9 +6,10 @@ import './AuctionChatBox.scss';
 interface AuctionChatBoxProps {
   draftId: string;
   isGuest: boolean;
+  isLoggedIn: boolean;
 }
 
-const AuctionChatBox: React.FC<AuctionChatBoxProps> = ({ draftId, isGuest }) => {
+const AuctionChatBox: React.FC<AuctionChatBoxProps> = ({ draftId, isGuest, isLoggedIn }) => {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [newMessage, setNewMessage] = useState('');
   const [isSending, setIsSending] = useState(false);
@@ -85,7 +86,7 @@ const AuctionChatBox: React.FC<AuctionChatBoxProps> = ({ draftId, isGuest }) => 
           value={newMessage}
           onChange={event => setNewMessage(event.target.value)}
           placeholder={isGuest ? 'Guests can view chat only' : 'Type a message...'}
-          disabled={isGuest || isSending}
+          disabled={isGuest || isSending || !isLoggedIn}
         />
         <button
           className="auction-chat-send button"

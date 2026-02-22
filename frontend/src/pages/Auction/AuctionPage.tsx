@@ -28,6 +28,7 @@ const AuctionPage: React.FC = () => {
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [isGuest, setIsGuest] = useState(false);
   const [showJoinModal, setShowJoinModal] = useState(false);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [joinPassword, setJoinPassword] = useState('');
   const [joinError, setJoinError] = useState<string | null>(null);
   const [showEeveelutionModal, setShowEeveelutionModal] = useState(false);
@@ -41,6 +42,14 @@ const AuctionPage: React.FC = () => {
 
     try {
       const updatedDraft = await joinDraft(auctionId, password);
+      if(!isLoggedIn) {
+        fetchCurrentUser()
+          .then(user => {
+            setCurrentUserId(user.user_id);
+            setIsGuest(user.is_guest);
+            setIsLoggedIn(true);
+          })
+      }
       setDraft(updatedDraft);
       setShowJoinModal(false);
       setJoinPassword('');
@@ -61,6 +70,7 @@ const AuctionPage: React.FC = () => {
         console.log("Fetched current user:", user);
         setCurrentUserId(user.user_id);
         setIsGuest(user.is_guest);
+        setIsLoggedIn(!!user.user_id);
         if(!user.is_guest) {
           setAvatar(user.avatar)
         }
@@ -71,7 +81,7 @@ const AuctionPage: React.FC = () => {
         setDraft(draftData);
 
         const alreadyOnTeam = draftData.teams.some(team => team.user_id === user.user_id);
-        if (draftData.draft_state === 'PENDING' && !alreadyOnTeam) {
+        if (draftData.draft_state === 'PENDING' && (!alreadyOnTeam || !isLoggedIn)) {
           setShowJoinModal(true);
         }
       })
@@ -266,7 +276,7 @@ const AuctionPage: React.FC = () => {
                         userBudgetRemaining={draft.teams.find(team => team.user_id === currentUserId)?.budget_remaining || 0}
                       />
                     )}
-                    <AuctionChatBox draftId={draft.draft_id} isGuest={isGuest} />
+                    <AuctionChatBox draftId={draft.draft_id} isGuest={isGuest} isLoggedIn={isLoggedIn} />
                   </>
                 )}
               </div>

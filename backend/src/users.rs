@@ -4,6 +4,7 @@ use axum::http::header::{AUTHORIZATION, USER_AGENT};
 use axum_login;
 use axum_login::{AuthUser, AuthnBackend};
 use oauth2::url::Url;
+use oauth2::Scope;
 use oauth2::{AuthorizationCode, TokenResponse};
 use oauth2::{CsrfToken, EndpointNotSet, EndpointSet, basic::BasicClient, reqwest};
 use petname::petname;
@@ -154,7 +155,8 @@ impl AuthBackend {
                 let _res = sqlx::query!(
                     "
                     INSERT INTO users (user_id, user_name, discriminator, global_name, avatar, role_hash)
-                    VALUES ($1, $2, $3, $4, $5, $6);
+                    VALUES ($1, $2, $3, $4, $5, $6)
+                    ON CONFLICT (user_id) DO NOTHING;
                     ",
                     user.user_id,
                     user.user_name,
@@ -177,7 +179,9 @@ impl AuthBackend {
     }
 
     pub fn authorize_url(&self) -> (Url, CsrfToken) {
-        self.client.authorize_url(CsrfToken::new_random).url()
+        self.client
+        .authorize_url(CsrfToken::new_random)
+        .url()
     }
 }
 
