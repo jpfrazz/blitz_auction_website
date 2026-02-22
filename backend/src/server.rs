@@ -113,7 +113,8 @@ impl Server {
             .route("/drafts/{draft_id}", get(handlers::get_draft))
             .route("/ws/{draft_id}", any(handlers::websocket_handler))
             .route("/login", get(handlers::discord_oauth_redirect))
-            .route("/auth/discord/callback", get(handlers::discord_callback));
+            .route("/auth/discord/callback", get(handlers::discord_callback))
+            .route("/me", get(handlers::me));
 
         let private_routes = Router::new()
             .route("/drafts", get(handlers::list_open_drafts).post(handlers::create_draft))
@@ -126,7 +127,6 @@ impl Server {
                 "/drafts/{draft_id}/chats",
                 get(handlers::get_draft_chats).post(handlers::create_draft_chat),
             )
-            .route("/me", get(handlers::me))
             .route_layer(middleware::from_fn(auto_login_guest));
 
         Router::new()

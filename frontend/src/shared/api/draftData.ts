@@ -2,7 +2,7 @@ import axios from 'axios';
 import { ChatMessage, Draft, DraftLobby } from "../../types";
 
 // Fetch current user info
-export async function fetchCurrentUser(): Promise<{user_id: string, username: string, avatar?: string, is_guest: boolean}> {
+export async function fetchCurrentUser(): Promise<{user_id: string | null, username: string | null, avatar?: string, is_guest: boolean}> {
   const response = await axios.get('/api/me');
   // Response can be {GuestUser: {...}} or {DiscordUser: {...}}
   const data = response.data;
@@ -19,8 +19,13 @@ export async function fetchCurrentUser(): Promise<{user_id: string, username: st
       avatar: data.DiscordUser.avatar,
       is_guest: false,
     };
+  } else {
+    return {
+      user_id: null,
+      username: null,
+      is_guest: false,
+    }
   }
-  throw new Error('Unknown user type');
 }
 
 // Fetch a draft by id from the backend
