@@ -215,16 +215,8 @@ pub async fn ready_up(
 
     team.ready = ready;
 
-    let mut draft_started = false;
-    if draft.all_teams_ready() {
-        draft.start_draft().await.map_err(|e| {
-            (
-                StatusCode::PRECONDITION_FAILED,
-                format!("draft failed to start: {}", e),
-            )
-        })?;
-        draft_started = true;
-    }
+    // Removed automatic draft start when all teams are ready
+    let draft_started = false;
 
     Ok(Json(ReadyUpResponse {
         ready,

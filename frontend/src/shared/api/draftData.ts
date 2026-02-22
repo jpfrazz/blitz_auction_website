@@ -2,7 +2,7 @@ import axios from 'axios';
 import { ChatMessage, Draft, DraftLobby } from "../../types";
 
 // Fetch current user info
-export async function fetchCurrentUser(): Promise<{user_id: string, username: string, is_guest: boolean}> {
+export async function fetchCurrentUser(): Promise<{user_id: string, username: string, avatar?: string, is_guest: boolean}> {
   const response = await axios.get('/api/me');
   // Response can be {GuestUser: {...}} or {DiscordUser: {...}}
   const data = response.data;
@@ -14,8 +14,9 @@ export async function fetchCurrentUser(): Promise<{user_id: string, username: st
     };
   } else if (data.DiscordUser) {
     return {
-      user_id: data.DiscordUser.user_id,
-      username: data.DiscordUser.user_name,
+      user_id: data.DiscordUser.id,
+      username: data.DiscordUser.username,
+      avatar: data.DiscordUser.avatar,
       is_guest: false,
     };
   }
