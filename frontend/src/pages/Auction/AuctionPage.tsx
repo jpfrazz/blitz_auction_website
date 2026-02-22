@@ -31,6 +31,7 @@ const AuctionPage: React.FC = () => {
   const [joinPassword, setJoinPassword] = useState('');
   const [joinError, setJoinError] = useState<string | null>(null);
   const [showEeveelutionModal, setShowEeveelutionModal] = useState(false);
+  const [avatar, setAvatar] = useState<string | undefined>(undefined);
 
   const attemptJoinDraft = async (password?: string) => {
     if (!auctionId) return;
@@ -60,6 +61,9 @@ const AuctionPage: React.FC = () => {
         console.log("Fetched current user:", user);
         setCurrentUserId(user.user_id);
         setIsGuest(user.is_guest);
+        if(!user.is_guest) {
+          setAvatar(user.avatar)
+        }
         return fetchDraftById(auctionId).then(draftData => ({ user, draftData }));
       })
       .then(({ user, draftData }) => {

@@ -89,3 +89,16 @@
 .navDropdown:hover .navDropdownItem:nth-child(2) {
   transition-delay: 0.08s;
 }
+
+.userInfo {
+  display: flex;
+  align-items: center;
+  gap: 0.5em;
+}
+
+.userAvatar {
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 50%;
+  margin-right: 0.75rem;
+}

@@ -1,6 +1,7 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import './Header.scss';
 import { Link } from 'react-router-dom';
+import { fetchCurrentUser } from '../api/draftData';
 
 const navButtons = [
   // { label: "Team Planner", link: "/TeamPlanner" },
@@ -15,6 +16,13 @@ function Header() {
   const scrollToTop = () => {
     window.scrollTo(0, 0);
   };
+
+  type UserState =
+    | { is_guest: boolean; user_id: string; username: string; avatar?: string };
+  const [user, setUser] = useState<UserState | null>(null);
+  useEffect(() => {
+    fetchCurrentUser().then(user => setUser(user)).catch(() => setUser(null));
+  }, []);
 
   return (
     <header className="header">
@@ -50,6 +58,24 @@ function Header() {
               {btn.label}
             </Link>
           ))}
+          {!user && (
+            <a href="/api/login" className="navButton">Login</a>
+          )}
+          {user && !user.is_guest && (
+            <div className="userInfo">
+              <img
+                src={`https://cdn.discordapp.com/avatars/${user.user_id}/${user.avatar}.png`}
+                alt="avatar"
+                className="userAvatar"
+              />
+              <h1>{user.username}</h1>
+            </div>
+          )}
+          {user && user.is_guest && (
+            <div className="userInfo">
+              <h1>{user.username}</h1>
+            </div>
+          )}
         </nav>
       </div>
     </header>
