@@ -119,6 +119,10 @@ const FAQ = () => (
             <li>
               <b>Elite... eight!?</b> Battle Frontier Brains join the Elite Four for a more diverse lineup of final bosses.
             </li>
+              <li>
+                <b>Rental Pokemon:</b> For ¥5000, a shady salesman will allow you to rent a random Pokémon from his powerful collection. You'd better not try to steal it!
+              </li>
+
           </ul>
 
           <h3 style={{ textAlign: 'left' }}>Quality of Life Improvements</h3>
@@ -137,6 +141,9 @@ const FAQ = () => (
             </li>
             <li>
               <b>Visible IVs:</b> When paused to view your Pokémon’s stats, press A to display their IVs.
+            </li>
+            <li>
+              <b>Custom Colors:</b> Choose from ten custom trainer palettes by interacting with the PC in your room!
             </li>
           </ul>
 

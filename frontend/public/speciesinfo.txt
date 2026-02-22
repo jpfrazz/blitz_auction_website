@@ -751,6 +751,18 @@ Key Moves:
    Close Combat (50)
    Megahorn (55)
 
+Farfetch'd
+Key Moves:
+   Fury Cutter (10)
+   Rock Smash (15)
+   Brutal Swing (20)
+   Detech (25)
+   Knock Off (30)
+   Brick Break (TM/40)
+   Leaf Blade (55)
+   Brave Bird (MR!)
+   Sky Attack (Egg)
+
 Feebas
 Key Moves:
    Water Pulse (Evo.)
@@ -1506,6 +1518,17 @@ Key Moves:
    High Horsepower (57)
    Charm (Egg)
 
+Nickit
+Key Moves:
+   Assurance (8)
+   Snarl (12)
+   Taunt (TM)
+   Hone Claws (16)
+   Sucker Punch (28)
+   Night Slash (34)
+   Parting Shot (52)
+   Knock Off (Egg)
+
 Nincada
 Key Moves:
    Fury Cutter (Evo.)  
@@ -1777,6 +1800,17 @@ Key Moves:
    Discharge (40)
    Tri-Attack (50)
    Nasty Plot (MR)
+
+Purrloin
+Key Moves:
+   Pursuit (15)
+   Fake Out (21)
+   Hone Claws (Evo.)
+   Snarl (TM)
+   Assurance (31)
+   Night Slash (43)
+   Play Rough (58)
+   Encore (Egg)
 
 Ralts
 Key Moves:

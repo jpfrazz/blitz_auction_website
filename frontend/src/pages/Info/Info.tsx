@@ -22,6 +22,7 @@ const Info = () => (
           <li><a href="#gym-benchmarks">Gym Benchmarks</a></li>
           <li><a href="#complete-learnset">Complete Learnsets</a></li>
           <li><a href="#ai-logic">AI Logic</a></li>
+          <li><a href="#key-binds">Key Binds</a></li>
         </ul>
       </nav>
 
@@ -352,6 +353,7 @@ const Info = () => (
                 <img src="/MiniIcons/hatenna.png" alt="Hatenna" />
                 <img src="/MiniIcons/honedge.png" alt="Honedge" />
                 <img src="/MiniIcons/horsea.png" alt="Horsea" />
+                <img src="/MiniIcons/impidimp.png" alt="Impidimp" />
                 <img src="/MiniIcons/jangmo-o.png" alt="Jangmo-o" />
                 <img src="/MiniIcons/litwick.png" alt="Litwick" />
                 <img src="/MiniIcons/solosis.png" alt="Solosis" />
@@ -366,6 +368,7 @@ const Info = () => (
                 <li>Hatenna &gt; Hattrem</li>
                 <li>Honedge &gt; Doublade</li>
                 <li>Horsea &gt; Seadra</li>
+                <li>Impidimp &gt; Morgrem</li>
                 <li>Jangmo-o &gt; Hakamo-o</li>
                 <li>Litwick &gt; Lampent</li>
                 <li>Solosis &gt; Duosion</li>
@@ -387,6 +390,7 @@ const Info = () => (
                 <img src="/MiniIcons/corsola-galar.png" alt="Corsola-Galar" />
                 <img src="/MiniIcons/croagunk.png" alt="Croagunk" />
                 <img src="/MiniIcons/elgyem.png" alt="Elgyem" />
+                <img src="/MiniIcons/frillish.png" alt="Frillish" />
                 <img src="/MiniIcons/meditite.png" alt="Meditite" />
                 <img src="/MiniIcons/ponyta.png" alt="Ponyta" />
                 <img src="/MiniIcons/sandygast.png" alt="Sandygast" />
@@ -406,6 +410,7 @@ const Info = () => (
                 <li>Corsola-Galar &gt; Cursola</li>
                 <li>Croagunk &gt; Toxicroak</li>
                 <li>Elgyem &gt; Beheeyem</li>
+                <li>Frillish &gt; Jellicent</li>
                 <li>Meditite &gt; Medicham</li>
                 <li>Ponyta &gt; Rapidash</li>
                 <li>Sandygast &gt; Palossand</li>
@@ -451,12 +456,14 @@ const Info = () => (
               <ul>
                 <li>Gloom &gt; Vileplume</li>
                 <li>Exeggcute &gt; Exeggutor</li>
+                <li>Voltorb &gt; Electrode</li>
                 <li>Eevee &gt; Leafeon</li>
               </ul>
             </details>
             <details>
               <summary className='slateport-market-dropdown'>Ice Stone</summary>
               <ul>
+                <li>Cetoddle &gt; Cetitan</li>
                 <li>Vulpix-Alola &gt; Ninetales-Alola</li>
                 <li>Eevee &gt; Glaceon</li>
               </ul>
@@ -595,6 +602,7 @@ const Info = () => (
               <li>Scizorite</li>
               <li>Sharpedonite</li>
               <li>Starmite</li>
+              <li>Steelixite</li>
             </ul>
           </div>
           <div className="slateport-market-card">
@@ -687,6 +695,16 @@ const Info = () => (
           <li>It's their Pokémon's final turn of Perish Song</li>
           <li>Their Pokémon has Truant and you've shown a Protect-like move</li>
           <li>Your Pokémon has Wonder Guard, their Pokémon can't hit it, and they have a different Pokémon which can hit it</li>
+        </ul>
+      </section>
+
+      <section id="key-binds" className="info-section">
+        <h2 className="info-question">Key Binds</h2>
+        <hr />
+        <ul>
+          <li>Holding "B" on your Gameboy while riding Flygon urges him to move at 1.5x speed</li>
+          <li>Pressing "L" while riding Flygon instantly takes you to the Fly map</li>
+          <li>Pressing "Select" while viewing the overworld map instantly snaps the cursor to Slateport City</li>
         </ul>
       </section>
     </main>
