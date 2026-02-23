@@ -55,6 +55,42 @@ const AllPokemonTab: React.FC<AllPokemonTabProps> = ({ pokemon, auctions }) => {
     [pokemon, auctions]
   );
 
+  // Helper to get all new types from evolutions (excluding Mega forms)
+  const getEvolutionTypes = (basePokemon: any) => {
+    const baseTypes = new Set([
+      basePokemon.type1?.toLowerCase(),
+      basePokemon.type2?.toLowerCase(),
+    ].filter(Boolean));
+    // Find all evolutions (direct and indirect, non-mega, non-base)
+    const evolutions = allPokemon.filter(
+      p => p.evolves_from_id?.toString() === (basePokemon.pokedex_id ?? basePokemon.id).toString() && (p.form ?? '').toLowerCase() !== 'mega'
+    );
+    // Recursively get types from all stages
+    const seen = new Set();
+    const collectTypes = (pkmn: Pokemon): string[] => {
+      if (!pkmn || seen.has(pkmn.pokedex_id + ':' + (pkmn.form ?? ''))) return [];
+      seen.add(pkmn.pokedex_id + ':' + (pkmn.form ?? ''));
+      let types: string[] = [];
+      if (pkmn.type1) types.push(pkmn.type1.toLowerCase());
+      if (pkmn.type2) types.push(pkmn.type2.toLowerCase());
+      // Find further evolutions
+      const nextEvos = allPokemon.filter(
+        p => p.evolves_from_id?.toString() === (pkmn.pokedex_id ?? pkmn.id).toString() && (p.form ?? '').toLowerCase() !== 'mega'
+      );
+      for (const evo of nextEvos) {
+        types = types.concat(collectTypes(evo));
+      }
+      return types;
+    };
+    const evoTypeSet = new Set<string>();
+    evolutions.forEach(evo => {
+      collectTypes(evo).forEach(type => evoTypeSet.add(type));
+    });
+    // Remove base types
+    const uniqueNewTypes = Array.from(evoTypeSet).filter(t => !Array.from(baseTypes).includes(t));
+    return uniqueNewTypes;
+  };
+
   const columns = useMemo<ColumnDef<any, any>[]>(
     () => [
       { accessorKey: 'name', header: 'Name' },
@@ -69,11 +105,31 @@ const AllPokemonTab: React.FC<AllPokemonTabProps> = ({ pokemon, auctions }) => {
           return type1.includes(filter) || type2.includes(filter);
         },
       },
+      {
+        accessorKey: 'evolutionTypes',
+        header: 'Evolution Types',
+        cell: ({ row }) => {
+          const evoTypes = getEvolutionTypes(row.original);
+          if (!evoTypes.length) return null;
+          return (
+            <span className="type-pill-group">
+              {evoTypes.map(type => (
+                <span key={type} className={`type-pill type-pill-${type}`}>{type.charAt(0).toUpperCase() + type.slice(1)}</span>
+              ))}
+            </span>
+          );
+        },
+        filterFn: (row, columnId, filterValue) => {
+          const evoTypes = getEvolutionTypes(row.original);
+          const filter = (filterValue as string).toLowerCase();
+          return evoTypes.some(type => type.toLowerCase().includes(filter));
+        },
+      },
       { accessorKey: 'cost', header: 'Cost' },
       { accessorKey: 'draftedBy', header: 'Drafted By' },
       { accessorKey: 'baseStatTotal', header: 'BST' },
     ],
-    []
+    [allPokemon]
   );
 
   const [sorting, setSorting] = useState<SortingState>([{ id: 'name', desc: false }]);
