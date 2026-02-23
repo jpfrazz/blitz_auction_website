@@ -116,6 +116,7 @@ const EvolutionTree: React.FC<{ node: EvoNode }> = ({ node }) => {
 
 const CurrentPokemonPanel: React.FC<CurrentPokemonPanelProps> = ({ current_auction, all_pokemon }) => {
   const pokemonData: Pokemon = current_auction.pokemon;
+  console.log('Current Pokémon data:', pokemonData);
   // Build the evolution tree for the current Pokémon
   const evoTree = buildEvolutionTree(pokemonData, all_pokemon);
   const getStatColorClass = (value: number) => {
@@ -136,6 +137,7 @@ const CurrentPokemonPanel: React.FC<CurrentPokemonPanelProps> = ({ current_aucti
 
   const normalizeLearnMethod = (method?: string) => {
     if (!method) return '';
+    console.log('Normalizing learn method:', method);
     return method.toLowerCase().replace(/\s+/g, '_');
   };
 
@@ -165,7 +167,12 @@ const CurrentPokemonPanel: React.FC<CurrentPokemonPanelProps> = ({ current_aucti
 
   const formatLearnMethod = (method?: string) => {
     if (!method) return '';
-    return method.replace(/_/g, ' ');
+    console.log('Original learn method:', method);
+    // Split on slash, trim, replace underscores, and join with comma
+    return method
+      .split('/')
+      .map((m) => m.replace(/_/g, ' ').trim())
+      .join('/');
   };
 
   return (
