@@ -311,10 +311,10 @@ pokedex_id,pokemon_name,form,move_name,learn_method,species
 222,Corsola,,Ice Beam,TM,
 222,Corsola,,Giga Drain,TM,Corsola-Galar
 222,Corsola,,Surf,HM,
-222,Corsola,,Strength Sap,35,Corsola-Galar
+222,Corsola,,Strength Sap,35,Cursola
 222,Corsola,,Calm Mind,TM,
-222,Corsola,,Perish Song,MOVE_REMINDER,Corsola-Galar
-222,Corsola,,Liquidation,EGG,
+222,Corsola,,Perish Song,MOVE_REMINDER,Cursola
+222,Corsola,,Liquidation,EGG,Corsola
 222,Corsola,,Destiny Bond,EGG,Corsola-Galar
 453,Croagunk,,Taunt,10,
 453,Croagunk,,Rock Smash,HM,
