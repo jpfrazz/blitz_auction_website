@@ -74,6 +74,7 @@ CREATE TABLE key_moves (
     patch_version TEXT NOT NULL,
     name TEXT NOT NULL REFERENCES moves(name),
     learn_method TEXT NOT NULL,
+    species TEXT,
 
     FOREIGN KEY (pokedex_id, form, patch_version)
         REFERENCES pokemon(pokedex_id, form, patch_version)

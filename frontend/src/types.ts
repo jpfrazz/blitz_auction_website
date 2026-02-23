@@ -34,6 +34,7 @@ export interface Pokemon {
 export interface KeyMove {
   move_name: string;
   learn_method: string;
+  species?: string; // Optional field to indicate if the move is specific to a certain species or form
 }
 
 export type SerializedUser =

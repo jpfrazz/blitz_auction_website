@@ -1,6 +1,6 @@
 {
   "db_name": "PostgreSQL",
-  "query": "\n        SELECT\n            p.*,\n            COALESCE(\n                (\n                    SELECT json_agg(\n                        json_build_object(\n                            'pokedex_id', km.pokedex_id,\n                            'form', km.form,\n                            'patch_version', km.patch_version,\n                            'move_name', km.move_name,\n                            'learn_method', km.learn_method\n                        )\n                    )\n                    FROM key_moves km\n                    WHERE (km.pokedex_id, km.form, km.patch_version) =\n                        (p.pokedex_id, p.form, p.patch_version)\n                ),\n                '[]'::json\n            ) as \"key_moves!: Json<Vec<KeyMoveRow>>\"\n        FROM pokemon p\n        ",
+  "query": "\n        SELECT\n            p.*,\n            COALESCE(\n                (\n                    SELECT json_agg(\n                        json_build_object(\n                            'pokedex_id', km.pokedex_id,\n                            'form', km.form,\n                            'patch_version', km.patch_version,\n                            'move_name', km.move_name,\n                            'learn_method', km.learn_method,\n                            'species', km.species\n                        )\n                    )\n                    FROM key_moves km\n                    WHERE (km.pokedex_id, km.form, km.patch_version) =\n                        (p.pokedex_id, p.form, p.patch_version)\n                ),\n                '[]'::json\n            ) as \"key_moves!: Json<Vec<KeyMoveRow>>\"\n        FROM pokemon p\n        ",
   "describe": {
     "columns": [
       {
@@ -148,5 +148,5 @@
       null
     ]
   },
-  "hash": "01a5aa03f7cef0c4b34a60d09db11e40f1a1feba1371caf8f74941d5fce3b27e"
+  "hash": "fef47ee45ace753f78b3072cd8adfac0b068a3a659daf196d165507fb6ea4938"
 }

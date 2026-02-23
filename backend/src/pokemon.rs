@@ -23,7 +23,8 @@ pub async fn init_pokemon_data(pool: &PgPool) -> Result<(), sqlx::Error> {
                             'form', km.form,
                             'patch_version', km.patch_version,
                             'move_name', km.move_name,
-                            'learn_method', km.learn_method
+                            'learn_method', km.learn_method,
+                            'species', km.species
                         )
                     )
                     FROM key_moves km
@@ -205,6 +206,7 @@ pub struct KeyMoveRow {
     pub patch_version: String,
     pub move_name: String,
     pub learn_method: String,
+    pub species: Option<String>,
 }
 
 #[derive(EnumString, Display, Clone, Copy, Debug, Serialize, Deserialize)]
