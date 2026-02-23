@@ -73,6 +73,7 @@ class KeyMoveRow(TypedDict):
     patch_version: str
     move_name: str
     learn_method: str
+    species: str
 
 
 Rows = Iterable[DbRow]
@@ -146,13 +147,14 @@ def transform_row(
     )
 
 
-def transform_key_move_row(row: Mapping[str, str]) -> KeyMoveRow:
+def transform_key_move_row(row: Mapping[str, str], *, patch_version: str) -> KeyMoveRow:
     return KeyMoveRow(
         pokedex_id=to_int(row.get("pokedex_id", "")),
         form=row.get("form", "").strip(),
-        patch_version=row.get("patch_version", "").strip(),
+        patch_version=patch_version,
         move_name=row.get("move_name", "").strip(),
         learn_method=row.get("learn_method", "").strip(),
+        species=row.get("species", "").strip(),
     )
 
 # ---------- SQL ----------
@@ -216,14 +218,16 @@ INSERT INTO key_moves (
     form,
     patch_version,
     move_name,
-    learn_method
+    learn_method,
+    species
 )
 VALUES (
     %(pokedex_id)s,
     %(form)s,
     %(patch_version)s,
     %(move_name)s,
-    %(learn_method)s
+    %(learn_method)s,
+    %(species)s
 )
 ON CONFLICT DO NOTHING;
 """
@@ -278,9 +282,10 @@ def load_key_moves_csv(
     *,
     csv_path: Path,
     dsn: str,
+    patch_version: str,
 ) -> None:
     transformed_rows = (
-        transform_key_move_row(row)
+        transform_key_move_row(row, patch_version=patch_version)
         for row in read_csv(csv_path)
     )
 
@@ -294,11 +299,12 @@ if __name__ == "__main__":
     dsn = "postgresql://postgres:password@localhost:5432/auction_db"
     reset_database(dsn)
     load_csv(
-        csv_path=Path("pokemon-8.2.csv"),
+        csv_path=Path("pokemon.csv"),
         dsn=dsn,
-        patch_version="8.2",
+        patch_version="8.3",
     )
     load_key_moves_csv(
         csv_path=Path("pokemon_moves.csv"),
         dsn=dsn,
+        patch_version="8.3",
     )

@@ -293,10 +293,18 @@ const CurrentPokemonPanel: React.FC<CurrentPokemonPanelProps> = ({ current_aucti
                   className="key-move-row"
                   key={`${move.move_name}-${index}`}
                 >
-                  {move.learn_method ? (
-                    <>{move.move_name} ({formatLearnMethod(move.learn_method)})</>
+                  {move.species ? (
+                    <>
+                      <img
+                        src={`/MiniIcons/${move.species.toLowerCase()}.png`}
+                        alt={move.species}
+                        className="key-move-species-img"
+                        style={{ width: 24, height: 24, marginRight: 6, verticalAlign: 'middle' }}
+                      />
+                      {move.move_name} ({formatLearnMethod(move.learn_method)})
+                    </>
                   ) : (
-                    move.move_name
+                    <>{move.move_name} ({formatLearnMethod(move.learn_method)})</>
                   )}
                 </div>
               ))}
