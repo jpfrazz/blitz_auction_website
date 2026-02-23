@@ -66,6 +66,7 @@ export interface Draft {
   draft_id: string;
   draft_name: string;
   has_password: boolean;
+  total_auctions: number;
   host: string;
   ranked: boolean;
   total_teams: number;

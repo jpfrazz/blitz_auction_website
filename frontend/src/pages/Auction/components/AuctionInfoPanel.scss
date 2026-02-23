@@ -143,3 +143,71 @@
     }
   }
 }
+
+.auction-draft-number {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: $eb-text;
+  background: rgba(0,0,0,0.15);
+  padding: 4px 12px;
+  border-radius: 6px;
+  z-index: 2;
+}
+// Modal styles for bid warning
+.auction-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.auction-modal-content {
+  background: $eb-surface;
+  color: $eb-text;
+  padding: 2rem;
+  border-radius: 8px;
+  max-width: 400px;
+  text-align: center;
+  box-shadow: 0 2px 16px #0008;
+}
+
+.auction-modal-actions {
+  margin-top: 1.5rem;
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+}
+
+.auction-modal-confirm {
+  padding: 8px 20px;
+  background: $eb-primary-hover;
+  color: $eb-text;
+  border: none;
+  border-radius: 4px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+  &:hover {
+    background: darken($eb-primary-hover, 10%);
+  }
+}
+
+.auction-modal-cancel {
+  padding: 8px 20px;
+  background: $eb-border;
+  color: $eb-text;
+  border: none;
+  border-radius: 4px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+  &:hover {
+    background: lighten($eb-border, 10%);
+  }
+}

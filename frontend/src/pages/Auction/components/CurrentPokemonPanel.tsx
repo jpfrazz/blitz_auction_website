@@ -165,7 +165,11 @@ const CurrentPokemonPanel: React.FC<CurrentPokemonPanelProps> = ({ current_aucti
 
   const formatLearnMethod = (method?: string) => {
     if (!method) return '';
-    return method.replace(/_/g, ' ');
+    // Split on slash, trim, replace underscores, and join with comma
+    return method
+      .split('/')
+      .map((m) => m.replace(/_/g, ' ').trim())
+      .join('/');
   };
 
   return (

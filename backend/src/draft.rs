@@ -42,6 +42,7 @@ pub struct DraftResponse {
     draft_id: String,
     draft_name: String,
     has_password: bool,
+    total_auctions: u32,
     host: String,
     ranked: bool,
     total_teams: u32,
@@ -62,6 +63,7 @@ pub struct DraftLobbyResponse {
     ranked: bool,
     teams_joined: u32,
     total_teams: u32,
+    total_auctions: u32,   
     draft_state: DraftState,
 }
 
@@ -94,6 +96,7 @@ impl From<Draft> for DraftResponse {
             host: draft.host.get_user_id_string(),
             ranked: draft.settings.ranked,
             total_teams: draft.settings.num_teams,
+            total_auctions: draft.settings.num_auctions,
             teams: draft.teams.into_values().collect(),
             draft_state: draft.draft_state,
             current_auction,
@@ -118,6 +121,7 @@ impl From<Draft> for DraftLobbyResponse {
             ranked: draft.settings.ranked,
             teams_joined: draft.teams.len() as u32,
             total_teams: draft.settings.num_teams,
+            total_auctions: draft.settings.num_auctions,
             draft_state: draft.draft_state,
         }
     }
