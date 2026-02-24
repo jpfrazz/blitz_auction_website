@@ -55,9 +55,8 @@ CREATE TABLE pokemon (
         REFERENCES pokemon(pokedex_id, form, patch_version)
 );
 
-CREATE TABLE IF NOT EXISTS moves (
-    id INT PRIMARY KEY,
-    name VARCHAR(255) NOT NULL,
+CREATE TABLE moves (
+    name VARCHAR(255) PRIMARY KEY,
     description TEXT,
     effect VARCHAR(255),
     power INT DEFAULT 0,
@@ -72,7 +71,7 @@ CREATE TABLE key_moves (
     pokedex_id INT NOT NULL,
     form TEXT NOT NULL DEFAULT '',
     patch_version TEXT NOT NULL,
-    name TEXT NOT NULL REFERENCES moves(name),
+    move_name TEXT NOT NULL REFERENCES moves(name),
     learn_method TEXT NOT NULL,
     species TEXT,
 
