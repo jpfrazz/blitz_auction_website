@@ -150,7 +150,11 @@ const AuctionInfoPanel: React.FC<AuctionInfoPanelProps> = ({
       </div>
 
       <div className="bid-buttons-section">
-        <button className="bid-button" onClick={handleBid100} disabled={!canBid}>
+        <button
+          className="bid-button"
+          onClick={handleBid100}
+          disabled={!canBid || (secondsRemaining >= 9)}
+        >
           ▲ $100
         </button>
         <input

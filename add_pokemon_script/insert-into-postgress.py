@@ -127,7 +127,7 @@ def transform_row(
         patch_version=patch_version,
         form=row["form"].strip(),
         stage=row["stage"].strip(),
-        description=None,
+        description=row["description"],
         type1=row["type1"].strip(),
         type2=to_optional_str(row["type2"]),
         ability1=row["ability1"].strip(),
