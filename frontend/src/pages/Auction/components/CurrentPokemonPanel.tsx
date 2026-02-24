@@ -18,6 +18,20 @@ interface EvoNode {
   isMega?: boolean;
 }
 
+const getStatColorClass = (value: number) => {
+  if (value <= 30) return 'stat-bar-red';
+  if (value <= 50) return 'stat-bar-orange';
+  if (value <= 70) return 'stat-bar-yellow';
+  if (value <= 100) return 'stat-bar-light-green';
+  if (value <= 150) return 'stat-bar-dark-green';
+  return 'stat-bar-light-blue';
+};
+
+const getStatWidth = (value: number) => {
+  const max = 150;
+  return `${Math.min(100, (value / max) * 100)}%`;
+};
+
 function buildEvolutionTree(
   root: Pokemon,
   allPokemon: Pokemon[],
@@ -43,7 +57,6 @@ function buildEvolutionTree(
         isMega,
       };
     });
-
   return { pokemon: root, children };
 }
 
@@ -68,13 +81,15 @@ const EvolutionTree: React.FC<{ node: EvoNode }> = ({ node }) => {
       return `/baseforms/${pokemon.name}.png`;
     }
   };
+  // Determine if this is a baseform or evolution
+  const isBaseform = !node.pokemon.evolves_from_id;
   return (
     <div className="evo-tree-node-horizontal">
       <div className="evo-pokemon-block-horizontal">
         <img
           src={getImageSrc(node.pokemon)}
           alt={node.pokemon.name}
-          className="evo-pokemon-img"
+          className={isBaseform ? "evo-pokemon-img-baseform" : "evo-pokemon-img-evolution"}
         />
         <div className="evo-pokemon-name">{node.pokemon.name}</div>
         <div className="pokemon-type-ability">
@@ -87,6 +102,115 @@ const EvolutionTree: React.FC<{ node: EvoNode }> = ({ node }) => {
             <span className={`type-badge type-badge-${node.pokemon.type2.toLowerCase()}`}>
               {node.pokemon.type2.toUpperCase()}
             </span>
+          )}
+        </div>
+        <div className="pokemon-stats">
+          {!isBaseform && (
+            <>
+              <div className="evo-pokemon-ability">
+                {node.pokemon.ability1 && <div>{node.pokemon.ability1}</div>}
+                {node.pokemon.ability2 && <div>{node.pokemon.ability2}</div>}
+                {node.pokemon.hidden_ability && <div>(H) {node.pokemon.hidden_ability}</div>}
+              </div>
+              {node.pokemon.stats && (
+                <>
+                  <div className="stat-row">
+                    <span className="stat-label">HP</span>
+                    <span className="stat-value">{node.pokemon.stats.hp}</span>
+                    <div
+                      className="stat-bar"
+                      style={{ width: getStatWidth(node.pokemon.stats.hp) }}
+                    >
+                      <div
+                        className={`stat-bar-fill ${getStatColorClass(node.pokemon.stats.hp)}`}
+                        style={{ width: '100%' }}
+                      />
+                    </div>
+                  </div>
+                  <div className="stat-row">
+                    <span className="stat-label">Atk</span>
+                    <span className="stat-value">{node.pokemon.stats.attack}</span>
+                    <div
+                      className="stat-bar"
+                      style={{ width: getStatWidth(node.pokemon.stats.attack) }}
+                    >
+                      <div
+                        className={`stat-bar-fill ${getStatColorClass(node.pokemon.stats.attack)}`}
+                        style={{ width: '100%' }}
+                      />
+                    </div>
+                  </div>
+                  <div className="stat-row">
+                    <span className="stat-label">Def</span>
+                    <span className="stat-value">{node.pokemon.stats.defense}</span>
+                    <div
+                      className="stat-bar"
+                      style={{ width: getStatWidth(node.pokemon.stats.defense) }}
+                    >
+                      <div
+                        className={`stat-bar-fill ${getStatColorClass(node.pokemon.stats.defense)}`}
+                        style={{ width: '100%' }}
+                      />
+                    </div>
+                  </div>
+                  <div className="stat-row">
+                    <span className="stat-label">SpA</span>
+                    <span className="stat-value">
+                      {node.pokemon.stats.sp_attack ?? node.pokemon.stats.specialAttack}
+                    </span>
+                    <div
+                      className="stat-bar"
+                      style={{
+                        width: getStatWidth(
+                          node.pokemon.stats.sp_attack ?? node.pokemon.stats.specialAttack
+                        ),
+                      }}
+                    >
+                      <div
+                        className={`stat-bar-fill ${getStatColorClass(
+                          node.pokemon.stats.sp_attack ?? node.pokemon.stats.specialAttack
+                        )}`}
+                        style={{ width: '100%' }}
+                      />
+                    </div>
+                  </div>
+                  <div className="stat-row">
+                    <span className="stat-label">SpD</span>
+                    <span className="stat-value">
+                      {node.pokemon.stats.sp_defense ?? node.pokemon.stats.specialDefense}
+                    </span>
+                    <div
+                      className="stat-bar"
+                      style={{
+                        width: getStatWidth(
+                          node.pokemon.stats.sp_defense ?? node.pokemon.stats.specialDefense
+                        ),
+                      }}
+                    >
+                      <div
+                        className={`stat-bar-fill ${getStatColorClass(
+                          node.pokemon.stats.sp_defense ?? node.pokemon.stats.specialDefense
+                        )}`}
+                        style={{ width: '100%' }}
+                      />
+                    </div>
+                  </div>
+                  <div className="stat-row">
+                    <span className="stat-label">Spe</span>
+                    <span className="stat-value">{node.pokemon.stats.speed}</span>
+                    <div
+                      className="stat-bar"
+                      style={{ width: getStatWidth(node.pokemon.stats.speed) }}
+                    >
+                      <div
+                        className={`stat-bar-fill ${getStatColorClass(node.pokemon.stats.speed)}`}
+                        style={{ width: '100%' }}
+                      />
+                    </div>
+                  </div>
+                </>
+              )}
+            </>
           )}
         </div>
       </div>
@@ -118,24 +242,9 @@ const EvolutionTree: React.FC<{ node: EvoNode }> = ({ node }) => {
 
 const CurrentPokemonPanel: React.FC<CurrentPokemonPanelProps> = ({ current_auction, all_pokemon }) => {
   const pokemonData: Pokemon = current_auction.pokemon;
-  pokemonData.ability = (pokemonData as any).ability || [(pokemonData as any).ability1, (pokemonData as any).ability2, (pokemonData as any).hidden_ability].filter(Boolean).join('/');
   const [showTipModal, setShowTipModal] = React.useState(false);
   // Build the evolution tree for the current Pokémon
   const evoTree = buildEvolutionTree(pokemonData, all_pokemon);
-  const getStatColorClass = (value: number) => {
-    if (value < 30) return 'stat-bar-red';
-    if (value <= 49) return 'stat-bar-orange';
-    if (value <= 69) return 'stat-bar-yellow';
-    if (value <= 99) return 'stat-bar-light-green';
-    if (value <= 149) return 'stat-bar-dark-green';
-    return 'stat-bar-light-blue';
-  };
-
-  const getStatWidth = (value: number) => {
-    const max = 150;
-    return `${Math.min(100, (value / max) * 100)}%`;
-  };
-
   const keyMoves = pokemonData.key_moves ?? [];
 
   const normalizeLearnMethod = (method?: string) => {
@@ -196,9 +305,11 @@ const CurrentPokemonPanel: React.FC<CurrentPokemonPanelProps> = ({ current_aucti
         </div>
 
         <div className="pokemon-type-ability">
-          {pokemonData.ability && (
-            <span className="ability-text">{pokemonData.ability}</span>
-          )}
+          <div className="ability-text">
+            {pokemonData.ability1 && <div>{pokemonData.ability1}</div>}
+            {pokemonData.ability2 && <div>{pokemonData.ability2}</div>}
+            {pokemonData.hidden_ability && <div>(H) {pokemonData.hidden_ability}</div>}
+          </div>
         </div>
 
         <div className="pokemon-stats">
