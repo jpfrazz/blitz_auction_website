@@ -118,6 +118,7 @@ const EvolutionTree: React.FC<{ node: EvoNode }> = ({ node }) => {
 
 const CurrentPokemonPanel: React.FC<CurrentPokemonPanelProps> = ({ current_auction, all_pokemon }) => {
   const pokemonData: Pokemon = current_auction.pokemon;
+  pokemonData.ability = (pokemonData as any).ability || [(pokemonData as any).ability1, (pokemonData as any).ability2, (pokemonData as any).hidden_ability].filter(Boolean).join('/');
   const [showTipModal, setShowTipModal] = React.useState(false);
   // Build the evolution tree for the current Pokémon
   const evoTree = buildEvolutionTree(pokemonData, all_pokemon);
