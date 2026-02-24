@@ -175,6 +175,7 @@ const AuctionSetupForm: React.FC = () => {
                 <input
                   type="checkbox"
                   checked={ranked}
+                  hidden={true}
                   onChange={e => setRanked(e.target.checked)}
                   disabled={isGuest === true}
                   title={isGuest === true ? 'You must be logged in to enable ranked' : ''}
@@ -188,6 +189,7 @@ const AuctionSetupForm: React.FC = () => {
             type="button"
             className="auction-setup-btn navButton"
             onClick={() => setShowModal(true)}
+            hidden={true}
             disabled={ranked}
           >
             Select Pokémon
