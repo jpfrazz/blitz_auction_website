@@ -52,19 +52,21 @@ function buildEvolutionTree(
 const EvolutionTree: React.FC<{ node: EvoNode }> = ({ node }) => {
   // Use evolutions folder for all images
   const getImageSrc = (pokemon: Pokemon) => {
-      if (pokemon.evolves_from_id && (pokemon.form !== 'Mega' && pokemon.form !== 'Mega X')) {
-        return `/evolutions/${pokemon.name}.png`;
-      } else if (pokemon.form === 'Mega' || (pokemon.form === 'Mega X' && !pokemon.name.includes('Charizard'))) {
-        let baseName = pokemon.name.startsWith('Mega ')
-          ? pokemon.name.slice(5)
-          : pokemon.name;
-        return `/evolutions/${baseName}-Mega.png`;
-      } else if (pokemon.name.includes('Charizard') && pokemon.form === 'Mega X'){ 
-          pokemon.name = 'Mega Charizard X';
-          return `/evolutions/Charizard X-Mega.png`;
-      } else {
-        return `/baseforms/${pokemon.name}.png`;
-      }
+    if (pokemon.evolves_from_id && (pokemon.form === 'Alola' || pokemon.form === 'Galar' || pokemon.form === 'Hisui' || pokemon.form === 'Paldea')) {
+      return `/evolutions/${pokemon.name}-${pokemon.form}.png`;
+    } else if (pokemon.evolves_from_id && (pokemon.form !== 'Mega' && pokemon.form !== 'Mega X')) {
+      return `/evolutions/${pokemon.name}.png`;
+    } else if (pokemon.form === 'Mega' || (pokemon.form === 'Mega X' && !pokemon.name.includes('Charizard'))) {
+      let baseName = pokemon.name.startsWith('Mega ')
+        ? pokemon.name.slice(5)
+        : pokemon.name;
+      return `/evolutions/${baseName}-Mega.png`;
+    } else if (pokemon.name.includes('Charizard') && pokemon.form === 'Mega X') {
+      pokemon.name = 'Mega Charizard X';
+      return `/evolutions/Charizard X-Mega.png`;
+    } else {
+      return `/baseforms/${pokemon.name}.png`;
+    }
   };
   return (
     <div className="evo-tree-node-horizontal">
@@ -201,100 +203,100 @@ const CurrentPokemonPanel: React.FC<CurrentPokemonPanelProps> = ({ current_aucti
         <div className="pokemon-stats">
           {pokemonData.stats && (
             <>
-            <div className="stat-row">
-              <span className="stat-label">HP</span>
-              <span className="stat-value">{pokemonData.stats.hp}</span>
-              <div
-                className="stat-bar"
-                style={{ width: getStatWidth(pokemonData.stats.hp) }}
-              >
-                <div 
-                  className={`stat-bar-fill ${getStatColorClass(pokemonData.stats.hp)}`}
-                  style={{ width: '100%' }}
-                />
+              <div className="stat-row">
+                <span className="stat-label">HP</span>
+                <span className="stat-value">{pokemonData.stats.hp}</span>
+                <div
+                  className="stat-bar"
+                  style={{ width: getStatWidth(pokemonData.stats.hp) }}
+                >
+                  <div
+                    className={`stat-bar-fill ${getStatColorClass(pokemonData.stats.hp)}`}
+                    style={{ width: '100%' }}
+                  />
+                </div>
               </div>
-            </div>
-            <div className="stat-row">
-              <span className="stat-label">Atk</span>
-              <span className="stat-value">{pokemonData.stats.attack}</span>
-              <div
-                className="stat-bar"
-                style={{ width: getStatWidth(pokemonData.stats.attack) }}
-              >
-                <div 
-                  className={`stat-bar-fill ${getStatColorClass(pokemonData.stats.attack)}`}
-                  style={{ width: '100%' }}
-                />
+              <div className="stat-row">
+                <span className="stat-label">Atk</span>
+                <span className="stat-value">{pokemonData.stats.attack}</span>
+                <div
+                  className="stat-bar"
+                  style={{ width: getStatWidth(pokemonData.stats.attack) }}
+                >
+                  <div
+                    className={`stat-bar-fill ${getStatColorClass(pokemonData.stats.attack)}`}
+                    style={{ width: '100%' }}
+                  />
+                </div>
               </div>
-            </div>
-            <div className="stat-row">
-              <span className="stat-label">Def</span>
-              <span className="stat-value">{pokemonData.stats.defense}</span>
-              <div
-                className="stat-bar"
-                style={{ width: getStatWidth(pokemonData.stats.defense) }}
-              >
-                <div 
-                  className={`stat-bar-fill ${getStatColorClass(pokemonData.stats.defense)}`}
-                  style={{ width: '100%' }}
-                />
+              <div className="stat-row">
+                <span className="stat-label">Def</span>
+                <span className="stat-value">{pokemonData.stats.defense}</span>
+                <div
+                  className="stat-bar"
+                  style={{ width: getStatWidth(pokemonData.stats.defense) }}
+                >
+                  <div
+                    className={`stat-bar-fill ${getStatColorClass(pokemonData.stats.defense)}`}
+                    style={{ width: '100%' }}
+                  />
+                </div>
               </div>
-            </div>
-            <div className="stat-row">
-              <span className="stat-label">SpA</span>
-              <span className="stat-value">
-                {pokemonData.stats.sp_attack ?? pokemonData.stats.specialAttack}
-              </span>
-              <div
-                className="stat-bar"
-                style={{
-                  width: getStatWidth(
-                    pokemonData.stats.sp_attack ?? pokemonData.stats.specialAttack
-                  ),
-                }}
-              >
-                <div 
-                  className={`stat-bar-fill ${getStatColorClass(
-                    pokemonData.stats.sp_attack ?? pokemonData.stats.specialAttack
-                  )}`}
-                  style={{ width: '100%' }}
-                />
+              <div className="stat-row">
+                <span className="stat-label">SpA</span>
+                <span className="stat-value">
+                  {pokemonData.stats.sp_attack ?? pokemonData.stats.specialAttack}
+                </span>
+                <div
+                  className="stat-bar"
+                  style={{
+                    width: getStatWidth(
+                      pokemonData.stats.sp_attack ?? pokemonData.stats.specialAttack
+                    ),
+                  }}
+                >
+                  <div
+                    className={`stat-bar-fill ${getStatColorClass(
+                      pokemonData.stats.sp_attack ?? pokemonData.stats.specialAttack
+                    )}`}
+                    style={{ width: '100%' }}
+                  />
+                </div>
               </div>
-            </div>
-            <div className="stat-row">
-              <span className="stat-label">SpD</span>
-              <span className="stat-value">
-                {pokemonData.stats.sp_defense ?? pokemonData.stats.specialDefense}
-              </span>
-              <div
-                className="stat-bar"
-                style={{
-                  width: getStatWidth(
-                    pokemonData.stats.sp_defense ?? pokemonData.stats.specialDefense
-                  ),
-                }}
-              >
-                <div 
-                  className={`stat-bar-fill ${getStatColorClass(
-                    pokemonData.stats.sp_defense ?? pokemonData.stats.specialDefense
-                  )}`}
-                  style={{ width: '100%' }}
-                />
+              <div className="stat-row">
+                <span className="stat-label">SpD</span>
+                <span className="stat-value">
+                  {pokemonData.stats.sp_defense ?? pokemonData.stats.specialDefense}
+                </span>
+                <div
+                  className="stat-bar"
+                  style={{
+                    width: getStatWidth(
+                      pokemonData.stats.sp_defense ?? pokemonData.stats.specialDefense
+                    ),
+                  }}
+                >
+                  <div
+                    className={`stat-bar-fill ${getStatColorClass(
+                      pokemonData.stats.sp_defense ?? pokemonData.stats.specialDefense
+                    )}`}
+                    style={{ width: '100%' }}
+                  />
+                </div>
               </div>
-            </div>
-            <div className="stat-row">
-              <span className="stat-label">Spe</span>
-              <span className="stat-value">{pokemonData.stats.speed}</span>
-              <div
-                className="stat-bar"
-                style={{ width: getStatWidth(pokemonData.stats.speed) }}
-              >
-                <div 
-                  className={`stat-bar-fill ${getStatColorClass(pokemonData.stats.speed)}`}
-                  style={{ width: '100%' }}
-                />
+              <div className="stat-row">
+                <span className="stat-label">Spe</span>
+                <span className="stat-value">{pokemonData.stats.speed}</span>
+                <div
+                  className="stat-bar"
+                  style={{ width: getStatWidth(pokemonData.stats.speed) }}
+                >
+                  <div
+                    className={`stat-bar-fill ${getStatColorClass(pokemonData.stats.speed)}`}
+                    style={{ width: '100%' }}
+                  />
+                </div>
               </div>
-            </div>
             </>
           )}
         </div>
@@ -346,7 +348,7 @@ const CurrentPokemonPanel: React.FC<CurrentPokemonPanelProps> = ({ current_aucti
                 const lines = pokemonData.description.split(/\\n|\n/);
                 return (
                   <>
-                    {lines[0] && <h1 style={{marginTop: 0}}>{lines[0]}</h1>}
+                    {lines[0] && <h1 style={{ marginTop: 0 }}>{lines[0]}</h1>}
                     {lines.slice(1).map((line, idx) => (
                       <React.Fragment key={idx}>
                         {line}
