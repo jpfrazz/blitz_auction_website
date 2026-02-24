@@ -116,6 +116,7 @@ const EvolutionTree: React.FC<{ node: EvoNode }> = ({ node }) => {
 
 const CurrentPokemonPanel: React.FC<CurrentPokemonPanelProps> = ({ current_auction, all_pokemon }) => {
   const pokemonData: Pokemon = current_auction.pokemon;
+  const [showTipModal, setShowTipModal] = React.useState(false);
   // Build the evolution tree for the current Pokémon
   const evoTree = buildEvolutionTree(pokemonData, all_pokemon);
   const getStatColorClass = (value: number) => {
@@ -176,8 +177,18 @@ const CurrentPokemonPanel: React.FC<CurrentPokemonPanelProps> = ({ current_aucti
     <div className="auction-current-pokemon-box">
       <div className="pokemon-left-column">
         <div className="pokemon-header">
-          <div className="pokemon-left">
-            <h2 className="pokemon-name">{pokemonData.name}</h2>
+          <div className="pokemon-left" style={{ display: 'flex', alignItems: 'center' }}>
+            <h2 className="pokemon-name" style={{ marginRight: 8 }}>{pokemonData.name}</h2>
+            {pokemonData.description && (
+              <button
+                className="pokemon-tip-btn"
+                title="Show tip"
+                onClick={() => setShowTipModal(true)}
+                style={{ marginLeft: 4 }}
+              >
+                <span role="img" aria-label="tip">★</span>
+              </button>
+            )}
           </div>
         </div>
 
@@ -322,6 +333,33 @@ const CurrentPokemonPanel: React.FC<CurrentPokemonPanelProps> = ({ current_aucti
           <EvolutionTree node={evoTree} />
         </div>
       </div>
+
+      {/* Tip Modal */}
+      {showTipModal && pokemonData.description && (
+        <div className="pokemon-tip-modal-overlay" onClick={() => setShowTipModal(false)}>
+          <div className="pokemon-tip-modal" onClick={e => e.stopPropagation()}>
+            <div className="pokemon-tip-modal-header">
+              <button className="pokemon-tip-modal-close" onClick={() => setShowTipModal(false)}>&times;</button>
+            </div>
+            <div className="pokemon-tip-modal-content">
+              {(() => {
+                const lines = pokemonData.description.split(/\\n|\n/);
+                return (
+                  <>
+                    {lines[0] && <h1 style={{marginTop: 0}}>{lines[0]}</h1>}
+                    {lines.slice(1).map((line, idx) => (
+                      <React.Fragment key={idx}>
+                        {line}
+                        {idx < lines.length - 2 && <br />}
+                      </React.Fragment>
+                    ))}
+                  </>
+                );
+              })()}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
