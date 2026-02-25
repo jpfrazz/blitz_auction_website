@@ -175,9 +175,8 @@ const AuctionSetupForm: React.FC = () => {
                 <input
                   type="checkbox"
                   checked={ranked}
-                  hidden={true}
                   onChange={e => setRanked(e.target.checked)}
-                  disabled={isGuest === true}
+                  disabled={/*isGuest === true*/true} // TODO: Re-enable once auth is working
                   title={isGuest === true ? 'You must be logged in to enable ranked' : ''}
                 />
               </div>
@@ -189,8 +188,7 @@ const AuctionSetupForm: React.FC = () => {
             type="button"
             className="auction-setup-btn navButton"
             onClick={() => setShowModal(true)}
-            hidden={true}
-            disabled={ranked}
+            disabled={/*ranked*/true} // TODO: Re-enable once auth is working
           >
             Select Pokémon
           </button>
