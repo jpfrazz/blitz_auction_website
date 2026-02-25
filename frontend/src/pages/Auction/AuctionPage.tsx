@@ -81,7 +81,7 @@ const AuctionPage: React.FC = () => {
         setDraft(draftData);
 
         const alreadyOnTeam = draftData.teams.some(team => team.user_id === user.user_id);
-        if (draftData.draft_state === 'PENDING' && (!alreadyOnTeam || !isLoggedIn)) {
+        if (draftData.draft_state === 'PENDING' && !alreadyOnTeam) {
           setShowJoinModal(true);
         }
       })
