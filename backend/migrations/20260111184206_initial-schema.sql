@@ -92,8 +92,7 @@ CREATE TABLE drafts (
     patch_version TEXT NOT NULL,
     pokemon_drafted INT NOT NULL DEFAULT 0,
     updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-    created_at TIMESTAMPTZ NOT NULL DEFAULT now(),expires_at TIMESTAMPTZ NOT NULL DEFAULT (NOW() + INTERVAL '1 day'),
-
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
     CONSTRAINT at_least_one_host_id CHECK (
         host_user_id IS NOT NULL OR host_guest_id IS NOT NULL
     )
