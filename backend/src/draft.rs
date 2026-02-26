@@ -34,6 +34,7 @@ pub struct Draft {
     pub spectators: Vec<User>,
     pub tx: broadcast::Sender<ServerMessage>,
     pub db_pool: PgPool,
+    pub expires_at: chrono::DateTime<Utc>,
     draft_runner: Arc<DraftRunner>,
 }
 
@@ -181,6 +182,7 @@ impl Draft {
         pokemon: Vec<&'static Pokemon>,
         pool: PgPool,
         draft_runner: Arc<DraftRunner>,
+        expires_at: chrono::DateTime<Utc>,
     ) -> Draft {
         let (tx, _rx) = broadcast::channel(1_000);
         Draft {
@@ -197,6 +199,7 @@ impl Draft {
             current_auction: 0,
             tx,
             draft_runner,
+            expires_at,
         }
     }
 
@@ -278,6 +281,7 @@ impl Draft {
                 pokemon,
                 pool,
                 draft_runner,
+                Utc::now() + chrono::Duration::days(1),
             );
             for (i, p) in draft.pokemon.iter().filter(|p| p.stage == PokemonStage::base && !p.is_baby).enumerate() {
                 let auction = Auction::build(draft.draft_id.clone(), i as u32, p, &mut tx)
