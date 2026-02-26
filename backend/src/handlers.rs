@@ -17,6 +17,7 @@ use axum::{
     response::{Redirect, Response},
 };
 use axum_login::AuthSession;
+use chrono::Utc;
 use oauth2::CsrfToken;
 use serde::{Deserialize, Serialize};
 use sqlx::Row;
@@ -117,7 +118,7 @@ pub async fn list_open_drafts(
     for draft_ref in state.drafts.iter() {
         let draft_lock = draft_ref.value().clone();
         let draft = draft_lock.read().await.clone();
-        if draft.draft_state == DraftState::COMPLETED {
+        if draft.draft_state == DraftState::COMPLETED || draft.expires_at < Utc::now() {
             continue;
         }
         open_drafts.push(draft.into());
@@ -361,10 +362,10 @@ pub async fn get_draft_chats(
     Path(draft_id): Path<String>,
 ) -> Result<Json<Vec<ChatMessage>>, (StatusCode, String)> {
     let rows = sqlx::query(
-        "SELECT c.chat_id, c.draft_id, c.user_id, COALESCE(u.user_name, c.user_id) AS user_name, c.message, c.created_at\
-         FROM chats c\
-         LEFT JOIN users u ON u.user_id = c.user_id\
-         WHERE c.draft_id = $1\
+        "SELECT c.chat_id, c.draft_id, c.user_id, COALESCE(u.user_name, c.user_id) AS user_name, c.message, c.created_at
+         FROM chats c
+         LEFT JOIN users u ON u.user_id = c.user_id
+         WHERE c.draft_id = $1
          ORDER BY c.created_at ASC",
     )
     .bind(&draft_id)
