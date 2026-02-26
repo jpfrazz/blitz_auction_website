@@ -187,13 +187,9 @@ const Info = () => (
             <div className="slateport-market-title">Game Start — 1000</div>
             <ul className="slateport-list">
               <li className="tm-grass">Bullet Seed</li>
-              <li className="tm-ice">Hail</li>
               <li className='tm-normal'>Safeguard</li>
-              <li className="tm-rock">Sandstorm</li>
-              <li className="tm-psychic">Skill Swap</li>
               <li className="tm-steel">Steel Wing</li>
               <li className="tm-dark">Thief</li>
-              <li className="tm-dark">Torment</li>
               <li className="tm-psychic">Trick Room</li>
             </ul>
           </div>
@@ -201,9 +197,13 @@ const Info = () => (
             <div className="slateport-market-title">Badge 4 — 2000</div>
             <ul className="slateport-list">
               <li className='tm-normal'>Double Team</li>
+              <li className="tm-ice">Hail</li>
               <li className="tm-psychic">Light Screen</li>
+              <li className="tm-water">Rain Dance</li>
               <li className="tm-psychic">Reflect</li>
               <li className="tm-psychic">Rest</li>
+              <li className="tm-rock">Sandstorm</li>
+              <li className="tm-fire">Sunny Day</li>
             </ul>
           </div>
           <div className="slateport-market-card">
@@ -216,11 +216,10 @@ const Info = () => (
               <li className="tm-grass">Giga Drain</li>
               <li className="tm-normal">Hyper Beam</li>
               <li className="tm-steel">Iron Tail</li>
-              <li className="tm-water">Rain Dance</li>
+              <li className="tm-rock">Rock Slide</li>
               <li className="tm-ghost">Shadow Ball</li>
               <li className="tm-dark">Snarl</li>
               <li className="tm-grass">Solar Beam</li>
-              <li className="tm-fire">Sunny Day</li>
               <li className="tm-bug">X Scissor</li>
             </ul>
           </div>
