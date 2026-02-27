@@ -25,8 +25,8 @@ const AuctionChatBox: React.FC<AuctionChatBoxProps> = ({ draftId, isGuest, isLog
 
   useEffect(() => {
     loadChats();
-    // const interval = setInterval(loadChats, 1000);
-    // return () => clearInterval(interval);
+    const interval = setInterval(loadChats, 1000);
+    return () => clearInterval(interval);
   }, [loadChats]);
 
   const handleSend = async (event: React.FormEvent) => {
