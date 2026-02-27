@@ -401,6 +401,7 @@ const Info = () => (
                 <img src="/MiniIcons/tirtouga.png" alt="Tirtouga" />
                 <img src="/MiniIcons/tyrunt.png" alt="Tyrunt" />
                 <img src="/MiniIcons/varoom.png" alt="Varoom" />
+                <img src="/MiniIcons/wailmer.png" alt="Wailmer" />
               </div>
               <ul>
                 <li>Amaura &gt; Aurorus</li>
@@ -421,6 +422,7 @@ const Info = () => (
                 <li>Tirtouga &gt; Carracosta</li>
                 <li>Tyrunt &gt; Tyrantrum</li>
                 <li>Varoom &gt; Revavroom</li>
+                <li>Wailmer &gt; Wailord</li>
               </ul>
             </details>
             <details>
@@ -454,6 +456,7 @@ const Info = () => (
               <summary className='slateport-market-dropdown'>Leaf Stone</summary>
               <ul>
                 <li>Gloom &gt; Vileplume</li>
+                <li>Cottonee &gt; Whimsicott</li>
                 <li>Exeggcute &gt; Exeggutor</li>
                 <li>Voltorb &gt; Electrode</li>
                 <li>Eevee &gt; Leafeon</li>
@@ -507,6 +510,7 @@ const Info = () => (
               <ul>
                 <li>Doublade &gt; Aegislash</li>
                 <li>Litwick &gt; Chandelure</li>
+                <li>Misdreavus &gt; Mismagius</li>
                 <li>Murkrow &gt; Honchkrow</li>
                 <li>Sneasel &gt; Weavile</li>
               </ul>
