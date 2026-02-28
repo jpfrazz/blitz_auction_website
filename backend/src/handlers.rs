@@ -421,13 +421,13 @@ pub async fn create_draft_chat(
 
     let user_id = user.get_user_id_string();
     let row = sqlx::query(
-        "WITH inserted AS (\
-            INSERT INTO chats (draft_id, user_id, message)\
-            VALUES ($1, $2, $3)\
-            RETURNING chat_id, draft_id, user_id, message, created_at\
-        )\
-        SELECT i.chat_id, i.draft_id, i.user_id, COALESCE(u.user_name, i.user_id) AS user_name, i.message, i.created_at\
-        FROM inserted i\
+        "WITH inserted AS (
+            INSERT INTO chats (draft_id, user_id, message)
+            VALUES ($1, $2, $3)
+            RETURNING chat_id, draft_id, user_id, message, created_at
+        )
+        SELECT i.chat_id, i.draft_id, i.user_id, COALESCE(u.user_name, i.user_id) AS user_name, i.message, i.created_at
+        FROM inserted i
         LEFT JOIN users u ON u.user_id = i.user_id",
     )
     .bind(&draft_id)
@@ -562,4 +562,18 @@ async fn handle_websocket(mut socket: WebSocket, tx: broadcast::Sender<ServerMes
             }
         }
     }
+}
+
+#[debug_handler]
+pub async fn logout(
+    mut auth_session: AuthSession<AuthBackend>,
+    session: Session,
+) -> Result<Redirect, String> {
+    // Log out the user
+    if let Err(_e) = auth_session.logout().await {
+        return Err("failed to logout".to_string());
+    }
+    // Clear the session
+    session.clear().await;
+    Ok(Redirect::to("/"))
 }

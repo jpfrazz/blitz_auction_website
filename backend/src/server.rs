@@ -127,7 +127,8 @@ impl Server {
                 "/drafts/{draft_id}/chats",
                 get(handlers::get_draft_chats).post(handlers::create_draft_chat),
             )
-            .route_layer(middleware::from_fn(auto_login_guest));
+            .route_layer(middleware::from_fn(auto_login_guest))
+            .route("/logout", get(handlers::logout));
 
         Router::new()
             .merge(public_routes)
