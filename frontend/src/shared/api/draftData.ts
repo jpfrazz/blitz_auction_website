@@ -96,3 +96,12 @@ export async function createDraftChat(draft_id: string, message: string): Promis
   const response = await axios.post(`/api/drafts/${draft_id}/chats`, { message });
   return response.data;
 }
+
+// Change guest name
+export async function changeGuestName(newName: string): Promise<string> {
+  // Only send the part after 'guest:'
+  const trimmed = newName.trim();
+  if (!trimmed) throw new Error('Name cannot be empty');
+  const response = await axios.post('/api/guests/change-name', { new_name: `guest:${trimmed}` });
+  return response.data;
+}

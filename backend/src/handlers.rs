@@ -70,6 +70,11 @@ pub struct CreateChatRequest {
     pub message: String,
 }
 
+#[derive(Clone, Debug, Deserialize)]
+pub struct ChangeGuestNameRequest {
+    pub new_name: String,
+}
+
 #[debug_handler]
 pub async fn create_draft(
     State(state): State<ServerState>,
@@ -576,4 +581,48 @@ pub async fn logout(
     // Clear the session
     session.clear().await;
     Ok(Redirect::to("/"))
+}
+
+#[debug_handler]
+pub async fn change_guest_name(
+    mut auth_session: AuthSession<AuthBackend>,
+    State(state): State<ServerState>,
+    Json(req): Json<ChangeGuestNameRequest>,
+) -> Result<Json<String>, (StatusCode, String)> {
+    let user_id = match auth_session.user {
+        Some(User::GuestUser(ref guest)) => guest.user_id.clone(),
+        _ => return Err((StatusCode::FORBIDDEN, "Only guests can change their name".to_string())),
+    };
+    let new_name = req.new_name.trim();
+    if new_name.is_empty() || new_name.len() > 32 {
+        return Err((StatusCode::BAD_REQUEST, "Name must be 1-32 characters".to_string()));
+    }
+    let res = sqlx::query!(
+        "UPDATE guests SET user_name = $1 WHERE user_id = $2",
+        new_name,
+        user_id
+    )
+    .execute(&state.db_pool)
+    .await;
+    match res {
+        Ok(_) => {
+            // Update the auth session with the new name
+            if let Some(User::GuestUser(guest)) = auth_session.user.as_mut() {
+                guest.user_name = new_name.to_string();
+            }
+            // Update all teams in active drafts for this guest
+            for draft_ref in state.drafts.iter() {
+                let draft_lock = draft_ref.value().clone();
+                let mut draft = draft_lock.write().await;
+                if let Some(team) = draft.teams.get_mut(&user_id) {
+                    team.username = new_name.to_string();
+                    // Optionally broadcast update to websocket clients
+                    let draft_response = crate::draft::DraftResponse::from(draft.clone());
+                    let _ = draft.tx.send(crate::messages::ServerMessage::DraftUpdate(draft_response));
+                }
+            }
+            Ok(Json(new_name.to_string()))
+        },
+        Err(e) => Err((StatusCode::INTERNAL_SERVER_ERROR, format!("DB error: {}", e))),
+    }
 }
