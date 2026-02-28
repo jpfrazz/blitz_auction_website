@@ -68,18 +68,32 @@ function Header() {
             <a href="/api/login" className="navButton">Login</a>
           )}
           {user && !user.is_guest && (
-            <div className="userInfo">
-              <img
-                src={`https://cdn.discordapp.com/avatars/${user.user_id}/${user.avatar}.png`}
-                alt="avatar"
-                className="userAvatar"
-              />
-              <h1>{user.username}</h1>
+            <div className="userDropdown">
+              <button className="userDropdownTrigger" type="button">
+                <img
+                  src={`https://cdn.discordapp.com/avatars/${user.user_id}/${user.avatar}.png`}
+                  alt="avatar"
+                  className="userAvatar"
+                />
+                <h1>{user.username}</h1>
+              </button>
+              <div className="userDropdownMenu navDropdownMenu">
+                <button className="navButton userDropdownItem" onClick={() => window.location.href = '/api/logout'}>
+                  Logout
+                </button>
+              </div>
             </div>
           )}
           {user && user.is_guest && (
-            <div className="userInfo">
-              <h1>{user.username}</h1>
+            <div className="userDropdown">
+              <button className="userDropdownTrigger" type="button">
+                <h1>{user.username}</h1>
+              </button>
+              <div className="userDropdownMenu navDropdownMenu">
+                <button className="navButton userDropdownItem" onClick={() => window.location.href = '/api/logout'}>
+                  Logout
+                </button>
+              </div>
             </div>
           )}
         </nav>
