@@ -59,6 +59,13 @@
     background: $eb-primary-hover;
 }
 
+.player-disconnected {
+    background: #b71c1c !important;
+    color: #fff !important;
+    border: 2px solid #b71c1c !important;
+    opacity: 0.85;
+}
+
 .highest-bidder {
     border: 3px solid $eb-primary-hover;
 }

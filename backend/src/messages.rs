@@ -6,6 +6,7 @@ use crate::draft::DraftState;
 #[derive(Clone, Debug, Serialize)]
 #[serde(tag = "type", content = "data")]
 pub enum ServerMessage {
+        DraftUpdate(crate::draft::DraftResponse),
     AuctionStarted {
         pokemon_name: String,
         starting_bid: u32,

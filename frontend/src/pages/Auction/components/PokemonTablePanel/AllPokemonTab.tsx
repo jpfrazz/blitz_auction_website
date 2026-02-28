@@ -182,91 +182,88 @@ const AllPokemonTab: React.FC<AllPokemonTabProps> = ({ pokemon, auctions }) => {
                           role="button"
                           aria-label="Toggle sort"
                         >
-                            {header.column.getIsSorted() ? (
-                              header.column.getIsSorted() === 'desc' ? '↓' : '↑'
+                          {header.column.getIsSorted() ? (
+                            header.column.getIsSorted() === 'desc' ? '↓' : '↑'
                           ) : '⇅'}
                         </span>
                       )}
                     </div>
-                  <div>
-                    {header.column.getCanFilter() ? (
-                      <input
-                        type="text"
-                        value={(header.column.getFilterValue() ?? '') as string}
-                        onChange={e => header.column.setFilterValue(e.target.value)}
-                        placeholder={`Search...`}
-                        style={{ width: '90%', marginTop: 4, fontSize: '0.9em' }}
-                      />
-                    ) : null}
-                  </div>
-                </th>
-              ))}
-            </tr>
-          ))}
-        </thead>
-        <tbody>
-          {table.getRowModel().rows.map(row => (
-            <tr key={row.id}>
-              {row.getVisibleCells().map(cell => {
-                // Render both types as pills in the 'Type' column
-                if (cell.column.id === 'type1') {
-                  const type1 = cell.getValue() as string;
-                  const type2 = cell.row.original.type2 as string | undefined;
-                  if (!type1 && !type2) return <td key={cell.id}></td>;
-                  return (
-                    <td key={cell.id}>
-                      <span className="type-pill-group">
-                        {type1 && (
-                          <span className={`type-pill type-pill-${type1.toLowerCase()}`}>{type1}</span>
-                        )}
-                        {type2 && (
-                          <span className={`type-pill type-pill-${type2.toLowerCase()}`}>{type2}</span>
-                        )}
-                      </span>
-                    </td>
-                  );
-                }
-                if (cell.column.id === 'name') {
-                  const name = cell.getValue() as string;
-                  return (
-                    <td key={cell.id}>
-                      <img
-                        src={`/MiniIcons/${name.toLowerCase()}.png`}
-                        alt={name}
+                    <div>
+                      {header.column.getCanFilter() ? (
+                        <input
+                          type="text"
+                          value={(header.column.getFilterValue() ?? '') as string}
+                          onChange={e => header.column.setFilterValue(e.target.value)}
+                          placeholder={`Search...`}
+                          style={{ width: '90%', marginTop: 4, fontSize: '0.9em' }}
+                        />
+                      ) : null}
+                    </div>
+                  </th>
+                ))}
+              </tr>
+            ))}
+          </thead>
+          <tbody>
+            {table.getRowModel().rows.map(row => (
+              <tr key={row.id}>
+                {row.getVisibleCells().map(cell => {
+                  // Render both types as pills in the 'Type' column
+                  if (cell.column.id === 'type1') {
+                    const type1 = cell.getValue() as string;
+                    const type2 = cell.row.original.type2 as string | undefined;
+                    if (!type1 && !type2) return <td key={cell.id}></td>;
+                    return (
+                      <td key={cell.id}>
+                        <span className="type-pill-group">
+                          {type1 && (
+                            <span className={`type-pill type-pill-${type1.toLowerCase()}`}>{type1}</span>
+                          )}
+                          {type2 && (
+                            <span className={`type-pill type-pill-${type2.toLowerCase()}`}>{type2}</span>
+                          )}
+                        </span>
+                      </td>
+                    );
+                  }
+                  if (cell.column.id === 'name') {
+                    const name = cell.getValue() as string;
+                    return (
+                      <td key={cell.id}>
+                        <img
+                          src={`/MiniIcons/${name.toLowerCase()}.png`}
+                          alt={name}
                           className="pokemon-table-img"
                           onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }}
                         />
-                      <button
-                        className="pokemon-name-button"
-                        type="button"
-                        onClick={() => setSelectedPokemon(cell.row.original as Pokemon)}
+                        <button
+                          className="pokemon-name-button"
+                          type="button"
+                          onClick={() => setSelectedPokemon(cell.row.original as Pokemon)}
+                        >
+                          {name}
+                        </button>
+                      </td>
+                    );
+                  }
+                  if (cell.column.id === 'baseStatTotal') {
+                    const bst = cell.getValue() as number;
+                    return (
+                      <td
+                        key={cell.id}
                       >
-                        {name}
-                      </button>
-                    </td>
-                  );
-                }
-                if (cell.column.id === 'baseStatTotal') {
-                  const bst = cell.getValue() as number;
-                  const warning = bst > 430 ? 'Warning: This mon will be disobedient for the first 2 gyms.' : undefined;
+                        {bst}
+                      </td>
+                    );
+                  }
                   return (
-                    <td
-                      key={cell.id}
-                      style={bst > 430 ? { color: 'red', fontWeight: 700 } : {}}
-                      title={warning}
-                    >
-                      {bst}
+                    <td key={cell.id}>
+                      {flexRender(cell.column.columnDef.cell, cell.getContext())}
                     </td>
                   );
-                }
-                return (
-                  <td key={cell.id}>
-                    {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                  </td>
-                );
-              })}
-            </tr>
-          ))}
+                })}
+              </tr>
+            ))}
           </tbody>
         </table>
       </div>

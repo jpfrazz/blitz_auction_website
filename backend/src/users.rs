@@ -181,6 +181,7 @@ impl AuthBackend {
     pub fn authorize_url(&self) -> (Url, CsrfToken) {
         self.client
         .authorize_url(CsrfToken::new_random)
+        .add_scope(Scope::new("identify".to_string()))
         .url()
     }
 }
