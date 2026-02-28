@@ -6,9 +6,10 @@ interface PlayerRowProps {
   teams: Team[];
   numPlayers: number;
   highestBidderId?: string | null;
+  wsConnected?: boolean;
 }
 
-const PlayerRow: React.FC<PlayerRowProps> = ({ teams, numPlayers, highestBidderId }) => {
+const PlayerRow: React.FC<PlayerRowProps> = ({ teams, numPlayers, highestBidderId, wsConnected = true }) => {
   return (
     <div className="auction-players-row">
       {Array.from({ length: numPlayers }).map((_, idx) => {
@@ -18,10 +19,11 @@ const PlayerRow: React.FC<PlayerRowProps> = ({ teams, numPlayers, highestBidderI
         const readinessClass = isFilled && team?.ready ? 'player-ready' : 'player-not-ready';
         const teamMoney = team?.budget_remaining ?? 0;
         const wonPokemon = team?.auctions_won ?? team?.pokemon ?? [];
+        const disconnectedClass = !wsConnected ? 'player-disconnected' : '';
         return (
           <div
             key={idx}
-            className={`auction-player-box ${isFilled ? readinessClass : 'player-open'} ${team?.user_id === highestBidderId ? 'highest-bidder' : ''}`}
+            className={`auction-player-box ${isFilled ? readinessClass : 'player-open'} ${team?.user_id === highestBidderId ? 'highest-bidder' : ''} ${disconnectedClass}`}
           >
             <div className="auction-player-name">
               {playerName || 'Open Slot'}

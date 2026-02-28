@@ -216,6 +216,10 @@ pub async fn ready_up(
 
     team.ready = ready;
 
+    // Broadcast full draft object to all websocket clients
+    let draft_response = crate::draft::DraftResponse::from(draft.clone());
+    let _ = draft.tx.send(crate::messages::ServerMessage::DraftUpdate(draft_response));
+
     // Removed automatic draft start when all teams are ready
     let draft_started = false;
 
@@ -341,6 +345,10 @@ pub async fn claim_eeveelution(
     let user_id = user.get_user_id_string();
     if let Some(team) = draft.teams.get_mut(&user_id) {
         team.auctions_won.push(target_pokemon);
+
+        // Broadcast full draft object to all websocket clients
+        let draft_response = crate::draft::DraftResponse::from(draft.clone());
+        let _ = draft.tx.send(crate::messages::ServerMessage::DraftUpdate(draft_response));
 
         Ok(Json(serde_json::json!({
             "success": true,

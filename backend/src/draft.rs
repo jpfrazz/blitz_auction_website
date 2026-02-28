@@ -360,6 +360,7 @@ impl Draft {
         team.auctions_won.push(completed_auction.pokemon);
         team.budget_remaining -= completed_auction.highest_bid;
 
+
         // update websocket
         // self.tx
         //     .send(ServerMessage::AuctionResult {
@@ -376,6 +377,10 @@ impl Draft {
         //         eprintln!("failed sending result to channel");
         //         e.to_string()
         //     })?;
+
+        // Broadcast full draft object to all websocket clients
+        let draft_response = crate::draft::DraftResponse::from(self.clone());
+        let _ = self.tx.send(crate::messages::ServerMessage::DraftUpdate(draft_response));
 
         Ok(())
     }
@@ -416,6 +421,11 @@ impl Draft {
         };
 
         self.teams.insert(user_id, team);
+
+        // Broadcast full draft object to all websocket clients
+        let draft_response = crate::draft::DraftResponse::from(self.clone());
+        let _ = self.tx.send(crate::messages::ServerMessage::DraftUpdate(draft_response));
+
         Ok(())
     }
 
@@ -553,6 +563,10 @@ impl Draft {
         //     expires_at,
         // });
 
+        // Broadcast full draft object to all websocket clients
+        let draft_response = crate::draft::DraftResponse::from(self.clone());
+        let _ = self.tx.send(crate::messages::ServerMessage::DraftUpdate(draft_response));
+
         Ok(ClientBidResponse {
             accepted: true,
             error: None,
@@ -630,6 +644,11 @@ impl Draft {
         })?;
 
         self.draft_state = DraftState::BIDDING;
+
+        // Broadcast full draft object to all websocket clients
+        let draft_response = crate::draft::DraftResponse::from(self.clone());
+        let _ = self.tx.send(crate::messages::ServerMessage::DraftUpdate(draft_response));
+
         Ok(())
     }
 

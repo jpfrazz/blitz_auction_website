@@ -1,4 +1,5 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
+import { connectDraftWebSocket } from '../../shared/api/draftWebSocket';
 import { useLocation } from 'react-router-dom';
 import Header from '../../shared/components/Header';
 import { fetchDraftById, readyUpDraft, joinDraft, fetchCurrentUser, claimEeveelution, startDraft } from '../../shared/api/draftData';
@@ -33,6 +34,16 @@ const AuctionPage: React.FC = () => {
   const [joinError, setJoinError] = useState<string | null>(null);
   const [showEeveelutionModal, setShowEeveelutionModal] = useState(false);
   const [avatar, setAvatar] = useState<string | undefined>(undefined);
+  const [wsConnected, setWsConnected] = useState(true);
+
+  const wsRef = useRef<WebSocket | null>(null);
+
+  const connectWebSocket = (draftId: string) => {
+    if (wsRef.current) {
+      wsRef.current.close();
+    }
+    wsRef.current = connectDraftWebSocket(draftId, setDraft, setWsConnected);
+  };
 
   const attemptJoinDraft = async (password?: string) => {
     if (!auctionId) return;
@@ -63,11 +74,9 @@ const AuctionPage: React.FC = () => {
   useEffect(() => {
     if (!auctionId) return;
 
-    // Initial fetch
     setLoading(true);
     fetchCurrentUser()
       .then(user => {
-        console.log("Fetched current user:", user);
         setCurrentUserId(user.user_id);
         setIsGuest(user.is_guest);
         setIsLoggedIn(!!user.user_id);
@@ -77,9 +86,8 @@ const AuctionPage: React.FC = () => {
         return fetchDraftById(auctionId).then(draftData => ({ user, draftData }));
       })
       .then(({ user, draftData }) => {
-        console.log("Fetched draft successfully", draftData);
         setDraft(draftData);
-
+        connectWebSocket(auctionId);
         const alreadyOnTeam = draftData.teams.some(team => team.user_id === user.user_id);
         if (draftData.draft_state === 'PENDING' && !alreadyOnTeam) {
           setShowJoinModal(true);
@@ -88,17 +96,11 @@ const AuctionPage: React.FC = () => {
       .catch(error => console.error('Error fetching draft on initial load:', error))
       .finally(() => setLoading(false));
 
-    // Set up interval to fetch every second
-    const interval = setInterval(() => {
-      fetchDraftById(auctionId)
-        .then(data => {
-          setDraft(data);
-          console.log("Interval draft_state:", data);
-        })
-        .catch(error => console.error('Error fetching draft in interval:', error));
-    }, 1000);
-
-    return () => clearInterval(interval);
+    return () => {
+      if (wsRef.current) {
+        wsRef.current.close();
+      }
+    };
   }, [auctionId]);
 
   const handleReadyUp = async () => {
@@ -204,6 +206,7 @@ const AuctionPage: React.FC = () => {
                 teams={draft.teams}
                 numPlayers={draft.teams.length}
                 highestBidderId={draft.current_auction ? getUserId(draft.current_auction.highest_bidder) : null}
+                wsConnected={wsConnected}
               />
             </div>
             {/* Main content grid */}
