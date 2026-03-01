@@ -14,8 +14,8 @@ export async function fetchCurrentUser(): Promise<{user_id: string | null, usern
     };
   } else if (data.DiscordUser) {
     return {
-      user_id: data.DiscordUser.id,
-      username: data.DiscordUser.username,
+      user_id: data.DiscordUser.user_id ?? data.DiscordUser.id,
+      username: data.DiscordUser.user_name ?? data.DiscordUser.username,
       avatar: data.DiscordUser.avatar,
       is_guest: false,
     };
