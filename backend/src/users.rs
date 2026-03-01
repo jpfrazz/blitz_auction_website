@@ -217,7 +217,7 @@ impl AuthBackend {
         let random_nature_index = (uuid::Uuid::new_v4().as_u128() as usize) % POKEMON_NATURES.len();
         let random_nature = POKEMON_NATURES[random_nature_index];
 
-        let random_pokemon_name = pokemon::get_highest_patch_pokemon_data()
+        let random_pokemon_name = pokemon::get_pokemon_data(&Vec::new())
             .and_then(|pokemon_data| {
                 if pokemon_data.is_empty() {
                     None
