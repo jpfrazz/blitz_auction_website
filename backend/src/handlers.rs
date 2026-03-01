@@ -149,6 +149,19 @@ pub async fn get_draft(
 }
 
 #[debug_handler]
+pub async fn get_pokemon(
+) -> Result<Json<Vec<Arc<pokemon::Pokemon>>>, (StatusCode, String)> {
+    let Some(pokemon) = pokemon::get_pokemon_data(&Vec::new()) else {
+        return Err((
+            StatusCode::NOT_FOUND,
+            "no pokemon data available".to_string(),
+        ));
+    };
+
+    Ok(Json(pokemon))
+}
+
+#[debug_handler]
 pub async fn join_draft(
     State(state): State<ServerState>,
     Path(draft_id): Path<String>,
