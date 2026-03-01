@@ -670,10 +670,13 @@ const Info = () => (
         <h2 className="info-question">Complete Learnsets</h2>
         <hr />
         <p className="info-answer">
-          Emerald Blitz uses custom learnsets for all Pokémon. For a complete list of moves each Pokémon can learn, please refer to the <a href="/Pokedex" target="_blank" rel="noopener noreferrer">
-              Pokédex
-            </a>.
+          Emerald Blitz uses custom learnsets for all Pokémon based on generation 7. For a complete list of moves each Pokémon can learn, see:
         </p>
+        <ul>
+          <li><a href="https://github.com/FranklyNathan/EmeraldBlitz/blob/main/src/data/pokemon/level_up_learnsets/gen_7.h" target="_blank" rel="noopener noreferrer">Level-Up Moves</a></li>
+          <li><a href="https://github.com/FranklyNathan/EmeraldBlitz/blob/main/src/data/pokemon/teachable_learnsets.h" target="_blank" rel="noopener noreferrer">Teachable Moves</a></li>
+          <li><a href="https://github.com/FranklyNathan/EmeraldBlitz/blob/main/src/data/pokemon/egg_moves.h" target="_blank" rel="noopener noreferrer">Egg Moves</a></li>
+        </ul>
       </section>
 
       <section id="ai-logic" className="info-section">

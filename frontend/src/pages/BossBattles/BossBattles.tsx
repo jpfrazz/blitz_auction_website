@@ -118,7 +118,8 @@ const BossBattles = () => {
         const match = trainerIdUpper.match(/^(.*?)(?:\s+(\d+))?$/);
         
         if (match) {
-          const baseName = match[1];
+          let baseName = match[1];
+          if (baseName === 'JUAN') baseName = 'JUAN AND WALLACE';
           if (gymLeaders.includes(baseName)) {
              stage = match[2] ? `gym-${match[2]}` : 'gym';
           } else if (e4Members.includes(trainerKey)) {
@@ -232,8 +233,12 @@ const BossBattles = () => {
         const number = match && match[2] ? Number(match[2]) : null;
 
         const normalizedTrainerName = name.replace(/\sand\s/gi, ' AND ').toUpperCase();
+
+        let searchKey = normalizedTrainerName;
+        if (searchKey === 'TATE AND LIZA') searchKey = 'TATE&LIZA';
+        if (searchKey === 'JUAN AND WALLACE') searchKey = 'JUAN&WALCE';
         
-        if (trainer.trainerKey !== normalizedTrainerName) return false;
+        if (trainer.trainerKey !== searchKey) return false;
         if (number !== null && trainer.stage !== `gym-${number}`) return false;
       }
       return true;
