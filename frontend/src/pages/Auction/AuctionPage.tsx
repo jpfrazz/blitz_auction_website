@@ -297,6 +297,7 @@ const AuctionPage: React.FC = () => {
                         current_auction={draft.current_auction}
                         draft_id={draft.draft_id}
                         currentAuctionExpiresAt={draft.current_auction_expires_at}
+                        currentServerTime={draft.current_server_time}
                         canBid={Boolean(
                           currentUserId &&
                           draft.teams.some(team => team.user_id === currentUserId)

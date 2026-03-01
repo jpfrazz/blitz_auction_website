@@ -81,6 +81,7 @@ export interface Draft {
   completed_auctions: Auction[];
   current_auction: Auction | null;
   current_auction_expires_at?: string;
+  current_server_time?: string;
   pokemon: Pokemon[];
 }
 
