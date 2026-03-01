@@ -76,7 +76,6 @@ export interface Draft {
   current_auction: Auction | null;
   current_auction_expires_at?: string;
   pokemon: Pokemon[];
-  patch_version: string;
 }
 
 export interface ChatMessage {

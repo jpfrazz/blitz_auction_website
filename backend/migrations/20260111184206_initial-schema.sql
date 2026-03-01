@@ -29,7 +29,6 @@ CREATE TABLE guests (
 CREATE TABLE pokemon (
     pokedex_id INT NOT NULL,
     name TEXT NOT NULL,
-    patch_version TEXT NOT NULL,
     form TEXT NOT NULL DEFAULT '',
     stage TEXT NOT NULL DEFAULT 'Base',
     description TEXT,
@@ -50,9 +49,9 @@ CREATE TABLE pokemon (
     sp_defense INT NOT NULL,
     speed INT NOT NULL,
 
-    PRIMARY KEY (pokedex_id, form, patch_version),
-    FOREIGN KEY (evolves_from_id, evolves_from_form, patch_version)
-        REFERENCES pokemon(pokedex_id, form, patch_version)
+    PRIMARY KEY (pokedex_id, form),
+    FOREIGN KEY (evolves_from_id, evolves_from_form)
+        REFERENCES pokemon(pokedex_id, form)
 );
 
 CREATE TABLE moves (
@@ -70,13 +69,12 @@ CREATE TABLE moves (
 CREATE TABLE key_moves (
     pokedex_id INT NOT NULL,
     form TEXT NOT NULL DEFAULT '',
-    patch_version TEXT NOT NULL,
     move_name TEXT NOT NULL REFERENCES moves(name),
     learn_method TEXT NOT NULL,
     species TEXT,
 
-    FOREIGN KEY (pokedex_id, form, patch_version)
-        REFERENCES pokemon(pokedex_id, form, patch_version)
+    FOREIGN KEY (pokedex_id, form)
+        REFERENCES pokemon(pokedex_id, form)
         ON DELETE CASCADE
 );
 
@@ -89,7 +87,6 @@ CREATE TABLE drafts (
     starting_money INT NOT NULL DEFAULT 20000,
     num_teams INT NOT NULL DEFAULT 8,
     status TEXT NOT NULL DEFAULT 'PENDING',
-    patch_version TEXT NOT NULL,
     pokemon_drafted INT NOT NULL DEFAULT 0,
     updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
     created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
@@ -102,7 +99,6 @@ CREATE TABLE auctions (
     auction_id BIGSERIAL NOT NULL PRIMARY KEY,
     pokedex_id INT NOT NULL,
     form TEXT NOT NULL,
-    patch_version TEXT NOT NULL,
     draft_id TEXT NOT NULL REFERENCES drafts(draft_id) ON DELETE CASCADE,
     draft_order INT NOT NULL,
     status TEXT NOT NULL DEFAULT 'PENDING',
@@ -112,8 +108,8 @@ CREATE TABLE auctions (
     updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
     created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
 
-    FOREIGN KEY (pokedex_id, form, patch_version)
-        REFERENCES pokemon(pokedex_id, form, patch_version),
+    FOREIGN KEY (pokedex_id, form)
+        REFERENCES pokemon(pokedex_id, form),
 
     CONSTRAINT at_least_one_winner CHECK (
         winning_bid IS NULL OR (winning_user_id IS NOT NULL OR winning_guest_id IS NOT NULL)

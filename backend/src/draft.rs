@@ -28,7 +28,7 @@ pub struct Draft {
     pub draft_state: DraftState,
     pub settings: DraftSettings,
     pub current_auction: u32,
-    pub pokemon: Vec<&'static Pokemon>,
+    pub pokemon: Vec<Arc<Pokemon>>,
     pub auctions: Vec<Auction>,
     pub teams: HashMap<String, Team>,
     pub spectators: Vec<User>,
@@ -52,8 +52,7 @@ pub struct DraftResponse {
     completed_auctions: Vec<Auction>,
     current_auction: Option<Auction>,
     current_auction_expires_at: Option<chrono::DateTime<Utc>>,
-    pokemon: Vec<&'static Pokemon>,
-    patch_version: String,
+    pokemon: Vec<Arc<Pokemon>>,
 }
 
 #[derive(Clone, Debug, Serialize)]
@@ -108,7 +107,6 @@ impl From<Draft> for DraftResponse {
                 .take(draft.current_auction as usize)
                 .collect(),
             pokemon: draft.pokemon,
-            patch_version: draft.settings.patch_version,
         }
     }
 }
@@ -159,7 +157,6 @@ pub struct DraftSettings {
     #[serde(default)]
     password: Option<String>,
     excluded_pokemon: Vec<ExcludedPokemon>,
-    patch_version: String,
     num_auctions: u32,
     pub auction_length: Duration,
 }
@@ -170,7 +167,7 @@ pub struct Team {
     pub username: String,
     pub ready: bool,
     budget_remaining: u32,
-    pub auctions_won: Vec<&'static Pokemon>,
+    pub auctions_won: Vec<Arc<Pokemon>>,
 }
 
 impl Draft {
@@ -179,7 +176,7 @@ impl Draft {
         draft_name: String,
         host: User,
         settings: DraftSettings,
-        pokemon: Vec<&'static Pokemon>,
+        pokemon: Vec<Arc<Pokemon>>,
         pool: PgPool,
         draft_runner: Arc<DraftRunner>,
         expires_at: chrono::DateTime<Utc>,
@@ -239,11 +236,10 @@ impl Draft {
             });
 
             let Some(mut pokemon) =
-                pokemon::get_pokemon_data(&settings.patch_version, &settings.excluded_pokemon)
+                pokemon::get_pokemon_data(&settings.excluded_pokemon)
             else {
                 return Err(format!(
-                    "requested patch_version does not exist: {}",
-                    settings.patch_version
+                    "error getting pokemon data",
                 ));
             };
             // always randomize order
@@ -251,8 +247,8 @@ impl Draft {
 
             let query_string = format!(
                 r#"
-                INSERT INTO drafts (draft_id, draft_name, password, num_teams, starting_money, patch_version, ranked, {})
-                VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+                INSERT INTO drafts (draft_id, draft_name, password, num_teams, starting_money, ranked, {})
+                VALUES ($1, $2, $3, $4, $5, $6, $7)
                 "#,
                 host_field,
             );
@@ -263,7 +259,6 @@ impl Draft {
                 .bind(&settings.password)
                 .bind(settings.num_teams as i32)
                 .bind(settings.starting_money as i32)
-                .bind(&settings.patch_version)
                 .bind(settings.ranked)
                 .bind(&host_id)
                 .execute(&mut *tx)
@@ -284,7 +279,7 @@ impl Draft {
                 Utc::now() + chrono::Duration::days(1),
             );
             for (i, p) in draft.pokemon.iter().filter(|p| p.stage == PokemonStage::base && !p.is_baby).enumerate() {
-                let auction = Auction::build(draft.draft_id.clone(), i as u32, p, &mut tx)
+                let auction = Auction::build(draft.draft_id.clone(), i as u32, p.clone(), &mut tx)
                     .await
                     .map_err(|e| {
                         let error_str = format!("couldn't create auction: {}", e);
@@ -357,7 +352,7 @@ impl Draft {
             )
             .expect("auction winner should be on a team");
 
-        team.auctions_won.push(completed_auction.pokemon);
+        team.auctions_won.push(completed_auction.pokemon.clone());
         team.budget_remaining -= completed_auction.highest_bid;
 
 
