@@ -1,38 +1,42 @@
 @import '../../../../shared/style/theme.scss';
 
-
-
 .auction-draft-history-list {
-	ul {
-		list-style: none;
-		padding: 0;
-		margin: 0;
-	}
+  padding: 1rem;
+  font-size: 1.2rem;
+  color: $eb-text;
 
-	li {
-		padding: 6px 0;
-		font-size: 1rem;
-		text-align: left;
-		margin-left: 24px;
+  h3 {
+    margin-top: 0;
+    margin-bottom: 1rem;
+    text-align: center;
+    font-size: 1.5rem;
+  }
 
-		&:last-child {
-			border-bottom: none;
-		}
+  ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    border-radius: 4px;
+    overflow: hidden;
+    border: 1px solid $eb-border;
+  }
 
-		.draft-history-pokemon-sprite {
-			width: 32px;
-			height: 32px;
-			object-fit: contain;
-			border-radius: 8px;
-			margin: 0 auto;
-			margin-right: 12px;
-		}
-	}
+  li {
+    display: flex;
+    align-items: center;
+    padding: 0.5rem 1rem;
+    background: $eb-bg;
 
-	h3 {
-		margin: 0 0 8px 0;
-		font-size: 32px;
-		color: $eb-text;
-		text-align: center;
-	}
+    &:nth-child(even) {
+      background: $eb-surface;
+    }
+  }
+
+  .draft-history-pokemon-icon {
+    width: auto;
+    height: auto;
+    max-width: 20px;
+    max-height: 20px;
+    margin-right: 10px;
+  }
 }

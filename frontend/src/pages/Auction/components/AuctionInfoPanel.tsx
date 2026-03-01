@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Auction } from '../../../types';
 import { placeBid } from '../../../shared/api/draftData';
-import { getUserLabel } from '../../../shared/utils/user';
+import { getUserLabel, getUserId } from '../../../shared/utils/user';
 import './AuctionInfoPanel.scss';
 
 interface AuctionInfoPanelProps {
@@ -12,6 +12,7 @@ interface AuctionInfoPanelProps {
   userBudgetRemaining: number;
   completed_auctions: Auction[];
   total_auctions: number;
+  currentUserId: string | null;
 }
 
 const AuctionInfoPanel: React.FC<AuctionInfoPanelProps> = ({
@@ -21,15 +22,36 @@ const AuctionInfoPanel: React.FC<AuctionInfoPanelProps> = ({
   canBid,
   userBudgetRemaining,
   completed_auctions,
-  total_auctions
+  total_auctions,
+  currentUserId
 }) => {
   const [secondsRemaining, setSecondsRemaining] = useState(0);
   const [initialSeconds, setInitialSeconds] = useState(0);
   const [customBidAmount, setCustomBidAmount] = useState('');
   const [showBidWarning, setShowBidWarning] = useState(false);
   const [pendingBid, setPendingBid] = useState<number | null>(null);
+  const [isResetting, setIsResetting] = useState(false);
+  const [isBidAnimating, setIsBidAnimating] = useState(false);
+  const isInitialBid = useRef(true);
 
   useEffect(() => {
+    if (isInitialBid.current) {
+      isInitialBid.current = false;
+      return;
+    }
+
+    if (current_auction.highest_bid > 0) {
+      setIsBidAnimating(true);
+      const timer = setTimeout(() => setIsBidAnimating(false), 500);
+      return () => clearTimeout(timer);
+    }
+  }, [current_auction.highest_bid]);
+
+  useEffect(() => {
+    // When the expiration time changes (e.g. a bid is placed), trigger a fast reset animation
+    setIsResetting(true);
+    const resetTimer = setTimeout(() => setIsResetting(false), 500);
+
     const updateCountdown = () => {
       const expiresAt = new Date(currentAuctionExpiresAt ?? 0).getTime();
       const now = Date.now();
@@ -44,20 +66,26 @@ const AuctionInfoPanel: React.FC<AuctionInfoPanelProps> = ({
 
     updateCountdown();
     const interval = setInterval(updateCountdown, 1000);
-    return () => clearInterval(interval);
+    return () => {
+      clearInterval(interval);
+      clearTimeout(resetTimer);
+    };
   }, [currentAuctionExpiresAt, initialSeconds]);
 
-  const circumference = 2 * Math.PI * 45;
   const progress = initialSeconds > 0 ? secondsRemaining / initialSeconds : 0;
-  const strokeDashoffset = circumference - (progress * circumference);
 
   // Determine color based on remaining time
-  let ringColor = '#00aa00'; // green
+  let timerColor = '#00aa00'; // green
   if (secondsRemaining <= 3) {
-    ringColor = '#ff0000'; // red
+    timerColor = '#ff0000'; // red
   } else if (secondsRemaining <= 5) {
-    ringColor = '#ff8800'; // dark orange
+    timerColor = '#ff8800'; // dark orange
   }
+
+  const getTypeIconSrc = (type: string) => {
+    const formattedType = type.charAt(0).toUpperCase() + type.slice(1).toLowerCase();
+    return `/TypeIcons/${formattedType}IC_SV.png`;
+  };
 
   const handleBid100 = async () => {
     const newBid = current_auction.highest_bid + 100;
@@ -111,40 +139,63 @@ const AuctionInfoPanel: React.FC<AuctionInfoPanelProps> = ({
   };
 
   const showBidNow = !currentAuctionExpiresAt;
+  const highBidderId = getUserId(current_auction.highest_bidder);
+  const isCurrentUserHighBidder = highBidderId === currentUserId && highBidderId !== null;
 
   return (
     <div className="auction-info-box">
       <div className="auction-draft-number">
         Draft #: {completed_auctions.length + 1}/{total_auctions}
       </div>
-      <div className="auction-countdown-ring">
-        <svg width="140" height="140" viewBox="0 0 140 140">
-          <circle cx="70" cy="70" r="45" className="countdown-ring-background" />
-          <circle
-            cx="70"
-            cy="70"
-            r="45"
-            className="countdown-ring-progress"
-            strokeDasharray={circumference}
-            style={{ strokeDashoffset, stroke: ringColor }}
-          />
-        </svg>
-        <div className="countdown-text" style={{ color: ringColor }}>
+      <div className="auction-countdown-container">
+        <div className="countdown-text" style={{ color: timerColor }}>
           {showBidNow ? 'Bid!' : `${secondsRemaining}s`}
+        </div>
+        <div className="countdown-bar-background">
+          <div
+            className="countdown-bar-progress"
+            style={{
+              width: `${progress * 100}%`,
+              backgroundColor: timerColor,
+              transition: isResetting ? 'width 0.2s ease-out' : 'width 1s linear'
+            }}
+          />
         </div>
       </div>
 
       <div className="auction-pokemon-section">
-        <h2 className="pokemon-name">{current_auction.pokemon.name}</h2>
-        <img
-          src={`/baseforms/${current_auction.pokemon.name}.png`}
-          alt={current_auction.pokemon.name}
-          className="auction-pokemon-image"
-        />
+        <div className="pokemon-info-display">
+          <img
+            src={`/MiniIcons/${current_auction.pokemon.name.toLowerCase()}.png`}
+            alt={current_auction.pokemon.name}
+            className="pokemon-info-icon"
+            onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+          />
+          <h2 className="pokemon-name">{current_auction.pokemon.name}</h2>
+          <div className="pokemon-info-types">
+            {current_auction.pokemon.type1 && (
+              <img
+                src={getTypeIconSrc(current_auction.pokemon.type1)}
+                alt={current_auction.pokemon.type1}
+                className="pokemon-info-type-icon"
+              />
+            )}
+            {current_auction.pokemon.type2 && (
+              <img
+                src={getTypeIconSrc(current_auction.pokemon.type2)}
+                alt={current_auction.pokemon.type2}
+                className="pokemon-info-type-icon"
+              />
+            )}
+          </div>
+        </div>
         <div className="bid-info">
-          <p className="current-bid">${current_auction.highest_bid}</p>
+          <p className={`current-bid ${isBidAnimating ? 'bid-animate' : ''}`}>${current_auction.highest_bid}</p>
           <p className="bidder-label">
-            High Bidder: {getUserLabel(current_auction.highest_bidder) || 'No bids yet'}
+            {isCurrentUserHighBidder
+              ? "You're the High Bidder!"
+              : `High Bidder: ${getUserLabel(current_auction.highest_bidder) || 'No bids yet'}`
+            }
           </p>
         </div>
       </div>
@@ -160,7 +211,7 @@ const AuctionInfoPanel: React.FC<AuctionInfoPanelProps> = ({
         <input
           type="number"
           className="custom-bid-input"
-          placeholder="Custom amount"
+          placeholder=""
           value={customBidAmount}
           onChange={e => setCustomBidAmount(e.target.value)}
           autoComplete="off"

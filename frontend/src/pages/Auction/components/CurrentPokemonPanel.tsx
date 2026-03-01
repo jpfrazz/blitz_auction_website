@@ -32,6 +32,11 @@ const getStatWidth = (value: number) => {
   return `${Math.min(100, (value / max) * 100)}%`;
 };
 
+const getTypeIconSrc = (type: string) => {
+  const formattedType = type.charAt(0).toUpperCase() + type.slice(1).toLowerCase();
+  return `/TypeIcons/${formattedType}IC_SV.png`;
+};
+
 function buildEvolutionTree(
   root: Pokemon,
   allPokemon: Pokemon[],
@@ -85,23 +90,26 @@ const EvolutionTree: React.FC<{ node: EvoNode }> = ({ node }) => {
   const isBaseform = !node.pokemon.evolves_from_id;
   return (
     <div className="evo-tree-node-horizontal">
-      <div className="evo-pokemon-block-horizontal">
+      <div className={`evo-pokemon-block-horizontal ${isBaseform ? 'baseform' : ''}`}>
         <img
           src={getImageSrc(node.pokemon)}
           alt={node.pokemon.name}
           className={isBaseform ? "evo-pokemon-img-baseform" : "evo-pokemon-img-evolution"}
         />
-        <div className="evo-pokemon-name">{node.pokemon.name}</div>
         <div className="pokemon-type-ability">
           {node.pokemon.type1 && (
-            <span className={`type-badge type-badge-${node.pokemon.type1.toLowerCase()}`}>
-              {node.pokemon.type1.toUpperCase()}
-            </span>
+            <img
+              src={getTypeIconSrc(node.pokemon.type1)}
+              alt={node.pokemon.type1}
+              className={`type-badge type-badge-${node.pokemon.type1.toLowerCase()}`}
+            />
           )}
           {node.pokemon.type2 && (
-            <span className={`type-badge type-badge-${node.pokemon.type2.toLowerCase()}`}>
-              {node.pokemon.type2.toUpperCase()}
-            </span>
+            <img
+              src={getTypeIconSrc(node.pokemon.type2)}
+              alt={node.pokemon.type2}
+              className={`type-badge type-badge-${node.pokemon.type2.toLowerCase()}`}
+            />
           )}
         </div>
         <div className="pokemon-stats">
@@ -110,7 +118,7 @@ const EvolutionTree: React.FC<{ node: EvoNode }> = ({ node }) => {
               <div className="evo-pokemon-ability">
                 {node.pokemon.ability1 && <div>{node.pokemon.ability1}</div>}
                 {node.pokemon.ability2 && <div>{node.pokemon.ability2}</div>}
-                {node.pokemon.hidden_ability && <div>(H) {node.pokemon.hidden_ability}</div>}
+                {node.pokemon.hidden_ability && <div>{node.pokemon.hidden_ability} (H)</div>}
               </div>
               {node.pokemon.stats && (
                 <>
@@ -308,7 +316,7 @@ const CurrentPokemonPanel: React.FC<CurrentPokemonPanelProps> = ({ current_aucti
           <div className="ability-text">
             {pokemonData.ability1 && <div>{pokemonData.ability1}</div>}
             {pokemonData.ability2 && <div>{pokemonData.ability2}</div>}
-            {pokemonData.hidden_ability && <div>(H) {pokemonData.hidden_ability}</div>}
+            {pokemonData.hidden_ability && <div>{pokemonData.hidden_ability} (H)</div>}
           </div>
         </div>
 
@@ -428,7 +436,7 @@ const CurrentPokemonPanel: React.FC<CurrentPokemonPanelProps> = ({ current_aucti
                         src={`/MiniIcons/${move.species.toLowerCase()}.png`}
                         alt={move.species}
                         className="key-move-species-img"
-                        style={{ width: 24, height: 24, marginRight: 6, verticalAlign: 'middle' }}
+                        style={{ maxWidth: 20, maxHeight: 20, width: 'auto', height: 'auto', marginRight: 6, verticalAlign: 'middle' }}
                       />
                       {move.move_name} ({formatLearnMethod(move.learn_method)})
                     </>

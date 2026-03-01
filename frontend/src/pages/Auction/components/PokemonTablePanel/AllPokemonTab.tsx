@@ -19,6 +19,11 @@ interface AllPokemonTabProps {
   auctions: Auction[];
 }
 
+const getTypeIconSrc = (type: string) => {
+  const formattedType = type.charAt(0).toUpperCase() + type.slice(1).toLowerCase();
+  return `/TypeIcons/${formattedType}IC_SV.png`;
+};
+
 const AllPokemonTab: React.FC<AllPokemonTabProps> = ({ pokemon, auctions }) => {
   const [selectedPokemon, setSelectedPokemon] = useState<Pokemon | null>(null);
   const allPokemon = useMemo(() => pokemon, [pokemon]);
@@ -112,11 +117,13 @@ const AllPokemonTab: React.FC<AllPokemonTabProps> = ({ pokemon, auctions }) => {
           const evoTypes = getEvolutionTypes(row.original);
           if (!evoTypes.length) return null;
           return (
-            <span className="type-pill-group">
+            <div className="type-icon-group">
               {evoTypes.map(type => (
-                <span key={type} className={`type-pill type-pill-${type}`}>{type.charAt(0).toUpperCase() + type.slice(1)}</span>
+                <img
+                  key={type} src={getTypeIconSrc(type)} alt={type} className="type-icon-table"
+                />
               ))}
-            </span>
+            </div>
           );
         },
         filterFn: (row, columnId, filterValue) => {
@@ -127,7 +134,6 @@ const AllPokemonTab: React.FC<AllPokemonTabProps> = ({ pokemon, auctions }) => {
       },
       { accessorKey: 'cost', header: 'Cost' },
       { accessorKey: 'draftedBy', header: 'Drafted By' },
-      { accessorKey: 'baseStatTotal', header: 'BST' },
     ],
     [allPokemon]
   );
@@ -171,7 +177,10 @@ const AllPokemonTab: React.FC<AllPokemonTabProps> = ({ pokemon, auctions }) => {
             {table.getHeaderGroups().map(headerGroup => (
               <tr key={headerGroup.id}>
                 {headerGroup.headers.map(header => (
-                  <th key={header.id}>
+                  <th
+                    key={header.id}
+                    colSpan={header.colSpan}
+                  >
                     <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
                       {flexRender(header.column.columnDef.header, header.getContext())}
                       {header.column.getCanSort() && (
@@ -215,14 +224,14 @@ const AllPokemonTab: React.FC<AllPokemonTabProps> = ({ pokemon, auctions }) => {
                     if (!type1 && !type2) return <td key={cell.id}></td>;
                     return (
                       <td key={cell.id}>
-                        <span className="type-pill-group">
+                        <div className="type-icon-group">
                           {type1 && (
-                            <span className={`type-pill type-pill-${type1.toLowerCase()}`}>{type1}</span>
+                            <img src={getTypeIconSrc(type1)} alt={type1} className="type-icon-table" />
                           )}
                           {type2 && (
-                            <span className={`type-pill type-pill-${type2.toLowerCase()}`}>{type2}</span>
+                            <img src={getTypeIconSrc(type2)} alt={type2} className="type-icon-table" />
                           )}
-                        </span>
+                        </div>
                       </td>
                     );
                   }
@@ -230,29 +239,23 @@ const AllPokemonTab: React.FC<AllPokemonTabProps> = ({ pokemon, auctions }) => {
                     const name = cell.getValue() as string;
                     return (
                       <td key={cell.id}>
-                        <img
-                          src={`/MiniIcons/${name.toLowerCase()}.png`}
-                          alt={name}
-                          className="pokemon-table-img"
-                          onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }}
-                        />
-                        <button
-                          className="pokemon-name-button"
-                          type="button"
-                          onClick={() => setSelectedPokemon(cell.row.original as Pokemon)}
-                        >
-                          {name}
-                        </button>
-                      </td>
-                    );
-                  }
-                  if (cell.column.id === 'baseStatTotal') {
-                    const bst = cell.getValue() as number;
-                    return (
-                      <td
-                        key={cell.id}
-                      >
-                        {bst}
+                        <div className="pokemon-name-cell">
+                          <div className="pokemon-icon-wrapper">
+                            <img
+                              src={`/MiniIcons/${name.toLowerCase()}.png`}
+                              alt={name}
+                              className="pokemon-table-img"
+                              onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }}
+                            />
+                          </div>
+                          <button
+                            className="pokemon-name-button"
+                            type="button"
+                            onClick={() => setSelectedPokemon(cell.row.original as Pokemon)}
+                          >
+                            {name}
+                          </button>
+                        </div>
                       </td>
                     );
                   }

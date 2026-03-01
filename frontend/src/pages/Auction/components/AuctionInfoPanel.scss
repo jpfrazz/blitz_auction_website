@@ -19,39 +19,33 @@
   box-sizing: border-box;
 }
 
-.auction-countdown-ring {
-  position: relative;
-  width: 140px;
-  height: 140px;
+.auction-countdown-container {
+  width: 100%;
   display: flex;
+  flex-direction: column;
   align-items: center;
-  justify-content: center;
-
-  svg {
-    transform: rotate(-90deg);
-  }
-
-  .countdown-ring-background {
-    fill: none;
-    stroke: rgba(255, 255, 255, 0.1);
-    stroke-width: 4;
-  }
-
-  .countdown-ring-progress {
-    fill: none;
-    stroke: #00aa00;
-    stroke-width: 4;
-    stroke-linecap: round;
-    transition: stroke-dashoffset 1s linear;
-    stroke-dasharray: 282.7; // 2 * PI * 45
-  }
+  gap: 4px;
+  padding: 0 20px;
+  box-sizing: border-box;
+  margin: 0.25rem 0;
 
   .countdown-text {
-    position: absolute;
     font-size: 24px;
     font-weight: bold;
-    color: #00aa00;
-    text-align: center;
+  }
+
+  .countdown-bar-background {
+    width: 100%;
+    height: 12px;
+    background-color: rgba(255, 255, 255, 0.1);
+    border-radius: 6px;
+    overflow: hidden;
+
+    .countdown-bar-progress {
+      height: 100%;
+      border-radius: 6px;
+      transition: width 1s linear;
+    }
   }
 }
 
@@ -62,9 +56,43 @@
   gap: 12px;
   width: 100%;
 
+  .pokemon-info-display {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    background: rgba(0,0,0,0.15);
+    padding: 0.5rem 1rem;
+    border-radius: 8px;
+    width: 90%;
+    box-sizing: border-box;
+  }
+
+  .pokemon-info-icon {
+    width: auto;
+    height: auto;
+    max-width: 32px;
+    max-height: 32px;
+    image-rendering: pixelated;
+    flex-shrink: 0;
+  }
+
+  .pokemon-info-types {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+    margin-left: auto;
+  }
+
+  .pokemon-info-type-icon {
+    width: 80px;
+    height: auto;
+    object-fit: contain;
+    display: block;
+  }
+
   .pokemon-name {
     margin: 0;
-    font-size: 20px;
+    font-size: 18px;
     color: $eb-text;
   }
 
@@ -83,6 +111,12 @@
       font-weight: bold;
       color: $eb-text;
       margin: 8px 0 4px 0;
+      transition: transform 0.2s ease-out, color 0.2s ease-out;
+
+      &.bid-animate {
+        transform: scale(1.15);
+        color: $eb-primary;
+      }
     }
 
     .bidder-label {
@@ -99,31 +133,35 @@
   width: 100%;
   align-items: center;
   justify-content: center;
-  padding-bottom: 16px;
+  padding-bottom: 1.2rem;
   flex-wrap: wrap;
 
   .bid-button {
     @extend button;
-    flex: 0 0 25%;
-    max-width: 25%;
     min-width: 0;
     padding: 12px;
-    font-size: 1.5rem;
+    font-size: 1.2rem;
 
     display: flex; 
     align-items: center; 
     justify-content: center;
     flex-wrap: nowrap;
     flex: 1 1 0;
+
+    &:first-of-type {
+      max-width: 25%;
+      min-width: 25%;
+      flex-grow: 0;
+    }
   }
 
   .custom-bid-input {
     @extend input;
     flex: 0 0 25%;
-    max-width: 25%;
+    max-width: 20%;
     min-width: 0;
     padding: 14px;
-    font-size: 1.5rem;
+    font-size: 1.2rem;
 
     &:focus {
       outline: none;

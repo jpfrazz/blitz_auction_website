@@ -16,11 +16,11 @@ const DraftHistoryTab: React.FC<DraftHistoryTabProps> = ({ auctions }) => {
         {sortedAuctions.map((auction, idx) => (
           <li key={idx}>
             <img
-              src={`/baseforms/${auction.pokemon.name}.png`}
+              src={`/MiniIcons/${auction.pokemon.name.toLowerCase()}.png`}
               alt={auction.pokemon.name}
-              className="draft-history-pokemon-sprite"
+              className="draft-history-pokemon-icon"
             />
-            <strong>{auction.pokemon.name}</strong>: 
+            <strong>{auction.pokemon.name}</strong>:
             {auction.highest_bid > 0
               ? ` ${getUserLabel(auction.highest_bidder)} won for $${auction.highest_bid}`
               : ' No bids yet'}

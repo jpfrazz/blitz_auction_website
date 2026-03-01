@@ -38,6 +38,14 @@ const AuctionPage: React.FC = () => {
 
   const wsRef = useRef<WebSocket | null>(null);
 
+  useEffect(() => {
+    document.body.classList.add('auction-page-active');
+    // Cleanup function to remove the class when the component unmounts
+    return () => {
+      document.body.classList.remove('auction-page-active');
+    };
+  }, []); // The empty array ensures this runs only once on mount and cleanup on unmount
+
   const connectWebSocket = (draftId: string) => {
     if (wsRef.current) {
       wsRef.current.close();
@@ -166,7 +174,7 @@ const AuctionPage: React.FC = () => {
             {showJoinModal && (
               <div className="auction-password-modal-overlay">
                 <div className="auction-password-modal" onClick={e => e.stopPropagation()}>
-                  <h3 className="auction-password-modal-title">Join Draft</h3>
+                  <h3 className="auction-password-modal-title">Join As...</h3>
                   {draft.has_password && (
                     <input
                       className="auction-password-modal-input"
@@ -187,14 +195,14 @@ const AuctionPage: React.FC = () => {
                       }}
                       disabled={joiningDraft}
                     >
-                      Join as Spectator
+                      Spectator
                     </button>
                     <button
                       className="button"
                       onClick={() => attemptJoinDraft(joinPassword)}
                       disabled={joiningDraft}
                     >
-                      {joiningDraft ? 'Joining...' : 'Join as Racer'}
+                      {joiningDraft ? 'Joining...' : 'Racer'}
                     </button>
                   </div>
                 </div>
@@ -276,6 +284,7 @@ const AuctionPage: React.FC = () => {
                           currentUserId &&
                           draft.teams.some(team => team.user_id === currentUserId)
                         )}
+                        currentUserId={currentUserId}
                         userBudgetRemaining={draft.teams.find(team => team.user_id === currentUserId)?.budget_remaining || 0}
                         completed_auctions={draft.completed_auctions}
                         total_auctions={draft.total_auctions}
