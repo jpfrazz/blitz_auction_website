@@ -7,13 +7,41 @@ use oauth2::url::Url;
 use oauth2::Scope;
 use oauth2::{AuthorizationCode, TokenResponse};
 use oauth2::{CsrfToken, EndpointNotSet, EndpointSet, basic::BasicClient, reqwest};
-use petname::petname;
 use serde::{Deserialize, Serialize};
 use sqlx::{PgPool, sqlx_macros::FromRow};
 use strum;
 
+use crate::pokemon;
+
 const DISCORD_AUTH_URL: &str = "https://discord.com/oauth2/authorize";
 const DISCORD_TOKEN_URL: &str = "https://discord.com/api/oauth2/token";
+const POKEMON_NATURES: [&str; 25] = [
+    "Hardy",
+    "Lonely",
+    "Brave",
+    "Adamant",
+    "Naughty",
+    "Bold",
+    "Docile",
+    "Relaxed",
+    "Impish",
+    "Lax",
+    "Timid",
+    "Hasty",
+    "Serious",
+    "Jolly",
+    "Naive",
+    "Modest",
+    "Mild",
+    "Quiet",
+    "Bashful",
+    "Rash",
+    "Calm",
+    "Gentle",
+    "Sassy",
+    "Careful",
+    "Quirky",
+];
 
 #[derive(Clone, Debug)]
 pub enum AuthError {
@@ -184,6 +212,25 @@ impl AuthBackend {
         .add_scope(Scope::new("identify".to_string()))
         .url()
     }
+
+    fn generate_guest_username(&self) -> String {
+        let random_nature_index = (uuid::Uuid::new_v4().as_u128() as usize) % POKEMON_NATURES.len();
+        let random_nature = POKEMON_NATURES[random_nature_index];
+
+        let random_pokemon_name = pokemon::get_highest_patch_pokemon_data()
+            .and_then(|pokemon_data| {
+                if pokemon_data.is_empty() {
+                    None
+                } else {
+                    let random_pokemon_index =
+                        (uuid::Uuid::new_v4().as_u128() as usize) % pokemon_data.len();
+                    Some(pokemon_data[random_pokemon_index].name.clone())
+                }
+            })
+            .unwrap_or_else(|| "Pikachu".to_string());
+
+        format!("guest:{}-{}", random_nature, random_pokemon_name)
+    }
 }
 
 impl AuthnBackend for AuthBackend {
@@ -199,8 +246,7 @@ impl AuthnBackend for AuthBackend {
         match creds {
             Credentials::Guest => {
                 let user_id = uuid::Uuid::new_v4().to_string();
-                let petname = petname(3, "-").expect("petname should be generated");
-                let user_name = format!("guest:{}", petname);
+                let user_name = self.generate_guest_username();
                 user = User::GuestUser(GuestUser { user_id, user_name });
             }
             Credentials::Discord(creds) => {
