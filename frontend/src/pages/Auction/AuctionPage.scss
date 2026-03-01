@@ -3,7 +3,7 @@
 // Hide the main site header on the auction page
 body.auction-page-active {
 	.header {
-		transform: translateY(calc(-100% + 5px));
+		transform: translateY(calc(-100% + 10px));
 		transition: transform 0.3s ease-in-out;
 
 		&:hover {
