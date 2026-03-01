@@ -53,7 +53,7 @@ const AllPokemonTab: React.FC<AllPokemonTabProps> = ({ pokemon, auctions }) => {
           speed,
           baseStatTotal,
           ability,
-          cost: auction ? auction.highest_bid : '',
+          cost: auction ? Number(auction.highest_bid) : undefined,
           draftedBy: auction ? getUserLabel(auction.highest_bidder) : '',
         };
       }),
@@ -132,7 +132,12 @@ const AllPokemonTab: React.FC<AllPokemonTabProps> = ({ pokemon, auctions }) => {
           return evoTypes.some(type => type.toLowerCase().includes(filter));
         },
       },
-      { accessorKey: 'cost', header: 'Cost' },
+      {
+        accessorKey: 'cost',
+        header: 'Cost',
+        sortingFn: 'basic',
+        sortUndefined: 'last',
+      },
       { accessorKey: 'draftedBy', header: 'Drafted By' },
     ],
     [allPokemon]

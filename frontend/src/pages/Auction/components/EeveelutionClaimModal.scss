@@ -182,11 +182,17 @@
     color: $eb-text-muted;
     cursor: default;
     box-shadow: $eb-shadow;
+  }
 
-    &.current-user {
-      background-color: $eb-primary;
-      color: $eb-text;
-      font-weight: 600;
+  &.current-user-unclaim {
+    background-color: $eb-primary;
+    color: $eb-text;
+    font-weight: 600;
+    cursor: pointer;
+
+    &:hover:not(:disabled) {
+      background: $eb-primary-hover;
+      color: $eb-text-black;
     }
   }
 }

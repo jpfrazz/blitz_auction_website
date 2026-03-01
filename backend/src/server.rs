@@ -123,6 +123,7 @@ impl Server {
             .route("/drafts/{draft_id}/bid", post(handlers::bid))
             .route("/drafts/{draft_id}/start", post(handlers::start_draft))
             .route("/drafts/{draft_id}/claim-eeveelution", post(handlers::claim_eeveelution))
+            .route("/drafts/{draft_id}/unclaim-eeveelution", post(handlers::unclaim_eeveelution))
             .route(
                 "/drafts/{draft_id}/chats",
                 get(handlers::get_draft_chats).post(handlers::create_draft_chat),

@@ -14,6 +14,7 @@ interface EeveelutionClaimModalProps {
   teams: Team[];
   currentUserId: string | null;
   onClaim: (pokedexId: number, form: string | null) => Promise<void>;
+  onUnclaim: (pokedexId: number, form: string | null) => Promise<void>;
   onClose: () => void;
 }
 
@@ -22,6 +23,7 @@ const EeveelutionClaimModal: React.FC<EeveelutionClaimModalProps> = ({
   teams,
   currentUserId,
   onClaim,
+  onUnclaim,
   onClose,
 }) => {
   const [claiming, setClaiming] = useState<string | null>(null);
@@ -50,6 +52,19 @@ const EeveelutionClaimModal: React.FC<EeveelutionClaimModalProps> = ({
       await onClaim(eeveelution.pokedex_id, eeveelution.form);
     } catch (err: any) {
       setError(err?.message || 'Failed to claim Eeveelution');
+    } finally {
+      setClaiming(null);
+    }
+  };
+
+  const handleUnclaim = async (eeveelution: Eeveelution) => {
+    setError(null);
+    setClaiming(`${eeveelution.pokedex_id}-${eeveelution.form}`);
+
+    try {
+      await onUnclaim(eeveelution.pokedex_id, eeveelution.form);
+    } catch (err: any) {
+      setError(err?.message || 'Failed to unclaim Eeveelution');
     } finally {
       setClaiming(null);
     }
@@ -101,12 +116,22 @@ const EeveelutionClaimModal: React.FC<EeveelutionClaimModalProps> = ({
                 <div className="eeveelution-card-name">{eeveelution.name}</div>
 
                 {isClaimed ? (
-                  <button
-                    className={`eeveelution-button claimed ${isCurrentUserClaim ? 'current-user' : ''}`}
-                    disabled
-                  >
-                    {isCurrentUserClaim ? 'Your Pick!' : `Claimed by ${claimedInfo?.username}`}
-                  </button>
+                  isCurrentUserClaim ? (
+                    <button
+                      className="eeveelution-button claimed current-user-unclaim"
+                      onClick={() => handleUnclaim(eeveelution)}
+                      disabled={isClaiming || claiming !== null}
+                    >
+                      {isClaiming ? 'Unclaiming...' : 'Unclaim'}
+                    </button>
+                  ) : (
+                    <button
+                      className="eeveelution-button claimed"
+                      disabled
+                    >
+                      {`Claimed by ${claimedInfo?.username}`}
+                    </button>
+                  )
                 ) : (
                   <button
                     className="eeveelution-button"

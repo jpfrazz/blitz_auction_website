@@ -2,7 +2,7 @@ import React, { useEffect, useState, useRef } from 'react';
 import { connectDraftWebSocket } from '../../shared/api/draftWebSocket';
 import { useLocation } from 'react-router-dom';
 import Header from '../../shared/components/Header';
-import { fetchDraftById, readyUpDraft, joinDraft, fetchCurrentUser, claimEeveelution, startDraft } from '../../shared/api/draftData';
+import { fetchDraftById, readyUpDraft, joinDraft, fetchCurrentUser, claimEeveelution, unclaimEeveelution, startDraft } from '../../shared/api/draftData';
 import { getUserId } from '../../shared/utils/user';
 import './AuctionPage.scss';
 import '../../shared/style/theme.scss';
@@ -164,6 +164,18 @@ const AuctionPage: React.FC = () => {
     }
   };
 
+  const handleUnclaimEeveelution = async (pokedexId: number, form: string | null) => {
+    if (!draft) return;
+    try {
+      await unclaimEeveelution(draft.draft_id, pokedexId, form);
+      const updated = await fetchDraftById(draft.draft_id);
+      setDraft(updated);
+    } catch (error) {
+      console.error('Error unclaiming eeveelution:', error);
+      throw error;
+    }
+  };
+
   return (
     <>
       <Header />
@@ -180,23 +192,28 @@ const AuctionPage: React.FC = () => {
                       className="auction-password-modal-input"
                       type="password"
                       value={joinPassword}
-                      onChange={e => setJoinPassword(e.target.value)}
+                      onChange={e => {
+                        setJoinPassword(e.target.value);
+                        if (joinError) {
+                          setJoinError(null);
+                        }
+                      }}
                       placeholder="Password"
                       autoFocus
                     />
                   )}
                   {joinError && <div className="auction-password-modal-error">{joinError}</div>}
                   <div className="auction-password-modal-actions">
-                    <button
-                      className="button"
-                      onClick={() => {
-                        setShowJoinModal(false);
-                        setJoinError(null);
-                      }}
-                      disabled={joiningDraft}
-                    >
-                      Spectator
-                    </button>
+                      <button
+                        className="button"
+                        onClick={() => {
+                          setShowJoinModal(false);
+                          setJoinError(null);
+                        }}
+                        disabled={joiningDraft}
+                      >
+                        Spectator
+                      </button>
                     <button
                       className="button"
                       onClick={() => attemptJoinDraft(joinPassword)}
@@ -310,6 +327,7 @@ const AuctionPage: React.FC = () => {
                   { pokedex_id: 700, name: 'Sylveon', form: null },
                 ]} teams={draft.teams} currentUserId={currentUserId}
                 onClaim={handleClaimEeveelution}
+                onUnclaim={handleUnclaimEeveelution}
                 onClose={() => setShowEeveelutionModal(false)}
               />
             )}

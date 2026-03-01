@@ -1,6 +1,16 @@
 import axios from 'axios';
 import { ChatMessage, Draft, DraftLobby } from "../../types";
 
+interface JoinDraftResponse {
+  joined: boolean;
+  error?: string;
+}
+
+interface EeveelutionClaimResponse {
+  success: boolean;
+  error?: string;
+}
+
 // Fetch current user info
 export async function fetchCurrentUser(): Promise<{user_id: string | null, username: string | null, avatar?: string, is_guest: boolean}> {
   const response = await axios.get('/api/me');
@@ -56,13 +66,20 @@ export async function readyUpDraft(draft_id: string): Promise<Draft> {
 // Join a draft
 export async function joinDraft(draft_id: string, password?: string): Promise<Draft> {
   const trimmedPassword = password?.trim();
+  let joinResponse;
+
   if (trimmedPassword) {
-    await axios.post(`/api/drafts/${draft_id}/join`, {
+    joinResponse = await axios.post<JoinDraftResponse>(`/api/drafts/${draft_id}/join`, {
       password: trimmedPassword,
     });
   } else {
-    await axios.post(`/api/drafts/${draft_id}/join`);
+    joinResponse = await axios.post<JoinDraftResponse>(`/api/drafts/${draft_id}/join`);
   }
+
+  if (!joinResponse.data.joined) {
+    throw new Error(joinResponse.data.error || 'Failed to join draft.');
+  }
+
   // Fetch and return the updated draft after joining
   const response = await axios.get(`/api/drafts/${draft_id}`);
   return response.data;
@@ -82,6 +99,22 @@ export async function claimEeveelution(draft_id: string, pokedex_id: number, for
     pokedex_id,
     form
   });
+  const data = response.data as EeveelutionClaimResponse;
+  if (typeof data?.success === 'boolean' && !data.success) {
+    throw new Error(data.error || 'Failed to claim Eeveelution');
+  }
+  return data;
+}
+
+export async function unclaimEeveelution(draft_id: string, pokedex_id: number, form: string | null): Promise<any> {
+  const response = await axios.post(`/api/drafts/${draft_id}/unclaim-eeveelution`, {
+    pokedex_id,
+    form
+  });
+  const data = response.data as EeveelutionClaimResponse;
+  if (typeof data?.success === 'boolean' && !data.success) {
+    throw new Error(data.error || 'Failed to unclaim Eeveelution');
+  }
   return response.data;
 }
 

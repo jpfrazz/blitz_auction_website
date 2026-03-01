@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { createDraftChat, fetchDraftChats } from '../../../shared/api/draftData';
 import { ChatMessage } from '../../../types';
 import './AuctionChatBox.scss';
@@ -14,6 +14,14 @@ const AuctionChatBox: React.FC<AuctionChatBoxProps> = ({ draftId, isGuest, isLog
   const [newMessage, setNewMessage] = useState('');
   const [isSending, setIsSending] = useState(false);
   const [isCollapsed, setIsCollapsed] = useState(true);
+  const chatBodyRef = useRef<HTMLDivElement | null>(null);
+  const isNearBottomRef = useRef(true);
+
+  const isNearBottom = (element: HTMLDivElement) => {
+    const threshold = 40;
+    const distanceFromBottom = element.scrollHeight - element.scrollTop - element.clientHeight;
+    return distanceFromBottom <= threshold;
+  };
 
   const loadChats = useCallback(async () => {
     try {
@@ -29,6 +37,33 @@ const AuctionChatBox: React.FC<AuctionChatBoxProps> = ({ draftId, isGuest, isLog
     const interval = setInterval(loadChats, 1000);
     return () => clearInterval(interval);
   }, [loadChats]);
+
+  useEffect(() => {
+    if (isCollapsed || !chatBodyRef.current) {
+      return;
+    }
+
+    if (isNearBottomRef.current) {
+      chatBodyRef.current.scrollTop = chatBodyRef.current.scrollHeight;
+    }
+  }, [messages, isCollapsed]);
+
+  useEffect(() => {
+    if (isCollapsed || !chatBodyRef.current) {
+      return;
+    }
+
+    chatBodyRef.current.scrollTop = chatBodyRef.current.scrollHeight;
+    isNearBottomRef.current = true;
+  }, [isCollapsed]);
+
+  const handleChatScroll = () => {
+    if (!chatBodyRef.current) {
+      return;
+    }
+
+    isNearBottomRef.current = isNearBottom(chatBodyRef.current);
+  };
 
   const handleSend = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -74,7 +109,7 @@ const AuctionChatBox: React.FC<AuctionChatBoxProps> = ({ draftId, isGuest, isLog
       </div>
       {!isCollapsed && (
         <>
-          <div className="auction-chat-body">
+          <div className="auction-chat-body" ref={chatBodyRef} onScroll={handleChatScroll}>
             {messages.length === 0 ? (
               <div className="auction-chat-empty">No messages yet.</div>
             ) : (
