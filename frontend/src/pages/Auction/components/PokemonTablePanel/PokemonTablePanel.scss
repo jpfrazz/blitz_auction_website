@@ -10,7 +10,7 @@
 	width: 100%;
 	flex: 1;
 	min-height: 0;
-	overflow: hidden;
+	overflow: auto;
 }
 
 .pokemon-table-panel-outer {
@@ -57,10 +57,6 @@
 .pokemon-table-tab-content {
 	width: 100%;
 	padding: 8px 0 0 0;
-	flex: 1;
-	min-height: 0;
-	display: flex;
-	flex-direction: column;
 }
 
 .auction-team-planner-placeholder {
