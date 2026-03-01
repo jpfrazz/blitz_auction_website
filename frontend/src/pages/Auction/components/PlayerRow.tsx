@@ -18,12 +18,16 @@ const PlayerRow: React.FC<PlayerRowProps> = ({ teams, numPlayers, highestBidderI
         const isFilled = Boolean(team);
         const readinessClass = isFilled && team?.ready ? 'player-ready' : 'player-not-ready';
         const teamMoney = team?.budget_remaining ?? 0;
+        const zeroMoneyClass = isFilled && teamMoney === 0 ? 'player-zero-money' : '';
+        const playerStateClass = isFilled
+          ? (zeroMoneyClass || readinessClass)
+          : 'player-open';
         const wonPokemon = team?.auctions_won ?? team?.pokemon ?? [];
         const disconnectedClass = !wsConnected ? 'player-disconnected' : '';
         return (
           <div
             key={idx}
-            className={`auction-player-box ${isFilled ? readinessClass : 'player-open'} ${team?.user_id === highestBidderId ? 'highest-bidder' : ''} ${disconnectedClass}`}
+            className={`auction-player-box ${playerStateClass} ${team?.user_id === highestBidderId ? 'highest-bidder' : ''} ${disconnectedClass}`}
           >
             <div className="auction-player-name">
               {playerName || 'Open Slot'}

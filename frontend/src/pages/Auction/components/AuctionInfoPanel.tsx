@@ -32,7 +32,30 @@ const AuctionInfoPanel: React.FC<AuctionInfoPanelProps> = ({
   const [pendingBid, setPendingBid] = useState<number | null>(null);
   const [isResetting, setIsResetting] = useState(false);
   const [isBidAnimating, setIsBidAnimating] = useState(false);
+  const [bidNotification, setBidNotification] = useState<string | null>(null);
   const isInitialBid = useRef(true);
+  const bidNotificationTimerRef = useRef<number | null>(null);
+
+  const showBidNotification = (message: string) => {
+    setBidNotification(message);
+
+    if (bidNotificationTimerRef.current) {
+      window.clearTimeout(bidNotificationTimerRef.current);
+    }
+
+    bidNotificationTimerRef.current = window.setTimeout(() => {
+      setBidNotification(null);
+      bidNotificationTimerRef.current = null;
+    }, 3000);
+  };
+
+  useEffect(() => {
+    return () => {
+      if (bidNotificationTimerRef.current) {
+        window.clearTimeout(bidNotificationTimerRef.current);
+      }
+    };
+  }, []);
 
   useEffect(() => {
     if (isInitialBid.current) {
@@ -90,12 +113,15 @@ const AuctionInfoPanel: React.FC<AuctionInfoPanelProps> = ({
   const handleBid100 = async () => {
     const newBid = current_auction.highest_bid + 100;
     if (newBid > userBudgetRemaining) {
-      console.error('Bid exceeds remaining budget');
+      showBidNotification("You don't have enough money for that bid.");
       return;
     }
     try {
       const response = await placeBid(draft_id, current_auction.auction_id, newBid);
       if (!response.accepted) {
+        if (response.error?.toLowerCase().includes('brokie')) {
+          showBidNotification("You don't have enough money for that bid.");
+        }
         console.error('Bid rejected:', response.error);
       }
     } catch (error) {
@@ -114,7 +140,7 @@ const AuctionInfoPanel: React.FC<AuctionInfoPanelProps> = ({
       return;
     }
     if (bidValue > userBudgetRemaining) {
-      console.error('Bid exceeds remaining budget');
+      showBidNotification("You don't have enough money for that bid.");
       return;
     }
     if (bidValue - current_auction.highest_bid > 2000) {
@@ -131,6 +157,9 @@ const AuctionInfoPanel: React.FC<AuctionInfoPanelProps> = ({
       if (response.accepted) {
         setCustomBidAmount('');
       } else {
+        if (response.error?.toLowerCase().includes('brokie')) {
+          showBidNotification("You don't have enough money for that bid.");
+        }
         console.error('Bid rejected:', response.error);
       }
     } catch (error) {
@@ -148,6 +177,11 @@ const AuctionInfoPanel: React.FC<AuctionInfoPanelProps> = ({
         Draft Number: {completed_auctions.length + 1}/{total_auctions}
       </div>
       <div className="auction-countdown-container">
+        {bidNotification && (
+          <div className="auction-bid-notification" role="status" aria-live="polite">
+            {bidNotification}
+          </div>
+        )}
         <div className="countdown-text" style={{ color: timerColor }}>
           {showBidNow ? 'Bid!' : `${secondsRemaining}s`}
         </div>

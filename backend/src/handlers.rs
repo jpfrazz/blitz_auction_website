@@ -370,6 +370,90 @@ pub async fn claim_eeveelution(
 }
 
 #[debug_handler]
+pub async fn unclaim_eeveelution(
+    State(state): State<ServerState>,
+    Path(draft_id): Path<String>,
+    auth_session: AuthSession<AuthBackend>,
+    Json(claim_request): Json<ClaimEeveelutionRequest>,
+) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
+    let user = auth_session
+        .user
+        .ok_or((StatusCode::UNAUTHORIZED, "user not authenticated".to_string()))?;
+
+    let Some(draft_lock) = state.drafts.get(&draft_id) else {
+        return Err((StatusCode::NOT_FOUND, "draft not found".to_string()));
+    };
+
+    let mut draft = draft_lock.write().await;
+    if draft.draft_state != DraftState::COMPLETED {
+        return Err((
+            StatusCode::PRECONDITION_FAILED,
+            "draft must be completed".to_string(),
+        ));
+    }
+
+    let target_pokemon = draft
+        .pokemon
+        .iter()
+        .find(|p| {
+            p.pokedex_id == claim_request.pokedex_id as u32
+                && p.form == claim_request.form
+        })
+        .ok_or((StatusCode::NOT_FOUND, "pokemon not found in draft".to_string()))?
+        .clone();
+
+    let user_id = user.get_user_id_string();
+    let Some(team) = draft.teams.get_mut(&user_id) else {
+        return Err((StatusCode::NOT_FOUND, "team not found".to_string()));
+    };
+
+    let maybe_index = team.auctions_won.iter().position(|p| {
+        p.pokedex_id == target_pokemon.pokedex_id && p.form == target_pokemon.form
+    });
+
+    if let Some(index) = maybe_index {
+        team.auctions_won.remove(index);
+
+        let draft_response = crate::draft::DraftResponse::from(draft.clone());
+        let _ = draft.tx.send(crate::messages::ServerMessage::DraftUpdate(draft_response));
+
+        return Ok(Json(serde_json::json!({
+            "success": true,
+            "unclaimed_by": user_id,
+            "pokemon": {
+                "pokedex_id": target_pokemon.pokedex_id,
+                "name": target_pokemon.name,
+                "form": target_pokemon.form
+            }
+        })));
+    }
+
+    let claimed_by_other = draft
+        .teams
+        .values()
+        .find(|other_team| {
+            other_team.user_id != user_id
+                && other_team
+                    .auctions_won
+                    .iter()
+                    .any(|p| p.pokedex_id == target_pokemon.pokedex_id && p.form == target_pokemon.form)
+        })
+        .map(|team| team.username.clone());
+
+    if let Some(owner_name) = claimed_by_other {
+        return Err((
+            StatusCode::FORBIDDEN,
+            format!("eeveelution is claimed by {}", owner_name),
+        ));
+    }
+
+    Err((
+        StatusCode::NOT_FOUND,
+        "you have not claimed this eeveelution".to_string(),
+    ))
+}
+
+#[debug_handler]
 pub async fn get_draft_chats(
     State(state): State<ServerState>,
     Path(draft_id): Path<String>,

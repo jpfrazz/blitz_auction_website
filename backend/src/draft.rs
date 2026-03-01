@@ -398,11 +398,11 @@ impl Draft {
                     .map(|p| p.trim().to_string())
                     .filter(|p| !p.is_empty())
                 else {
-                    return Err("draft password required".to_string());
+                    return Err("Draft Password Required".to_string());
                 };
 
                 if password != *draft_password {
-                    return Err("draft password is incorrect".to_string());
+                    return Err("Draft Password is Incorrect".to_string());
                 }
             }
         }
