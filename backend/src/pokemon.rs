@@ -1,4 +1,4 @@
-use std::{collections::HashMap, sync::OnceLock};
+use std::{collections::HashMap, sync::{Arc, OnceLock, RwLock}};
 use strum::{Display, EnumString};
 
 use dashmap::DashMap;
@@ -7,8 +7,7 @@ use sqlx::{PgPool, prelude::FromRow, types::Json};
 
 use crate::draft::ExcludedPokemon;
 
-type PokemonData = DashMap<String, HashMap<u32, HashMap<Option<String>, &'static Pokemon>>>;
-static POKEMON_DATA: OnceLock<PokemonData> = OnceLock::new();
+static POKEMON_DATA: OnceLock<RwLock<Vec<Arc<Pokemon>>>> = OnceLock::new();
 
 pub async fn init_pokemon_data(pool: &PgPool) -> Result<(), sqlx::Error> {
     let pokemon_list = sqlx::query!(
@@ -21,15 +20,14 @@ pub async fn init_pokemon_data(pool: &PgPool) -> Result<(), sqlx::Error> {
                         json_build_object(
                             'pokedex_id', km.pokedex_id,
                             'form', km.form,
-                            'patch_version', km.patch_version,
                             'move_name', km.move_name,
                             'learn_method', km.learn_method,
                             'species', km.species
                         )
                     )
                     FROM key_moves km
-                    WHERE (km.pokedex_id, km.form, km.patch_version) =
-                        (p.pokedex_id, p.form, p.patch_version)
+                    WHERE (km.pokedex_id, km.form) =
+                        (p.pokedex_id, p.form)
                 ),
                 '[]'::json
             ) as "key_moves!: Json<Vec<KeyMoveRow>>"
@@ -53,7 +51,6 @@ pub async fn init_pokemon_data(pool: &PgPool) -> Result<(), sqlx::Error> {
             panic!("stage not valid: {}, {}", row.stage, row.pokedex_id)
         }),
         is_baby: row.is_baby,
-        patch_version: row.patch_version,
         type1: row
             .type1
             .parse()
@@ -112,68 +109,40 @@ pub async fn init_pokemon_data(pool: &PgPool) -> Result<(), sqlx::Error> {
     .fetch_all(pool)
     .await?;
 
-    let cache: PokemonData = DashMap::new();
+    let pokemon_vec: Vec<Arc<Pokemon>> = pokemon_list
+        .into_iter()
+        .map(|p|
+            Arc::new(p)
+        )
+        .collect();
 
-    for pokemon in pokemon_list.into_iter() {
-        cache
-            .entry(pokemon.patch_version.clone())
-            .or_default()
-            .entry(pokemon.pokedex_id.clone())
-            .or_default()
-            .insert(pokemon.form.clone(), Box::leak(Box::new(pokemon)));
-    }
+    let rw_lock = RwLock::new(pokemon_vec);
 
     POKEMON_DATA
-        .set(cache)
+        .set(rw_lock)
         .expect("POKEMON_DATA already initialized");
     Ok(())
 }
 
 pub fn get_pokemon_data(
-    patch_version: &str,
     excluded_pokemon: &Vec<ExcludedPokemon>,
-) -> Option<Vec<&'static Pokemon>> {
+) -> Option<Vec<Arc<Pokemon>>> {
     let cache = POKEMON_DATA.get().expect("POKEMON_DATA not initialized");
-
-    let id_map = cache.get(patch_version)?;
+    let Ok(pokemon_vec) = cache.read() else {
+        return None;
+    };
 
     Some(
-        id_map
-            .values()
-            .flat_map(|form_map| form_map.values())
-            .copied()
+        pokemon_vec
+            .iter()
             .filter(|p| {
                 !excluded_pokemon
                     .iter()
                     .any(|e| e.pokedex_id == p.pokedex_id && e.form == p.form)
             })
-            .collect(),
-    )
-}
-
-fn parse_patch_version(version: &str) -> Vec<u32> {
-    version
-        .trim_start_matches(['v', 'V'])
-        .split('.')
-        .map(|part| part.parse::<u32>().unwrap_or(0))
-        .collect()
-}
-
-pub fn get_highest_patch_pokemon_data() -> Option<Vec<&'static Pokemon>> {
-    let cache = POKEMON_DATA.get().expect("POKEMON_DATA not initialized");
-
-    let highest_patch = cache
-        .iter()
-        .map(|entry| entry.key().clone())
-        .max_by(|a, b| parse_patch_version(a).cmp(&parse_patch_version(b)))?;
-
-    let id_map = cache.get(&highest_patch)?;
-
-    Some(
-        id_map
-            .values()
-            .flat_map(|form_map| form_map.values())
-            .copied()
+            .map(|p| {
+                p.clone()
+            })
             .collect(),
     )
 }
@@ -185,7 +154,6 @@ pub struct Pokemon {
     pub form: Option<String>,
     pub stage: PokemonStage,
     pub is_baby: bool,
-    pub patch_version: String,
     pub type1: PokemonType,
     pub type2: Option<PokemonType>,
     pub ability1: String,
@@ -203,7 +171,6 @@ pub struct Pokemon {
 pub struct KeyMoveRow {
     pub pokedex_id: i32,
     pub form: Option<String>,
-    pub patch_version: String,
     pub move_name: String,
     pub learn_method: String,
     pub species: Option<String>,

@@ -2,49 +2,33 @@
 
 // Pokémon table image in name column
 .pokemon-table-img {
-    width: 24px;
-    height: 24px;
+    width: auto;
+    height: auto;
+    max-width: 20px;
+    max-height: 20px;
     object-fit: contain;
-    margin-right: 10px;
     vertical-align: middle;
 }
 
-// Type pill color classes using SCSS variables from theme.scss
-.type-pill-normal   { background: $color-normal; }
-.type-pill-fire     { background: $color-fire; }
-.type-pill-water    { background: $color-water; }
-.type-pill-grass    { background: $color-grass; }
-.type-pill-electric { background: $color-electric;}
-.type-pill-ice      { background: $color-ice; }
-.type-pill-fighting { background: $color-fighting; }
-.type-pill-poison   { background: $color-poison; }
-.type-pill-ground   { background: $color-ground; }
-.type-pill-flying   { background: $color-flying; }
-.type-pill-psychic  { background: $color-psychic; }
-.type-pill-bug      { background: $color-bug; }
-.type-pill-rock     { background: $color-rock; }
-.type-pill-ghost    { background: $color-ghost; }
-.type-pill-dragon   { background: $color-dragon; }
-.type-pill-dark     { background: $color-dark; }
-.type-pill-steel    { background: $color-steel; }
-.type-pill-fairy    { background: $color-fairy; }
-
-.type-pill {
-    display: inline-flex;
+.pokemon-name-cell {
+    display: flex;
     align-items: center;
-    justify-content: center;
-    padding: 0 6px;
-    border-radius: 999px;
-    color: $eb-text;
-    font-size: 0.78em;
-    font-weight: 600;
-    margin: 0;
-    letter-spacing: 0.5px;
-    min-width: 32px;
-    text-align: center;
-    height: 18px;
-    margin-left: 5px;
 }
+
+.pokemon-icon-wrapper {
+    width: 24px;
+    display: flex;
+    justify-content: center;
+    margin-right: 8px;
+    flex-shrink: 0;
+}
+
+.all-pokemon-table .type-icon-table {
+    height: 1.5rem;
+    object-fit: contain;
+    margin: 0 1px;
+}
+
 .all-pokemon-container {
     position: relative;
     width: 100%;
@@ -54,7 +38,7 @@
 .all-pokemon-table-wrapper {
     width: 100%;
     overflow: auto;
-    max-height: 600px;
+    height: 100%;
 }
 
 .all-pokemon-table {
@@ -62,14 +46,14 @@
     border-collapse: collapse;
     background: $eb-bg;
     color: $eb-text;
-    font-size: 0.92rem;
+    font-size: 1.1rem;
 }
 
 .all-pokemon-table th, .all-pokemon-table td {
     border: 1px solid $eb-border;
     padding: 4px 8px;
     text-align: left;
-    font-size: 0.92rem;
+    font-size: 1.1rem;
     line-height: 1.2;
 }
 
@@ -80,6 +64,28 @@
     position: sticky;
     top: 0;
     z-index: 1;
+
+    &:nth-child(1) {
+        min-width: 10rem;
+    }
+
+    &:nth-child(2) {
+        min-width: 12rem;
+    }
+
+    &:nth-child(3) {
+        min-width: 16rem;
+    }
+
+    &:nth-child(4) {
+        width: auto;
+        min-width: 16rem;
+    }
+
+    &:nth-child(6) {
+        width: auto;
+        min-width: 8rem;
+    }
 }
 
 .all-pokemon-table tr:nth-child(even) {
@@ -106,9 +112,11 @@
     inset: 0;
     background: rgba(0, 0, 0, 0.72);
     display: flex;
-    align-items: center;
+    align-items: flex-start;
     justify-content: center;
     z-index: 1200;
+    padding-top: .6rem;
+    box-sizing: border-box;
 }
 
 .all-pokemon-modal {

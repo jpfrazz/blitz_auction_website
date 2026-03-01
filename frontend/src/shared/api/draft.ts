@@ -11,7 +11,6 @@ export interface CreateDraftRequest {
   ranked: boolean;
   password?: string | null;
   excluded_pokemon: ExcludedPokemon[];
-  patch_version: string;
   num_auctions: number;
   auction_length: {
     secs: number;

@@ -3,6 +3,7 @@ use strum::Display;
 
 use serde::{Deserialize, Serialize};
 use tokio::time::Instant;
+use std::sync::Arc;
 
 use crate::{pokemon::Pokemon, users::User};
 
@@ -12,7 +13,7 @@ pub struct Auction {
     pub draft_id: String,
     pub draft_order: u32,
     pub status: AuctionState,
-    pub pokemon: &'static Pokemon,
+    pub pokemon: Arc<Pokemon>,
     pub highest_bid: u32,
     pub highest_bidder: Option<User>,
     #[serde(skip)]
@@ -31,7 +32,7 @@ impl Auction {
         draft_id: String,
         draft_order: u32,
         auction_id: String,
-        pokemon: &'static Pokemon,
+        pokemon: Arc<Pokemon>,
     ) -> Auction {
         Auction {
             auction_id,
@@ -48,19 +49,18 @@ impl Auction {
     pub async fn build(
         draft_id: String,
         draft_order: u32,
-        pokemon: &'static Pokemon,
+        pokemon: Arc<Pokemon>,
         tx: &mut Transaction<'_, Postgres>,
     ) -> Result<Auction, sqlx::Error> {
         let auction_id = sqlx::query!(
             r#"
             INSERT INTO auctions
-            (pokedex_id, form, patch_version, draft_id, draft_order)
-            VALUES ($1, $2, $3, $4, $5)
+            (pokedex_id, form, draft_id, draft_order)
+            VALUES ($1, $2, $3, $4)
             RETURNING auction_id
             "#,
             pokemon.pokedex_id as i32,
             pokemon.form.clone().unwrap_or_else(|| "".to_string()),
-            pokemon.patch_version,
             draft_id,
             draft_order as i32,
         )

@@ -6,7 +6,7 @@ import './TierListTab.scss';
 const TierListTab = () => {
   return (
     <div className="auction-tier-list">
-      <img src='/tierlist.png' alt='Tier List'></img>
+      <img src='/tierlist.png' alt='Tier List' style={{ width: '100%', height: 'auto', display: 'block' }} />
     </div>
   );
 };

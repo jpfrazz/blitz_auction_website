@@ -1,5 +1,20 @@
 @import '../../shared/style/theme.scss';
 
+// Hide the main site header on the auction page
+body.auction-page-active {
+	.header {
+		transform: translateY(calc(-100% + 5px));
+		transition: transform 0.3s ease-in-out;
+
+		&:hover {
+			transform: translateY(0);
+		}
+	}
+	.header:hover ~ .auction-main-layout {
+		padding-top: 5.5rem;
+	}
+}
+
 html, body, #root {
   height: 100%;
 }
@@ -9,7 +24,8 @@ html, body, #root {
   display: flex;
   flex-direction: column;
   gap: 1rem;
-  padding: 7.5rem 1rem 1rem;
+  padding: 0.5rem 1rem 1rem;
+  transition: padding-top 0.3s ease-in-out;
   box-sizing: border-box;
   overflow-x: hidden;
   overflow-y: auto;
@@ -31,7 +47,7 @@ html, body, #root {
 .auction-left-panel {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 8px;
   width: 75%;
   height: 100%;
   min-height: 0;
@@ -83,10 +99,13 @@ html, body, #root {
   flex-direction: column;
   gap: 12px;
   box-sizing: border-box;
+  align-items: center;
 }
 
 .auction-password-modal-title {
   margin: 0;
+  width: 100%;
+  text-align: center;
 }
 
 .auction-password-modal-input {
@@ -106,9 +125,16 @@ html, body, #root {
 
 .auction-password-modal-actions {
   display: flex;
-  justify-content: space-between;
+  justify-content: center;
   align-items: center;
+  gap: 1rem;
   width: 100%;
+
+  .button {
+    padding: 1.5rem 1.5rem;
+    flex: 1;
+    white-space: nowrap;
+  }
 }
 .draft-completed-panel {
   display: flex;

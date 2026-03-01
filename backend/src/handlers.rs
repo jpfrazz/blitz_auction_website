@@ -149,19 +149,6 @@ pub async fn get_draft(
 }
 
 #[debug_handler]
-pub async fn get_highest_patch_pokemon(
-) -> Result<Json<Vec<&'static pokemon::Pokemon>>, (StatusCode, String)> {
-    let Some(pokemon) = pokemon::get_highest_patch_pokemon_data() else {
-        return Err((
-            StatusCode::NOT_FOUND,
-            "no pokemon data available".to_string(),
-        ));
-    };
-
-    Ok(Json(pokemon))
-}
-
-#[debug_handler]
 pub async fn join_draft(
     State(state): State<ServerState>,
     Path(draft_id): Path<String>,
@@ -319,8 +306,8 @@ pub async fn claim_eeveelution(
             p.pokedex_id == claim_request.pokedex_id as u32
                 && p.form == claim_request.form
         })
-        .copied()
-        .ok_or((StatusCode::NOT_FOUND, "pokemon not found in draft".to_string()))?;
+        .ok_or((StatusCode::NOT_FOUND, "pokemon not found in draft".to_string()))?
+        .clone();
 
     // Check if this pokemon was already claimed by someone else
     let already_claimed_by = draft
@@ -349,7 +336,7 @@ pub async fn claim_eeveelution(
     // Add the eeveelution to the user's team
     let user_id = user.get_user_id_string();
     if let Some(team) = draft.teams.get_mut(&user_id) {
-        team.auctions_won.push(target_pokemon);
+        team.auctions_won.push(target_pokemon.clone());
 
         // Broadcast full draft object to all websocket clients
         let draft_response = crate::draft::DraftResponse::from(draft.clone());

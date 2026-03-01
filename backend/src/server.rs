@@ -109,7 +109,6 @@ impl Server {
     ) -> Router {
         let public_routes = Router::new()
             .route("/", get(|| async { "blitz auction api" }))
-            .route("/pokemon/highest-patch", get(handlers::get_highest_patch_pokemon))
             .route("/drafts/{draft_id}", get(handlers::get_draft))
             .route("/ws/{draft_id}", any(handlers::websocket_handler))
             .route("/login", get(handlers::discord_oauth_redirect))

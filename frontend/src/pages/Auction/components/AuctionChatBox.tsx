@@ -13,6 +13,7 @@ const AuctionChatBox: React.FC<AuctionChatBoxProps> = ({ draftId, isGuest, isLog
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [newMessage, setNewMessage] = useState('');
   const [isSending, setIsSending] = useState(false);
+  const [isCollapsed, setIsCollapsed] = useState(true);
 
   const loadChats = useCallback(async () => {
     try {
@@ -60,42 +61,53 @@ const AuctionChatBox: React.FC<AuctionChatBoxProps> = ({ draftId, isGuest, isLog
   };
 
   return (
-    <div className="auction-chat-box">
+    <div className={`auction-chat-box ${isCollapsed ? 'collapsed' : ''}`}>
       <div className="auction-chat-header">
         <div className="auction-chat-title">Chat</div>
-      </div>
-      <div className="auction-chat-body">
-        {messages.length === 0 ? (
-          <div className="auction-chat-empty">No messages yet.</div>
-        ) : (
-          messages.map(message => (
-            <div className="auction-chat-message" key={message.chat_id}>
-              <div className="auction-chat-message-header">
-                <span className="auction-chat-user">{message.user_name}</span>
-                <span className="auction-chat-time">{formatTime(message.created_at)}</span>
-              </div>
-              <div className="auction-chat-text">{message.message}</div>
-            </div>
-          ))
-        )}
-      </div>
-      <form className="auction-chat-input-row" onSubmit={handleSend}>
-        <input
-          className="auction-chat-input"
-          type="text"
-          value={newMessage}
-          onChange={event => setNewMessage(event.target.value)}
-          placeholder={isGuest ? 'Guests can view chat only' : 'Type a message...'}
-          disabled={isGuest || isSending || !isLoggedIn}
-        />
         <button
-          className="auction-chat-send button"
-          type="submit"
-          disabled={isGuest || isSending || newMessage.trim().length === 0}
+          type="button"
+          onClick={() => setIsCollapsed(!isCollapsed)}
+          className="auction-chat-collapse-btn"
         >
-          {isGuest ? 'Send' : isSending ? 'Sending...' : 'Send'}
+          {isCollapsed ? '+' : '-'}
         </button>
-      </form>
+      </div>
+      {!isCollapsed && (
+        <>
+          <div className="auction-chat-body">
+            {messages.length === 0 ? (
+              <div className="auction-chat-empty">No messages yet.</div>
+            ) : (
+              messages.map(message => (
+                <div className="auction-chat-message" key={message.chat_id}>
+                  <div className="auction-chat-message-header">
+                    <span className="auction-chat-user">{message.user_name}</span>
+                    <span className="auction-chat-time">{formatTime(message.created_at)}</span>
+                  </div>
+                  <div className="auction-chat-text">{message.message}</div>
+                </div>
+              ))
+            )}
+          </div>
+          <form className="auction-chat-input-row" onSubmit={handleSend}>
+            <input
+              className="auction-chat-input"
+              type="text"
+              value={newMessage}
+              onChange={event => setNewMessage(event.target.value)}
+              placeholder={isGuest ? 'Guests can view chat only' : 'Type a message...'}
+              disabled={isGuest || isSending || !isLoggedIn}
+            />
+            <button
+              className="auction-chat-send button"
+              type="submit"
+              disabled={isGuest || isSending || newMessage.trim().length === 0}
+            >
+              {isGuest ? 'Send' : isSending ? 'Sending...' : 'Send'}
+            </button>
+          </form>
+        </>
+      )}
     </div>
   );
 };

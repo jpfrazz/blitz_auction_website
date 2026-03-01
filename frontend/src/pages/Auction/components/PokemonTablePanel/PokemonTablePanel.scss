@@ -10,7 +10,7 @@
 	width: 100%;
 	flex: 1;
 	min-height: 0;
-	overflow: auto;
+	overflow: hidden;
 }
 
 .pokemon-table-panel-outer {
@@ -36,7 +36,7 @@
 		border: none;
 		color: $eb-text-black;
 		font-size: 1rem;
-		padding: 8px 16px;
+		padding: 4px 16px;
 		cursor: pointer;
 		border-radius: 4px 4px 0 0;
 		transition: background 0.15s, color 0.15s;

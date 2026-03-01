@@ -23,6 +23,7 @@ class CsvRow(TypedDict):
     dex_number: str
     name: str
     form: str
+    description: str
     evolves_from_id: str
     evolves_from_form: str
     type1: str
@@ -45,7 +46,6 @@ class CsvRow(TypedDict):
 class DbRow(TypedDict):
     pokedex_id: int
     name: str
-    patch_version: str
     form: str
     stage: str
     description: Optional[str]
@@ -70,7 +70,6 @@ class DbRow(TypedDict):
 class KeyMoveRow(TypedDict):
     pokedex_id: int
     form: str
-    patch_version: str
     move_name: str
     learn_method: str
     species: str
@@ -118,13 +117,10 @@ def to_bool(value: Optional[str], default: bool = False) -> bool:
 
 def transform_row(
     row: CsvRow,
-    *,
-    patch_version: str,
 ) -> DbRow:
     return DbRow(
         pokedex_id=to_int(row["dex_number"]),
         name=row["name"].strip(),
-        patch_version=patch_version,
         form=row["form"].strip(),
         stage=row["stage"].strip(),
         description=row["description"],
@@ -147,11 +143,10 @@ def transform_row(
     )
 
 
-def transform_key_move_row(row: Mapping[str, str], *, patch_version: str) -> KeyMoveRow:
+def transform_key_move_row(row: Mapping[str, str]) -> KeyMoveRow:
     return KeyMoveRow(
         pokedex_id=to_int(row.get("pokedex_id", "")),
         form=row.get("form", "").strip(),
-        patch_version=patch_version,
         move_name=row.get("move_name", "").strip(),
         learn_method=row.get("learn_method", "").strip(),
         species=row.get("species", "").strip(),
@@ -163,7 +158,6 @@ INSERT_SQL = """
 INSERT INTO pokemon (
     pokedex_id,
     name,
-    patch_version,
     form,
     stage,
     description,
@@ -187,7 +181,6 @@ INSERT INTO pokemon (
 VALUES (
     %(pokedex_id)s,
     %(name)s,
-    %(patch_version)s,
     %(form)s,
     %(stage)s,
     %(description)s,
@@ -208,7 +201,7 @@ VALUES (
     %(sp_defense)s,
     %(speed)s
 )
-ON CONFLICT (pokedex_id, form, patch_version)
+ON CONFLICT (pokedex_id, form)
 DO NOTHING;
 """
 
@@ -216,7 +209,6 @@ INSERT_KEY_MOVES_SQL = """
 INSERT INTO key_moves (
     pokedex_id,
     form,
-    patch_version,
     move_name,
     learn_method,
     species
@@ -224,7 +216,6 @@ INSERT INTO key_moves (
 VALUES (
     %(pokedex_id)s,
     %(form)s,
-    %(patch_version)s,
     %(move_name)s,
     %(learn_method)s,
     %(species)s
@@ -267,10 +258,9 @@ def load_csv(
     *,
     csv_path: Path,
     dsn: str,
-    patch_version: str,
 ) -> None:
     transformed_rows = (
-        transform_row(row, patch_version=patch_version)
+        transform_row(row)
         for row in read_csv(csv_path)
     )
 
@@ -282,10 +272,9 @@ def load_key_moves_csv(
     *,
     csv_path: Path,
     dsn: str,
-    patch_version: str,
 ) -> None:
     transformed_rows = (
-        transform_key_move_row(row, patch_version=patch_version)
+        transform_key_move_row(row)
         for row in read_csv(csv_path)
     )
 
@@ -301,10 +290,8 @@ if __name__ == "__main__":
     load_csv(
         csv_path=Path("pokemon.csv"),
         dsn=dsn,
-        patch_version="8.3",
     )
     load_key_moves_csv(
         csv_path=Path("pokemon_moves.csv"),
         dsn=dsn,
-        patch_version="8.3",
     )
