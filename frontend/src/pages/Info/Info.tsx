@@ -21,6 +21,7 @@ const Info = () => (
           <li><a href="#slateport-market-items">Slateport Market Items</a></li>
           <li><a href="#gym-benchmarks">Gym Benchmarks</a></li>
           <li><a href="#complete-learnset">Complete Learnsets</a></li>
+          <li><a href="#inter-gym-mechanics">Inter-Gym Mechanics</a></li>
           <li><a href="#ai-logic">AI Logic</a></li>
           <li><a href="#key-binds">Key Binds</a></li>
         </ul>
@@ -670,10 +671,46 @@ const Info = () => (
         <h2 className="info-question">Complete Learnsets</h2>
         <hr />
         <p className="info-answer">
-          Emerald Blitz uses custom learnsets for all Pokémon. For a complete list of moves each Pokémon can learn, please refer to the <a href="/Pokedex" target="_blank" rel="noopener noreferrer">
-              Pokédex
-            </a>.
+          Emerald Blitz uses custom learnsets for all Pokémon based on generation 7. For a complete list of moves each Pokémon can learn, see:
         </p>
+        <ul>
+          <li><a href="https://github.com/FranklyNathan/EmeraldBlitz/blob/main/src/data/pokemon/level_up_learnsets/gen_7.h" target="_blank" rel="noopener noreferrer">Level-Up Moves</a></li>
+          <li><a href="https://github.com/FranklyNathan/EmeraldBlitz/blob/main/src/data/pokemon/teachable_learnsets.h" target="_blank" rel="noopener noreferrer">Teachable Moves</a></li>
+          <li><a href="https://github.com/FranklyNathan/EmeraldBlitz/blob/main/src/data/pokemon/egg_moves.h" target="_blank" rel="noopener noreferrer">Egg Moves</a></li>
+        </ul>
+      </section>
+
+      <section id="inter-gym-mechanics" className="info-section">
+        <h2 className="info-question">Inter-Gym Mechanics</h2>
+        <hr />
+        <p className="info-answer">
+          <strong>Day Care</strong>
+        </p>
+        <p className="info-answer">
+          The Day Care has been repurposed! Now, when you leave your Pokmeon in the Day Care and come back after earning a badge, the first move in its learnset is replaced with its egg move. Each evolution line in Emerald Blitz has one egg move. Talk to the old man out front to check what each Pokémon in your party could learn!
+        </p>
+        <ul>
+          <li>Once you've visited Mauville City, you can fly directly to the Day Care.</li>
+          <li>You can't access the Day Care until you've earned at least one badge.</li>
+          <li>You can only store one Pokémon in the Day Care at a time.</li>
+        </ul>
+        <p className="info-answer">
+          <strong>Pokémon Renting</strong>
+        </p>
+        <p className="info-answer">
+          For the price of ¥6000, Talk to the shady man in the top left of the Slateport Market to rent a Pokémon. Once rented, you can use it for the next gym before returning it.<br />
+          <br />
+          After renting, when you re-enter the market with a new badge, the salesman teleports to you and reclaims your rented Pokemon. If the rented Pokémon is fainted, he scolds you thoroughly and charges you an additional ¥6000 for being so careless.<br />
+          <br />
+          ...Still, even if it's fainted, returning the rental Pokémon is the right thing to do. If you steal it, you'll be paying back renter NPC for the rest of your run, never able to purchase anything but berries.
+        </p>
+        <ul>
+          <li>You can rent one Pokemon at a time.</li>
+          <li>You can no longer rent Pokémon after obtaining the 7th badge.</li>
+          <li>Once renter NPC chooses a Pokémon to offer to you, he'll continue to offer that same Pokémon until you rent it (it doesn't randomize each time you speak to him).</li>
+          <li>Mega Stones for the eight Pokémon in the pool who can mega evolve are available for purchase in Slateport's outdoor market after you obtain the 6th gym badge.</li>
+          <li>Stealing a Pokémon effectively locks you out of the Slateport outdoor market, as renter NPC will reclaim his Pokémon on entrance. Because of this, doing so by renting at the latest possible point costs ¥28,250 (the cost of the rental plus the prize money you're no longer able to spend).</li>
+        </ul>
       </section>
 
       <section id="ai-logic" className="info-section">

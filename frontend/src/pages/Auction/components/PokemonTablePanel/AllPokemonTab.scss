@@ -32,13 +32,16 @@
 .all-pokemon-container {
     position: relative;
     width: 100%;
-    height: 100%;
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
 }
 
 .all-pokemon-table-wrapper {
     width: 100%;
     overflow: auto;
-    height: 100%;
+    flex: 1;
 }
 
 .all-pokemon-table {
@@ -121,8 +124,8 @@
 
 .all-pokemon-modal {
     position: relative;
-    width: min(1024px, 95vw);
-    max-height: 92vh;
+    width: 95%;
+    max-height: 95%;
     overflow: auto;
     background: $eb-surface;
     border: 1px solid $eb-border;
