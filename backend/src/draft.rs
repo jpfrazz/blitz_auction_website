@@ -35,6 +35,7 @@ pub struct Draft {
     pub tx: broadcast::Sender<ServerMessage>,
     pub db_pool: PgPool,
     pub expires_at: chrono::DateTime<Utc>,
+    pub current_server_time: chrono::DateTime<Utc>,
     draft_runner: Arc<DraftRunner>,
 }
 
@@ -52,6 +53,7 @@ pub struct DraftResponse {
     completed_auctions: Vec<Auction>,
     current_auction: Option<Auction>,
     current_auction_expires_at: Option<chrono::DateTime<Utc>>,
+    current_server_time: chrono::DateTime<Utc>,
     pokemon: Vec<Arc<Pokemon>>,
 }
 
@@ -101,6 +103,7 @@ impl From<Draft> for DraftResponse {
             draft_state: draft.draft_state,
             current_auction,
             current_auction_expires_at,
+            current_server_time: draft.current_server_time,
             completed_auctions: draft
                 .auctions
                 .into_iter()
@@ -197,6 +200,7 @@ impl Draft {
             tx,
             draft_runner,
             expires_at,
+            current_server_time: Utc::now(),
         }
     }
 
@@ -528,26 +532,36 @@ impl Draft {
         }
 
         // update auction in memory
-        let (pokedex_id, form, winning_bid, winning_bidder, expires_at) = {
+        let (pokedex_id, form, winning_bid, winning_bidder, expires_at, expires_at_changed) = {
             let current_auction = self.current_auction as usize;
             let auction = &mut self.auctions[current_auction];
+            let previous_expires_at = auction.expires_at;
+            let updated_expires_at = std::cmp::max(
+                previous_expires_at.unwrap(),
+                Instant::now() + Duration::from_secs(10),
+            );
             auction.highest_bidder = Some(user.clone());
             auction.highest_bid = bid_request.value;
-            auction.expires_at = Some(std::cmp::max(
-                auction.expires_at.unwrap(),
-                Instant::now() + Duration::from_secs(10),
-            ));
+            auction.expires_at = Some(updated_expires_at);
             if auction.status == AuctionState::PENDING {
                 auction.status = AuctionState::OPEN;
             }
+            let expires_at_changed = previous_expires_at
+                .map(|value| value != updated_expires_at)
+                .unwrap_or(true);
             (
                 auction.pokemon.pokedex_id,
                 auction.pokemon.form.clone(),
                 auction.highest_bid,
                 user,
-                crate::get_expiry_time_from_instant(auction.expires_at.unwrap()),
+                crate::get_expiry_time_from_instant(updated_expires_at),
+                expires_at_changed,
             )
         };
+
+        if expires_at_changed {
+            self.current_server_time = Utc::now();
+        }
 
         // send update to ws
         // let _ = draft.tx.send(ServerMessage::AuctionUpdate {

@@ -8,6 +8,7 @@ interface AuctionInfoPanelProps {
   current_auction: Auction;
   draft_id: string;
   currentAuctionExpiresAt?: string;
+  currentServerTime?: string;
   canBid: boolean;
   userBudgetRemaining: number;
   completed_auctions: Auction[];
@@ -19,6 +20,7 @@ const AuctionInfoPanel: React.FC<AuctionInfoPanelProps> = ({
   current_auction,
   draft_id,
   currentAuctionExpiresAt,
+  currentServerTime,
   canBid,
   userBudgetRemaining,
   completed_auctions,
@@ -75,10 +77,17 @@ const AuctionInfoPanel: React.FC<AuctionInfoPanelProps> = ({
     setIsResetting(true);
     const resetTimer = setTimeout(() => setIsResetting(false), 500);
 
+    const serverNowMs = new Date(currentServerTime ?? 0).getTime();
+    const expiresAtMs = new Date(currentAuctionExpiresAt ?? 0).getTime();
+    const initialRemainingMs = Number.isNaN(serverNowMs) || Number.isNaN(expiresAtMs)
+      ? 0
+      : Math.max(0, expiresAtMs - serverNowMs);
+    const startPerfMs = performance.now();
+
     const updateCountdown = () => {
-      const expiresAt = new Date(currentAuctionExpiresAt ?? 0).getTime();
-      const now = Date.now();
-      const remaining = Math.max(0, Math.floor((expiresAt - now) / 1000));
+      const elapsedSinceStart = performance.now() - startPerfMs;
+      const remainingMs = Math.max(0, initialRemainingMs - elapsedSinceStart);
+      const remaining = Math.floor(remainingMs / 1000);
       setSecondsRemaining(remaining);
       
       // Set initial seconds only once
@@ -88,12 +97,12 @@ const AuctionInfoPanel: React.FC<AuctionInfoPanelProps> = ({
     };
 
     updateCountdown();
-    const interval = setInterval(updateCountdown, 1000);
+    const interval = setInterval(updateCountdown, 250);
     return () => {
       clearInterval(interval);
       clearTimeout(resetTimer);
     };
-  }, [currentAuctionExpiresAt, initialSeconds]);
+  }, [currentAuctionExpiresAt, currentServerTime, initialSeconds]);
 
   const progress = initialSeconds > 0 ? secondsRemaining / initialSeconds : 0;
 
