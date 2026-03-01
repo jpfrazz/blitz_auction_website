@@ -39,7 +39,13 @@ export interface KeyMove {
 
 export type SerializedUser =
   | { GuestUser: { user_id: string; user_name: string } }
-  | { DiscordUser: { user_id: string; user_name: string } };
+  | { DiscordUser: {
+      id?: string | null;
+      user_id?: string;
+      user_name?: string;
+      username?: string;
+      global_name?: string | null;
+    } };
 
 // Types for draft data
 export type DraftState = 'PENDING' | 'BIDDING' | 'PAUSED' | 'COMPLETED' | { BIDDING: number } | { PAUSED: number };
