@@ -145,7 +145,7 @@ const AuctionInfoPanel: React.FC<AuctionInfoPanelProps> = ({
   return (
     <div className="auction-info-box">
       <div className="auction-draft-number">
-        Draft #: {completed_auctions.length + 1}/{total_auctions}
+        Draft Number: {completed_auctions.length + 1}/{total_auctions}
       </div>
       <div className="auction-countdown-container">
         <div className="countdown-text" style={{ color: timerColor }}>
