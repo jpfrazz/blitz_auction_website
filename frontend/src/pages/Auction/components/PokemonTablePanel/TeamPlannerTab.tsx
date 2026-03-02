@@ -20,6 +20,14 @@ const TeamPlannerTab: React.FC<TeamPlannerTabProps> = ({ teams, currentUserId, a
   }
 
   const teamPokemon = currentUserTeam.auctions_won ?? currentUserTeam.pokemon ?? [];
+  const sortedTeamPokemon = [...teamPokemon].sort((a, b) => {
+    const nameCompare = a.name.localeCompare(b.name);
+    if (nameCompare !== 0) {
+      return nameCompare;
+    }
+
+    return (a.form ?? '').localeCompare(b.form ?? '');
+  });
 
   if (teamPokemon.length === 0) {
     return <div className="auction-team-planner-placeholder">No Pokémon drafted yet.</div>;
@@ -69,13 +77,13 @@ const TeamPlannerTab: React.FC<TeamPlannerTabProps> = ({ teams, currentUserId, a
   }
 
   const evoItemCounts: Record<string, number> = {};
-  teamPokemon.forEach(pokemon => {
+  sortedTeamPokemon.forEach(pokemon => {
     collectEvoItemsFromTree(pokemon, allPokemon, evoItemCounts);
   });
 
   const sortedItems = Object.entries(evoItemCounts).sort((a, b) => b[1] - a[1]);
 
-  const teamPokemonAuctions: Auction[] = teamPokemon.map((pokemon, index) => ({
+  const teamPokemonAuctions: Auction[] = sortedTeamPokemon.map((pokemon, index) => ({
     auction_id: `team-planner-${pokemon.name}-${pokemon.form ?? 'base'}-${index}`,
     pokemon,
     status: 'COMPLETED',
