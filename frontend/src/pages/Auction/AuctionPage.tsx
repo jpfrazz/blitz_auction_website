@@ -254,7 +254,7 @@ const AuctionPage: React.FC = () => {
   };
 
   return (
-    <>
+    <div style={{ display: 'flex', flexDirection: 'column', height: '100vh' }}>
       <Header />
       <main className="auction-main-layout">
         {loading && <div>Loading draft...</div>}
@@ -496,7 +496,7 @@ const AuctionPage: React.FC = () => {
 
         {!loading && !draft && <div>No draft found.</div>}
       </main>
-    </>
+    </div>
   );
 };
 

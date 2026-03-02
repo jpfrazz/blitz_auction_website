@@ -190,6 +190,7 @@ const Info = () => (
               <li className="tm-grass">Bullet Seed</li>
               <li className='tm-normal'>Safeguard</li>
               <li className="tm-steel">Steel Wing</li>
+              <li className="tm-dark">Taunt</li>
               <li className="tm-dark">Thief</li>
               <li className="tm-psychic">Trick Room</li>
             </ul>

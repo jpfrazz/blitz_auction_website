@@ -90,7 +90,7 @@ const HoppingIcons = () => {
       width: '100%',
       height: '100%',
       pointerEvents: 'none',
-      zIndex: 1,
+      zIndex: 100,
       overflow: 'hidden'
     }}>
       <button
@@ -113,7 +113,7 @@ const HoppingIcons = () => {
           style={{
             position: 'absolute',
             left: `${icon.x}px`,
-            bottom: `${icon.y + 60}px`,
+            bottom: `${icon.y + 65}px`,
             imageRendering: 'pixelated'
           }}
           onError={(e) => e.currentTarget.style.display = 'none'}
@@ -124,16 +124,17 @@ const HoppingIcons = () => {
 };
 
 const Home = () => (
-  <>
+  <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
     <Header />
     <HoppingIcons />
     <main style={{
-      minHeight: 'calc(100vh - 180px)', // adjust for header/footer
+      flex: 1,
       display: 'flex',
       flexDirection: 'column',
       alignItems: 'center',
       justifyContent: 'center',
       padding: '7.5rem 16px 0',
+      boxSizing: 'border-box',
     }}>
       <img
         src="/blitzlogo.png"
@@ -161,7 +162,7 @@ const Home = () => (
       </div>
     </main>
     <Footer />
-  </>
+  </div>
 );
 
 export default Home;

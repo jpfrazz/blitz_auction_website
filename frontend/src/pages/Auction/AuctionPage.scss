@@ -29,15 +29,14 @@ html, body, #root {
 }
 
 .auction-main-layout {
-  height: 100%;
+  flex: 1;
   display: flex;
   flex-direction: column;
   gap: 1rem;
   padding: 0.5rem 1rem 1rem;
   transition: padding-top 0.3s ease-in-out;
   box-sizing: border-box;
-  overflow-x: hidden;
-  overflow-y: auto;
+  overflow: hidden;
   width: 100%;
 }
 
@@ -129,7 +128,7 @@ html, body, #root {
 
 .auction-password-modal-error {
   color: $eb-primary-hover;
-  font-size: 0.9rem;
+  font-size: 1.5rem;
 }
 
 .auction-password-modal-actions {
