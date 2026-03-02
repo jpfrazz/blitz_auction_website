@@ -110,7 +110,7 @@ const LobbyViewer: React.FC = () => {
   });
 
   return (
-    <>
+    <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
       <Header />
       <main className="lobby-viewer-main">
         <h1 className="lobby-viewer-title">Lobby Viewer</h1>
@@ -195,7 +195,7 @@ const LobbyViewer: React.FC = () => {
         )}
       </main>
       <Footer />
-    </>
+    </div>
   );
 };
 

@@ -209,6 +209,17 @@ const BossBattles = () => {
         }
       }
 
+      if (trainerKey === 'ARCHIE') {
+        infoLines.push(
+          <span>How villainous! Archie has a 50% chance of appearing instead of Juan and Wallace 8.</span>
+        );
+      }
+      if (trainerKey === 'MAXIE') {
+        infoLines.push(
+          <span>How villainous! Maxie has a 50% chance of appearing instead of Flannery 8.</span>
+        );
+      }
+
       trainers.push({
         id: `trainer-${index}`,
         displayName: trainerIdLine,

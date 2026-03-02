@@ -16,13 +16,13 @@ const DEFAULT_STARTING_MONEY = 20000;
 const DEFAULT_AUCTION_SECONDS = 10;
 
 const AuctionSetup = () => (
-  <>
+  <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
     <Header />
     <main className="auction-setup-main">
       <AuctionSetupForm />
     </main>
     <Footer />
-  </>
+  </div>
 );
 
 const AuctionSetupForm: React.FC = () => {

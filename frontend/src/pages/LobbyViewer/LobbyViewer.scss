@@ -1,7 +1,9 @@
 @import '../../shared/style/theme.scss';
 
 .lobby-viewer-main {
-  min-height: calc(91vh - 180px);
+  flex: 1;
+  display: flex;
+  flex-direction: column;
   padding: 7.5rem 16px 0;
   font-size: 14px;
 }

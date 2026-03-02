@@ -115,6 +115,13 @@ In-Game Timer now displays seconds
 Juan&Wallace can no longer switch out Dondozo or Whiscash
 //Preventing bugs during which the catfish swap out while a Tatsugiri is inside of them. Spam Charm until the cows come home.
 
+Added Mega Evolution Sprites for Excadrill, Froslass and Eelektrik
+//Thanks to GRAFAIAIMX for posting these for public use
+
+Added a new Portable PC sprite
+//Thanks to Zarha for continuing to cook
+
+
 -----------------------------------------------
 Pool Removals
 -----------------------------------------------
