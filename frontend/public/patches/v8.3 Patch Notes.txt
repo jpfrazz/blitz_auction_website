@@ -106,12 +106,14 @@ All Weather TMs now cost 2000
 
 
 -----------------------------------------------
-QoL Changes
+QoL Changes & Bugfix
 -----------------------------------------------
 
 In-Game Timer now displays seconds
 //Whenever the player's in-game time is printed (on the trainer card, while saving, or on the Hall of Fame screen), it now displays with seconds.
 
+Juan&Wallace can no longer switch out Dondozo or Whiscash
+//Preventing bugs during which the catfish swap out while a Tatsugiri is inside of them. Spam Charm until the cows come home.
 
 -----------------------------------------------
 Pool Removals
