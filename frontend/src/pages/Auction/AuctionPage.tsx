@@ -14,6 +14,11 @@ import PokemonTablePanel from './components/PokemonTablePanel/PokemonTablePanel'
 import EeveelutionClaimModal from './components/EeveelutionClaimModal';
 import { Draft } from '../../types';
 
+const AUCTION_ALERT_SOUND_PATH = encodeURI('/14 Battle! (Wild Pokémon).mp3');
+const AUCTION_ALERT_SOUND_MUTED_KEY = 'auction_alert_sound_muted';
+const AUCTION_ALERT_SOUND_MUTED_EVENT = 'auction-alert-muted-changed';
+const AUCTION_ALERT_VOLUME = 0.6;
+
 function useAuctionId() {
   const location = useLocation();
   return location.search.replace(/^\?/, '');
@@ -35,6 +40,13 @@ const AuctionPage: React.FC = () => {
   const [showEeveelutionModal, setShowEeveelutionModal] = useState(false);
   const [avatar, setAvatar] = useState<string | undefined>(undefined);
   const [wsConnected, setWsConnected] = useState(true);
+  const [isAuctionSoundMuted, setIsAuctionSoundMuted] = useState<boolean>(() => {
+    if (typeof window === 'undefined') {
+      return false;
+    }
+
+    return localStorage.getItem(AUCTION_ALERT_SOUND_MUTED_KEY) === 'true';
+  });
   const [showDraftSettingsModal, setShowDraftSettingsModal] = useState(false);
   const [pendingNumTeams, setPendingNumTeams] = useState('');
   const [pendingNumAuctions, setPendingNumAuctions] = useState('');
@@ -43,14 +55,91 @@ const AuctionPage: React.FC = () => {
   const [draftSettingsError, setDraftSettingsError] = useState<string | null>(null);
 
   const wsRef = useRef<WebSocket | null>(null);
+  const auctionAlertAudioRef = useRef<HTMLAudioElement | null>(null);
+  const auctionAlertStopTimerRef = useRef<number | null>(null);
+  const previousAuctionIdRef = useRef<string | null>(null);
+  const hasInitializedAuctionTrackingRef = useRef(false);
 
   useEffect(() => {
     document.body.classList.add('auction-page-active');
     // Cleanup function to remove the class when the component unmounts
     return () => {
       document.body.classList.remove('auction-page-active');
+
+      if (auctionAlertStopTimerRef.current) {
+        window.clearTimeout(auctionAlertStopTimerRef.current);
+        auctionAlertStopTimerRef.current = null;
+      }
+
+      if (auctionAlertAudioRef.current) {
+        auctionAlertAudioRef.current.pause();
+        auctionAlertAudioRef.current = null;
+      }
     };
   }, []); // The empty array ensures this runs only once on mount and cleanup on unmount
+
+  useEffect(() => {
+    const handleMutedChanged = (event: Event) => {
+      const customEvent = event as CustomEvent<boolean>;
+      if (typeof customEvent.detail === 'boolean') {
+        setIsAuctionSoundMuted(customEvent.detail);
+      }
+    };
+
+    window.addEventListener(AUCTION_ALERT_SOUND_MUTED_EVENT, handleMutedChanged as EventListener);
+
+    return () => {
+      window.removeEventListener(AUCTION_ALERT_SOUND_MUTED_EVENT, handleMutedChanged as EventListener);
+    };
+  }, []);
+
+  const playAuctionStartAlert = async () => {
+    if (!auctionAlertAudioRef.current) {
+      auctionAlertAudioRef.current = new Audio(AUCTION_ALERT_SOUND_PATH);
+      auctionAlertAudioRef.current.preload = 'auto';
+    }
+
+    const audio = auctionAlertAudioRef.current;
+    audio.volume = AUCTION_ALERT_VOLUME;
+
+    if (auctionAlertStopTimerRef.current) {
+      window.clearTimeout(auctionAlertStopTimerRef.current);
+      auctionAlertStopTimerRef.current = null;
+    }
+
+    audio.currentTime = 0;
+
+    try {
+      await audio.play();
+    } catch {
+      return;
+    }
+
+    auctionAlertStopTimerRef.current = window.setTimeout(() => {
+      audio.pause();
+      audio.currentTime = 0;
+      auctionAlertStopTimerRef.current = null;
+    }, 2000);
+  };
+
+  useEffect(() => {
+    const currentAuctionId = draft?.current_auction?.auction_id ?? null;
+
+    if (!hasInitializedAuctionTrackingRef.current) {
+      hasInitializedAuctionTrackingRef.current = true;
+      previousAuctionIdRef.current = currentAuctionId;
+      return;
+    }
+
+    const isNewAuction = currentAuctionId !== null
+      && previousAuctionIdRef.current !== currentAuctionId;
+
+    if (isNewAuction && !isAuctionSoundMuted) {
+      void playAuctionStartAlert();
+    }
+
+    previousAuctionIdRef.current = currentAuctionId;
+  }, [draft?.current_auction?.auction_id, isAuctionSoundMuted]);
 
   const connectWebSocket = (draftId: string) => {
     if (wsRef.current) {

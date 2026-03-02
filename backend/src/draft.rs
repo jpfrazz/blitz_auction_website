@@ -280,7 +280,7 @@ impl Draft {
                 pokemon,
                 pool,
                 draft_runner,
-                Utc::now() + chrono::Duration::days(1),
+                Utc::now() + chrono::Duration::hours(6),
             );
             for (i, p) in draft.pokemon.iter().filter(|p| p.stage == PokemonStage::base && !p.is_baby).enumerate() {
                 let auction = Auction::build(draft.draft_id.clone(), i as u32, p.clone(), &mut tx)

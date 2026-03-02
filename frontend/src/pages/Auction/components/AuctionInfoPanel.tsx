@@ -130,10 +130,13 @@ const AuctionInfoPanel: React.FC<AuctionInfoPanelProps> = ({
       if (!response.accepted) {
         if (response.error?.toLowerCase().includes('brokie')) {
           showBidNotification("You don't have enough money for that bid.");
+        } else {
+          showBidNotification(response.error || 'Bid failed. Please try again.');
         }
         console.error('Bid rejected:', response.error);
       }
     } catch (error) {
+      showBidNotification('Bid failed. Please try again.');
       console.error('Error placing bid:', error);
     }
   };
@@ -166,10 +169,13 @@ const AuctionInfoPanel: React.FC<AuctionInfoPanelProps> = ({
       if (!response.accepted) {
         if (response.error?.toLowerCase().includes('brokie')) {
           showBidNotification("You don't have enough money for that bid.");
+        } else {
+          showBidNotification(response.error || 'Bid failed. Please try again.');
         }
         console.error('Bid rejected:', response.error);
       }
     } catch (error) {
+      showBidNotification('Bid failed. Please try again.');
       console.error('Error placing bid:', error);
     }
   };
