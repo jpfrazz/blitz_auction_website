@@ -1,6 +1,7 @@
 import React from 'react';
 import CurrentPokemonPanel from '../CurrentPokemonPanel';
 import { Auction, Pokemon, Team } from '../../../../types';
+import './TeamPlannerTab.scss';
 
 interface TeamPlannerTabProps {
   teams: Team[];
@@ -83,6 +84,15 @@ const TeamPlannerTab: React.FC<TeamPlannerTabProps> = ({ teams, currentUserId, a
 
   const sortedItems = Object.entries(evoItemCounts).sort((a, b) => b[1] - a[1]);
 
+  const eggMoves = Array.from(
+    new Set(
+      sortedTeamPokemon
+        .flatMap((pokemon) => pokemon.key_moves ?? [])
+        .filter((move) => (move.learn_method ?? '').toLowerCase().includes('egg'))
+        .map((move) => move.move_name)
+    )
+  ).sort((a, b) => a.localeCompare(b));
+
   const teamPokemonAuctions: Auction[] = sortedTeamPokemon.map((pokemon, index) => ({
     auction_id: `team-planner-${pokemon.name}-${pokemon.form ?? 'base'}-${index}`,
     pokemon,
@@ -93,19 +103,37 @@ const TeamPlannerTab: React.FC<TeamPlannerTabProps> = ({ teams, currentUserId, a
 
   return (
     <div className="auction-team-planner-list">
-      {/* Evolution item summary section */}
-      {sortedItems.length > 0 && (
-        <div className="evo-method-summary">
-          <h3 style={{ marginBottom: '8px' }}>Evolution Items on Your Team</h3>
-          <ul style={{ marginBottom: '16px' }}>
-            {sortedItems.map(([item, count]) => (
-              <li key={item} style={{ fontSize: '16px', marginBottom: '4px' }}>{count}x {item.charAt(0).toUpperCase() + item.slice(1)}</li>
-            ))}
-          </ul>
-          <hr style={{ margin: '16px 0' }} />
+      <h3 className="team-builder-main-title">Your Team Planner</h3>
+      <div className="team-builder-header-split">
+        <div className="team-builder-header-half">
+          <h3>Evolution Items on Your Team</h3>
+          {sortedItems.length > 0 ? (
+            <ul className="team-builder-header-list">
+              {sortedItems.map(([item, count]) => (
+                <li key={item}>{count}x {item.charAt(0).toUpperCase() + item.slice(1)}</li>
+              ))}
+            </ul>
+          ) : (
+            <div className="team-builder-header-empty">No evolution items found.</div>
+          )}
         </div>
-      )}
-      <h3 style={{ marginBottom: '8px' }}>Your Team Planner</h3>
+
+        <div className="team-builder-header-divider" />
+
+        <div className="team-builder-header-half">
+          <h3>Egg Moves on Your Team</h3>
+          {eggMoves.length > 0 ? (
+            <ul className="team-builder-header-list">
+              {eggMoves.map((move) => (
+                <li key={move}>{move}</li>
+              ))}
+            </ul>
+          ) : (
+            <div className="team-builder-header-empty">No egg moves found.</div>
+          )}
+        </div>
+      </div>
+
       {teamPokemonAuctions.map(teamPokemonAuction => (
         <CurrentPokemonPanel
           key={teamPokemonAuction.auction_id}

@@ -319,7 +319,7 @@ const AuctionPage: React.FC = () => {
                       />
                     </label>
                     <label className="auction-settings-field-label">
-                      Total Auctions
+                      Total Pokemon
                       <input
                         className="auction-password-modal-input"
                         type="number"

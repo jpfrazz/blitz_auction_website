@@ -96,6 +96,15 @@ const AllPokemonTab: React.FC<AllPokemonTabProps> = ({ pokemon, auctions }) => {
     return uniqueNewTypes;
   };
 
+  const getEvolutionTypesSortKey = (basePokemon: any) =>
+    {
+      const sortedTypes = getEvolutionTypes(basePokemon)
+      .map(type => type.toLowerCase())
+      .sort((a, b) => a.localeCompare(b));
+
+      return sortedTypes.length > 0 ? sortedTypes.join('|') : undefined;
+    };
+
   const columns = useMemo<ColumnDef<any, any>[]>(
     () => [
       { accessorKey: 'name', header: 'Name' },
@@ -111,10 +120,13 @@ const AllPokemonTab: React.FC<AllPokemonTabProps> = ({ pokemon, auctions }) => {
         },
       },
       {
-        accessorKey: 'evolutionTypes',
+        id: 'evolutionTypes',
+        accessorFn: (row) => getEvolutionTypesSortKey(row),
         header: 'Evolution Types',
+        sortUndefined: 'last',
         cell: ({ row }) => {
-          const evoTypes = getEvolutionTypes(row.original);
+          const sortKey = row.getValue('evolutionTypes') as string | undefined;
+          const evoTypes = sortKey ? sortKey.split('|') : [];
           if (!evoTypes.length) return null;
           return (
             <div className="type-icon-group">
@@ -127,9 +139,9 @@ const AllPokemonTab: React.FC<AllPokemonTabProps> = ({ pokemon, auctions }) => {
           );
         },
         filterFn: (row, columnId, filterValue) => {
-          const evoTypes = getEvolutionTypes(row.original);
           const filter = (filterValue as string).toLowerCase();
-          return evoTypes.some(type => type.toLowerCase().includes(filter));
+          const evolutionTypesKey = (row.getValue(columnId) as string | undefined) ?? '';
+          return evolutionTypesKey.includes(filter);
         },
       },
       {
