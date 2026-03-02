@@ -17,10 +17,10 @@ jobs:
         include:
           - image_name: blitz-auction-frontend
             context: ./frontend/
-            dockerfile: ../dockerfiles/frontend-nginx.Dockerfile
+            dockerfile: ./dockerfiles/frontend-nginx.Dockerfile
           - image_name: blitz-auction-backend
             context: ./backend/
-            dockerfile: ../dockerfiles/backend.Dockerfile
+            dockerfile: ./dockerfiles/backend.Dockerfile
 
     steps:
       - name: Checkout Code
