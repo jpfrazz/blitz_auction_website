@@ -145,6 +145,58 @@ html, body, #root {
     white-space: nowrap;
   }
 }
+
+.auction-settings-field-row {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.auction-settings-field-label {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  color: $eb-text;
+  font-size: 0.95rem;
+  text-align: left;
+}
+
+.auction-settings-remove-teams {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  text-align: left;
+}
+
+.auction-settings-remove-teams-title {
+  color: $eb-text;
+  font-weight: 600;
+}
+
+.auction-settings-remove-teams-empty {
+  color: $eb-text-muted;
+  font-size: 0.9rem;
+}
+
+.auction-settings-remove-teams-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-height: 160px;
+  overflow-y: auto;
+}
+
+.auction-settings-remove-teams-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: $eb-text;
+  font-size: 0.95rem;
+}
+
 .draft-completed-panel {
   display: flex;
   flex-direction: column;

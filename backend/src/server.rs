@@ -122,6 +122,10 @@ impl Server {
             .route("/drafts/{draft_id}/ready", post(handlers::ready_up))
             .route("/drafts/{draft_id}/bid", post(handlers::bid))
             .route("/drafts/{draft_id}/start", post(handlers::start_draft))
+            .route(
+                "/drafts/{draft_id}/pending-settings",
+                post(handlers::update_pending_draft_settings),
+            )
             .route("/drafts/{draft_id}/claim-eeveelution", post(handlers::claim_eeveelution))
             .route("/drafts/{draft_id}/unclaim-eeveelution", post(handlers::unclaim_eeveelution))
             .route(

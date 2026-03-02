@@ -45,6 +45,14 @@ pub struct ReadyUpResponse {
     pub draft_started: bool,
 }
 
+#[derive(Clone, Debug, Deserialize)]
+pub struct UpdatePendingDraftSettingsRequest {
+    pub num_teams: u32,
+    pub num_auctions: u32,
+    #[serde(default)]
+    pub remove_team_ids: Vec<String>,
+}
+
 fn default_ready_true() -> bool {
     true
 }
@@ -286,6 +294,38 @@ pub async fn start_draft(
     }
 
     Ok(())
+}
+
+#[debug_handler]
+pub async fn update_pending_draft_settings(
+    State(state): State<ServerState>,
+    Path(draft_id): Path<String>,
+    auth_session: AuthSession<AuthBackend>,
+    Json(update_request): Json<UpdatePendingDraftSettingsRequest>,
+) -> Result<Json<DraftResponse>, (StatusCode, String)> {
+    let Some(user) = auth_session.user else {
+        return Err((StatusCode::FORBIDDEN, "user is not logged in".to_string()));
+    };
+
+    let Some(draft_lock) = state.drafts.get(&draft_id) else {
+        return Err((StatusCode::NOT_FOUND, "draft does not exist".to_string()));
+    };
+
+    let mut draft = draft_lock.write().await;
+
+    if draft.host != user {
+        return Err((StatusCode::FORBIDDEN, "user is not host".to_string()));
+    }
+
+    draft
+        .update_pending_settings(
+            update_request.num_teams,
+            update_request.num_auctions,
+            update_request.remove_team_ids,
+        )
+        .await?;
+
+    Ok(Json(DraftResponse::from(draft.clone())))
 }
 
 #[debug_handler]

@@ -63,6 +63,21 @@ export async function readyUpDraft(draft_id: string): Promise<Draft> {
   return response.data;
 }
 
+export async function updatePendingDraftSettings(
+  draft_id: string,
+  num_teams: number,
+  num_auctions: number,
+  remove_team_ids: string[] = [],
+): Promise<Draft> {
+  const response = await axios.post(`/api/drafts/${draft_id}/pending-settings`, {
+    num_teams,
+    num_auctions,
+    remove_team_ids,
+  });
+
+  return response.data;
+}
+
 // Join a draft
 export async function joinDraft(draft_id: string, password?: string): Promise<Draft> {
   const trimmedPassword = password?.trim();
