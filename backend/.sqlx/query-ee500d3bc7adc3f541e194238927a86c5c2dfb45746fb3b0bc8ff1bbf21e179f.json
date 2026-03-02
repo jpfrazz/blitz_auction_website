@@ -1,0 +1,15 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n                DELETE FROM teams\n                WHERE draft_id = $1\n                  AND (user_id = $2 OR guest_id = $2)\n                ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Text",
+        "Text"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "ee500d3bc7adc3f541e194238927a86c5c2dfb45746fb3b0bc8ff1bbf21e179f"
+}

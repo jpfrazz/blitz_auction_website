@@ -163,9 +163,7 @@ const AuctionInfoPanel: React.FC<AuctionInfoPanelProps> = ({
   const actuallyPlaceBid = async (bidValue: number) => {
     try {
       const response = await placeBid(draft_id, current_auction.auction_id, bidValue);
-      if (response.accepted) {
-        setCustomBidAmount('');
-      } else {
+      if (!response.accepted) {
         if (response.error?.toLowerCase().includes('brokie')) {
           showBidNotification("You don't have enough money for that bid.");
         }
@@ -257,6 +255,14 @@ const AuctionInfoPanel: React.FC<AuctionInfoPanelProps> = ({
           placeholder=""
           value={customBidAmount}
           onChange={e => setCustomBidAmount(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') {
+              e.preventDefault();
+              void handleCustomBid();
+            }
+          }}
+          step={100}
+          min={100}
           autoComplete="off"
           disabled={!canBid}
         />

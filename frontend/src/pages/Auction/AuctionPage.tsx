@@ -2,7 +2,7 @@ import React, { useEffect, useState, useRef } from 'react';
 import { connectDraftWebSocket } from '../../shared/api/draftWebSocket';
 import { useLocation } from 'react-router-dom';
 import Header from '../../shared/components/Header';
-import { fetchDraftById, readyUpDraft, joinDraft, fetchCurrentUser, claimEeveelution, unclaimEeveelution, startDraft } from '../../shared/api/draftData';
+import { fetchDraftById, readyUpDraft, joinDraft, fetchCurrentUser, claimEeveelution, unclaimEeveelution, startDraft, updatePendingDraftSettings } from '../../shared/api/draftData';
 import { getUserId } from '../../shared/utils/user';
 import './AuctionPage.scss';
 import '../../shared/style/theme.scss';
@@ -35,6 +35,12 @@ const AuctionPage: React.FC = () => {
   const [showEeveelutionModal, setShowEeveelutionModal] = useState(false);
   const [avatar, setAvatar] = useState<string | undefined>(undefined);
   const [wsConnected, setWsConnected] = useState(true);
+  const [showDraftSettingsModal, setShowDraftSettingsModal] = useState(false);
+  const [pendingNumTeams, setPendingNumTeams] = useState('');
+  const [pendingNumAuctions, setPendingNumAuctions] = useState('');
+  const [selectedTeamIdsToRemove, setSelectedTeamIdsToRemove] = useState<string[]>([]);
+  const [savingDraftSettings, setSavingDraftSettings] = useState(false);
+  const [draftSettingsError, setDraftSettingsError] = useState<string | null>(null);
 
   const wsRef = useRef<WebSocket | null>(null);
 
@@ -176,6 +182,77 @@ const AuctionPage: React.FC = () => {
     }
   };
 
+  const handleOpenDraftSettings = () => {
+    if (!draft) return;
+    setPendingNumTeams(String(draft.total_teams));
+    setPendingNumAuctions(String(draft.total_auctions));
+    setSelectedTeamIdsToRemove([]);
+    setDraftSettingsError(null);
+    setShowDraftSettingsModal(true);
+  };
+
+  const handleSaveDraftSettings = async () => {
+    if (!draft) return;
+
+    const nextNumTeams = Number(pendingNumTeams);
+    const nextNumAuctions = Number(pendingNumAuctions);
+
+    if (!Number.isInteger(nextNumTeams) || nextNumTeams <= 0) {
+      setDraftSettingsError('Number of teams must be a positive whole number.');
+      return;
+    }
+
+    if (!Number.isInteger(nextNumAuctions) || nextNumAuctions <= 0) {
+      setDraftSettingsError('Total auctions must be a positive whole number.');
+      return;
+    }
+
+    setSavingDraftSettings(true);
+    setDraftSettingsError(null);
+
+    try {
+      const updatedDraft = await updatePendingDraftSettings(
+        draft.draft_id,
+        nextNumTeams,
+        nextNumAuctions,
+        selectedTeamIdsToRemove,
+      );
+      setDraft(updatedDraft);
+      setSelectedTeamIdsToRemove([]);
+      setShowDraftSettingsModal(false);
+    } catch (error: any) {
+      setDraftSettingsError(error?.response?.data || error?.message || 'Failed to update draft settings.');
+    } finally {
+      setSavingDraftSettings(false);
+    }
+  };
+
+  const handlePendingNumTeamsChange = (value: string) => {
+    setPendingNumTeams(value);
+
+    if (value.trim() === '') {
+      setPendingNumAuctions('');
+      return;
+    }
+
+    const parsedTeams = Number(value);
+    if (!Number.isFinite(parsedTeams)) {
+      return;
+    }
+
+    setPendingNumAuctions(String(parsedTeams * 8));
+  };
+
+  const toggleTeamRemoval = (teamId: string) => {
+    setSelectedTeamIdsToRemove((prev) => {
+      if (prev.includes(teamId)) {
+        return prev.filter((id) => id !== teamId);
+      }
+
+      return [...prev, teamId];
+    });
+  };
+
   return (
     <>
       <Header />
@@ -220,6 +297,80 @@ const AuctionPage: React.FC = () => {
                       disabled={joiningDraft}
                     >
                       {joiningDraft ? 'Joining...' : 'Racer'}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+            {showDraftSettingsModal && draft && (
+              <div className="auction-password-modal-overlay">
+                <div className="auction-password-modal" onClick={e => e.stopPropagation()}>
+                  <h3 className="auction-password-modal-title">Edit Pending Draft Settings</h3>
+                  <div className="auction-settings-field-row">
+                    <label className="auction-settings-field-label">
+                      Number of Teams
+                      <input
+                        className="auction-password-modal-input"
+                        type="number"
+                        min={1}
+                        value={pendingNumTeams}
+                        onChange={(e) => handlePendingNumTeamsChange(e.target.value)}
+                        disabled={savingDraftSettings}
+                      />
+                    </label>
+                    <label className="auction-settings-field-label">
+                      Total Auctions
+                      <input
+                        className="auction-password-modal-input"
+                        type="number"
+                        min={1}
+                        value={pendingNumAuctions}
+                        onChange={(e) => setPendingNumAuctions(e.target.value)}
+                        disabled={savingDraftSettings}
+                      />
+                    </label>
+                  </div>
+                  <div className="auction-settings-remove-teams">
+                    <div className="auction-settings-remove-teams-title">Remove Joined Teams</div>
+                    {draft.teams.filter((team) => team.user_id !== draft.host).length === 0 ? (
+                      <div className="auction-settings-remove-teams-empty">No removable teams joined.</div>
+                    ) : (
+                      <div className="auction-settings-remove-teams-list">
+                        {draft.teams
+                          .filter((team) => team.user_id !== draft.host)
+                          .map((team) => (
+                            <label key={team.user_id} className="auction-settings-remove-teams-item">
+                              <input
+                                type="checkbox"
+                                checked={selectedTeamIdsToRemove.includes(team.user_id)}
+                                onChange={() => toggleTeamRemoval(team.user_id)}
+                                disabled={savingDraftSettings}
+                              />
+                              <span>{team.username}</span>
+                            </label>
+                          ))}
+                      </div>
+                    )}
+                  </div>
+                  {draftSettingsError && <div className="auction-password-modal-error">{draftSettingsError}</div>}
+                  <div className="auction-password-modal-actions">
+                    <button
+                      className="button"
+                      onClick={() => {
+                        setShowDraftSettingsModal(false);
+                        setSelectedTeamIdsToRemove([]);
+                        setDraftSettingsError(null);
+                      }}
+                      disabled={savingDraftSettings}
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      className="button"
+                      onClick={handleSaveDraftSettings}
+                      disabled={savingDraftSettings}
+                    >
+                      {savingDraftSettings ? 'Saving...' : 'Save'}
                     </button>
                   </div>
                 </div>
@@ -272,13 +423,21 @@ const AuctionPage: React.FC = () => {
                         <h3 className="draft-completed-title">Ready Up!</h3>
                         <div className="draft-completed-buttons">
                           {currentUserId === draft.host && (
-                            <button
-                              onClick={handleStartDraft}
-                              disabled={startingDraft || !allTeamsReady}
-                              className="button"
-                            >
-                              {startingDraft ? 'Starting Draft...' : 'Start Draft'}
-                            </button>
+                            <>
+                              <button
+                                onClick={handleOpenDraftSettings}
+                                className="button"
+                              >
+                                Edit Draft Settings
+                              </button>
+                              <button
+                                onClick={handleStartDraft}
+                                disabled={startingDraft || !allTeamsReady}
+                                className="button"
+                              >
+                                {startingDraft ? 'Starting Draft...' : 'Start Draft'}
+                              </button>
+                            </>
                           )}
                           {currentUserTeam && !currentUserReady && (
                             <button

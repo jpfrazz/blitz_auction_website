@@ -168,17 +168,6 @@
       border-color: $eb-primary;
       background-color: $eb-bg;
     }
-
-    /* Remove number input spinners */
-    &::-webkit-outer-spin-button,
-    &::-webkit-inner-spin-button {
-      -webkit-appearance: none;
-      margin: 0;
-    }
-
-    &[type='number'] {
-      -moz-appearance: textfield;
-    }
   }
 }
 

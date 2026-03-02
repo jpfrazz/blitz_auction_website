@@ -661,6 +661,141 @@ impl Draft {
         Ok(())
     }
 
+    pub async fn update_pending_settings(
+        &mut self,
+        num_teams: u32,
+        num_auctions: u32,
+        remove_team_ids: Vec<String>,
+    ) -> Result<(), (StatusCode, String)> {
+        if self.draft_state != DraftState::PENDING {
+            return Err((
+                StatusCode::PRECONDITION_FAILED,
+                "draft must be in PENDING state".to_string(),
+            ));
+        }
+
+        if num_teams == 0 {
+            return Err((
+                StatusCode::BAD_REQUEST,
+                "num_teams must be greater than 0".to_string(),
+            ));
+        }
+
+        if num_auctions == 0 {
+            return Err((
+                StatusCode::BAD_REQUEST,
+                "num_auctions must be greater than 0".to_string(),
+            ));
+        }
+
+        let host_user_id = self.host.get_user_id_string();
+        let mut unique_remove_ids: Vec<String> = Vec::new();
+        for team_id in remove_team_ids {
+            if unique_remove_ids.contains(&team_id) {
+                continue;
+            }
+
+            if team_id == host_user_id {
+                return Err((
+                    StatusCode::BAD_REQUEST,
+                    "host cannot be removed from draft".to_string(),
+                ));
+            }
+
+            if !self.teams.contains_key(&team_id) {
+                return Err((
+                    StatusCode::BAD_REQUEST,
+                    format!("team {} is not in this draft", team_id),
+                ));
+            }
+
+            unique_remove_ids.push(team_id);
+        }
+
+        let teams_after_removal = self.teams.len().saturating_sub(unique_remove_ids.len()) as u32;
+        if num_teams < teams_after_removal {
+            return Err((
+                StatusCode::BAD_REQUEST,
+                "num_teams cannot be less than teams remaining after removals".to_string(),
+            ));
+        }
+
+        let max_auctions = self.auctions.len() as u32;
+        if num_auctions > max_auctions {
+            return Err((
+                StatusCode::BAD_REQUEST,
+                format!(
+                    "num_auctions cannot exceed {} for this draft",
+                    max_auctions
+                ),
+            ));
+        }
+
+        let mut tx = self.db_pool.begin().await.map_err(|e| {
+            (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                format!("failed to begin transaction: {}", e),
+            )
+        })?;
+
+        for team_id in &unique_remove_ids {
+            let _ = sqlx::query!(
+                r#"
+                DELETE FROM teams
+                WHERE draft_id = $1
+                  AND (user_id = $2 OR guest_id = $2)
+                "#,
+                self.draft_id,
+                team_id,
+            )
+            .execute(&mut *tx)
+            .await
+            .map_err(|e| {
+                (
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    format!("failed to remove team {}: {}", team_id, e),
+                )
+            })?;
+        }
+
+        let _ = sqlx::query!(
+            r#"
+            UPDATE drafts
+            SET num_teams = $1
+            WHERE draft_id = $2
+            "#,
+            num_teams as i32,
+            self.draft_id
+        )
+        .execute(&mut *tx)
+        .await
+        .map_err(|e| {
+            (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                format!("failed to update draft settings: {}", e),
+            )
+        })?;
+
+        tx.commit().await.map_err(|e| {
+            (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                format!("failed to commit draft settings update: {}", e),
+            )
+        })?;
+
+        for team_id in unique_remove_ids {
+            self.teams.remove(&team_id);
+        }
+
+        self.settings.num_teams = num_teams;
+        self.settings.num_auctions = num_auctions;
+
+        let draft_response = crate::draft::DraftResponse::from(self.clone());
+        let _ = self.tx.send(crate::messages::ServerMessage::DraftUpdate(draft_response));
+
+        Ok(())
+    }
+
     pub fn all_teams_ready(&self) -> bool {
         self.teams.len() == self.settings.num_teams as usize
             && self.teams.values().all(|team| team.ready)
