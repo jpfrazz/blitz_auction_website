@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import './Header.scss';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { fetchCurrentUser, changeGuestName } from '../api/draftData';
 
 const navButtons = [
@@ -13,6 +13,12 @@ const navButtons = [
 ];
 
 function Header() {
+  const location = useLocation();
+  const isAuctionPage = location.pathname === '/Auction';
+
+  const AUCTION_ALERT_SOUND_MUTED_KEY = 'auction_alert_sound_muted';
+  const AUCTION_ALERT_SOUND_MUTED_EVENT = 'auction-alert-muted-changed';
+
   const scrollToTop = () => {
     window.scrollTo(0, 0);
   };
@@ -34,6 +40,20 @@ function Header() {
   const [newGuestName, setNewGuestName] = useState('');
   const [nameError, setNameError] = useState<string | null>(null);
   const [changingName, setChangingName] = useState(false);
+  const [isAuctionSoundMuted, setIsAuctionSoundMuted] = useState<boolean>(() => {
+    if (typeof window === 'undefined') {
+      return false;
+    }
+
+    return localStorage.getItem(AUCTION_ALERT_SOUND_MUTED_KEY) === 'true';
+  });
+
+  const toggleAuctionSoundMuted = () => {
+    const nextMuted = !isAuctionSoundMuted;
+    setIsAuctionSoundMuted(nextMuted);
+    localStorage.setItem(AUCTION_ALERT_SOUND_MUTED_KEY, String(nextMuted));
+    window.dispatchEvent(new CustomEvent(AUCTION_ALERT_SOUND_MUTED_EVENT, { detail: nextMuted }));
+  };
 
   const handleChangeName = async () => {
     setNameError(null);
@@ -120,6 +140,17 @@ function Header() {
                 </button>
               </div>
             </div>
+          )}
+          {isAuctionPage && (
+            <button
+              type="button"
+              className="headerSoundToggle"
+              onClick={toggleAuctionSoundMuted}
+              title={isAuctionSoundMuted ? 'Unmute auction sound' : 'Mute auction sound'}
+              aria-label={isAuctionSoundMuted ? 'Unmute auction sound' : 'Mute auction sound'}
+            >
+              {isAuctionSoundMuted ? '🔇' : '🔊'}
+            </button>
           )}
         </nav>
       </div>
