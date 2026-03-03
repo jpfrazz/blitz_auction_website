@@ -1,6 +1,7 @@
 .*
 !.gitignore
 !.sqlx
+!.github
 
 backend/target/
 backend/**/*.rs.bk

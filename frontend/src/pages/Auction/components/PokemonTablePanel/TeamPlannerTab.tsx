@@ -62,36 +62,58 @@ const TeamPlannerTab: React.FC<TeamPlannerTabProps> = ({ teams, currentUserId, a
     return null;
   }
 
-  // Recursively walk the evolution tree
-  function collectEvoItemsFromTree(pokemon: Pokemon, allPokemon: Pokemon[], itemCounts: Record<string, number>) {
-    const item = extractEvolutionItem(pokemon.evolution_method);
-    if (item) {
-      itemCounts[item] = (itemCounts[item] || 0) + 1;
-    }
-    // Find all children
+  function collectEvoItemsFromTree(
+    currentPokemonInTree: Pokemon,
+    allPokemon: Pokemon[],
+    itemMap: Map<string, Set<string>>
+  ) {
     const children = allPokemon.filter(
       (p) =>
-        p.evolves_from_id?.toString() === (pokemon.pokedex_id ?? pokemon.id).toString() &&
-        (p.evolves_from_form ?? '') === (pokemon.form ?? '')
+        p.evolves_from_id?.toString() === (currentPokemonInTree.pokedex_id ?? currentPokemonInTree.id).toString() &&
+        (p.evolves_from_form ?? '') === (currentPokemonInTree.form ?? '')
     );
-    children.forEach(child => collectEvoItemsFromTree(child, allPokemon, itemCounts));
+
+    children.forEach(child => {
+      const item = extractEvolutionItem(child.evolution_method);
+      if (item) {
+        if (!itemMap.has(item)) {
+          itemMap.set(item, new Set());
+        }
+        itemMap.get(item)!.add(currentPokemonInTree.name);
+      }
+      collectEvoItemsFromTree(child, allPokemon, itemMap);
+    });
   }
 
-  const evoItemCounts: Record<string, number> = {};
+  const evoItemMap = new Map<string, Set<string>>();
   sortedTeamPokemon.forEach(pokemon => {
-    collectEvoItemsFromTree(pokemon, allPokemon, evoItemCounts);
+    collectEvoItemsFromTree(pokemon, allPokemon, evoItemMap);
   });
 
-  const sortedItems = Object.entries(evoItemCounts).sort((a, b) => b[1] - a[1]);
+  const sortedEvoItems = Array.from(evoItemMap.entries())
+    .sort(([itemA], [itemB]) => itemA.localeCompare(itemB))
+    .flatMap(([itemName, pokemonNames]) =>
+      Array.from(pokemonNames).sort().map(pokemonName => ({ itemName, pokemonName }))
+    );
 
-  const eggMoves = Array.from(
-    new Set(
-      sortedTeamPokemon
-        .flatMap((pokemon) => pokemon.key_moves ?? [])
-        .filter((move) => (move.learn_method ?? '').toLowerCase().includes('egg'))
-        .map((move) => move.move_name)
-    )
-  ).sort((a, b) => a.localeCompare(b));
+  const eggMovesMap = new Map<string, Set<string>>();
+
+  sortedTeamPokemon.forEach(pokemon => {
+    (pokemon.key_moves ?? [])
+      .filter(move => (move.learn_method ?? '').toLowerCase().includes('egg'))
+      .forEach(move => {
+        if (!eggMovesMap.has(move.move_name)) {
+          eggMovesMap.set(move.move_name, new Set());
+        }
+        eggMovesMap.get(move.move_name)!.add(pokemon.name);
+      });
+  });
+
+  const eggMoves = Array.from(eggMovesMap.entries())
+    .sort(([moveA], [moveB]) => moveA.localeCompare(moveB))
+    .flatMap(([moveName, pokemonNames]) =>
+      Array.from(pokemonNames).sort().map(pokemonName => ({ moveName, pokemonName }))
+    );
 
   const teamPokemonAuctions: Auction[] = sortedTeamPokemon.map((pokemon, index) => ({
     auction_id: `team-planner-${pokemon.name}-${pokemon.form ?? 'base'}-${index}`,
@@ -107,10 +129,13 @@ const TeamPlannerTab: React.FC<TeamPlannerTabProps> = ({ teams, currentUserId, a
       <div className="team-builder-header-split">
         <div className="team-builder-header-half">
           <h3>Evolution Items on Your Team</h3>
-          {sortedItems.length > 0 ? (
+          {sortedEvoItems.length > 0 ? (
             <ul className="team-builder-header-list">
-              {sortedItems.map(([item, count]) => (
-                <li key={item}>{count}x {item.charAt(0).toUpperCase() + item.slice(1)}</li>
+              {sortedEvoItems.map(({ itemName, pokemonName }) => (
+                <li key={`${itemName}-${pokemonName}`}>
+                  {itemName.charAt(0).toUpperCase() + itemName.slice(1)}{' '}
+                  <span className="evo-item-pokemon-name">({pokemonName})</span>
+                </li>
               ))}
             </ul>
           ) : (
@@ -124,8 +149,11 @@ const TeamPlannerTab: React.FC<TeamPlannerTabProps> = ({ teams, currentUserId, a
           <h3>Egg Moves on Your Team</h3>
           {eggMoves.length > 0 ? (
             <ul className="team-builder-header-list">
-              {eggMoves.map((move) => (
-                <li key={move}>{move}</li>
+              {eggMoves.map(({ moveName, pokemonName }) => (
+                <li key={`${moveName}-${pokemonName}`}>
+                  {moveName}{' '}
+                  <span className="egg-move-pokemon-name">({pokemonName})</span>
+                </li>
               ))}
             </ul>
           ) : (
