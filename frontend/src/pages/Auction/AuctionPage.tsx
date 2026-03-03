@@ -17,7 +17,7 @@ import { Draft } from '../../types';
 const AUCTION_ALERT_SOUND_PATH = encodeURI('/14 Battle! (Wild Pokémon).mp3');
 const AUCTION_ALERT_SOUND_MUTED_KEY = 'auction_alert_sound_muted';
 const AUCTION_ALERT_SOUND_MUTED_EVENT = 'auction-alert-muted-changed';
-const AUCTION_ALERT_VOLUME = 0.6;
+const AUCTION_ALERT_VOLUME = 0.1;
 
 function useAuctionId() {
   const location = useLocation();
