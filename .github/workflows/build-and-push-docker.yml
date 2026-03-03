@@ -1,4 +1,4 @@
-name: Build and Push to GHCR
+name: Build and Push and Deploy
 
 on:
   push:
@@ -47,3 +47,43 @@ jobs:
             ghcr.io/${{ github.repository_owner }}/${{ matrix.image_name }}:${{ github.sha }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
+
+  deploy:
+    needs: build-and-push
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Connect to Tailscale
+        uses: tailscale/github-action@v3
+        with:
+          oauth-client-id: ${{ secrets.TS_OAUTH_CLIENT_ID }}
+          oauth-secret: ${{ secrets.TS_OAUTH_CLIENT_SECRET }}
+          tags: tag:blitz-gh-action
+
+      - name: Configure SSH
+        run: |
+          mkdir -p ~/.ssh/
+          echo "$SSH_KEY" >> ~/.ssh/private_key
+          chmod 600 ~/.ssh/private_key
+          cat <<EOF > ~/.ssh/config
+          Host server
+            HostName $SSH_HOST
+            User $SSH_USER
+            StrictHostKeyChecking no
+            UserKnownHostsFile /dev/null
+          EOF
+        env:
+          SSH_USER: ${{ secrets.SSH_USER }}
+          SSH_HOST: ${{ secrets.SSH_HOST }}
+
+      - name: Deploy via SSH
+        run: |
+          ssh server << 'EOF'
+            set -e
+            cd /home/game/blitz_auction_website
+            git fetch
+            git checkout origin/main -- docker-compose.yml docker-compose.prod.yml
+            docker compose pull
+            docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
+            docker image prune -f
+          EOF
