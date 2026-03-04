@@ -255,35 +255,6 @@ const CurrentPokemonPanel: React.FC<CurrentPokemonPanelProps> = ({ current_aucti
   const evoTree = buildEvolutionTree(pokemonData, all_pokemon);
   const keyMoves = pokemonData.key_moves ?? [];
 
-  const normalizeLearnMethod = (method?: string) => {
-    if (!method) return '';
-    return method.toLowerCase().replace(/\s+/g, '_');
-  };
-
-  const getLearnMethodRank = (method?: string) => {
-    const normalizedMethod = normalizeLearnMethod(method);
-
-    if (/^\d+$/.test(normalizedMethod)) return 0;
-    if (normalizedMethod === 'move_reminder') return 1;
-    if (normalizedMethod === 'move_tutor') return 2;
-    if (normalizedMethod === 'egg') return 4;
-    return 3;
-  };
-
-  const sortedKeyMoves = [...keyMoves].sort((a, b) => {
-    const rankDiff = getLearnMethodRank(a.learn_method) - getLearnMethodRank(b.learn_method);
-    if (rankDiff !== 0) return rankDiff;
-
-    const methodA = normalizeLearnMethod(a.learn_method);
-    const methodB = normalizeLearnMethod(b.learn_method);
-
-    if (/^\d+$/.test(methodA) && /^\d+$/.test(methodB)) {
-      return Number(methodA) - Number(methodB);
-    }
-
-    return a.move_name.localeCompare(b.move_name);
-  });
-
   const formatLearnMethod = (method?: string) => {
     if (!method) return '';
     // Split on slash, trim, replace underscores, and join with comma
@@ -425,7 +396,7 @@ const CurrentPokemonPanel: React.FC<CurrentPokemonPanelProps> = ({ current_aucti
           <div className="pokemon-key-moves">
             <div className="key-moves-title">Key Moves</div>
             <div className="key-moves-list">
-              {sortedKeyMoves.map((move, index) => (
+              {keyMoves.map((move, index) => (
                 <div
                   className="key-move-row"
                   key={`${move.move_name}-${index}`}

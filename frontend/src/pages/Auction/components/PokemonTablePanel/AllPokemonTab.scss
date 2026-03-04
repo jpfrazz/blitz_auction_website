@@ -137,16 +137,7 @@
     position: absolute;
     top: 8px;
     right: 8px;
-    width: 32px;
-    height: 32px;
-    border-radius: 50%;
-    border: none;
-    font-size: 22px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 0 0 4px 1px; //Janky but I'm not sure why it isn't centered otherwise
-    cursor: pointer;
+    @include modal-close-button($size: 32px, $cross-size: 14px);
 }
 
 h3 {

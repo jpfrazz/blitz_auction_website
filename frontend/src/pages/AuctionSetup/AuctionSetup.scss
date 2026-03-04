@@ -167,11 +167,8 @@
 	margin-bottom: 12px;
 }
 .auction-modal-close {
-	background: none;
-	border: none;
-	color: $eb-text;
-	font-size: 2rem;
-	cursor: pointer;
+	position: relative;
+	@include modal-close-button($size: 28px);
 	margin-left: 12px;
 }
 .auction-modal-grid {

@@ -42,10 +42,9 @@ function Header() {
   const [changingName, setChangingName] = useState(false);
   const [isAuctionSoundMuted, setIsAuctionSoundMuted] = useState<boolean>(() => {
     if (typeof window === 'undefined') {
-      return false;
+      return true;
     }
-
-    return localStorage.getItem(AUCTION_ALERT_SOUND_MUTED_KEY) === 'true';
+    return localStorage.getItem(AUCTION_ALERT_SOUND_MUTED_KEY) !== 'false';
   });
 
   const toggleAuctionSoundMuted = () => {

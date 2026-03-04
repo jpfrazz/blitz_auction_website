@@ -58,18 +58,8 @@
 }
 
 .eeveelution-modal-close {
-  background: none;
-  border: none;
-  color: $eb-text;
-  font-size: 1.8rem;
-  cursor: pointer;
-  padding: 0;
-  line-height: 1;
-  transition: color 0.2s;
-
-  &:hover {
-    color: $eb-primary-hover;
-  }
+  position: relative;
+  @include modal-close-button($size: 28px);
 }
 
 .eeveelution-modal-description {
