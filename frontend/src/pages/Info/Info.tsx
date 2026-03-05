@@ -64,12 +64,12 @@ const Info = () => (
             <div className="location-scale-caption">Lilycove City</div>
           </div>
           <div className="location-scale-card">
-            <img src="/HeartScaleLocations/HeartScale8.png" alt="Route 105 Heart Scale" />
-            <div className="location-scale-caption">Route 105</div>
-          </div>
-          <div className="location-scale-card">
             <img src="/HeartScaleLocations/HeartScale9.png" alt="Route 115 Heart Scale" />
             <div className="location-scale-caption">Route 115</div>
+          </div>
+          <div className="location-scale-card">
+            <img src="/HeartScaleLocations/HeartScale8.png" alt="Route 105 Heart Scale" />
+            <div className="location-scale-caption">Route 105</div>
           </div>
         </div>
       </section>
@@ -118,38 +118,56 @@ const Info = () => (
         <p className="info-answer">
           Locations of important NPCs.
         </p>
+
+          <div className="location-scale-card">
+            <img src="/KeyNPCLocations/KeyNPC2.png" alt="Berry Saleswoman - Route 104" />
+            <div className="location-scale-caption">Berry Saleswoman - Route 104</div>
+          </div>
+
+          <div className="location-scale-card">
+            <img src="/KeyNPCLocations/KeyNPC10.png" alt="Energy Guru - Slateport City" />
+            <div className="location-scale-caption">Burmy Binders - Route 104</div>
+          </div>
+
         <div className="location-scale-grid">
           <div className="location-scale-card">
             <img src="/KeyNPCLocations/KeyNPC1.png" alt="Status Chef - Slateport Market" />
             <div className="location-scale-caption">Status Chef - Slateport Market</div>
           </div>
+
           <div className="location-scale-card">
-            <img src="/KeyNPCLocations/KeyNPC2.png" alt="Berry Saleswoman - Route 104" />
-            <div className="location-scale-caption">Berry Saleswoman - Route 104</div>
+            <img src="/KeyNPCLocations/KeyNPC9.png" alt="Black Market Renter - Slateport City" />
+            <div className="location-scale-caption">Black Market Renter - Slateport City</div>
           </div>
+
+          <div className="location-scale-card">
+            <img src="/KeyNPCLocations/KeyNPC7.png" alt="Time-of-Day Jump - Starting House" />
+            <div className="location-scale-caption">Time Advancer - Starting House</div>
+          </div>
+
+          <div className="location-scale-card">
+            <img src="/KeyNPCLocations/KeyNPC8.png" alt="Energy Guru - Slateport City" />
+            <div className="location-scale-caption">Energy Guru - Slateport City</div>
+          </div>
+
           <div className="location-scale-card">
             <img src="/KeyNPCLocations/KeyNPC3.png" alt="Move Tutor - Fallarbor Town" />
             <div className="location-scale-caption">Move Tutor - Fallarbor Town</div>
           </div>
+
           <div className="location-scale-card">
             <img src="/KeyNPCLocations/KeyNPC4.png" alt="Rotom Catalogs - Fortree City" />
             <div className="location-scale-caption">Rotom Catalogs - Fortree City</div>
           </div>
+      
           <div className="location-scale-card">
             <img src="/KeyNPCLocations/KeyNPC5.png" alt="Substitute Tutor - Lilycove City" />
             <div className="location-scale-caption">Substitute Tutor - Lilycove City</div>
           </div>
+
           <div className="location-scale-card">
             <img src="/KeyNPCLocations/KeyNPC6.png" alt="Day Care - Route 117" />
             <div className="location-scale-caption">Day Care - Route 117</div>
-          </div>
-          <div className="location-scale-card">
-            <img src="/KeyNPCLocations/KeyNPC7.png" alt="Time-of-Day Jump - Starting House" />
-            <div className="location-scale-caption">Time-of-Day Jump - Starting House</div>
-          </div>
-          <div className="location-scale-card">
-            <img src="/KeyNPCLocations/KeyNPC8.png" alt="Energy Guru - Slateport City" />
-            <div className="location-scale-caption">Energy Guru - Slateport City</div>
           </div>
         </div>
       </section>
