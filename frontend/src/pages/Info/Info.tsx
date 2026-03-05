@@ -119,6 +119,7 @@ const Info = () => (
           Locations of important NPCs.
         </p>
 
+        <div className="location-scale-grid">
           <div className="location-scale-card">
             <img src="/KeyNPCLocations/KeyNPC2.png" alt="Berry Saleswoman - Route 104" />
             <div className="location-scale-caption">Berry Saleswoman - Route 104</div>
@@ -129,7 +130,6 @@ const Info = () => (
             <div className="location-scale-caption">Burmy Binders - Route 104</div>
           </div>
 
-        <div className="location-scale-grid">
           <div className="location-scale-card">
             <img src="/KeyNPCLocations/KeyNPC1.png" alt="Status Chef - Slateport Market" />
             <div className="location-scale-caption">Status Chef - Slateport Market</div>
