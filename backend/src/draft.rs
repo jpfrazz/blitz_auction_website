@@ -282,7 +282,7 @@ impl Draft {
                 draft_runner,
                 Utc::now() + chrono::Duration::hours(6),
             );
-            for (i, p) in draft.pokemon.iter().filter(|p| p.stage == PokemonStage::base && p.obtain_method.is_none()).enumerate() {
+            for (i, p) in draft.pokemon.iter().filter(|p| p.stage == PokemonStage::base && p.obtain_method.as_deref() == Some("")).enumerate() {
                 let auction = Auction::build(draft.draft_id.clone(), i as u32, p.clone(), &mut tx)
                     .await
                     .map_err(|e| {
