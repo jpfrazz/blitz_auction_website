@@ -21,7 +21,7 @@ use chrono::Utc;
 use oauth2::CsrfToken;
 use serde::{Deserialize, Serialize};
 use sqlx::Row;
-use std::{sync::Arc, time::Duration};
+use std::{collections::HashMap, sync::Arc, time::Duration};
 use tokio::{
     sync::{RwLock, broadcast},
     time::Instant,
@@ -71,6 +71,24 @@ pub struct ChatMessage {
     pub user_name: String,
     pub message: String,
     pub created_at: chrono::DateTime<chrono::Utc>,
+}
+
+#[derive(Clone, Debug, Serialize)]
+pub struct LeaderboardPokemon {
+    pub pokedex_id: i32,
+    pub name: String,
+    pub form: Option<String>,
+}
+
+#[derive(Clone, Debug, Serialize)]
+pub struct LeaderboardEntry {
+    pub user_id: String,
+    pub username: String,
+    pub win: i32,
+    pub loss: i32,
+    pub mmr: i32,
+    pub games_played: i32,
+    pub most_drafted_pokemon: Vec<LeaderboardPokemon>,
 }
 
 #[derive(Clone, Debug, Deserialize)]
@@ -190,6 +208,126 @@ pub async fn get_rental_pokemon(
         .collect();
 
     Ok(Json(rental_pokemon))
+}
+
+#[debug_handler]
+pub async fn get_leaderboard(
+    State(state): State<ServerState>,
+) -> Result<Json<Vec<LeaderboardEntry>>, (StatusCode, String)> {
+    let user_rows = sqlx::query(
+        "SELECT user_id, user_name, wins, losses, mmr
+         FROM users
+         ORDER BY mmr DESC, wins DESC, losses ASC, user_name ASC",
+    )
+    .fetch_all(&state.db_pool)
+    .await
+    .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    let games_rows = sqlx::query(
+        "SELECT t.user_id, COUNT(*)::INT AS games_played
+         FROM teams t
+         JOIN drafts d ON d.draft_id = t.draft_id
+         WHERE t.user_id IS NOT NULL
+           AND d.status = 'COMPLETED'
+           AND d.ranked = TRUE
+         GROUP BY t.user_id",
+    )
+    .fetch_all(&state.db_pool)
+    .await
+    .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    let mut games_played_by_user: HashMap<String, i32> = HashMap::new();
+    for row in games_rows {
+        let user_id: String = row
+            .try_get("user_id")
+            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+        let games_played: i32 = row
+            .try_get("games_played")
+            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+        games_played_by_user.insert(user_id, games_played);
+    }
+
+    let pokemon_rows = sqlx::query(
+        "SELECT
+            a.winning_user_id AS user_id,
+            a.pokedex_id,
+            p.name,
+            NULLIF(a.form, '') AS form,
+            COUNT(*)::INT AS drafted_count
+         FROM auctions a
+         JOIN drafts d ON d.draft_id = a.draft_id
+         JOIN pokemon p ON p.pokedex_id = a.pokedex_id AND p.form = a.form
+         WHERE a.winning_user_id IS NOT NULL
+           AND d.status = 'COMPLETED'
+           AND d.ranked = TRUE
+         GROUP BY a.winning_user_id, a.pokedex_id, p.name, a.form
+         ORDER BY a.winning_user_id, drafted_count DESC, p.name ASC",
+    )
+    .fetch_all(&state.db_pool)
+    .await
+    .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    let mut most_drafted_by_user: HashMap<String, Vec<LeaderboardPokemon>> = HashMap::new();
+    for row in pokemon_rows {
+        let user_id: String = row
+            .try_get("user_id")
+            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+        let entry = most_drafted_by_user.entry(user_id).or_default();
+        if entry.len() >= 5 {
+            continue;
+        }
+
+        let pokedex_id: i32 = row
+            .try_get("pokedex_id")
+            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+        let name: String = row
+            .try_get("name")
+            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+        let form: Option<String> = row
+            .try_get("form")
+            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+        entry.push(LeaderboardPokemon {
+            pokedex_id,
+            name,
+            form,
+        });
+    }
+
+    let mut leaderboard: Vec<LeaderboardEntry> = Vec::with_capacity(user_rows.len());
+    for row in user_rows {
+        let user_id: String = row
+            .try_get("user_id")
+            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+        let username: String = row
+            .try_get("user_name")
+            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+        let win: i32 = row
+            .try_get("wins")
+            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+        let loss: i32 = row
+            .try_get("losses")
+            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+        let mmr: i32 = row
+            .try_get("mmr")
+            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+        let games_played = games_played_by_user.get(&user_id).copied().unwrap_or(0);
+        let most_drafted_pokemon = most_drafted_by_user.remove(&user_id).unwrap_or_default();
+
+        leaderboard.push(LeaderboardEntry {
+            user_id,
+            username,
+            win,
+            loss,
+            mmr,
+            games_played,
+            most_drafted_pokemon,
+        });
+    }
+
+    Ok(Json(leaderboard))
 }
 
 #[debug_handler]
