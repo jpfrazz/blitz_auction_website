@@ -5,3 +5,4 @@
 
 backend/target/
 backend/**/*.rs.bk
+add_pokemon_script/__pycache__/
