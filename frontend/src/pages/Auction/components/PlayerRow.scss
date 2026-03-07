@@ -8,6 +8,7 @@
     gap: 4px;
     margin: 0;
     background: $eb-surface;
+    border: 1px solid black;
     flex-wrap: nowrap;
     overflow-x: auto;
     overflow-y: hidden;
@@ -74,11 +75,12 @@
 
 .highest-bidder {
     border: none;
+    box-shadow: inset 0 0 0 3px $eb-primary-hover, $eb-shadow;
     &.player-ready {
         background: saturate(lighten($eb-primary, 10%), 25%);
     }
     &.player-not-ready {
-        background: lighten($eb-primary-hover, 15%);
+        background: white;
     }
 }
 

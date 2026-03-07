@@ -73,26 +73,41 @@ const AuctionInfoPanel: React.FC<AuctionInfoPanelProps> = ({
   }, [current_auction.highest_bid]);
 
   useEffect(() => {
+    // When the expiration time changes, reset initialSeconds so it can be re-calculated.
+    setInitialSeconds(0);
+  }, [currentAuctionExpiresAt]);
+
+  useEffect(() => {
     // When the expiration time changes (e.g. a bid is placed), trigger a fast reset animation
     setIsResetting(true);
     const resetTimer = setTimeout(() => setIsResetting(false), 500);
 
     const serverNowMs = new Date(currentServerTime ?? 0).getTime();
     const expiresAtMs = new Date(currentAuctionExpiresAt ?? 0).getTime();
-    const initialRemainingMs = Number.isNaN(serverNowMs) || Number.isNaN(expiresAtMs)
+    let initialRemainingMs = Number.isNaN(serverNowMs) || Number.isNaN(expiresAtMs)
       ? 0
       : Math.max(0, expiresAtMs - serverNowMs);
+
+    // If a bid was just placed, the timer is likely reset to 10s.
+    // Add a buffer to ensure "10" is displayed for a full second, compensating for network/processing lag.
+    const isTimerReset = initialRemainingMs > 9000 && initialRemainingMs <= 10000;
+    if (isTimerReset) {
+      initialRemainingMs = 10900;
+    }
+
     const startPerfMs = performance.now();
 
     const updateCountdown = () => {
       const elapsedSinceStart = performance.now() - startPerfMs;
       const remainingMs = Math.max(0, initialRemainingMs - elapsedSinceStart);
-      const remaining = Math.ceil(remainingMs / 1000);
-      setSecondsRemaining(remaining);
+      const remaining = Math.floor(remainingMs / 1000);
       
-      // Set initial seconds only once
+      // Cap the displayed seconds at 10 to match the intended auction timer.
+      setSecondsRemaining(Math.min(remaining, 10));
+      
+      // Set initial seconds only once per timer reset
       if (initialSeconds === 0 && remaining > 0) {
-        setInitialSeconds(remaining);
+        setInitialSeconds(10); // The auction timer is 10 seconds.
       }
     };
 
@@ -233,14 +248,11 @@ const AuctionInfoPanel: React.FC<AuctionInfoPanelProps> = ({
             )}
           </div>
         </div>
-        <div className="auction-draft-number">
-          Draft Number: {completed_auctions.length + 1}/{total_auctions}
-        </div>
         <div className="bid-info">
           <p className={`current-bid ${isBidAnimating ? 'bid-animate' : ''}`}>${current_auction.highest_bid}</p>
           <p className="bidder-label">
             {isCurrentUserHighBidder
-              ? "You're the High Bidder!"
+              ? "You're the high bidder!"
               : `High Bidder: ${getUserLabel(current_auction.highest_bidder) || 'No bids yet'}`
             }
           </p>
@@ -280,8 +292,8 @@ const AuctionInfoPanel: React.FC<AuctionInfoPanelProps> = ({
     {showBidWarning && (
       <div className="auction-modal-overlay">
         <div className="auction-modal-content">
-          <h3>Large Bid Increase</h3>
-          <p>Your bid is more than $2000 above the current bid. Are you sure you want to proceed?</p>
+          <h3>Whoa, that's a big bid!</h3>
+          <p>Your bid is more than $2000 above the current bid. Are you sure you want to bid so much?</p>
           <div className="auction-modal-actions">
             <button
               className="auction-modal-confirm"

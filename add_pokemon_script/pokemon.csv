@@ -589,7 +589,7 @@ dex_number,name,form,evolves_from_id,evolves_from_form,type1,type2,stage,ability
 127,Mega Pinsir,Mega,127,,Bug,Flying,mega,Aerilate,,,65,155,120,65,90,105,Pinsirite,"Stage 1",Rental,
 227,Skarmory,,,,Steel,Flying,base,Keen Eye,Sturdy,Weak Armor,65,80,140,40,70,70,,,Rental,
 227,Mega Skarmory,Mega,227,,Steel,Flying,mega,Keen Eye,Sturdy,Weak Armor,65,80,140,40,70,70,Skarmorite,"Stage 1",Rental,
-962,Bombirdier,,,,Flying,Dark,base,Big Pecks,Keen Eye,Rocky Payload,70,103,85,60,85,82,,,Rental,
+962,Bombirdier,,,,Flying,Dark,base,Stork's Blessing,,Rocky Payload,70,103,85,60,85,82,,,Rental,
 626,Bouffalant,,,,Normal,,base,Reckless,Sap Sipper,Soundproof,95,110,95,40,95,55,,,Rental,
 455,Carnivine,,,,Grass,,base,Levitate,,,74,100,72,90,72,46,,,Rental,
 764,Comfey,,,,Fairy,,base,Flower Veil,Triage,Natural Cure,51,52,90,82,110,100,,,Rental,

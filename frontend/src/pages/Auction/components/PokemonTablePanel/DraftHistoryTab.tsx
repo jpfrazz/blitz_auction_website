@@ -9,34 +9,27 @@ interface DraftHistoryTabProps {
 
 const DraftHistoryTab: React.FC<DraftHistoryTabProps> = ({ auctions }) => {
   const sortedAuctions = [...auctions].reverse();
-  const soldAuctions = auctions.filter(auction => auction.highest_bid > 0);
-  const averageSoldPrice =
-    soldAuctions.length > 0
-      ? Math.round(
-          soldAuctions.reduce((total, auction) => total + auction.highest_bid, 0) /
-            soldAuctions.length
-        )
-      : null;
 
   return (
-    <div className="auction-draft-history-list">
-      <h3>Draft History</h3>
-      <div className="draft-history-average-price">
-        Average Price:{' '}
-        {averageSoldPrice !== null ? `$${averageSoldPrice.toLocaleString()}` : 'N/A'}
-      </div>
+    <div className="auction-draft-history-list" style={{ paddingTop: '1rem' }}>
       <ul>
         {sortedAuctions.map((auction, idx) => (
           <li key={idx}>
-            <img
-              src={`/MiniIcons/${auction.pokemon.name.toLowerCase()}.png`}
-              alt={auction.pokemon.name}
-              className="draft-history-pokemon-icon"
-            />
-            <strong>{auction.pokemon.name}</strong>:
-            {auction.highest_bid > 0
-              ? ` ${getUserLabel(auction.highest_bidder)} won for $${auction.highest_bid}`
-              : ' No bids yet'}
+            <div style={{ display: 'flex', alignItems: 'center' }}>
+              <div style={{ width: '24px', display: 'flex', justifyContent: 'center', marginRight: '8px', flexShrink: 0 }}>
+                <img
+                  src={`/MiniIcons/${auction.pokemon.name.toLowerCase()}.png`}
+                  alt={auction.pokemon.name}
+                  className="draft-history-pokemon-icon"
+                />
+              </div>
+              <div>
+                <strong>{auction.pokemon.name}</strong>:
+                {auction.highest_bid > 0
+                  ? ` ${getUserLabel(auction.highest_bidder)} won for $${auction.highest_bid}`
+                  : ' No bids yet'}
+              </div>
+            </div>
           </li>
         ))}
       </ul>

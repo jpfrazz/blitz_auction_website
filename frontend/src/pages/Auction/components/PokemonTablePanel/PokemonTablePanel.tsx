@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import AllPokemonTab from './AllPokemonTab';
 import TeamPlannerTab from './TeamPlannerTab';
 import DraftHistoryTab from './DraftHistoryTab';
@@ -21,6 +21,8 @@ interface PokemonTablePanelProps {
 
 const PokemonTablePanel: React.FC<PokemonTablePanelProps> = ({ auctions, pokemon, teams, currentUserId }) => {
   const [tab, setTab] = useState<string>(TAB_ALL);
+
+  const nonRentalPokemon = useMemo(() => pokemon.filter(p => p.obtain_method !== 'Rental'), [pokemon]);
 
   return (
     <div className="pokemon-table-panel-outer">
@@ -52,7 +54,7 @@ const PokemonTablePanel: React.FC<PokemonTablePanelProps> = ({ auctions, pokemon
       </div>
       <div className="auction-pokemon-table-box">
         <div className="pokemon-table-tab-content">
-          {tab === TAB_ALL && <AllPokemonTab pokemon={pokemon} auctions={auctions} />}
+          {tab === TAB_ALL && <AllPokemonTab pokemon={nonRentalPokemon} auctions={auctions} />}
           {tab === TAB_TEAM && <TeamPlannerTab teams={teams} currentUserId={currentUserId} allPokemon={pokemon} />}
           {tab === TAB_HISTORY && <DraftHistoryTab auctions={auctions} />}
           {tab === TIER_LIST && <TierListTab />}

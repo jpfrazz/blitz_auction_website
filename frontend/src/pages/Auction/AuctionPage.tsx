@@ -10,9 +10,11 @@ import PlayerRow from './components/PlayerRow';
 import CurrentPokemonPanel from './components/CurrentPokemonPanel';
 import AuctionInfoPanel from './components/AuctionInfoPanel';
 import AuctionChatBox from './components/AuctionChatBox';
+import AuctionStatsPanel from './components/AuctionStatsPanel';
 import PokemonTablePanel from './components/PokemonTablePanel/PokemonTablePanel';
 import EeveelutionClaimModal from './components/EeveelutionClaimModal';
 import { Draft } from '../../types';
+import confetti from 'canvas-confetti';
 
 const AUCTION_ALERT_SOUND_PATH = encodeURI('/14 Battle! (Wild Pokémon).mp3');
 const AUCTION_ALERT_SOUND_MUTED_KEY = 'auction_alert_sound_muted';
@@ -58,6 +60,7 @@ const AuctionPage: React.FC = () => {
   const auctionAlertAudioRef = useRef<HTMLAudioElement | null>(null);
   const auctionAlertStopTimerRef = useRef<number | null>(null);
   const previousAuctionIdRef = useRef<string | null>(null);
+  const prevCompletedAuctionsLengthRef = useRef<number | null>(null);
   const hasInitializedAuctionTrackingRef = useRef(false);
 
   useEffect(() => {
@@ -140,6 +143,32 @@ const AuctionPage: React.FC = () => {
 
     previousAuctionIdRef.current = currentAuctionId;
   }, [draft?.current_auction?.auction_id, isAuctionSoundMuted]);
+
+  useEffect(() => {
+    if (!draft) return;
+
+    const currentLength = draft.completed_auctions.length;
+
+    if (prevCompletedAuctionsLengthRef.current === null) {
+      prevCompletedAuctionsLengthRef.current = currentLength;
+      return;
+    }
+
+    if (currentLength > prevCompletedAuctionsLengthRef.current) {
+      const newAuctions = draft.completed_auctions.slice(prevCompletedAuctionsLengthRef.current);
+      newAuctions.forEach(auction => {
+        if (getUserId(auction.highest_bidder) === currentUserId) {
+          confetti({
+            particleCount: 100,
+            spread: 70,
+            origin: { y: 0.6 },
+            zIndex: 1500,
+          });
+        }
+      });
+      prevCompletedAuctionsLengthRef.current = currentLength;
+    }
+  }, [draft?.completed_auctions, currentUserId]);
 
   const connectWebSocket = (draftId: string) => {
     if (wsRef.current) {
@@ -552,6 +581,12 @@ const AuctionPage: React.FC = () => {
                         )}
                         currentUserId={currentUserId}
                         userBudgetRemaining={draft.teams.find(team => team.user_id === currentUserId)?.budget_remaining || 0}
+                        completed_auctions={draft.completed_auctions}
+                        total_auctions={draft.total_auctions}
+                      />
+                    )}
+                    {draft.draft_state !== 'PENDING' && draft.current_auction && (
+                      <AuctionStatsPanel
                         completed_auctions={draft.completed_auctions}
                         total_auctions={draft.total_auctions}
                       />

@@ -7,7 +7,7 @@
   display: flex;
   flex-direction: column;
   width: 100%;
-  flex: 0 1 25%;
+  flex: 1 1 auto;
   min-height: 0;
 
   &.collapsed {
@@ -22,7 +22,7 @@
   justify-content: space-between;
   padding: 0.75rem 1rem;
   border-bottom: 0.0625rem solid $eb-border;
-  background: $eb-bg;
+  background: $eb-surface;
 }
 
 .auction-chat-title {
@@ -48,7 +48,7 @@
   flex: 1;
   overflow-y: auto;
   padding: 1rem;
-  background: $eb-surface;
+  background: $eb-bg;
 }
 
 .auction-chat-empty {
@@ -93,7 +93,7 @@
   gap: 0.75rem;
   padding: 0.75rem 1rem 1rem;
   border-top: 0.0625rem solid $eb-border;
-  background: $eb-bg;
+  background: $eb-surface;
 }
 
 .auction-chat-input {
@@ -101,7 +101,7 @@
   padding: 0.5rem 0.75rem;
   border: 0.0625rem solid $eb-border;
   border-radius: 0.25rem;
-  background: $eb-surface;
+  background: $eb-bg;
   color: $eb-text;
   font-size: 1.2rem;
 

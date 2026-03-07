@@ -82,7 +82,7 @@
 
     &:nth-child(4) {
         width: auto;
-        min-width: 16rem;
+        min-width: 15.5rem;
     }
 
     &:nth-child(6) {
@@ -95,7 +95,7 @@
   background: $eb-surface;
 }
 
-.all-pokemon-table tr:hover {
+.all-pokemon-table tbody tr:hover {
     background: $eb-accent;
     color: $eb-text-black;
 }

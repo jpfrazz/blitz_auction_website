@@ -125,10 +125,9 @@ const TeamPlannerTab: React.FC<TeamPlannerTabProps> = ({ teams, currentUserId, a
 
   return (
     <div className="auction-team-planner-list">
-      <h3 className="team-builder-main-title">Your Team Planner</h3>
       <div className="team-builder-header-split">
         <div className="team-builder-header-half">
-          <h3>Evolution Items on Your Team</h3>
+          <h3>Evolution Items</h3>
           {sortedEvoItems.length > 0 ? (
             <ul className="team-builder-header-list">
               {sortedEvoItems.map(({ itemName, pokemonName }) => (
@@ -146,7 +145,7 @@ const TeamPlannerTab: React.FC<TeamPlannerTabProps> = ({ teams, currentUserId, a
         <div className="team-builder-header-divider" />
 
         <div className="team-builder-header-half">
-          <h3>Egg Moves on Your Team</h3>
+          <h3>Egg Moves</h3>
           {eggMoves.length > 0 ? (
             <ul className="team-builder-header-list">
               {eggMoves.map(({ moveName, pokemonName }) => (
