@@ -1,0 +1,123 @@
+@import '../shared/style/theme.scss';
+
+.leaderboard-page-wrapper {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+    background: $eb-bg;
+}
+
+.leaderboard-container {
+    padding: 7.5rem 1rem 2rem; // Increased top padding to clear header, added bottom padding
+    max-width: 1200px;
+    margin: 0 auto;
+    font-family: 'Segoe UI', 'Arial', sans-serif;
+    color: $eb-text;
+    width: 100%;
+}
+
+.leaderboard-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.leaderboard-header h1 {
+    color: $eb-text-muted;
+    font-size: 1.6rem;
+    font-weight: 400;
+}
+
+.filter-container {
+    display: flex;
+    align-items: center;
+    font-size: 1.5rem;
+}
+
+.filter-container label {
+    margin-right: 10px;
+    font-weight: bold;
+    color: $eb-text;
+}
+
+.filter-container input {
+    padding: 8px;
+    border-radius: 4px;
+    border: 1px solid $eb-border;
+    background: $eb-bg;
+    color: $eb-text;
+    font-size: 1.5rem;
+    width: 5rem;
+    color-scheme: dark;
+}
+
+.leaderboard-table {
+    width: 100%;
+    border-collapse: collapse;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    border: 1px solid black;
+    background: $eb-surface;
+}
+
+.leaderboard-table th,
+.leaderboard-table td {
+    border: 1px solid black;
+    padding: 12px;
+    text-align: left;
+    font-size: 1.5rem;
+}
+
+.leaderboard-table th {
+    background-color: #111;
+    color: $eb-text;
+    font-weight: bold;
+    position: sticky;
+    top: 0;
+    z-index: 1;
+}
+
+.leaderboard-table tbody tr {
+    background: $eb-surface;
+}
+
+.leaderboard-table tbody tr.gold-row {
+    background-color: #3E3924;
+}
+
+.leaderboard-table tbody tr.silver-row {
+    background-color: #41464B;
+}
+
+.leaderboard-table tbody tr.bronze-row {
+    background-color: #4B3B2F;
+}
+
+.leaderboard-table tbody tr.gold-row:hover,
+.leaderboard-table tbody tr.silver-row:hover,
+.leaderboard-table tbody tr.bronze-row:hover {
+    background: $eb-accent;
+}
+
+.leaderboard-table tbody tr:hover {
+    background: $eb-accent;
+    color: $eb-text-black;
+}
+
+.pokemon-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    align-items: center;
+}
+
+.leaderboard-pokemon-img {
+    width: 48px;
+    height: 48px;
+    object-fit: contain;
+    transition: transform 0.2s;
+}
+
+.leaderboard-pokemon-img:hover {
+    transform: scale(1.2);
+}

@@ -5,6 +5,7 @@ import { fetchCurrentUser, changeGuestName } from '../api/draftData';
 
 const navButtons = [
   // { label: "Team Planner", link: "/TeamPlanner" },
+  { label: "Leaderboard", link: "/Leaderboard" },
   { label: "Pokédex", link: "/Pokedex" },
   { label: "Boss Battles", link: "/BossBattles" },
   { label: "Blitz Info", link: "/Info" },
