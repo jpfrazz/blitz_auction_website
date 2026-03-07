@@ -8,14 +8,13 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: space-between;
   width: 100%;
-  flex: 0 1 75%;
+  flex: 0 1 auto;
   min-height: 0;
   max-height: 100%;
   overflow-y: auto;
   overflow-x: hidden;
-  padding: 12px 8px 0;
+  padding: 0 8px 1.5rem;
   box-sizing: border-box;
 }
 
@@ -27,7 +26,7 @@
   gap: 4px;
   padding: 0 20px;
   box-sizing: border-box;
-  margin: 0.25rem 0;
+  margin: 1rem 0 2rem;
 
   .countdown-text {
     font-size: 24px;
@@ -44,7 +43,6 @@
     .countdown-bar-progress {
       height: 100%;
       border-radius: 6px;
-      transition: width 1s linear;
     }
   }
 }
@@ -54,6 +52,7 @@
   flex-direction: column;
   align-items: center;
   gap: 12px;
+  margin-bottom: 3rem;
   width: 100%;
 
   .pokemon-info-display {
@@ -72,7 +71,6 @@
     height: auto;
     max-width: 32px;
     max-height: 32px;
-    image-rendering: pixelated;
     flex-shrink: 0;
   }
 
@@ -110,7 +108,7 @@
       font-size: 28px;
       font-weight: bold;
       color: $eb-text;
-      margin: 8px 0 4px 0;
+      margin: 4px 0;
       transition: transform 0.2s ease-out, color 0.2s ease-out;
 
       &.bid-animate {
@@ -133,7 +131,6 @@
   width: 100%;
   align-items: center;
   justify-content: center;
-  padding-bottom: 1.2rem;
   flex-wrap: wrap;
 
   .bid-button {

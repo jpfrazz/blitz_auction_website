@@ -87,7 +87,7 @@ const AuctionInfoPanel: React.FC<AuctionInfoPanelProps> = ({
     const updateCountdown = () => {
       const elapsedSinceStart = performance.now() - startPerfMs;
       const remainingMs = Math.max(0, initialRemainingMs - elapsedSinceStart);
-      const remaining = Math.floor(remainingMs / 1000);
+      const remaining = Math.ceil(remainingMs / 1000);
       setSecondsRemaining(remaining);
       
       // Set initial seconds only once
@@ -186,9 +186,6 @@ const AuctionInfoPanel: React.FC<AuctionInfoPanelProps> = ({
 
   return (
     <div className="auction-info-box">
-      <div className="auction-draft-number">
-        Draft Number: {completed_auctions.length + 1}/{total_auctions}
-      </div>
       <div className="auction-countdown-container">
         {bidNotification && (
           <div className="auction-bid-notification" role="status" aria-live="polite">
@@ -204,7 +201,7 @@ const AuctionInfoPanel: React.FC<AuctionInfoPanelProps> = ({
             style={{
               width: `${progress * 100}%`,
               backgroundColor: timerColor,
-              transition: isResetting ? 'width 0.2s ease-out' : 'width 1s linear'
+              transition: isResetting ? 'width 0.2s ease-out' : 'width 0.25s ease-in-out'
             }}
           />
         </div>
@@ -235,6 +232,9 @@ const AuctionInfoPanel: React.FC<AuctionInfoPanelProps> = ({
               />
             )}
           </div>
+        </div>
+        <div className="auction-draft-number">
+          Draft Number: {completed_auctions.length + 1}/{total_auctions}
         </div>
         <div className="bid-info">
           <p className={`current-bid ${isBidAnimating ? 'bid-animate' : ''}`}>${current_auction.highest_bid}</p>

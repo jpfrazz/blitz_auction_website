@@ -394,7 +394,7 @@ const CurrentPokemonPanel: React.FC<CurrentPokemonPanelProps> = ({ current_aucti
 
         {keyMoves.length > 0 && (
           <div className="pokemon-key-moves">
-            <div className="key-moves-title">Key Moves</div>
+            <div className="key-moves-title">Key Moves:</div>
             <div className="key-moves-list">
               {keyMoves.map((move, index) => (
                 <div

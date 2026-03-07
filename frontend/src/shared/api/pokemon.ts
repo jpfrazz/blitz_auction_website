@@ -9,3 +9,12 @@ export async function fetchPokemonList(): Promise<Pokemon[]> {
     id: pokemon.pokedex_id,
   }));
 }
+
+export async function fetchRentalPokemonList(): Promise<Pokemon[]> {
+  const response = await axios.get('/api/pokemon/rental');
+
+  return response.data.map((pokemon: any) => ({
+    ...pokemon,
+    id: pokemon.pokedex_id,
+  }));
+}

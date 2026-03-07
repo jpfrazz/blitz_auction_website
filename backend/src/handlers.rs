@@ -166,7 +166,30 @@ pub async fn get_pokemon(
         ));
     };
 
-    Ok(Json(pokemon))
+    let non_rental_pokemon = pokemon
+        .into_iter()
+        .filter(|p| p.obtain_method.as_deref() != Some("Rental"))
+        .collect();
+
+    Ok(Json(non_rental_pokemon))
+}
+
+#[debug_handler]
+pub async fn get_rental_pokemon(
+) -> Result<Json<Vec<Arc<pokemon::Pokemon>>>, (StatusCode, String)> {
+    let Some(pokemon) = pokemon::get_pokemon_data(&Vec::new()) else {
+        return Err((
+            StatusCode::NOT_FOUND,
+            "no pokemon data available".to_string(),
+        ));
+    };
+
+    let rental_pokemon = pokemon
+        .into_iter()
+        .filter(|p| p.obtain_method.as_deref() == Some("Rental"))
+        .collect();
+
+    Ok(Json(rental_pokemon))
 }
 
 #[debug_handler]

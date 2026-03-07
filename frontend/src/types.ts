@@ -28,7 +28,7 @@ export interface Pokemon {
   evolves_from_form?: string;
   evolution_method?: string;
   mega?: string;
-  is_baby?: boolean;
+  obtain_method?: string;
 }
 
 export interface KeyMove {

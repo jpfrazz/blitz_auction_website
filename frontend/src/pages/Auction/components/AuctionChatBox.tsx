@@ -130,7 +130,7 @@ const AuctionChatBox: React.FC<AuctionChatBoxProps> = ({ draftId, isGuest, isLog
               type="text"
               value={newMessage}
               onChange={event => setNewMessage(event.target.value)}
-              placeholder={isGuest ? 'Guests can view chat only' : 'Type a message...'}
+              placeholder={isGuest ? 'Log in with Discord to chat!' : 'Type a message...'}
               disabled={isGuest || isSending || !isLoggedIn}
             />
             <button

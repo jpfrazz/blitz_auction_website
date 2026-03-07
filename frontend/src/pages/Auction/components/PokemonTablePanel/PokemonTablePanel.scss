@@ -3,7 +3,7 @@
 .auction-pokemon-table-box {
 	background: $eb-surface;
 	border: $eb-border;
-	border-radius: 4px;
+	border-radius: 0px;
 	display: flex;
 	align-items: stretch;
 	justify-content: stretch;
@@ -56,7 +56,7 @@
 
 .pokemon-table-tab-content {
 	width: 100%;
-	padding: 8px 0 0 0;
+	padding: 0;
 	flex: 1;
 	min-height: 0;
 	display: flex;

@@ -31,7 +31,7 @@ const AllPokemonTab: React.FC<AllPokemonTabProps> = ({ pokemon, auctions }) => {
   // Add auction info to each row for table use
   const data = useMemo(() =>
     pokemon
-      .filter((p: any) => p.stage === 'base')
+      .filter((p: any) => p.stage === 'base' && p.obtain_method !== 'rental')
       .map(p => {
         const pokedexId = p.pokedex_id ?? p.id;
         const auction = auctions.find(a => a.pokemon.pokedex_id === pokedexId);

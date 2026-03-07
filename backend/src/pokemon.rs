@@ -50,7 +50,11 @@ pub async fn init_pokemon_data(pool: &PgPool) -> Result<(), sqlx::Error> {
         stage: row.stage.parse().unwrap_or_else(|e| {
             panic!("stage not valid: {}, {}", row.stage, row.pokedex_id)
         }),
-        is_baby: row.is_baby,
+        obtain_method: if row.obtain_method.is_empty() {
+            None
+        } else {
+            Some(row.obtain_method)
+        },
         type1: row
             .type1
             .parse()
@@ -153,7 +157,6 @@ pub struct Pokemon {
     pub name: String,
     pub form: Option<String>,
     pub stage: PokemonStage,
-    pub is_baby: bool,
     pub type1: PokemonType,
     pub type2: Option<PokemonType>,
     pub ability1: String,
@@ -165,6 +168,7 @@ pub struct Pokemon {
     pub evolves_from_id: Option<i32>,
     pub evolves_from_form: Option<String>,
     pub evolution_method: Option<String>,
+    pub obtain_method: Option<String>,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]

@@ -40,7 +40,7 @@ class CsvRow(TypedDict):
     speed: str
     evolution_method: str
     mega: str
-    is_baby: str
+    obtain_method: str
 
 
 class DbRow(TypedDict):
@@ -58,7 +58,7 @@ class DbRow(TypedDict):
     evolves_from_form: Optional[str]
     evolution_method: Optional[str]
     mega: Optional[str]
-    is_baby: bool
+    obtain_method: Optional[str]
     hp: int
     attack: int
     defense: int
@@ -133,7 +133,7 @@ def transform_row(
         evolves_from_form=to_optional_str(row["evolves_from_form"]),
         evolution_method=to_optional_str(row["evolution_method"]),
         mega=to_optional_str(row["mega"]),
-        is_baby=to_bool(row["is_baby"]),
+        obtain_method=row["obtain_method"].strip(),
         hp=to_int(row["hp"]),
         attack=to_int(row["attack"]),
         defense=to_int(row["defense"]),
@@ -170,7 +170,7 @@ INSERT INTO pokemon (
     evolves_from_form,
     evolution_method,
     mega,
-    is_baby,
+    obtain_method,
     hp,
     attack,
     defense,
@@ -193,7 +193,7 @@ VALUES (
     %(evolves_from_form)s,
     %(evolution_method)s,
     %(mega)s,
-    %(is_baby)s,
+    %(obtain_method)s,
     %(hp)s,
     %(attack)s,
     %(defense)s,

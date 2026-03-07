@@ -75,8 +75,8 @@
       },
       {
         "ordinal": 14,
-        "name": "is_baby",
-        "type_info": "Bool"
+        "name": "obtain_method",
+        "type_info": "Text"
       },
       {
         "ordinal": 15,

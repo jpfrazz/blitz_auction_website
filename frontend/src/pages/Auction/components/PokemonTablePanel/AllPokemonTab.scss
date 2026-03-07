@@ -61,8 +61,8 @@
 }
 
 .all-pokemon-table th {
-    background: $eb-primary;
-    color: $eb-text-black;
+    background: #111;
+    color: $eb-text;
     font-weight: 700;
     position: sticky;
     top: 0;
@@ -91,8 +91,8 @@
     }
 }
 
-.all-pokemon-table tr:nth-child(even) {
-    background: $eb-surface;
+.all-pokemon-table tbody tr:nth-child(odd) {
+  background: $eb-surface;
 }
 
 .all-pokemon-table tr:hover {
