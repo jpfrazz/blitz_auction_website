@@ -15,10 +15,10 @@ const mockLeaderboardData: LeaderboardEntry[] = [
 	{
 		user_id: 'user-001',
 		username: 'FranklyNathan',
-		win: 18,
-		loss: 7,
+		win: 52,
+		loss: 18,
 		mmr: 1695,
-		games_played: 25,
+		games_played: 10,
 		most_drafted_pokemon: [
 			{ id: 700, name: 'Sylveon', form: '' },
 			{ id: 296, name: 'Makuhita', form: '' },
@@ -30,10 +30,10 @@ const mockLeaderboardData: LeaderboardEntry[] = [
 	{
 		user_id: 'user-002',
 		username: 'Route119Rain',
-		win: 15,
-		loss: 10,
+		win: 38,
+		loss: 18,
 		mmr: 1582,
-		games_played: 25,
+		games_played: 8,
 		most_drafted_pokemon: [
 			{ id: 170, name: 'Chinchou', form: '' },
 			{ id: 704, name: 'Goomy', form: '' },
@@ -45,10 +45,10 @@ const mockLeaderboardData: LeaderboardEntry[] = [
 	{
 		user_id: 'user-003',
 		username: 'StoneBadgeEnjoyer',
-		win: 12,
-		loss: 13,
+		win: 20,
+		loss: 22,
 		mmr: 1509,
-		games_played: 25,
+		games_played: 6,
 		most_drafted_pokemon: [
 			{ id: 513, name: 'Pansear', form: '' },
 			{ id: 837, name: 'Rolycoly', form: '' },
@@ -60,10 +60,10 @@ const mockLeaderboardData: LeaderboardEntry[] = [
 	{
 		user_id: 'user-004',
 		username: 'PikaPal',
-		win: 9,
-		loss: 5,
+		win: 25,
+		loss: 10,
 		mmr: 1590,
-		games_played: 14,
+		games_played: 5,
 		most_drafted_pokemon: [
 			{ id: 196, name: 'Espeon', form: '' },
 			{ id: 172, name: 'Pichu', form: '' },
@@ -73,10 +73,10 @@ const mockLeaderboardData: LeaderboardEntry[] = [
 	{
 		user_id: 'user-005',
 		username: 'GengarGrin',
-		win: 7,
-		loss: 2,
+		win: 16,
+		loss: 5,
 		mmr: 1550,
-		games_played: 9,
+		games_played: 3,
 		most_drafted_pokemon: [
 			{ id: 92, name: 'Gastly', form: '' },
 			{ id: 471, name: 'Glaceon', form: '' },
@@ -86,10 +86,10 @@ const mockLeaderboardData: LeaderboardEntry[] = [
 	{
 		user_id: 'user-006',
 		username: 'SnorlaxSnacker',
-		win: 4,
-		loss: 4,
+		win: 7,
+		loss: 7,
 		mmr: 1490,
-		games_played: 8,
+		games_played: 2,
 		most_drafted_pokemon: [
 			{ id: 216, name: 'Teddiursa', form: '' },
 			{ id: 446, name: 'Munchlax', form: '' },
@@ -99,10 +99,10 @@ const mockLeaderboardData: LeaderboardEntry[] = [
 	{
 		user_id: 'user-007',
 		username: 'EeveeExplorer',
-		win: 3,
-		loss: 4,
+		win: 6,
+		loss: 8,
 		mmr: 1475,
-		games_played: 7,
+		games_played: 2,
 		most_drafted_pokemon: [
 			{ id: 196, name: 'Espeon', form: '' },
 			{ id: 280, name: 'Ralts', form: '' },
@@ -111,10 +111,10 @@ const mockLeaderboardData: LeaderboardEntry[] = [
 	{
 		user_id: 'user-008',
 		username: 'DragonTamer',
-		win: 5,
+		win: 6,
 		loss: 1,
 		mmr: 1560,
-		games_played: 6,
+		games_played: 1,
 		most_drafted_pokemon: [
 			{ id: 696, name: 'Tyrunt', form: '' },
 			{ id: 371, name: 'Bagon', form: '' },
@@ -123,10 +123,10 @@ const mockLeaderboardData: LeaderboardEntry[] = [
 	{
 		user_id: 'user-009',
 		username: 'AquaJetsetter',
-		win: 2,
-		loss: 3,
+		win: 3,
+		loss: 4,
 		mmr: 1480,
-		games_played: 5,
+		games_played: 1,
 		most_drafted_pokemon: [
 			{ id: 7, name: 'Squirtle', form: '' },
 			{ id: 320, name: 'Wailmer', form: '' },
@@ -136,9 +136,9 @@ const mockLeaderboardData: LeaderboardEntry[] = [
 		user_id: 'user-010',
 		username: 'RockSolid',
 		win: 1,
-		loss: 3,
+		loss: 6,
 		mmr: 1420,
-		games_played: 4,
+		games_played: 1,
 		most_drafted_pokemon: [
 			{ id: 74, name: 'Geodude', form: '' },
 			{ id: 95, name: 'Onix', form: '' },
@@ -148,9 +148,9 @@ const mockLeaderboardData: LeaderboardEntry[] = [
 		user_id: 'user-011',
 		username: 'Nathan’s Haters',
 		win: 0,
-		loss: 50,
+		loss: 70,
 		mmr: 60,
-		games_played: 50,
+		games_played: 10,
 		most_drafted_pokemon: [
 			{ id: 664, name: 'Scatterbug', form: '' },
 			{ id: 13, name: 'Weedle', form: '' },
@@ -159,10 +159,10 @@ const mockLeaderboardData: LeaderboardEntry[] = [
 	{
 		user_id: 'user-012',
 		username: 'LilTimmy',
-		win: 1,
-		loss: 8,
+		win: 2,
+		loss: 12,
 		mmr: 1100,
-		games_played: 9,
+		games_played: 2,
 		most_drafted_pokemon: [
 			{ id: 821, name: 'Rookidee', form: '' },
 			{ id: 263, name: 'Zigzagoon', form: '' },
@@ -172,7 +172,7 @@ const mockLeaderboardData: LeaderboardEntry[] = [
 		user_id: 'user-013',
 		username: 'OneandDone',
 		win: 0,
-		loss: 1,
+		loss: 7,
 		mmr: 1450,
 		games_played: 1,
 		most_drafted_pokemon: [
