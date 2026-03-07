@@ -1,0 +1,7 @@
+auction_role_sync_bot.py
+pyproject.toml
+discord_bot.egg-info/PKG-INFO
+discord_bot.egg-info/SOURCES.txt
+discord_bot.egg-info/dependency_links.txt
+discord_bot.egg-info/requires.txt
+discord_bot.egg-info/top_level.txt

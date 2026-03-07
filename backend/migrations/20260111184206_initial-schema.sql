@@ -4,7 +4,6 @@ CREATE TABLE users (
     discriminator TEXT NOT NULL,
     global_name TEXT,
     avatar TEXT,
-    role_hash TEXT NOT NULL,
     wins INT NOT NULL DEFAULT 0,
     losses INT NOT NULL DEFAULT 0,
     mmr INT NOT NULL DEFAULT 1500,
@@ -14,8 +13,9 @@ CREATE TABLE users (
 
 CREATE TABLE user_roles (
     user_id TEXT NOT NULL REFERENCES users(user_id),
-    role TEXT NOT NULL,
-    PRIMARY KEY (user_id, role)
+    role_id TEXT NOT NULL,
+    role_name TEXT NOT NULL,
+    PRIMARY KEY (user_id, role_id)
 );
 
 CREATE TABLE guests (

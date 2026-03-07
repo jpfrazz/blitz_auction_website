@@ -2,8 +2,8 @@ use sqlx::{Postgres, Transaction};
 use strum::Display;
 
 use serde::{Deserialize, Serialize};
-use tokio::time::Instant;
 use std::sync::Arc;
+use tokio::time::Instant;
 
 use crate::{pokemon::Pokemon, users::User};
 
