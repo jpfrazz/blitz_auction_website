@@ -22,7 +22,10 @@ use chrono::Utc;
 use oauth2::CsrfToken;
 use serde::{Deserialize, Serialize};
 use sqlx::Row;
-use std::sync::Arc;
+use std::{
+    sync::Arc,
+    collections::HashMap
+};
 use tokio::sync::{RwLock, broadcast};
 use tower_sessions::Session;
 
