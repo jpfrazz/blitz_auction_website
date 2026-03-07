@@ -75,38 +75,38 @@
       },
       {
         "ordinal": 14,
-        "name": "obtain_method",
-        "type_info": "Text"
-      },
-      {
-        "ordinal": 15,
         "name": "hp",
         "type_info": "Int4"
       },
       {
-        "ordinal": 16,
+        "ordinal": 15,
         "name": "attack",
         "type_info": "Int4"
       },
       {
-        "ordinal": 17,
+        "ordinal": 16,
         "name": "defense",
         "type_info": "Int4"
       },
       {
-        "ordinal": 18,
+        "ordinal": 17,
         "name": "sp_attack",
         "type_info": "Int4"
       },
       {
-        "ordinal": 19,
+        "ordinal": 18,
         "name": "sp_defense",
         "type_info": "Int4"
       },
       {
-        "ordinal": 20,
+        "ordinal": 19,
         "name": "speed",
         "type_info": "Int4"
+      },
+      {
+        "ordinal": 20,
+        "name": "obtain_method",
+        "type_info": "Text"
       },
       {
         "ordinal": 21,
@@ -138,7 +138,7 @@
       false,
       false,
       false,
-      false,
+      true,
       null
     ]
   },

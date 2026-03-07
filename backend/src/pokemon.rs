@@ -50,11 +50,6 @@ pub async fn init_pokemon_data(pool: &PgPool) -> Result<(), sqlx::Error> {
         stage: row.stage.parse().unwrap_or_else(|e| {
             panic!("stage not valid: {}, {}", row.stage, row.pokedex_id)
         }),
-        obtain_method: if row.obtain_method.is_empty() {
-            None
-        } else {
-            Some(row.obtain_method)
-        },
         type1: row
             .type1
             .parse()
@@ -109,6 +104,7 @@ pub async fn init_pokemon_data(pool: &PgPool) -> Result<(), sqlx::Error> {
         evolves_from_id: row.evolves_from_id,
         evolves_from_form: row.evolves_from_form,
         evolution_method: row.evolution_method,
+        obtain_method: row.obtain_method,
     })
     .fetch_all(pool)
     .await?;
