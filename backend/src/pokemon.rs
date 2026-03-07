@@ -1,7 +1,6 @@
-use std::{collections::HashMap, sync::{Arc, OnceLock, RwLock}};
+use std::sync::{Arc, OnceLock, RwLock};
 use strum::{Display, EnumString};
 
-use dashmap::DashMap;
 use serde::{Deserialize, Serialize};
 use sqlx::{PgPool, prelude::FromRow, types::Json};
 
@@ -35,12 +34,12 @@ pub async fn init_pokemon_data(pool: &PgPool) -> Result<(), sqlx::Error> {
         "#,
     )
     .map(|row| Pokemon {
-        pokedex_id: u32::try_from(row.pokedex_id).unwrap_or_else(|_|
+        pokedex_id: u32::try_from(row.pokedex_id).unwrap_or_else(|_| {
             panic!(
                 "Pokemon {} {} has invalid pokedex_id: {}",
                 row.name, row.form, row.pokedex_id
             )
-        ),
+        }),
         name: row.name.clone(),
         form: if row.form.is_empty() {
             None
@@ -109,12 +108,7 @@ pub async fn init_pokemon_data(pool: &PgPool) -> Result<(), sqlx::Error> {
     .fetch_all(pool)
     .await?;
 
-    let pokemon_vec: Vec<Arc<Pokemon>> = pokemon_list
-        .into_iter()
-        .map(|p|
-            Arc::new(p)
-        )
-        .collect();
+    let pokemon_vec: Vec<Arc<Pokemon>> = pokemon_list.into_iter().map(|p| Arc::new(p)).collect();
 
     let rw_lock = RwLock::new(pokemon_vec);
 
@@ -124,9 +118,7 @@ pub async fn init_pokemon_data(pool: &PgPool) -> Result<(), sqlx::Error> {
     Ok(())
 }
 
-pub fn get_pokemon_data(
-    excluded_pokemon: &Vec<ExcludedPokemon>,
-) -> Option<Vec<Arc<Pokemon>>> {
+pub fn get_pokemon_data(excluded_pokemon: &Vec<ExcludedPokemon>) -> Option<Vec<Arc<Pokemon>>> {
     let cache = POKEMON_DATA.get().expect("POKEMON_DATA not initialized");
     let Ok(pokemon_vec) = cache.read() else {
         return None;
@@ -140,9 +132,7 @@ pub fn get_pokemon_data(
                     .iter()
                     .any(|e| e.pokedex_id == p.pokedex_id && e.form == p.form)
             })
-            .map(|p| {
-                p.clone()
-            })
+            .map(|p| p.clone())
             .collect(),
     )
 }
@@ -203,7 +193,7 @@ pub enum PokemonType {
 pub enum PokemonStage {
     base,
     evo,
-    mega
+    mega,
 }
 
 #[derive(Clone, Copy, Debug, Serialize, Deserialize, FromRow)]

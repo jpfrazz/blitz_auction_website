@@ -4,8 +4,8 @@ use petname::petname;
 use rand::seq::SliceRandom;
 use serde::{Deserialize, Serialize};
 use sqlx::PgPool;
-use strum::Display;
 use std::{collections::HashMap, sync::Arc};
+use strum::Display;
 use tokio::{
     sync::broadcast,
     time::{Duration, Instant},
@@ -13,7 +13,7 @@ use tokio::{
 
 use crate::{
     auction::{Auction, AuctionState},
-    draft_runner::{self, DraftRunner},
+    draft_runner::DraftRunner,
     get_expiry_time_from_instant,
     messages::{ClientBidRequest, ClientBidResponse, ServerMessage},
     pokemon::{self, Pokemon, PokemonStage},
@@ -65,7 +65,7 @@ pub struct DraftLobbyResponse {
     ranked: bool,
     teams_joined: u32,
     total_teams: u32,
-    total_auctions: u32,   
+    total_auctions: u32,
     draft_state: DraftState,
 }
 
@@ -239,12 +239,8 @@ impl Draft {
                 }
             });
 
-            let Some(mut pokemon) =
-                pokemon::get_pokemon_data(&settings.excluded_pokemon)
-            else {
-                return Err(format!(
-                    "error getting pokemon data",
-                ));
+            let Some(mut pokemon) = pokemon::get_pokemon_data(&settings.excluded_pokemon) else {
+                return Err(format!("error getting pokemon data",));
             };
             // always randomize order
             pokemon.shuffle(&mut rand::rng());
@@ -282,7 +278,12 @@ impl Draft {
                 draft_runner,
                 Utc::now() + chrono::Duration::hours(6),
             );
-            for (i, p) in draft.pokemon.iter().filter(|p| p.stage == PokemonStage::base && p.obtain_method.as_deref() == Some("")).enumerate() {
+            for (i, p) in draft
+                .pokemon
+                .iter()
+                .filter(|p| p.stage == PokemonStage::base && p.obtain_method.as_deref() == Some(""))
+                .enumerate()
+            {
                 let auction = Auction::build(draft.draft_id.clone(), i as u32, p.clone(), &mut tx)
                     .await
                     .map_err(|e| {
@@ -346,7 +347,8 @@ impl Draft {
         tx.commit().await.map_err(|e| e.to_string())?;
 
         self.current_auction += 1;
-        let team: &mut Team = self.teams
+        let team: &mut Team = self
+            .teams
             .get_mut(
                 &completed_auction
                     .highest_bidder
@@ -358,7 +360,6 @@ impl Draft {
 
         team.auctions_won.push(completed_auction.pokemon.clone());
         team.budget_remaining -= completed_auction.highest_bid;
-
 
         // update websocket
         // self.tx
@@ -379,7 +380,9 @@ impl Draft {
 
         // Broadcast full draft object to all websocket clients
         let draft_response = crate::draft::DraftResponse::from(self.clone());
-        let _ = self.tx.send(crate::messages::ServerMessage::DraftUpdate(draft_response));
+        let _ = self
+            .tx
+            .send(crate::messages::ServerMessage::DraftUpdate(draft_response));
 
         Ok(())
     }
@@ -454,7 +457,9 @@ impl Draft {
 
         // Broadcast full draft object to all websocket clients
         let draft_response = crate::draft::DraftResponse::from(self.clone());
-        let _ = self.tx.send(crate::messages::ServerMessage::DraftUpdate(draft_response));
+        let _ = self
+            .tx
+            .send(crate::messages::ServerMessage::DraftUpdate(draft_response));
 
         Ok(())
     }
@@ -605,7 +610,9 @@ impl Draft {
 
         // Broadcast full draft object to all websocket clients
         let draft_response = crate::draft::DraftResponse::from(self.clone());
-        let _ = self.tx.send(crate::messages::ServerMessage::DraftUpdate(draft_response));
+        let _ = self
+            .tx
+            .send(crate::messages::ServerMessage::DraftUpdate(draft_response));
 
         Ok(ClientBidResponse {
             accepted: true,
@@ -679,15 +686,15 @@ impl Draft {
         )
         .execute(&self.db_pool)
         .await
-        .map_err(|e| {
-            e.to_string()
-        })?;
+        .map_err(|e| e.to_string())?;
 
         self.draft_state = DraftState::BIDDING;
 
         // Broadcast full draft object to all websocket clients
         let draft_response = crate::draft::DraftResponse::from(self.clone());
-        let _ = self.tx.send(crate::messages::ServerMessage::DraftUpdate(draft_response));
+        let _ = self
+            .tx
+            .send(crate::messages::ServerMessage::DraftUpdate(draft_response));
 
         Ok(())
     }
@@ -755,10 +762,7 @@ impl Draft {
         if num_auctions > max_auctions {
             return Err((
                 StatusCode::BAD_REQUEST,
-                format!(
-                    "num_auctions cannot exceed {} for this draft",
-                    max_auctions
-                ),
+                format!("num_auctions cannot exceed {} for this draft", max_auctions),
             ));
         }
 
@@ -822,7 +826,9 @@ impl Draft {
         self.settings.num_auctions = num_auctions;
 
         let draft_response = crate::draft::DraftResponse::from(self.clone());
-        let _ = self.tx.send(crate::messages::ServerMessage::DraftUpdate(draft_response));
+        let _ = self
+            .tx
+            .send(crate::messages::ServerMessage::DraftUpdate(draft_response));
 
         Ok(())
     }

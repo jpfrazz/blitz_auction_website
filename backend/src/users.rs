@@ -1,47 +1,20 @@
 // github discord oauth example: https://github.com/maxcountryman/axum-login/tree/main/examples/oauth2
 
-use axum::http::header::{AUTHORIZATION, USER_AGENT};
 use axum_login;
 use axum_login::{AuthUser, AuthnBackend};
-use oauth2::url::Url;
+use dashmap::DashMap;
 use oauth2::Scope;
+use oauth2::url::Url;
 use oauth2::{AuthorizationCode, TokenResponse};
 use oauth2::{CsrfToken, EndpointNotSet, EndpointSet, basic::BasicClient, reqwest};
 use serde::{Deserialize, Serialize};
-use sqlx::{PgPool, sqlx_macros::FromRow};
+use sqlx::{PgPool, sqlx_macros::FromRow, types::Json};
+use std::sync::Arc;
 use strum;
+use twilight_model::id::Id;
+use twilight_model::id::marker::{RoleMarker, UserMarker};
 
-use crate::pokemon;
-
-const DISCORD_AUTH_URL: &str = "https://discord.com/oauth2/authorize";
-const DISCORD_TOKEN_URL: &str = "https://discord.com/api/oauth2/token";
-const POKEMON_NATURES: [&str; 25] = [
-    "Hardy",
-    "Lonely",
-    "Brave",
-    "Adamant",
-    "Naughty",
-    "Bold",
-    "Docile",
-    "Relaxed",
-    "Impish",
-    "Lax",
-    "Timid",
-    "Hasty",
-    "Serious",
-    "Jolly",
-    "Naive",
-    "Modest",
-    "Mild",
-    "Quiet",
-    "Bashful",
-    "Rash",
-    "Calm",
-    "Gentle",
-    "Sassy",
-    "Careful",
-    "Quirky",
-];
+use crate::{DISCORD_GUILD_ID, POKEMON_NATURES, pokemon};
 
 #[derive(Clone, Debug)]
 pub enum AuthError {
@@ -83,19 +56,15 @@ impl User {
 }
 
 // https://discord.com/developers/docs/resources/user
-#[derive(Clone, Debug, Deserialize, FromRow, Serialize, PartialEq, Eq)]
+#[derive(Clone, Debug, FromRow, Serialize, Deserialize, PartialEq, Eq)]
 pub struct DiscordUser {
-    #[serde(rename = "id")]
     pub user_id: String,
-    #[serde(rename = "username")]
     pub user_name: String,
     discriminator: String,
     global_name: Option<String>,
     avatar: Option<String>,
     #[sqlx(default)]
-    roles: Option<Vec<String>>,
-    #[serde(skip)]
-    role_hash: Vec<u8>,
+    roles: Vec<DiscordRole>,
 }
 
 #[derive(Clone, Debug, Deserialize, Serialize, PartialEq, Eq)]
@@ -121,10 +90,7 @@ impl AuthUser for User {
     }
 
     fn session_auth_hash(&self) -> &[u8] {
-        match self {
-            User::GuestUser(_) => &[],
-            User::DiscordUser(user) => &user.role_hash,
-        }
+        &[]
     }
 }
 
@@ -147,10 +113,23 @@ pub struct AuthBackend {
     db_pool: PgPool,
     client: BasicClientSet,
     http_client: reqwest::Client,
+    discord_client: Arc<twilight_http::Client>,
+    discord_role_map: DashMap<Id<RoleMarker>, DiscordRole>,
+}
+
+#[derive(Clone, Debug, Deserialize, Serialize, PartialEq, Eq, sqlx::FromRow, sqlx::Type)]
+pub struct DiscordRole {
+    role_id: String,
+    role_name: String,
 }
 
 impl AuthBackend {
-    pub fn new(db_pool: PgPool, client: BasicClientSet) -> Self {
+    pub fn new(
+        db_pool: PgPool,
+        client: BasicClientSet,
+        discord_client: Arc<twilight_http::Client>,
+        discord_role_map: DashMap<Id<RoleMarker>, DiscordRole>,
+    ) -> Self {
         let http_client: reqwest::Client = reqwest::ClientBuilder::new()
             .redirect(reqwest::redirect::Policy::none())
             .build()
@@ -160,10 +139,13 @@ impl AuthBackend {
             db_pool,
             client,
             http_client,
+            discord_client,
+            discord_role_map,
         }
     }
 
     async fn insert_user_in_db(&self, user: &User) -> Result<(), AuthError> {
+        println!("inserting user into db, {}", user.get_user_name_string());
         match user {
             User::GuestUser(user) => {
                 let _res = sqlx::query!(
@@ -179,38 +161,85 @@ impl AuthBackend {
                 .map_err(|_e| AuthError::SqlxError)?;
             }
             User::DiscordUser(user) => {
-                let role_hash = self.get_discord_roles(user);
-                let _res = sqlx::query!(
-                    "
-                    INSERT INTO users (user_id, user_name, discriminator, global_name, avatar, role_hash)
-                    VALUES ($1, $2, $3, $4, $5, $6)
-                    ON CONFLICT (user_id) DO NOTHING;
-                    ",
+                let mut tx = self
+                    .db_pool
+                    .begin()
+                    .await
+                    .map_err(|_| AuthError::SqlxError)?;
+                let _ = sqlx::query!(
+                    r#"
+                    INSERT INTO users (user_id, user_name, discriminator, global_name, avatar)
+                    VALUES ($1, $2, $3, $4, $5)
+                    ON CONFLICT (user_id) DO UPDATE
+                    SET
+                        user_name = EXCLUDED.user_name,
+                        global_name = EXCLUDED.global_name,
+                        avatar = EXCLUDED.avatar,
+                        discriminator = EXCLUDED.discriminator
+                    "#,
                     user.user_id,
                     user.user_name,
                     user.discriminator,
                     user.global_name,
                     user.avatar,
-                    role_hash,
                 )
-                .execute(&self.db_pool)
+                .execute(&mut *tx)
                 .await
-                .map_err(|_e| AuthError::SqlxError)?;
+                .map_err(|_| AuthError::SqlxError)?;
+
+                let id_vec: Vec<String> = user.roles.iter()
+                    .map(|r| r.role_id.clone())
+                    .collect();
+
+                let name_vec: Vec<String> = user.roles.iter()
+                    .map(|r| r.role_name.clone())
+                    .collect();
+
+                println!("deleting roles in db, {}", user.user_name);
+
+                // delete removed roles
+                let _ = sqlx::query!(
+                    r#"
+                        DELETE FROM user_roles WHERE user_id = $1 AND NOT (role_id = ANY($2))
+                    "#,
+                    user.user_id,
+                    &id_vec,
+                )
+                .execute(&mut *tx)
+                .await
+                .map_err(|_| AuthError::SqlxError)?;
+
+                println!("changing roles in db, {}", user.user_name);
+
+                // add new roles
+                let _ = sqlx::query!(
+                    r#" 
+                        INSERT INTO user_roles (user_id, role_id, role_name)
+                        SELECT $1, * FROM UNNEST($2::text[], $3::text[])
+                        ON CONFLICT (user_id, role_id) DO NOTHING
+                    "#,
+                    user.user_id,
+                    &id_vec,
+                    &name_vec
+                )
+                .execute(&mut *tx)
+                .await
+                .map_err(|_| AuthError::SqlxError)?;
+
+                tx.commit().await.map_err(|_| AuthError::SqlxError)?;
             }
         }
+
+        println!("inserted user successfully, {}", user.get_user_name_string());
 
         Ok(())
     }
 
-    fn get_discord_roles(&self, user: &DiscordUser) -> String {
-        "".to_string()
-    }
-
     pub fn authorize_url(&self) -> (Url, CsrfToken) {
         self.client
-        .authorize_url(CsrfToken::new_random)
-        .add_scope(Scope::new("identify".to_string()))
-        .url()
+            .authorize_url(CsrfToken::new_random)
+            .add_scope(Scope::new("identify".to_string()))
+            .url()
     }
 
     fn generate_guest_username(&self) -> String {
@@ -230,6 +259,65 @@ impl AuthBackend {
             .unwrap_or_else(|| "Pikachu".to_string());
 
         format!("guest:{}-{}", random_nature, random_pokemon_name)
+    }
+
+    async fn get_discord_roles(
+        &self,
+        user_id: twilight_model::id::Id<UserMarker>,
+    ) -> Vec<DiscordRole> {
+        let guild_id = Id::new(DISCORD_GUILD_ID);
+
+        let member_res = self.discord_client.guild_member(guild_id, user_id).await;
+        match member_res {
+            Ok(res) => {
+                if let Ok(member) = res.model().await {
+                    member
+                        .roles
+                        .into_iter()
+                        .map(|role_id| DiscordRole {
+                            role_id: role_id.get().to_string().clone(),
+                            role_name: self
+                                .discord_role_map
+                                .get(&role_id)
+                                .map(|e| e.value().role_name.to_string())
+                                .unwrap_or_default()
+                                .clone(),
+                        })
+                        .collect()
+                } else {
+                    eprintln!("failed to parse member roles");
+                    vec![]
+                }
+            }
+            Err(e) => {
+                eprintln!("failed to parse member roles, {}", e);
+                vec![]
+            }
+        }
+    }
+
+    pub async fn get_role_map(
+        client: &twilight_http::Client,
+    ) -> DashMap<Id<RoleMarker>, DiscordRole> {
+        let guild_id = Id::new(DISCORD_GUILD_ID);
+        if let Ok(res) = client.roles(guild_id).await {
+            if let Ok(roles) = res.model().await {
+                roles
+                    .into_iter()
+                    .map(|role| {
+                        let discord_role = DiscordRole {
+                            role_id: role.id.get().to_string().clone(),
+                            role_name: role.name,
+                        };
+                        (role.id, discord_role)
+                    })
+                    .collect()
+            } else {
+                DashMap::new()
+            }
+        } else {
+            DashMap::new()
+        }
     }
 }
 
@@ -254,6 +342,8 @@ impl AuthnBackend for AuthBackend {
                     return Ok(None);
                 }
 
+                println!("getting user from discord");
+
                 let token_res = self
                     .client
                     .exchange_code(AuthorizationCode::new(creds.code))
@@ -261,32 +351,37 @@ impl AuthnBackend for AuthBackend {
                     .await
                     .map_err(|_| Self::Error::OAuthError)?;
 
-                let user_info_text = reqwest::Client::new()
-                    .get("https://discord.com/api/users/@me")
-                    .header(USER_AGENT.as_str(), "blitz-auction-backend")
-                    .header(
-                        AUTHORIZATION.as_str(),
-                        format!("Bearer {}", token_res.access_token().secret()),
-                    )
-                    .send()
+                let access_token = token_res.access_token().secret();
+
+                let twilight_client =
+                    twilight_http::Client::new(format!("Bearer {}", access_token));
+
+                let twilight_user = twilight_client
+                    .current_user()
                     .await
                     .map_err(|e| {
-                        println!("{}", e);
+                        eprintln!("{}", e);
                         Self::Error::ReqwestError
                     })?
-                    .text()
+                    .model()
                     .await
                     .map_err(|e| {
-                        println!("{}", e);
+                        eprintln!("{}", e);
                         Self::Error::ReqwestError
                     })?;
 
-                let discord_user: DiscordUser =
-                    serde_json::from_str(&user_info_text)
-                    .map_err(|e| {
-                        println!("{}", e);
-                        Self::Error::ReqwestError
-                    })?;
+                let discord_roles = self.get_discord_roles(twilight_user.id).await;
+
+                let discord_user = DiscordUser {
+                    user_id: twilight_user.id.to_string(),
+                    user_name: twilight_user.name,
+                    discriminator: twilight_user.discriminator.to_string(),
+                    global_name: twilight_user.global_name,
+                    avatar: twilight_user.avatar.map(|a| a.to_string()),
+                    roles: discord_roles,
+                };
+
+                println!("got user {} from discord", discord_user.user_name);
 
                 user = User::DiscordUser(discord_user);
             }
@@ -321,14 +416,16 @@ impl AuthnBackend for AuthBackend {
                 User::GuestUser(guest_user)
             }
             UserId::DiscordId(user_id) => {
-                let discord_user = sqlx::query_as!(
-                    DiscordUser,
+                println!("getting user {}", user_id);
+                let row = sqlx::query!(
                     r#"
-                        SELECT u.user_id, u.user_name, u.discriminator, u.global_name, u.avatar, u.role_hash,
+                        SELECT u.user_id, u.user_name, u.discriminator, u.global_name, u.avatar,
                             COALESCE(
-                                array_agg(r.role) FILTER (WHERE r.role IS NOT NULL),
-                                '{}'
-                            ) as "roles!: Vec<String>"
+                                jsonb_agg(
+                                    jsonb_build_object('role_id', r.role_id, 'role_name', r.role_name)
+                                ) FILTER (WHERE r.role_id IS NOT NULL),
+                                '[]'
+                            ) as "roles!"
                         FROM users as u
                         LEFT JOIN user_roles r ON r.user_id = u.user_id
                         WHERE u.user_id = $1
@@ -338,10 +435,24 @@ impl AuthnBackend for AuthBackend {
                 )
                 .fetch_one(&self.db_pool)
                 .await
-                .map_err(|_e| {
+                .map_err(|e| {
+                    eprintln!("{e}");
                     Self::Error::SqlxError
                 })?;
 
+                let discord_user = DiscordUser {
+                    user_id: row.user_id,
+                    user_name: row.user_name,
+                    discriminator: row.discriminator,
+                    global_name: row.global_name,
+                    avatar: row.avatar,
+                    roles: serde_json::from_value(row.roles).map_err(|e| {
+                        eprintln!("failed to get roles from db, {}", e);
+                        AuthError::SqlxError
+                    })?
+                };
+
+                println!("got user {}", user_id);
                 User::DiscordUser(discord_user)
             }
         };
@@ -352,12 +463,8 @@ impl AuthnBackend for AuthBackend {
 
 type AuthSession = axum_login::AuthSession<AuthBackend>;
 
-pub const CSRF_STATE_KEY: &str = "oauth.csrf-state";
-
 #[derive(Debug, Clone, Deserialize)]
 pub struct AuthzResp {
     code: String,
     state: CsrfToken,
 }
-
-pub async fn discord_oauth_callback(auth_session: AuthSession) {}

@@ -28,3 +28,13 @@ pub fn get_expiry_time_from_instant(instant: Instant) -> chrono::DateTime<chrono
     let time_remaining = instant - Instant::now();
     chrono::Utc::now() + time_remaining
 }
+
+pub const DISCORD_GUILD_ID: u64 = 1436799517121843272;
+pub const CSRF_STATE_KEY: &str = "oauth.csrf-state";
+pub const DISCORD_AUTH_URL: &str = "https://discord.com/oauth2/authorize";
+pub const DISCORD_TOKEN_URL: &str = "https://discord.com/api/oauth2/token";
+pub const POKEMON_NATURES: [&str; 25] = [
+    "Hardy", "Lonely", "Brave", "Adamant", "Naughty", "Bold", "Docile", "Relaxed", "Impish", "Lax",
+    "Timid", "Hasty", "Serious", "Jolly", "Naive", "Modest", "Mild", "Quiet", "Bashful", "Rash",
+    "Calm", "Gentle", "Sassy", "Careful", "Quirky",
+];
