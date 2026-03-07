@@ -18,6 +18,10 @@ interface EvoNode {
   isMega?: boolean;
 }
 
+const getPokemonNodeKey = (pokemon: Pokemon) => {
+  return `${pokemon.pokedex_id ?? pokemon.id ?? pokemon.name}-${pokemon.form ?? ''}`;
+};
+
 const getStatColorClass = (value: number) => {
   if (value <= 30) return 'stat-bar-red';
   if (value <= 50) return 'stat-bar-orange';
@@ -44,24 +48,35 @@ function buildEvolutionTree(
 ): EvoNode {
   // Unique key for a Pokémon (pokedex_id + form)
   const key = `${root.pokedex_id ?? root.id}-${root.form ?? ''}`;
-  if (visited.has(key)) return { pokemon: root, children: [] };
+
+  if (visited.has(key)) {
+    return { pokemon: root, children: [] };
+  }
+
   visited.add(key);
 
   // Find all Pokémon that evolve from this one (children)
   const children = allPokemon
     .filter(
-      (p) =>
-        p.evolves_from_id?.toString() === (root.pokedex_id ?? root.id).toString() &&
-        (p.evolves_from_form ?? '') === (root.form ?? '')
+      (p) => {
+        const matches =
+          p.evolves_from_id?.toString() === (root.pokedex_id ?? root.id).toString() &&
+          (p.evolves_from_form ?? '') === (root.form ?? '');
+
+        return matches;
+      }
     )
     .map((child) => {
       const isMega = child.form === 'Mega';
+      const childNode = buildEvolutionTree(child, allPokemon, visited);
+
       return {
-        ...buildEvolutionTree(child, allPokemon, visited),
+        ...childNode,
         methodFromParent: child.evolution_method,
         isMega,
       };
     });
+
   return { pokemon: root, children };
 }
 
@@ -224,8 +239,8 @@ const EvolutionTree: React.FC<{ node: EvoNode }> = ({ node }) => {
       </div>
       {node.children.length > 0 && (
         <div className="evo-children-block-horizontal">
-          {node.children.map((child, idx) => (
-            <React.Fragment key={child.pokemon.id + '-' + (child.pokemon.form ?? '')}>
+          {node.children.map((child) => (
+            <React.Fragment key={getPokemonNodeKey(child.pokemon)}>
               <div className="evo-arrow-block-horizontal">
                 <div className="evo-arrow-container-horizontal">
                   {/* Use react-icons for arrows */}
@@ -250,6 +265,7 @@ const EvolutionTree: React.FC<{ node: EvoNode }> = ({ node }) => {
 
 const CurrentPokemonPanel: React.FC<CurrentPokemonPanelProps> = ({ current_auction, all_pokemon }) => {
   const pokemonData: Pokemon = current_auction.pokemon;
+  const currentPokemonKey = getPokemonNodeKey(pokemonData);
   const [showTipModal, setShowTipModal] = React.useState(false);
   // Build the evolution tree for the current Pokémon
   const evoTree = buildEvolutionTree(pokemonData, all_pokemon);
@@ -423,7 +439,7 @@ const CurrentPokemonPanel: React.FC<CurrentPokemonPanelProps> = ({ current_aucti
 
       <div className="pokemon-right-column">
         <div className="pokemon-evolution-tree-section">
-          <EvolutionTree node={evoTree} />
+          <EvolutionTree key={currentPokemonKey} node={evoTree} />
         </div>
       </div>
 
