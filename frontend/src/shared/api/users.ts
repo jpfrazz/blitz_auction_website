@@ -1,4 +1,5 @@
 import { Pokemon } from '../../types';
+import axios from 'axios';
 
 export interface LeaderboardEntry {
 	user_id: string;
@@ -58,7 +59,7 @@ const mockLeaderboardData: LeaderboardEntry[] = [
 	},
 ];
 
-const USE_MOCK_LEADERBOARD_API = true;
+const USE_MOCK_LEADERBOARD_API = true; // Set to false to use real API when available
 
 export async function fetchLeaderboard(): Promise<LeaderboardEntry[]> {
 	if (USE_MOCK_LEADERBOARD_API) {
@@ -67,14 +68,11 @@ export async function fetchLeaderboard(): Promise<LeaderboardEntry[]> {
 
 	// Swap to backend endpoint when available.
 	// Example expected route: GET /api/leaderboard
-	const response = await fetch('/api/leaderboard', {
-		method: 'GET',
-		credentials: 'include',
-	});
+	const response = await axios.get('/api/leaderboard');
 
-	if (!response.ok) {
+	if (response.status !== 200) {
 		throw new Error(`Failed to fetch leaderboard: ${response.statusText}`);
 	}
 
-	return response.json();
+	return response.data;
 }

@@ -115,7 +115,8 @@ impl Server {
             .route("/ws/{draft_id}", any(handlers::websocket_handler))
             .route("/login", get(handlers::discord_oauth_redirect))
             .route("/auth/discord/callback", get(handlers::discord_callback))
-            .route("/me", get(handlers::me));
+            .route("/me", get(handlers::me))
+            .route("/leaderboard", get(handlers::get_leaderboard));
 
         let private_routes = Router::new()
             .route("/drafts", get(handlers::list_open_drafts).post(handlers::create_draft))

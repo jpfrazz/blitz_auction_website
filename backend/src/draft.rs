@@ -419,6 +419,37 @@ impl Draft {
             auctions_won: vec![],
         };
 
+        match &user {
+            User::DiscordUser(_) => {
+                sqlx::query!(
+                    r#"
+                    INSERT INTO teams (user_id, draft_id, money_remaining)
+                    VALUES ($1, $2, $3)
+                    "#,
+                    user_id,
+                    self.draft_id,
+                    self.settings.starting_money as i32,
+                )
+                .execute(&self.db_pool)
+                .await
+                .map_err(|e| format!("failed to persist team in db: {}", e))?;
+            }
+            User::GuestUser(_) => {
+                sqlx::query!(
+                    r#"
+                    INSERT INTO teams (guest_id, draft_id, money_remaining)
+                    VALUES ($1, $2, $3)
+                    "#,
+                    user_id,
+                    self.draft_id,
+                    self.settings.starting_money as i32,
+                )
+                .execute(&self.db_pool)
+                .await
+                .map_err(|e| format!("failed to persist team in db: {}", e))?;
+            }
+        }
+
         self.teams.insert(user_id, team);
 
         // Broadcast full draft object to all websocket clients
