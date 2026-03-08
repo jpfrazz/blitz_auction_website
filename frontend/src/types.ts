@@ -37,6 +37,11 @@ export interface KeyMove {
   species?: string; // Optional field to indicate if the move is specific to a certain species or form
 }
 
+export interface UserRole {
+  role_id: string;
+  role_name: string;
+}
+
 export type SerializedUser =
   | { GuestUser: { user_id: string; user_name: string } }
   | { DiscordUser: {
@@ -45,6 +50,7 @@ export type SerializedUser =
       user_name?: string;
       username?: string;
       global_name?: string | null;
+      roles?: UserRole[];
     } };
 
 // Types for draft data

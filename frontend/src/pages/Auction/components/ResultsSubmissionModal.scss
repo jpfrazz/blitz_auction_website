@@ -1,3 +1,5 @@
+@import '../../../shared/style/theme.scss';
+
 .results-modal-overlay {
   position: fixed;
   top: 0;
@@ -12,8 +14,8 @@
 }
 
 .results-modal {
-  background-color: #1e1e1e;
-  border: 2px solid #4a9eff;
+  background-color: $eb-bg;
+  border: $eb-border;
   border-radius: 8px;
   padding: 2rem;
   max-width: 600px;
@@ -32,18 +34,18 @@
   }
 
   &::-webkit-scrollbar-thumb {
-    background: #4a9eff;
+    background: $eb-primary;
     border-radius: 4px;
 
     &:hover {
-      background: #5aadff;
+      background: $eb-primary-hover;
     }
   }
 }
 
 .results-modal-title {
   text-align: center;
-  color: #4a9eff;
+  color: $eb-primary;
   font-size: 1.5rem;
   margin-bottom: 0.5rem;
   font-weight: 600;
@@ -59,6 +61,16 @@
 .results-modal-error {
   background-color: #3a1e1e;
   color: #ff6b6b;
+  padding: 1rem;
+  border-radius: 4px;
+  margin-bottom: 1rem;
+  text-align: center;
+  font-size: 0.9rem;
+}
+
+.results-modal-success {
+  background-color: #1f3a24;
+  color: #6aea6b;
   padding: 1rem;
   border-radius: 4px;
   margin-bottom: 1rem;
@@ -114,7 +126,7 @@
 
   &:focus {
     outline: none;
-    border-color: #4a9eff;
+    border-color: $eb-border;
     box-shadow: 0 0 8px rgba(74, 158, 255, 0.2);
   }
 

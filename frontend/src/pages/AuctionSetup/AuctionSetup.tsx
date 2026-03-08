@@ -10,8 +10,8 @@ import './AuctionSetup.scss';
 import '../../shared/style/theme.scss';
 import { createDraft, CreateDraftRequest } from '../../shared/api/draft';
 
-const MIN_TEAM_SIZE = 6;
-const MAX_TEAM_SIZE = 8;
+const MIN_TEAM_SIZE = 2;
+const MAX_TEAM_SIZE = 12;
 const DEFAULT_STARTING_MONEY = 20000;
 const DEFAULT_AUCTION_SECONDS = 10;
 
@@ -26,12 +26,17 @@ const AuctionSetup = () => (
 );
 
 const AuctionSetupForm: React.FC = () => {
-  const [isGuest, setIsGuest] = useState<boolean | null>(null);
+  const [hasRefereeRole, setHasRefereeRole] = useState(false);
   const navigate = useNavigate();
+
   useEffect(() => {
     fetchCurrentUser()
-      .then(user => setIsGuest(user.is_guest))
-      .catch(() => setIsGuest(null));
+      .then((user) => {
+        const roles = user.roles ?? [];
+        const isReferee = roles.some((role) => role.role_name === 'Referee');
+        setHasRefereeRole(isReferee);
+      })
+      .catch(() => setHasRefereeRole(false));
   }, []);
 
   const [numTeams, setNumTeams] = useState(8);
@@ -168,29 +173,30 @@ const AuctionSetupForm: React.FC = () => {
               />
             </label>
           </div>
-          <div className="auction-setup-field" style={{ flex: 0.5 }}>
-            <label className="auction-setup-label">Ranked Race
-              <div className="auction-setup-checkbox-row" style={{ marginLeft: '12px' }}>
-                <input
-                  type="checkbox"
-                  checked={ranked}
-                  onChange={e => setRanked(e.target.checked)}
-                  disabled={/*isGuest === true*/true} // TODO: Re-enable once auth is working
-                  title={isGuest === true ? 'You must be logged in to enable ranked' : ''}
-                />
-              </div>
-            </label>
-          </div>
+          {hasRefereeRole && (
+            <div className="auction-setup-field" style={{ flex: 0.5 }}>
+              <label className="auction-setup-label">Ranked Race
+                <div className="auction-setup-checkbox-row" style={{ marginLeft: '12px' }}>
+                  <input
+                    type="checkbox"
+                    checked={ranked}
+                    onChange={e => setRanked(e.target.checked)}
+                  />
+                </div>
+              </label>
+            </div>
+          )}
         </div>
         <div className="auction-setup-field auction-setup-btn-row">
-          <button
-            type="button"
-            className="auction-setup-btn navButton"
-            onClick={() => setShowModal(true)}
-            disabled={/*ranked*/true} // TODO: Re-enable once auth is working
-          >
-            Select Pokémon
-          </button>
+          {hasRefereeRole && (
+            <button
+              type="button"
+              className="auction-setup-btn navButton"
+              onClick={() => setShowModal(true)}
+            >
+              Select Pokémon
+            </button>
+          )}
           <button type="submit" className="auction-setup-btn navButton">Create Auction</button>
           
         </div>

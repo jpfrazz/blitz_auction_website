@@ -53,6 +53,13 @@ impl User {
             Self::DiscordUser(user) => user.user_name.clone(),
         }
     }
+
+    pub fn has_role_name(&self, role_name: &str) -> bool {
+        match self {
+            Self::DiscordUser(user) => user.roles.iter().any(|role| role.role_name == role_name),
+            Self::GuestUser(_) => false,
+        }
+    }
 }
 
 // https://discord.com/developers/docs/resources/user
