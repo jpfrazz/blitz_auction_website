@@ -11,7 +11,7 @@ use tokio_util::time::{
     delay_queue::{self, Key},
 };
 
-use crate::draft::Draft;
+use crate::draft::{Draft, DraftState};
 
 enum Command {
     Start {
@@ -49,7 +49,7 @@ impl DraftRunner {
                     Self::handle_command(cmd, &mut timer_queue, &mut draft_keys);
                 },
                 Some(auction_key) = timer_queue.next() => {
-                    Self::handle_expiration(auction_key.into_inner(), drafts.clone(), &mut timer_queue).await;
+                    Self::handle_expiration(auction_key.into_inner(), drafts.clone(), &mut timer_queue, &mut draft_keys).await;
                 },
             }
         }
@@ -65,14 +65,17 @@ impl DraftRunner {
                 draft_id,
                 expires_at,
             } => {
+                if let Some(old_key) = draft_keys.remove(&draft_id) {
+                    queue.remove(&old_key);
+                }
                 let key = queue.insert_at(draft_id.clone(), expires_at);
                 draft_keys.insert(draft_id, key);
             }
             Command::Stop(draft_id) => {
-                let Some(key) = draft_keys.get(&draft_id) else {
+                let Some(key) = draft_keys.remove(&draft_id) else {
                     return;
                 };
-                queue.remove(key);
+                queue.remove(&key);
             }
         }
     }
@@ -81,11 +84,18 @@ impl DraftRunner {
         draft_id: String,
         drafts: Arc<DashMap<String, Arc<RwLock<Draft>>>>,
         queue: &mut DelayQueue<String>,
+        draft_keys: &mut HashMap<String, Key>,
     ) {
+        draft_keys.remove(&draft_id);
         let draft_lock = drafts
             .get(&draft_id)
             .expect("draft removed from drafts before draft runner");
         let mut draft = draft_lock.write().await;
+
+        if matches!(draft.draft_state, DraftState::PAUSED(_)) {
+            return;
+        }
+
         let current_auction = draft
             .auctions
             .get(draft.current_auction as usize)
@@ -95,7 +105,8 @@ impl DraftRunner {
             .expect("auction expiration not set");
         if expiration > Instant::now() {
             // reinsert draft to queue if its expiration time was changed by a handler
-            queue.insert_at(draft_id, expiration);
+            let key = queue.insert_at(draft_id.clone(), expiration);
+            draft_keys.insert(draft_id, key);
             return;
         }
 
@@ -119,6 +130,16 @@ impl DraftRunner {
             })
             .await
             .map_err(|_e| "failed to register draft".to_string());
+
+        Ok(())
+    }
+
+    pub async fn unregister_draft(&self, draft_id: String) -> Result<(), String> {
+        let _ = self
+            .cmd_tx
+            .send(Command::Stop(draft_id))
+            .await
+            .map_err(|_e| "failed to unregister draft".to_string())?;
 
         Ok(())
     }

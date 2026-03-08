@@ -63,6 +63,14 @@ export async function readyUpDraft(draft_id: string): Promise<Draft> {
   return response.data;
 }
 
+export async function pauseDraft(draft_id: string): Promise<void> {
+  await axios.post(`/api/drafts/${draft_id}/pause`);
+}
+
+export async function unpauseDraft(draft_id: string): Promise<void> {
+  await axios.post(`/api/drafts/${draft_id}/unpause`);
+}
+
 export async function updatePendingDraftSettings(
   draft_id: string,
   num_teams: number,

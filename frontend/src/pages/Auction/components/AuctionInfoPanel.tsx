@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Auction } from '../../../types';
 import { placeBid } from '../../../shared/api/draftData';
 import { getUserLabel, getUserId } from '../../../shared/utils/user';
+import { TbPlayerPauseFilled , TbPlayerPlayFilled } from 'react-icons/tb';
 import './AuctionInfoPanel.scss';
 
 interface AuctionInfoPanelProps {
@@ -9,6 +10,10 @@ interface AuctionInfoPanelProps {
   draft_id: string;
   currentAuctionExpiresAt?: string;
   currentServerTime?: string;
+  isHost: boolean;
+  isPaused: boolean;
+  pauseActionPending: boolean;
+  onTogglePause: () => void;
   canBid: boolean;
   userBudgetRemaining: number;
   completed_auctions: Auction[];
@@ -21,6 +26,10 @@ const AuctionInfoPanel: React.FC<AuctionInfoPanelProps> = ({
   draft_id,
   currentAuctionExpiresAt,
   currentServerTime,
+  isHost,
+  isPaused,
+  pauseActionPending,
+  onTogglePause,
   canBid,
   userBudgetRemaining,
   completed_auctions,
@@ -78,6 +87,11 @@ const AuctionInfoPanel: React.FC<AuctionInfoPanelProps> = ({
   }, [currentAuctionExpiresAt]);
 
   useEffect(() => {
+    if (isPaused) {
+      setIsResetting(false);
+      return;
+    }
+
     // When the expiration time changes (e.g. a bid is placed), trigger a fast reset animation
     setIsResetting(true);
     const resetTimer = setTimeout(() => setIsResetting(false), 500);
@@ -117,7 +131,7 @@ const AuctionInfoPanel: React.FC<AuctionInfoPanelProps> = ({
       clearInterval(interval);
       clearTimeout(resetTimer);
     };
-  }, [currentAuctionExpiresAt, currentServerTime, initialSeconds]);
+  }, [currentAuctionExpiresAt, currentServerTime, initialSeconds, isPaused]);
 
   const progress = initialSeconds > 0 ? secondsRemaining / initialSeconds : 0;
 
@@ -207,8 +221,22 @@ const AuctionInfoPanel: React.FC<AuctionInfoPanelProps> = ({
             {bidNotification}
           </div>
         )}
-        <div className="countdown-text" style={{ color: timerColor }}>
-          {showBidNow ? 'Bid!' : `${secondsRemaining}s`}
+        <div className="countdown-header-row">
+          <div className="countdown-text" style={{ color: timerColor }}>
+            {isPaused ? 'Paused' : (showBidNow ? 'Bid!' : `${secondsRemaining}s`)}
+          </div>
+          {isHost && (
+            <button
+              type="button"
+              className="pause-toggle-button"
+              onClick={onTogglePause}
+              disabled={pauseActionPending}
+              aria-label={isPaused ? 'Unpause draft' : 'Pause draft'}
+              title={isPaused ? 'Unpause' : 'Pause'}
+            >
+              {isPaused ? <TbPlayerPlayFilled /> : <TbPlayerPauseFilled />}
+            </button>
+          )}
         </div>
         <div className="countdown-bar-background">
           <div
@@ -263,7 +291,7 @@ const AuctionInfoPanel: React.FC<AuctionInfoPanelProps> = ({
         <button
           className="bid-button"
           onClick={handleBid100}
-          disabled={!canBid || (secondsRemaining >= 9)}
+          disabled={!canBid || isPaused || (secondsRemaining >= 9)}
         >
           ▲ $100
         </button>
@@ -282,9 +310,9 @@ const AuctionInfoPanel: React.FC<AuctionInfoPanelProps> = ({
           step={100}
           min={100}
           autoComplete="off"
-          disabled={!canBid}
+          disabled={!canBid || isPaused}
         />
-        <button className="bid-button" onClick={handleCustomBid} disabled={!canBid}>
+        <button className="bid-button" onClick={handleCustomBid} disabled={!canBid || isPaused}>
           Custom Bid
         </button>
       </div>
