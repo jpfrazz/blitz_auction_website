@@ -457,6 +457,56 @@ pub async fn start_draft(
     Ok(())
 }
 
+pub async fn pause_draft(
+    auth_session: AuthSession<AuthBackend>,
+    Path(draft_id): Path<String>,
+    State(state): State<ServerState>,
+) -> Result<(), (StatusCode, String)> {
+    let Some(user) = auth_session.user else {
+        return Err((StatusCode::FORBIDDEN, "user is not logged in".to_string()));
+    };
+
+    let Some(draft_lock) = state.drafts.get(&draft_id) else {
+        return Err((StatusCode::NOT_FOUND, "draft does not exist".to_string()));
+    };
+
+    {
+        let mut draft = draft_lock.write().await;
+        if draft.host != user {
+            return Err((StatusCode::FORBIDDEN, "user is not host".to_string()));
+        }
+
+        draft.pause().await?;
+    }
+
+    Ok(())
+}
+
+pub async fn unpause_draft(
+    auth_session: AuthSession<AuthBackend>,
+    Path(draft_id): Path<String>,
+    State(state): State<ServerState>,
+) -> Result<(), (StatusCode, String)> {
+    let Some(user) = auth_session.user else {
+        return Err((StatusCode::FORBIDDEN, "user is not logged in".to_string()));
+    };
+
+    let Some(draft_lock) = state.drafts.get(&draft_id) else {
+        return Err((StatusCode::NOT_FOUND, "draft does not exist".to_string()));
+    };
+
+    {
+        let mut draft = draft_lock.write().await;
+        if draft.host != user {
+            return Err((StatusCode::FORBIDDEN, "user is not host".to_string()));
+        }
+
+        draft.unpause().await?;
+    }
+
+    Ok(())
+}
+
 #[debug_handler]
 pub async fn update_pending_draft_settings(
     State(state): State<ServerState>,

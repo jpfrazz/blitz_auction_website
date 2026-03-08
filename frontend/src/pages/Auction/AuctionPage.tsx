@@ -2,7 +2,7 @@ import React, { useEffect, useState, useRef } from 'react';
 import { connectDraftWebSocket } from '../../shared/api/draftWebSocket';
 import { useLocation } from 'react-router-dom';
 import Header from '../../shared/components/Header';
-import { fetchDraftById, readyUpDraft, joinDraft, fetchCurrentUser, claimEeveelution, unclaimEeveelution, startDraft, updatePendingDraftSettings } from '../../shared/api/draftData';
+import { fetchDraftById, readyUpDraft, joinDraft, fetchCurrentUser, claimEeveelution, unclaimEeveelution, startDraft, pauseDraft, unpauseDraft, updatePendingDraftSettings } from '../../shared/api/draftData';
 import { getUserId } from '../../shared/utils/user';
 import './AuctionPage.scss';
 import '../../shared/style/theme.scss';
@@ -32,6 +32,7 @@ const AuctionPage: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [startingDraft, setStartingDraft] = useState(false);
   const [readyingUp, setReadyingUp] = useState(false);
+  const [pausingDraft, setPausingDraft] = useState(false);
   const [joiningDraft, setJoiningDraft] = useState(false);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [isGuest, setIsGuest] = useState(false);
@@ -263,6 +264,27 @@ const AuctionPage: React.FC = () => {
       console.error('Error starting draft:', error);
     } finally {
       setStartingDraft(false);
+    }
+  };
+
+  const isDraftPaused = draft
+    ? (draft.draft_state === 'PAUSED'
+      || (typeof draft.draft_state === 'object' && draft.draft_state !== null && 'PAUSED' in draft.draft_state))
+    : false;
+
+  const handleTogglePauseDraft = async () => {
+    if (!draft) return;
+    setPausingDraft(true);
+    try {
+      if (isDraftPaused) {
+        await unpauseDraft(draft.draft_id);
+      } else {
+        await pauseDraft(draft.draft_id);
+      }
+    } catch (error) {
+      console.error('Error toggling pause:', error);
+    } finally {
+      setPausingDraft(false);
     }
   };
 
@@ -575,6 +597,10 @@ const AuctionPage: React.FC = () => {
                         draft_id={draft.draft_id}
                         currentAuctionExpiresAt={draft.current_auction_expires_at}
                         currentServerTime={draft.current_server_time}
+                        isHost={currentUserId === draft.host}
+                        isPaused={isDraftPaused}
+                        pauseActionPending={pausingDraft}
+                        onTogglePause={handleTogglePauseDraft}
                         canBid={Boolean(
                           currentUserId &&
                           draft.teams.some(team => team.user_id === currentUserId)

@@ -567,19 +567,25 @@ impl Draft {
             let current_auction = self.current_auction as usize;
             let auction = &mut self.auctions[current_auction];
             let previous_expires_at = auction.expires_at;
-            let updated_expires_at = std::cmp::max(
-                previous_expires_at.unwrap(),
-                Instant::now() + Duration::from_secs(10),
-            );
+            let was_pending = auction.status == AuctionState::PENDING;
+            let updated_expires_at = if was_pending {
+                previous_expires_at.expect("auction expiration should be set when bidding starts")
+            } else {
+                std::cmp::max(
+                    previous_expires_at.expect("open auction expiration should be set"),
+                    Instant::now() + Duration::from_secs(10),
+                )
+            };
             auction.highest_bidder = Some(user.clone());
             auction.highest_bid = bid_request.value;
             auction.expires_at = Some(updated_expires_at);
-            if auction.status == AuctionState::PENDING {
+            if was_pending {
                 auction.status = AuctionState::OPEN;
             }
             let expires_at_changed = previous_expires_at
                 .map(|value| value != updated_expires_at)
-                .unwrap_or(true);
+                .unwrap_or(true)
+                || was_pending;
             (
                 auction.pokemon.pokedex_id,
                 auction.pokemon.form.clone(),
@@ -688,6 +694,107 @@ impl Draft {
         // Broadcast full draft object to all websocket clients
         let draft_response = crate::draft::DraftResponse::from(self.clone());
         let _ = self.tx.send(crate::messages::ServerMessage::DraftUpdate(draft_response));
+
+        Ok(())
+    }
+
+    pub async fn pause(&mut self) -> Result<(), (StatusCode, String)> {
+        if matches!(self.draft_state, DraftState::PAUSED(_)) {
+            return Ok(());
+        }
+
+        if self.draft_state != DraftState::BIDDING {
+            return Err((
+                StatusCode::PRECONDITION_FAILED,
+                "draft must be in BIDDING state".to_string(),
+            ));
+        }
+
+        let remaining_seconds = self.auctions[self.current_auction as usize]
+            .expires_at
+            .map(|expires_at| {
+                let seconds = expires_at.saturating_duration_since(Instant::now()).as_secs();
+                u32::try_from(seconds).unwrap_or(u32::MAX)
+            })
+            .unwrap_or(0);
+
+        sqlx::query!(
+            r#"
+            UPDATE drafts
+            SET status = $1
+            WHERE draft_id = $2
+            "#,
+            "PAUSED",
+            self.draft_id,
+        )
+        .execute(&self.db_pool)
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+        self.draft_runner
+            .unregister_draft(self.draft_id.clone())
+            .await
+            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e))?;
+
+        self.draft_state = DraftState::PAUSED(remaining_seconds);
+        self.current_server_time = Utc::now();
+
+        let draft_response = crate::draft::DraftResponse::from(self.clone());
+        let _ = self
+            .tx
+            .send(crate::messages::ServerMessage::DraftUpdate(draft_response));
+
+        Ok(())
+    }
+
+    pub async fn unpause(&mut self) -> Result<(), (StatusCode, String)> {
+        if self.draft_state == DraftState::BIDDING {
+            return Ok(());
+        }
+
+        if !matches!(self.draft_state, DraftState::PAUSED(_)) {
+            return Err((
+                StatusCode::PRECONDITION_FAILED,
+                "draft must be in PAUSED state".to_string(),
+            ));
+        }
+
+        let current_auction_index = self.current_auction as usize;
+        let should_resume_timer = self.auctions[current_auction_index].status == AuctionState::OPEN;
+
+        sqlx::query!(
+            r#"
+            UPDATE drafts
+            SET status = $1
+            WHERE draft_id = $2
+            "#,
+            DraftState::BIDDING.to_string(),
+            self.draft_id,
+        )
+        .execute(&self.db_pool)
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+        self.draft_state = DraftState::BIDDING;
+        self.current_server_time = Utc::now();
+
+        if should_resume_timer {
+            let expires_at = Instant::now() + Duration::from_secs(10);
+            self.auctions[current_auction_index].expires_at = Some(expires_at);
+
+            let draft_runner = self.draft_runner.clone();
+            draft_runner
+                .register_draft(self, expires_at)
+                .await
+                .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e))?;
+        } else {
+            self.auctions[current_auction_index].expires_at = None;
+        }
+
+        let draft_response = crate::draft::DraftResponse::from(self.clone());
+        let _ = self
+            .tx
+            .send(crate::messages::ServerMessage::DraftUpdate(draft_response));
 
         Ok(())
     }
