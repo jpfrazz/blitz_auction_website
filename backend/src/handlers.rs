@@ -1,9 +1,10 @@
 use crate::{
+    CSRF_STATE_KEY,
     draft::{Draft, DraftLobbyResponse, DraftResponse, DraftSettings, DraftState},
     messages::{ClientBidRequest, ClientBidResponse, ClientJoinResponse, ServerMessage},
     pokemon,
     server::ServerState,
-    users::{AuthBackend, CSRF_STATE_KEY, Credentials, DiscordCreds, User, UserId},
+    users::{AuthBackend, Credentials, DiscordCreds, User},
 };
 use axum::{
     Json,
@@ -21,11 +22,11 @@ use chrono::Utc;
 use oauth2::CsrfToken;
 use serde::{Deserialize, Serialize};
 use sqlx::Row;
-use std::{collections::HashMap, sync::Arc, time::Duration};
-use tokio::{
-    sync::{RwLock, broadcast},
-    time::Instant,
+use std::{
+    sync::Arc,
+    collections::HashMap
 };
+use tokio::sync::{RwLock, broadcast};
 use tower_sessions::Session;
 
 #[derive(Clone, Debug, Deserialize)]
@@ -175,8 +176,7 @@ pub async fn get_draft(
 }
 
 #[debug_handler]
-pub async fn get_pokemon(
-) -> Result<Json<Vec<Arc<pokemon::Pokemon>>>, (StatusCode, String)> {
+pub async fn get_pokemon() -> Result<Json<Vec<Arc<pokemon::Pokemon>>>, (StatusCode, String)> {
     let Some(pokemon) = pokemon::get_pokemon_data(&Vec::new()) else {
         return Err((
             StatusCode::NOT_FOUND,
@@ -392,7 +392,9 @@ pub async fn ready_up(
 
     // Broadcast full draft object to all websocket clients
     let draft_response = crate::draft::DraftResponse::from(draft.clone());
-    let _ = draft.tx.send(crate::messages::ServerMessage::DraftUpdate(draft_response));
+    let _ = draft
+        .tx
+        .send(crate::messages::ServerMessage::DraftUpdate(draft_response));
 
     // Removed automatic draft start when all teams are ready
     let draft_started = false;
@@ -546,9 +548,10 @@ pub async fn claim_eeveelution(
     auth_session: AuthSession<AuthBackend>,
     Json(claim_request): Json<ClaimEeveelutionRequest>,
 ) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
-    let user = auth_session
-        .user
-        .ok_or((StatusCode::UNAUTHORIZED, "user not authenticated".to_string()))?;
+    let user = auth_session.user.ok_or((
+        StatusCode::UNAUTHORIZED,
+        "user not authenticated".to_string(),
+    ))?;
 
     let Some(draft_lock) = state.drafts.get(&draft_id) else {
         return Err((StatusCode::NOT_FOUND, "draft not found".to_string()));
@@ -566,28 +569,25 @@ pub async fn claim_eeveelution(
     let target_pokemon = draft
         .pokemon
         .iter()
-        .find(|p| {
-            p.pokedex_id == claim_request.pokedex_id as u32
-                && p.form == claim_request.form
-        })
-        .ok_or((StatusCode::NOT_FOUND, "pokemon not found in draft".to_string()))?
+        .find(|p| p.pokedex_id == claim_request.pokedex_id as u32 && p.form == claim_request.form)
+        .ok_or((
+            StatusCode::NOT_FOUND,
+            "pokemon not found in draft".to_string(),
+        ))?
         .clone();
 
     // Check if this pokemon was already claimed by someone else
-    let already_claimed_by = draft
-        .teams
-        .values()
-        .find_map(|team| {
-            if team
-                .auctions_won
-                .iter()
-                .any(|p| p.pokedex_id == target_pokemon.pokedex_id && p.form == target_pokemon.form)
-            {
-                Some(team.username.clone())
-            } else {
-                None
-            }
-        });
+    let already_claimed_by = draft.teams.values().find_map(|team| {
+        if team
+            .auctions_won
+            .iter()
+            .any(|p| p.pokedex_id == target_pokemon.pokedex_id && p.form == target_pokemon.form)
+        {
+            Some(team.username.clone())
+        } else {
+            None
+        }
+    });
 
     if let Some(claimer_name) = already_claimed_by {
         return Ok(Json(serde_json::json!({
@@ -604,7 +604,9 @@ pub async fn claim_eeveelution(
 
         // Broadcast full draft object to all websocket clients
         let draft_response = crate::draft::DraftResponse::from(draft.clone());
-        let _ = draft.tx.send(crate::messages::ServerMessage::DraftUpdate(draft_response));
+        let _ = draft
+            .tx
+            .send(crate::messages::ServerMessage::DraftUpdate(draft_response));
 
         Ok(Json(serde_json::json!({
             "success": true,
@@ -627,9 +629,10 @@ pub async fn unclaim_eeveelution(
     auth_session: AuthSession<AuthBackend>,
     Json(claim_request): Json<ClaimEeveelutionRequest>,
 ) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
-    let user = auth_session
-        .user
-        .ok_or((StatusCode::UNAUTHORIZED, "user not authenticated".to_string()))?;
+    let user = auth_session.user.ok_or((
+        StatusCode::UNAUTHORIZED,
+        "user not authenticated".to_string(),
+    ))?;
 
     let Some(draft_lock) = state.drafts.get(&draft_id) else {
         return Err((StatusCode::NOT_FOUND, "draft not found".to_string()));
@@ -646,11 +649,11 @@ pub async fn unclaim_eeveelution(
     let target_pokemon = draft
         .pokemon
         .iter()
-        .find(|p| {
-            p.pokedex_id == claim_request.pokedex_id as u32
-                && p.form == claim_request.form
-        })
-        .ok_or((StatusCode::NOT_FOUND, "pokemon not found in draft".to_string()))?
+        .find(|p| p.pokedex_id == claim_request.pokedex_id as u32 && p.form == claim_request.form)
+        .ok_or((
+            StatusCode::NOT_FOUND,
+            "pokemon not found in draft".to_string(),
+        ))?
         .clone();
 
     let user_id = user.get_user_id_string();
@@ -658,15 +661,18 @@ pub async fn unclaim_eeveelution(
         return Err((StatusCode::NOT_FOUND, "team not found".to_string()));
     };
 
-    let maybe_index = team.auctions_won.iter().position(|p| {
-        p.pokedex_id == target_pokemon.pokedex_id && p.form == target_pokemon.form
-    });
+    let maybe_index = team
+        .auctions_won
+        .iter()
+        .position(|p| p.pokedex_id == target_pokemon.pokedex_id && p.form == target_pokemon.form);
 
     if let Some(index) = maybe_index {
         team.auctions_won.remove(index);
 
         let draft_response = crate::draft::DraftResponse::from(draft.clone());
-        let _ = draft.tx.send(crate::messages::ServerMessage::DraftUpdate(draft_response));
+        let _ = draft
+            .tx
+            .send(crate::messages::ServerMessage::DraftUpdate(draft_response));
 
         return Ok(Json(serde_json::json!({
             "success": true,
@@ -684,10 +690,9 @@ pub async fn unclaim_eeveelution(
         .values()
         .find(|other_team| {
             other_team.user_id != user_id
-                && other_team
-                    .auctions_won
-                    .iter()
-                    .any(|p| p.pokedex_id == target_pokemon.pokedex_id && p.form == target_pokemon.form)
+                && other_team.auctions_won.iter().any(|p| {
+                    p.pokedex_id == target_pokemon.pokedex_id && p.form == target_pokemon.form
+                })
         })
         .map(|team| team.username.clone());
 
@@ -746,17 +751,24 @@ pub async fn create_draft_chat(
     auth_session: AuthSession<AuthBackend>,
     Json(request): Json<CreateChatRequest>,
 ) -> Result<Json<ChatMessage>, (StatusCode, String)> {
-    let user = auth_session
-        .user
-        .ok_or((StatusCode::UNAUTHORIZED, "user not authenticated".to_string()))?;
+    let user = auth_session.user.ok_or((
+        StatusCode::UNAUTHORIZED,
+        "user not authenticated".to_string(),
+    ))?;
 
     if matches!(user, User::GuestUser(_)) {
-        return Err((StatusCode::FORBIDDEN, "guests cannot send messages".to_string()));
+        return Err((
+            StatusCode::FORBIDDEN,
+            "guests cannot send messages".to_string(),
+        ));
     }
 
     let message = request.message.trim();
     if message.is_empty() {
-        return Err((StatusCode::BAD_REQUEST, "message cannot be empty".to_string()));
+        return Err((
+            StatusCode::BAD_REQUEST,
+            "message cannot be empty".to_string(),
+        ));
     }
 
     let user_id = user.get_user_id_string();
@@ -844,7 +856,11 @@ pub async fn discord_callback(
         new_state,
     });
 
-    let Some(user) = auth_session.authenticate(creds).await.map_err(|e| e.to_string())? else {
+    let Some(user) = auth_session
+        .authenticate(creds)
+        .await
+        .map_err(|e| e.to_string())?
+    else {
         return Err("failed to authenticate".to_string());
     };
 
@@ -926,11 +942,19 @@ pub async fn change_guest_name(
 ) -> Result<Json<String>, (StatusCode, String)> {
     let user_id = match auth_session.user {
         Some(User::GuestUser(ref guest)) => guest.user_id.clone(),
-        _ => return Err((StatusCode::FORBIDDEN, "Only guests can change their name".to_string())),
+        _ => {
+            return Err((
+                StatusCode::FORBIDDEN,
+                "Only guests can change their name".to_string(),
+            ));
+        }
     };
     let new_name = req.new_name.trim();
     if new_name.is_empty() || new_name.len() > 32 {
-        return Err((StatusCode::BAD_REQUEST, "Name must be 1-32 characters".to_string()));
+        return Err((
+            StatusCode::BAD_REQUEST,
+            "Name must be 1-32 characters".to_string(),
+        ));
     }
     let res = sqlx::query!(
         "UPDATE guests SET user_name = $1 WHERE user_id = $2",
@@ -953,11 +977,16 @@ pub async fn change_guest_name(
                     team.username = new_name.to_string();
                     // Optionally broadcast update to websocket clients
                     let draft_response = crate::draft::DraftResponse::from(draft.clone());
-                    let _ = draft.tx.send(crate::messages::ServerMessage::DraftUpdate(draft_response));
+                    let _ = draft
+                        .tx
+                        .send(crate::messages::ServerMessage::DraftUpdate(draft_response));
                 }
             }
             Ok(Json(new_name.to_string()))
-        },
-        Err(e) => Err((StatusCode::INTERNAL_SERVER_ERROR, format!("DB error: {}", e))),
+        }
+        Err(e) => Err((
+            StatusCode::INTERNAL_SERVER_ERROR,
+            format!("DB error: {}", e),
+        )),
     }
 }

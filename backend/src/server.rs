@@ -80,7 +80,7 @@ impl Server {
             .with_same_site(tower_sessions::cookie::SameSite::Lax)
     }
 
-    fn create_auth_layer(
+    async fn create_auth_layer(
         &self,
         session_layer: SessionManagerLayer<MemoryStore>,
     ) -> AuthManagerLayer<AuthBackend, MemoryStore> {
@@ -98,7 +98,15 @@ impl Server {
             .set_client_secret(client_secret)
             .set_auth_uri(auth_url)
             .set_token_uri(token_url);
-        let auth_backend = AuthBackend::new(self.server_state.db_pool.clone(), client);
+        let discord_token = env::var("DISCORD_TOKEN").expect("DISCORD_TOKEN should be provided");
+        let discord_client = Arc::new(twilight_http::Client::new(discord_token));
+        let discord_role_map = AuthBackend::get_role_map(discord_client.as_ref()).await;
+        let auth_backend = AuthBackend::new(
+            self.server_state.db_pool.clone(),
+            client,
+            discord_client,
+            discord_role_map,
+        );
         AuthManagerLayerBuilder::new(auth_backend, session_layer).build()
     }
 
@@ -119,7 +127,10 @@ impl Server {
             .route("/leaderboard", get(handlers::get_leaderboard));
 
         let private_routes = Router::new()
-            .route("/drafts", get(handlers::list_open_drafts).post(handlers::create_draft))
+            .route(
+                "/drafts",
+                get(handlers::list_open_drafts).post(handlers::create_draft),
+            )
             .route("/drafts/{draft_id}/join", post(handlers::join_draft))
             .route("/drafts/{draft_id}/ready", post(handlers::ready_up))
             .route("/drafts/{draft_id}/bid", post(handlers::bid))
@@ -130,8 +141,14 @@ impl Server {
                 "/drafts/{draft_id}/pending-settings",
                 post(handlers::update_pending_draft_settings),
             )
-            .route("/drafts/{draft_id}/claim-eeveelution", post(handlers::claim_eeveelution))
-            .route("/drafts/{draft_id}/unclaim-eeveelution", post(handlers::unclaim_eeveelution))
+            .route(
+                "/drafts/{draft_id}/claim-eeveelution",
+                post(handlers::claim_eeveelution),
+            )
+            .route(
+                "/drafts/{draft_id}/unclaim-eeveelution",
+                post(handlers::unclaim_eeveelution),
+            )
             .route(
                 "/drafts/{draft_id}/chats",
                 get(handlers::get_draft_chats).post(handlers::create_draft_chat),
@@ -150,7 +167,7 @@ impl Server {
 
     pub async fn serve(self) -> Result<(), Error> {
         let session_layer = self.create_session_layer();
-        let auth_layer = self.create_auth_layer(session_layer);
+        let auth_layer = self.create_auth_layer(session_layer).await;
         let cors_layer = CorsLayer::new()
             .allow_methods([Method::GET, Method::POST])
             .allow_origin(Any);

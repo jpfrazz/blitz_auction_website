@@ -56,8 +56,4 @@ async def on_member_update(before, after):
         print(f"Role update detected for {after.id}")
         sync_roles(after.id, after_roles, before_roles)
 
-
-
-
-
 client.run(TOKEN)

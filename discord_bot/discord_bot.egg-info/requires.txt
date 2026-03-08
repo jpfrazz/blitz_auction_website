@@ -1,0 +1,4 @@
+discord>=2.3.2
+dotenv>=0.9.9
+psycopg>=3.3.2
+psycopg-binary>=3.3.2
