@@ -6,6 +6,7 @@ export type SerializedUser =
     user_name?: string;
     username?: string;
     global_name?: string | null;
+    roles?: Array<{ role_id: string; role_name: string }>;
 } };
 
 export function getUserLabel(user: string | SerializedUser | null | undefined): string {

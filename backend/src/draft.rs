@@ -174,6 +174,10 @@ pub struct Team {
 }
 
 impl Draft {
+    pub fn is_ranked(&self) -> bool {
+        self.settings.ranked
+    }
+
     fn new(
         draft_id: String,
         draft_name: String,

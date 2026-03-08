@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { ChatMessage, Draft, DraftLobby } from "../../types";
+import { ChatMessage, Draft, DraftLobby, UserRole } from "../../types";
 
 interface JoinDraftResponse {
   joined: boolean;
@@ -12,7 +12,7 @@ interface EeveelutionClaimResponse {
 }
 
 // Fetch current user info
-export async function fetchCurrentUser(): Promise<{user_id: string | null, username: string | null, avatar?: string, is_guest: boolean}> {
+export async function fetchCurrentUser(): Promise<{user_id: string | null, username: string | null, avatar?: string, is_guest: boolean, roles?: UserRole[]}> {
   const response = await axios.get('/api/me');
   // Response can be {GuestUser: {...}} or {DiscordUser: {...}}
   const data = response.data;
@@ -27,6 +27,7 @@ export async function fetchCurrentUser(): Promise<{user_id: string | null, usern
       user_id: data.DiscordUser.user_id ?? data.DiscordUser.id,
       username: data.DiscordUser.user_name ?? data.DiscordUser.username,
       avatar: data.DiscordUser.avatar,
+      roles: data.DiscordUser.roles ?? [],
       is_guest: false,
     };
   } else {
@@ -34,6 +35,7 @@ export async function fetchCurrentUser(): Promise<{user_id: string | null, usern
       user_id: null,
       username: null,
       is_guest: false,
+      roles: [],
     }
   }
 }
@@ -69,6 +71,13 @@ export async function pauseDraft(draft_id: string): Promise<void> {
 
 export async function unpauseDraft(draft_id: string): Promise<void> {
   await axios.post(`/api/drafts/${draft_id}/unpause`);
+}
+
+export async function submitRaceResults(
+  draft_id: string,
+  placements: Record<string, number>,
+): Promise<void> {
+  await axios.post(`/api/drafts/${draft_id}/submit-results`, placements);
 }
 
 export async function updatePendingDraftSettings(

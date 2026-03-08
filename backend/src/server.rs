@@ -138,6 +138,10 @@ impl Server {
             .route("/drafts/{draft_id}/pause", post(handlers::pause_draft))
             .route("/drafts/{draft_id}/unpause", post(handlers::unpause_draft))
             .route(
+                "/drafts/{draft_id}/submit-results",
+                post(handlers::submit_race_results),
+            )
+            .route(
                 "/drafts/{draft_id}/pending-settings",
                 post(handlers::update_pending_draft_settings),
             )

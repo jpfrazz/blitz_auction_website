@@ -2,7 +2,7 @@ import React, { useEffect, useState, useRef } from 'react';
 import { connectDraftWebSocket } from '../../shared/api/draftWebSocket';
 import { useLocation } from 'react-router-dom';
 import Header from '../../shared/components/Header';
-import { fetchDraftById, readyUpDraft, joinDraft, fetchCurrentUser, claimEeveelution, unclaimEeveelution, startDraft, pauseDraft, unpauseDraft, updatePendingDraftSettings } from '../../shared/api/draftData';
+import { fetchDraftById, readyUpDraft, joinDraft, fetchCurrentUser, claimEeveelution, unclaimEeveelution, startDraft, pauseDraft, unpauseDraft, submitRaceResults, updatePendingDraftSettings } from '../../shared/api/draftData';
 import { getUserId } from '../../shared/utils/user';
 import './AuctionPage.scss';
 import '../../shared/style/theme.scss';
@@ -13,6 +13,7 @@ import AuctionChatBox from './components/AuctionChatBox';
 import AuctionStatsPanel from './components/AuctionStatsPanel';
 import PokemonTablePanel from './components/PokemonTablePanel/PokemonTablePanel';
 import EeveelutionClaimModal from './components/EeveelutionClaimModal';
+import ResultsSubmissionModal from './components/ResultsSubmissionModal';
 import { Draft } from '../../types';
 import confetti from 'canvas-confetti';
 
@@ -36,11 +37,13 @@ const AuctionPage: React.FC = () => {
   const [joiningDraft, setJoiningDraft] = useState(false);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [isGuest, setIsGuest] = useState(false);
+  const [hasRefereeRole, setHasRefereeRole] = useState(false);
   const [showJoinModal, setShowJoinModal] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [joinPassword, setJoinPassword] = useState('');
   const [joinError, setJoinError] = useState<string | null>(null);
   const [showEeveelutionModal, setShowEeveelutionModal] = useState(false);
+  const [showResultsSubmissionModal, setShowResultsSubmissionModal] = useState(false);
   const [avatar, setAvatar] = useState<string | undefined>(undefined);
   const [wsConnected, setWsConnected] = useState(true);
   const [isAuctionSoundMuted, setIsAuctionSoundMuted] = useState<boolean>(() => {
@@ -191,6 +194,7 @@ const AuctionPage: React.FC = () => {
           .then(user => {
             setCurrentUserId(user.user_id);
             setIsGuest(user.is_guest);
+            setHasRefereeRole((user.roles ?? []).some((role) => role.role_name === 'Referee'));
             setIsLoggedIn(true);
           })
       }
@@ -212,6 +216,7 @@ const AuctionPage: React.FC = () => {
       .then(user => {
         setCurrentUserId(user.user_id);
         setIsGuest(user.is_guest);
+        setHasRefereeRole((user.roles ?? []).some((role) => role.role_name === 'Referee'));
         setIsLoggedIn(!!user.user_id);
         if(!user.is_guest) {
           setAvatar(user.avatar)
@@ -393,6 +398,14 @@ const AuctionPage: React.FC = () => {
     });
   };
 
+  const handleSubmitResults = async (placements: Record<string, number>) => {
+    if (!draft) {
+      throw new Error('Draft not loaded');
+    }
+
+    await submitRaceResults(draft.draft_id, placements);
+  };
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100vh' }}>
       <Header />
@@ -554,6 +567,14 @@ const AuctionPage: React.FC = () => {
                       >
                         Claim Eeveelution
                       </button>
+                      {hasRefereeRole && (
+                        <button
+                          className="button"
+                          onClick={() => setShowResultsSubmissionModal(true)}
+                        >
+                          Submit Results
+                        </button>
+                      )}
                     </div>
                   </div>
                 ) : (
@@ -639,6 +660,14 @@ const AuctionPage: React.FC = () => {
                 onClaim={handleClaimEeveelution}
                 onUnclaim={handleUnclaimEeveelution}
                 onClose={() => setShowEeveelutionModal(false)}
+              />
+            )}
+            {showResultsSubmissionModal && draft && (
+              <ResultsSubmissionModal
+                teams={draft.teams}
+                currentUserId={currentUserId}
+                onSubmit={handleSubmitResults}
+                onClose={() => setShowResultsSubmissionModal(false)}
               />
             )}
           </>
