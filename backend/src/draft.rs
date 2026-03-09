@@ -641,16 +641,16 @@ impl Draft {
 
         let auction = &self.auctions[self.current_auction as usize];
         if auction.auction_id != bid_request.auction_id {
-            return Err(format!("auction is not active"));
-        }
-        if auction.highest_bid >= bid_request.value {
-            return Err(format!("bid is not higher than current highest bid"));
-        }
-        if bid_request.value % 100 != 0 {
-            return Err(format!("bid must be multiple of 100"));
+            return Err(format!("Auction is not active"));
         }
         if auction.highest_bidder == Some(user.clone()) {
-            return Err(format!("user is already the highest bidder"));
+            return Err(format!("You're already the high bidder!"));
+        }
+        if auction.highest_bid >= bid_request.value {
+            return Err(format!("Bid is not higher than current highest bid"));
+        }
+        if bid_request.value % 100 != 0 {
+            return Err(format!("Bid must be a multiple of 100"));
         }
         // check user has team in draft
         let Some(team) = self.teams.get(&user.get_user_id_string()) else {
@@ -658,7 +658,7 @@ impl Draft {
         };
 
         if team.budget_remaining < bid_request.value {
-            return Err(format!("user is too brokie"));
+            return Err(format!("You don't have enough money!"));
         }
 
         let user_field = match user {

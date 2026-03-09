@@ -186,6 +186,23 @@ pokedex_id,pokemon_name,form,move_name,learn_method,species
 974,Cetoddle,,Earthquake,TM,
 974,Cetoddle,,Ice Spinner,44,
 974,Cetoddle,,Icicle Crash,Egg,
+935,Charcadet,,Fire Spin,12,
+935,Charcadet,,Will-O-Wisp,16,
+935,Charcadet,,Flame Charge,24,
+935,Charcadet,,Incinerate,28,
+935,Charcadet,,Overheat,TM,
+935,Charcadet,,Psyshock,Evo.,Armarouge
+935,Charcadet,,Mystical Fire,MR,Armarouge
+935,Charcadet,,Calm Mind,37/TM,Armarouge
+935,Charcadet,,Flamethrower,48/TM,Armarouge
+935,Charcadet,,Armor Cannon,MR!,Armarouge
+935,Charcadet,,Shadow Claw,Evo.,Ceruledge
+935,Charcadet,,Night Slash,MR,Ceruledge
+935,Charcadet,,Bulk Up,TM,Ceruledge
+935,Charcadet,,Bitter Blade,48,Ceruledge
+935,Charcadet,,Psycho Cut,56,Ceruledge
+935,Charcadet,,Shadow Ball,TM,
+935,Charcadet,,Destiny Bond,Egg,
 4,Charmander,,Ember,7,
 4,Charmander,,Dragon Breath,16,
 4,Charmander,,Fire Fang,28,

@@ -24,6 +24,7 @@ const Info = () => (
           <li><a href="#inter-gym-mechanics">Inter-Gym Mechanics</a></li>
           <li><a href="#ai-logic">AI Logic</a></li>
           <li><a href="#key-binds">Key Binds</a></li>
+          <li><a href="#ability-reworks">Reworked Abilities</a></li>
         </ul>
       </nav>
 
@@ -523,6 +524,7 @@ const Info = () => (
               <ul>
                 <li>Kirlia &gt; Gallade</li>
                 <li>Snorunt &gt; Froslass</li>
+                <li>Charcadet &gt; Armarouge</li>
               </ul>
             </details>
             <details>
@@ -533,6 +535,7 @@ const Info = () => (
                 <li>Misdreavus &gt; Mismagius</li>
                 <li>Murkrow &gt; Honchkrow</li>
                 <li>Sneasel &gt; Weavile</li>
+                <li>Charcadet &gt; Ceruledge</li>
               </ul>
             </details>
             <details>
@@ -764,6 +767,26 @@ const Info = () => (
           <li>Holding "B" on your Gameboy while riding Flygon urges him to move at 1.5x speed</li>
           <li>Pressing "L" while riding Flygon instantly takes you to the Fly map</li>
           <li>Pressing "Select" while viewing the overworld map instantly snaps the cursor to Slateport City</li>
+        </ul>
+      </section>
+
+      <section id="ability-reworks" className="info-section">
+        <h2 className="info-question">Reworked Abilities</h2>
+        <hr />
+        <p className="info-answer">
+          Abilities which would otherwise be useless have been reworked for Blitz. These include...
+        </p>
+        <ul className="info-answer">
+          <li><strong>Anticipation:</strong> Raises the user's Evasiveness by 1 stage when the opposing Pokémon has a super-effective move.</li>
+          <li><strong>Ball Fetch:</strong> Finds a held Sitrus Berry at the end of a boss battle.</li>
+          <li><strong>Forecast:</strong> Sets weather on entry based on the first move in the Pokémon's learnset (sun for fire, rain for water, hail for ice).</li>
+          <li><strong>Frisk:</strong> Steals the opponent's held item on switch in.</li>
+          <li><strong>Grassy Pelt:</strong> Boosts 1.5x defense in Sun, not in Grassy Terrain.</li>
+          <li><strong>Honey Gather:</strong> Finds a held Sitrus Berry at the end of a boss battle.</li>
+          <li><strong>Pickup:</strong> Finds a held Sitrus Berry at the end of a boss battle.</li>
+          <li><strong>Run Away:</strong> Forces the user to switch out when HP drops below 1/4.</li>
+          <li><strong>Seed Sower:</strong> Sets Leech Seed when an opposing attack makes contact.</li>
+          <li><strong>Surge Surfer:</strong> Boosts 2x speed in Rain, not in Electric Terrain.</li>
         </ul>
       </section>
     </main>

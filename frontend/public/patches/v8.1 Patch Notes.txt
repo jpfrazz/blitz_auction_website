@@ -22,10 +22,10 @@ Elgyem (22)
 
 
 -----------------------------------------------
-Ability Rework: Doodle
+Move Rework: Doodle
 -----------------------------------------------
 
-Grafaiai's signature ability Doodle now functions like Smeargle's Sketch but for abilities. When Doodle is used from the party menu, it offers the player four options for Grafaiai's new ability from the following pool:
+Grafaiai's signature move Doodle now functions like Smeargle's Sketch but for abilities. When Doodle is used from the party menu, it offers the player four options for Grafaiai's new ability from the following pool:
 
 Drizzle
 Drought

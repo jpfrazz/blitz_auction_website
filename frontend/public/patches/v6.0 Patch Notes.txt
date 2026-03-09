@@ -50,7 +50,7 @@ Sandshrew Alola Evolution: Ice Stone > Level 22
 
 
 Pool Change: Smoliv Added
-Abillity Change: Seed Sower now sets Leech Seed
+Ability Change: Seed Sower now sets Leech Seed
 //Smoliv is so smol, and for that we love him. However, he is also so stink! His only abiity is Seed Sower, which sets grassy terrain when attacked. This is useless in our game where terrain is disabled. However, I've changed Seed Sower so that now each time Arboliva is attacked, it sets leech seed. This gives Arboliva a super unique strength. It's now the best pivot pokemon in the game, able to set seeds and switch back out. It can also set up a sweep with Growth, Reflect and Giga Drain, because despite being slow, it will set seeds on every Pokémon that comes in and hits it first.
 //I usually don't like changing any vanilla mechanics like this, but the ability is literally called Seed Sower, the old version doesn't work, and this makes it really cool. So there!
 

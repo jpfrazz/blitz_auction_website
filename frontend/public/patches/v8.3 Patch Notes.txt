@@ -83,6 +83,8 @@ All Evolution Item costs changed to 1000 (Fire Stone, King's Rock, etc.)
 //Needing to keep in mind how "expensive" each Pokémon is in-game is an interesting wrinkle to the draft, but Ability Patches and TMs are enough without also needing to spend so much money just to evolve.
 
 Wally Magnezone Tri-Attack > Flash Cannon
+Wally Garchomp Dig > Earthquake
+//Early feedback has been that Wally is significantly easier than Steven. These are the obvious adjustments--we'll start here and reassess later.
 
 Pokémon boosted by Commander cannot land critical hits
 //A nerf to prevent early Dondozo from scoring a critical hit to one-shot your Eevee through Baby-Doll Eyes. Tatsugiri's Commander boost now restricts the boosted Pokémon from ever critting.
@@ -122,7 +124,7 @@ Added a new Portable PC sprite
 //Thanks to Zarha for continuing to cook
 
 Added an De-Eeveelution NPC
-//The woman wearing yellow in the Slateport Market can now devolve your Eevee if you talk to her with exactly four badges and an Eeveelution in your party. Any evolution-specific moves are forgotten, and she pays you back the price of your stone. As she will tell you in her dialogue, she's only to be used if you're in a race and accidentally evolved your Eevee into an Eeveelution that's already been claimed.
+//If you talk to her with exactly four badges and an Eeveelution in your party, the woman wearing yellow in the Slateport Market can now devolve your Eevee. Any evolution-specific moves are forgotten, and she pays you back the price of your stone. As she will tell you in her dialogue, she's only to be used if you're in a race and accidentally evolved your Eevee into an Eeveelution that's already been claimed.
 //Again, this NPC is not intended for regular use. She's here as we prepare for competitive races so that referees can solve disputes or mistakes mid-race if necessary.
 
 
