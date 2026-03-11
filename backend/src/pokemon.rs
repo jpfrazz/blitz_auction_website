@@ -46,9 +46,10 @@ pub async fn init_pokemon_data(pool: &PgPool) -> Result<(), sqlx::Error> {
         } else {
             Some(row.form.clone())
         },
-        stage: row.stage.parse().unwrap_or_else(|e| {
-            panic!("stage not valid: {}, {}", row.stage, row.pokedex_id)
-        }),
+        stage: row
+            .stage
+            .parse()
+            .unwrap_or_else(|e| panic!("stage not valid: {}, {}", row.stage, row.pokedex_id)),
         type1: row
             .type1
             .parse()

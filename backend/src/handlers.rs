@@ -199,8 +199,8 @@ pub async fn get_pokemon() -> Result<Json<Vec<Arc<pokemon::Pokemon>>>, (StatusCo
 }
 
 #[debug_handler]
-pub async fn get_rental_pokemon(
-) -> Result<Json<Vec<Arc<pokemon::Pokemon>>>, (StatusCode, String)> {
+pub async fn get_rental_pokemon() -> Result<Json<Vec<Arc<pokemon::Pokemon>>>, (StatusCode, String)>
+{
     let Some(pokemon) = pokemon::get_pokemon_data(&Vec::new()) else {
         return Err((
             StatusCode::NOT_FOUND,
@@ -553,7 +553,11 @@ pub async fn submit_race_results(
         ));
     }
 
-    let team_user_ids: Vec<String> = draft.teams.values().map(|team| team.user_id.clone()).collect();
+    let team_user_ids: Vec<String> = draft
+        .teams
+        .values()
+        .map(|team| team.user_id.clone())
+        .collect();
     let team_count = team_user_ids.len();
 
     if team_count == 0 {
@@ -636,9 +640,10 @@ pub async fn submit_race_results(
             let opponent_rating = *mmr_by_user
                 .get(opponent_id)
                 .ok_or((StatusCode::BAD_REQUEST, "missing opponent MMR".to_string()))?;
-            let opponent_place = *placements
-                .get(opponent_id)
-                .ok_or((StatusCode::BAD_REQUEST, "missing opponent placement".to_string()))?;
+            let opponent_place = *placements.get(opponent_id).ok_or((
+                StatusCode::BAD_REQUEST,
+                "missing opponent placement".to_string(),
+            ))?;
 
             let result = if user_place < opponent_place {
                 wins += 1;

@@ -194,13 +194,10 @@ impl AuthBackend {
                 .await
                 .map_err(|_| AuthError::SqlxError)?;
 
-                let id_vec: Vec<String> = user.roles.iter()
-                    .map(|r| r.role_id.clone())
-                    .collect();
+                let id_vec: Vec<String> = user.roles.iter().map(|r| r.role_id.clone()).collect();
 
-                let name_vec: Vec<String> = user.roles.iter()
-                    .map(|r| r.role_name.clone())
-                    .collect();
+                let name_vec: Vec<String> =
+                    user.roles.iter().map(|r| r.role_name.clone()).collect();
 
                 println!("deleting roles in db, {}", user.user_name);
 
@@ -237,7 +234,10 @@ impl AuthBackend {
             }
         }
 
-        println!("inserted user successfully, {}", user.get_user_name_string());
+        println!(
+            "inserted user successfully, {}",
+            user.get_user_name_string()
+        );
 
         Ok(())
     }
@@ -456,7 +456,7 @@ impl AuthnBackend for AuthBackend {
                     roles: serde_json::from_value(row.roles).map_err(|e| {
                         eprintln!("failed to get roles from db, {}", e);
                         AuthError::SqlxError
-                    })?
+                    })?,
                 };
 
                 println!("got user {}", user_id);

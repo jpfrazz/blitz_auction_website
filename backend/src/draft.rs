@@ -12,7 +12,7 @@ use tokio::{
 };
 
 use crate::{
-    auction::{Auction, AuctionState},
+    auction::{Auction, AuctionResponse, AuctionState},
     draft_runner::DraftRunner,
     get_expiry_time_from_instant,
     messages::{ClientBidRequest, ClientBidResponse, ServerMessage},
@@ -20,7 +20,7 @@ use crate::{
     users::User,
 };
 
-#[derive(Clone, Debug)]
+#[derive(Debug)]
 pub struct Draft {
     pub draft_id: String,
     pub draft_name: String,
@@ -35,7 +35,6 @@ pub struct Draft {
     pub tx: broadcast::Sender<ServerMessage>,
     pub db_pool: PgPool,
     pub expires_at: chrono::DateTime<Utc>,
-    pub current_server_time: chrono::DateTime<Utc>,
     draft_runner: Arc<DraftRunner>,
 }
 
@@ -50,9 +49,8 @@ pub struct DraftResponse {
     total_teams: u32,
     teams: Vec<Team>,
     draft_state: DraftState,
-    completed_auctions: Vec<Auction>,
-    current_auction: Option<Auction>,
-    current_auction_expires_at: Option<chrono::DateTime<Utc>>,
+    completed_auctions: Vec<AuctionResponse>,
+    current_auction: Option<AuctionResponse>,
     current_server_time: chrono::DateTime<Utc>,
     pokemon: Vec<Arc<Pokemon>>,
 }
@@ -185,26 +183,14 @@ impl Draft {
         settings: DraftSettings,
         pokemon: Vec<Arc<Pokemon>>,
         pool: PgPool,
-        draft_runner: Arc<DraftRunner>,
-        expires_at: chrono::DateTime<Utc>,
     ) -> Draft {
         let (tx, _rx) = broadcast::channel(1_000);
         Draft {
             draft_id: draft_id,
             draft_name,
             host: host,
-            db_pool: pool,
-            teams: HashMap::new(),
-            spectators: vec![],
-            draft_state: DraftState::PENDING,
             pokemon,
-            auctions: Vec::with_capacity(settings.num_auctions as usize),
-            settings,
-            current_auction: 0,
             tx,
-            draft_runner,
-            expires_at,
-            current_server_time: Utc::now(),
         }
     }
 
@@ -212,7 +198,6 @@ impl Draft {
         host: User,
         mut settings: DraftSettings,
         pool: PgPool,
-        draft_runner: Arc<DraftRunner>,
     ) -> Result<Draft, String> {
         let host_field = match host {
             User::DiscordUser(_) => "host_user_id",
@@ -222,7 +207,6 @@ impl Draft {
         for _ in 0..3 {
             let mut tx = pool.begin().await.map_err(|e| {
                 let error_string = format!("failed to begin transaction: {}", e);
-                // eprintln!("{}", &error_string);
                 error_string
             })?;
 
@@ -276,11 +260,7 @@ impl Draft {
                 draft_id,
                 draft_name,
                 host,
-                settings,
                 pokemon,
-                pool,
-                draft_runner,
-                Utc::now() + chrono::Duration::hours(6),
             );
             for (i, p) in draft
                 .pokemon
@@ -309,9 +289,7 @@ impl Draft {
         Err("Couldn't create auction in db".to_string())
     }
 
-    pub async fn resolve_auction(&mut self) -> Result<(), String> {
-        let completed_auction = &mut self.auctions[self.current_auction as usize];
-
+    pub async fn resolve_auction(&self, completed_auction: AuctionResponse) -> Result<(), String> {
         let mut tx = self.db_pool.begin().await.map_err(|e| e.to_string())?;
 
         let _res = sqlx::query!(
@@ -325,11 +303,6 @@ impl Draft {
         .execute(&mut *tx)
         .await
         .map_err(|e| e.to_string())?;
-
-        completed_auction
-            .resolve(&mut tx)
-            .await
-            .map_err(|e| e.to_string())?;
 
         // change state to closed if all auctions are finished
         if self.current_auction + 1 >= self.settings.num_auctions {
@@ -357,30 +330,11 @@ impl Draft {
                 &completed_auction
                     .highest_bidder
                     .clone()
-                    .expect("auction should have winner")
-                    .get_user_id_string(),
             )
             .expect("auction winner should be on a team");
 
         team.auctions_won.push(completed_auction.pokemon.clone());
         team.budget_remaining -= completed_auction.highest_bid;
-
-        // update websocket
-        // self.tx
-        //     .send(ServerMessage::AuctionResult {
-        //         pokedex_id: completed_auction.pokemon.pokedex_id,
-        //         form: completed_auction.pokemon.form.clone(),
-        //         winning_bid: completed_auction.highest_bid,
-        //         winner: completed_auction
-        //             .highest_bidder
-        //             .as_ref()
-        //             .expect("No one won this auction")
-        //             .get_user_id_string(),
-        //     })
-        //     .map_err(|e| {
-        //         eprintln!("failed sending result to channel");
-        //         e.to_string()
-        //     })?;
 
         // Broadcast full draft object to all websocket clients
         let draft_response = crate::draft::DraftResponse::from(self.clone());
@@ -724,7 +678,9 @@ impl Draft {
         let remaining_seconds = self.auctions[self.current_auction as usize]
             .expires_at
             .map(|expires_at| {
-                let seconds = expires_at.saturating_duration_since(Instant::now()).as_secs();
+                let seconds = expires_at
+                    .saturating_duration_since(Instant::now())
+                    .as_secs();
                 u32::try_from(seconds).unwrap_or(u32::MAX)
             })
             .unwrap_or(0);
@@ -947,5 +903,43 @@ impl Draft {
     pub fn all_teams_ready(&self) -> bool {
         self.teams.len() == self.settings.num_teams as usize
             && self.teams.values().all(|team| team.ready)
+    }
+}
+
+struct DraftActor {
+    draft: Arc<Draft>,
+    draft_state: DraftState,
+    settings: DraftSettings,
+    current_auction: Arc<Auction>,
+    auctions: Vec<Auction>,
+    teams: HashMap<String, Team>,
+    spectators: Vec<User>,
+    expires_at: chrono::DateTime<Utc>,
+}
+
+impl DraftActor {
+    async fn bid(&self, user: User, bid_request: ClientBidRequest) -> Result<(), String> {
+        if self.draft_state != DraftState::BIDDING {
+            return Err("draft is not accepting bids".to_string());
+        }
+        if self.current_auction.auction_id != bid_request.auction_id {
+            return Err(format!("auction is not active"));
+        }
+        if bid_request.value % 100 != 0 {
+            return Err(format!("bid must be multiple of 100"));
+        }
+        let Some(team) = self.teams.get(&user.get_user_id_string()) else {
+            return Err(format!("user is not assigned to a team"));
+        };
+
+        if team.budget_remaining < bid_request.value {
+            return Err(format!("user is too brokie"));
+        }
+
+        self.current_auction.bid(bid_request);
+
+
+
+        Ok(())
     }
 }
