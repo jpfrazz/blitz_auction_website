@@ -16,7 +16,8 @@ pub struct AuctionResponse {
     pub auction_id: String,
     pub draft_id: String,
     pub state: AuctionState,
-    pub pokemon: Pokemon,
+    pub pokedex_id: u32,
+    pub pokemon_form: String,
     pub highest_bid: u32,
     pub highest_bidder: String,
     pub expires_at: Option<DateTime<Utc>>,
@@ -26,7 +27,7 @@ pub struct AuctionResponse {
 #[derive(Debug)]
 pub struct Auction {
     pub auction_id: String,
-    pub draft: Arc<Draft>,
+    pub draft_id: String,
     pub pokemon: Arc<Pokemon>,
     actor_sender: OnceCell<mpsc::Sender<AuctionCommand>>,
 }
@@ -41,20 +42,20 @@ pub enum AuctionState {
 
 impl Auction {
     fn new(
-        draft: Arc<Draft>,
         auction_id: String,
+        draft_id: String,
         pokemon: Arc<Pokemon>,
     ) -> Auction {
         Auction {
             auction_id,
-            draft,
+            draft_id,
             pokemon,
             actor_sender: OnceCell::new(),
         }
     }
 
     pub async fn build(
-        draft: Arc<Draft>,
+        draft_id: String,
         draft_order: u32,
         pokemon: Arc<Pokemon>,
         tx: &mut Transaction<'_, Postgres>,
@@ -68,7 +69,7 @@ impl Auction {
             "#,
             pokemon.pokedex_id as i32,
             pokemon.form.clone().unwrap_or_else(|| "".to_string()),
-            draft.draft_id,
+            draft_id,
             draft_order as i32,
         )
         .fetch_one(&mut **tx)
@@ -76,7 +77,7 @@ impl Auction {
         .auction_id;
 
         Ok(Auction::new(
-            draft,
+            draft_id,
             auction_id.to_string(),
             pokemon,
         ))
@@ -98,16 +99,20 @@ impl Auction {
         }
     }
 
-    pub async fn start(self: Arc<Self>, length: u32) -> Result<(), String> {
+    pub async fn start(&self, draft: Arc<Draft>, length: u32) -> Result<(), String> {
         let (actor_sender, actor_receiver) = mpsc::channel(1_000);
         if self.actor_sender.set(actor_sender).is_ok() {
-            let auction = self.clone();
-            let draft = self.draft.clone();
-            let pokemon = self.pokemon.clone();
+            let auction_id = self.auction_id.clone();
+            let pokedex_id = self.pokemon.pokedex_id;
+            let pokemon_form = self.pokemon.form.clone().unwrap_or_default();
+            let draft = draft;
             tokio::spawn(async move {
-                let mut actor = AuctionActor::new(
-                    auction,
+                let actor = AuctionActor::new(
+                    auction_id,
+                    draft,
                     length,
+                    pokedex_id,
+                    pokemon_form,
                     actor_receiver,
                 );
                 actor.run().await
@@ -171,9 +176,10 @@ impl From<&Auction> for AuctionResponse {
     fn from(value: &Auction) -> Self {
         AuctionResponse {
             auction_id: value.auction_id.clone(),
-            draft_id: value.draft.draft_id.clone(),
+            draft_id: value.draft_id.clone(),
             state: AuctionState::PENDING,
-            pokemon: value.pokemon.as_ref().clone(),
+            pokedex_id: value.pokemon.pokedex_id,
+            pokemon_form: value.pokemon.form.clone().unwrap_or_default(),
             highest_bid: 0,
             highest_bidder: format!(""),
             expires_at: None,
@@ -183,9 +189,12 @@ impl From<&Auction> for AuctionResponse {
 }
 
 struct AuctionActor {
-    auction: Arc<Auction>,
+    auction_id: String,
+    draft: Arc<Draft>,
     state: AuctionState,
     length: u32,
+    pokedex_id: u32,
+    pokemon_form: String,
     highest_bid: u32,
     highest_bidder: String,
     expires_at: Option<Instant>,
@@ -203,14 +212,20 @@ type AuctionCommandResponse = Result<(), String>;
 
 impl AuctionActor {
     pub fn new(
-        auction: Arc<Auction>,
+        auction_id: String,
+        draft: Arc<Draft>,
         length: u32,
+        pokedex_id: u32,
+        pokemon_form: String,
         receiver: mpsc::Receiver<AuctionCommand>,
     ) -> Self {
         Self {
-            auction,
+            auction_id,
+            draft,
             state: AuctionState::PENDING,
             length,
+            pokedex_id,
+            pokemon_form,
             highest_bid: 0,
             highest_bidder: "".to_string(),
             receiver,
@@ -222,7 +237,7 @@ impl AuctionActor {
         AuctionResponse::from(self)
     }
 
-    pub async fn run(&mut self) {
+    pub async fn run(mut self) {
         self.state = AuctionState::OPEN;
 
         // do not start the timer until the bid is > 0
@@ -232,7 +247,13 @@ impl AuctionActor {
                     AuctionCommand::Bid{response_sender, bid_request} => {
                         self.first_bid(bid_request, response_sender);
                     }
-                    _ => continue,
+                    AuctionCommand::Get(response_sender) => {
+                        let response = self.get();
+                        let _ = response_sender.send(response);
+                    },
+                    AuctionCommand::Resume(sender) | AuctionCommand::Pause(sender) => {
+                        let _ = sender.send(Err(format!("auction doesn't start until the first bid")));
+                    }
                 }
             }
         }
@@ -245,13 +266,16 @@ impl AuctionActor {
             tokio::select! {
                 Some(cmd) = self.receiver.recv() => self.handle_cmd(cmd, auction_timer.as_mut()).await,
                 _ = &mut auction_timer => {
+                    if let AuctionState::PAUSED(_) = self.state {
+                        continue;
+                    }
                     self.resolve_auction().await;
                     break;
                 },
             }
         }
 
-        println!("auction {} actor resolved", self.auction.auction_id);
+        println!("auction {} actor resolved", self.auction_id);
     }
 
     async fn handle_cmd(&mut self, cmd: AuctionCommand, auction_timer: Pin<&mut Sleep>) {
@@ -321,7 +345,7 @@ impl AuctionActor {
 
     async fn resolve_auction(&mut self) {
         self.state = AuctionState::CLOSED;
-        self.auction.draft
+        self.draft
             .resolve_auction(AuctionResponse::from(&*self));
     }
 }
@@ -333,12 +357,13 @@ impl From<&AuctionActor> for AuctionResponse {
             .clone()
             .map(|some| get_expiry_time_from_instant(some));
         Self {
-            auction_id: value.auction.auction_id.clone(),
-            draft_id: value.auction.draft.draft_id.clone(),
+            auction_id: value.auction_id.clone(),
+            draft_id: value.draft.draft_id.clone(),
             state: value.state.clone(),
             highest_bid: value.highest_bid,
             highest_bidder: value.highest_bidder.clone(),
-            pokemon: value.auction.pokemon.as_ref().clone(),
+            pokedex_id: value.pokedex_id,
+            pokemon_form: value.pokemon_form.clone(),
             expires_at: expires_at,
             server_timestamp: Utc::now(),
         }

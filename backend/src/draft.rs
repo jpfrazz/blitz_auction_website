@@ -4,10 +4,10 @@ use petname::petname;
 use rand::seq::SliceRandom;
 use serde::{Deserialize, Serialize};
 use sqlx::PgPool;
-use std::{collections::HashMap, sync::Arc};
+use std::{collections::HashMap, sync::{Arc}};
 use strum::Display;
 use tokio::{
-    sync::broadcast,
+    sync::{broadcast, oneshot, mpsc},
     time::{Duration, Instant},
 };
 
@@ -35,7 +35,7 @@ pub struct Draft {
     pub tx: broadcast::Sender<ServerMessage>,
     pub db_pool: PgPool,
     pub expires_at: chrono::DateTime<Utc>,
-    draft_runner: Arc<DraftRunner>,
+    actor_sender: mpsc::Sender<DraftCommand>,
 }
 
 #[derive(Clone, Debug, Serialize)]
@@ -49,10 +49,8 @@ pub struct DraftResponse {
     total_teams: u32,
     teams: Vec<Team>,
     draft_state: DraftState,
-    completed_auctions: Vec<AuctionResponse>,
-    current_auction: Option<AuctionResponse>,
+    current_auction: usize,
     current_server_time: chrono::DateTime<Utc>,
-    pokemon: Vec<Arc<Pokemon>>,
 }
 
 #[derive(Clone, Debug, Serialize)]
@@ -131,7 +129,6 @@ impl From<Draft> for DraftLobbyResponse {
 pub enum DraftState {
     PENDING,
     BIDDING,
-    PAUSED(u32),
     COMPLETED,
 }
 
@@ -424,159 +421,85 @@ impl Draft {
 
     pub async fn bid(
         &mut self,
-        bid_request: &ClientBidRequest,
+        bid_request: ClientBidRequest,
         user: &User,
     ) -> Result<ClientBidResponse, (StatusCode, String)> {
-        let (user_field, auction_id, bid_value) = match self.validate_bid_request(bid_request, user)
-        {
-            Ok(res) => res,
-            Err(e) => {
-                eprintln!("Bid not valid: {}", e);
-                return Ok(ClientBidResponse {
-                    accepted: false,
-                    error: Some(e),
-                });
-            }
-        };
-        let user_id = user.get_user_id_string();
 
-        let mut tx = self.db_pool.begin().await.map_err(|e| {
-            eprintln!("Error starting db transaction: {}", e);
-            (
-                StatusCode::INTERNAL_SERVER_ERROR,
-                "Couldn't process bid".to_string(),
-            )
-        })?;
+        let (response_sender, response_receiver) = oneshot::channel();
+        let cmd = DraftCommand::Bid { response_sender, bid_request };
+        self.actor_sender.send(cmd).await
+            .map_err(|e | 
+                (StatusCode::INTERNAL_SERVER_ERROR, format!("failed to send bid to actor, {}", e))
+            )?;
 
-        // update auction in db
-        let query_string = &format!(
-            "
-            UPDATE auctions
-            SET (winning_bid, {}, status) = ({}, '{}', '{}')
-            WHERE auction_id = {}
-            ",
-            user_field,
-            bid_value,
-            user_id,
-            AuctionState::OPEN.to_string(),
-            auction_id
-        );
-
-        let _ = sqlx::query(query_string)
-            .execute(&mut *tx)
-            .await
-            .map_err(|e| {
-                eprintln!(
-                    "failed writing to db: {}\nquery_string: {}",
-                    e, query_string
-                );
-                (
-                    StatusCode::INTERNAL_SERVER_ERROR,
-                    "failed to write to db".to_string(),
-                )
-            })?;
-
-        let user_field = match user {
-            User::DiscordUser(_) => "user_id",
-            User::GuestUser(_) => "guest_id",
-        };
-
-        // insert bid in db
-        let query_string = &format!(
-            "
-            INSERT INTO bids (auction_id, {}, value, accepted, winning)
-            VALUES ({}, '{}', {}, true, true)
-            ",
-            user_field, auction_id, user_id, bid_value
-        );
-
-        let _ = sqlx::query(query_string)
-            .execute(&mut *tx)
-            .await
-            .map_err(|e| {
-                eprintln!("failed writing to db: {}", e);
-                return (
-                    StatusCode::INTERNAL_SERVER_ERROR,
-                    "failed to write to db".to_string(),
-                );
-            })?;
-
-        tx.commit().await.map_err(|e| {
-            eprintln!("failed commiting transaction to db: {}", e);
-            (
-                StatusCode::INTERNAL_SERVER_ERROR,
-                "failed to write to db".to_string(),
-            )
-        })?;
-
-        // register draft if this is the first bid
-        if self.auctions[self.current_auction as usize].status == AuctionState::PENDING {
-            let draft_runner = self.draft_runner.clone();
-            let expires_at = Instant::now() + self.settings.auction_length;
-            draft_runner
-                .register_draft(self, expires_at)
-                .await
-                .map_err(|e| {
-                    eprintln!("failed to register draft: {}", e);
-                    (
-                        StatusCode::INTERNAL_SERVER_ERROR,
-                        "failed to process bid".to_string(),
-                    )
-                })?;
-        }
-
-        // update auction in memory
-        let (pokedex_id, form, winning_bid, winning_bidder, expires_at, expires_at_changed) = {
-            let current_auction = self.current_auction as usize;
-            let auction = &mut self.auctions[current_auction];
-            let previous_expires_at = auction.expires_at;
-            let was_pending = auction.status == AuctionState::PENDING;
-            let updated_expires_at = if was_pending {
-                previous_expires_at.expect("auction expiration should be set when bidding starts")
-            } else {
-                std::cmp::max(
-                    previous_expires_at.expect("open auction expiration should be set"),
-                    Instant::now() + Duration::from_secs(10),
-                )
-            };
-            auction.highest_bidder = Some(user.clone());
-            auction.highest_bid = bid_request.value;
-            auction.expires_at = Some(updated_expires_at);
-            if was_pending {
-                auction.status = AuctionState::OPEN;
-            }
-            let expires_at_changed = previous_expires_at
-                .map(|value| value != updated_expires_at)
-                .unwrap_or(true)
-                || was_pending;
-            (
-                auction.pokemon.pokedex_id,
-                auction.pokemon.form.clone(),
-                auction.highest_bid,
-                user,
-                crate::get_expiry_time_from_instant(updated_expires_at),
-                expires_at_changed,
-            )
-        };
-
-        if expires_at_changed {
-            self.current_server_time = Utc::now();
-        }
-
-        // send update to ws
-        // let _ = draft.tx.send(ServerMessage::AuctionUpdate {
-        //     pokedex_id,
-        //     form,
-        //     winning_bid,
-        //     winning_bidder: Some(winning_bidder.get_user_id_string()),
-        //     expires_at,
-        // });
-
-        // Broadcast full draft object to all websocket clients
-        let draft_response = crate::draft::DraftResponse::from(self.clone());
-        let _ = self
-            .tx
-            .send(crate::messages::ServerMessage::DraftUpdate(draft_response));
+        // let mut tx = self.db_pool.begin().await.map_err(|e| {
+        //     eprintln!("Error starting db transaction: {}", e);
+        //     (
+        //         StatusCode::INTERNAL_SERVER_ERROR,
+        //         "Couldn't process bid".to_string(),
+        //     )
+        // })?;
+        //
+        // // update auction in db
+        // let query_string = &format!(
+        //     "
+        //     UPDATE auctions
+        //     SET (winning_bid, {}, status) = ({}, '{}', '{}')
+        //     WHERE auction_id = {}
+        //     ",
+        //     user_field,
+        //     bid_value,
+        //     user_id,
+        //     AuctionState::OPEN.to_string(),
+        //     auction_id
+        // );
+        //
+        // let _ = sqlx::query(query_string)
+        //     .execute(&mut *tx)
+        //     .await
+        //     .map_err(|e| {
+        //         eprintln!(
+        //             "failed writing to db: {}\nquery_string: {}",
+        //             e, query_string
+        //         );
+        //         (
+        //             StatusCode::INTERNAL_SERVER_ERROR,
+        //             "failed to write to db".to_string(),
+        //         )
+        //     })?;
+        //
+        // let user_field = match user {
+        //     User::DiscordUser(_) => "user_id",
+        //     User::GuestUser(_) => "guest_id",
+        // };
+        //
+        // // insert bid in db
+        // let query_string = &format!(
+        //     "
+        //     INSERT INTO bids (auction_id, {}, value, accepted, winning)
+        //     VALUES ({}, '{}', {}, true, true)
+        //     ",
+        //     user_field, auction_id, user_id, bid_value
+        // );
+        //
+        // let _ = sqlx::query(query_string)
+        //     .execute(&mut *tx)
+        //     .await
+        //     .map_err(|e| {
+        //         eprintln!("failed writing to db: {}", e);
+        //         return (
+        //             StatusCode::INTERNAL_SERVER_ERROR,
+        //             "failed to write to db".to_string(),
+        //         );
+        //     })?;
+        //
+        // tx.commit().await.map_err(|e| {
+        //     eprintln!("failed commiting transaction to db: {}", e);
+        //     (
+        //         StatusCode::INTERNAL_SERVER_ERROR,
+        //         "failed to write to db".to_string(),
+        //     )
+        // })?;
 
         Ok(ClientBidResponse {
             accepted: true,
@@ -584,184 +507,80 @@ impl Draft {
         })
     }
 
-    fn validate_bid_request(
-        &self,
-        bid_request: &ClientBidRequest,
-        user: &User,
-    ) -> Result<(String, i64, i32), String> {
-        if self.draft_state != DraftState::BIDDING {
-            return Err("draft is not accepting bids".to_string());
-        }
+    pub async fn start(&mut self, user_id: String) -> Result<(), (StatusCode, String)> {
 
-        let auction = &self.auctions[self.current_auction as usize];
-        if auction.auction_id != bid_request.auction_id {
-            return Err(format!("Auction is not active"));
-        }
-        if auction.highest_bidder == Some(user.clone()) {
-            return Err(format!("You're already the high bidder!"));
-        }
-        if auction.highest_bid >= bid_request.value {
-            return Err(format!("Bid is not higher than current highest bid"));
-        }
-        if bid_request.value % 100 != 0 {
-            return Err(format!("Bid must be a multiple of 100"));
-        }
-        // check user has team in draft
-        let Some(team) = self.teams.get(&user.get_user_id_string()) else {
-            return Err(format!("user is not assigned to a team"));
-        };
+        // let _ = sqlx::query!(
+        //     r#"
+        //     UPDATE drafts
+        //     SET status = $1
+        //     WHERE draft_id = $2
+        //     "#,
+        //     DraftState::BIDDING.to_string(),
+        //     self.draft_id
+        // )
+        // .execute(&self.db_pool)
+        // .await
+        // .map_err(|e| e.to_string())?;
 
-        if team.budget_remaining < bid_request.value {
-            return Err(format!("You don't have enough money!"));
-        }
+        let (response_sender, response_receiver) = oneshot::channel();
+        let cmd = DraftCommand::Start { response_sender, user_id };
+        self.actor_sender.send(cmd).await
+            .map_err(|e|
+                (StatusCode::INTERNAL_SERVER_ERROR, format!("failed to send to actor, {}", e))
+            )?;
 
-        let user_field = match user {
-            User::DiscordUser(_) => "winning_user_id",
-            User::GuestUser(_) => "winning_guest_id",
-        };
+        response_receiver.await.map_err(|e|
+            (StatusCode::INTERNAL_SERVER_ERROR, format!("failed to wait for actor response, {}", e))
+        )?
 
-        let auction_id = bid_request
-            .auction_id
-            .parse::<i64>()
-            .expect(format!("auction id should be i64, is {}", bid_request.auction_id).as_str());
-
-        let bid_value = bid_request.value as i32;
-
-        Ok((user_field.to_string(), auction_id, bid_value))
     }
 
-    pub async fn start_draft(&mut self) -> Result<(), String> {
-        if self.teams.len() < self.settings.num_teams as usize {
-            return Err("all teams must join before the draft can start".to_string());
-        }
+    pub async fn pause(&mut self, user_id: String) -> Result<(), (StatusCode, String)> {
 
-        if self.teams.values().any(|team| !team.ready) {
-            return Err("all teams must ready up before the draft can start".to_string());
-        }
+        // sqlx::query!(
+        //     r#"
+        //     UPDATE drafts
+        //     SET status = $1
+        //     WHERE draft_id = $2
+        //     "#,
+        //     "PAUSED",
+        //     self.draft_id,
+        // )
+        // .execute(&self.db_pool)
+        // .await
+        // .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
 
-        let _ = sqlx::query!(
-            r#"
-            UPDATE drafts
-            SET status = $1
-            WHERE draft_id = $2
-            "#,
-            DraftState::BIDDING.to_string(),
-            self.draft_id
-        )
-        .execute(&self.db_pool)
-        .await
-        .map_err(|e| e.to_string())?;
+        let (response_sender, response_receiver) = oneshot::channel();
+        let cmd = DraftCommand::Pause { response_sender, user_id };
+        self.actor_sender.send(cmd).await
+            .map_err(|e|
+                (StatusCode::INTERNAL_SERVER_ERROR, format!("failed to send to actor, {}", e))
+            )?;
 
-        self.draft_state = DraftState::BIDDING;
-
-        // Broadcast full draft object to all websocket clients
-        let draft_response = crate::draft::DraftResponse::from(self.clone());
-        let _ = self
-            .tx
-            .send(crate::messages::ServerMessage::DraftUpdate(draft_response));
-
-        Ok(())
+        response_receiver.await.map_err(|e| format!("failed to wait for actor response, {}", e))?
     }
 
-    pub async fn pause(&mut self) -> Result<(), (StatusCode, String)> {
-        if matches!(self.draft_state, DraftState::PAUSED(_)) {
-            return Ok(());
-        }
+    pub async fn resume(&mut self, user_id: String) -> Result<(), (StatusCode, String)> {
 
-        if self.draft_state != DraftState::BIDDING {
-            return Err((
-                StatusCode::PRECONDITION_FAILED,
-                "draft must be in BIDDING state".to_string(),
-            ));
-        }
+        // sqlx::query!(
+        //     r#"
+        //     UPDATE drafts
+        //     SET status = $1
+        //     WHERE draft_id = $2
+        //     "#,
+        //     DraftState::BIDDING.to_string(),
+        //     self.draft_id,
+        // )
+        // .execute(&self.db_pool)
+        // .await
+        // .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
 
-        let remaining_seconds = self.auctions[self.current_auction as usize]
-            .expires_at
-            .map(|expires_at| {
-                let seconds = expires_at
-                    .saturating_duration_since(Instant::now())
-                    .as_secs();
-                u32::try_from(seconds).unwrap_or(u32::MAX)
-            })
-            .unwrap_or(0);
-
-        sqlx::query!(
-            r#"
-            UPDATE drafts
-            SET status = $1
-            WHERE draft_id = $2
-            "#,
-            "PAUSED",
-            self.draft_id,
-        )
-        .execute(&self.db_pool)
-        .await
-        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-
-        self.draft_runner
-            .unregister_draft(self.draft_id.clone())
-            .await
-            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e))?;
-
-        self.draft_state = DraftState::PAUSED(remaining_seconds);
-        self.current_server_time = Utc::now();
-
-        let draft_response = crate::draft::DraftResponse::from(self.clone());
-        let _ = self
-            .tx
-            .send(crate::messages::ServerMessage::DraftUpdate(draft_response));
-
-        Ok(())
-    }
-
-    pub async fn unpause(&mut self) -> Result<(), (StatusCode, String)> {
-        if self.draft_state == DraftState::BIDDING {
-            return Ok(());
-        }
-
-        if !matches!(self.draft_state, DraftState::PAUSED(_)) {
-            return Err((
-                StatusCode::PRECONDITION_FAILED,
-                "draft must be in PAUSED state".to_string(),
-            ));
-        }
-
-        let current_auction_index = self.current_auction as usize;
-        let should_resume_timer = self.auctions[current_auction_index].status == AuctionState::OPEN;
-
-        sqlx::query!(
-            r#"
-            UPDATE drafts
-            SET status = $1
-            WHERE draft_id = $2
-            "#,
-            DraftState::BIDDING.to_string(),
-            self.draft_id,
-        )
-        .execute(&self.db_pool)
-        .await
-        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-
-        self.draft_state = DraftState::BIDDING;
-        self.current_server_time = Utc::now();
-
-        if should_resume_timer {
-            let expires_at = Instant::now() + Duration::from_secs(10);
-            self.auctions[current_auction_index].expires_at = Some(expires_at);
-
-            let draft_runner = self.draft_runner.clone();
-            draft_runner
-                .register_draft(self, expires_at)
-                .await
-                .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e))?;
-        } else {
-            self.auctions[current_auction_index].expires_at = None;
-        }
-
-        let draft_response = crate::draft::DraftResponse::from(self.clone());
-        let _ = self
-            .tx
-            .send(crate::messages::ServerMessage::DraftUpdate(draft_response));
+        let (response_sender, response_receiver) = oneshot::channel();
+        let cmd = DraftCommand::Resume { response_sender, user_id };
+        self.actor_sender.send(cmd).await
+            .map_err(|e|
+                (StatusCode::INTERNAL_SERVER_ERROR, format!("failed to wait for actor response, {}", e))
+            )?;
 
         Ok(())
     }
@@ -908,27 +727,76 @@ impl Draft {
 
 struct DraftActor {
     draft: Arc<Draft>,
+    host: String,
     draft_state: DraftState,
     settings: DraftSettings,
-    current_auction: Arc<Auction>,
+    current_auction: usize,
     auctions: Vec<Auction>,
     teams: HashMap<String, Team>,
     spectators: Vec<User>,
-    expires_at: chrono::DateTime<Utc>,
+    receiver: mpsc::Receiver<DraftCommand>
+}
+
+
+enum DraftCommand {
+    Start{response_sender: oneshot::Sender<Result<(), String>>, user_id: String},
+    Resume{response_sender: oneshot::Sender<Result<(), String>>, user_id: String},
+    Pause{response_sender: oneshot::Sender<Result<(), String>>, user_id: String},
+    Get(oneshot::Sender<Result<DraftResponse, String>>),
+    Join{response_sender: oneshot::Sender<Result<(), String>>, user: User, password: Option<String>},
+    Kick{response_sender: oneshot::Sender<Result<(), String>>, user: User},
+    Bid{response_sender: oneshot::Sender<Result<(), String>>, bid_request: ClientBidRequest},
 }
 
 impl DraftActor {
-    async fn bid(&self, user: User, bid_request: ClientBidRequest) -> Result<(), String> {
+    pub async fn run(mut self) {
+        loop {
+            if let Some(cmd) = self.receiver.recv().await {
+                match cmd {
+                    DraftCommand::Bid { response_sender, bid_request } => {
+                        let res = self.bid(bid_request).await;
+                        let _ = response_sender.send(res);
+                    },
+                    DraftCommand::Start { response_sender, user_id } => {
+                        let res = self.start(user_id).await;
+                        let _ = response_sender.send(res);
+                    },
+                    DraftCommand::Pause { response_sender, user_id } => {
+                        let res = self.pause(user_id).await;
+                        let _ = response_sender.send(res);
+                    },
+                    DraftCommand::Resume { response_sender, user_id } => {
+                        let res = self.resume(user_id).await;
+                        let _ = response_sender.send(res);
+                    },
+                    DraftCommand::Join { response_sender, user, password} => {
+                        let res = self.join(user, password).await;
+                        let _ = response_sender.send(res);
+                    },
+                    DraftCommand::Kick { response_sender, user} => {
+                        let res = self.kick(user).await;
+                        let _ = response_sender.send(res);
+                    },
+                    DraftCommand::Get(response_sender) => {
+                        let _ = response_sender.send(Ok(DraftResponse::from(&self)));
+                    }
+                }
+            }
+        }
+    }
+
+    async fn bid(&self, bid_request: ClientBidRequest) -> Result<(), String> {
+        let auction = &self.auctions[self.current_auction];
         if self.draft_state != DraftState::BIDDING {
             return Err("draft is not accepting bids".to_string());
         }
-        if self.current_auction.auction_id != bid_request.auction_id {
+        if auction.auction_id != bid_request.auction_id {
             return Err(format!("auction is not active"));
         }
         if bid_request.value % 100 != 0 {
             return Err(format!("bid must be multiple of 100"));
         }
-        let Some(team) = self.teams.get(&user.get_user_id_string()) else {
+        let Some(team) = self.teams.get(&bid_request.user_id) else {
             return Err(format!("user is not assigned to a team"));
         };
 
@@ -936,10 +804,133 @@ impl DraftActor {
             return Err(format!("user is too brokie"));
         }
 
-        self.current_auction.bid(bid_request);
-
-
+        auction.bid(bid_request).await?;
+        todo!("add db write");
 
         Ok(())
+    }
+
+    async fn start(&mut self, user_id: String) -> Result<(), String> {
+        if user_id != self.host {
+            return Err(format!("user is not the host"));
+        }
+        if self.draft_state != DraftState::PENDING {
+            return Err(format!("draft is not pending"));
+        }
+        if self.teams.len() < self.settings.num_teams as usize {
+            return Err(format!("only {} of {} teams have joined the draft", self.teams.len(), self.settings.num_teams));
+        }
+        if self.teams.values().any(|t| !t.ready) {
+            return Err(format!("all teams must ready up"));
+        }
+
+        let auction = &self.auctions[self.current_auction];
+        auction.start(self.draft.clone(), self.settings.auction_length.as_secs() as u32).await?;
+
+        todo!("self.db_handle.start()");
+
+        self.draft_state = DraftState::BIDDING;
+
+        Ok(())
+    }
+
+    async fn resume(&self, user_id: String) -> Result<(), String> {
+        if user_id != self.host {
+            return Err(format!("user is not the host"));
+        }
+
+        self.auctions[self.current_auction].resume().await?;
+
+        todo!("self.db_actor.resume()");
+
+        Ok(())
+    }
+
+    async fn pause(&self, user_id: String) -> Result<(), String> {
+        if user_id != self.host {
+            return Err(format!("user is not the host"));
+        }
+
+        self.auctions[self.current_auction].pause().await?;
+
+        todo!("self.db_actor.pause()");
+
+        Ok(())
+    }
+
+    async fn join(&mut self, user: User, password: Option<String>) -> Result<(), String> {
+        let user_id = user.get_user_id_string();
+        if self.teams.iter().any(|(u_id, _)| *u_id == user_id) {
+            return Err(format!("user is already in this draft"));
+        }
+        if self.teams.len() >= self.settings.num_teams as usize {
+            return Err("draft is already full".to_string());
+        }
+
+        if user_id != self.host {
+            if let Some(draft_password) = self.settings.password.as_ref() {
+                let Some(password) = password
+                    .as_ref()
+                    .map(|p| p.trim().to_string())
+                    .filter(|p| !p.is_empty())
+                else {
+                    return Err("Draft Password Required".to_string());
+                };
+
+                if password != *draft_password {
+                    return Err("Draft Password is Incorrect".to_string());
+                }
+            }
+        }
+
+        let team = Team {
+            user_id: user_id.clone(),
+            username: user.get_user_name_string(),
+            ready: user_id == self.host,
+            budget_remaining: self.settings.starting_money,
+            auctions_won: vec![],
+        };
+        self.teams.insert(user_id.clone(), team);
+
+        todo!("self.db_actor.join()");
+
+        Ok(())
+    }
+
+    async fn kick(&mut self, user: User) -> Result<(), String> {
+        let user_id = user.get_user_id_string();
+        if !self.teams.iter().any(|(u_id, _)| *u_id == user_id) {
+            return Err(format!("user is not in this draft"));
+        }
+        if user_id == self.host {
+            return Err(format!("cannot kick host"));
+        }
+        if self.draft_state != DraftState::PENDING {
+            return Err(format!("cannot kick after draft starts"));
+        }
+
+        self.teams.remove(&user_id);
+
+        todo!("self.db_actor.kick");
+
+        Ok(())
+    }
+}
+
+impl From<&DraftActor> for DraftResponse {
+    fn from(value: &DraftActor) -> Self {
+        DraftResponse {
+            draft_id: value.draft.draft_id.clone(),
+            draft_name: value.draft.draft_name.clone(),
+            has_password: value.settings.password.is_some(),
+            host: value.host.clone(),
+            ranked: value.settings.ranked,
+            total_teams: value.settings.num_teams,
+            total_auctions: value.settings.num_auctions,
+            teams: value.teams.values().cloned().collect(),
+            draft_state: value.draft_state.clone(),
+            current_auction: value.current_auction,
+            current_server_time: Utc::now(),
+        }
     }
 }

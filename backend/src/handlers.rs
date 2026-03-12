@@ -416,9 +416,11 @@ pub async fn bid(
     State(state): State<ServerState>,
     Path(draft_id): Path<String>,
     auth_session: AuthSession<AuthBackend>,
-    Json(bid_request): Json<ClientBidRequest>,
+    Json(mut bid_request): Json<ClientBidRequest>,
 ) -> Result<Json<ClientBidResponse>, (StatusCode, String)> {
     let user = auth_session.user.expect("user should exist");
+    // inject user_id into bid request
+    bid_request.user_id = user.get_user_id_string();
     let draft_lock = state.drafts.get(&draft_id).ok_or((
         StatusCode::FORBIDDEN,
         "user does not have access to requested draft".to_string(),
