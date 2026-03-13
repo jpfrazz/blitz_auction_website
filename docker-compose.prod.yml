@@ -2,16 +2,27 @@ services:
     frontend:
         volumes:
             - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+            - ./nginx/99-autoreload.sh:/docker-entrypoint.d/99-autoreload.sh
+            - ./certbot/conf:/etc/letsencrypt:ro
+            - ./certbot/www:/var/www/certbot:ro
+        ports:
+          - "80:80"
+          - "443:443"
         env_file:
             - .env.prod
+
+    # add certbot to handle https in prod
+    certbot:
+        image: certbot/certbot
+        volumes:
+            - ./nginx/certbot/conf:/etc/letsencrypt
+            - ./nginx/certbot/www:/var/www/certbot
+        entrypoint: "/bin/sh -c 'trap exit TERM; while :; do certbot renew; sleep 12h & wait $${!}; done;'"  # Renew certificates every 12 hours
+
     backend:
         env_file:
             - .env.prod
+
     db:
         env_file:
             - .env.prod
-    # cloudflare tunnel
-    tunnel:
-        command: tunnel run
-        environment:
-          - TUNNEL_TOKEN=${TUNNEL_TOKEN}

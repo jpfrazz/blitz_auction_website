@@ -76,6 +76,7 @@ impl Server {
     fn create_session_layer(&self) -> SessionManagerLayer<MemoryStore> {
         let session_store = MemoryStore::default();
         SessionManagerLayer::new(session_store)
+            .with_secure(false)
             .with_expiry(Expiry::OnSessionEnd)
             .with_same_site(tower_sessions::cookie::SameSite::Lax)
     }

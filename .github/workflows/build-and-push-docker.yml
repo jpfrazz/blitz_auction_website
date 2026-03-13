@@ -26,6 +26,9 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
 
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
@@ -40,6 +43,7 @@ jobs:
         uses: docker/build-push-action@v5
         with:
           context: ${{ matrix.context }}
+          platforms: linux/arm64,linux/amd64
           file: ${{ matrix.dockerfile }}
           push: true
           tags: |
@@ -78,10 +82,12 @@ jobs:
         run: |
           ssh server << 'EOF'
             set -e
-            cd /home/game/blitz_auction_website
+            cd /home/$SSH_USER/blitz_auction_website
             git fetch
             git checkout origin/main -- docker-compose.yml docker-compose.prod.yml
             docker compose pull
             docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --wait
             docker image prune -f
           EOF
+        env:
+          SSH_USER: ${{ secrets.SSH_USER }}

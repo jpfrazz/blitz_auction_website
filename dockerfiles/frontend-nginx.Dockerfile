@@ -1,4 +1,4 @@
-FROM node:25-alpine AS builder
+FROM --platform=$BUILDPLATFORM node:25-alpine AS builder
 WORKDIR /app
 
 COPY package*.json ./
@@ -7,7 +7,7 @@ RUN npm ci
 COPY . .
 RUN npm run build
 
-FROM nginx:1.29-trixie AS runner
+FROM nginx:1.29-alpine AS runner
 
 COPY --from=builder /app/build /usr/share/nginx/html
 

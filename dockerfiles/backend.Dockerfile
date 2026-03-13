@@ -1,4 +1,4 @@
-FROM rust:1.92 AS chef
+FROM --platform=$BUILDPLATFORM rust:1.92 AS chef
 WORKDIR /app
 RUN cargo install cargo-chef --locked
 
@@ -7,7 +7,12 @@ COPY Cargo.toml Cargo.lock .
 RUN cargo chef prepare --recipe-path recipe.json
 
 FROM chef AS builder
+ARG TARGETARCH
 COPY --from=planner /app/recipe.json recipe.json
+
+RUN if [ "$TARGETARCH" = "arm64" ]; then \
+    rustup target add aarch64-unknown-linux-gnu; \
+    fi
 
 RUN --mount=type=cache,target=/usr/local/cargo/registry,sharing=locked \
     --mount=type=cache,target=/usr/local/cargo/git,sharing=locked \

@@ -31,15 +31,6 @@ services:
         networks:
             - auction_net
 
-    # cloudflare tunnel
-    tunnel:
-        image: cloudflare/cloudflared:latest
-        container_name: auction-tunnel
-        restart: always
-        command: tunnel --url http://frontend:80
-        networks:
-            - auction_net
-
     # postgres db
     db:
         image: postgres:18-trixie
@@ -52,21 +43,6 @@ services:
             - ./backend/migrations:/docker-entrypoint-initdb.d
         networks:
             - auction_net
-
-    # discord_bot:
-    #     image: ghcr.io/jpfrazz/blitz-discord-bot:latest
-    #     build:
-    #         context: ./discord_bot/
-    #         dockerfile: ../dockerfiles/discord-bot.Dockerfile
-    #     container_name: discord-bot
-    #     restart: always
-    #     env_file:
-    #         - .env
-    #     depends_on:
-    #         - db
-    #     networks:
-    #         - auction_net
-
 
 networks:
     auction_net:
