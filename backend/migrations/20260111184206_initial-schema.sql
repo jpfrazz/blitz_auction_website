@@ -79,7 +79,7 @@ CREATE TABLE key_moves (
 );
 
 CREATE TABLE drafts (
-    draft_id TEXT NOT NULL PRIMARY KEY,
+    draft_id BIGSERIAL NOT NULL PRIMARY KEY,
     draft_name TEXT NOT NULL DEFAULT '',
     password TEXT,
     host_user_id TEXT REFERENCES users(user_id),
@@ -140,8 +140,6 @@ CREATE TABLE bids (
     user_id TEXT REFERENCES users(user_id),
     guest_id TEXT REFERENCES guests(user_id),
     value INT NOT NULL,
-    accepted BOOLEAN NOT NULL,
-    winning BOOLEAN NOT NULL,
     updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
     created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 

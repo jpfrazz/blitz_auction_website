@@ -1,3 +1,4 @@
+use axum::http::StatusCode;
 use axum_login::tower_sessions::{MemoryStore, SessionManagerLayer};
 use chrono;
 use sqlx::PgPool;
@@ -14,6 +15,7 @@ pub mod messages;
 pub mod pokemon;
 pub mod server;
 pub mod users;
+pub mod db_writer;
 
 pub fn init_auth_layer(pool: PgPool) {
     let session_store = MemoryStore::default();
@@ -38,3 +40,5 @@ pub const POKEMON_NATURES: [&str; 25] = [
     "Timid", "Hasty", "Serious", "Jolly", "Naive", "Modest", "Mild", "Quiet", "Bashful", "Rash",
     "Calm", "Gentle", "Sassy", "Careful", "Quirky",
 ];
+
+pub type AppError = (StatusCode, String);
