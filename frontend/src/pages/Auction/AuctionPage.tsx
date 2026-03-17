@@ -2,7 +2,7 @@ import React, { useEffect, useState, useRef } from 'react';
 import { connectDraftWebSocket } from '../../shared/api/draftWebSocket';
 import { useLocation } from 'react-router-dom';
 import Header from '../../shared/components/Header';
-import { fetchDraftById, readyUpDraft, joinDraft, fetchCurrentUser, claimEeveelution, unclaimEeveelution, startDraft, pauseDraft, unpauseDraft, submitRaceResults, updatePendingDraftSettings } from '../../shared/api/draftData';
+import { fetchDraftById, fetchDraftPokemon, fetchDraftCurrentAuction, readyUpDraft, joinDraft, fetchCurrentUser, claimEeveelution, unclaimEeveelution, startDraft, pauseDraft, unpauseDraft, submitRaceResults, updatePendingDraftSettings } from '../../shared/api/draftData';
 import { getUserId } from '../../shared/utils/user';
 import './AuctionPage.scss';
 import '../../shared/style/theme.scss';
@@ -221,10 +221,19 @@ const AuctionPage: React.FC = () => {
         if(!user.is_guest) {
           setAvatar(user.avatar)
         }
-        return fetchDraftById(auctionId).then(draftData => ({ user, draftData }));
+        return Promise.all([
+            fetchDraftById(auctionId),
+            fetchDraftPokemon(auctionId),
+            fetchDraftCurrentAuction(auctionId)
+        ]).then(([draftData, pokemon, current_auction]) => ({ user, draftData, pokemon, current_auction}));
       })
-      .then(({ user, draftData }) => {
-        setDraft(draftData);
+      .then(({ user, draftData, pokemon, current_auction }) => {
+        const fullDraft = {
+            ...draftData,
+            pokemon,
+            current_auction,
+        };
+        setDraft(fullDraft);
         connectWebSocket(auctionId);
         const alreadyOnTeam = draftData.teams.some(team => team.user_id === user.user_id);
         if (draftData.draft_state === 'PENDING' && !alreadyOnTeam) {

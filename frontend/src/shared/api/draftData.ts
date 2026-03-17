@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { ChatMessage, Draft, DraftLobby, UserRole } from "../../types";
+import { ChatMessage, Draft, DraftLobby, UserRole, Pokemon, Auction } from "../../types";
 
 interface JoinDraftResponse {
   joined: boolean;
@@ -43,6 +43,16 @@ export async function fetchCurrentUser(): Promise<{user_id: string | null, usern
 // Fetch a draft by id from the backend
 export async function fetchDraftById(draft_id: string): Promise<Draft> {
   const response = await axios.get(`/api/drafts/${draft_id}`);
+  return response.data;
+}
+
+export async function fetchDraftPokemon(draft_id: string): Promise<Pokemon[]> {
+  const response = await axios.get(`/api/drafts/${draft_id}/pokemon`);
+  return response.data;
+}
+
+export async function fetchDraftCurrentAuction(draft_id: string): Promise<Auction> {
+  const response = await axios.get(`/api/drafts/${draft_id}/current_auction`);
   return response.data;
 }
 

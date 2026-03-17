@@ -367,7 +367,7 @@ pub async fn get_current_auction (
         ));
     };
 
-    Ok(Json(draft.get_current_auction()))
+    Ok(Json(draft.get_current_auction().await?))
 }
 
 #[debug_handler]
