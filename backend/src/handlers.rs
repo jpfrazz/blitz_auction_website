@@ -354,7 +354,7 @@ pub async fn get_draft_pokemon (
 pub async fn get_current_auction (
     State(state): State<ServerState>,
     Path(draft_id): Path<String>,
-) -> Result<Json<AuctionResponse>, AppError> {
+) -> Result<Json<Option<AuctionResponse>>, AppError> {
     let draft_uuid = Uuid::from_str(&draft_id)
         .map_err(|_e| (
                 StatusCode::BAD_REQUEST,

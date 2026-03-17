@@ -168,7 +168,7 @@ impl Draft {
         self.pokemon.clone()
     }
     
-    pub async fn get_current_auction(&self) -> Result<AuctionResponse, AppError> {
+    pub async fn get_current_auction(&self) -> Result<Option<AuctionResponse>, AppError> {
         let (response_sender, response_receiver) = oneshot::channel();
         let cmd = DraftCommand::GetCurrentAuction(response_sender);
         let _ = self.actor_sender.send(cmd).await
@@ -571,7 +571,7 @@ enum DraftCommand {
         response_sender: oneshot::Sender<Result<(), AppError>>,
         user_id: String,
     },
-    GetCurrentAuction(oneshot::Sender<Result<AuctionResponse, AppError>>),
+    GetCurrentAuction(oneshot::Sender<Result<Option<AuctionResponse>, AppError>>),
 }
 
 impl DraftActor {
@@ -669,9 +669,12 @@ impl DraftActor {
         }
     }
 
-    async fn get_current_auction(&self) -> Result<AuctionResponse, AppError> {
+    async fn get_current_auction(&self) -> Result<Option<AuctionResponse>, AppError> {
+        if self.draft_state == DraftState::PENDING {
+            return Ok(None);
+        }
         let auction = &self.auctions[self.current_auction];
-        auction.get().await
+        auction.get().await.map(|ok| Some(ok))
     }
 
     async fn bid(&self, auction_id: i64, bid_value: u32, user: User) -> Result<(), AppError> {
