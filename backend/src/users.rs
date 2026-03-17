@@ -60,6 +60,13 @@ impl User {
             Self::GuestUser(_) => false,
         }
     }
+
+    pub fn get_user_and_guest_id(&self) -> (Option<String>, Option<String>) {
+        match self {
+            Self::DiscordUser(user) => (Some(user.user_id.clone()), None),
+            Self::GuestUser(user) => (None, Some(user.user_id.clone())),
+        }
+    }
 }
 
 // https://discord.com/developers/docs/resources/user

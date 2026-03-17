@@ -5,17 +5,16 @@ use sqlx::PgPool;
 use tokio::time::Instant;
 use tower_sessions::{Expiry, cookie::time::Duration};
 
-use crate::{draft::Draft, draft_runner::DraftRunner};
+use crate::{draft::Draft};
 
 pub mod auction;
+pub mod db_writer;
 pub mod draft;
-pub mod draft_runner;
 pub mod handlers;
 pub mod messages;
 pub mod pokemon;
 pub mod server;
 pub mod users;
-pub mod db_writer;
 
 pub fn init_auth_layer(pool: PgPool) {
     let session_store = MemoryStore::default();

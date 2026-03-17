@@ -9,17 +9,17 @@ use tokio::{
     sync::{OnceCell, RwLock, mpsc, oneshot},
     time::{Duration, Instant, Sleep},
 };
+use uuid::Uuid;
 
 use crate::{
-    draft::Draft, get_expiry_time_from_instant, messages::ClientBidRequest, pokemon::Pokemon,
-    users::User,
-    AppError,
+    AppError, draft::Draft, get_expiry_time_from_instant, messages::ClientBidRequest,
+    pokemon::Pokemon, users::User,
 };
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct AuctionResponse {
-    pub auction_id: String,
-    pub draft_id: String,
+    pub auction_id: i64,
+    pub draft_id: Uuid,
     pub state: AuctionState,
     pub pokedex_id: u32,
     pub pokemon_form: String,
@@ -31,11 +31,10 @@ pub struct AuctionResponse {
 
 #[derive(Debug)]
 pub struct Auction {
-    pub auction_id: String,
-    pub draft_id: String,
+    pub auction_id: i64,
+    pub draft_id: Uuid,
     pub pokemon: Arc<Pokemon>,
     actor_sender: OnceCell<mpsc::Sender<AuctionCommand>>,
-    db_actor: Arc<DbActor>,
 }
 
 #[derive(Clone, Debug, Display, Serialize, Deserialize, PartialEq, Eq)]
@@ -47,7 +46,7 @@ pub enum AuctionState {
 }
 
 impl Auction {
-    fn new(auction_id: String, draft_id: String, pokemon: Arc<Pokemon>) -> Auction {
+    pub fn new(draft_id: Uuid, auction_id: i64, pokemon: Arc<Pokemon>) -> Auction {
         Auction {
             auction_id,
             draft_id,
@@ -56,52 +55,22 @@ impl Auction {
         }
     }
 
-    pub async fn build(
-        draft_id: String,
-        draft_order: u32,
-        pokemon: Arc<Pokemon>,
-    ) -> Result<Auction, AppError> {
-        // let auction_id = sqlx::query!(
-        //     r#"
-        //     INSERT INTO auctions
-        //     (pokedex_id, form, draft_id, draft_order)
-        //     VALUES ($1, $2, $3, $4)
-        //     RETURNING auction_id
-        //     "#,
-        //     pokemon.pokedex_id as i32,
-        //     pokemon.form.clone().unwrap_or_else(|| "".to_string()),
-        //     draft_id,
-        //     draft_order as i32,
-        // )
-        // .fetch_one(&mut **tx)
-        // .await?
-        // .auction_id;
-
-        let auction_id = db_actor.create_auction(draft_id, draft_order, pokemon).await?;
-        Ok(Auction::new(draft_id, auction_id.to_string(), pokemon))
-    }
-
     pub async fn get(&self) -> Result<AuctionResponse, AppError> {
         if let Some(sender) = self.actor_sender.get() {
             let (os_sender, os_receiver) = oneshot::channel();
             let cmd = AuctionCommand::Get(os_sender);
-            sender
-                .send(cmd)
-                .await
-                .map_err(|e| {
-                    (
-                        StatusCode::INTERNAL_SERVER_ERROR,
-                        format!("couldn't process get, {}", e)
-                    )
-                })?;
-            os_receiver
-                .await
-                .map_err(|e| {
-                    (
-                        StatusCode::INTERNAL_SERVER_ERROR,
-                        format!("couldn't process get, {}", e)
-                    )
-                })
+            sender.send(cmd).await.map_err(|e| {
+                (
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    format!("couldn't process get, {}", e),
+                )
+            })?;
+            os_receiver.await.map_err(|e| {
+                (
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    format!("couldn't process get, {}", e),
+                )
+            })
         } else {
             Ok(AuctionResponse::from(self))
         }
@@ -129,39 +98,35 @@ impl Auction {
         } else {
             Err((
                 StatusCode::PRECONDITION_FAILED,
-                format!("auction has already started")
+                format!("auction has already started"),
             ))
         }
     }
 
-    pub async fn bid(&self, bid_request: ClientBidRequest) -> Result<(), AppError> {
+    pub async fn bid(&self, bid_value: u32, user_id: String) -> Result<(), AppError> {
         if let Some(sender) = self.actor_sender.get() {
             let (response_sender, response_receiver) = oneshot::channel();
             let cmd = AuctionCommand::Bid {
                 response_sender,
-                bid_request,
+                bid_value,
+                user_id,
             };
-            sender
-                .send(cmd)
-                .await
-                .map_err(|e| {
-                    (
-                        StatusCode::INTERNAL_SERVER_ERROR,
-                        format!("couldn't process bid, {}", e)
-                    )
-                })?;
-            response_receiver
-                .await
-                .map_err(|e| {
-                    (
-                        StatusCode::INTERNAL_SERVER_ERROR,
-                        format!("couldn't process bid, {}", e)
-                    )
-                })?
+            sender.send(cmd).await.map_err(|e| {
+                (
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    format!("couldn't process bid, {}", e),
+                )
+            })?;
+            response_receiver.await.map_err(|e| {
+                (
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    format!("couldn't process bid, {}", e),
+                )
+            })?
         } else {
             Err((
                 StatusCode::PRECONDITION_FAILED,
-                format!("auction is not running")
+                format!("auction is not running"),
             ))
         }
     }
@@ -170,56 +135,46 @@ impl Auction {
         if let Some(sender) = self.actor_sender.get() {
             let (os_sender, os_receiver) = oneshot::channel();
             let cmd = AuctionCommand::Resume(os_sender);
-            sender
-                .send(cmd)
-                .await
-                .map_err(|e| {
-                    (
-                        StatusCode::INTERNAL_SERVER_ERROR,
-                        format!("couldn't process resume, {}", e)
-                    )
-                })?;
-            os_receiver
-                .await
-                .map_err(|e| {
-                    (
-                        StatusCode::INTERNAL_SERVER_ERROR,
-                        format!("couldn't process resume, {}", e)
-                    )
-                })?
+            sender.send(cmd).await.map_err(|e| {
+                (
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    format!("couldn't process resume, {}", e),
+                )
+            })?;
+            os_receiver.await.map_err(|e| {
+                (
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    format!("couldn't process resume, {}", e),
+                )
+            })?
         } else {
             Err((
                 StatusCode::PRECONDITION_FAILED,
-                format!("auction is not running")
+                format!("auction is not running"),
             ))
         }
     }
 
-    pub async fn pause(&self) -> Result<(), AppError> {
+    pub async fn pause(&self) -> Result<u32, AppError> {
         if let Some(sender) = self.actor_sender.get() {
             let (os_sender, os_receiver) = oneshot::channel();
             let cmd = AuctionCommand::Pause(os_sender);
-            sender
-                .send(cmd)
-                .await
-                .map_err(|e| {
-                    (
-                        StatusCode::INTERNAL_SERVER_ERROR,
-                        format!("couldn't process pause, {}", e)
-                    )
-                })?;
-            os_receiver
-                .await
-                .map_err(|e| {
-                    (
-                        StatusCode::INTERNAL_SERVER_ERROR,
-                        format!("couldn't process pause, {}", e)
-                    )
-                })?
+            sender.send(cmd).await.map_err(|e| {
+                (
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    format!("couldn't process pause, {}", e),
+                )
+            })?;
+            os_receiver.await.map_err(|e| {
+                (
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    format!("couldn't process pause, {}", e),
+                )
+            })?
         } else {
             Err((
                 StatusCode::PRECONDITION_FAILED,
-                format!("auction is not running")
+                format!("auction is not running"),
             ))
         }
     }
@@ -228,7 +183,7 @@ impl Auction {
 impl From<&Auction> for AuctionResponse {
     fn from(value: &Auction) -> Self {
         AuctionResponse {
-            auction_id: value.auction_id.clone(),
+            auction_id: value.auction_id,
             draft_id: value.draft_id.clone(),
             state: AuctionState::PENDING,
             pokedex_id: value.pokemon.pokedex_id,
@@ -242,7 +197,7 @@ impl From<&Auction> for AuctionResponse {
 }
 
 struct AuctionActor {
-    auction_id: String,
+    auction_id: i64,
     draft: Arc<Draft>,
     state: AuctionState,
     length: u32,
@@ -257,10 +212,11 @@ struct AuctionActor {
 enum AuctionCommand {
     Bid {
         response_sender: oneshot::Sender<AuctionCommandResponse>,
-        bid_request: ClientBidRequest,
+        bid_value: u32,
+        user_id: String,
     },
     Resume(oneshot::Sender<AuctionCommandResponse>),
-    Pause(oneshot::Sender<AuctionCommandResponse>),
+    Pause(oneshot::Sender<Result<u32, AppError>>),
     Get(oneshot::Sender<AuctionResponse>),
 }
 
@@ -268,7 +224,7 @@ type AuctionCommandResponse = Result<(), AppError>;
 
 impl AuctionActor {
     pub fn new(
-        auction_id: String,
+        auction_id: i64,
         draft: Arc<Draft>,
         length: u32,
         pokedex_id: u32,
@@ -302,20 +258,26 @@ impl AuctionActor {
                 match cmd {
                     AuctionCommand::Bid {
                         response_sender,
-                        bid_request,
+                        bid_value,
+                        user_id,
                     } => {
-                        self.first_bid(bid_request, response_sender);
+                        self.first_bid(bid_value, user_id, response_sender);
                     }
                     AuctionCommand::Get(response_sender) => {
                         let response = self.get();
                         let _ = response_sender.send(response);
                     }
-                    AuctionCommand::Resume(sender) | AuctionCommand::Pause(sender) => {
-                        let _ =
-                            sender.send(Err((
-                                StatusCode::PRECONDITION_FAILED,
-                                format!("auction doesn't start until the first bid")
-                            )));
+                    AuctionCommand::Resume(sender) => {
+                        let _ = sender.send(Err((
+                            StatusCode::PRECONDITION_FAILED,
+                            format!("auction doesn't start until the first bid"),
+                        )));
+                    }
+                    AuctionCommand::Pause(sender) => {
+                        let _ = sender.send(Err((
+                            StatusCode::PRECONDITION_FAILED,
+                            format!("auction doesn't start until the first bid"),
+                        )));
                     }
                 }
             }
@@ -345,21 +307,23 @@ impl AuctionActor {
         match cmd {
             AuctionCommand::Bid {
                 response_sender,
-                bid_request,
-            } => self.bid(bid_request, auction_timer, response_sender).await,
+                bid_value,
+                user_id,
+            } => {
+                self.bid(bid_value, user_id, auction_timer, response_sender)
+                    .await
+            }
             AuctionCommand::Pause(response_sender) => {
                 if self.state == AuctionState::OPEN {
                     let now = Instant::now();
-                    self.state = AuctionState::PAUSED(
-                        self.expires_at.expect("").duration_since(now).as_secs() as u32,
-                    );
-                    let _ = response_sender.send(Ok(()));
+                    let t = self.expires_at.expect("").duration_since(now).as_secs() as u32;
+                    self.state = AuctionState::PAUSED(t);
+                    let _ = response_sender.send(Ok(t));
                 } else {
-                        let _ =
-                            response_sender.send(Err((
-                                StatusCode::PRECONDITION_FAILED,
-                                format!("auction is not running")
-                            )));
+                    let _ = response_sender.send(Err((
+                        StatusCode::PRECONDITION_FAILED,
+                        format!("auction is not running"),
+                    )));
                 }
             }
             AuctionCommand::Resume(response_sender) => {
@@ -378,23 +342,21 @@ impl AuctionActor {
 
     async fn first_bid(
         &mut self,
-        bid_request: ClientBidRequest,
+        bid_value: u32,
+        user_id: String,
         sender: oneshot::Sender<AuctionCommandResponse>,
     ) {
         let response: AuctionCommandResponse;
-        if bid_request.value <= self.highest_bid {
+        if bid_value <= self.highest_bid {
+            response = Err((StatusCode::PRECONDITION_FAILED, format!("bid is too low")));
+        } else if user_id == self.highest_bidder {
             response = Err((
                 StatusCode::PRECONDITION_FAILED,
-                format!("bid is too low")
-            ));
-        } else if bid_request.user_id == self.highest_bidder {
-            response = Err((
-                StatusCode::PRECONDITION_FAILED,
-                format!("user is already the highest bidder")
+                format!("user is already the highest bidder"),
             ));
         } else {
-            self.highest_bid = bid_request.value;
-            self.highest_bidder = bid_request.user_id;
+            self.highest_bid = bid_value;
+            self.highest_bidder = user_id;
             response = Ok(());
         }
 
@@ -403,24 +365,22 @@ impl AuctionActor {
 
     async fn bid(
         &mut self,
-        bid_request: ClientBidRequest,
+        bid_value: u32,
+        user_id: String,
         auction_timer: Pin<&mut Sleep>,
         sender: oneshot::Sender<AuctionCommandResponse>,
     ) {
         let response: AuctionCommandResponse;
-        if bid_request.value <= self.highest_bid {
+        if bid_value <= self.highest_bid {
+            response = Err((StatusCode::PRECONDITION_FAILED, format!("bid is too low")));
+        } else if user_id == self.highest_bidder {
             response = Err((
                 StatusCode::PRECONDITION_FAILED,
-                format!("bid is too low")
-            ));
-        } else if bid_request.user_id == self.highest_bidder {
-            response = Err((
-                StatusCode::PRECONDITION_FAILED,
-                format!("user is already the highest bidder")
+                format!("user is already the highest bidder"),
             ));
         } else {
-            self.highest_bid = bid_request.value;
-            self.highest_bidder = bid_request.user_id;
+            self.highest_bid = bid_value;
+            self.highest_bidder = user_id;
             response = Ok(());
 
             self.expires_at = Some(std::cmp::max(
@@ -436,7 +396,7 @@ impl AuctionActor {
 
     async fn resolve_auction(&mut self) {
         self.state = AuctionState::CLOSED;
-        self.draft.resolve_auction(AuctionResponse::from(&*self));
+        self.draft.resolve_auction(self.auction_id);
     }
 }
 
@@ -448,7 +408,7 @@ impl From<&AuctionActor> for AuctionResponse {
             .map(|some| get_expiry_time_from_instant(some));
         Self {
             auction_id: value.auction_id.clone(),
-            draft_id: value.draft.draft_id.clone(),
+            draft_id: value.draft.draft_id,
             state: value.state.clone(),
             highest_bid: value.highest_bid,
             highest_bidder: value.highest_bidder.clone(),

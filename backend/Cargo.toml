@@ -28,4 +28,4 @@ twilight-cache-inmemory = "0.17.1"
 twilight-gateway = "0.17.1"
 twilight-http = "0.17.1"
 twilight-model = "0.17.1"
-uuid = { version = "1.19.0", features = ["serde", "v4"] }
+uuid = { version = "1.19.0", features = ["serde", "v4", "v7"] }

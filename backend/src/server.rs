@@ -1,5 +1,5 @@
 use crate::{
-    Draft, DraftRunner, PgPool, handlers, pokemon,
+    Draft, PgPool, handlers, pokemon,
     users::{AuthBackend, Credentials},
 };
 use axum::{
@@ -14,17 +14,16 @@ use axum_login::{AuthManagerLayer, AuthManagerLayerBuilder, AuthSession, AuthnBa
 use dashmap::DashMap;
 use oauth2::{AuthUrl, ClientId, ClientSecret, TokenUrl, basic::BasicClient};
 use std::{env, sync::Arc};
-use tokio::sync::RwLock;
 use tower_http::cors::{Any, CorsLayer};
 use tower_sessions::{Expiry, MemoryStore, SessionManagerLayer};
+use uuid::Uuid;
 
-type DraftCache = Arc<DashMap<String, Arc<RwLock<Draft>>>>;
+type DraftCache = Arc<DashMap<Uuid, Arc<Draft>>>;
 
 #[derive(Clone, Debug)]
 pub struct ServerState {
     pub db_pool: PgPool,
     pub drafts: DraftCache,
-    pub draft_runner: Arc<DraftRunner>,
 }
 
 #[derive(Clone, Debug, strum::Display)]
@@ -62,11 +61,9 @@ impl Server {
             )));
         };
         let drafts = DraftCache::new(DashMap::new());
-        let draft_runner = Arc::new(DraftRunner::new(drafts.clone()));
         let server_state = ServerState {
             db_pool,
             drafts,
-            draft_runner,
         };
         let server = Self::new(server_state);
 
@@ -74,9 +71,14 @@ impl Server {
     }
 
     fn create_session_layer(&self) -> SessionManagerLayer<MemoryStore> {
+        let secure = match env::var("ENV").expect("ENV should be provided").as_str() {
+            "PROD" => true,
+            "DEV" => false,
+            _ => true,
+        };
         let session_store = MemoryStore::default();
         SessionManagerLayer::new(session_store)
-            .with_secure(false)
+            .with_secure(secure)
             .with_expiry(Expiry::OnSessionEnd)
             .with_same_site(tower_sessions::cookie::SameSite::Lax)
     }
@@ -138,29 +140,29 @@ impl Server {
             .route("/drafts/{draft_id}/start", post(handlers::start_draft))
             .route("/drafts/{draft_id}/pause", post(handlers::pause_draft))
             .route("/drafts/{draft_id}/unpause", post(handlers::unpause_draft))
-            .route(
-                "/drafts/{draft_id}/submit-results",
-                post(handlers::submit_race_results),
-            )
-            .route(
-                "/drafts/{draft_id}/pending-settings",
-                post(handlers::update_pending_draft_settings),
-            )
-            .route(
-                "/drafts/{draft_id}/claim-eeveelution",
-                post(handlers::claim_eeveelution),
-            )
-            .route(
-                "/drafts/{draft_id}/unclaim-eeveelution",
-                post(handlers::unclaim_eeveelution),
-            )
+            // .route(
+            //     "/drafts/{draft_id}/submit-results",
+            //     post(handlers::submit_race_results),
+            // )
+            // .route(
+            //     "/drafts/{draft_id}/pending-settings",
+            //     post(handlers::update_pending_draft_settings),
+            // )
+            // .route(
+            //     "/drafts/{draft_id}/claim-eeveelution",
+            //     post(handlers::claim_eeveelution),
+            // )
+            // .route(
+            //     "/drafts/{draft_id}/unclaim-eeveelution",
+            //     post(handlers::unclaim_eeveelution),
+            // )
             .route(
                 "/drafts/{draft_id}/chats",
                 get(handlers::get_draft_chats).post(handlers::create_draft_chat),
             )
             .route_layer(middleware::from_fn(auto_login_guest))
-            .route("/logout", get(handlers::logout))
-            .route("/guests/change-name", post(handlers::change_guest_name));
+            .route("/logout", get(handlers::logout));
+            // .route("/guests/change-name", post(handlers::change_guest_name));
 
         Router::new()
             .merge(public_routes)

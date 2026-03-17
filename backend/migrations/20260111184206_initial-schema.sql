@@ -14,8 +14,9 @@ CREATE TABLE users (
 
 CREATE TABLE user_roles (
     user_id TEXT NOT NULL REFERENCES users(user_id),
-    role TEXT NOT NULL,
-    PRIMARY KEY (user_id, role)
+    role_id TEXT NOT NULL,
+    role_name TEXT NOT NULL,
+    PRIMARY KEY (user_id, role_id)
 );
 
 CREATE TABLE guests (
@@ -41,7 +42,7 @@ CREATE TABLE pokemon (
     evolves_from_id INT,
     evolves_from_form TEXT,
     mega TEXT,
-    is_baby BOOLEAN NOT NULL DEFAULT FALSE,
+    obtain_method TEXT,
     hp INT NOT NULL,
     attack INT NOT NULL,
     defense INT NOT NULL,
@@ -79,29 +80,33 @@ CREATE TABLE key_moves (
 );
 
 CREATE TABLE drafts (
-    draft_id BIGSERIAL NOT NULL PRIMARY KEY,
+    draft_id UUID NOT NULL PRIMARY KEY,
     draft_name TEXT NOT NULL DEFAULT '',
     password TEXT,
     host_user_id TEXT REFERENCES users(user_id),
     host_guest_id TEXT REFERENCES guests(user_id),
+    ranked BOOLEAN NOT NULL,
     starting_money INT NOT NULL DEFAULT 20000,
     num_teams INT NOT NULL DEFAULT 8,
-    status TEXT NOT NULL DEFAULT 'PENDING',
+    state TEXT NOT NULL DEFAULT 'PENDING',
     pokemon_drafted INT NOT NULL DEFAULT 0,
     updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
     created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-    CONSTRAINT at_least_one_host_id CHECK (
-        host_user_id IS NOT NULL OR host_guest_id IS NOT NULL
+    CONSTRAINT exactly_one_host_id CHECK (
+        num_nonnulls(host_guest_id, host_user_id) = 1
     )
 );
+
+CREATE INDEX idx_drafts_id_sorted ON drafts (draft_id);
 
 CREATE TABLE auctions (
     auction_id BIGSERIAL NOT NULL PRIMARY KEY,
     pokedex_id INT NOT NULL,
     form TEXT NOT NULL,
-    draft_id TEXT NOT NULL REFERENCES drafts(draft_id) ON DELETE CASCADE,
+    draft_id UUID NOT NULL REFERENCES drafts(draft_id) ON DELETE CASCADE,
     draft_order INT NOT NULL,
-    status TEXT NOT NULL DEFAULT 'PENDING',
+    state TEXT NOT NULL DEFAULT 'PENDING',
+    paused_time_remaining INT,
     winning_bid INT,
     winning_user_id TEXT REFERENCES users(user_id),
     winning_guest_id TEXT REFERENCES guests(user_id),
@@ -111,8 +116,13 @@ CREATE TABLE auctions (
     FOREIGN KEY (pokedex_id, form)
         REFERENCES pokemon(pokedex_id, form),
 
-    CONSTRAINT at_least_one_winner CHECK (
-        winning_bid IS NULL OR (winning_user_id IS NOT NULL OR winning_guest_id IS NOT NULL)
+    CONSTRAINT paused_time_if_paused CHECK (
+        (state != 'PAUSED' AND paused_time_remaining IS NULL)
+        OR (state = 'PAUSED' AND paused_time_remaining IS NOT NULL)
+    ),
+
+    CONSTRAINT exactly_one_winner CHECK (
+        winning_bid IS NULL OR (num_nonnulls(winning_guest_id, winning_user_id) = 1)
     )
 );
 
@@ -123,14 +133,19 @@ CREATE TABLE teams (
     team_id BIGSERIAL NOT NULL PRIMARY KEY,
     user_id TEXT REFERENCES users(user_id) ON DELETE CASCADE,
     guest_id TEXT REFERENCES guests(user_id) ON DELETE CASCADE,
-    draft_id TEXT NOT NULL REFERENCES drafts(draft_id) ON DELETE CASCADE,
+    draft_id UUID NOT NULL REFERENCES drafts(draft_id) ON DELETE CASCADE,
     money_remaining INT NOT NULL,
     pokemon_drafted INT NOT NULL DEFAULT 0,
+    placement INT,
+    post_match_mmr INT,
     updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
     created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
 
-    CONSTRAINT at_least_one_acct_id CHECK (
-        user_id IS NOT NULL OR guest_id IS NOT NULL
+    CONSTRAINT not_xor_placement_mmr CHECK (
+        num_nonnulls(placement, post_match_mmr) != 1
+    ),
+    CONSTRAINT exactly_one_acct_id CHECK (
+        num_nonnulls(user_id, guest_id) = 1
     )
 );
 
@@ -143,14 +158,14 @@ CREATE TABLE bids (
     updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
     created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 
-    CONSTRAINT at_least_one_acct_id CHECK (
-        user_id IS NOT NULL OR guest_id IS NOT NULL
+    CONSTRAINT exactly_one_acct_id CHECK (
+        num_nonnulls(user_id, guest_id) = 1
     )
 );
 
 CREATE TABLE chats (
     chat_id BIGSERIAL NOT NULL PRIMARY KEY,
-    draft_id TEXT NOT NULL REFERENCES drafts(draft_id) ON DELETE CASCADE,
+    draft_id UUID NOT NULL REFERENCES drafts(draft_id) ON DELETE CASCADE,
     user_id TEXT NOT NULL,
     message TEXT NOT NULL,
     created_at TIMESTAMPTZ NOT NULL DEFAULT now()

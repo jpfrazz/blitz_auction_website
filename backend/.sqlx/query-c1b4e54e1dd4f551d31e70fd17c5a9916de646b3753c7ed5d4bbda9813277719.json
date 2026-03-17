@@ -1,0 +1,15 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n                UPDATE auctions\n                SET state = $1, paused_time_remaining = NULL\n                WHERE auction_id = $2\n            ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Text",
+        "Int8"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "c1b4e54e1dd4f551d31e70fd17c5a9916de646b3753c7ed5d4bbda9813277719"
+}
