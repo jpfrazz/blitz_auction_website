@@ -123,6 +123,8 @@ impl Server {
             .route("/pokemon", get(handlers::get_pokemon))
             .route("/pokemon/rental", get(handlers::get_rental_pokemon))
             .route("/drafts/{draft_id}", get(handlers::get_draft))
+            .route("/drafts/{draft_id}/pokemon", get(handlers::get_draft_pokemon))
+            .route("/drafts/{draft_id}/current_auction", get(handlers::get_current_auction))
             .route("/ws/{draft_id}", any(handlers::websocket_handler))
             .route("/login", get(handlers::discord_oauth_redirect))
             .route("/auth/discord/callback", get(handlers::discord_callback))

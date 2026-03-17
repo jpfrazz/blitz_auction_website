@@ -16,7 +16,6 @@ use crate::{
     AppError,
     auction::{self, Auction, AuctionResponse},
     db_writer::DbWriter,
-    get_expiry_time_from_instant,
     messages::{ClientBidRequest, ServerMessage},
     pokemon::{self, Pokemon, PokemonStage},
     users::User,
@@ -28,6 +27,7 @@ pub struct Draft {
     pub draft_name: String,
     pub host: User,
     pub broadcast_rx: broadcast::Receiver<ServerMessage>,
+    pub pokemon: Vec<Arc<Pokemon>>,
     actor_sender: mpsc::Sender<DraftCommand>
 }
 
@@ -43,6 +43,7 @@ pub struct DraftResponse {
     teams: Vec<Team>,
     draft_state: DraftState,
     current_auction: usize,
+    completed_auctions: Vec<AuctionResponse>,
     current_server_time: chrono::DateTime<Utc>,
 }
 
@@ -102,11 +103,12 @@ struct Team {
 }
 
 impl Draft {
-    fn new(draft_id: Uuid, draft_name: String, host: User, actor_sender: mpsc::Sender<DraftCommand>, broadcast_rx: broadcast::Receiver<ServerMessage>) -> Draft {
+    fn new(draft_id: Uuid, draft_name: String, host: User, pokemon: Vec<Arc<Pokemon>>, actor_sender: mpsc::Sender<DraftCommand>, broadcast_rx: broadcast::Receiver<ServerMessage>) -> Draft {
         Draft {
             draft_id,
             draft_name,
             host,
+            pokemon,
             broadcast_rx,
             actor_sender
         }
@@ -151,7 +153,7 @@ impl Draft {
         }
         let (actor_sender, actor_receiver) = mpsc::channel(1_000);
         let (broadcast_tx, broadcast_rx) = broadcast::channel(1_000);
-        let draft = Arc::new(Draft::new(draft_id, draft_name, host, actor_sender, broadcast_rx));
+        let draft = Arc::new(Draft::new(draft_id, draft_name, host, pokemon, actor_sender, broadcast_rx));
         let actor_draft = draft.clone();
 
         tokio::spawn(async move {
@@ -162,9 +164,29 @@ impl Draft {
         return Ok(draft);
     }
 
-    pub async fn resolve_auction(&self, auction_id: i64) -> Result<(), AppError> {
+    pub fn get_pokemon(&self) -> Vec<Arc<Pokemon>> {
+        self.pokemon.clone()
+    }
+    
+    pub async fn get_current_auction(&self) -> Result<AuctionResponse, AppError> {
         let (response_sender, response_receiver) = oneshot::channel();
-        let cmd = DraftCommand::ResolveAuction { response_sender,  auction_id };
+        let cmd = DraftCommand::GetCurrentAuction(response_sender);
+        let _ = self.actor_sender.send(cmd).await
+            .map_err(|e| (
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    format!("failed to send resolve auction cmd, {}", e)
+            ))?;
+
+        response_receiver.await
+            .map_err(|e| (
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    format!("failed to listen to resolve auction response, {}", e)
+            ))?
+    }
+
+    pub async fn resolve_auction(&self, completed_auction: AuctionResponse) -> Result<(), AppError> {
+        let (response_sender, response_receiver) = oneshot::channel();
+        let cmd = DraftCommand::ResolveAuction { response_sender,  completed_auction };
         let _ = self.actor_sender.send(cmd).await
             .map_err(|e| (
                     StatusCode::INTERNAL_SERVER_ERROR,
@@ -181,6 +203,22 @@ impl Draft {
     pub async fn join_draft(&self, user: User, password: Option<String>) -> Result<(), AppError> {
         let (response_sender, response_receiver) = oneshot::channel();
         let cmd = DraftCommand::Join { response_sender , user, password };
+        let _ = self.actor_sender.send(cmd).await
+            .map_err(|e| (
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    format!("failed to send join draft cmd, {}", e)
+            ))?;
+
+        response_receiver.await
+            .map_err(|e| (
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    format!("failed to listen to join draft response, {}", e)
+            ))?
+    }
+
+    pub async fn kick(&self, user: User) -> Result<(), AppError> {
+        let (response_sender, response_receiver) = oneshot::channel();
+        let cmd = DraftCommand::Kick { response_sender , user };
         let _ = self.actor_sender.send(cmd).await
             .map_err(|e| (
                     StatusCode::INTERNAL_SERVER_ERROR,
@@ -487,6 +525,7 @@ struct DraftActor {
     settings: DraftSettings,
     current_auction: usize,
     auctions: Vec<Auction>,
+    completed_auctions: Vec<AuctionResponse>,
     db_writer: DbWriter,
     teams: HashMap<String, Team>,
     spectators: Vec<User>,
@@ -525,15 +564,14 @@ enum DraftCommand {
     },
     ResolveAuction {
         response_sender: oneshot::Sender<Result<(), AppError>>,
-        auction_id: i64,
+        completed_auction: AuctionResponse,
     },
     GetLobby(oneshot::Sender<Result<DraftLobbyResponse, AppError>>),
     ReadyUp {
         response_sender: oneshot::Sender<Result<(), AppError>>,
         user_id: String,
     },
-
-
+    GetCurrentAuction(oneshot::Sender<Result<AuctionResponse, AppError>>),
 }
 
 impl DraftActor {
@@ -547,6 +585,7 @@ impl DraftActor {
             teams: HashMap::new(),
             auctions,
             db_writer,
+            completed_auctions: vec![],
             receiver,
             broadcast_tx,
             spectators: vec![],
@@ -609,9 +648,9 @@ impl DraftActor {
                     }
                     DraftCommand::ResolveAuction {
                         response_sender,
-                        auction_id,
+                        completed_auction,
                     } => {
-                        let res = self.resolve_auction(auction_id).await;
+                        let res = self.resolve_auction(completed_auction).await;
                         let _ = response_sender.send(res);
                     }
                     DraftCommand::ReadyUp {
@@ -621,9 +660,18 @@ impl DraftActor {
                         let res = self.ready_up(user_id).await;
                         let _ = response_sender.send(res);
                     },
+                    DraftCommand::GetCurrentAuction(response_sender) => {
+                        let res = self.get_current_auction().await;
+                        let _ = response_sender.send(res);
+                    },
                 }
             }
         }
+    }
+
+    async fn get_current_auction(&self) -> Result<AuctionResponse, AppError> {
+        let auction = &self.auctions[self.current_auction];
+        auction.get().await
     }
 
     async fn bid(&self, auction_id: i64, bid_value: u32, user: User) -> Result<(), AppError> {
@@ -812,7 +860,7 @@ impl DraftActor {
         Ok(())
     }
 
-    async fn resolve_auction(&mut self, auction_id: i64) -> Result<(), AppError> {
+    async fn resolve_auction(&mut self, completed_auction: AuctionResponse) -> Result<(), AppError> {
         if self.draft_state != DraftState::BIDDING {
             return Err((
                 StatusCode::PRECONDITION_FAILED,
@@ -820,15 +868,16 @@ impl DraftActor {
             ));
         }
         let current_auction = &self.auctions[self.current_auction];
-        if current_auction.auction_id != auction_id {
+        if current_auction.auction_id != completed_auction.auction_id {
             return Err((
                     StatusCode::PRECONDITION_FAILED,
                     format!("completed auction {}, different than current auction {}",
-                        auction_id, current_auction.auction_id)
+                        completed_auction.auction_id, current_auction.auction_id)
             ));
         }
-        self.db_writer.resolve_auction(auction_id).await?;
+        self.db_writer.resolve_auction(completed_auction.auction_id).await?;
         self.current_auction += 1;
+        self.completed_auctions.push(completed_auction);
         Ok(())
     }
 
@@ -858,6 +907,7 @@ impl From<&DraftActor> for DraftResponse {
             teams: value.teams.values().cloned().collect(),
             draft_state: value.draft_state.clone(),
             current_auction: value.current_auction,
+            completed_auctions: value.completed_auctions.clone(),
             current_server_time: Utc::now(),
         }
     }

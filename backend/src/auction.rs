@@ -396,7 +396,7 @@ impl AuctionActor {
 
     async fn resolve_auction(&mut self) {
         self.state = AuctionState::CLOSED;
-        self.draft.resolve_auction(self.auction_id);
+        self.draft.resolve_auction(AuctionResponse::from(&*self));
     }
 }
 

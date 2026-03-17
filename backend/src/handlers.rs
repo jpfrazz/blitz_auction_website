@@ -1,5 +1,5 @@
 use crate::{
-    AppError, CSRF_STATE_KEY, draft::{Draft, DraftLobbyResponse, DraftResponse, DraftSettings, DraftState}, messages::{ClientBidRequest, ClientBidResponse, ClientJoinResponse, ServerMessage}, pokemon, server::ServerState, users::{AuthBackend, Credentials, DiscordCreds, User}
+    AppError, CSRF_STATE_KEY, auction::AuctionResponse, draft::{Draft, DraftLobbyResponse, DraftResponse, DraftSettings, DraftState}, messages::{ClientBidRequest, ClientBidResponse, ClientJoinResponse, ServerMessage}, pokemon::{self, Pokemon}, server::ServerState, users::{AuthBackend, Credentials, DiscordCreds, User}
 };
 use axum::{
     Json,
@@ -328,6 +328,46 @@ pub async fn join_draft(
     };
 
     draft.join_draft(user, password).await
+}
+
+#[debug_handler]
+pub async fn get_draft_pokemon (
+    State(state): State<ServerState>,
+    Path(draft_id): Path<String>,
+) -> Result<Json<Vec<Arc<Pokemon>>>, AppError> {
+    let draft_uuid = Uuid::from_str(&draft_id)
+        .map_err(|_e| (
+                StatusCode::BAD_REQUEST,
+                format!("requested draft does not exist")
+        ))?;
+    let Some(draft) = state.drafts.get(&draft_uuid) else {
+        return Err((
+                StatusCode::BAD_REQUEST,
+                format!("requested draft does not exist")
+        ));
+    };
+
+    Ok(Json(draft.get_pokemon()))
+}
+
+#[debug_handler]
+pub async fn get_current_auction (
+    State(state): State<ServerState>,
+    Path(draft_id): Path<String>,
+) -> Result<Json<AuctionResponse>, AppError> {
+    let draft_uuid = Uuid::from_str(&draft_id)
+        .map_err(|_e| (
+                StatusCode::BAD_REQUEST,
+                format!("requested draft does not exist")
+        ))?;
+    let Some(draft) = state.drafts.get(&draft_uuid) else {
+        return Err((
+                StatusCode::BAD_REQUEST,
+                format!("requested draft does not exist")
+        ));
+    };
+
+    Ok(Json(draft.get_current_auction()))
 }
 
 #[debug_handler]
