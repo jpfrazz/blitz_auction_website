@@ -1,0 +1,15 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n                UPDATE drafts\n                SET state = $1\n                WHERE draft_id = $2\n            ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Text",
+        "Uuid"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "b2cc36788a2c9947d1a10ee40b626099214436cc6e7e718c31bcff1ad0477c0b"
+}

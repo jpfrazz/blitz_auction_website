@@ -1,0 +1,25 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n                    INSERT INTO auctions (\n                        pokedex_id, form, draft_order, draft_id\n                    ) VALUES ($1, $2, $3, $4)\n                    RETURNING auction_id\n                ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "auction_id",
+        "type_info": "Int8"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Int4",
+        "Text",
+        "Int4",
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      false
+    ]
+  },
+  "hash": "bef0355daabb001a0bf0371aa38d0fc0fc41d46ff9d15401226abb330e4977b3"
+}

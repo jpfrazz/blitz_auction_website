@@ -1,0 +1,15 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n                UPDATE auctions\n                SET state = $1\n                WHERE auction_id = $2\n            ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Text",
+        "Int8"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "95224c4d1c97f10b460a547968f9dcad59a6bb649bf0412a021a486c161f445e"
+}

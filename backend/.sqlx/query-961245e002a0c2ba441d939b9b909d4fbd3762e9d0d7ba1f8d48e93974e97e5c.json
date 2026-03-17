@@ -1,0 +1,14 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n                UPDATE drafts\n                SET pokemon_drafted = pokemon_drafted + 1\n                WHERE draft_id = $1\n            ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "961245e002a0c2ba441d939b9b909d4fbd3762e9d0d7ba1f8d48e93974e97e5c"
+}

@@ -1,23 +1,40 @@
+use axum::http::StatusCode;
+use chrono::{DateTime, Utc};
 use sqlx::{Postgres, Transaction};
 use strum::Display;
 
 use serde::{Deserialize, Serialize};
-use std::sync::Arc;
-use tokio::time::Instant;
+use std::{pin::Pin, sync::Arc};
+use tokio::{
+    sync::{OnceCell, RwLock, mpsc, oneshot},
+    time::{Duration, Instant, Sleep},
+};
+use uuid::Uuid;
 
-use crate::{pokemon::Pokemon, users::User};
+use crate::{
+    AppError, draft::Draft, get_expiry_time_from_instant, messages::ClientBidRequest,
+    pokemon::Pokemon, users::User,
+};
 
-#[derive(Clone, Debug, Serialize)]
-pub struct Auction {
-    pub auction_id: String,
-    pub draft_id: String,
-    pub draft_order: u32,
-    pub status: AuctionState,
-    pub pokemon: Arc<Pokemon>,
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct AuctionResponse {
+    pub auction_id: i64,
+    pub draft_id: Uuid,
+    pub state: AuctionState,
+    pub pokedex_id: u32,
+    pub pokemon_form: String,
     pub highest_bid: u32,
-    pub highest_bidder: Option<User>,
-    #[serde(skip)]
-    pub expires_at: Option<Instant>,
+    pub highest_bidder: String,
+    pub expires_at: Option<DateTime<Utc>>,
+    pub server_timestamp: DateTime<Utc>,
+}
+
+#[derive(Debug)]
+pub struct Auction {
+    pub auction_id: i64,
+    pub draft_id: Uuid,
+    pub pokemon: Arc<Pokemon>,
+    actor_sender: OnceCell<mpsc::Sender<AuctionCommand>>,
 }
 
 #[derive(Clone, Debug, Display, Serialize, Deserialize, PartialEq, Eq)]
@@ -25,101 +42,380 @@ pub enum AuctionState {
     PENDING,
     OPEN,
     CLOSED,
+    PAUSED(u32),
 }
 
 impl Auction {
-    fn new(
-        draft_id: String,
-        draft_order: u32,
-        auction_id: String,
-        pokemon: Arc<Pokemon>,
-    ) -> Auction {
+    pub fn new(draft_id: Uuid, auction_id: i64, pokemon: Arc<Pokemon>) -> Auction {
         Auction {
             auction_id,
             draft_id,
-            draft_order,
-            status: AuctionState::PENDING,
             pokemon,
+            actor_sender: OnceCell::new(),
+        }
+    }
+
+    pub async fn get(&self) -> Result<AuctionResponse, AppError> {
+        if let Some(sender) = self.actor_sender.get() {
+            let (os_sender, os_receiver) = oneshot::channel();
+            let cmd = AuctionCommand::Get(os_sender);
+            sender.send(cmd).await.map_err(|e| {
+                (
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    format!("couldn't process get, {}", e),
+                )
+            })?;
+            os_receiver.await.map_err(|e| {
+                (
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    format!("couldn't process get, {}", e),
+                )
+            })
+        } else {
+            Ok(AuctionResponse::from(self))
+        }
+    }
+
+    pub async fn start(&self, draft: Arc<Draft>, length: u32) -> Result<(), AppError> {
+        let (actor_sender, actor_receiver) = mpsc::channel(1_000);
+        if self.actor_sender.set(actor_sender).is_ok() {
+            let auction_id = self.auction_id.clone();
+            let pokedex_id = self.pokemon.pokedex_id;
+            let pokemon_form = self.pokemon.form.clone().unwrap_or_default();
+            let draft = draft;
+            tokio::spawn(async move {
+                let actor = AuctionActor::new(
+                    auction_id,
+                    draft,
+                    length,
+                    pokedex_id,
+                    pokemon_form,
+                    actor_receiver,
+                );
+                actor.run().await
+            });
+            Ok(())
+        } else {
+            Err((
+                StatusCode::PRECONDITION_FAILED,
+                format!("auction has already started"),
+            ))
+        }
+    }
+
+    pub async fn bid(&self, bid_value: u32, user_id: String) -> Result<(), AppError> {
+        if let Some(sender) = self.actor_sender.get() {
+            let (response_sender, response_receiver) = oneshot::channel();
+            let cmd = AuctionCommand::Bid {
+                response_sender,
+                bid_value,
+                user_id,
+            };
+            sender.send(cmd).await.map_err(|e| {
+                (
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    format!("couldn't process bid, {}", e),
+                )
+            })?;
+            response_receiver.await.map_err(|e| {
+                (
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    format!("couldn't process bid, {}", e),
+                )
+            })?
+        } else {
+            Err((
+                StatusCode::PRECONDITION_FAILED,
+                format!("auction is not running"),
+            ))
+        }
+    }
+
+    pub async fn resume(&self) -> Result<(), AppError> {
+        if let Some(sender) = self.actor_sender.get() {
+            let (os_sender, os_receiver) = oneshot::channel();
+            let cmd = AuctionCommand::Resume(os_sender);
+            sender.send(cmd).await.map_err(|e| {
+                (
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    format!("couldn't process resume, {}", e),
+                )
+            })?;
+            os_receiver.await.map_err(|e| {
+                (
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    format!("couldn't process resume, {}", e),
+                )
+            })?
+        } else {
+            Err((
+                StatusCode::PRECONDITION_FAILED,
+                format!("auction is not running"),
+            ))
+        }
+    }
+
+    pub async fn pause(&self) -> Result<u32, AppError> {
+        if let Some(sender) = self.actor_sender.get() {
+            let (os_sender, os_receiver) = oneshot::channel();
+            let cmd = AuctionCommand::Pause(os_sender);
+            sender.send(cmd).await.map_err(|e| {
+                (
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    format!("couldn't process pause, {}", e),
+                )
+            })?;
+            os_receiver.await.map_err(|e| {
+                (
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    format!("couldn't process pause, {}", e),
+                )
+            })?
+        } else {
+            Err((
+                StatusCode::PRECONDITION_FAILED,
+                format!("auction is not running"),
+            ))
+        }
+    }
+}
+
+impl From<&Auction> for AuctionResponse {
+    fn from(value: &Auction) -> Self {
+        AuctionResponse {
+            auction_id: value.auction_id,
+            draft_id: value.draft_id.clone(),
+            state: AuctionState::PENDING,
+            pokedex_id: value.pokemon.pokedex_id,
+            pokemon_form: value.pokemon.form.clone().unwrap_or_default(),
             highest_bid: 0,
-            highest_bidder: None,
+            highest_bidder: format!(""),
+            expires_at: None,
+            server_timestamp: Utc::now(),
+        }
+    }
+}
+
+struct AuctionActor {
+    auction_id: i64,
+    draft: Arc<Draft>,
+    state: AuctionState,
+    length: u32,
+    pokedex_id: u32,
+    pokemon_form: String,
+    highest_bid: u32,
+    highest_bidder: String,
+    expires_at: Option<Instant>,
+    receiver: mpsc::Receiver<AuctionCommand>,
+}
+
+enum AuctionCommand {
+    Bid {
+        response_sender: oneshot::Sender<AuctionCommandResponse>,
+        bid_value: u32,
+        user_id: String,
+    },
+    Resume(oneshot::Sender<AuctionCommandResponse>),
+    Pause(oneshot::Sender<Result<u32, AppError>>),
+    Get(oneshot::Sender<AuctionResponse>),
+}
+
+type AuctionCommandResponse = Result<(), AppError>;
+
+impl AuctionActor {
+    pub fn new(
+        auction_id: i64,
+        draft: Arc<Draft>,
+        length: u32,
+        pokedex_id: u32,
+        pokemon_form: String,
+        receiver: mpsc::Receiver<AuctionCommand>,
+    ) -> Self {
+        Self {
+            auction_id,
+            draft,
+            state: AuctionState::PENDING,
+            length,
+            pokedex_id,
+            pokemon_form,
+            highest_bid: 0,
+            highest_bidder: "".to_string(),
+            receiver,
             expires_at: None,
         }
     }
 
-    pub async fn build(
-        draft_id: String,
-        draft_order: u32,
-        pokemon: Arc<Pokemon>,
-        tx: &mut Transaction<'_, Postgres>,
-    ) -> Result<Auction, sqlx::Error> {
-        let auction_id = sqlx::query!(
-            r#"
-            INSERT INTO auctions
-            (pokedex_id, form, draft_id, draft_order)
-            VALUES ($1, $2, $3, $4)
-            RETURNING auction_id
-            "#,
-            pokemon.pokedex_id as i32,
-            pokemon.form.clone().unwrap_or_else(|| "".to_string()),
-            draft_id,
-            draft_order as i32,
-        )
-        .fetch_one(&mut **tx)
-        .await?
-        .auction_id;
-
-        Ok(Auction::new(
-            draft_id,
-            draft_order,
-            auction_id.to_string(),
-            pokemon,
-        ))
+    fn get(&self) -> AuctionResponse {
+        AuctionResponse::from(self)
     }
 
-    pub async fn resolve(&mut self, tx: &mut Transaction<'_, Postgres>) -> Result<(), sqlx::Error> {
-        let winning_user = self
-            .highest_bidder
-            .as_ref()
-            .expect("someone should win auctions");
-        let user_field = match winning_user {
-            User::DiscordUser(_) => "winning_user_id",
-            User::GuestUser(_) => "winning_guest_id",
-        };
-        let user_id = winning_user.get_user_id_string();
-        let winning_bid = self.highest_bid as i32;
-        let query_string = format!(
-            "
-                UPDATE auctions
-                SET (status, winning_bid, {}) = ('{}', {}, '{}')
-                WHERE auction_id = {}
-            ",
-            user_field,
-            AuctionState::CLOSED.to_string(),
-            winning_bid,
-            user_id,
-            self.auction_id,
-        );
+    pub async fn run(mut self) {
+        self.state = AuctionState::OPEN;
 
-        let _res = sqlx::query(&query_string).execute(&mut **tx).await?;
+        // do not start the timer until the bid is > 0
+        while self.highest_bid == 0 {
+            if let Some(cmd) = self.receiver.recv().await {
+                match cmd {
+                    AuctionCommand::Bid {
+                        response_sender,
+                        bid_value,
+                        user_id,
+                    } => {
+                        self.first_bid(bid_value, user_id, response_sender);
+                    }
+                    AuctionCommand::Get(response_sender) => {
+                        let response = self.get();
+                        let _ = response_sender.send(response);
+                    }
+                    AuctionCommand::Resume(sender) => {
+                        let _ = sender.send(Err((
+                            StatusCode::PRECONDITION_FAILED,
+                            format!("auction doesn't start until the first bid"),
+                        )));
+                    }
+                    AuctionCommand::Pause(sender) => {
+                        let _ = sender.send(Err((
+                            StatusCode::PRECONDITION_FAILED,
+                            format!("auction doesn't start until the first bid"),
+                        )));
+                    }
+                }
+            }
+        }
 
-        let user_field = match winning_user {
-            User::DiscordUser(_) => "user_id",
-            User::GuestUser(_) => "guest_id",
-        };
+        self.expires_at = Some(Instant::now() + Duration::from_secs(self.length as u64));
+        let auction_timer = tokio::time::sleep_until(self.expires_at.unwrap());
+        tokio::pin!(auction_timer);
 
-        let query_string = format!(
-            "
-                UPDATE teams
-                SET (money_remaining, pokemon_drafted) = (money_remaining - {}, pokemon_drafted + 1)
-                WHERE {} = '{}' AND draft_id = '{}'
-            ",
-            winning_bid, user_field, user_id, self.draft_id,
-        );
+        loop {
+            tokio::select! {
+                Some(cmd) = self.receiver.recv() => self.handle_cmd(cmd, auction_timer.as_mut()).await,
+                _ = &mut auction_timer => {
+                    if let AuctionState::PAUSED(_) = self.state {
+                        continue;
+                    }
+                    self.resolve_auction().await;
+                    break;
+                },
+            }
+        }
 
-        let _res = sqlx::query(&query_string).execute(&mut **tx).await?;
+        println!("auction {} actor resolved", self.auction_id);
+    }
 
-        self.status = AuctionState::CLOSED;
+    async fn handle_cmd(&mut self, cmd: AuctionCommand, auction_timer: Pin<&mut Sleep>) {
+        match cmd {
+            AuctionCommand::Bid {
+                response_sender,
+                bid_value,
+                user_id,
+            } => {
+                self.bid(bid_value, user_id, auction_timer, response_sender)
+                    .await
+            }
+            AuctionCommand::Pause(response_sender) => {
+                if self.state == AuctionState::OPEN {
+                    let now = Instant::now();
+                    let t = self.expires_at.expect("").duration_since(now).as_secs() as u32;
+                    self.state = AuctionState::PAUSED(t);
+                    let _ = response_sender.send(Ok(t));
+                } else {
+                    let _ = response_sender.send(Err((
+                        StatusCode::PRECONDITION_FAILED,
+                        format!("auction is not running"),
+                    )));
+                }
+            }
+            AuctionCommand::Resume(response_sender) => {
+                if let AuctionState::PAUSED(t) = self.state {
+                    self.expires_at = Some(Instant::now() + Duration::from_secs(t as u64));
+                    auction_timer.reset(self.expires_at.expect(""));
+                    let _ = response_sender.send(Ok(()));
+                }
+            }
+            AuctionCommand::Get(response_sender) => {
+                let response = self.get();
+                let _ = response_sender.send(response);
+            }
+        }
+    }
 
-        Ok(())
+    async fn first_bid(
+        &mut self,
+        bid_value: u32,
+        user_id: String,
+        sender: oneshot::Sender<AuctionCommandResponse>,
+    ) {
+        let response: AuctionCommandResponse;
+        if bid_value <= self.highest_bid {
+            response = Err((StatusCode::PRECONDITION_FAILED, format!("bid is too low")));
+        } else if user_id == self.highest_bidder {
+            response = Err((
+                StatusCode::PRECONDITION_FAILED,
+                format!("user is already the highest bidder"),
+            ));
+        } else {
+            self.highest_bid = bid_value;
+            self.highest_bidder = user_id;
+            response = Ok(());
+        }
+
+        let _ = sender.send(response);
+    }
+
+    async fn bid(
+        &mut self,
+        bid_value: u32,
+        user_id: String,
+        auction_timer: Pin<&mut Sleep>,
+        sender: oneshot::Sender<AuctionCommandResponse>,
+    ) {
+        let response: AuctionCommandResponse;
+        if bid_value <= self.highest_bid {
+            response = Err((StatusCode::PRECONDITION_FAILED, format!("bid is too low")));
+        } else if user_id == self.highest_bidder {
+            response = Err((
+                StatusCode::PRECONDITION_FAILED,
+                format!("user is already the highest bidder"),
+            ));
+        } else {
+            self.highest_bid = bid_value;
+            self.highest_bidder = user_id;
+            response = Ok(());
+
+            self.expires_at = Some(std::cmp::max(
+                self.expires_at.expect(""),
+                Instant::now() + Duration::from_secs(10),
+            ));
+
+            auction_timer.reset(self.expires_at.expect(""));
+        }
+
+        let _ = sender.send(response);
+    }
+
+    async fn resolve_auction(&mut self) {
+        self.state = AuctionState::CLOSED;
+        self.draft.resolve_auction(AuctionResponse::from(&*self));
+    }
+}
+
+impl From<&AuctionActor> for AuctionResponse {
+    fn from(value: &AuctionActor) -> Self {
+        let expires_at = value
+            .expires_at
+            .clone()
+            .map(|some| get_expiry_time_from_instant(some));
+        Self {
+            auction_id: value.auction_id.clone(),
+            draft_id: value.draft.draft_id,
+            state: value.state.clone(),
+            highest_bid: value.highest_bid,
+            highest_bidder: value.highest_bidder.clone(),
+            pokedex_id: value.pokedex_id,
+            pokemon_form: value.pokemon_form.clone(),
+            expires_at: expires_at,
+            server_timestamp: Utc::now(),
+        }
     }
 }

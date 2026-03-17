@@ -1,0 +1,15 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n                DELETE FROM teams\n                WHERE user_id IS NOT DISTINCT FROM $1\n                    AND guest_id IS NOT DISTINCT FROM $2\n            ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Text",
+        "Text"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "fc2f392d38ce34d3df4346bea45fa8a1422a4e1f98d2468f693c2445b6d6c445"
+}

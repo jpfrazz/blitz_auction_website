@@ -1,10 +1,5 @@
 use crate::{
-    CSRF_STATE_KEY,
-    draft::{Draft, DraftLobbyResponse, DraftResponse, DraftSettings, DraftState},
-    messages::{ClientBidRequest, ClientBidResponse, ClientJoinResponse, ServerMessage},
-    pokemon,
-    server::ServerState,
-    users::{AuthBackend, Credentials, DiscordCreds, User},
+    AppError, CSRF_STATE_KEY, auction::AuctionResponse, draft::{Draft, DraftLobbyResponse, DraftResponse, DraftSettings, DraftState}, messages::{ClientBidRequest, ClientBidResponse, ClientJoinResponse, ServerMessage}, pokemon::{self, Pokemon}, server::ServerState, users::{AuthBackend, Credentials, DiscordCreds, User}
 };
 use axum::{
     Json,
@@ -12,19 +7,20 @@ use axum::{
     debug_handler,
     extract::{
         Path, Query, State, WebSocketUpgrade,
-        ws::{Message, WebSocket},
+        ws::{Message, WebSocket, close_code::STATUS},
     },
     http::StatusCode,
     response::{Redirect, Response},
 };
 use axum_login::AuthSession;
 use chrono::Utc;
+use dashmap::mapref::entry;
 use oauth2::CsrfToken;
 use serde::{Deserialize, Serialize};
 use sqlx::Row;
+use uuid::Uuid;
 use std::{
-    collections::{HashMap, HashSet},
-    sync::Arc,
+    collections::{HashMap, HashSet}, str::FromStr, sync::Arc
 };
 use tokio::sync::{RwLock, broadcast};
 use tower_sessions::Session;
@@ -111,55 +107,23 @@ pub async fn create_draft(
     State(state): State<ServerState>,
     auth_session: AuthSession<AuthBackend>,
     Json(draft_settings): Json<DraftSettings>,
-) -> Result<String, (StatusCode, String)> {
-    let host = auth_session.user.clone().expect("user should exist");
-    for _ in 0..3 {
-        match Draft::build(
-            host.clone(),
-            draft_settings.clone(),
-            state.db_pool.clone(),
-            state.draft_runner.clone(),
-        )
-        .await
-        {
-            Ok(mut draft) => {
-                let draft_id = draft.draft_id.clone();
-                if !draft.is_ranked() {
-                    draft
-                        .join_draft(host.clone(), None)
-                        .await
-                        .expect("host should be able to join draft");
-                }
-                state
-                    .drafts
-                    .insert(draft_id.clone(), Arc::new(RwLock::new(draft)));
-                return Ok(draft_id);
-            }
-            Err(e) => {
-                eprintln!("failed to create draft: {}", e);
-            }
-        }
-    }
-
-    Err((
-        StatusCode::INTERNAL_SERVER_ERROR,
-        "Could not create draft!".to_string(),
-    ))
+) -> Result<String, AppError> {
+    let host = auth_session.user.expect("user should exist");
+    let draft = Draft::build(host, draft_settings, state.db_pool.clone()).await?;
+    let draft_id = draft.draft_id;
+    state.drafts.insert(draft_id, draft);
+    Ok(draft_id.to_string())
 }
 
 #[debug_handler]
 pub async fn list_open_drafts(
     State(state): State<ServerState>,
-) -> Result<Json<Vec<DraftLobbyResponse>>, (StatusCode, String)> {
-    let mut open_drafts: Vec<DraftLobbyResponse> = vec![];
+) -> Result<Json<Vec<DraftLobbyResponse>>, AppError> {
+    let drafts = state.drafts;
 
-    for draft_ref in state.drafts.iter() {
-        let draft_lock = draft_ref.value().clone();
-        let draft = draft_lock.read().await.clone();
-        if draft.draft_state == DraftState::COMPLETED || draft.expires_at < Utc::now() {
-            continue;
-        }
-        open_drafts.push(draft.into());
+    let mut open_drafts = vec![];
+    for entry in drafts.iter() {
+        open_drafts.push(entry.value().get_lobby().await?);
     }
 
     Ok(Json(open_drafts))
@@ -169,20 +133,26 @@ pub async fn list_open_drafts(
 pub async fn get_draft(
     State(state): State<ServerState>,
     Path(draft_id): Path<String>,
-) -> Result<Json<DraftResponse>, (StatusCode, String)> {
-    let draft_lock = state
-        .drafts
-        .get(&draft_id)
-        .map(|d| d.value().clone())
-        .ok_or((StatusCode::NOT_FOUND, "draft not found".to_string()))?;
+) -> Result<Json<DraftResponse>, AppError> {
+    let draft_uuid = Uuid::from_str(&draft_id)
+        .map_err(|e| (
+                StatusCode::BAD_REQUEST,
+                format!("requested draft does not exist")
+        ))?;
+    let Some(draft) = state.drafts.get(&draft_uuid) else {
+        return Err((
+                StatusCode::BAD_REQUEST,
+                format!("requested draft does not exist")
+        ));
+    };
 
-    let draft = draft_lock.read().await.clone();
+    let res = draft.get().await?;
 
-    Ok(Json(draft.into()))
+    Ok(Json(res))
 }
 
 #[debug_handler]
-pub async fn get_pokemon() -> Result<Json<Vec<Arc<pokemon::Pokemon>>>, (StatusCode, String)> {
+pub async fn get_pokemon() -> Result<Json<Vec<Arc<pokemon::Pokemon>>>, AppError> {
     let Some(pokemon) = pokemon::get_pokemon_data(&Vec::new()) else {
         return Err((
             StatusCode::NOT_FOUND,
@@ -199,8 +169,8 @@ pub async fn get_pokemon() -> Result<Json<Vec<Arc<pokemon::Pokemon>>>, (StatusCo
 }
 
 #[debug_handler]
-pub async fn get_rental_pokemon(
-) -> Result<Json<Vec<Arc<pokemon::Pokemon>>>, (StatusCode, String)> {
+pub async fn get_rental_pokemon() -> Result<Json<Vec<Arc<pokemon::Pokemon>>>, AppError>
+{
     let Some(pokemon) = pokemon::get_pokemon_data(&Vec::new()) else {
         return Err((
             StatusCode::NOT_FOUND,
@@ -219,7 +189,7 @@ pub async fn get_rental_pokemon(
 #[debug_handler]
 pub async fn get_leaderboard(
     State(state): State<ServerState>,
-) -> Result<Json<Vec<LeaderboardEntry>>, (StatusCode, String)> {
+) -> Result<Json<Vec<LeaderboardEntry>>, AppError> {
     let user_rows = sqlx::query(
         "SELECT user_id, user_name, wins, losses, mmr
          FROM users
@@ -342,25 +312,62 @@ pub async fn join_draft(
     Path(draft_id): Path<String>,
     auth_session: AuthSession<AuthBackend>,
     join_request: Option<Json<JoinDraftRequest>>,
-) -> Result<Json<ClientJoinResponse>, (StatusCode, String)> {
+) -> Result<(), AppError> {
     let user = auth_session.user.expect("user should exist");
     let password = join_request.and_then(|Json(req)| req.password);
-    let Some(draft_lock) = state.drafts.get(&draft_id) else {
-        return Err((StatusCode::NOT_FOUND, "draft does not exist".to_string()));
+    let draft_uuid = Uuid::from_str(&draft_id)
+        .map_err(|e| (
+                StatusCode::BAD_REQUEST,
+                format!("requested draft does not exist")
+        ))?;
+    let Some(draft) = state.drafts.get(&draft_uuid) else {
+        return Err((
+                StatusCode::BAD_REQUEST,
+                format!("requested draft does not exist")
+        ));
     };
 
-    let mut draft = draft_lock.write().await;
-    if let Err(e) = draft.join_draft(user, password).await {
-        return Ok(Json(ClientJoinResponse {
-            joined: false,
-            error: Some(e),
-        }));
-    }
+    draft.join_draft(user, password).await
+}
 
-    Ok(Json(ClientJoinResponse {
-        joined: true,
-        error: None,
-    }))
+#[debug_handler]
+pub async fn get_draft_pokemon (
+    State(state): State<ServerState>,
+    Path(draft_id): Path<String>,
+) -> Result<Json<Vec<Arc<Pokemon>>>, AppError> {
+    let draft_uuid = Uuid::from_str(&draft_id)
+        .map_err(|_e| (
+                StatusCode::BAD_REQUEST,
+                format!("requested draft does not exist")
+        ))?;
+    let Some(draft) = state.drafts.get(&draft_uuid) else {
+        return Err((
+                StatusCode::BAD_REQUEST,
+                format!("requested draft does not exist")
+        ));
+    };
+
+    Ok(Json(draft.get_pokemon()))
+}
+
+#[debug_handler]
+pub async fn get_current_auction (
+    State(state): State<ServerState>,
+    Path(draft_id): Path<String>,
+) -> Result<Json<Option<AuctionResponse>>, AppError> {
+    let draft_uuid = Uuid::from_str(&draft_id)
+        .map_err(|_e| (
+                StatusCode::BAD_REQUEST,
+                format!("requested draft does not exist")
+        ))?;
+    let Some(draft) = state.drafts.get(&draft_uuid) else {
+        return Err((
+                StatusCode::BAD_REQUEST,
+                format!("requested draft does not exist")
+        ));
+    };
+
+    Ok(Json(draft.get_current_auction().await?))
 }
 
 #[debug_handler]
@@ -369,46 +376,23 @@ pub async fn ready_up(
     Path(draft_id): Path<String>,
     auth_session: AuthSession<AuthBackend>,
     ready_request: Option<Json<ReadyUpRequest>>,
-) -> Result<Json<ReadyUpResponse>, (StatusCode, String)> {
+) -> Result<(), AppError> {
     let user = auth_session.user.expect("user should exist");
     let ready = ready_request.map(|Json(req)| req.ready).unwrap_or(true);
 
-    let Some(draft_lock) = state.drafts.get(&draft_id) else {
-        return Err((StatusCode::NOT_FOUND, "draft does not exist".to_string()));
-    };
-
-    let mut draft = draft_lock.write().await;
-
-    if draft.draft_state != DraftState::PENDING {
+    let draft_uuid = Uuid::from_str(&draft_id)
+        .map_err(|e| (
+                StatusCode::BAD_REQUEST,
+                format!("requested draft does not exist")
+        ))?;
+    let Some(draft) = state.drafts.get(&draft_uuid) else {
         return Err((
-            StatusCode::PRECONDITION_FAILED,
-            "draft is no longer pending".to_string(),
-        ));
-    }
-
-    let user_id = user.get_user_id_string();
-    let Some(team) = draft.teams.get_mut(&user_id) else {
-        return Err((
-            StatusCode::FORBIDDEN,
-            "user is not assigned to a team".to_string(),
+                StatusCode::BAD_REQUEST,
+                format!("requested draft does not exist")
         ));
     };
 
-    team.ready = ready;
-
-    // Broadcast full draft object to all websocket clients
-    let draft_response = crate::draft::DraftResponse::from(draft.clone());
-    let _ = draft
-        .tx
-        .send(crate::messages::ServerMessage::DraftUpdate(draft_response));
-
-    // Removed automatic draft start when all teams are ready
-    let draft_started = false;
-
-    Ok(Json(ReadyUpResponse {
-        ready,
-        draft_started,
-    }))
+    draft.ready_up(user.get_user_id_string()).await
 }
 
 #[debug_handler]
@@ -417,15 +401,25 @@ pub async fn bid(
     Path(draft_id): Path<String>,
     auth_session: AuthSession<AuthBackend>,
     Json(bid_request): Json<ClientBidRequest>,
-) -> Result<Json<ClientBidResponse>, (StatusCode, String)> {
+) -> Result<(), AppError> {
     let user = auth_session.user.expect("user should exist");
-    let draft_lock = state.drafts.get(&draft_id).ok_or((
-        StatusCode::FORBIDDEN,
-        "user does not have access to requested draft".to_string(),
-    ))?;
-
-    let mut draft = draft_lock.write().await;
-    draft.bid(&bid_request, &user).await.map(|ok| Json(ok))
+    let auction_id = bid_request.auction_id.parse::<i64>()
+        .map_err(|e| (
+                StatusCode::BAD_REQUEST,
+                format!("failed to parse auction_id as i64, {}", e)
+        ))?;
+    let draft_uuid = Uuid::from_str(&draft_id)
+        .map_err(|e| (
+                StatusCode::BAD_REQUEST,
+                format!("requested draft does not exist")
+        ))?;
+    let Some(draft) = state.drafts.get(&draft_uuid) else {
+        return Err((
+                StatusCode::BAD_REQUEST,
+                format!("requested draft does not exist")
+        ));
+    };
+    draft.bid(auction_id, bid_request.value, user).await
 }
 
 pub async fn start_draft(
@@ -437,32 +431,18 @@ pub async fn start_draft(
         return Err((StatusCode::FORBIDDEN, "user is not logged in".to_string()));
     };
 
-    let Some(draft_lock) = state.drafts.get(&draft_id) else {
+    let Ok(draft_id) = Uuid::from_str(&draft_id) else {
+        return Err((
+                StatusCode::BAD_REQUEST,
+                format!("requested draft does not exist")
+        ));
+    };
+
+    let Some(draft) = state.drafts.get(&draft_id) else {
         return Err((StatusCode::NOT_FOUND, "draft does not exist".to_string()));
     };
 
-    {
-        let mut draft = draft_lock.write().await;
-        if draft.host != user {
-            return Err((StatusCode::FORBIDDEN, "user is not host".to_string()));
-        }
-
-        if draft.draft_state != DraftState::PENDING {
-            return Err((
-                StatusCode::PRECONDITION_FAILED,
-                "draft must be in PENDING state".to_string(),
-            ));
-        }
-
-        let Ok(_) = draft.start_draft().await else {
-            return Err((
-                StatusCode::INTERNAL_SERVER_ERROR,
-                "draft failed to start".to_string(),
-            ));
-        };
-    }
-
-    Ok(())
+    draft.start(user.get_user_id_string()).await
 }
 
 pub async fn pause_draft(
@@ -474,20 +454,18 @@ pub async fn pause_draft(
         return Err((StatusCode::FORBIDDEN, "user is not logged in".to_string()));
     };
 
-    let Some(draft_lock) = state.drafts.get(&draft_id) else {
+    let Ok(draft_id) = Uuid::from_str(&draft_id) else {
+        return Err((
+                StatusCode::BAD_REQUEST,
+                format!("requested draft does not exist")
+        ));
+    };
+
+    let Some(draft) = state.drafts.get(&draft_id) else {
         return Err((StatusCode::NOT_FOUND, "draft does not exist".to_string()));
     };
 
-    {
-        let mut draft = draft_lock.write().await;
-        if draft.host != user {
-            return Err((StatusCode::FORBIDDEN, "user is not host".to_string()));
-        }
-
-        draft.pause().await?;
-    }
-
-    Ok(())
+    draft.pause(user.get_user_id_string()).await
 }
 
 pub async fn unpause_draft(
@@ -499,422 +477,425 @@ pub async fn unpause_draft(
         return Err((StatusCode::FORBIDDEN, "user is not logged in".to_string()));
     };
 
-    let Some(draft_lock) = state.drafts.get(&draft_id) else {
+    let Ok(draft_id) = Uuid::from_str(&draft_id) else {
+        return Err((
+                StatusCode::NOT_FOUND,
+                format!("requested draft does not exist")
+        ));
+    };
+
+    let Some(draft) = state.drafts.get(&draft_id) else {
         return Err((StatusCode::NOT_FOUND, "draft does not exist".to_string()));
     };
 
-    {
-        let mut draft = draft_lock.write().await;
-        if draft.host != user {
-            return Err((StatusCode::FORBIDDEN, "user is not host".to_string()));
-        }
-
-        draft.unpause().await?;
-    }
-
-    Ok(())
+    draft.resume(user.get_user_id_string()).await
 }
 
-#[debug_handler]
-pub async fn submit_race_results(
-    State(state): State<ServerState>,
-    Path(draft_id): Path<String>,
-    auth_session: AuthSession<AuthBackend>,
-    Json(placements): Json<HashMap<String, u32>>,
-) -> Result<(), (StatusCode, String)> {
-    let Some(user) = auth_session.user else {
-        return Err((StatusCode::FORBIDDEN, "user is not logged in".to_string()));
-    };
+// #[debug_handler]
+// pub async fn submit_race_results(
+//     State(state): State<ServerState>,
+//     Path(draft_id): Path<String>,
+//     auth_session: AuthSession<AuthBackend>,
+//     Json(placements): Json<HashMap<String, u32>>,
+// ) -> Result<(), (StatusCode, String)> {
+//     let Some(user) = auth_session.user else {
+//         return Err((StatusCode::FORBIDDEN, "user is not logged in".to_string()));
+//     };
+//
+//     if !user.has_role_name("Referee") {
+//         return Err((
+//             StatusCode::FORBIDDEN,
+//             "user must have Referee role".to_string(),
+//         ));
+//     }
+//
+//     let Some(draft_lock) = state.drafts.get(&draft_id) else {
+//         return Err((StatusCode::NOT_FOUND, "draft does not exist".to_string()));
+//     };
+//
+//     let draft = draft_lock.read().await;
+//
+//     if draft.draft_state != DraftState::COMPLETED {
+//         return Err((
+//             StatusCode::PRECONDITION_FAILED,
+//             "draft must be completed before submitting results".to_string(),
+//         ));
+//     }
+//
+//     if !draft.is_ranked() {
+//         return Err((
+//             StatusCode::PRECONDITION_FAILED,
+//             "results submission only applies to ranked drafts".to_string(),
+//         ));
+//     }
+//
+//     let team_user_ids: Vec<String> = draft
+//         .teams
+//         .values()
+//         .map(|team| team.user_id.clone())
+//         .collect();
+//     let team_count = team_user_ids.len();
+//
+//     if team_count == 0 {
+//         return Err((StatusCode::BAD_REQUEST, "draft has no teams".to_string()));
+//     }
+//
+//     if placements.len() != team_count {
+//         return Err((
+//             StatusCode::BAD_REQUEST,
+//             "placements must be provided for every team".to_string(),
+//         ));
+//     }
+//
+//     let mut seen_places: HashSet<u32> = HashSet::new();
+//     for user_id in &team_user_ids {
+//         let Some(place) = placements.get(user_id) else {
+//             return Err((
+//                 StatusCode::BAD_REQUEST,
+//                 format!("missing placement for team {}", user_id),
+//             ));
+//         };
+//
+//         if *place == 0 || *place > team_count as u32 {
+//             return Err((
+//                 StatusCode::BAD_REQUEST,
+//                 "placements must be between 1 and number of teams".to_string(),
+//             ));
+//         }
+//
+//         if !seen_places.insert(*place) {
+//             return Err((
+//                 StatusCode::BAD_REQUEST,
+//                 "placements must be unique".to_string(),
+//             ));
+//         }
+//     }
+//
+//     let mmr_rows = sqlx::query("SELECT user_id, mmr FROM users WHERE user_id = ANY($1)")
+//         .bind(&team_user_ids)
+//         .fetch_all(&state.db_pool)
+//         .await
+//         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+//
+//     let mut mmr_by_user: HashMap<String, i32> = HashMap::with_capacity(mmr_rows.len());
+//     for row in mmr_rows {
+//         let user_id: String = row
+//             .try_get("user_id")
+//             .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+//         let mmr: i32 = row
+//             .try_get("mmr")
+//             .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+//         mmr_by_user.insert(user_id, mmr);
+//     }
+//
+//     if mmr_by_user.len() != team_count {
+//         return Err((
+//             StatusCode::BAD_REQUEST,
+//             "all submitted teams must map to users with MMR".to_string(),
+//         ));
+//     }
+//
+//     let mut updates: HashMap<String, (i32, i32, i32)> = HashMap::with_capacity(team_count);
+//     for user_id in &team_user_ids {
+//         let user_rating = *mmr_by_user
+//             .get(user_id)
+//             .ok_or((StatusCode::BAD_REQUEST, "missing user MMR".to_string()))?;
+//         let user_place = *placements
+//             .get(user_id)
+//             .ok_or((StatusCode::BAD_REQUEST, "missing placement".to_string()))?;
+//
+//         let mut wins = 0_i32;
+//         let mut losses = 0_i32;
+//         let mut mmr_delta = 0.0_f64;
+//
+//         for opponent_id in &team_user_ids {
+//             if opponent_id == user_id {
+//                 continue;
+//             }
+//
+//             let opponent_rating = *mmr_by_user
+//                 .get(opponent_id)
+//                 .ok_or((StatusCode::BAD_REQUEST, "missing opponent MMR".to_string()))?;
+//             let opponent_place = *placements.get(opponent_id).ok_or((
+//                 StatusCode::BAD_REQUEST,
+//                 "missing opponent placement".to_string(),
+//             ))?;
+//
+//             let result = if user_place < opponent_place {
+//                 wins += 1;
+//                 1.0
+//             } else {
+//                 losses += 1;
+//                 0.0
+//             };
+//
+//             let expected = expected_score(user_rating, opponent_rating);
+//             mmr_delta += 20.0 * (result - expected);
+//         }
+//
+//         updates.insert(user_id.clone(), (mmr_delta.round() as i32, wins, losses));
+//     }
+//
+//     let mut tx = state
+//         .db_pool
+//         .begin()
+//         .await
+//         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+//
+//     for user_id in &team_user_ids {
+//         let Some((mmr_delta, wins, losses)) = updates.get(user_id) else {
+//             return Err((
+//                 StatusCode::INTERNAL_SERVER_ERROR,
+//                 "missing computed update".to_string(),
+//             ));
+//         };
+//
+//         sqlx::query(
+//             "UPDATE users
+//              SET mmr = mmr + $1,
+//                  wins = wins + $2,
+//                  losses = losses + $3
+//              WHERE user_id = $4",
+//         )
+//         .bind(*mmr_delta)
+//         .bind(*wins)
+//         .bind(*losses)
+//         .bind(user_id)
+//         .execute(&mut *tx)
+//         .await
+//         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+//     }
+//
+//     for user_id in &team_user_ids {
+//         let Some(place) = placements.get(user_id) else {
+//             return Err((StatusCode::BAD_REQUEST, "missing placement".to_string()));
+//         };
+//         let Some(original_mmr) = mmr_by_user.get(user_id) else {
+//             return Err((StatusCode::BAD_REQUEST, "missing user MMR".to_string()));
+//         };
+//
+//         sqlx::query(
+//             "UPDATE teams
+//              SET placement = $1,
+//                  pre_result_mmr = $2
+//                          WHERE draft_id = $3
+//                              AND user_id = $4",
+//         )
+//         .bind(*place as i32)
+//         .bind(*original_mmr)
+//         .bind(&draft_id)
+//         .bind(user_id)
+//         .execute(&mut *tx)
+//         .await
+//         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+//     }
+//
+//     tx.commit()
+//         .await
+//         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+//
+//     Ok(())
+// }
 
-    if !user.has_role_name("Referee") {
-        return Err((
-            StatusCode::FORBIDDEN,
-            "user must have Referee role".to_string(),
-        ));
-    }
+// #[debug_handler]
+// pub async fn update_pending_draft_settings(
+//     State(state): State<ServerState>,
+//     Path(draft_id): Path<String>,
+//     auth_session: AuthSession<AuthBackend>,
+//     Json(update_request): Json<UpdatePendingDraftSettingsRequest>,
+// ) -> Result<Json<DraftResponse>, (StatusCode, String)> {
+//     let Some(user) = auth_session.user else {
+//         return Err((StatusCode::FORBIDDEN, "user is not logged in".to_string()));
+//     };
+//
+//     let Some(draft_lock) = state.drafts.get(&draft_id) else {
+//         return Err((StatusCode::NOT_FOUND, "draft does not exist".to_string()));
+//     };
+//
+//     let mut draft = draft_lock.write().await;
+//
+//     if draft.host != user {
+//         return Err((StatusCode::FORBIDDEN, "user is not host".to_string()));
+//     }
+//
+//     draft
+//         .update_pending_settings(
+//             update_request.num_teams,
+//             update_request.num_auctions,
+//             update_request.remove_team_ids,
+//         )
+//         .await?;
+//
+//     Ok(Json(DraftResponse::from(draft.clone())))
+// }
 
-    let Some(draft_lock) = state.drafts.get(&draft_id) else {
-        return Err((StatusCode::NOT_FOUND, "draft does not exist".to_string()));
-    };
+// #[debug_handler]
+// pub async fn claim_eeveelution(
+//     State(state): State<ServerState>,
+//     Path(draft_id): Path<String>,
+//     auth_session: AuthSession<AuthBackend>,
+//     Json(claim_request): Json<ClaimEeveelutionRequest>,
+// ) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
+//     let user = auth_session.user.ok_or((
+//         StatusCode::UNAUTHORIZED,
+//         "user not authenticated".to_string(),
+//     ))?;
+//
+//     let Some(draft_lock) = state.drafts.get(&draft_id) else {
+//         return Err((StatusCode::NOT_FOUND, "draft not found".to_string()));
+//     };
+//
+//     let mut draft = draft_lock.write().await;
+//     if draft.draft_state != DraftState::COMPLETED {
+//         return Err((
+//             StatusCode::PRECONDITION_FAILED,
+//             "draft must be completed".to_string(),
+//         ));
+//     }
+//
+//     // Check if the pokemon exists in the draft
+//     let target_pokemon = draft
+//         .pokemon
+//         .iter()
+//         .find(|p| p.pokedex_id == claim_request.pokedex_id as u32 && p.form == claim_request.form)
+//         .ok_or((
+//             StatusCode::NOT_FOUND,
+//             "pokemon not found in draft".to_string(),
+//         ))?
+//         .clone();
+//
+//     // Check if this pokemon was already claimed by someone else
+//     let already_claimed_by = draft.teams.values().find_map(|team| {
+//         if team
+//             .auctions_won
+//             .iter()
+//             .any(|p| p.pokedex_id == target_pokemon.pokedex_id && p.form == target_pokemon.form)
+//         {
+//             Some(team.username.clone())
+//         } else {
+//             None
+//         }
+//     });
+//
+//     if let Some(claimer_name) = already_claimed_by {
+//         return Ok(Json(serde_json::json!({
+//             "success": false,
+//             "error": format!("Already claimed by {}", claimer_name),
+//             "claimed_by": claimer_name
+//         })));
+//     }
+//
+//     // Add the eeveelution to the user's team
+//     let user_id = user.get_user_id_string();
+//     if let Some(team) = draft.teams.get_mut(&user_id) {
+//         team.auctions_won.push(target_pokemon.clone());
+//
+//         // Broadcast full draft object to all websocket clients
+//         let draft_response = crate::draft::DraftResponse::from(draft.clone());
+//         let _ = draft
+//             .tx
+//             .send(crate::messages::ServerMessage::DraftUpdate(draft_response));
+//
+//         Ok(Json(serde_json::json!({
+//             "success": true,
+//             "claimed_by": user_id,
+//             "pokemon": {
+//                 "pokedex_id": target_pokemon.pokedex_id,
+//                 "name": target_pokemon.name,
+//                 "form": target_pokemon.form
+//             }
+//         })))
+//     } else {
+//         Err((StatusCode::NOT_FOUND, "team not found".to_string()))
+//     }
+// }
 
-    let draft = draft_lock.read().await;
-
-    if draft.draft_state != DraftState::COMPLETED {
-        return Err((
-            StatusCode::PRECONDITION_FAILED,
-            "draft must be completed before submitting results".to_string(),
-        ));
-    }
-
-    if !draft.is_ranked() {
-        return Err((
-            StatusCode::PRECONDITION_FAILED,
-            "results submission only applies to ranked drafts".to_string(),
-        ));
-    }
-
-    let team_user_ids: Vec<String> = draft.teams.values().map(|team| team.user_id.clone()).collect();
-    let team_count = team_user_ids.len();
-
-    if team_count == 0 {
-        return Err((StatusCode::BAD_REQUEST, "draft has no teams".to_string()));
-    }
-
-    if placements.len() != team_count {
-        return Err((
-            StatusCode::BAD_REQUEST,
-            "placements must be provided for every team".to_string(),
-        ));
-    }
-
-    let mut seen_places: HashSet<u32> = HashSet::new();
-    for user_id in &team_user_ids {
-        let Some(place) = placements.get(user_id) else {
-            return Err((
-                StatusCode::BAD_REQUEST,
-                format!("missing placement for team {}", user_id),
-            ));
-        };
-
-        if *place == 0 || *place > team_count as u32 {
-            return Err((
-                StatusCode::BAD_REQUEST,
-                "placements must be between 1 and number of teams".to_string(),
-            ));
-        }
-
-        if !seen_places.insert(*place) {
-            return Err((
-                StatusCode::BAD_REQUEST,
-                "placements must be unique".to_string(),
-            ));
-        }
-    }
-
-    let mmr_rows = sqlx::query("SELECT user_id, mmr FROM users WHERE user_id = ANY($1)")
-        .bind(&team_user_ids)
-        .fetch_all(&state.db_pool)
-        .await
-        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-
-    let mut mmr_by_user: HashMap<String, i32> = HashMap::with_capacity(mmr_rows.len());
-    for row in mmr_rows {
-        let user_id: String = row
-            .try_get("user_id")
-            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-        let mmr: i32 = row
-            .try_get("mmr")
-            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-        mmr_by_user.insert(user_id, mmr);
-    }
-
-    if mmr_by_user.len() != team_count {
-        return Err((
-            StatusCode::BAD_REQUEST,
-            "all submitted teams must map to users with MMR".to_string(),
-        ));
-    }
-
-    let mut updates: HashMap<String, (i32, i32, i32)> = HashMap::with_capacity(team_count);
-    for user_id in &team_user_ids {
-        let user_rating = *mmr_by_user
-            .get(user_id)
-            .ok_or((StatusCode::BAD_REQUEST, "missing user MMR".to_string()))?;
-        let user_place = *placements
-            .get(user_id)
-            .ok_or((StatusCode::BAD_REQUEST, "missing placement".to_string()))?;
-
-        let mut wins = 0_i32;
-        let mut losses = 0_i32;
-        let mut mmr_delta = 0.0_f64;
-
-        for opponent_id in &team_user_ids {
-            if opponent_id == user_id {
-                continue;
-            }
-
-            let opponent_rating = *mmr_by_user
-                .get(opponent_id)
-                .ok_or((StatusCode::BAD_REQUEST, "missing opponent MMR".to_string()))?;
-            let opponent_place = *placements
-                .get(opponent_id)
-                .ok_or((StatusCode::BAD_REQUEST, "missing opponent placement".to_string()))?;
-
-            let result = if user_place < opponent_place {
-                wins += 1;
-                1.0
-            } else {
-                losses += 1;
-                0.0
-            };
-
-            let expected = expected_score(user_rating, opponent_rating);
-            mmr_delta += 20.0 * (result - expected);
-        }
-
-        updates.insert(user_id.clone(), (mmr_delta.round() as i32, wins, losses));
-    }
-
-    let mut tx = state
-        .db_pool
-        .begin()
-        .await
-        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-
-    for user_id in &team_user_ids {
-        let Some((mmr_delta, wins, losses)) = updates.get(user_id) else {
-            return Err((
-                StatusCode::INTERNAL_SERVER_ERROR,
-                "missing computed update".to_string(),
-            ));
-        };
-
-        sqlx::query(
-            "UPDATE users
-             SET mmr = mmr + $1,
-                 wins = wins + $2,
-                 losses = losses + $3
-             WHERE user_id = $4",
-        )
-        .bind(*mmr_delta)
-        .bind(*wins)
-        .bind(*losses)
-        .bind(user_id)
-        .execute(&mut *tx)
-        .await
-        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-    }
-
-    for user_id in &team_user_ids {
-        let Some(place) = placements.get(user_id) else {
-            return Err((StatusCode::BAD_REQUEST, "missing placement".to_string()));
-        };
-        let Some(original_mmr) = mmr_by_user.get(user_id) else {
-            return Err((StatusCode::BAD_REQUEST, "missing user MMR".to_string()));
-        };
-
-        sqlx::query(
-            "UPDATE teams
-             SET placement = $1,
-                 pre_result_mmr = $2
-                         WHERE draft_id = $3
-                             AND user_id = $4",
-        )
-        .bind(*place as i32)
-        .bind(*original_mmr)
-        .bind(&draft_id)
-        .bind(user_id)
-        .execute(&mut *tx)
-        .await
-        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-    }
-
-    tx.commit()
-        .await
-        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-
-    Ok(())
-}
-
-#[debug_handler]
-pub async fn update_pending_draft_settings(
-    State(state): State<ServerState>,
-    Path(draft_id): Path<String>,
-    auth_session: AuthSession<AuthBackend>,
-    Json(update_request): Json<UpdatePendingDraftSettingsRequest>,
-) -> Result<Json<DraftResponse>, (StatusCode, String)> {
-    let Some(user) = auth_session.user else {
-        return Err((StatusCode::FORBIDDEN, "user is not logged in".to_string()));
-    };
-
-    let Some(draft_lock) = state.drafts.get(&draft_id) else {
-        return Err((StatusCode::NOT_FOUND, "draft does not exist".to_string()));
-    };
-
-    let mut draft = draft_lock.write().await;
-
-    if draft.host != user {
-        return Err((StatusCode::FORBIDDEN, "user is not host".to_string()));
-    }
-
-    draft
-        .update_pending_settings(
-            update_request.num_teams,
-            update_request.num_auctions,
-            update_request.remove_team_ids,
-        )
-        .await?;
-
-    Ok(Json(DraftResponse::from(draft.clone())))
-}
-
-#[debug_handler]
-pub async fn claim_eeveelution(
-    State(state): State<ServerState>,
-    Path(draft_id): Path<String>,
-    auth_session: AuthSession<AuthBackend>,
-    Json(claim_request): Json<ClaimEeveelutionRequest>,
-) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
-    let user = auth_session.user.ok_or((
-        StatusCode::UNAUTHORIZED,
-        "user not authenticated".to_string(),
-    ))?;
-
-    let Some(draft_lock) = state.drafts.get(&draft_id) else {
-        return Err((StatusCode::NOT_FOUND, "draft not found".to_string()));
-    };
-
-    let mut draft = draft_lock.write().await;
-    if draft.draft_state != DraftState::COMPLETED {
-        return Err((
-            StatusCode::PRECONDITION_FAILED,
-            "draft must be completed".to_string(),
-        ));
-    }
-
-    // Check if the pokemon exists in the draft
-    let target_pokemon = draft
-        .pokemon
-        .iter()
-        .find(|p| p.pokedex_id == claim_request.pokedex_id as u32 && p.form == claim_request.form)
-        .ok_or((
-            StatusCode::NOT_FOUND,
-            "pokemon not found in draft".to_string(),
-        ))?
-        .clone();
-
-    // Check if this pokemon was already claimed by someone else
-    let already_claimed_by = draft.teams.values().find_map(|team| {
-        if team
-            .auctions_won
-            .iter()
-            .any(|p| p.pokedex_id == target_pokemon.pokedex_id && p.form == target_pokemon.form)
-        {
-            Some(team.username.clone())
-        } else {
-            None
-        }
-    });
-
-    if let Some(claimer_name) = already_claimed_by {
-        return Ok(Json(serde_json::json!({
-            "success": false,
-            "error": format!("Already claimed by {}", claimer_name),
-            "claimed_by": claimer_name
-        })));
-    }
-
-    // Add the eeveelution to the user's team
-    let user_id = user.get_user_id_string();
-    if let Some(team) = draft.teams.get_mut(&user_id) {
-        team.auctions_won.push(target_pokemon.clone());
-
-        // Broadcast full draft object to all websocket clients
-        let draft_response = crate::draft::DraftResponse::from(draft.clone());
-        let _ = draft
-            .tx
-            .send(crate::messages::ServerMessage::DraftUpdate(draft_response));
-
-        Ok(Json(serde_json::json!({
-            "success": true,
-            "claimed_by": user_id,
-            "pokemon": {
-                "pokedex_id": target_pokemon.pokedex_id,
-                "name": target_pokemon.name,
-                "form": target_pokemon.form
-            }
-        })))
-    } else {
-        Err((StatusCode::NOT_FOUND, "team not found".to_string()))
-    }
-}
-
-#[debug_handler]
-pub async fn unclaim_eeveelution(
-    State(state): State<ServerState>,
-    Path(draft_id): Path<String>,
-    auth_session: AuthSession<AuthBackend>,
-    Json(claim_request): Json<ClaimEeveelutionRequest>,
-) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
-    let user = auth_session.user.ok_or((
-        StatusCode::UNAUTHORIZED,
-        "user not authenticated".to_string(),
-    ))?;
-
-    let Some(draft_lock) = state.drafts.get(&draft_id) else {
-        return Err((StatusCode::NOT_FOUND, "draft not found".to_string()));
-    };
-
-    let mut draft = draft_lock.write().await;
-    if draft.draft_state != DraftState::COMPLETED {
-        return Err((
-            StatusCode::PRECONDITION_FAILED,
-            "draft must be completed".to_string(),
-        ));
-    }
-
-    let target_pokemon = draft
-        .pokemon
-        .iter()
-        .find(|p| p.pokedex_id == claim_request.pokedex_id as u32 && p.form == claim_request.form)
-        .ok_or((
-            StatusCode::NOT_FOUND,
-            "pokemon not found in draft".to_string(),
-        ))?
-        .clone();
-
-    let user_id = user.get_user_id_string();
-    let Some(team) = draft.teams.get_mut(&user_id) else {
-        return Err((StatusCode::NOT_FOUND, "team not found".to_string()));
-    };
-
-    let maybe_index = team
-        .auctions_won
-        .iter()
-        .position(|p| p.pokedex_id == target_pokemon.pokedex_id && p.form == target_pokemon.form);
-
-    if let Some(index) = maybe_index {
-        team.auctions_won.remove(index);
-
-        let draft_response = crate::draft::DraftResponse::from(draft.clone());
-        let _ = draft
-            .tx
-            .send(crate::messages::ServerMessage::DraftUpdate(draft_response));
-
-        return Ok(Json(serde_json::json!({
-            "success": true,
-            "unclaimed_by": user_id,
-            "pokemon": {
-                "pokedex_id": target_pokemon.pokedex_id,
-                "name": target_pokemon.name,
-                "form": target_pokemon.form
-            }
-        })));
-    }
-
-    let claimed_by_other = draft
-        .teams
-        .values()
-        .find(|other_team| {
-            other_team.user_id != user_id
-                && other_team.auctions_won.iter().any(|p| {
-                    p.pokedex_id == target_pokemon.pokedex_id && p.form == target_pokemon.form
-                })
-        })
-        .map(|team| team.username.clone());
-
-    if let Some(owner_name) = claimed_by_other {
-        return Err((
-            StatusCode::FORBIDDEN,
-            format!("eeveelution is claimed by {}", owner_name),
-        ));
-    }
-
-    Err((
-        StatusCode::NOT_FOUND,
-        "you have not claimed this eeveelution".to_string(),
-    ))
-}
+// #[debug_handler]
+// pub async fn unclaim_eeveelution(
+//     State(state): State<ServerState>,
+//     Path(draft_id): Path<String>,
+//     auth_session: AuthSession<AuthBackend>,
+//     Json(claim_request): Json<ClaimEeveelutionRequest>,
+// ) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
+//     let user = auth_session.user.ok_or((
+//         StatusCode::UNAUTHORIZED,
+//         "user not authenticated".to_string(),
+//     ))?;
+//
+//     let Some(draft_lock) = state.drafts.get(&draft_id) else {
+//         return Err((StatusCode::NOT_FOUND, "draft not found".to_string()));
+//     };
+//
+//     let mut draft = draft_lock.write().await;
+//     if draft.draft_state != DraftState::COMPLETED {
+//         return Err((
+//             StatusCode::PRECONDITION_FAILED,
+//             "draft must be completed".to_string(),
+//         ));
+//     }
+//
+//     let target_pokemon = draft
+//         .pokemon
+//         .iter()
+//         .find(|p| p.pokedex_id == claim_request.pokedex_id as u32 && p.form == claim_request.form)
+//         .ok_or((
+//             StatusCode::NOT_FOUND,
+//             "pokemon not found in draft".to_string(),
+//         ))?
+//         .clone();
+//
+//     let user_id = user.get_user_id_string();
+//     let Some(team) = draft.teams.get_mut(&user_id) else {
+//         return Err((StatusCode::NOT_FOUND, "team not found".to_string()));
+//     };
+//
+//     let maybe_index = team
+//         .auctions_won
+//         .iter()
+//         .position(|p| p.pokedex_id == target_pokemon.pokedex_id && p.form == target_pokemon.form);
+//
+//     if let Some(index) = maybe_index {
+//         team.auctions_won.remove(index);
+//
+//         let draft_response = crate::draft::DraftResponse::from(draft.clone());
+//         let _ = draft
+//             .tx
+//             .send(crate::messages::ServerMessage::DraftUpdate(draft_response));
+//
+//         return Ok(Json(serde_json::json!({
+//             "success": true,
+//             "unclaimed_by": user_id,
+//             "pokemon": {
+//                 "pokedex_id": target_pokemon.pokedex_id,
+//                 "name": target_pokemon.name,
+//                 "form": target_pokemon.form
+//             }
+//         })));
+//     }
+//
+//     let claimed_by_other = draft
+//         .teams
+//         .values()
+//         .find(|other_team| {
+//             other_team.user_id != user_id
+//                 && other_team.auctions_won.iter().any(|p| {
+//                     p.pokedex_id == target_pokemon.pokedex_id && p.form == target_pokemon.form
+//                 })
+//         })
+//         .map(|team| team.username.clone());
+//
+//     if let Some(owner_name) = claimed_by_other {
+//         return Err((
+//             StatusCode::FORBIDDEN,
+//             format!("eeveelution is claimed by {}", owner_name),
+//         ));
+//     }
+//
+//     Err((
+//         StatusCode::NOT_FOUND,
+//         "you have not claimed this eeveelution".to_string(),
+//     ))
+// }
 
 #[debug_handler]
 pub async fn get_draft_chats(
@@ -1092,20 +1073,22 @@ pub async fn websocket_handler(
     Path(draft_id): Path<String>,
     ws: WebSocketUpgrade,
 ) -> Result<Response<Body>, (StatusCode, String)> {
-    let tx = {
-        let Some(draft_lock) = state.drafts.get(&draft_id) else {
-            return Err((StatusCode::NOT_FOUND, "Draft does not exist".to_string()));
-        };
-        let draft = draft_lock.read().await;
-
-        draft.tx.clone()
+    let draft_uuid = Uuid::from_str(&draft_id)
+        .map_err(|e| (
+                StatusCode::BAD_REQUEST,
+                format!("requested draft does not exist")
+        ))?;
+    let Some(draft) = state.drafts.get(&draft_uuid) else {
+        return Err((
+                StatusCode::BAD_REQUEST,
+                format!("requested draft does not exist")
+        ));
     };
-    Ok(ws.on_upgrade(move |socket| handle_websocket(socket, tx)))
+    let rx = draft.broadcast_rx.resubscribe();
+    Ok(ws.on_upgrade(move |socket| handle_websocket(socket, rx)))
 }
 
-async fn handle_websocket(mut socket: WebSocket, tx: broadcast::Sender<ServerMessage>) {
-    let mut rx = tx.subscribe();
-
+async fn handle_websocket(mut socket: WebSocket, mut rx: broadcast::Receiver<ServerMessage>) {
     loop {
         tokio::select! {
             Ok(msg) = rx.recv() => {
@@ -1125,6 +1108,7 @@ async fn handle_websocket(mut socket: WebSocket, tx: broadcast::Sender<ServerMes
             }
         }
     }
+
 }
 
 #[debug_handler]
@@ -1141,59 +1125,59 @@ pub async fn logout(
     Ok(Redirect::to("/"))
 }
 
-#[debug_handler]
-pub async fn change_guest_name(
-    mut auth_session: AuthSession<AuthBackend>,
-    State(state): State<ServerState>,
-    Json(req): Json<ChangeGuestNameRequest>,
-) -> Result<Json<String>, (StatusCode, String)> {
-    let user_id = match auth_session.user {
-        Some(User::GuestUser(ref guest)) => guest.user_id.clone(),
-        _ => {
-            return Err((
-                StatusCode::FORBIDDEN,
-                "Only guests can change their name".to_string(),
-            ));
-        }
-    };
-    let new_name = req.new_name.trim();
-    if new_name.is_empty() || new_name.len() > 32 {
-        return Err((
-            StatusCode::BAD_REQUEST,
-            "Name must be 1-32 characters".to_string(),
-        ));
-    }
-    let res = sqlx::query!(
-        "UPDATE guests SET user_name = $1 WHERE user_id = $2",
-        new_name,
-        user_id
-    )
-    .execute(&state.db_pool)
-    .await;
-    match res {
-        Ok(_) => {
-            // Update the auth session with the new name
-            if let Some(User::GuestUser(guest)) = auth_session.user.as_mut() {
-                guest.user_name = new_name.to_string();
-            }
-            // Update all teams in active drafts for this guest
-            for draft_ref in state.drafts.iter() {
-                let draft_lock = draft_ref.value().clone();
-                let mut draft = draft_lock.write().await;
-                if let Some(team) = draft.teams.get_mut(&user_id) {
-                    team.username = new_name.to_string();
-                    // Optionally broadcast update to websocket clients
-                    let draft_response = crate::draft::DraftResponse::from(draft.clone());
-                    let _ = draft
-                        .tx
-                        .send(crate::messages::ServerMessage::DraftUpdate(draft_response));
-                }
-            }
-            Ok(Json(new_name.to_string()))
-        }
-        Err(e) => Err((
-            StatusCode::INTERNAL_SERVER_ERROR,
-            format!("DB error: {}", e),
-        )),
-    }
-}
+// #[debug_handler]
+// pub async fn change_guest_name(
+//     mut auth_session: AuthSession<AuthBackend>,
+//     State(state): State<ServerState>,
+//     Json(req): Json<ChangeGuestNameRequest>,
+// ) -> Result<Json<String>, (StatusCode, String)> {
+//     let user_id = match auth_session.user {
+//         Some(User::GuestUser(ref guest)) => guest.user_id.clone(),
+//         _ => {
+//             return Err((
+//                 StatusCode::FORBIDDEN,
+//                 "Only guests can change their name".to_string(),
+//             ));
+//         }
+//     };
+//     let new_name = req.new_name.trim();
+//     if new_name.is_empty() || new_name.len() > 32 {
+//         return Err((
+//             StatusCode::BAD_REQUEST,
+//             "Name must be 1-32 characters".to_string(),
+//         ));
+//     }
+//     let res = sqlx::query!(
+//         "UPDATE guests SET user_name = $1 WHERE user_id = $2",
+//         new_name,
+//         user_id
+//     )
+//     .execute(&state.db_pool)
+//     .await;
+//     match res {
+//         Ok(_) => {
+//             // Update the auth session with the new name
+//             if let Some(User::GuestUser(guest)) = auth_session.user.as_mut() {
+//                 guest.user_name = new_name.to_string();
+//             }
+//             // Update all teams in active drafts for this guest
+//             for draft_ref in state.drafts.iter() {
+//                 let draft_lock = draft_ref.value().clone();
+//                 let mut draft = draft_lock.write().await;
+//                 if let Some(team) = draft.teams.get_mut(&user_id) {
+//                     team.username = new_name.to_string();
+//                     // Optionally broadcast update to websocket clients
+//                     let draft_response = crate::draft::DraftResponse::from(draft.clone());
+//                     let _ = draft
+//                         .tx
+//                         .send(crate::messages::ServerMessage::DraftUpdate(draft_response));
+//                 }
+//             }
+//             Ok(Json(new_name.to_string()))
+//         }
+//         Err(e) => Err((
+//             StatusCode::INTERNAL_SERVER_ERROR,
+//             format!("DB error: {}", e),
+//         )),
+//     }
+// }

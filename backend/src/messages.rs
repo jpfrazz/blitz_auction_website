@@ -54,8 +54,6 @@ pub enum ClientMessage {
 
 #[derive(Clone, Debug, Deserialize)]
 pub struct ClientBidRequest {
-    #[serde(skip)]
-    pub user_id: String,
     pub auction_id: String,
     pub value: u32,
 }

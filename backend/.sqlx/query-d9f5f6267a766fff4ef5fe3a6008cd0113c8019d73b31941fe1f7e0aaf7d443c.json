@@ -1,0 +1,17 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n                INSERT INTO bids (\n                    auction_id, user_id, guest_id, value\n                )\n                VALUES ($1, $2, $3, $4)\n            ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Int8",
+        "Text",
+        "Text",
+        "Int4"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "d9f5f6267a766fff4ef5fe3a6008cd0113c8019d73b31941fe1f7e0aaf7d443c"
+}
