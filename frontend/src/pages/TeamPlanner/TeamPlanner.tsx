@@ -30,7 +30,7 @@ const TeamPlanner = () => {
     return {
       auction_id: `team-planner-${pokemon.value}-${index}`,
       pokemon: panelPokemon,
-      status: 'PENDING',
+      auction_state: 'PENDING',
       highest_bid: 0,
       highest_bidder: null,
     };

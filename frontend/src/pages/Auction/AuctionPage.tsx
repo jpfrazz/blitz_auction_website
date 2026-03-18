@@ -14,7 +14,7 @@ import AuctionStatsPanel from './components/AuctionStatsPanel';
 import PokemonTablePanel from './components/PokemonTablePanel/PokemonTablePanel';
 import EeveelutionClaimModal from './components/EeveelutionClaimModal';
 import ResultsSubmissionModal from './components/ResultsSubmissionModal';
-import { Draft } from '../../types';
+import { Draft, Auction, Pokemon } from '../../types';
 import confetti from 'canvas-confetti';
 
 const AUCTION_ALERT_SOUND_PATH = encodeURI('/14 Battle! (Wild Pokémon).mp3');
@@ -30,6 +30,8 @@ function useAuctionId() {
 const AuctionPage: React.FC = () => {
   const auctionId = useAuctionId();
   const [draft, setDraft] = useState<Draft | null>(null);
+  const [currentAuction, setCurrentAuction] = useState<Auction | null>(null);
+  const [pokemon, setPokemon] = useState<Pokemon[]>([]);
   const [loading, setLoading] = useState(false);
   const [startingDraft, setStartingDraft] = useState(false);
   const [readyingUp, setReadyingUp] = useState(false);
@@ -130,7 +132,7 @@ const AuctionPage: React.FC = () => {
   };
 
   useEffect(() => {
-    const currentAuctionId = draft?.current_auction?.auction_id ?? null;
+    const currentAuctionId = currentAuction?.auction_id ?? null;
 
     if (!hasInitializedAuctionTrackingRef.current) {
       hasInitializedAuctionTrackingRef.current = true;
@@ -146,7 +148,7 @@ const AuctionPage: React.FC = () => {
     }
 
     previousAuctionIdRef.current = currentAuctionId;
-  }, [draft?.current_auction?.auction_id, isAuctionSoundMuted]);
+  }, [currentAuction?.auction_id, isAuctionSoundMuted]);
 
   useEffect(() => {
     if (!draft) return;
@@ -228,12 +230,9 @@ const AuctionPage: React.FC = () => {
         ]).then(([draftData, pokemon, current_auction]) => ({ user, draftData, pokemon, current_auction}));
       })
       .then(({ user, draftData, pokemon, current_auction }) => {
-        const fullDraft = {
-            ...draftData,
-            pokemon,
-            current_auction,
-        };
-        setDraft(fullDraft);
+        setDraft(draftData);
+        setCurrentAuction(current_auction);
+        setPokemon(pokemon);
         connectWebSocket(auctionId);
         const alreadyOnTeam = draftData.teams.some(team => team.user_id === user.user_id);
         if (draftData.draft_state === 'PENDING' && !alreadyOnTeam) {
@@ -282,8 +281,8 @@ const AuctionPage: React.FC = () => {
   };
 
   const isDraftPaused = draft
-    ? (draft.draft_state === 'PAUSED'
-      || (typeof draft.draft_state === 'object' && draft.draft_state !== null && 'PAUSED' in draft.draft_state))
+    ? (currentAuction?.auction_state === 'PAUSED'
+      || (typeof currentAuction?.auction_state === 'object' && currentAuction?.auction_state !== null && 'PAUSED' in currentAuction?.auction_state))
     : false;
 
   const handleTogglePauseDraft = async () => {
@@ -543,7 +542,7 @@ const AuctionPage: React.FC = () => {
               <PlayerRow
                 teams={draft.teams}
                 numPlayers={draft.teams.length}
-                highestBidderId={draft.current_auction ? getUserId(draft.current_auction.highest_bidder) : null}
+                highestBidderId={currentAuction ? getUserId(currentAuction.highest_bidder) : null}
                 wsConnected={wsConnected}
               />
             </div>
@@ -551,15 +550,15 @@ const AuctionPage: React.FC = () => {
             <div className="auction-content-grid">
               {/* Left: Current auctioned Pokémon and table */}
               <div className="auction-left-panel">
-                {draft.current_auction && (
-                  <CurrentPokemonPanel 
-                    current_auction={draft.current_auction}
-                    all_pokemon={draft.pokemon}
+                {currentAuction && (
+                  <CurrentPokemonPanel
+                    current_auction={currentAuction}
+                    all_pokemon={pokemon}
                   />
                 )}
                 <PokemonTablePanel
                   auctions={draft.completed_auctions}
-                  pokemon={draft.pokemon}
+                  pokemon={pokemon}
                   teams={draft.teams}
                   currentUserId={currentUserId}
                 />
@@ -621,11 +620,11 @@ const AuctionPage: React.FC = () => {
                         </div>
                       </div>
                     )}
-                    {draft.current_auction && (
+                    {currentAuction && (
                       <AuctionInfoPanel
-                        current_auction={draft.current_auction}
+                        current_auction={currentAuction}
                         draft_id={draft.draft_id}
-                        currentAuctionExpiresAt={draft.current_auction_expires_at}
+                        currentAuctionExpiresAt={currentAuction.expires_at}
                         currentServerTime={draft.current_server_time}
                         isHost={currentUserId === draft.host}
                         isPaused={isDraftPaused}
@@ -641,7 +640,7 @@ const AuctionPage: React.FC = () => {
                         total_auctions={draft.total_auctions}
                       />
                     )}
-                    {draft.draft_state !== 'PENDING' && draft.current_auction && (
+                    {draft.draft_state !== 'PENDING' && currentAuction && (
                       <AuctionStatsPanel
                         completed_auctions={draft.completed_auctions}
                         total_auctions={draft.total_auctions}

@@ -1,4 +1,4 @@
-import axios from 'axios';
+import axios, {AxiosError} from 'axios';
 import { ChatMessage, Draft, DraftLobby, UserRole, Pokemon, Auction } from "../../types";
 
 interface JoinDraftResponse {
@@ -109,20 +109,18 @@ export async function updatePendingDraftSettings(
 export async function joinDraft(draft_id: string, password?: string): Promise<Draft> {
   const trimmedPassword = password?.trim();
   let joinResponse;
-
-  if (trimmedPassword) {
-    joinResponse = await axios.post<JoinDraftResponse>(`/api/drafts/${draft_id}/join`, {
+  try {
+    joinResponse = await axios.post(`/api/drafts/${draft_id}/join`, {
       password: trimmedPassword,
     });
-  } else {
-    joinResponse = await axios.post<JoinDraftResponse>(`/api/drafts/${draft_id}/join`);
+  } catch (error) {
+    if (axios.isAxiosError(error) && error.response) {
+      throw new Error(error.response.data);
+    } else {
+      throw error;
+    }
   }
-
-  if (!joinResponse.data.joined) {
-    throw new Error(joinResponse.data.error || 'Failed to join draft.');
-  }
-
-  // Fetch and return the updated draft after joining
+   // Fetch and return the updated draft after joining
   const response = await axios.get(`/api/drafts/${draft_id}`);
   return response.data;
 }

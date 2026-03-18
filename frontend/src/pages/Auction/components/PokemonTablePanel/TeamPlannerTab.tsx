@@ -118,7 +118,7 @@ const TeamPlannerTab: React.FC<TeamPlannerTabProps> = ({ teams, currentUserId, a
   const teamPokemonAuctions: Auction[] = sortedTeamPokemon.map((pokemon, index) => ({
     auction_id: `team-planner-${pokemon.name}-${pokemon.form ?? 'base'}-${index}`,
     pokemon,
-    status: 'COMPLETED',
+    auction_state: 'COMPLETED',
     highest_bid: 0,
     highest_bidder: null,
   }));

@@ -54,12 +54,12 @@ export type SerializedUser =
     } };
 
 // Types for draft data
-export type DraftState = 'PENDING' | 'BIDDING' | 'PAUSED' | 'COMPLETED' | { BIDDING: number } | { PAUSED: number };
+export type DraftState = 'PENDING' | 'BIDDING' | 'COMPLETED';
 
 export interface Auction {
   auction_id: string;
   pokemon: Pokemon;
-  status: 'BIDDING' | 'COMPLETED' | 'PENDING';
+  auction_state: 'BIDDING' | 'COMPLETED' | 'PENDING' | 'PAUSED';
   highest_bid: number;
   highest_bidder: string | SerializedUser | null;
   expires_at?: string;
@@ -85,10 +85,7 @@ export interface Draft {
   teams: Team[];
   draft_state: DraftState;
   completed_auctions: Auction[];
-  current_auction: Auction | null;
-  current_auction_expires_at?: string;
   current_server_time?: string;
-  pokemon: Pokemon[];
 }
 
 export interface ChatMessage {
