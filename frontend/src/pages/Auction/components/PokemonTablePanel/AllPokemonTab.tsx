@@ -168,7 +168,7 @@ const AllPokemonTab: React.FC<AllPokemonTabProps> = ({ pokemon, auctions }) => {
       auction_id: 'preview',
       draft_id: 'preview',
       draft_order: 0,
-      status: 'PENDING',
+      auction_state: 'PENDING',
       pokemon: selectedPokemon,
       highest_bid: 0,
       highest_bidder: null,
