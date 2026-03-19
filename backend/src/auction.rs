@@ -1,19 +1,17 @@
 use axum::http::StatusCode;
 use chrono::{DateTime, Utc};
-use sqlx::{Postgres, Transaction};
 use strum::Display;
 
 use serde::{Deserialize, Serialize};
 use std::{pin::Pin, sync::Arc};
 use tokio::{
-    sync::{OnceCell, RwLock, mpsc, oneshot},
+    sync::{OnceCell, broadcast, mpsc, oneshot},
     time::{Duration, Instant, Sleep},
 };
 use uuid::Uuid;
 
 use crate::{
-    AppError, draft::Draft, get_expiry_time_from_instant, messages::ClientBidRequest,
-    pokemon::Pokemon, users::User,
+    AppError, draft::Draft, get_expiry_time_from_instant, messages::ServerMessage, pokemon::{self, Pokemon}
 };
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -21,8 +19,7 @@ pub struct AuctionResponse {
     pub auction_id: i64,
     pub draft_id: Uuid,
     pub state: AuctionState,
-    pub pokedex_id: u32,
-    pub pokemon_form: String,
+    pub pokemon: Pokemon,
     pub highest_bid: u32,
     pub highest_bidder: String,
     pub expires_at: Option<DateTime<Utc>>,
@@ -80,17 +77,17 @@ impl Auction {
         let (actor_sender, actor_receiver) = mpsc::channel(1_000);
         if self.actor_sender.set(actor_sender).is_ok() {
             let auction_id = self.auction_id.clone();
-            let pokedex_id = self.pokemon.pokedex_id;
-            let pokemon_form = self.pokemon.form.clone().unwrap_or_default();
+            let pokemon = self.pokemon.clone();
             let draft = draft;
+            let broadcast_tx = draft.broadcast_tx.clone();
             tokio::spawn(async move {
                 let actor = AuctionActor::new(
                     auction_id,
                     draft,
                     length,
-                    pokedex_id,
-                    pokemon_form,
+                    pokemon,
                     actor_receiver,
+                    broadcast_tx,
                 );
                 actor.run().await
             });
@@ -186,8 +183,7 @@ impl From<&Auction> for AuctionResponse {
             auction_id: value.auction_id,
             draft_id: value.draft_id.clone(),
             state: AuctionState::PENDING,
-            pokedex_id: value.pokemon.pokedex_id,
-            pokemon_form: value.pokemon.form.clone().unwrap_or_default(),
+            pokemon: (*value.pokemon).clone(),
             highest_bid: 0,
             highest_bidder: format!(""),
             expires_at: None,
@@ -201,12 +197,12 @@ struct AuctionActor {
     draft: Arc<Draft>,
     state: AuctionState,
     length: u32,
-    pokedex_id: u32,
-    pokemon_form: String,
+    pokemon: Arc<Pokemon>,
     highest_bid: u32,
     highest_bidder: String,
     expires_at: Option<Instant>,
     receiver: mpsc::Receiver<AuctionCommand>,
+    broadcast_tx: broadcast::Sender<ServerMessage>
 }
 
 enum AuctionCommand {
@@ -227,20 +223,20 @@ impl AuctionActor {
         auction_id: i64,
         draft: Arc<Draft>,
         length: u32,
-        pokedex_id: u32,
-        pokemon_form: String,
+        pokemon: Arc<Pokemon>,
         receiver: mpsc::Receiver<AuctionCommand>,
+        broadcast_tx: broadcast::Sender<ServerMessage>,
     ) -> Self {
         Self {
             auction_id,
             draft,
             state: AuctionState::PENDING,
             length,
-            pokedex_id,
-            pokemon_form,
+            pokemon,
             highest_bid: 0,
             highest_bidder: "".to_string(),
             receiver,
+            broadcast_tx,
             expires_at: None,
         }
     }
@@ -261,7 +257,7 @@ impl AuctionActor {
                         bid_value,
                         user_id,
                     } => {
-                        self.first_bid(bid_value, user_id, response_sender);
+                        self.first_bid(bid_value, user_id, response_sender).await;
                     }
                     AuctionCommand::Get(response_sender) => {
                         let response = self.get();
@@ -319,6 +315,8 @@ impl AuctionActor {
                     let t = self.expires_at.expect("").duration_since(now).as_secs() as u32;
                     self.state = AuctionState::PAUSED(t);
                     let _ = response_sender.send(Ok(t));
+                    let msg = AuctionResponse::from(&*self);
+                    let _ = self.broadcast_tx.send(ServerMessage::AuctionUpdate(msg));
                 } else {
                     let _ = response_sender.send(Err((
                         StatusCode::PRECONDITION_FAILED,
@@ -331,6 +329,8 @@ impl AuctionActor {
                     self.expires_at = Some(Instant::now() + Duration::from_secs(t as u64));
                     auction_timer.reset(self.expires_at.expect(""));
                     let _ = response_sender.send(Ok(()));
+                    let msg = AuctionResponse::from(&*self);
+                    let _ = self.broadcast_tx.send(ServerMessage::AuctionUpdate(msg));
                 }
             }
             AuctionCommand::Get(response_sender) => {
@@ -361,6 +361,8 @@ impl AuctionActor {
         }
 
         let _ = sender.send(response);
+        let msg = AuctionResponse::from(&*self);
+        let _ = self.broadcast_tx.send(ServerMessage::AuctionUpdate(msg));
     }
 
     async fn bid(
@@ -392,11 +394,13 @@ impl AuctionActor {
         }
 
         let _ = sender.send(response);
+        let msg = AuctionResponse::from(&*self);
+        let _ = self.broadcast_tx.send(ServerMessage::AuctionUpdate(msg));
     }
 
     async fn resolve_auction(&mut self) {
         self.state = AuctionState::CLOSED;
-        self.draft.resolve_auction(AuctionResponse::from(&*self));
+        let _ = self.draft.resolve_auction(AuctionResponse::from(&*self)).await;
     }
 }
 
@@ -412,8 +416,7 @@ impl From<&AuctionActor> for AuctionResponse {
             state: value.state.clone(),
             highest_bid: value.highest_bid,
             highest_bidder: value.highest_bidder.clone(),
-            pokedex_id: value.pokedex_id,
-            pokemon_form: value.pokemon_form.clone(),
+            pokemon: (*value.pokemon).clone(),
             expires_at: expires_at,
             server_timestamp: Utc::now(),
         }

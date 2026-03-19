@@ -180,7 +180,7 @@ const AuctionPage: React.FC = () => {
     if (wsRef.current) {
       wsRef.current.close();
     }
-    wsRef.current = connectDraftWebSocket(draftId, setDraft, setWsConnected);
+    wsRef.current = connectDraftWebSocket(draftId, setDraft, setCurrentAuction, setWsConnected);
   };
 
   const attemptJoinDraft = async (password?: string) => {

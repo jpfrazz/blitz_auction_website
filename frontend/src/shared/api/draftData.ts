@@ -126,7 +126,7 @@ export async function joinDraft(draft_id: string, password?: string): Promise<Dr
 }
 
 // Place a bid on the current auction
-export async function placeBid(draft_id: string, auction_id: string, value: number): Promise<{accepted: boolean, error?: string}> {
+export async function placeBid(draft_id: string, auction_id: string, value: number): Promise<any> {
   const response = await axios.post(`/api/drafts/${draft_id}/bid`, {
     auction_id,
     value

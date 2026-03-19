@@ -26,7 +26,7 @@ pub struct Draft {
     pub draft_id: Uuid,
     pub draft_name: String,
     pub host: User,
-    pub broadcast_rx: broadcast::Receiver<ServerMessage>,
+    pub broadcast_tx: broadcast::Sender<ServerMessage>,
     pub pokemon: Vec<Arc<Pokemon>>,
     actor_sender: mpsc::Sender<DraftCommand>
 }
@@ -103,13 +103,13 @@ struct Team {
 }
 
 impl Draft {
-    fn new(draft_id: Uuid, draft_name: String, host: User, pokemon: Vec<Arc<Pokemon>>, actor_sender: mpsc::Sender<DraftCommand>, broadcast_rx: broadcast::Receiver<ServerMessage>) -> Draft {
+    fn new(draft_id: Uuid, draft_name: String, host: User, pokemon: Vec<Arc<Pokemon>>, actor_sender: mpsc::Sender<DraftCommand>, broadcast_tx: broadcast::Sender<ServerMessage>) -> Draft {
         Draft {
             draft_id,
             draft_name,
             host,
             pokemon,
-            broadcast_rx,
+            broadcast_tx,
             actor_sender
         }
     }
@@ -154,8 +154,8 @@ impl Draft {
             auctions.push(auction);
         }
         let (actor_sender, actor_receiver) = mpsc::channel(1_000);
-        let (broadcast_tx, broadcast_rx) = broadcast::channel(1_000);
-        let draft = Arc::new(Draft::new(draft_id, draft_name, host.clone(), pokemon, actor_sender, broadcast_rx));
+        let (broadcast_tx, _) = broadcast::channel(10_000);
+        let draft = Arc::new(Draft::new(draft_id, draft_name, host.clone(), pokemon, actor_sender, broadcast_tx.clone()));
         let actor_draft = draft.clone();
 
         tokio::spawn(async move {
@@ -604,6 +604,12 @@ impl DraftActor {
             spectators: vec![],
         }
     }
+
+    fn broadcast(&self) {
+        let data = DraftResponse::from(self);
+        let _ = self.broadcast_tx.send(ServerMessage::DraftUpdate(data));
+    }
+
     pub async fn run(mut self) {
         loop {
             if let Some(cmd) = self.receiver.recv().await {
@@ -622,7 +628,9 @@ impl DraftActor {
                         user_id,
                     } => {
                         let res = self.start(user_id).await;
+                        let ok = res.is_ok();
                         let _ = response_sender.send(res);
+                        if ok { self.broadcast(); } ;
                     }
                     DraftCommand::Pause {
                         response_sender,
@@ -644,14 +652,18 @@ impl DraftActor {
                         password,
                     } => {
                         let res = self.join(user, password).await;
+                        let ok = res.is_ok();
                         let _ = response_sender.send(res);
+                        if ok { self.broadcast(); } ;
                     }
                     DraftCommand::Kick {
                         response_sender,
                         user,
                     } => {
                         let res = self.kick(user).await;
+                        let ok = res.is_ok();
                         let _ = response_sender.send(res);
+                        if ok { self.broadcast(); } ;
                     },
                     DraftCommand::Get(response_sender) => {
                         let _ = response_sender.send(Ok(DraftResponse::from(&self)));
@@ -664,14 +676,18 @@ impl DraftActor {
                         completed_auction,
                     } => {
                         let res = self.resolve_auction(completed_auction).await;
+                        let ok = res.is_ok();
                         let _ = response_sender.send(res);
+                        if ok { self.broadcast(); } ;
                     }
                     DraftCommand::ReadyUp {
                         response_sender,
                         user_id,
                     } => {
                         let res = self.ready_up(user_id).await;
+                        let ok = res.is_ok();
                         let _ = response_sender.send(res);
+                        if ok { self.broadcast(); } ;
                     },
                     DraftCommand::GetCurrentAuction(response_sender) => {
                         let res = self.get_current_auction().await;
@@ -894,6 +910,7 @@ impl DraftActor {
         self.db_writer.resolve_auction(completed_auction.auction_id).await?;
         self.current_auction += 1;
         self.completed_auctions.push(completed_auction);
+        let _ = self.auctions[self.current_auction].start(self.draft.clone(), self.settings.auction_length.as_secs() as u32).await;
         Ok(())
     }
 

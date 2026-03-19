@@ -403,11 +403,7 @@ pub async fn bid(
     Json(bid_request): Json<ClientBidRequest>,
 ) -> Result<(), AppError> {
     let user = auth_session.user.expect("user should exist");
-    let auction_id = bid_request.auction_id.parse::<i64>()
-        .map_err(|e| (
-                StatusCode::BAD_REQUEST,
-                format!("failed to parse auction_id as i64, {}", e)
-        ))?;
+    let auction_id = bid_request.auction_id;
     let draft_uuid = Uuid::from_str(&draft_id)
         .map_err(|e| (
                 StatusCode::BAD_REQUEST,
@@ -1090,11 +1086,12 @@ pub async fn websocket_handler(
                 format!("requested draft does not exist")
         ));
     };
-    let rx = draft.broadcast_rx.resubscribe();
-    Ok(ws.on_upgrade(move |socket| handle_websocket(socket, rx)))
+    let tx = draft.broadcast_tx.clone();
+    Ok(ws.on_upgrade(move |socket| handle_websocket(socket, tx)))
 }
 
-async fn handle_websocket(mut socket: WebSocket, mut rx: broadcast::Receiver<ServerMessage>) {
+async fn handle_websocket(mut socket: WebSocket, tx: broadcast::Sender<ServerMessage>) {
+    let mut rx = tx.subscribe();
     loop {
         tokio::select! {
             Ok(msg) = rx.recv() => {
@@ -1114,7 +1111,6 @@ async fn handle_websocket(mut socket: WebSocket, mut rx: broadcast::Receiver<Ser
             }
         }
     }
-
 }
 
 #[debug_handler]

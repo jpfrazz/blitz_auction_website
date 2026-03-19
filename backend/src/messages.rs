@@ -1,60 +1,31 @@
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 
-use crate::draft::DraftState;
+use crate::{
+    auction, draft, users::User
+};
 
 #[derive(Clone, Debug, Serialize)]
 #[serde(tag = "type", content = "data")]
 pub enum ServerMessage {
-    DraftUpdate(crate::draft::DraftResponse),
-    AuctionStarted {
-        pokemon_name: String,
-        starting_bid: u32,
-        expires_at: DateTime<Utc>,
-    },
-    AuctionUpdate {
-        pokedex_id: u32,
-        form: Option<String>,
-        winning_bid: u32,
-        winning_bidder: Option<String>,
-        expires_at: DateTime<Utc>,
-    },
+    DraftUpdate(draft::DraftResponse),
+    AuctionUpdate(auction::AuctionResponse),
     AuctionResult {
         pokedex_id: u32,
         form: Option<String>,
         winning_bid: u32,
         winner: String,
     },
-    PlayerJoined(String),
-    PlayerLeft(String),
+    PlayerJoined(User),
+    PlayerLeft(User),
     DraftStarted,
     DraftEnded,
-    DraftState(DraftState),
-}
-
-#[derive(Clone, Debug, Deserialize)]
-pub enum ClientMessage {
-    CreateDraft {
-        default_funds: u32,
-        draft_name: String,
-        excluded_pokemon: Vec<u32>,
-        num_auctions: u32,
-        num_teams: u8,
-        password: Option<String>,
-        ranked: bool,
-        auction_length: u8,
-    },
-    JoinDraft {
-        team_name: Option<String>,
-    },
-    Bid {
-        value: u32,
-    },
+    DraftState(draft::DraftState),
 }
 
 #[derive(Clone, Debug, Deserialize)]
 pub struct ClientBidRequest {
-    pub auction_id: String,
+    pub auction_id: i64,
     pub value: u32,
 }
 
