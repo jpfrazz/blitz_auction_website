@@ -227,12 +227,13 @@ const AuctionPage: React.FC = () => {
             fetchDraftById(auctionId),
             fetchDraftPokemon(auctionId),
             fetchDraftCurrentAuction(auctionId)
-        ]).then(([draftData, pokemon, current_auction]) => ({ user, draftData, pokemon, current_auction}));
+        ]).then(([draftData, pokemonData, current_auction]) => ({ user, draftData, pokemonData, current_auction }));
       })
-      .then(({ user, draftData, pokemon, current_auction }) => {
+      .then(({ user, draftData, pokemonData, current_auction }) => {
         setDraft(draftData);
         setCurrentAuction(current_auction);
-        setPokemon(pokemon);
+        setPokemon(pokemonData);
+        console.log('Fetched draft data:', draftData);
         connectWebSocket(auctionId);
         const alreadyOnTeam = draftData.teams.some(team => team.user_id === user.user_id);
         if (draftData.draft_state === 'PENDING' && !alreadyOnTeam) {
