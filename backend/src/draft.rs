@@ -141,10 +141,12 @@ impl Draft {
         pokemon.shuffle(&mut rand::rng());
         let db_writer = DbWriter::new(pool.clone(), draft_id, settings.starting_money);
 
-        let host_id = host.get_user_id_string();
         let auction_ids = db_writer
             .create_draft(host.clone(), settings.clone(), pokemon.clone())
             .await?;
+        if !settings.ranked {
+            db_writer.join_draft(host.clone()).await?;
+        }
         let mut auctions = Vec::new();
 
         for (i, id) in auction_ids.into_iter().enumerate() {
@@ -153,11 +155,11 @@ impl Draft {
         }
         let (actor_sender, actor_receiver) = mpsc::channel(1_000);
         let (broadcast_tx, broadcast_rx) = broadcast::channel(1_000);
-        let draft = Arc::new(Draft::new(draft_id, draft_name, host, pokemon, actor_sender, broadcast_rx));
+        let draft = Arc::new(Draft::new(draft_id, draft_name, host.clone(), pokemon, actor_sender, broadcast_rx));
         let actor_draft = draft.clone();
 
         tokio::spawn(async move {
-            let actor = DraftActor::new(actor_draft, host_id, settings, auctions, db_writer, actor_receiver, broadcast_tx);
+            let actor = DraftActor::new(actor_draft, host, settings, auctions, db_writer, actor_receiver, broadcast_tx);
             actor.run().await;
         });
 
@@ -575,14 +577,25 @@ enum DraftCommand {
 }
 
 impl DraftActor {
-    pub fn new(draft: Arc<Draft>, host: String, settings: DraftSettings, auctions: Vec<Auction>, db_writer: DbWriter, receiver: mpsc::Receiver<DraftCommand>, broadcast_tx: broadcast::Sender<ServerMessage>) -> Self {
+    pub fn new(draft: Arc<Draft>, host: User, settings: DraftSettings, auctions: Vec<Auction>, db_writer: DbWriter, receiver: mpsc::Receiver<DraftCommand>, broadcast_tx: broadcast::Sender<ServerMessage>) -> Self {
+        let host_id = host.get_user_id_string();
+        let mut teams = HashMap::new();
+        if !settings.ranked {
+            teams.insert(host_id.clone(), Team {
+                user_id: host_id.clone(),
+                username: host.get_user_name_string(),
+                ready: true,
+                budget_remaining: settings.starting_money,
+                auctions_won: vec![],
+            });
+        }
         Self {
             draft,
-            host,
+            host: host_id,
             draft_state: DraftState::PENDING,
             settings,
             current_auction: 0,
-            teams: HashMap::new(),
+            teams,
             auctions,
             db_writer,
             completed_auctions: vec![],

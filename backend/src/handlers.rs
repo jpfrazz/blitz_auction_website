@@ -902,6 +902,9 @@ pub async fn get_draft_chats(
     State(state): State<ServerState>,
     Path(draft_id): Path<String>,
 ) -> Result<Json<Vec<ChatMessage>>, (StatusCode, String)> {
+    let draft_uuid = Uuid::from_str(&draft_id)
+        .map_err(|_| (StatusCode::BAD_REQUEST, "invalid draft id".to_string()))?;
+
     let rows = sqlx::query(
         "SELECT c.chat_id, c.draft_id, c.user_id, COALESCE(u.user_name, c.user_id) AS user_name, c.message, c.created_at
          FROM chats c
@@ -909,7 +912,7 @@ pub async fn get_draft_chats(
          WHERE c.draft_id = $1
          ORDER BY c.created_at ASC",
     )
-    .bind(&draft_id)
+    .bind(draft_uuid)
     .fetch_all(&state.db_pool)
     .await
     .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
@@ -939,6 +942,9 @@ pub async fn create_draft_chat(
     auth_session: AuthSession<AuthBackend>,
     Json(request): Json<CreateChatRequest>,
 ) -> Result<Json<ChatMessage>, (StatusCode, String)> {
+    let draft_uuid = Uuid::from_str(&draft_id)
+        .map_err(|_| (StatusCode::BAD_REQUEST, "invalid draft id".to_string()))?;
+        
     let user = auth_session.user.ok_or((
         StatusCode::UNAUTHORIZED,
         "user not authenticated".to_string(),
@@ -970,7 +976,7 @@ pub async fn create_draft_chat(
         FROM inserted i
         LEFT JOIN users u ON u.user_id = i.user_id",
     )
-    .bind(&draft_id)
+    .bind(draft_uuid)
     .bind(&user_id)
     .bind(message)
     .fetch_one(&state.db_pool)
