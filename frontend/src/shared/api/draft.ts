@@ -12,10 +12,7 @@ export interface CreateDraftRequest {
   password?: string | null;
   excluded_pokemon: ExcludedPokemon[];
   num_auctions: number;
-  auction_length: {
-    secs: number;
-    nanos: number;
-  };
+  auction_length: number;
 }
 
 // Create a draft via POST /drafts (proxied to backend)

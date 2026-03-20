@@ -63,6 +63,7 @@ export interface Auction {
   highest_bid: number;
   highest_bidder: string | SerializedUser | null;
   expires_at?: string;
+  current_server_time?: string;
 }
 
 export interface Team {
@@ -86,6 +87,7 @@ export interface Draft {
   draft_state: DraftState;
   completed_auctions: Auction[];
   current_server_time?: string;
+  auction_length: number;
 }
 
 export interface ChatMessage {

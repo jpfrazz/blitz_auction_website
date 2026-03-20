@@ -237,7 +237,7 @@ const AuctionPage: React.FC = () => {
         connectWebSocket(auctionId);
         const alreadyOnTeam = draftData.teams.some(team => team.user_id === user.user_id);
         if (draftData.draft_state === 'PENDING' && !alreadyOnTeam) {
-          setShowJoinModal(true);
+          setShowJoinModal(true)
         }
       })
       .catch(error => console.error('Error fetching draft on initial load:', error))
@@ -626,7 +626,7 @@ const AuctionPage: React.FC = () => {
                         current_auction={currentAuction}
                         draft_id={draft.draft_id}
                         currentAuctionExpiresAt={currentAuction.expires_at}
-                        currentServerTime={draft.current_server_time}
+                        currentServerTime={currentAuction.current_server_time}
                         isHost={currentUserId === draft.host}
                         isPaused={isDraftPaused}
                         pauseActionPending={pausingDraft}
@@ -639,6 +639,7 @@ const AuctionPage: React.FC = () => {
                         userBudgetRemaining={draft.teams.find(team => team.user_id === currentUserId)?.budget_remaining || 0}
                         completed_auctions={draft.completed_auctions}
                         total_auctions={draft.total_auctions}
+                        auctionLength={draft.auction_length}
                       />
                     )}
                     {draft.draft_state !== 'PENDING' && currentAuction && (

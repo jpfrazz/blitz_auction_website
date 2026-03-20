@@ -45,6 +45,7 @@ pub struct DraftResponse {
     current_auction: usize,
     completed_auctions: Vec<AuctionResponse>,
     current_server_time: chrono::DateTime<Utc>,
+    auction_length: u32,
 }
 
 #[derive(Clone, Debug, Serialize)]
@@ -90,7 +91,7 @@ pub struct DraftSettings {
     pub password: Option<String>,
     pub excluded_pokemon: Vec<ExcludedPokemon>,
     pub num_auctions: u32,
-    pub auction_length: Duration,
+    pub auction_length: u32,
 }
 
 #[derive(Clone, Debug, Serialize)]
@@ -740,7 +741,7 @@ impl DraftActor {
             ));
         }
 
-        auction.bid(bid_value, user.get_user_id_string()).await?;
+        auction.bid(bid_value, user.clone()).await?;
         self.db_writer.write_bid(auction_id, bid_value, user).await;
 
         Ok(())
@@ -782,7 +783,7 @@ impl DraftActor {
         auction
             .start(
                 self.draft.clone(),
-                self.settings.auction_length.as_secs() as u32,
+                self.settings.auction_length,
             )
             .await?;
 
@@ -910,7 +911,7 @@ impl DraftActor {
         self.db_writer.resolve_auction(completed_auction.auction_id).await?;
         self.current_auction += 1;
         self.completed_auctions.push(completed_auction);
-        let _ = self.auctions[self.current_auction].start(self.draft.clone(), self.settings.auction_length.as_secs() as u32).await;
+        let _ = self.auctions[self.current_auction].start(self.draft.clone(), self.settings.auction_length).await;
         Ok(())
     }
 
@@ -942,6 +943,7 @@ impl From<&DraftActor> for DraftResponse {
             current_auction: value.current_auction,
             completed_auctions: value.completed_auctions.clone(),
             current_server_time: Utc::now(),
+            auction_length: value.settings.auction_length,
         }
     }
 }
