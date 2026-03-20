@@ -113,7 +113,7 @@ pub struct MatchHistoryTeam {
     pub money_remaining: i32,
     pub pokemon_drafted: Vec<MatchHistoryAuction>,
     pub placement: Option<i32>,
-    pub post_match_mmr: Option<i32>,
+    pub pre_match_mmr: Option<i32>,
     pub updated_at: chrono::DateTime<chrono::Utc>,
     pub created_at: chrono::DateTime<chrono::Utc>,
 }
@@ -127,7 +127,7 @@ pub struct MatchHistoryTeamRow {
     pub money_remaining: i32,
     pub pokemon_drafted: i32,
     pub placement: Option<i32>,
-    pub post_match_mmr: Option<i32>,
+    pub pre_match_mmr: Option<i32>,
     pub updated_at: chrono::DateTime<chrono::Utc>,
     pub created_at: chrono::DateTime<chrono::Utc>,
 }
@@ -485,7 +485,7 @@ pub async fn get_stats_page_data(
 
     let team_rows = sqlx::query(
         "SELECT t.team_id, t.user_id, t.guest_id, t.draft_id, t.money_remaining,
-                t.pokemon_drafted, t.placement, t.post_match_mmr, t.updated_at, t.created_at
+                t.pokemon_drafted, t.placement, t.pre_match_mmr, t.updated_at, t.created_at
          FROM teams t
          JOIN drafts d ON d.draft_id = t.draft_id
          WHERE d.state = 'COMPLETED'
@@ -527,8 +527,8 @@ pub async fn get_stats_page_data(
             placement: row
                 .try_get("placement")
                 .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?,
-            post_match_mmr: row
-                .try_get("post_match_mmr")
+            pre_match_mmr: row
+                .try_get("pre_match_mmr")
                 .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?,
             updated_at: row
                 .try_get("updated_at")
@@ -611,7 +611,7 @@ pub async fn get_match_history_by_user_id(
 ) -> Result<Json<Vec<MatchHistoryTeam>>, AppError> {
     let team_rows = sqlx::query(
         "SELECT team_id, user_id, guest_id, draft_id, money_remaining, placement,
-                post_match_mmr, updated_at, created_at
+                pre_match_mmr, updated_at, created_at
          FROM teams
          WHERE user_id = $1 OR guest_id = $1
          ORDER BY created_at DESC",
@@ -646,8 +646,8 @@ pub async fn get_match_history_by_user_id(
             placement: row
                 .try_get("placement")
                 .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?,
-            post_match_mmr: row
-                .try_get("post_match_mmr")
+            pre_match_mmr: row
+                .try_get("pre_match_mmr")
                 .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?,
             updated_at: row
                 .try_get("updated_at")

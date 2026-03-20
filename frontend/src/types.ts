@@ -132,7 +132,7 @@ export interface MatchHistoryTeam {
   money_remaining: number;
   pokemon_drafted: StatsAuction[];
   placement: number | null;
-  post_match_mmr: number | null;
+  pre_match_mmr: number | null;
   updated_at: string;
   created_at: string;
 }
@@ -145,7 +145,7 @@ export interface StatsPageTeamRow {
   money_remaining: number;
   pokemon_drafted: number;
   placement: number | null;
-  post_match_mmr: number | null;
+  pre_match_mmr: number | null;
   updated_at: string;
   created_at: string;
 }

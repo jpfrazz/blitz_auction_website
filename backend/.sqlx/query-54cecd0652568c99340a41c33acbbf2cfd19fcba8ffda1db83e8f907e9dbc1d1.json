@@ -1,0 +1,17 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n                INSERT INTO teams (\n                    user_id, guest_id, draft_id, money_remaining, pre_match_mmr\n                )\n                VALUES ($1, $2, $3, $4,\n                    (SELECT mmr FROM users WHERE user_id = $1)\n                )\n            ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Text",
+        "Text",
+        "Uuid",
+        "Int4"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "54cecd0652568c99340a41c33acbbf2cfd19fcba8ffda1db83e8f907e9dbc1d1"
+}

@@ -27,7 +27,7 @@ struct Actor {
 
 enum DbCommand {
     CreateDraft {
-        response_sender: oneshot::Sender<Result<Vec<i64>, AppError>>,
+        response_sender: oneshot::Sender<Result<Vec<(i64, Arc<Pokemon>)>, AppError>>,
         host: User,
         settings: DraftSettings,
         pokemon: Vec<Arc<Pokemon>>,
@@ -77,7 +77,7 @@ impl DbWriter {
         host: User,
         settings: DraftSettings,
         pokemon: Vec<Arc<Pokemon>>,
-    ) -> Result<Vec<i64>, AppError> {
+    ) -> Result<Vec<(i64, Arc<Pokemon>)>, AppError> {
         let (response_sender, response_receiver) = oneshot::channel();
         let cmd = DbCommand::CreateDraft {
             response_sender,
@@ -309,7 +309,7 @@ impl Actor {
         host: User,
         settings: DraftSettings,
         pokemon: Vec<Arc<Pokemon>>,
-    ) -> Result<Vec<i64>, (StatusCode, String)> {
+    ) -> Result<Vec<(i64, Arc<Pokemon>)>, (StatusCode, String)> {
         if settings.num_auctions as usize > pokemon.len() {
             return Err((
                 StatusCode::BAD_REQUEST,
@@ -358,10 +358,9 @@ impl Actor {
             )
         })?;
 
-        for (i, (id, form)) in pokemon
+        for (i, p) in pokemon
             .iter()
-            .filter(|p| p.stage != PokemonStage::base && p.obtain_method == None)
-            .map(|p| (p.pokedex_id, p.form.clone()))
+            .filter(|p| p.stage == PokemonStage::base && p.obtain_method == Some("".to_string()))
             .enumerate()
         {
             if i >= settings.num_auctions as usize {
@@ -375,8 +374,8 @@ impl Actor {
                     ) VALUES ($1, $2, $3, $4)
                     RETURNING auction_id
                 "#,
-                id as i32,
-                form.unwrap_or_default(),
+                p.pokedex_id as i32,
+                p.form.clone().unwrap_or_default(),
                 i as i32,
                 self.draft_id.clone()
             )
@@ -389,7 +388,7 @@ impl Actor {
                 )
             })?;
 
-            auction_ids.push(auction.auction_id);
+            auction_ids.push((auction.auction_id, p.clone()));
         }
 
         let _ = tx.commit().await.map_err(|e| {
@@ -620,9 +619,11 @@ impl Actor {
         let _ = sqlx::query!(
             r#"
                 INSERT INTO teams (
-                    user_id, guest_id, draft_id, money_remaining
+                    user_id, guest_id, draft_id, money_remaining, pre_match_mmr
                 )
-                VALUES ($1, $2, $3, $4)
+                VALUES ($1, $2, $3, $4,
+                    (SELECT mmr FROM users WHERE user_id = $1)
+                )
             "#,
             user_id,
             guest_id,

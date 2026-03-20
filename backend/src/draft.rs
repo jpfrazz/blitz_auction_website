@@ -142,6 +142,7 @@ impl Draft {
         pokemon.shuffle(&mut rand::rng());
         let db_writer = DbWriter::new(pool.clone(), draft_id, settings.starting_money);
 
+        println!("pokemon len:, {}", pokemon.len());
         let auction_ids = db_writer
             .create_draft(host.clone(), settings.clone(), pokemon.clone())
             .await?;
@@ -149,9 +150,10 @@ impl Draft {
             db_writer.join_draft(host.clone()).await?;
         }
         let mut auctions = Vec::new();
+        println!("auction_ids len, {}", auction_ids.len());
 
-        for (i, id) in auction_ids.into_iter().enumerate() {
-            let auction = Auction::new(draft_id, id, pokemon[i].clone());
+        for (id, p) in auction_ids.into_iter() {
+            let auction = Auction::new(draft_id, id, p);
             auctions.push(auction);
         }
         let (actor_sender, actor_receiver) = mpsc::channel(1_000);
@@ -911,7 +913,13 @@ impl DraftActor {
         self.db_writer.resolve_auction(completed_auction.auction_id).await?;
         self.current_auction += 1;
         self.completed_auctions.push(completed_auction);
-        let _ = self.auctions[self.current_auction].start(self.draft.clone(), self.settings.auction_length).await;
+        if let Some(auction) = self.auctions.get(self.current_auction) {
+            let _ = auction.start(self.draft.clone(), self.settings.auction_length);
+        } else {
+            self.draft_state = DraftState::COMPLETED;
+            self.broadcast();
+        }
+
         Ok(())
     }
 

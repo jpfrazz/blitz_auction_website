@@ -140,9 +140,10 @@ CREATE TABLE teams (
     updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
     created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
 
-    CONSTRAINT not_xor_placement_mmr CHECK (
-        num_nonnulls(placement, post_match_mmr) != 1
+    CONSTRAINT users_need_mmr CHECK (
+        num_nonnulls(user_id, pre_match_mmr) != 1
     ),
+
     CONSTRAINT exactly_one_acct_id CHECK (
         num_nonnulls(user_id, guest_id) = 1
     )

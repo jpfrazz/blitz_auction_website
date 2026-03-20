@@ -655,7 +655,7 @@ const Stats: React.FC = () => {
 
                       {playerMatchHistory.map((team) => {
                         const auctions = team.pokemon_drafted || [];
-                        const isRanked = team.post_match_mmr !== null || team.placement !== null;
+                        const isRanked = team.pre_match_mmr !== null || team.placement !== null;
                         const result = !isRanked ? 'Unknown' : team.placement === 1 ? 'Win' : 'Loss';
                         const resultClass = result === 'Win' ? 'win' : result === 'Loss' ? 'loss' : 'unknown';
 
@@ -671,7 +671,7 @@ const Stats: React.FC = () => {
                                 <span className="separator">•</span>
                                 <span className="placement">{isRanked ? `#${team.placement}` : 'Unranked'}</span>
                                 <span className="separator">•</span>
-                                <span className="mmr">{team.post_match_mmr ?? '-'} MMR</span>
+                                <span className="mmr">{team.pre_match_mmr ?? '-'} MMR</span>
                               </div>
                               <div>
                                 <span className="budget-remaining">${team.money_remaining.toLocaleString()} left</span>
