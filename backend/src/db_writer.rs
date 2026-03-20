@@ -10,7 +10,7 @@ use crate::{
     auction::{AuctionResponse, AuctionState},
     draft::{DraftSettings, DraftState},
     messages::ClientBidRequest,
-    pokemon::Pokemon,
+    pokemon::{Pokemon, PokemonStage},
     users::{DiscordUser, GuestUser, User},
 };
 
@@ -258,7 +258,7 @@ impl Actor {
                         pokemon,
                     } => {
                         let res = self.create_draft(host, settings, pokemon).await;
-                        response_sender.send(res);
+                        let _ = response_sender.send(res);
                     }
                     DbCommand::StartDraft(response_sender) => {
                         let res = self.start_draft().await;
@@ -360,6 +360,7 @@ impl Actor {
 
         for (i, (id, form)) in pokemon
             .iter()
+            .filter(|p| p.stage != PokemonStage::base && p.obtain_method == None)
             .map(|p| (p.pokedex_id, p.form.clone()))
             .enumerate()
         {
