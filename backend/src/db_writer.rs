@@ -522,14 +522,7 @@ impl Actor {
         let Ok(mut tx) = self.pool.begin().await else {
             return false;
         };
-        let user_id = match user {
-            User::DiscordUser(ref user) => Some(user.user_id.clone()),
-            User::GuestUser(_) => None,
-        };
-        let guest_id = match user {
-            User::DiscordUser(_) => None,
-            User::GuestUser(ref user) => Some(user.user_id.clone()),
-        };
+        let (user_id, guest_id) = user.get_user_and_guest_id();
 
         let Ok(_) = sqlx::query!(
             r#"
@@ -539,10 +532,14 @@ impl Actor {
                     winning_user_id = $2,
                     winning_guest_id = $3
                 WHERE auction_id = $4
-                    AND winning_bid < $1
+                    AND (
+                        winning_bid IS NULL
+                        OR winning_bid < $1
+                    )
                     AND (
                         winning_user_id IS DISTINCT FROM $2
-                        OR winning_guest_id IS DISTINCT FROM $3)
+                        OR winning_guest_id IS DISTINCT FROM $3
+                    )
             "#,
             bid_value as i32,
             user_id,

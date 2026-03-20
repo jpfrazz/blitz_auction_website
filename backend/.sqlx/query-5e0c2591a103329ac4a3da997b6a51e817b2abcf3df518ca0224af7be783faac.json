@@ -1,0 +1,17 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n                UPDATE auctions\n                SET\n                    winning_bid = $1,\n                    winning_user_id = $2,\n                    winning_guest_id = $3\n                WHERE auction_id = $4\n                    AND (\n                        winning_bid IS NULL\n                        OR winning_bid < $1\n                    )\n                    AND (\n                        winning_user_id IS DISTINCT FROM $2\n                        OR winning_guest_id IS DISTINCT FROM $3\n                    )\n            ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Int4",
+        "Text",
+        "Text",
+        "Int8"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "5e0c2591a103329ac4a3da997b6a51e817b2abcf3df518ca0224af7be783faac"
+}
