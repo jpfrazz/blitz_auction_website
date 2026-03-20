@@ -1,0 +1,16 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n                UPDATE teams\n                SET\n                    money_remaining = money_remaining - $3,\n                    pokemon_drafted = pokemon_drafted + 1\n                WHERE user_id IS NOT DISTINCT FROM $1\n                    AND guest_id IS NOT DISTINCT FROM $2\n            ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Text",
+        "Text",
+        "Int4"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "81c017ca5abe5c25730eefd0a9e62d6ff6d5851473e497f39d414cc5a9c7911a"
+}

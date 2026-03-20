@@ -481,7 +481,9 @@ impl Actor {
         let _ = sqlx::query!(
             r#"
                 UPDATE teams
-                SET money_remaining = money_remaining - $3
+                SET
+                    money_remaining = money_remaining - $3,
+                    pokemon_drafted = pokemon_drafted + 1
                 WHERE user_id IS NOT DISTINCT FROM $1
                     AND guest_id IS NOT DISTINCT FROM $2
             "#,
