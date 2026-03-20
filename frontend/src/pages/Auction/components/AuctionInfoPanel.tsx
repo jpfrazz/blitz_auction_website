@@ -111,9 +111,9 @@ const AuctionInfoPanel: React.FC<AuctionInfoPanelProps> = ({
       clearInterval(interval);
       clearTimeout(resetTimer);
     };
-  }, [currentAuctionExpiresAt, currentServerTime, isPaused]);
+  }, [currentAuctionExpiresAt, isPaused]);
 
-  const progress = secondsRemaining / 10;
+  const progress = auctionLength > 0 ? secondsRemaining / auctionLength : 0;
 
   // Determine color based on remaining time
   let timerColor = '#00aa00'; // green

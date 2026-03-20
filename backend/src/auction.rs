@@ -23,7 +23,7 @@ pub struct AuctionResponse {
     pub highest_bid: u32,
     pub highest_bidder: Option<User>,
     pub expires_at: Option<DateTime<Utc>>,
-    pub server_timestamp: DateTime<Utc>,
+    pub current_server_time: DateTime<Utc>,
 }
 
 #[derive(Debug)]
@@ -187,7 +187,7 @@ impl From<&Auction> for AuctionResponse {
             highest_bid: 0,
             highest_bidder: None,
             expires_at: None,
-            server_timestamp: Utc::now(),
+            current_server_time: Utc::now(),
         }
     }
 }
@@ -416,18 +416,10 @@ impl AuctionActor {
 
 impl From<&AuctionActor> for AuctionResponse {
     fn from(value: &AuctionActor) -> Self {
-        let now = Instant::now();
-        let server_timestamp = Utc::now();
-
-        let expires_at = value.expires_at.map(|deadline| {
-            let remaining = if deadline > now {
-                deadline - now
-            } else {
-                Duration::from_secs(0)
-            };
-            server_timestamp + remaining
-        });
-
+        let expires_at = value
+            .expires_at
+            .clone()
+            .map(|some| get_expiry_time_from_instant(some));
         Self {
             auction_id: value.auction_id.clone(),
             draft_id: value.draft.draft_id,
@@ -435,8 +427,8 @@ impl From<&AuctionActor> for AuctionResponse {
             highest_bid: value.highest_bid,
             highest_bidder: value.highest_bidder.clone(),
             pokemon: (*value.pokemon).clone(),
-            expires_at,
-            server_timestamp,
-        }
+            expires_at: expires_at,
+            current_server_time: Utc::now(),
+          }
     }
 }
