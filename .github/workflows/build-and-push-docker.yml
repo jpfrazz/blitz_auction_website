@@ -80,7 +80,7 @@ jobs:
 
       - name: Deploy via SSH
         run: |
-          ssh server << 'EOF'
+          ssh server "SSH_USER=${{env.SSH_USER}}" << 'EOF'
             set -e
             cd /home/$SSH_USER/blitz_auction_website
             git fetch
