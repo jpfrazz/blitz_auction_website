@@ -914,7 +914,7 @@ impl DraftActor {
         self.current_auction += 1;
         self.completed_auctions.push(completed_auction);
         if let Some(auction) = self.auctions.get(self.current_auction) {
-            let _ = auction.start(self.draft.clone(), self.settings.auction_length);
+            let _ = auction.start(self.draft.clone(), self.settings.auction_length).await;
         } else {
             self.draft_state = DraftState::COMPLETED;
             self.broadcast();
