@@ -23,7 +23,7 @@ pub struct AuctionResponse {
     pub highest_bid: u32,
     pub highest_bidder: Option<User>,
     pub expires_at: Option<DateTime<Utc>>,
-    pub server_timestamp: DateTime<Utc>,
+    pub current_server_time: DateTime<Utc>,
 }
 
 #[derive(Debug)]
@@ -187,7 +187,7 @@ impl From<&Auction> for AuctionResponse {
             highest_bid: 0,
             highest_bidder: None,
             expires_at: None,
-            server_timestamp: Utc::now(),
+            current_server_time: Utc::now(),
         }
     }
 }
@@ -422,7 +422,7 @@ impl From<&AuctionActor> for AuctionResponse {
             highest_bidder: value.highest_bidder.clone(),
             pokemon: (*value.pokemon).clone(),
             expires_at: expires_at,
-            server_timestamp: Utc::now(),
+            current_server_time: Utc::now(),
         }
     }
 }

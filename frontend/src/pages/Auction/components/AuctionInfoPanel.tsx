@@ -39,7 +39,6 @@ const AuctionInfoPanel: React.FC<AuctionInfoPanelProps> = ({
   auctionLength,
 }) => {
   const [secondsRemaining, setSecondsRemaining] = useState(0);
-  const [initialSeconds, setInitialSeconds] = useState(0);
   const [customBidAmount, setCustomBidAmount] = useState('');
   const [showBidWarning, setShowBidWarning] = useState(false);
   const [pendingBid, setPendingBid] = useState<number | null>(null);
@@ -84,11 +83,6 @@ const AuctionInfoPanel: React.FC<AuctionInfoPanelProps> = ({
   }, [current_auction.highest_bid]);
 
   useEffect(() => {
-    // When the expiration time changes, reset initialSeconds so it can be re-calculated.
-    setInitialSeconds(0);
-  }, [currentAuctionExpiresAt]);
-
-  useEffect(() => {
     if (isPaused) {
       setIsResetting(false);
       return;
@@ -108,7 +102,7 @@ const AuctionInfoPanel: React.FC<AuctionInfoPanelProps> = ({
       const remainingMs = expiresAtMs - adjustedNow;
       // Cap the displayed seconds at 10 to match the intended auction timer.
       const remainingS = Math.ceil(remainingMs / 1000);
-      console.log("time remaining " || remainingS);
+      console.log("time remaining " + remainingS);
       setSecondsRemaining(Math.min(remainingS, 10));
     };
 
@@ -118,9 +112,9 @@ const AuctionInfoPanel: React.FC<AuctionInfoPanelProps> = ({
       clearInterval(interval);
       clearTimeout(resetTimer);
     };
-  }, [currentAuctionExpiresAt, currentServerTime, initialSeconds, isPaused]);
+  }, [currentAuctionExpiresAt, isPaused]);
 
-  const progress = auctionLength > 0 ? secondsRemaining / initialSeconds : 0;
+  const progress = auctionLength > 0 ? secondsRemaining / auctionLength : 0;
 
   // Determine color based on remaining time
   let timerColor = '#00aa00'; // green
