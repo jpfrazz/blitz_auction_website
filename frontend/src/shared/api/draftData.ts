@@ -1,5 +1,14 @@
 import axios, {AxiosError} from 'axios';
-import { ChatMessage, Draft, DraftLobby, UserRole, Pokemon, Auction } from "../../types";
+import {
+  Auction,
+  ChatMessage,
+  Draft,
+  DraftLobby,
+  MatchHistoryTeam,
+  Pokemon,
+  StatsPageResponse,
+  UserRole,
+} from "../../types";
 
 interface JoinDraftResponse {
   joined: boolean;

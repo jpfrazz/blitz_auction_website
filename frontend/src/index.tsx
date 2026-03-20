@@ -14,6 +14,7 @@ import PatchNotes from './pages/PatchNotes/PatchNotes';
 import AuctionPage from './pages/Auction/AuctionPage';
 import LobbyViewer from './pages/LobbyViewer/LobbyViewer';
 import LeaderboardPage from './pages/LeaderboardPage';
+import Stats from './pages/Stats/Stats';
 
 const container = document.getElementById('root');
 if (container) {
@@ -27,6 +28,7 @@ if (container) {
           <Route path="/Auction" element={<AuctionPage />} />
           <Route path="/LobbyViewer" element={<LobbyViewer />} />
           <Route path="/Leaderboard" element={<LeaderboardPage />} />
+          <Route path="/Stats" element={<Stats />} />
           <Route path="/TeamPlanner" element={<TeamPlanner />} />
           <Route path="/FAQ" element={<FAQ />} />
           <Route path="/Pokedex" element={<Pokedex />} />
