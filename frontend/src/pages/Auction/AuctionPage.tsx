@@ -626,7 +626,7 @@ const AuctionPage: React.FC = () => {
                         current_auction={currentAuction}
                         draft_id={draft.draft_id}
                         currentAuctionExpiresAt={currentAuction.expires_at}
-                        currentServerTime={currentAuction.current_server_time}
+                        currentServerTime={(currentAuction as any).server_timestamp}
                         isHost={currentUserId === draft.host}
                         isPaused={isDraftPaused}
                         pauseActionPending={pausingDraft}

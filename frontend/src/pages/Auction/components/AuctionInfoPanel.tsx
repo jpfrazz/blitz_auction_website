@@ -102,7 +102,6 @@ const AuctionInfoPanel: React.FC<AuctionInfoPanelProps> = ({
       const remainingMs = expiresAtMs - adjustedNow;
       // Cap the displayed seconds at 10 to match the intended auction timer.
       const remainingS = Math.ceil(remainingMs / 1000);
-      console.log("time remaining " + remainingS);
       setSecondsRemaining(Math.min(remainingS, 10));
     };
 

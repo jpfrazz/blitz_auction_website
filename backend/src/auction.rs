@@ -333,10 +333,16 @@ impl AuctionActor {
             AuctionCommand::Resume(response_sender) => {
                 if let AuctionState::PAUSED(t) = self.state {
                     self.expires_at = Some(Instant::now() + Duration::from_secs(t as u64));
+                    self.state = AuctionState::OPEN;
                     auction_timer.reset(self.expires_at.expect(""));
                     let _ = response_sender.send(Ok(()));
                     let msg = AuctionResponse::from(&*self);
                     let _ = self.broadcast_tx.send(ServerMessage::AuctionUpdate(msg));
+                } else {
+                    let _ = response_sender.send(Err((
+                        StatusCode::PRECONDITION_FAILED,
+                        format!("auction is not paused"),
+                    )));
                 }
             }
             AuctionCommand::Get(response_sender) => {
@@ -387,7 +393,6 @@ impl AuctionActor {
         } else {
             self.highest_bid = bid_value;
             self.highest_bidder = Some(user);
-            response = Ok(());
 
             self.expires_at = Some(std::cmp::max(
                 self.expires_at.expect(""),
@@ -395,11 +400,12 @@ impl AuctionActor {
             ));
 
             auction_timer.reset(self.expires_at.expect(""));
+            response = Ok(());
+            let msg = AuctionResponse::from(&*self);
+            let _ = self.broadcast_tx.send(ServerMessage::AuctionUpdate(msg));
         }
 
         let _ = sender.send(response);
-        let msg = AuctionResponse::from(&*self);
-        let _ = self.broadcast_tx.send(ServerMessage::AuctionUpdate(msg));
     }
 
     async fn resolve_auction(&mut self) {
@@ -423,6 +429,6 @@ impl From<&AuctionActor> for AuctionResponse {
             pokemon: (*value.pokemon).clone(),
             expires_at: expires_at,
             current_server_time: Utc::now(),
-        }
+          }
     }
 }
