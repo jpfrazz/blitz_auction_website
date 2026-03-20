@@ -333,10 +333,16 @@ impl AuctionActor {
             AuctionCommand::Resume(response_sender) => {
                 if let AuctionState::PAUSED(t) = self.state {
                     self.expires_at = Some(Instant::now() + Duration::from_secs(t as u64));
+                    self.state = AuctionState::OPEN;
                     auction_timer.reset(self.expires_at.expect(""));
                     let _ = response_sender.send(Ok(()));
                     let msg = AuctionResponse::from(&*self);
                     let _ = self.broadcast_tx.send(ServerMessage::AuctionUpdate(msg));
+                } else {
+                    let _ = response_sender.send(Err((
+                        StatusCode::PRECONDITION_FAILED,
+                        format!("auction is not paused"),
+                    )));
                 }
             }
             AuctionCommand::Get(response_sender) => {
@@ -387,7 +393,6 @@ impl AuctionActor {
         } else {
             self.highest_bid = bid_value;
             self.highest_bidder = Some(user);
-            response = Ok(());
 
             self.expires_at = Some(std::cmp::max(
                 self.expires_at.expect(""),
@@ -395,11 +400,12 @@ impl AuctionActor {
             ));
 
             auction_timer.reset(self.expires_at.expect(""));
+            response = Ok(());
+            let msg = AuctionResponse::from(&*self);
+            let _ = self.broadcast_tx.send(ServerMessage::AuctionUpdate(msg));
         }
 
         let _ = sender.send(response);
-        let msg = AuctionResponse::from(&*self);
-        let _ = self.broadcast_tx.send(ServerMessage::AuctionUpdate(msg));
     }
 
     async fn resolve_auction(&mut self) {
@@ -410,10 +416,18 @@ impl AuctionActor {
 
 impl From<&AuctionActor> for AuctionResponse {
     fn from(value: &AuctionActor) -> Self {
-        let expires_at = value
-            .expires_at
-            .clone()
-            .map(|some| get_expiry_time_from_instant(some));
+        let now = Instant::now();
+        let server_timestamp = Utc::now();
+
+        let expires_at = value.expires_at.map(|deadline| {
+            let remaining = if deadline > now {
+                deadline - now
+            } else {
+                Duration::from_secs(0)
+            };
+            server_timestamp + remaining
+        });
+
         Self {
             auction_id: value.auction_id.clone(),
             draft_id: value.draft.draft_id,
@@ -421,8 +435,8 @@ impl From<&AuctionActor> for AuctionResponse {
             highest_bid: value.highest_bid,
             highest_bidder: value.highest_bidder.clone(),
             pokemon: (*value.pokemon).clone(),
-            expires_at: expires_at,
-            server_timestamp: Utc::now(),
+            expires_at,
+            server_timestamp,
         }
     }
 }

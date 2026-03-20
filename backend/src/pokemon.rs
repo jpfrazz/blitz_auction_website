@@ -129,7 +129,8 @@ pub fn get_pokemon_data(excluded_pokemon: &Vec<ExcludedPokemon>) -> Option<Vec<A
         pokemon_vec
             .iter()
             .filter(|p| {
-                !excluded_pokemon
+                p.stage == PokemonStage::base
+                    && !excluded_pokemon
                     .iter()
                     .any(|e| e.pokedex_id == p.pokedex_id && e.form == p.form)
             })
