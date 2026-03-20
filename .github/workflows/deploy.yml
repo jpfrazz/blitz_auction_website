@@ -1,0 +1,50 @@
+name: Build and Deploy
+
+on:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Connect to Tailscale
+        uses: tailscale/github-action@v3
+        with:
+          oauth-client-id: ${{ secrets.TS_OAUTH_CLIENT_ID }}
+          oauth-secret: ${{ secrets.TS_OAUTH_CLIENT_SECRET }}
+          tags: tag:blitz-gh-action
+
+      - name: Configure SSH
+        run: |
+          mkdir -p ~/.ssh/
+          cat <<EOF > ~/.ssh/config
+          Host server
+            HostName $SSH_HOST
+            User $SSH_USER
+            StrictHostKeyChecking no
+            UserKnownHostsFile /dev/null
+          EOF
+        env:
+          SSH_USER: ${{ secrets.SSH_USER }}
+          SSH_HOST: ${{ secrets.SSH_HOST }}
+
+      - name: Deploy via SSH
+        run: |
+          ssh server  << EOF
+            set -e
+            cd /home/$SSH_USER/blitz_auction_website
+            git fetch origin main
+            git reset --hard origin/main
+            docker compose -f docker-compose.yml -f docker-compose.prod.yml build --pull
+            docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --wait
+            docker image prune -f
+          EOF
+        env:
+          SSH_USER: ${{ secrets.SSH_USER }}
