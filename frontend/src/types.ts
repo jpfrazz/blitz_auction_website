@@ -108,3 +108,56 @@ export interface DraftLobby {
   total_teams: number;
   draft_state: DraftState;
 }
+
+export interface StatsAuction {
+  auction_id: number;
+  pokedex_id: number;
+  form: string;
+  draft_id: string;
+  draft_order: number;
+  state: string;
+  paused_time_remaining: number | null;
+  winning_bid: number | null;
+  winning_user_id: string | null;
+  winning_guest_id: string | null;
+  updated_at: string;
+  created_at: string;
+}
+
+export interface MatchHistoryTeam {
+  team_id: number;
+  user_id: string | null;
+  guest_id: string | null;
+  draft_id: string;
+  money_remaining: number;
+  pokemon_drafted: StatsAuction[];
+  placement: number | null;
+  post_match_mmr: number | null;
+  updated_at: string;
+  created_at: string;
+}
+
+export interface StatsPageTeamRow {
+  team_id: number;
+  user_id: string | null;
+  guest_id: string | null;
+  draft_id: string;
+  money_remaining: number;
+  pokemon_drafted: number;
+  placement: number | null;
+  post_match_mmr: number | null;
+  updated_at: string;
+  created_at: string;
+}
+
+export interface StatsPagePlayer {
+  user_id: string;
+  user_name: string;
+  is_guest: boolean;
+}
+
+export interface StatsPageResponse {
+  players: StatsPagePlayer[];
+  teams: StatsPageTeamRow[];
+  auctions: StatsAuction[];
+}

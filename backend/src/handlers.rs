@@ -88,6 +88,64 @@ pub struct LeaderboardEntry {
     pub most_drafted_pokemon: Vec<LeaderboardPokemon>,
 }
 
+#[derive(Clone, Debug, Serialize)]
+pub struct MatchHistoryAuction {
+    pub auction_id: i64,
+    pub pokedex_id: i32,
+    pub form: String,
+    pub draft_id: String,
+    pub draft_order: i32,
+    pub state: String,
+    pub paused_time_remaining: Option<i32>,
+    pub winning_bid: Option<i32>,
+    pub winning_user_id: Option<String>,
+    pub winning_guest_id: Option<String>,
+    pub updated_at: chrono::DateTime<chrono::Utc>,
+    pub created_at: chrono::DateTime<chrono::Utc>,
+}
+
+#[derive(Clone, Debug, Serialize)]
+pub struct MatchHistoryTeam {
+    pub team_id: i64,
+    pub user_id: Option<String>,
+    pub guest_id: Option<String>,
+    pub draft_id: String,
+    pub money_remaining: i32,
+    pub pokemon_drafted: Vec<MatchHistoryAuction>,
+    pub placement: Option<i32>,
+    pub post_match_mmr: Option<i32>,
+    pub updated_at: chrono::DateTime<chrono::Utc>,
+    pub created_at: chrono::DateTime<chrono::Utc>,
+}
+
+#[derive(Clone, Debug, Serialize)]
+pub struct MatchHistoryTeamRow {
+    pub team_id: i64,
+    pub user_id: Option<String>,
+    pub guest_id: Option<String>,
+    pub draft_id: String,
+    pub money_remaining: i32,
+    pub pokemon_drafted: i32,
+    pub placement: Option<i32>,
+    pub post_match_mmr: Option<i32>,
+    pub updated_at: chrono::DateTime<chrono::Utc>,
+    pub created_at: chrono::DateTime<chrono::Utc>,
+}
+
+#[derive(Clone, Debug, Serialize)]
+pub struct StatsPageResponse {
+    pub players: Vec<StatsPagePlayer>,
+    pub teams: Vec<MatchHistoryTeamRow>,
+    pub auctions: Vec<MatchHistoryAuction>,
+}
+
+#[derive(Clone, Debug, Serialize)]
+pub struct StatsPagePlayer {
+    pub user_id: String,
+    pub user_name: String,
+    pub is_guest: bool,
+}
+
 #[derive(Clone, Debug, Deserialize)]
 pub struct CreateChatRequest {
     pub message: String,
@@ -100,6 +158,84 @@ pub struct ChangeGuestNameRequest {
 
 fn expected_score(player_rating: i32, opponent_rating: i32) -> f64 {
     1.0 / (1.0 + 10f64.powf((opponent_rating - player_rating) as f64 / 400.0))
+}
+
+fn require_non_guest_user_id(user: Option<User>) -> Result<String, AppError> {
+    match user {
+        Some(User::DiscordUser(user)) => Ok(user.user_id),
+        Some(User::GuestUser(_)) => Err((
+            StatusCode::FORBIDDEN,
+            "guests cannot access match history".to_string(),
+        )),
+        None => Err((StatusCode::UNAUTHORIZED, "user not authenticated".to_string())),
+    }
+}
+
+async fn get_user_won_auctions_for_draft(
+    state: &ServerState,
+    draft_id: Uuid,
+    user_id: &str,
+) -> Result<Vec<MatchHistoryAuction>, AppError> {
+    let auction_rows = sqlx::query(
+        "SELECT auction_id, pokedex_id, form, draft_id, draft_order, state,
+                paused_time_remaining, winning_bid, winning_user_id, winning_guest_id,
+                updated_at, created_at
+         FROM auctions
+         WHERE draft_id = $1
+           AND winning_user_id = $2
+         ORDER BY draft_order ASC",
+    )
+    .bind(draft_id)
+    .bind(user_id)
+    .fetch_all(&state.db_pool)
+    .await
+    .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    let mut auctions: Vec<MatchHistoryAuction> = Vec::with_capacity(auction_rows.len());
+    for row in auction_rows {
+        let draft_uuid: Uuid = row
+            .try_get("draft_id")
+            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+        auctions.push(MatchHistoryAuction {
+            auction_id: row
+                .try_get("auction_id")
+                .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?,
+            pokedex_id: row
+                .try_get("pokedex_id")
+                .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?,
+            form: row
+                .try_get("form")
+                .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?,
+            draft_id: draft_uuid.to_string(),
+            draft_order: row
+                .try_get("draft_order")
+                .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?,
+            state: row
+                .try_get("state")
+                .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?,
+            paused_time_remaining: row
+                .try_get("paused_time_remaining")
+                .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?,
+            winning_bid: row
+                .try_get("winning_bid")
+                .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?,
+            winning_user_id: row
+                .try_get("winning_user_id")
+                .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?,
+            winning_guest_id: row
+                .try_get("winning_guest_id")
+                .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?,
+            updated_at: row
+                .try_get("updated_at")
+                .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?,
+            created_at: row
+                .try_get("created_at")
+                .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?,
+        });
+    }
+
+    Ok(auctions)
 }
 
 #[debug_handler]
@@ -304,6 +440,225 @@ pub async fn get_leaderboard(
     }
 
     Ok(Json(leaderboard))
+}
+
+#[debug_handler]
+pub async fn get_stats_page_data(
+    State(state): State<ServerState>,
+) -> Result<Json<StatsPageResponse>, AppError> {
+    let player_rows = sqlx::query(
+        "SELECT DISTINCT
+                COALESCE(t.user_id, t.guest_id) AS user_id,
+                COALESCE(u.user_name, g.user_name) AS user_name,
+                (t.guest_id IS NOT NULL) AS is_guest
+         FROM teams t
+         JOIN drafts d ON d.draft_id = t.draft_id
+         LEFT JOIN users u ON u.user_id = t.user_id
+         LEFT JOIN guests g ON g.user_id = t.guest_id
+         WHERE d.state = 'COMPLETED'
+           AND EXISTS (
+                SELECT 1
+                FROM auctions a
+                WHERE a.draft_id = t.draft_id
+                  AND a.winning_bid IS NOT NULL
+           )
+         ORDER BY COALESCE(u.user_name, g.user_name) ASC",
+    )
+    .fetch_all(&state.db_pool)
+    .await
+    .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    let mut players: Vec<StatsPagePlayer> = Vec::with_capacity(player_rows.len());
+    for row in player_rows {
+        players.push(StatsPagePlayer {
+            user_id: row
+                .try_get("user_id")
+                .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?,
+            user_name: row
+                .try_get("user_name")
+                .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?,
+            is_guest: row
+                .try_get("is_guest")
+                .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?,
+        });
+    }
+
+    let team_rows = sqlx::query(
+        "SELECT t.team_id, t.user_id, t.guest_id, t.draft_id, t.money_remaining,
+                t.pokemon_drafted, t.placement, t.post_match_mmr, t.updated_at, t.created_at
+         FROM teams t
+         JOIN drafts d ON d.draft_id = t.draft_id
+         WHERE d.state = 'COMPLETED'
+           AND EXISTS (
+                SELECT 1
+                FROM auctions a
+                WHERE a.draft_id = t.draft_id
+                  AND a.winning_bid IS NOT NULL
+           )
+         ORDER BY t.created_at DESC",
+    )
+    .fetch_all(&state.db_pool)
+    .await
+    .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    let mut teams: Vec<MatchHistoryTeamRow> = Vec::with_capacity(team_rows.len());
+    for row in team_rows {
+        let draft_uuid: Uuid = row
+            .try_get("draft_id")
+            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+        teams.push(MatchHistoryTeamRow {
+            team_id: row
+                .try_get("team_id")
+                .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?,
+            user_id: row
+                .try_get("user_id")
+                .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?,
+            guest_id: row
+                .try_get("guest_id")
+                .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?,
+            draft_id: draft_uuid.to_string(),
+            money_remaining: row
+                .try_get("money_remaining")
+                .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?,
+            pokemon_drafted: row
+                .try_get("pokemon_drafted")
+                .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?,
+            placement: row
+                .try_get("placement")
+                .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?,
+            post_match_mmr: row
+                .try_get("post_match_mmr")
+                .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?,
+            updated_at: row
+                .try_get("updated_at")
+                .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?,
+            created_at: row
+                .try_get("created_at")
+                .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?,
+        });
+    }
+
+    let auction_rows = sqlx::query(
+        "SELECT a.auction_id, a.pokedex_id, a.form, a.draft_id, a.draft_order, a.state,
+                a.paused_time_remaining, a.winning_bid, a.winning_user_id, a.winning_guest_id,
+                a.updated_at, a.created_at
+         FROM auctions a
+         JOIN drafts d ON d.draft_id = a.draft_id
+         WHERE d.state = 'COMPLETED'
+           AND a.winning_bid IS NOT NULL
+         ORDER BY a.created_at DESC",
+    )
+    .fetch_all(&state.db_pool)
+    .await
+    .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    let mut auctions: Vec<MatchHistoryAuction> = Vec::with_capacity(auction_rows.len());
+    for row in auction_rows {
+        let draft_uuid: Uuid = row
+            .try_get("draft_id")
+            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+        auctions.push(MatchHistoryAuction {
+            auction_id: row
+                .try_get("auction_id")
+                .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?,
+            pokedex_id: row
+                .try_get("pokedex_id")
+                .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?,
+            form: row
+                .try_get("form")
+                .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?,
+            draft_id: draft_uuid.to_string(),
+            draft_order: row
+                .try_get("draft_order")
+                .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?,
+            state: row
+                .try_get("state")
+                .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?,
+            paused_time_remaining: row
+                .try_get("paused_time_remaining")
+                .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?,
+            winning_bid: row
+                .try_get("winning_bid")
+                .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?,
+            winning_user_id: row
+                .try_get("winning_user_id")
+                .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?,
+            winning_guest_id: row
+                .try_get("winning_guest_id")
+                .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?,
+            updated_at: row
+                .try_get("updated_at")
+                .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?,
+            created_at: row
+                .try_get("created_at")
+                .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?,
+        });
+    }
+
+    Ok(Json(StatsPageResponse {
+        players,
+        teams,
+        auctions,
+    }))
+}
+
+#[debug_handler]
+pub async fn get_match_history_by_user_id(
+    State(state): State<ServerState>,
+    Path(user_id): Path<String>,
+) -> Result<Json<Vec<MatchHistoryTeam>>, AppError> {
+    let team_rows = sqlx::query(
+        "SELECT team_id, user_id, guest_id, draft_id, money_remaining, placement,
+                post_match_mmr, updated_at, created_at
+         FROM teams
+         WHERE user_id = $1 OR guest_id = $1
+         ORDER BY created_at DESC",
+    )
+    .bind(&user_id)
+    .fetch_all(&state.db_pool)
+    .await
+    .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    let mut history: Vec<MatchHistoryTeam> = Vec::with_capacity(team_rows.len());
+    for row in team_rows {
+        let draft_uuid: Uuid = row
+            .try_get("draft_id")
+            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+        let auctions_won = get_user_won_auctions_for_draft(&state, draft_uuid, &user_id).await?;
+
+        history.push(MatchHistoryTeam {
+            team_id: row
+                .try_get("team_id")
+                .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?,
+            user_id: row
+                .try_get("user_id")
+                .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?,
+            guest_id: row
+                .try_get("guest_id")
+                .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?,
+            draft_id: draft_uuid.to_string(),
+            money_remaining: row
+                .try_get("money_remaining")
+                .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?,
+            pokemon_drafted: auctions_won,
+            placement: row
+                .try_get("placement")
+                .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?,
+            post_match_mmr: row
+                .try_get("post_match_mmr")
+                .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?,
+            updated_at: row
+                .try_get("updated_at")
+                .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?,
+            created_at: row
+                .try_get("created_at")
+                .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?,
+        });
+    }
+
+    Ok(Json(history))
 }
 
 #[debug_handler]
