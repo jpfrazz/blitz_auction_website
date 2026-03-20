@@ -19,6 +19,7 @@ interface AuctionInfoPanelProps {
   completed_auctions: Auction[];
   total_auctions: number;
   currentUserId: string | null;
+  auctionLength: number;
 }
 
 const AuctionInfoPanel: React.FC<AuctionInfoPanelProps> = ({
@@ -34,10 +35,10 @@ const AuctionInfoPanel: React.FC<AuctionInfoPanelProps> = ({
   userBudgetRemaining,
   completed_auctions,
   total_auctions,
-  currentUserId
+  currentUserId,
+  auctionLength,
 }) => {
   const [secondsRemaining, setSecondsRemaining] = useState(0);
-  const [initialSeconds, setInitialSeconds] = useState(0);
   const [customBidAmount, setCustomBidAmount] = useState('');
   const [showBidWarning, setShowBidWarning] = useState(false);
   const [pendingBid, setPendingBid] = useState<number | null>(null);
@@ -82,11 +83,6 @@ const AuctionInfoPanel: React.FC<AuctionInfoPanelProps> = ({
   }, [current_auction.highest_bid]);
 
   useEffect(() => {
-    // When the expiration time changes, reset initialSeconds so it can be re-calculated.
-    setInitialSeconds(0);
-  }, [currentAuctionExpiresAt]);
-
-  useEffect(() => {
     if (isPaused) {
       setIsResetting(false);
       return;
@@ -98,31 +94,15 @@ const AuctionInfoPanel: React.FC<AuctionInfoPanelProps> = ({
 
     const serverNowMs = new Date(currentServerTime ?? 0).getTime();
     const expiresAtMs = new Date(currentAuctionExpiresAt ?? 0).getTime();
-    let initialRemainingMs = Number.isNaN(serverNowMs) || Number.isNaN(expiresAtMs)
-      ? 0
-      : Math.max(0, expiresAtMs - serverNowMs);
 
-    // If a bid was just placed, the timer is likely reset to 10s.
-    // Add a buffer to ensure "10" is displayed for a full second, compensating for network/processing lag.
-    const isTimerReset = initialRemainingMs > 9000 && initialRemainingMs <= 10000;
-    if (isTimerReset) {
-      initialRemainingMs = 10900;
-    }
-
-    const startPerfMs = performance.now();
+    const offset = Date.now() - serverNowMs;
 
     const updateCountdown = () => {
-      const elapsedSinceStart = performance.now() - startPerfMs;
-      const remainingMs = Math.max(0, initialRemainingMs - elapsedSinceStart);
-      const remaining = Math.floor(remainingMs / 1000);
-      
+      const adjustedNow = Date.now() - offset;
+      const remainingMs = expiresAtMs - adjustedNow;
       // Cap the displayed seconds at 10 to match the intended auction timer.
-      setSecondsRemaining(Math.min(remaining, 10));
-      
-      // Set initial seconds only once per timer reset
-      if (initialSeconds === 0 && remaining > 0) {
-        setInitialSeconds(10); // The auction timer is 10 seconds.
-      }
+      const remainingS = Math.ceil(remainingMs / 1000);
+      setSecondsRemaining(Math.min(remainingS, 10));
     };
 
     updateCountdown();
@@ -131,9 +111,9 @@ const AuctionInfoPanel: React.FC<AuctionInfoPanelProps> = ({
       clearInterval(interval);
       clearTimeout(resetTimer);
     };
-  }, [currentAuctionExpiresAt, currentServerTime, initialSeconds, isPaused]);
+  }, [currentAuctionExpiresAt, currentServerTime, isPaused]);
 
-  const progress = initialSeconds > 0 ? secondsRemaining / initialSeconds : 0;
+  const progress = secondsRemaining / 10;
 
   // Determine color based on remaining time
   let timerColor = '#00aa00'; // green
@@ -156,13 +136,13 @@ const AuctionInfoPanel: React.FC<AuctionInfoPanelProps> = ({
     }
     try {
       const response = await placeBid(draft_id, current_auction.auction_id, newBid);
-      if (!response.accepted) {
-        if (response.error?.toLowerCase().includes('brokie')) {
+      if (response.status != 200) {
+        if (response.data?.toLowerCase().includes('brokie')) {
           showBidNotification("You don't have enough money for that bid.");
         } else {
-          showBidNotification(response.error || 'Bid failed. Please try again.');
+          showBidNotification(response.data || 'Bid failed. Please try again.');
         }
-        console.error('Bid rejected:', response.error);
+        console.error('Bid rejected:', response.data);
       }
     } catch (error) {
       showBidNotification('Bid failed. Please try again.');
@@ -195,13 +175,13 @@ const AuctionInfoPanel: React.FC<AuctionInfoPanelProps> = ({
   const actuallyPlaceBid = async (bidValue: number) => {
     try {
       const response = await placeBid(draft_id, current_auction.auction_id, bidValue);
-      if (!response.accepted) {
-        if (response.error?.toLowerCase().includes('brokie')) {
+      if (response.status != 200) {
+        if (response.data?.toLowerCase().includes('brokie')) {
           showBidNotification("You don't have enough money for that bid.");
         } else {
-          showBidNotification(response.error || 'Bid failed. Please try again.');
+          showBidNotification(response.data || 'Bid failed. Please try again.');
         }
-        console.error('Bid rejected:', response.error);
+        console.error('Bid rejected:', response.data);
       }
     } catch (error) {
       showBidNotification('Bid failed. Please try again.');

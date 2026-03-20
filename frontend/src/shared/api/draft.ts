@@ -12,7 +12,7 @@ export interface CreateDraftRequest {
   password?: string | null;
   excluded_pokemon: ExcludedPokemon[];
   num_auctions: number;
-  auction_length: {
+  auction_length: number | {
     secs: number;
     nanos: number;
   };
@@ -20,17 +20,27 @@ export interface CreateDraftRequest {
 
 // Create a draft via POST /drafts (proxied to backend)
 export async function createDraft(data: CreateDraftRequest): Promise<string> {
+  // Backend expects u32 (seconds), ensure we send a number
+  const payload = {
+    ...data,
+    auction_length: typeof data.auction_length === 'object'
+      ? data.auction_length.secs
+      : data.auction_length
+  };
+
   const response = await fetch(`/api/drafts`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
     },
     credentials: 'include', // Include auth cookies
-    body: JSON.stringify(data),
+    body: JSON.stringify(payload),
   });
 
   if (!response.ok) {
-    throw new Error(`Failed to create draft: ${response.statusText}`);
+    const errorBody = await response.text();
+    console.error('Failed to create draft. Server response:', errorBody);
+    throw new Error(`Failed to create draft: ${response.statusText}. Details: ${errorBody}`);
   }
 
   console.log("Draft created successfully");

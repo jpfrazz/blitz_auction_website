@@ -11,7 +11,7 @@ use tokio::{
 use uuid::Uuid;
 
 use crate::{
-    AppError, draft::Draft, get_expiry_time_from_instant, messages::ServerMessage, pokemon::{self, Pokemon}
+    AppError, draft::Draft, get_expiry_time_from_instant, messages::ServerMessage, pokemon::{self, Pokemon}, users::User
 };
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -21,7 +21,7 @@ pub struct AuctionResponse {
     pub state: AuctionState,
     pub pokemon: Pokemon,
     pub highest_bid: u32,
-    pub highest_bidder: String,
+    pub highest_bidder: Option<User>,
     pub expires_at: Option<DateTime<Utc>>,
     pub server_timestamp: DateTime<Utc>,
 }
@@ -100,13 +100,13 @@ impl Auction {
         }
     }
 
-    pub async fn bid(&self, bid_value: u32, user_id: String) -> Result<(), AppError> {
+    pub async fn bid(&self, bid_value: u32, user: User) -> Result<(), AppError> {
         if let Some(sender) = self.actor_sender.get() {
             let (response_sender, response_receiver) = oneshot::channel();
             let cmd = AuctionCommand::Bid {
                 response_sender,
                 bid_value,
-                user_id,
+                user,
             };
             sender.send(cmd).await.map_err(|e| {
                 (
@@ -185,7 +185,7 @@ impl From<&Auction> for AuctionResponse {
             state: AuctionState::PENDING,
             pokemon: (*value.pokemon).clone(),
             highest_bid: 0,
-            highest_bidder: format!(""),
+            highest_bidder: None,
             expires_at: None,
             server_timestamp: Utc::now(),
         }
@@ -199,7 +199,7 @@ struct AuctionActor {
     length: u32,
     pokemon: Arc<Pokemon>,
     highest_bid: u32,
-    highest_bidder: String,
+    highest_bidder: Option<User>,
     expires_at: Option<Instant>,
     receiver: mpsc::Receiver<AuctionCommand>,
     broadcast_tx: broadcast::Sender<ServerMessage>
@@ -209,7 +209,7 @@ enum AuctionCommand {
     Bid {
         response_sender: oneshot::Sender<AuctionCommandResponse>,
         bid_value: u32,
-        user_id: String,
+        user: User,
     },
     Resume(oneshot::Sender<AuctionCommandResponse>),
     Pause(oneshot::Sender<Result<u32, AppError>>),
@@ -234,7 +234,7 @@ impl AuctionActor {
             length,
             pokemon,
             highest_bid: 0,
-            highest_bidder: "".to_string(),
+            highest_bidder: None,
             receiver,
             broadcast_tx,
             expires_at: None,
@@ -248,6 +248,8 @@ impl AuctionActor {
     pub async fn run(mut self) {
         self.state = AuctionState::OPEN;
 
+        let msg = AuctionResponse::from(&self);
+        let _ = self.broadcast_tx.send(ServerMessage::AuctionUpdate(msg));
         // do not start the timer until the bid is > 0
         while self.highest_bid == 0 {
             if let Some(cmd) = self.receiver.recv().await {
@@ -255,9 +257,9 @@ impl AuctionActor {
                     AuctionCommand::Bid {
                         response_sender,
                         bid_value,
-                        user_id,
+                        user,
                     } => {
-                        self.first_bid(bid_value, user_id, response_sender).await;
+                        self.first_bid(bid_value, user, response_sender).await;
                     }
                     AuctionCommand::Get(response_sender) => {
                         let response = self.get();
@@ -280,8 +282,12 @@ impl AuctionActor {
         }
 
         self.expires_at = Some(Instant::now() + Duration::from_secs(self.length as u64));
+        dbg!(self.expires_at);
+        dbg!(get_expiry_time_from_instant(self.expires_at.unwrap()));
         let auction_timer = tokio::time::sleep_until(self.expires_at.unwrap());
         tokio::pin!(auction_timer);
+        let msg = AuctionResponse::from(&self);
+        let _ = self.broadcast_tx.send(ServerMessage::AuctionUpdate(msg));
 
         loop {
             tokio::select! {
@@ -304,9 +310,9 @@ impl AuctionActor {
             AuctionCommand::Bid {
                 response_sender,
                 bid_value,
-                user_id,
+                user,
             } => {
-                self.bid(bid_value, user_id, auction_timer, response_sender)
+                self.bid(bid_value, user, auction_timer, response_sender)
                     .await
             }
             AuctionCommand::Pause(response_sender) => {
@@ -327,10 +333,16 @@ impl AuctionActor {
             AuctionCommand::Resume(response_sender) => {
                 if let AuctionState::PAUSED(t) = self.state {
                     self.expires_at = Some(Instant::now() + Duration::from_secs(t as u64));
+                    self.state = AuctionState::OPEN;
                     auction_timer.reset(self.expires_at.expect(""));
                     let _ = response_sender.send(Ok(()));
                     let msg = AuctionResponse::from(&*self);
                     let _ = self.broadcast_tx.send(ServerMessage::AuctionUpdate(msg));
+                } else {
+                    let _ = response_sender.send(Err((
+                        StatusCode::PRECONDITION_FAILED,
+                        format!("auction is not paused"),
+                    )));
                 }
             }
             AuctionCommand::Get(response_sender) => {
@@ -343,47 +355,44 @@ impl AuctionActor {
     async fn first_bid(
         &mut self,
         bid_value: u32,
-        user_id: String,
+        user: User,
         sender: oneshot::Sender<AuctionCommandResponse>,
     ) {
         let response: AuctionCommandResponse;
         if bid_value <= self.highest_bid {
             response = Err((StatusCode::PRECONDITION_FAILED, format!("bid is too low")));
-        } else if user_id == self.highest_bidder {
+        } else if Some(&user) == self.highest_bidder.as_ref() {
             response = Err((
                 StatusCode::PRECONDITION_FAILED,
                 format!("user is already the highest bidder"),
             ));
         } else {
             self.highest_bid = bid_value;
-            self.highest_bidder = user_id;
+            self.highest_bidder = Some(user);
             response = Ok(());
         }
 
         let _ = sender.send(response);
-        let msg = AuctionResponse::from(&*self);
-        let _ = self.broadcast_tx.send(ServerMessage::AuctionUpdate(msg));
     }
 
     async fn bid(
         &mut self,
         bid_value: u32,
-        user_id: String,
+        user: User,
         auction_timer: Pin<&mut Sleep>,
         sender: oneshot::Sender<AuctionCommandResponse>,
     ) {
         let response: AuctionCommandResponse;
         if bid_value <= self.highest_bid {
             response = Err((StatusCode::PRECONDITION_FAILED, format!("bid is too low")));
-        } else if user_id == self.highest_bidder {
+        } else if Some(&user) == self.highest_bidder.as_ref() {
             response = Err((
                 StatusCode::PRECONDITION_FAILED,
                 format!("user is already the highest bidder"),
             ));
         } else {
             self.highest_bid = bid_value;
-            self.highest_bidder = user_id;
-            response = Ok(());
+            self.highest_bidder = Some(user);
 
             self.expires_at = Some(std::cmp::max(
                 self.expires_at.expect(""),
@@ -391,11 +400,12 @@ impl AuctionActor {
             ));
 
             auction_timer.reset(self.expires_at.expect(""));
+            response = Ok(());
+            let msg = AuctionResponse::from(&*self);
+            let _ = self.broadcast_tx.send(ServerMessage::AuctionUpdate(msg));
         }
 
         let _ = sender.send(response);
-        let msg = AuctionResponse::from(&*self);
-        let _ = self.broadcast_tx.send(ServerMessage::AuctionUpdate(msg));
     }
 
     async fn resolve_auction(&mut self) {
@@ -406,10 +416,18 @@ impl AuctionActor {
 
 impl From<&AuctionActor> for AuctionResponse {
     fn from(value: &AuctionActor) -> Self {
-        let expires_at = value
-            .expires_at
-            .clone()
-            .map(|some| get_expiry_time_from_instant(some));
+        let now = Instant::now();
+        let server_timestamp = Utc::now();
+
+        let expires_at = value.expires_at.map(|deadline| {
+            let remaining = if deadline > now {
+                deadline - now
+            } else {
+                Duration::from_secs(0)
+            };
+            server_timestamp + remaining
+        });
+
         Self {
             auction_id: value.auction_id.clone(),
             draft_id: value.draft.draft_id,
@@ -417,8 +435,8 @@ impl From<&AuctionActor> for AuctionResponse {
             highest_bid: value.highest_bid,
             highest_bidder: value.highest_bidder.clone(),
             pokemon: (*value.pokemon).clone(),
-            expires_at: expires_at,
-            server_timestamp: Utc::now(),
+            expires_at,
+            server_timestamp,
         }
     }
 }

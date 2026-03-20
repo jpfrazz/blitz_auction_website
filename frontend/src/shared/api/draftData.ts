@@ -131,7 +131,7 @@ export async function placeBid(draft_id: string, auction_id: string, value: numb
     auction_id,
     value
   });
-  return response.data;
+  return response;
 }
 // Claim an eeveelution after draft completes
 export async function claimEeveelution(draft_id: string, pokedex_id: number, form: string | null): Promise<any> {

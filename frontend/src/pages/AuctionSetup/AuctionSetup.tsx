@@ -91,10 +91,7 @@ const AuctionSetupForm: React.FC = () => {
           form: null, // Default to empty form, update if you have form data
         })),
         num_auctions: numPokemon,
-        auction_length: {
-          secs: DEFAULT_AUCTION_SECONDS,
-          nanos: 0,
-        },
+        auction_length: DEFAULT_AUCTION_SECONDS,
       };
       // POST to backend
       const response = await createDraft(data);
