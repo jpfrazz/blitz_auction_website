@@ -136,7 +136,7 @@ CREATE TABLE teams (
     money_remaining INT NOT NULL,
     pokemon_drafted INT NOT NULL DEFAULT 0,
     placement INT,
-    post_match_mmr INT,
+    pre_match_mmr INT,
     updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
     created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
 
