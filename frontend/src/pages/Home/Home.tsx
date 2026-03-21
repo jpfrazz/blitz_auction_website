@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import Header from '../../shared/components/Header';
 import Footer from '../../shared/components/Footer';
 import { fetchPokemonList } from '../../shared/api/pokemon';
+import './Home.scss';
 
 const formatPokemonName = (name: string) => {
   return name.toLowerCase()
@@ -123,46 +124,47 @@ const HoppingIcons = () => {
   );
 };
 
-const Home = () => (
-  <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
-    <Header />
-    <HoppingIcons />
-    <main style={{
-      flex: 1,
-      display: 'flex',
-      flexDirection: 'column',
-      alignItems: 'center',
-      justifyContent: 'center',
-      padding: '7.5rem 16px 0',
-      boxSizing: 'border-box',
-    }}>
-      <img
-        src="/blitzlogo.png"
-        alt="Pokemon Emerald Blitz Logo"
-        style={{
-          width: '30vw',
-          height: 'auto',
-          marginBottom: '16px',
-          marginTop: '16px',
-        }}
-      />
-      <a
-        href="/emeraldblitz.bps"
-        className='navButton'
-        download
-        style={{ fontSize: '1.5rem', width: '15rem' }}
-      >
-        Download Patch
-      </a>
-      <div style={{ color: '#fff', fontSize: '1.5rem', marginBottom: '8px' }}>
-        Current Release: v8.31
-      </div>
-      <div style={{ color: '#ccc', fontSize: '1.5rem', marginBottom: '8px' }}>
-        Once downloaded, apply the patch online using <a href="https://www.marcrobledo.com/RomPatcher.js/" target="_blank" rel="noopener noreferrer" style={{ color: '#4fc3f7' }}>this ROM Patcher</a>
-      </div>
-    </main>
-    <Footer />
-  </div>
-);
+const Home = () => {
+  const [isLoaded, setIsLoaded] = useState(false);
+  const imgRef = useRef<HTMLImageElement>(null);
+
+  useEffect(() => {
+    if (imgRef.current?.complete) {
+      setIsLoaded(true);
+    }
+  }, []);
+
+  return (
+    <div className="home-page">
+      <Header />
+      <HoppingIcons />
+      <main className={`home-main ${isLoaded ? 'visible' : ''}`}>
+        <img
+          ref={imgRef}
+          src="/blitzlogo.png"
+          alt="Pokemon Emerald Blitz Logo"
+          className={`home-logo ${isLoaded ? 'animate' : ''}`}
+          onLoad={() => setIsLoaded(true)}
+        />
+        <div className={`home-actions ${isLoaded ? 'animate' : ''}`}>
+          <div className="home-version-pill">
+            Current Release: v8.31
+          </div>
+          <a
+            href="/emeraldblitz.bps"
+            className='home-download-btn'
+            download
+          >
+            Download Patch
+          </a>
+          <div className="home-instructions">
+            Once downloaded, apply the patch online using <a href="https://www.marcrobledo.com/RomPatcher.js/" target="_blank" rel="noopener noreferrer">this ROM Patcher</a>
+          </div>
+        </div>
+      </main>
+      <Footer />
+    </div>
+  );
+};
 
 export default Home;

@@ -120,6 +120,10 @@
   transition-delay: 0.08s;
 }
 
+.navDropdown:hover .navDropdownItem:nth-child(3) {
+  transition-delay: 0.16s;
+}
+
 .userInfo {
   display: flex;
   align-items: center;

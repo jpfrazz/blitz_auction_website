@@ -8,10 +8,7 @@ const navButtons = [
   { label: "Leaderboard", link: "/Leaderboard" },
   { label: "Stats", link: "/Stats" },
   { label: "Pokédex", link: "/Pokedex" },
-  { label: "Boss Battles", link: "/BossBattles" },
-  { label: "Blitz Info", link: "/Info" },
   { label: "FAQ", link: "/FAQ" },
-  { label: "Patch Notes", link: "/PatchNotes" },
 ];
 
 function Header() {
@@ -94,6 +91,22 @@ function Header() {
               </Link>
               <Link to="/LobbyViewer" className="navButton navDropdownItem" onClick={scrollToTop}>
                 Lobby Viewer
+              </Link>
+            </div>
+          </div>
+          <div className="navDropdown">
+            <button className="navButton navDropdownTrigger" type="button">
+              Documentation
+            </button>
+            <div className="navDropdownMenu">
+              <Link to="/BossBattles" className="navButton navDropdownItem" onClick={scrollToTop}>
+                Boss Battles
+              </Link>
+              <Link to="/Info" className="navButton navDropdownItem" onClick={scrollToTop}>
+                Blitz Info
+              </Link>
+              <Link to="/PatchNotes" className="navButton navDropdownItem" onClick={scrollToTop}>
+                Patch Notes
               </Link>
             </div>
           </div>
