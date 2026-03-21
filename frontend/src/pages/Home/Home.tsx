@@ -119,7 +119,7 @@ const HoppingIcons = () => {
       overflow: 'hidden'
     }}>
       <div className={`space-hint ${showHint ? 'visible' : ''}`}>
-        Press space bar!
+        Press the space bar!
       </div>
       {icons.map(icon => (
         <img

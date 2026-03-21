@@ -17,10 +17,10 @@
 	max-width: 540px;
 	width: 100%;
 	margin: 48px auto 0 auto;
-	padding: 40px 48px 32px 48px;
+	padding: 32px 48px 40px 48px;
 	display: flex;
 	flex-direction: column;
-	align-items: center;
+	align-items: stretch;
 }
 
 .auction-setup-title {
@@ -28,6 +28,7 @@
 	font-weight: 700;
 	color: $eb-text;
 	margin-bottom: 24px;
+	margin-top: 0;
 	letter-spacing: 1px;
 	text-align: center;
 }
@@ -64,7 +65,9 @@
 	padding: 10px 14px;
 	font-size: 1.08rem;
 	transition: border 0.2s;
-	margin-left: 12px;
+	margin-left: 0;
+	width: 100%;
+	box-sizing: border-box;
 }
 .auction-setup-input:focus {
 	border: 1.5px solid $eb-primary;

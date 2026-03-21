@@ -138,7 +138,7 @@ const AuctionSetupForm: React.FC = () => {
             </label>
           </div>
         </div>
-        <div style={{ display: 'flex', gap: '10px', width: '100%', alignItems: 'flex-end' }}>
+        <div style={{ display: 'flex', gap: '10px', width: '100%' }}>
           <div className="auction-setup-field" style={{ flex: 1 }}>
             <label className="auction-setup-label">Number of Teams:
               <input
@@ -173,7 +173,7 @@ const AuctionSetupForm: React.FC = () => {
           {hasRefereeRole && (
             <div className="auction-setup-field" style={{ flex: 0.5 }}>
               <label className="auction-setup-label">Ranked Race
-                <div className="auction-setup-checkbox-row" style={{ marginLeft: '12px' }}>
+                <div className="auction-setup-checkbox-row">
                   <input
                     type="checkbox"
                     checked={ranked}
