@@ -4,11 +4,12 @@ import { fetchStatsPageData, fetchMatchHistoryByUserId } from '../../shared/api/
 import { StatsAuction, StatsPagePlayer, StatsPageResponse, StatsPageTeamRow, MatchHistoryTeam } from '../../types';
 import './Stats.scss';
 
-type StatsTab = 'overview' | 'players' | 'pokemon' | 'drafts' | 'player-search';
+type StatsTab = 'overview' | 'pokemon' | 'drafts' | 'player-search';
 
 interface PokemonAggregate {
   key: string;
   pokedex_id: number;
+  name: string;
   form: string;
   bidsWon: number;
   totalSpend: number;
@@ -26,8 +27,12 @@ interface PlayerAggregate {
   avgSpendPerDraft: number;
 }
 
-function getPokemonSprite(pokedexId: number): string {
-  return `/baseforms/${pokedexId}.png`;
+function formatPokemonName(name: string): string {
+  return name.toLowerCase()
+    .replace(/ /g, '-')
+    .replace(/[.:']/g, '')
+    .replace(/♀/g, '-f')
+    .replace(/♂/g, '-m');
 }
 
 function toLabel(value: string): string {
@@ -47,6 +52,11 @@ const Stats: React.FC = () => {
   const [playerMatchHistory, setPlayerMatchHistory] = useState<MatchHistoryTeam[] | null>(null);
   const [playerMatchHistoryLoading, setPlayerMatchHistoryLoading] = useState(false);
   const [playerMatchHistoryError, setPlayerMatchHistoryError] = useState<string | null>(null);
+  const [minAuctionsFilter, setMinAuctionsFilter] = useState<number>(40);
+  const [sortConfig, setSortConfig] = useState<{ key: keyof PokemonAggregate; direction: 'asc' | 'desc' }>({
+    key: 'bidsWon',
+    direction: 'desc',
+  });
 
   useEffect(() => {
     const load = async () => {
@@ -117,13 +127,39 @@ const Stats: React.FC = () => {
     }
   };
 
+  const handleSort = (key: keyof PokemonAggregate) => {
+    setSortConfig((current) => ({
+      key,
+      direction: current.key === key && current.direction === 'desc' ? 'asc' : 'desc',
+    }));
+  };
+
+  const validDraftIds = useMemo(() => {
+    if (!stats?.auctions) return new Set<string>();
+
+    const counts = new Map<string, number>();
+    stats.auctions.forEach((a) => {
+      if (a.winning_bid !== null) {
+        counts.set(a.draft_id, (counts.get(a.draft_id) || 0) + 1);
+      }
+    });
+
+    const valid = new Set<string>();
+    counts.forEach((count, id) => {
+      if (count >= minAuctionsFilter) {
+        valid.add(id);
+      }
+    });
+    return valid;
+  }, [stats?.auctions, minAuctionsFilter]);
+
   const sortedAuctions = useMemo(() => {
     const sorted = [...(stats?.auctions ?? [])]
-      .filter((auction) => auction.winning_bid !== null)
+      .filter((auction) => auction.winning_bid !== null && validDraftIds.has(auction.draft_id))
       .sort((a, b) => (b.created_at || '').localeCompare(a.created_at || ''));
     console.log('[Stats] Computed sortedAuctions:', sorted.length, 'auctions with winning bids');
     return sorted;
-  }, [stats?.auctions]);
+  }, [stats?.auctions, validDraftIds]);
 
   const pokemonSummary = useMemo<PokemonAggregate[]>(() => {
     const grouped = new Map<string, PokemonAggregate>();
@@ -138,6 +174,7 @@ const Stats: React.FC = () => {
         grouped.set(key, {
           key,
           pokedex_id: auction.pokedex_id,
+          name: auction.name,
           form: auction.form,
           bidsWon: 1,
           totalSpend: auction.winning_bid ?? 0,
@@ -152,14 +189,14 @@ const Stats: React.FC = () => {
         avgWinningBid: entry.bidsWon > 0 ? Math.round(entry.totalSpend / entry.bidsWon) : 0,
       }))
       .sort((a, b) => {
-        if (b.bidsWon !== a.bidsWon) {
-          return b.bidsWon - a.bidsWon;
-        }
-        return b.totalSpend - a.totalSpend;
+        const { key, direction } = sortConfig;
+        if (a[key] < b[key]) return direction === 'asc' ? -1 : 1;
+        if (a[key] > b[key]) return direction === 'asc' ? 1 : -1;
+        return 0;
       });
     console.log('[Stats] Computed pokemonSummary:', result.length, 'unique pokemon');
     return result;
-  }, [sortedAuctions]);
+  }, [sortedAuctions, sortConfig]);
 
   const playerSummary = useMemo<PlayerAggregate[]>(() => {
     const grouped = new Map<string, {
@@ -206,7 +243,9 @@ const Stats: React.FC = () => {
       grouped.set(key, existing);
     };
 
-    (stats?.teams ?? []).forEach(addTeamAggregate);
+    (stats?.teams ?? [])
+      .filter((team) => validDraftIds.has(team.draft_id))
+      .forEach(addTeamAggregate);
 
     sortedAuctions.forEach((auction) => {
       const key = auction.winning_user_id || auction.winning_guest_id;
@@ -266,6 +305,7 @@ const Stats: React.FC = () => {
     }>();
 
     (stats?.teams ?? []).forEach((team) => {
+      if (!validDraftIds.has(team.draft_id)) return;
       const existing = drafts.get(team.draft_id) || {
         draftId: team.draft_id,
         teamCount: 0,
@@ -313,13 +353,13 @@ const Stats: React.FC = () => {
     });
 
     return result;
-  }, [sortedAuctions, stats?.teams]);
+  }, [sortedAuctions, stats?.teams, validDraftIds]);
 
   const topPokemon = pokemonSummary.slice(0, 8);
   const recentWinningAuctions = sortedAuctions.slice(0, 12);
 
   const kpis = useMemo(() => {
-    const uniqueDrafts = new Set((stats?.teams ?? []).map((team) => team.draft_id)).size;
+    const uniqueDrafts = new Set((stats?.teams ?? []).filter(t => validDraftIds.has(t.draft_id)).map((team) => team.draft_id)).size;
     const uniquePlayers = playerSummary.length;
     const avgWinningBid = sortedAuctions.length > 0
       ? Math.round(
@@ -342,7 +382,7 @@ const Stats: React.FC = () => {
     });
 
     return result;
-  }, [playerSummary.length, sortedAuctions, stats?.teams]);
+  }, [playerSummary.length, sortedAuctions, stats?.teams, validDraftIds]);
 
   if (loading) {
     return (
@@ -368,6 +408,18 @@ const Stats: React.FC = () => {
     <div className="match-history-page">
       <Header />
       <main className="match-history-main">
+        <div className="stats-filter-bar">
+          <label className="stats-filter-label">
+            Include only drafts of minimum size
+            <input
+              className="stats-filter-input"
+              type="number"
+              min={0}
+              value={minAuctionsFilter}
+              onChange={(e) => setMinAuctionsFilter(Math.max(0, Number(e.target.value)))}
+            />
+          </label>
+        </div>
         <section className="stats-hero-card">
           <div>
             <h1>Draft Stats</h1>
@@ -386,7 +438,7 @@ const Stats: React.FC = () => {
             <div className="kpi-value">{kpis.uniquePlayers}</div>
           </article>
           <article className="kpi-card">
-            <div className="kpi-label">Winning Auctions</div>
+            <div className="kpi-label">Total Sales</div>
             <div className="kpi-value">{kpis.totalWinningAuctions}</div>
           </article>
           <article className="kpi-card">
@@ -402,13 +454,6 @@ const Stats: React.FC = () => {
             onClick={() => setActiveTab('overview')}
           >
             Overview
-          </button>
-          <button
-            className={`tab-chip ${activeTab === 'players' ? 'active' : ''}`}
-            type="button"
-            onClick={() => setActiveTab('players')}
-          >
-            Players
           </button>
           <button
             className={`tab-chip ${activeTab === 'pokemon' ? 'active' : ''}`}
@@ -439,21 +484,22 @@ const Stats: React.FC = () => {
               <h2>Most Picked Pokemon</h2>
               <div className="panel-list">
                 {topPokemon.map((entry) => (
-                  <div className="pokemon-row" key={entry.key}>
-                    <div className="pokemon-ident">
+                  <div className="stats-pokemon-row" key={entry.key}>
+                    <div className="stats-pokemon-ident">
                       <img
-                        src={getPokemonSprite(entry.pokedex_id)}
-                        alt={`${entry.pokedex_id}`}
+                        src={`/baseforms/${entry.name}.png`}
+                        alt={entry.name}
+                        style={{ width: '40px', height: '40px', objectFit: 'contain' }}
                         onError={(ev) => {
-                          (ev.currentTarget as HTMLImageElement).style.opacity = '0.35';
+                          (ev.currentTarget as HTMLImageElement).style.display = 'none';
                         }}
                       />
                       <div>
-                        <div className="strong">#{entry.pokedex_id}</div>
-                        <div className="muted">{toLabel(entry.form || 'base')}</div>
+                        <div className="strong">{entry.name}</div>
+                        {entry.form && entry.form !== 'base' && <div className="muted">{toLabel(entry.form)}</div>}
                       </div>
                     </div>
-                    <div className="pokemon-metrics">
+                    <div className="stats-pokemon-metrics">
                       <span>{entry.bidsWon} wins</span>
                       <span>${entry.avgWinningBid.toLocaleString()} avg</span>
                     </div>
@@ -471,7 +517,7 @@ const Stats: React.FC = () => {
                   return (
                     <div className="auction-row" key={auction.auction_id}>
                       <div>
-                        <div className="strong">#{auction.pokedex_id} {toLabel(auction.form || 'base')}</div>
+                        <div className="strong">{auction.name} {auction.form && auction.form !== 'base' ? toLabel(auction.form) : ''}</div>
                         <div className="muted mono">Draft {auction.draft_id}</div>
                       </div>
                       <div className="auction-metrics">
@@ -487,47 +533,6 @@ const Stats: React.FC = () => {
           </section>
         )}
 
-        {activeTab === 'players' && (
-          <section className="stats-content-grid">
-            <article className="stats-panel">
-              <h2>Player Performance</h2>
-              <div className="table-wrap">
-                <table>
-                  <thead>
-                    <tr>
-                      <th>Player</th>
-                      <th>Drafts</th>
-                      <th>Wins</th>
-                      <th>Top 4</th>
-                      <th>Avg Placement</th>
-                      <th>Total Spend</th>
-                      <th>Spend / Draft</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {playerSummary.map((player) => (
-                      <tr key={player.key}>
-                        <td>{player.name}</td>
-                        <td>{player.draftsPlayed}</td>
-                        <td>{player.wins}</td>
-                        <td>{player.topFour}</td>
-                        <td>{player.avgPlacement ?? '-'}</td>
-                        <td>${player.totalSpend.toLocaleString()}</td>
-                        <td>${player.avgSpendPerDraft.toLocaleString()}</td>
-                      </tr>
-                    ))}
-                    {playerSummary.length === 0 && (
-                      <tr>
-                        <td colSpan={7} className="empty-cell">No player stats available.</td>
-                      </tr>
-                    )}
-                  </tbody>
-                </table>
-              </div>
-            </article>
-          </section>
-        )}
-
         {activeTab === 'pokemon' && (
           <section className="stats-content-grid">
             <article className="stats-panel">
@@ -536,18 +541,34 @@ const Stats: React.FC = () => {
                 <table>
                   <thead>
                     <tr>
-                      <th>Pokemon</th>
-                      <th>Form</th>
-                      <th>Auctions Won</th>
-                      <th>Total Spend</th>
-                      <th>Avg Winning Bid</th>
+                      <th className="sortable" onClick={() => handleSort('name')}>
+                        Pokemon {sortConfig.key === 'name' ? (sortConfig.direction === 'asc' ? '↑' : '↓') : ''}
+                      </th>
+                      <th className="sortable" onClick={() => handleSort('bidsWon')}>
+                        Total Sales {sortConfig.key === 'bidsWon' ? (sortConfig.direction === 'asc' ? '↑' : '↓') : ''}
+                      </th>
+                      <th className="sortable" onClick={() => handleSort('totalSpend')}>
+                        Total Spend {sortConfig.key === 'totalSpend' ? (sortConfig.direction === 'asc' ? '↑' : '↓') : ''}
+                      </th>
+                      <th className="sortable" onClick={() => handleSort('avgWinningBid')}>
+                        Avg Winning Bid {sortConfig.key === 'avgWinningBid' ? (sortConfig.direction === 'asc' ? '↑' : '↓') : ''}
+                      </th>
                     </tr>
                   </thead>
                   <tbody>
                     {pokemonSummary.map((entry) => (
                       <tr key={entry.key}>
-                        <td>#{entry.pokedex_id}</td>
-                        <td>{toLabel(entry.form || 'base')}</td>
+                        <td>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <img
+                              src={`/MiniIcons/${formatPokemonName(entry.name)}.png`}
+                              alt={entry.name}
+                              style={{ width: 'auto', height: 'auto', maxWidth: '20px', maxHeight: '20px', objectFit: 'contain' }}
+                              onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+                            />
+                            <span>{entry.name} {entry.form && entry.form !== 'base' ? `(${toLabel(entry.form)})` : ''}</span>
+                          </div>
+                        </td>
                         <td>{entry.bidsWon}</td>
                         <td>${entry.totalSpend.toLocaleString()}</td>
                         <td>${entry.avgWinningBid.toLocaleString()}</td>
@@ -555,7 +576,7 @@ const Stats: React.FC = () => {
                     ))}
                     {pokemonSummary.length === 0 && (
                       <tr>
-                        <td colSpan={5} className="empty-cell">No pokemon stats available.</td>
+                        <td colSpan={4} className="empty-cell">No pokemon stats available.</td>
                       </tr>
                     )}
                   </tbody>
@@ -689,10 +710,10 @@ const Stats: React.FC = () => {
                                   title={`#${auction.pokedex_id} - $${auction.winning_bid ?? 0}`}
                                 >
                                   <img
-                                    src={getPokemonSprite(auction.pokedex_id)}
-                                    alt={`${auction.pokedex_id}`}
+                                    src={`/MiniIcons/${formatPokemonName(auction.name)}.png`}
+                                    alt={auction.name}
                                     onError={(ev) => {
-                                      (ev.currentTarget as HTMLImageElement).style.opacity = '0.35';
+                                      (ev.currentTarget as HTMLImageElement).style.display = 'none';
                                     }}
                                   />
                                 </div>

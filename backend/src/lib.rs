@@ -13,6 +13,7 @@ pub mod draft;
 pub mod handlers;
 pub mod messages;
 pub mod pokemon;
+pub mod stats;
 pub mod server;
 pub mod users;
 

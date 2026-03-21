@@ -1,5 +1,5 @@
 use crate::{
-    Draft, PgPool, handlers, pokemon,
+    Draft, PgPool, handlers, pokemon, stats,
     users::{AuthBackend, Credentials},
 };
 use axum::{
@@ -122,7 +122,6 @@ impl Server {
             .route("/", get(|| async { "blitz auction api" }))
             .route("/pokemon", get(handlers::get_pokemon))
             .route("/pokemon/rental", get(handlers::get_rental_pokemon))
-            .route("/stats", get(handlers::get_stats_page_data))
             .route("/drafts/{draft_id}", get(handlers::get_draft))
             .route("/drafts/{draft_id}/pokemon", get(handlers::get_draft_pokemon))
             .route("/drafts/{draft_id}/current_auction", get(handlers::get_current_auction))
@@ -131,7 +130,7 @@ impl Server {
             .route("/auth/discord/callback", get(handlers::discord_callback))
             .route("/me", get(handlers::me))
             .route("/leaderboard", get(handlers::get_leaderboard))
-            .route("/match-history/{user_id}", get(handlers::get_match_history_by_user_id));
+            .route("/stats", get(stats::get_stats_page_data));
 
         let private_routes = Router::new()
             .route(

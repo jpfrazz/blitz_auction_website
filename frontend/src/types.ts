@@ -112,6 +112,7 @@ export interface DraftLobby {
 export interface StatsAuction {
   auction_id: number;
   pokedex_id: number;
+  name: string;
   form: string;
   draft_id: string;
   draft_order: number;
