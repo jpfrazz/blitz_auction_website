@@ -1148,7 +1148,7 @@ pub async fn get_draft_chats(
         .map(|row| {
             Ok(ChatMessage {
                 chat_id: row.try_get("chat_id")?,
-                draft_id: row.try_get("draft_id")?,
+                draft_id: row.try_get::<Uuid, _>("draft_id")?.to_string(),
                 user_id: row.try_get("user_id")?,
                 user_name: row.try_get("user_name")?,
                 message: row.try_get("message")?,

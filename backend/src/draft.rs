@@ -934,6 +934,17 @@ impl DraftActor {
             ));
         }
 
+        let user_id = user.get_user_id_string();
+        if let Some(team) = self.teams.get(&user_id) {
+            let eeveelutions = [133, 134, 135, 136, 196, 197, 470, 471, 700];
+            if team.auctions_won.iter().any(|p| eeveelutions.contains(&(p.pokedex_id as i32))) {
+                return Ok(serde_json::json!({
+                    "success": false,
+                    "error": "You have already claimed an Eeveelution"
+                }));
+            }
+        }
+
         let target_pokemon = self.draft.pokemon.iter().find(|p| p.pokedex_id as i32 == pokedex_id && p.form == form).cloned();
         let target_pokemon = match target_pokemon {
             Some(p) => p,
@@ -957,7 +968,6 @@ impl DraftActor {
             }));
         }
 
-        let user_id = user.get_user_id_string();
         if let Some(team) = self.teams.get_mut(&user_id) {
             team.auctions_won.push(target_pokemon.clone());
             self.broadcast();
