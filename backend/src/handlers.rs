@@ -1,5 +1,5 @@
 use crate::{
-    AppError, CSRF_STATE_KEY, auction::AuctionResponse, draft::{Draft, DraftLobbyResponse, DraftResponse, DraftSettings, DraftState}, messages::{ClientBidRequest, ClientBidResponse, ClientJoinResponse, ServerMessage}, pokemon::{self, Pokemon}, server::ServerState, users::{AuthBackend, Credentials, DiscordCreds, User}
+    AppError, CSRF_STATE_KEY, auction::AuctionResponse, draft::{Draft, DraftLobbyResponse, DraftResponse, DraftSettings, DraftState}, messages::{ChatMessage, ClientBidRequest, ClientBidResponse, ClientJoinResponse, ServerMessage}, pokemon::{self, Pokemon}, server::ServerState, users::{AuthBackend, Credentials, DiscordCreds, User}
 };
 use axum::{
     Json,
@@ -58,16 +58,6 @@ fn default_ready_true() -> bool {
 pub struct ClaimEeveelutionRequest {
     pub pokedex_id: i32,
     pub form: Option<String>,
-}
-
-#[derive(Clone, Debug, Serialize)]
-pub struct ChatMessage {
-    pub chat_id: i64,
-    pub draft_id: String,
-    pub user_id: String,
-    pub user_name: String,
-    pub message: String,
-    pub created_at: chrono::DateTime<chrono::Utc>,
 }
 
 #[derive(Clone, Debug, Serialize)]
@@ -1222,9 +1212,6 @@ pub async fn create_draft_chat(
     let chat_id = row
         .try_get("chat_id")
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-    let draft_id = row
-        .try_get("draft_id")
-        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
     let user_id = row
         .try_get("user_id")
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
@@ -1238,14 +1225,20 @@ pub async fn create_draft_chat(
         .try_get("created_at")
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
 
-    Ok(Json(ChatMessage {
+    let chat_message = ChatMessage {
         chat_id,
-        draft_id,
+        draft_id: draft_id.clone(),
         user_id,
         user_name,
         message,
         created_at,
-    }))
+    };
+
+    if let Some(draft) = state.drafts.get(&draft_uuid) {
+        let _ = draft.broadcast_tx.send(ServerMessage::NewMessage(chat_message.clone()));
+    }
+
+    Ok(Json(chat_message))
 }
 pub async fn discord_oauth_redirect(
     auth_session: AuthSession<AuthBackend>,

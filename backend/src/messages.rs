@@ -21,6 +21,7 @@ pub enum ServerMessage {
     DraftStarted,
     DraftEnded,
     DraftState(draft::DraftState),
+    NewMessage(ChatMessage),
 }
 
 #[derive(Clone, Debug, Deserialize)]
@@ -34,6 +35,16 @@ pub struct ClientBidResponse {
     pub accepted: bool,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub error: Option<String>,
+}
+
+#[derive(Clone, Debug, Serialize)]
+pub struct ChatMessage {
+    pub chat_id: i64,
+    pub draft_id: String,
+    pub user_id: String,
+    pub user_name: String,
+    pub message: String,
+    pub created_at: DateTime<Utc>,
 }
 
 #[derive(Clone, Debug, Serialize)]

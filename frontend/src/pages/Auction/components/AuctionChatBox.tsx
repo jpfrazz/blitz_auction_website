@@ -78,9 +78,11 @@ const AuctionChatBox: React.FC<AuctionChatBoxProps> = ({ draftId, isGuest, isLog
 
     setIsSending(true);
     try {
-      await createDraftChat(draftId, trimmed);
+      const response = await createDraftChat(draftId, trimmed);
       setNewMessage('');
-      await loadChats();
+      if (response) {
+        setMessages((prev) => [...prev, response]);
+      }
     } catch (error) {
       console.error('Failed to send chat:', error);
     } finally {
