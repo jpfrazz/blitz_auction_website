@@ -151,14 +151,14 @@ impl Server {
             //     "/drafts/{draft_id}/pending-settings",
             //     post(handlers::update_pending_draft_settings),
             // )
-            // .route(
-            //     "/drafts/{draft_id}/claim-eeveelution",
-            //     post(handlers::claim_eeveelution),
-            // )
-            // .route(
-            //     "/drafts/{draft_id}/unclaim-eeveelution",
-            //     post(handlers::unclaim_eeveelution),
-            // )
+            .route(
+                "/drafts/{draft_id}/claim-eeveelution",
+                post(handlers::claim_eeveelution),
+            )
+            .route(
+                "/drafts/{draft_id}/unclaim-eeveelution",
+                post(handlers::unclaim_eeveelution),
+            )
             .route(
                 "/drafts/{draft_id}/chats",
                 get(handlers::get_draft_chats).post(handlers::create_draft_chat),

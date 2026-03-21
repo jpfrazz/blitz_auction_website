@@ -382,6 +382,54 @@ impl Draft {
         })?
     }
 
+    pub async fn claim_eeveelution(
+        &self,
+        user: User,
+        pokedex_id: i32,
+        form: Option<String>
+    ) -> Result<serde_json::Value, AppError> {
+        let (response_sender, response_receiver) = oneshot::channel();
+        let cmd = DraftCommand::ClaimEeveelution {
+            response_sender,
+            user,
+            pokedex_id,
+            form,
+        };
+        self.actor_sender.send(cmd).await.map_err(|e| (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            format!("failed to send claim eeveelution to actor, {}", e),
+        ))?;
+
+        response_receiver.await.map_err(|e| (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            format!("failed to wait for actor response, {}", e),
+        ))?
+    }
+
+    pub async fn unclaim_eeveelution(
+        &self,
+        user: User,
+        pokedex_id: i32,
+        form: Option<String>
+    ) -> Result<serde_json::Value, AppError> {
+        let (response_sender, response_receiver) = oneshot::channel();
+        let cmd = DraftCommand::UnclaimEeveelution {
+            response_sender,
+            user,
+            pokedex_id,
+            form,
+        };
+        self.actor_sender.send(cmd).await.map_err(|e| (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            format!("failed to send unclaim eeveelution to actor, {}", e),
+        ))?;
+
+        response_receiver.await.map_err(|e| (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            format!("failed to wait for actor response, {}", e),
+        ))?
+    }
+
 //     pub async fn update_pending_settings(
 //         &mut self,
 //         num_teams: u32,
@@ -577,6 +625,18 @@ enum DraftCommand {
         user_id: String,
     },
     GetCurrentAuction(oneshot::Sender<Result<Option<AuctionResponse>, AppError>>),
+    ClaimEeveelution {
+        response_sender: oneshot::Sender<Result<serde_json::Value, AppError>>,
+        user: User,
+        pokedex_id: i32,
+        form: Option<String>,
+    },
+    UnclaimEeveelution {
+        response_sender: oneshot::Sender<Result<serde_json::Value, AppError>>,
+        user: User,
+        pokedex_id: i32,
+        form: Option<String>,
+    },
 }
 
 impl DraftActor {
@@ -696,6 +756,24 @@ impl DraftActor {
                         let res = self.get_current_auction().await;
                         let _ = response_sender.send(res);
                     },
+                    DraftCommand::ClaimEeveelution {
+                        response_sender,
+                        user,
+                        pokedex_id,
+                        form,
+                    } => {
+                        let res = self.claim_eeveelution(user, pokedex_id, form).await;
+                        let _ = response_sender.send(res);
+                    }
+                    DraftCommand::UnclaimEeveelution {
+                        response_sender,
+                        user,
+                        pokedex_id,
+                        form,
+                    } => {
+                        let res = self.unclaim_eeveelution(user, pokedex_id, form).await;
+                        let _ = response_sender.send(res);
+                    }
                 }
             }
         }
@@ -941,6 +1019,105 @@ impl DraftActor {
 
         team.ready = true;
         Ok(())
+    }
+
+    async fn claim_eeveelution(&mut self, user: User, pokedex_id: i32, form: Option<String>) -> Result<serde_json::Value, AppError> {
+        if self.draft_state != DraftState::COMPLETED {
+            return Err((
+                StatusCode::PRECONDITION_FAILED,
+                "draft must be completed".to_string(),
+            ));
+        }
+
+        let target_pokemon = self.draft.pokemon.iter().find(|p| p.pokedex_id as i32 == pokedex_id && p.form == form).cloned();
+        let target_pokemon = match target_pokemon {
+            Some(p) => p,
+            None => return Err((StatusCode::NOT_FOUND, "pokemon not found in draft".to_string())),
+        };
+
+        // Check if claimed
+        let already_claimed_by = self.teams.values().find_map(|team| {
+            if team.auctions_won.iter().any(|p| p.pokedex_id == target_pokemon.pokedex_id && p.form == target_pokemon.form) {
+                Some(team.username.clone())
+            } else {
+                None
+            }
+        });
+
+        if let Some(claimer_name) = already_claimed_by {
+            return Ok(serde_json::json!({
+                "success": false,
+                "error": format!("Already claimed by {}", claimer_name),
+                "claimed_by": claimer_name
+            }));
+        }
+
+        let user_id = user.get_user_id_string();
+        if let Some(team) = self.teams.get_mut(&user_id) {
+            team.auctions_won.push(target_pokemon.clone());
+            self.broadcast();
+            Ok(serde_json::json!({
+                "success": true,
+                "claimed_by": user_id,
+                "pokemon": {
+                    "pokedex_id": target_pokemon.pokedex_id,
+                    "name": target_pokemon.name,
+                    "form": target_pokemon.form
+                }
+            }))
+        } else {
+            Err((StatusCode::NOT_FOUND, "team not found".to_string()))
+        }
+    }
+
+    async fn unclaim_eeveelution(&mut self, user: User, pokedex_id: i32, form: Option<String>) -> Result<serde_json::Value, AppError> {
+        if self.draft_state != DraftState::COMPLETED {
+            return Err((
+                StatusCode::PRECONDITION_FAILED,
+                "draft must be completed".to_string(),
+            ));
+        }
+
+        let target_pokemon = self.draft.pokemon.iter().find(|p| p.pokedex_id as i32 == pokedex_id && p.form == form).cloned();
+        let target_pokemon = match target_pokemon {
+            Some(p) => p,
+            None => return Err((StatusCode::NOT_FOUND, "pokemon not found in draft".to_string())),
+        };
+
+        let user_id = user.get_user_id_string();
+        let Some(team) = self.teams.get_mut(&user_id) else {
+            return Err((StatusCode::NOT_FOUND, "team not found".to_string()));
+        };
+
+        let maybe_index = team.auctions_won.iter().position(|p| p.pokedex_id == target_pokemon.pokedex_id && p.form == target_pokemon.form);
+
+        if let Some(index) = maybe_index {
+            team.auctions_won.remove(index);
+            self.broadcast();
+            return Ok(serde_json::json!({
+                "success": true,
+                "unclaimed_by": user_id,
+                "pokemon": {
+                    "pokedex_id": target_pokemon.pokedex_id,
+                    "name": target_pokemon.name,
+                    "form": target_pokemon.form
+                }
+            }));
+        }
+
+        let claimed_by_other = self.teams.values().find_map(|other_team| {
+            if other_team.user_id != user_id && other_team.auctions_won.iter().any(|p| p.pokedex_id == target_pokemon.pokedex_id && p.form == target_pokemon.form) {
+                Some(other_team.username.clone())
+            } else {
+                None
+            }
+        });
+
+        if let Some(owner_name) = claimed_by_other {
+            return Err((StatusCode::FORBIDDEN, format!("eeveelution is claimed by {}", owner_name)));
+        }
+
+        Err((StatusCode::NOT_FOUND, "you have not claimed this eeveelution".to_string()))
     }
 }
 

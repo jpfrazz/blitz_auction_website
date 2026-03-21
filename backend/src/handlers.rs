@@ -1080,173 +1080,57 @@ pub async fn unpause_draft(
 //     Ok(Json(DraftResponse::from(draft.clone())))
 // }
 
-// #[debug_handler]
-// pub async fn claim_eeveelution(
-//     State(state): State<ServerState>,
-//     Path(draft_id): Path<String>,
-//     auth_session: AuthSession<AuthBackend>,
-//     Json(claim_request): Json<ClaimEeveelutionRequest>,
-// ) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
-//     let user = auth_session.user.ok_or((
-//         StatusCode::UNAUTHORIZED,
-//         "user not authenticated".to_string(),
-//     ))?;
-//
-//     let Some(draft_lock) = state.drafts.get(&draft_id) else {
-//         return Err((StatusCode::NOT_FOUND, "draft not found".to_string()));
-//     };
-//
-//     let mut draft = draft_lock.write().await;
-//     if draft.draft_state != DraftState::COMPLETED {
-//         return Err((
-//             StatusCode::PRECONDITION_FAILED,
-//             "draft must be completed".to_string(),
-//         ));
-//     }
-//
-//     // Check if the pokemon exists in the draft
-//     let target_pokemon = draft
-//         .pokemon
-//         .iter()
-//         .find(|p| p.pokedex_id == claim_request.pokedex_id as u32 && p.form == claim_request.form)
-//         .ok_or((
-//             StatusCode::NOT_FOUND,
-//             "pokemon not found in draft".to_string(),
-//         ))?
-//         .clone();
-//
-//     // Check if this pokemon was already claimed by someone else
-//     let already_claimed_by = draft.teams.values().find_map(|team| {
-//         if team
-//             .auctions_won
-//             .iter()
-//             .any(|p| p.pokedex_id == target_pokemon.pokedex_id && p.form == target_pokemon.form)
-//         {
-//             Some(team.username.clone())
-//         } else {
-//             None
-//         }
-//     });
-//
-//     if let Some(claimer_name) = already_claimed_by {
-//         return Ok(Json(serde_json::json!({
-//             "success": false,
-//             "error": format!("Already claimed by {}", claimer_name),
-//             "claimed_by": claimer_name
-//         })));
-//     }
-//
-//     // Add the eeveelution to the user's team
-//     let user_id = user.get_user_id_string();
-//     if let Some(team) = draft.teams.get_mut(&user_id) {
-//         team.auctions_won.push(target_pokemon.clone());
-//
-//         // Broadcast full draft object to all websocket clients
-//         let draft_response = crate::draft::DraftResponse::from(draft.clone());
-//         let _ = draft
-//             .tx
-//             .send(crate::messages::ServerMessage::DraftUpdate(draft_response));
-//
-//         Ok(Json(serde_json::json!({
-//             "success": true,
-//             "claimed_by": user_id,
-//             "pokemon": {
-//                 "pokedex_id": target_pokemon.pokedex_id,
-//                 "name": target_pokemon.name,
-//                 "form": target_pokemon.form
-//             }
-//         })))
-//     } else {
-//         Err((StatusCode::NOT_FOUND, "team not found".to_string()))
-//     }
-// }
+#[debug_handler]
+pub async fn claim_eeveelution(
+    State(state): State<ServerState>,
+    Path(draft_id): Path<String>,
+    auth_session: AuthSession<AuthBackend>,
+    Json(claim_request): Json<ClaimEeveelutionRequest>,
+) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
+    let user = auth_session.user.ok_or((
+        StatusCode::UNAUTHORIZED,
+        "user not authenticated".to_string(),
+    ))?;
 
-// #[debug_handler]
-// pub async fn unclaim_eeveelution(
-//     State(state): State<ServerState>,
-//     Path(draft_id): Path<String>,
-//     auth_session: AuthSession<AuthBackend>,
-//     Json(claim_request): Json<ClaimEeveelutionRequest>,
-// ) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
-//     let user = auth_session.user.ok_or((
-//         StatusCode::UNAUTHORIZED,
-//         "user not authenticated".to_string(),
-//     ))?;
-//
-//     let Some(draft_lock) = state.drafts.get(&draft_id) else {
-//         return Err((StatusCode::NOT_FOUND, "draft not found".to_string()));
-//     };
-//
-//     let mut draft = draft_lock.write().await;
-//     if draft.draft_state != DraftState::COMPLETED {
-//         return Err((
-//             StatusCode::PRECONDITION_FAILED,
-//             "draft must be completed".to_string(),
-//         ));
-//     }
-//
-//     let target_pokemon = draft
-//         .pokemon
-//         .iter()
-//         .find(|p| p.pokedex_id == claim_request.pokedex_id as u32 && p.form == claim_request.form)
-//         .ok_or((
-//             StatusCode::NOT_FOUND,
-//             "pokemon not found in draft".to_string(),
-//         ))?
-//         .clone();
-//
-//     let user_id = user.get_user_id_string();
-//     let Some(team) = draft.teams.get_mut(&user_id) else {
-//         return Err((StatusCode::NOT_FOUND, "team not found".to_string()));
-//     };
-//
-//     let maybe_index = team
-//         .auctions_won
-//         .iter()
-//         .position(|p| p.pokedex_id == target_pokemon.pokedex_id && p.form == target_pokemon.form);
-//
-//     if let Some(index) = maybe_index {
-//         team.auctions_won.remove(index);
-//
-//         let draft_response = crate::draft::DraftResponse::from(draft.clone());
-//         let _ = draft
-//             .tx
-//             .send(crate::messages::ServerMessage::DraftUpdate(draft_response));
-//
-//         return Ok(Json(serde_json::json!({
-//             "success": true,
-//             "unclaimed_by": user_id,
-//             "pokemon": {
-//                 "pokedex_id": target_pokemon.pokedex_id,
-//                 "name": target_pokemon.name,
-//                 "form": target_pokemon.form
-//             }
-//         })));
-//     }
-//
-//     let claimed_by_other = draft
-//         .teams
-//         .values()
-//         .find(|other_team| {
-//             other_team.user_id != user_id
-//                 && other_team.auctions_won.iter().any(|p| {
-//                     p.pokedex_id == target_pokemon.pokedex_id && p.form == target_pokemon.form
-//                 })
-//         })
-//         .map(|team| team.username.clone());
-//
-//     if let Some(owner_name) = claimed_by_other {
-//         return Err((
-//             StatusCode::FORBIDDEN,
-//             format!("eeveelution is claimed by {}", owner_name),
-//         ));
-//     }
-//
-//     Err((
-//         StatusCode::NOT_FOUND,
-//         "you have not claimed this eeveelution".to_string(),
-//     ))
-// }
+    let draft_uuid = Uuid::from_str(&draft_id)
+        .map_err(|e| (
+                StatusCode::BAD_REQUEST,
+                format!("requested draft does not exist")
+        ))?;
+    let draft = state.drafts.get(&draft_uuid).map(|d| d.value().clone());
+    let Some(draft) = draft else {
+        return Err((StatusCode::NOT_FOUND, "draft not found".to_string()));
+    };
+
+    let result = draft.claim_eeveelution(user, claim_request.pokedex_id, claim_request.form).await?;
+    Ok(Json(result))
+}
+
+#[debug_handler]
+pub async fn unclaim_eeveelution(
+    State(state): State<ServerState>,
+    Path(draft_id): Path<String>,
+    auth_session: AuthSession<AuthBackend>,
+    Json(claim_request): Json<ClaimEeveelutionRequest>,
+) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
+    let user = auth_session.user.ok_or((
+        StatusCode::UNAUTHORIZED,
+        "user not authenticated".to_string(),
+    ))?;
+
+    let draft_uuid = Uuid::from_str(&draft_id)
+        .map_err(|e| (
+                StatusCode::BAD_REQUEST,
+                format!("requested draft does not exist")
+        ))?;
+    let draft = state.drafts.get(&draft_uuid).map(|d| d.value().clone());
+    let Some(draft) = draft else {
+        return Err((StatusCode::NOT_FOUND, "draft not found".to_string()));
+    };
+
+    let result = draft.unclaim_eeveelution(user, claim_request.pokedex_id, claim_request.form).await?;
+    Ok(Json(result))
+}
 
 #[debug_handler]
 pub async fn get_draft_chats(
