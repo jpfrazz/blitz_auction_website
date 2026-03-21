@@ -481,7 +481,7 @@ const Stats: React.FC = () => {
         {activeTab === 'overview' && (
           <section className="stats-content-grid two-col">
             <article className="stats-panel">
-              <h2>Most Picked Pokemon</h2>
+              <h2>Most Sold Pokemon</h2>
               <div className="panel-list">
                 {topPokemon.map((entry) => (
                   <div className="stats-pokemon-row" key={entry.key}>
@@ -500,7 +500,7 @@ const Stats: React.FC = () => {
                       </div>
                     </div>
                     <div className="stats-pokemon-metrics">
-                      <span>{entry.bidsWon} wins</span>
+                      <span>{entry.bidsWon} sales</span>
                       <span>${entry.avgWinningBid.toLocaleString()} avg</span>
                     </div>
                   </div>
