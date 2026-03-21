@@ -14,6 +14,9 @@ interface PokemonAggregate {
   bidsWon: number;
   totalSpend: number;
   avgWinningBid: number;
+  minBid: number;
+  maxBid: number;
+  priceVariance: number;
 }
 
 interface PlayerAggregate {
@@ -54,9 +57,10 @@ const Stats: React.FC = () => {
   const [playerMatchHistoryError, setPlayerMatchHistoryError] = useState<string | null>(null);
   const [minAuctionsFilter, setMinAuctionsFilter] = useState<number>(40);
   const [sortConfig, setSortConfig] = useState<{ key: keyof PokemonAggregate; direction: 'asc' | 'desc' }>({
-    key: 'bidsWon',
+    key: 'avgWinningBid',
     direction: 'desc',
   });
+  const [expandedDraftId, setExpandedDraftId] = useState<string | null>(null);
 
   useEffect(() => {
     const load = async () => {
@@ -161,42 +165,77 @@ const Stats: React.FC = () => {
     return sorted;
   }, [stats?.auctions, validDraftIds]);
 
-  const pokemonSummary = useMemo<PokemonAggregate[]>(() => {
-    const grouped = new Map<string, PokemonAggregate>();
+  const aggregatedPokemon = useMemo<PokemonAggregate[]>(() => {
+    const grouped = new Map<string, {
+      key: string;
+      pokedex_id: number;
+      name: string;
+      form: string;
+      bids: number[];
+    }>();
 
     sortedAuctions.forEach((auction) => {
       const key = `${auction.pokedex_id}:${auction.form || ''}`;
-      const existing = grouped.get(key);
-      if (existing) {
-        existing.bidsWon += 1;
-        existing.totalSpend += auction.winning_bid ?? 0;
-      } else {
-        grouped.set(key, {
+      let existing = grouped.get(key);
+      if (!existing) {
+        existing = {
           key,
           pokedex_id: auction.pokedex_id,
           name: auction.name,
           form: auction.form,
-          bidsWon: 1,
-          totalSpend: auction.winning_bid ?? 0,
-          avgWinningBid: 0,
-        });
+          bids: []
+        };
+        grouped.set(key, existing);
+      }
+      if (auction.winning_bid !== null) {
+        existing.bids.push(auction.winning_bid);
       }
     });
 
-    const result = Array.from(grouped.values())
-      .map((entry) => ({
-        ...entry,
-        avgWinningBid: entry.bidsWon > 0 ? Math.round(entry.totalSpend / entry.bidsWon) : 0,
-      }))
-      .sort((a, b) => {
-        const { key, direction } = sortConfig;
-        if (a[key] < b[key]) return direction === 'asc' ? -1 : 1;
-        if (a[key] > b[key]) return direction === 'asc' ? 1 : -1;
-        return 0;
+    return Array.from(grouped.values())
+      .map((entry) => {
+        const count = entry.bids.length;
+        const sum = entry.bids.reduce((a, b) => a + b, 0);
+        const avg = count > 0 ? Math.round(sum / count) : 0;
+        const min = count > 0 ? Math.min(...entry.bids) : 0;
+        const max = count > 0 ? Math.max(...entry.bids) : 0;
+        
+        // Calculate Standard Deviation for Price Variance
+        let stdDev = 0;
+        if (count > 0) {
+          const sqDiffSum = entry.bids.reduce((a, b) => a + Math.pow(b - avg, 2), 0);
+          stdDev = Math.sqrt(sqDiffSum / count);
+        }
+
+        return {
+          key: entry.key,
+          pokedex_id: entry.pokedex_id,
+          name: entry.name,
+          form: entry.form,
+          bidsWon: count,
+          totalSpend: sum,
+          avgWinningBid: avg,
+          minBid: min,
+          maxBid: max,
+          priceVariance: Math.round(stdDev),
+        };
       });
+  }, [sortedAuctions]);
+
+  const pokemonSummary = useMemo<PokemonAggregate[]>(() => {
+    const result = [...aggregatedPokemon].sort((a, b) => {
+      const { key, direction } = sortConfig;
+      if (a[key] < b[key]) return direction === 'asc' ? -1 : 1;
+      if (a[key] > b[key]) return direction === 'asc' ? 1 : -1;
+      return 0;
+    });
     console.log('[Stats] Computed pokemonSummary:', result.length, 'unique pokemon');
     return result;
-  }, [sortedAuctions, sortConfig]);
+  }, [aggregatedPokemon, sortConfig]);
+
+  const topPokemon = useMemo(() => {
+    return [...aggregatedPokemon].sort((a, b) => b.avgWinningBid - a.avgWinningBid).slice(0, 8);
+  }, [aggregatedPokemon]);
 
   const playerSummary = useMemo<PlayerAggregate[]>(() => {
     const grouped = new Map<string, {
@@ -355,7 +394,6 @@ const Stats: React.FC = () => {
     return result;
   }, [sortedAuctions, stats?.teams, validDraftIds]);
 
-  const topPokemon = pokemonSummary.slice(0, 8);
   const recentWinningAuctions = sortedAuctions.slice(0, 12);
 
   const kpis = useMemo(() => {
@@ -544,14 +582,20 @@ const Stats: React.FC = () => {
                       <th className="sortable" onClick={() => handleSort('name')}>
                         Pokemon {sortConfig.key === 'name' ? (sortConfig.direction === 'asc' ? '↑' : '↓') : ''}
                       </th>
-                      <th className="sortable" onClick={() => handleSort('bidsWon')}>
-                        Total Sales {sortConfig.key === 'bidsWon' ? (sortConfig.direction === 'asc' ? '↑' : '↓') : ''}
-                      </th>
-                      <th className="sortable" onClick={() => handleSort('totalSpend')}>
-                        Total Spend {sortConfig.key === 'totalSpend' ? (sortConfig.direction === 'asc' ? '↑' : '↓') : ''}
-                      </th>
                       <th className="sortable" onClick={() => handleSort('avgWinningBid')}>
                         Avg Winning Bid {sortConfig.key === 'avgWinningBid' ? (sortConfig.direction === 'asc' ? '↑' : '↓') : ''}
+                      </th>
+                      <th className="sortable" onClick={() => handleSort('minBid')}>
+                        Lowest Cost {sortConfig.key === 'minBid' ? (sortConfig.direction === 'asc' ? '↑' : '↓') : ''}
+                      </th>
+                      <th className="sortable" onClick={() => handleSort('maxBid')}>
+                        Highest Cost {sortConfig.key === 'maxBid' ? (sortConfig.direction === 'asc' ? '↑' : '↓') : ''}
+                      </th>
+                      <th className="sortable" onClick={() => handleSort('priceVariance')}>
+                        Price Variance {sortConfig.key === 'priceVariance' ? (sortConfig.direction === 'asc' ? '↑' : '↓') : ''}
+                      </th>
+                      <th className="sortable" onClick={() => handleSort('bidsWon')}>
+                        Total Sales {sortConfig.key === 'bidsWon' ? (sortConfig.direction === 'asc' ? '↑' : '↓') : ''}
                       </th>
                     </tr>
                   </thead>
@@ -569,14 +613,16 @@ const Stats: React.FC = () => {
                             <span>{entry.name} {entry.form && entry.form !== 'base' ? `(${toLabel(entry.form)})` : ''}</span>
                           </div>
                         </td>
-                        <td>{entry.bidsWon}</td>
-                        <td>${entry.totalSpend.toLocaleString()}</td>
                         <td>${entry.avgWinningBid.toLocaleString()}</td>
+                        <td>${entry.minBid.toLocaleString()}</td>
+                        <td>${entry.maxBid.toLocaleString()}</td>
+                        <td>±${entry.priceVariance.toLocaleString()}</td>
+                        <td>{entry.bidsWon}</td>
                       </tr>
                     ))}
                     {pokemonSummary.length === 0 && (
                       <tr>
-                        <td colSpan={4} className="empty-cell">No pokemon stats available.</td>
+                        <td colSpan={6} className="empty-cell">No pokemon stats available.</td>
                       </tr>
                     )}
                   </tbody>
@@ -603,13 +649,47 @@ const Stats: React.FC = () => {
                   </thead>
                   <tbody>
                     {draftSummary.map((draft) => (
-                      <tr key={draft.draftId}>
-                        <td className="mono">{draft.draftId}</td>
-                        <td>{draft.teamCount}</td>
-                        <td>{draft.auctionCount}</td>
-                        <td>${draft.avgWinningBid.toLocaleString()}</td>
-                        <td>${draft.highestBid.toLocaleString()}</td>
-                      </tr>
+                      <React.Fragment key={draft.draftId}>
+                        <tr
+                          className="draft-row-clickable"
+                          onClick={() => setExpandedDraftId((prev) => (prev === draft.draftId ? null : draft.draftId))}
+                        >
+                          <td className="mono">{draft.draftId}</td>
+                          <td>{draft.teamCount}</td>
+                          <td>{draft.auctionCount}</td>
+                          <td>${draft.avgWinningBid.toLocaleString()}</td>
+                          <td>${draft.highestBid.toLocaleString()}</td>
+                        </tr>
+                        {expandedDraftId === draft.draftId && (
+                          <tr className="draft-details-row">
+                            <td colSpan={5}>
+                              <div className="draft-details-grid">
+                                {sortedAuctions
+                                  .filter((a) => a.draft_id === draft.draftId)
+                                  .sort((a, b) => (b.winning_bid ?? 0) - (a.winning_bid ?? 0))
+                                  .map((auction) => {
+                                    const winnerKey = auction.winning_user_id || auction.winning_guest_id || '';
+                                    const winnerName = playersById.get(winnerKey)?.user_name || winnerKey || '-';
+                                    return (
+                                      <div className="draft-detail-card" key={auction.auction_id} title={`${auction.name} - $${auction.winning_bid}`}>
+                                        <img
+                                          src={`/baseforms/${auction.name}.png`}
+                                          alt={auction.name}
+                                          onError={(ev) => {
+                                            (ev.currentTarget as HTMLImageElement).style.display = 'none';
+                                          }}
+                                        />
+                                        <div className="pokemon-name">{auction.name}</div>
+                                        <div className="pokemon-price">${(auction.winning_bid ?? 0).toLocaleString()}</div>
+                                        <div className="pokemon-winner">{winnerName}</div>
+                                      </div>
+                                    );
+                                  })}
+                              </div>
+                            </td>
+                          </tr>
+                        )}
+                      </React.Fragment>
                     ))}
                     {draftSummary.length === 0 && (
                       <tr>

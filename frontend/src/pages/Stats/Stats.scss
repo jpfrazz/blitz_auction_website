@@ -537,3 +537,70 @@ th.sortable {
     background-color: #1a1f24;
   }
 }
+
+.draft-row-clickable {
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+
+  &:hover {
+    background-color: #1e262c;
+  }
+}
+
+.draft-details-row {
+  background-color: #0d1115;
+
+  td {
+    padding: 1rem;
+    border-bottom: 1px solid #273138;
+  }
+}
+
+.draft-details-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+  gap: 0.75rem;
+}
+
+.draft-detail-card {
+  background: #161b20;
+  padding: 0.6rem;
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  border: 1px solid #2a353f;
+
+  img {
+    width: 40px;
+    height: 40px;
+    object-fit: contain;
+    margin-bottom: 0.35rem;
+  }
+
+  .pokemon-name {
+    font-size: 0.85rem;
+    font-weight: 600;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    width: 100%;
+    margin-bottom: 0.15rem;
+  }
+
+  .pokemon-price {
+    font-size: 0.85rem;
+    color: #40c9a2;
+    font-weight: 700;
+  }
+
+  .pokemon-winner {
+    font-size: 0.8rem;
+    color: #95a6ae;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    width: 100%;
+  }
+}
