@@ -430,144 +430,31 @@ impl Draft {
         ))?
     }
 
-//     pub async fn update_pending_settings(
-//         &mut self,
-//         num_teams: u32,
-//         num_auctions: u32,
-//         remove_team_ids: Vec<String>,
-//     ) -> Result<(), (StatusCode, String)> {
-//         if self.draft_state != DraftState::PENDING {
-//             return Err((
-//                 StatusCode::PRECONDITION_FAILED,
-//                 "draft must be in PENDING state".to_string(),
-//             ));
-//         }
-//
-//         if num_teams == 0 {
-//             return Err((
-//                 StatusCode::BAD_REQUEST,
-//                 "num_teams must be greater than 0".to_string(),
-//             ));
-//         }
-//
-//         if num_auctions == 0 {
-//             return Err((
-//                 StatusCode::BAD_REQUEST,
-//                 "num_auctions must be greater than 0".to_string(),
-//             ));
-//         }
-//
-//         let host_user_id = self.host.get_user_id_string();
-//         let mut unique_remove_ids: Vec<String> = Vec::new();
-//         for team_id in remove_team_ids {
-//             if unique_remove_ids.contains(&team_id) {
-//                 continue;
-//             }
-//
-//             if team_id == host_user_id {
-//                 return Err((
-//                     StatusCode::BAD_REQUEST,
-//                     "host cannot be removed from draft".to_string(),
-//                 ));
-//             }
-//
-//             if !self.teams.contains_key(&team_id) {
-//                 return Err((
-//                     StatusCode::BAD_REQUEST,
-//                     format!("team {} is not in this draft", team_id),
-//                 ));
-//             }
-//
-//             unique_remove_ids.push(team_id);
-//         }
-//
-//         let teams_after_removal = self.teams.len().saturating_sub(unique_remove_ids.len()) as u32;
-//         if num_teams < teams_after_removal {
-//             return Err((
-//                 StatusCode::BAD_REQUEST,
-//                 "num_teams cannot be less than teams remaining after removals".to_string(),
-//             ));
-//         }
-//
-//         let max_auctions = self.auctions.len() as u32;
-//         if num_auctions > max_auctions {
-//             return Err((
-//                 StatusCode::BAD_REQUEST,
-//                 format!("num_auctions cannot exceed {} for this draft", max_auctions),
-//             ));
-//         }
-//
-//         let mut tx = self.db_pool.begin().await.map_err(|e| {
-//             (
-//                 StatusCode::INTERNAL_SERVER_ERROR,
-//                 format!("failed to begin transaction: {}", e),
-//             )
-//         })?;
-//
-//         for team_id in &unique_remove_ids {
-//             let _ = sqlx::query!(
-//                 r#"
-//                 DELETE FROM teams
-//                 WHERE draft_id = $1
-//                   AND (user_id = $2 OR guest_id = $2)
-//                 "#,
-//                 self.draft_id,
-//                 team_id,
-//             )
-//             .execute(&mut *tx)
-//             .await
-//             .map_err(|e| {
-//                 (
-//                     StatusCode::INTERNAL_SERVER_ERROR,
-//                     format!("failed to remove team {}: {}", team_id, e),
-//                 )
-//             })?;
-//         }
-//
-//         let _ = sqlx::query!(
-//             r#"
-//             UPDATE drafts
-//             SET num_teams = $1
-//             WHERE draft_id = $2
-//             "#,
-//             num_teams as i32,
-//             self.draft_id
-//         )
-//         .execute(&mut *tx)
-//         .await
-//         .map_err(|e| {
-//             (
-//                 StatusCode::INTERNAL_SERVER_ERROR,
-//                 format!("failed to update draft settings: {}", e),
-//             )
-//         })?;
-//
-//         tx.commit().await.map_err(|e| {
-//             (
-//                 StatusCode::INTERNAL_SERVER_ERROR,
-//                 format!("failed to commit draft settings update: {}", e),
-//             )
-//         })?;
-//
-//         for team_id in unique_remove_ids {
-//             self.teams.remove(&team_id);
-//         }
-//
-//         self.settings.num_teams = num_teams;
-//         self.settings.num_auctions = num_auctions;
-//
-//         let draft_response = crate::draft::DraftResponse::from(self.clone());
-//         let _ = self
-//             .tx
-//             .send(crate::messages::ServerMessage::DraftUpdate(draft_response));
-//
-//         Ok(())
-//     }
-//
-//     pub fn all_teams_ready(&self) -> bool {
-//         self.teams.len() == self.settings.num_teams as usize
-//             && self.teams.values().all(|team| team.ready)
-//     }
+    pub async fn update_pending_settings(
+        &self,
+        user_id: String,
+        num_teams: u32,
+        num_auctions: u32,
+        remove_team_ids: Vec<String>,
+    ) -> Result<DraftResponse, AppError> {
+        let (response_sender, response_receiver) = oneshot::channel();
+        let cmd = DraftCommand::UpdatePendingSettings {
+            response_sender,
+            user_id,
+            num_teams,
+            num_auctions,
+            remove_team_ids,
+        };
+        self.actor_sender.send(cmd).await.map_err(|e| (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            format!("failed to send update pending settings cmd to actor, {}", e)
+        ))?;
+
+        response_receiver.await.map_err(|e| (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            format!("failed to wait for response, {}", e)
+        ))?
+    }
 
 }
 
@@ -636,6 +523,13 @@ enum DraftCommand {
         user: User,
         pokedex_id: i32,
         form: Option<String>,
+    },
+    UpdatePendingSettings {
+        response_sender: oneshot::Sender<Result<DraftResponse, AppError>>,
+        user_id: String,
+        num_teams: u32,
+        num_auctions: u32,
+        remove_team_ids: Vec<String>,
     },
 }
 
@@ -772,6 +666,16 @@ impl DraftActor {
                         form,
                     } => {
                         let res = self.unclaim_eeveelution(user, pokedex_id, form).await;
+                        let _ = response_sender.send(res);
+                    }
+                    DraftCommand::UpdatePendingSettings {
+                        response_sender,
+                        user_id,
+                        num_teams,
+                        num_auctions,
+                        remove_team_ids,
+                    } => {
+                        let res = self.update_pending_settings(user_id, num_teams, num_auctions, remove_team_ids).await;
                         let _ = response_sender.send(res);
                     }
                 }
@@ -1118,6 +1022,87 @@ impl DraftActor {
         }
 
         Err((StatusCode::NOT_FOUND, "you have not claimed this eeveelution".to_string()))
+    }
+
+    async fn update_pending_settings(
+        &mut self,
+        user_id: String,
+        num_teams: u32,
+        num_auctions: u32,
+        remove_team_ids: Vec<String>,
+    ) -> Result<DraftResponse, AppError> {
+        if self.draft_state != DraftState::PENDING {
+            return Err((StatusCode::PRECONDITION_FAILED, "draft must be in PENDING state".to_string()));
+        }
+        if user_id != self.host {
+            return Err((StatusCode::FORBIDDEN, "user is not host".to_string()));
+        }
+        if num_teams == 0 || num_auctions == 0 {
+            return Err((StatusCode::BAD_REQUEST, "invalid settings".to_string()));
+        }
+
+        let mut unique_remove_ids = Vec::new();
+        for team_id in remove_team_ids {
+            if unique_remove_ids.contains(&team_id) { continue; }
+            if team_id == self.host {
+                return Err((StatusCode::BAD_REQUEST, "host cannot be removed".to_string()));
+            }
+            if !self.teams.contains_key(&team_id) {
+                return Err((StatusCode::BAD_REQUEST, format!("team {} not in draft", team_id)));
+            }
+            unique_remove_ids.push(team_id);
+        }
+
+        let teams_after = self.teams.len().saturating_sub(unique_remove_ids.len()) as u32;
+        if num_teams < teams_after {
+            return Err((StatusCode::BAD_REQUEST, "num_teams less than remaining teams".to_string()));
+        }
+
+        let current_auctions_len = self.auctions.len() as u32;
+        let mut new_auctions_data = Vec::new();
+        let mut truncate_to = None;
+
+        if num_auctions > current_auctions_len {
+            let needed = num_auctions - current_auctions_len;
+            let mut count_suitable = 0;
+            for p in self.draft.pokemon.iter() {
+                if p.stage == pokemon::PokemonStage::base && p.obtain_method == Some("".to_string()) {
+                    if count_suitable >= current_auctions_len {
+                        new_auctions_data.push((p.clone(), count_suitable as i32));
+                        if new_auctions_data.len() == needed as usize {
+                            break;
+                        }
+                    }
+                    count_suitable += 1;
+                }
+            }
+            
+            if new_auctions_data.len() < needed as usize {
+                 return Err((StatusCode::BAD_REQUEST, format!("Not enough suitable pokemon to increase auctions to {}", num_auctions)));
+            }
+        } else if num_auctions < current_auctions_len {
+            truncate_to = Some(num_auctions);
+        }
+
+        // Update DB
+        let new_ids = self.db_writer.update_draft_settings(num_teams, unique_remove_ids.clone(), new_auctions_data.clone(), truncate_to).await?;
+
+        // Update state
+        for team_id in unique_remove_ids {
+            self.teams.remove(&team_id);
+        }
+        self.settings.num_teams = num_teams;
+        self.settings.num_auctions = num_auctions;
+        self.auctions.truncate(num_auctions as usize); // Remove excess auctions if any
+
+        // Add new auctions if any
+        for (id, (p, _)) in new_ids.into_iter().zip(new_auctions_data.into_iter()) {
+            let auction = Auction::new(self.draft.draft_id, id, p);
+            self.auctions.push(auction);
+        }
+
+        self.broadcast();
+        Ok(DraftResponse::from(&*self))
     }
 }
 

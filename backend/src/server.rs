@@ -147,10 +147,10 @@ impl Server {
             //     "/drafts/{draft_id}/submit-results",
             //     post(handlers::submit_race_results),
             // )
-            // .route(
-            //     "/drafts/{draft_id}/pending-settings",
-            //     post(handlers::update_pending_draft_settings),
-            // )
+            .route(
+                "/drafts/{draft_id}/pending-settings",
+                post(handlers::update_pending_draft_settings),
+            )
             .route(
                 "/drafts/{draft_id}/claim-eeveelution",
                 post(handlers::claim_eeveelution),

@@ -2,6 +2,7 @@ use std::{fmt::format, sync::Arc};
 
 use axum::http::StatusCode;
 use sqlx::PgPool;
+use sqlx::Row;
 use tokio::sync::{mpsc, oneshot};
 use uuid::Uuid;
 
@@ -60,6 +61,13 @@ enum DbCommand {
     ResolveAuction{
         response_sender: oneshot::Sender<Result<(), AppError>>,
         auction_id: i64,
+    },
+    UpdateDraftSettings {
+        response_sender: oneshot::Sender<Result<Vec<i64>, AppError>>,
+        num_teams: u32,
+        remove_team_ids: Vec<String>,
+        new_auctions: Vec<(Arc<Pokemon>, i32)>,
+        truncate_auctions: Option<u32>,
     },
 }
 
@@ -235,6 +243,27 @@ impl DbWriter {
         };
         let _ = self.actor_sender.send(cmd).await;
     }
+
+    pub async fn update_draft_settings(
+        &self,
+        num_teams: u32,
+        remove_team_ids: Vec<String>,
+        new_auctions: Vec<(Arc<Pokemon>, i32)>,
+        truncate_auctions: Option<u32>,
+    ) -> Result<Vec<i64>, AppError> {
+        let (response_sender, response_receiver) = oneshot::channel();
+        let cmd = DbCommand::UpdateDraftSettings {
+            response_sender,
+            num_teams,
+            remove_team_ids,
+            new_auctions,
+            truncate_auctions,
+        };
+        self.actor_sender.send(cmd).await.map_err(|e| {
+            (StatusCode::INTERNAL_SERVER_ERROR, format!("failed to send update draft settings command, {}", e))
+        })?;
+        response_receiver.await.map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, format!("failed to wait for response, {}", e)))?
+    }
 }
 
 impl Actor {
@@ -297,6 +326,10 @@ impl Actor {
                         let res = self.kick_draft(user).await;
                         let _ = response_sender.send(res);
                     },
+                    DbCommand::UpdateDraftSettings { response_sender, num_teams, remove_team_ids, new_auctions, truncate_auctions } => {
+                        let res = self.update_draft_settings(num_teams, remove_team_ids, new_auctions, truncate_auctions).await;
+                        let _ = response_sender.send(res);
+                    }
                 }
             } else {
                 break;
@@ -659,5 +692,72 @@ impl Actor {
                 format!("failed to kick team from draft in db, {}", e)
         ))?;
         Ok(())
+    }
+
+    async fn update_draft_settings(
+        &self,
+        num_teams: u32,
+        remove_team_ids: Vec<String>,
+        new_auctions: Vec<(Arc<Pokemon>, i32)>,
+        truncate_auctions: Option<u32>
+    ) -> Result<Vec<i64>, AppError> {
+        let mut tx = self.pool.begin().await.map_err(|e| (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            format!("failed to begin transaction: {}", e)
+        ))?;
+
+        if !remove_team_ids.is_empty() {
+            let _ = sqlx::query(
+                "DELETE FROM teams WHERE draft_id = $1 AND (user_id = ANY($2) OR guest_id = ANY($2))"
+            )
+            .bind(self.draft_id)
+            .bind(&remove_team_ids)
+            .execute(&mut *tx)
+            .await
+            .map_err(|e| (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                format!("failed to remove teams: {}", e)
+            ))?;
+        }
+
+        let _ = sqlx::query(
+            "UPDATE drafts SET num_teams = $1 WHERE draft_id = $2"
+        )
+        .bind(num_teams as i32)
+        .bind(self.draft_id)
+        .execute(&mut *tx)
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, format!("failed to update draft settings: {}", e)))?;
+
+        if let Some(limit) = truncate_auctions {
+            let _ = sqlx::query(
+                "DELETE FROM auctions WHERE draft_id = $1 AND draft_order >= $2"
+            )
+            .bind(self.draft_id)
+            .bind(limit as i32)
+            .execute(&mut *tx)
+            .await
+            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, format!("failed to remove excess auctions: {}", e)))?;
+        }
+
+        let mut new_ids = Vec::new();
+        for (p, order) in new_auctions {
+            let row = sqlx::query(
+                "INSERT INTO auctions (pokedex_id, form, draft_order, draft_id) VALUES ($1, $2, $3, $4) RETURNING auction_id"
+            )
+            .bind(p.pokedex_id as i32)
+            .bind(p.form.clone().unwrap_or_default())
+            .bind(order)
+            .bind(self.draft_id)
+            .fetch_one(&mut *tx)
+            .await
+            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, format!("failed to insert new auction: {}", e)))?;
+            
+            let id: i64 = row.try_get("auction_id").map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, format!("failed to get auction_id: {}", e)))?;
+            new_ids.push(id);
+        }
+
+        tx.commit().await.map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, format!("failed to commit transaction: {}", e)))?;
+        Ok(new_ids)
     }
 }
