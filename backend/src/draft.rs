@@ -897,6 +897,7 @@ impl DraftActor {
         if let Some(winner) = &completed_auction.highest_bidder {
             if let Some(team) = self.teams.get_mut(&winner.get_user_id_string()) {
                 team.auctions_won.push(current_auction.pokemon.clone());
+                team.budget_remaining = team.budget_remaining.saturating_sub(completed_auction.highest_bid);
             }
         }
         self.current_auction += 1;
