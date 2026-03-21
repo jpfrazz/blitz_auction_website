@@ -666,7 +666,7 @@ const Info = () => (
           The Rare Candy stops leveling up your Pokémon at these thresholds. Defeating each gym leader also rewards you with a set amount of money.
         </p>
         <div className="info-table-wrapper">
-          <table className="info-table">
+          <table className="info-table" style={{ fontSize: '1.2rem' }}>
             <thead>
               <tr>
                 <th>Gym</th>

@@ -911,6 +911,12 @@ impl DraftActor {
             ));
         }
         self.db_writer.resolve_auction(completed_auction.auction_id).await?;
+
+        if let Some(winner) = &completed_auction.highest_bidder {
+            if let Some(team) = self.teams.get_mut(&winner.get_user_id_string()) {
+                team.auctions_won.push(current_auction.pokemon.clone());
+            }
+        }
         self.current_auction += 1;
         self.completed_auctions.push(completed_auction);
         if let Some(auction) = self.auctions.get(self.current_auction) {

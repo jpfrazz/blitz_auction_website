@@ -100,8 +100,10 @@ const AuctionInfoPanel: React.FC<AuctionInfoPanelProps> = ({
     const updateCountdown = () => {
       const adjustedNow = Date.now() - offset;
       const remainingMs = expiresAtMs - adjustedNow;
-      // Cap the displayed seconds at 10 to match the intended auction timer.
-      const remainingS = Math.ceil(remainingMs / 1000);
+      
+      // Snap to 0 if less than 0.5s remains to ensure "empty" state is visible
+      const effectiveMs = Math.max(0, remainingMs);
+      const remainingS = effectiveMs < 100 ? 0 : Math.ceil(effectiveMs / 1000);
       setSecondsRemaining(Math.min(remainingS, 10));
     };
 
@@ -111,7 +113,7 @@ const AuctionInfoPanel: React.FC<AuctionInfoPanelProps> = ({
       clearInterval(interval);
       clearTimeout(resetTimer);
     };
-  }, [currentAuctionExpiresAt, isPaused]);
+  }, [currentAuctionExpiresAt, currentServerTime, isPaused]);
 
   const progress = auctionLength > 0 ? secondsRemaining / auctionLength : 0;
 

@@ -138,7 +138,7 @@ const TeamPlannerTab: React.FC<TeamPlannerTabProps> = ({ teams, currentUserId, a
               ))}
             </ul>
           ) : (
-            <div className="team-builder-header-empty">No evolution items found.</div>
+            <div className="team-builder-header-empty">No evolution items needed.</div>
           )}
         </div>
 
