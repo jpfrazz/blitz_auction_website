@@ -257,7 +257,17 @@ const BossBattles = () => {
   }, [parsedTrainers, selectedStage, selectedTrainer]);
 
   const trainerOptions = useMemo(() => {
-    if (!selectedStage) return [];
+    if (!selectedStage) {
+      const toLabel = (str: string) => str.toLowerCase().replace(/\b\w/g, c => c.toUpperCase()).replace(/ And /g, ' and ');
+      return [
+        ...gymLeaders.map(l => ({ value: l, label: toLabel(l) })),
+        ...e4Members.map(l => ({ value: l, label: toLabel(l) })),
+        { value: 'STEVEN', label: 'Steven' },
+        { value: 'WALLY', label: 'Wally' },
+        { value: 'ARCHIE', label: 'Archie' },
+        { value: 'MAXIE', label: 'Maxie' }
+      ];
+    }
     
     if (selectedStage.includes('gym')) {
       const gymMatch = selectedStage.match(/^gym-(\d+)$/);
@@ -316,7 +326,6 @@ const BossBattles = () => {
               id="trainer-select" 
               value={selectedTrainer} 
               onChange={(e) => setSelectedTrainer(e.target.value)}
-              disabled={!selectedStage}
             >
               <option value="">-- Select Trainer --</option>
               {trainerOptions.map(opt => (
