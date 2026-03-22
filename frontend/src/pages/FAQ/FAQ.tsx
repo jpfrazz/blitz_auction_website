@@ -25,7 +25,7 @@ const FAQ = () => (
         </ul>
       </nav>
 
-      <section id="what-is-emerald-blitz" className="faq-section">
+      <section id="what-is-emerald-blitz" className="faq-section" style={{ scrollMarginTop: '120px' }}>
         <h2 className="faq-question">What's Emerald Blitz?</h2>
         <hr />
         <p className="faq-answer">
@@ -33,7 +33,7 @@ const FAQ = () => (
         </p>
       </section>
 
-      <section id="how-do-i-play" className="faq-section">
+      <section id="how-do-i-play" className="faq-section" style={{ scrollMarginTop: '120px' }}>
         <h2 className="faq-question">How do I play?</h2>
         <hr />
         <ol className="faq-answer">
@@ -50,7 +50,7 @@ const FAQ = () => (
         <p className="faq-answer">And you’re good to go!</p>
       </section>
 
-      <section id="what-are-the-rules" className="faq-section">
+      <section id="what-are-the-rules" className="faq-section" style={{ scrollMarginTop: '120px' }}>
         <h2 className="faq-question">What are the rules?</h2>
         <hr />
         <ul className="faq-answer">
@@ -78,7 +78,7 @@ const FAQ = () => (
         </ul>
       </section>
 
-      <section id="how-do-i-draft-with-my-friends" className="faq-section">
+      <section id="how-do-i-draft-with-my-friends" className="faq-section" style={{ scrollMarginTop: '120px' }}>
         <h2 className="faq-question">How do I draft with my friends?</h2>
         <hr />
         <ol className="faq-answer">
@@ -89,17 +89,16 @@ const FAQ = () => (
             The official ruleset uses the following settings:
             <ul>
               <li>Default Funds: 20,000 per player</li>
-              <li>Bidding Time Limit: 10 seconds</li>
               <li>Total Pokémon: 8 * Number of players (64 for 8-player drafts)</li>
             </ul>
           </li>
           <li>Press <b>Create Auction</b>.</li>
-          <li>Once you’re taken to the auction, copy the url and send it to your friends.</li>
-          <li>After everyone has joined and clicked "Ready Up," the auction will begin automatically.</li>
+          <li>Once you’re taken to the auction, tell your friends to find your auction in the Lobby Viewer.</li>
+          <li>After everyone has joined and clicked "Ready Up," press "Start Draft" to begin!</li>
         </ol>
       </section>
 
-      <section id="can-i-play-by-myself" className="faq-section">
+      <section id="can-i-play-by-myself" className="faq-section" style={{ scrollMarginTop: '120px' }}>
         <h2 className="faq-question">Can I play by myself without drafting?</h2>
         <hr />
         <p className="faq-answer">
@@ -107,7 +106,7 @@ const FAQ = () => (
         </p>
       </section>
 
-      <section id="whats-changed" className="faq-section">
+      <section id="whats-changed" className="faq-section" style={{ scrollMarginTop: '120px' }}>
         <h2 className="faq-question">So, what's changed from vanilla Emerald?</h2>
         <hr />
         <div className="faq-answer">
@@ -247,7 +246,7 @@ const FAQ = () => (
         </div>
       </section>
 
-      <section id="what-do-the-new-items-do" className="faq-section">
+      <section id="what-do-the-new-items-do" className="faq-section" style={{ scrollMarginTop: '120px' }}>
         <h2 className="faq-question">What do the new items do?</h2>
         <hr />
         <div className="faq-answer">

@@ -203,7 +203,7 @@ const AuctionInfoPanel: React.FC<AuctionInfoPanelProps> = ({
   };
 
   return (
-    <div className="auction-info-box">
+    <div className="auction-info-box" style={{ flexShrink: 0 }}>
       <div className="auction-countdown-container">
         {bidNotification && (
           <div className="auction-bid-notification" role="status" aria-live="polite">

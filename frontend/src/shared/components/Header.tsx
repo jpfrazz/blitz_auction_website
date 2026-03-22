@@ -14,6 +14,8 @@ const navButtons = [
 function Header() {
   const location = useLocation();
   const isAuctionPage = location.pathname === '/Auction';
+  const linkTarget = isAuctionPage ? '_blank' : undefined;
+  const linkRel = isAuctionPage ? 'noopener noreferrer' : undefined;
 
   const AUCTION_ALERT_SOUND_MUTED_KEY = 'auction_alert_sound_muted';
   const AUCTION_ALERT_SOUND_MUTED_EVENT = 'auction-alert-muted-changed';
@@ -73,7 +75,7 @@ function Header() {
   return (
     <header className="header">
       <div className="headerInner">
-        <Link to="/" className="logoLink" onClick={scrollToTop}>
+        <Link to="/" className="logoLink" onClick={scrollToTop} target={linkTarget} rel={linkRel}>
           <img
             src="/blitzlogo.png"
             alt="Emerald Blitz Logo"
@@ -86,10 +88,10 @@ function Header() {
               Auctions
             </button>
             <div className="navDropdownMenu">
-              <Link to="/AuctionSetup" className="navButton navDropdownItem" onClick={scrollToTop}>
+              <Link to="/AuctionSetup" className="navButton navDropdownItem" onClick={scrollToTop} target={linkTarget} rel={linkRel}>
                 Auction Setup
               </Link>
-              <Link to="/LobbyViewer" className="navButton navDropdownItem" onClick={scrollToTop}>
+              <Link to="/LobbyViewer" className="navButton navDropdownItem" onClick={scrollToTop} target={linkTarget} rel={linkRel}>
                 Lobby Viewer
               </Link>
             </div>
@@ -99,13 +101,13 @@ function Header() {
               Documentation
             </button>
             <div className="navDropdownMenu">
-              <Link to="/Info" className="navButton navDropdownItem" onClick={scrollToTop}>
+              <Link to="/Info" className="navButton navDropdownItem" onClick={scrollToTop} target={linkTarget} rel={linkRel}>
                 Blitz Info
               </Link>
-              <Link to="/BossBattles" className="navButton navDropdownItem" onClick={scrollToTop}>
+              <Link to="/BossBattles" className="navButton navDropdownItem" onClick={scrollToTop} target={linkTarget} rel={linkRel}>
                 Boss Battles
               </Link>
-              <Link to="/PatchNotes" className="navButton navDropdownItem" onClick={scrollToTop}>
+              <Link to="/PatchNotes" className="navButton navDropdownItem" onClick={scrollToTop} target={linkTarget} rel={linkRel}>
                 Patch Notes
               </Link>
             </div>
@@ -116,12 +118,14 @@ function Header() {
               to={btn.link}
               className="navButton"
               onClick={scrollToTop}
+              target={linkTarget}
+              rel={linkRel}
             >
               {btn.label}
             </Link>
           ))}
           {!user && (
-            <a href="/api/login" className="navButton">Login</a>
+            <a href="/api/login" className="navButton" target={linkTarget} rel={linkRel}>Login</a>
           )}
           {user && !user.is_guest && (
             <div className="userDropdown">

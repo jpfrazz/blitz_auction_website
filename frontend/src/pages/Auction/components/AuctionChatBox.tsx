@@ -115,15 +115,21 @@ const AuctionChatBox: React.FC<AuctionChatBoxProps> = ({ draftId, isGuest, isLog
             {messages.length === 0 ? (
               <div className="auction-chat-empty">No messages yet.</div>
             ) : (
-              messages.map(message => (
-                <div className="auction-chat-message" key={message.chat_id}>
-                  <div className="auction-chat-message-header">
-                    <span className="auction-chat-user">{message.user_name}</span>
-                    <span className="auction-chat-time">{formatTime(message.created_at)}</span>
+              messages.map((message, index) => {
+                const prevMessage = messages[index - 1];
+                const showHeader = !prevMessage || prevMessage.user_name !== message.user_name;
+                return (
+                  <div className={`auction-chat-message${!showHeader ? ' chained' : ''}`} key={message.chat_id}>
+                    {showHeader && (
+                      <div className="auction-chat-message-header">
+                        <span className="auction-chat-user">{message.user_name}</span>
+                        <span className="auction-chat-time">{formatTime(message.created_at)}</span>
+                      </div>
+                    )}
+                    <div className="auction-chat-text">{message.message}</div>
                   </div>
-                  <div className="auction-chat-text">{message.message}</div>
-                </div>
-              ))
+                );
+              })
             )}
           </div>
           <form className="auction-chat-input-row" onSubmit={handleSend}>
