@@ -85,6 +85,10 @@ const AuctionInfoPanel: React.FC<AuctionInfoPanelProps> = ({
   useEffect(() => {
     if (isPaused) {
       setIsResetting(false);
+      const state = (current_auction as any).state || (current_auction as any).auction_state;
+      if (state && typeof state === 'object' && 'PAUSED' in state) {
+        setSecondsRemaining(Number(state.PAUSED));
+      }
       return;
     }
 
@@ -113,15 +117,19 @@ const AuctionInfoPanel: React.FC<AuctionInfoPanelProps> = ({
       clearInterval(interval);
       clearTimeout(resetTimer);
     };
-  }, [currentAuctionExpiresAt, currentServerTime, isPaused]);
+  }, [currentAuctionExpiresAt, currentServerTime, isPaused, current_auction]);
 
   const progress = auctionLength > 0 ? secondsRemaining / auctionLength : 0;
 
+  const showBidNow = !currentAuctionExpiresAt;
+
   // Determine color based on remaining time
   let timerColor = '#00aa00'; // green
-  if (secondsRemaining <= 3) {
+  if (isPaused) {
+    timerColor = '#66b2ff'; // light blue
+  } else if (!showBidNow && secondsRemaining <= 3) {
     timerColor = '#ff0000'; // red
-  } else if (secondsRemaining <= 5) {
+  } else if (!showBidNow && secondsRemaining <= 5) {
     timerColor = '#ff8800'; // dark orange
   }
 
@@ -193,8 +201,6 @@ const AuctionInfoPanel: React.FC<AuctionInfoPanelProps> = ({
       console.error('Error placing bid:', error);
     }
   };
-
-  const showBidNow = !currentAuctionExpiresAt;
 
   return (
     <div className="auction-info-box">

@@ -281,9 +281,10 @@ const AuctionPage: React.FC = () => {
     }
   };
 
+  const auctionState = (currentAuction as any)?.state || (currentAuction as any)?.auction_state;
   const isDraftPaused = draft
-    ? (currentAuction?.auction_state === 'PAUSED'
-      || (typeof currentAuction?.auction_state === 'object' && currentAuction?.auction_state !== null && 'PAUSED' in currentAuction?.auction_state))
+    ? (auctionState === 'PAUSED'
+      || (typeof auctionState === 'object' && auctionState !== null && 'PAUSED' in auctionState))
     : false;
 
   const handleTogglePauseDraft = async () => {
