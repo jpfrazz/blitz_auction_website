@@ -16,6 +16,7 @@ interface PokemonAggregate {
   minBid: number;
   maxBid: number;
   priceVariance: number;
+  rank: number;
 }
 
 interface PlayerAggregate {
@@ -36,12 +37,20 @@ interface PokemonSaleRow {
   bid: number;
 }
 
+const excludedPokemonNames = new Set([
+  'Bombirdier',
+  'Larvesta',
+  'Hawlucha',
+  'Falinks',
+  'Absol',
+  'Miltank',
+  'Stonjourner',
+  'Klawf',
+  'Turtonator',
+]);
+
 function formatPokemonName(name: string): string {
-  return name.toLowerCase()
-    .replace(/ /g, '-')
-    .replace(/[.:']/g, '')
-    .replace(/♀/g, '-f')
-    .replace(/♂/g, '-m');
+  return name.toLowerCase().replace(/'/g, '');
 }
 
 function toLabel(value: string): string {
@@ -54,6 +63,33 @@ function toLabel(value: string): string {
 function parseLegacyCost(cost: string): number | null {
   const normalized = cost.trim().replace(/,/g, '');
   return /^\d+$/.test(normalized) ? Number(normalized) : null;
+}
+
+function getPriceColor(price: number): string {
+  // 5000+ is red (Hue 0)
+  // 1250 and below is purple (Hue 270)
+  // Intervals of 250
+  if (price >= 5000) return 'hsla(0, 85%, 45%, 0.35)';
+  if (price <= 1250) return 'hsla(270, 85%, 45%, 0.35)';
+
+  const maxPrice = 5000;
+  const minPrice = 1250;
+  const range = maxPrice - minPrice;
+  const stepSize = 250;
+  
+  const stepIndex = Math.floor((maxPrice - price) / stepSize);
+  const hue = (stepIndex / (range / stepSize)) * 270;
+  return `hsla(${hue}, 85%, 45%, 0.35)`;
+}
+
+function calculateQuantile(sortedData: number[], q: number) {
+  const pos = (sortedData.length - 1) * q;
+  const base = Math.floor(pos);
+  const rest = pos - base;
+  if (sortedData[base + 1] !== undefined) {
+    return sortedData[base] + rest * (sortedData[base + 1] - sortedData[base]);
+  }
+  return sortedData[base];
 }
 
 const Stats: React.FC = () => {
@@ -182,7 +218,7 @@ const Stats: React.FC = () => {
 
   const sortedAuctions = useMemo(() => {
     const sorted = [...(stats?.auctions ?? [])]
-      .filter((auction) => auction.winning_bid !== null && validDraftIds.has(auction.draft_id))
+      .filter((auction) => auction.winning_bid !== null && validDraftIds.has(auction.draft_id) && !excludedPokemonNames.has(auction.name))
       .sort((a, b) => (b.created_at || '').localeCompare(a.created_at || ''));
     console.log('[Stats] Computed sortedAuctions:', sorted.length, 'auctions with winning bids');
     return sorted;
@@ -207,6 +243,9 @@ const Stats: React.FC = () => {
     (stats?.legacy ?? []).forEach((legacyRow) => {
       const bid = parseLegacyCost(legacyRow.cost);
       if (bid === null) {
+        return;
+      }
+      if (excludedPokemonNames.has(legacyRow.pokemon)) {
         return;
       }
       sales.push({
@@ -239,18 +278,30 @@ const Stats: React.FC = () => {
       existing.bids.push(sale.bid);
     });
 
-    return Array.from(grouped.values())
+    let results = Array.from(grouped.values())
       .map((entry) => {
-        const count = entry.bids.length;
-        const sum = entry.bids.reduce((a, b) => a + b, 0);
+        let bids = entry.bids;
+
+        if (bids.length > 1) {
+          const sortedBids = [...bids].sort((a, b) => a - b);
+          const q1 = calculateQuantile(sortedBids, 0.25);
+          const q3 = calculateQuantile(sortedBids, 0.75);
+          const iqr = q3 - q1;
+          const lower = q1 - 1.5 * iqr;
+          const upper = q3 + 2.0 * iqr;
+          bids = sortedBids.filter((b) => b >= lower && b <= upper);
+        }
+
+        const count = bids.length;
+        const sum = bids.reduce((a, b) => a + b, 0);
         const avg = count > 0 ? Math.round(sum / count) : 0;
-        const min = count > 0 ? Math.min(...entry.bids) : 0;
-        const max = count > 0 ? Math.max(...entry.bids) : 0;
+        const min = count > 0 ? Math.min(...bids) : 0;
+        const max = count > 0 ? Math.max(...bids) : 0;
         
         // Calculate Standard Deviation for Price Variance
         let stdDev = 0;
         if (count > 0) {
-          const sqDiffSum = entry.bids.reduce((a, b) => a + Math.pow(b - avg, 2), 0);
+          const sqDiffSum = bids.reduce((a, b) => a + Math.pow(b - avg, 2), 0);
           stdDev = Math.sqrt(sqDiffSum / count);
         }
 
@@ -264,8 +315,17 @@ const Stats: React.FC = () => {
           minBid: min,
           maxBid: max,
           priceVariance: Math.round(stdDev),
+          rank: 0, // Placeholder
         };
       });
+
+    // Filter out pokemon that sell for 100 (avg <= 100)
+    results = results.filter((p) => p.avgWinningBid > 100);
+
+    // Calculate rank based on avgWinningBid descending
+    results.sort((a, b) => b.avgWinningBid - a.avgWinningBid);
+    results.forEach((p, i) => p.rank = i + 1);
+    return results;
   }, [sortedAuctions, stats?.legacy]);
 
   const pokemonSummary = useMemo<PokemonAggregate[]>(() => {
@@ -449,22 +509,20 @@ const Stats: React.FC = () => {
         .filter((bid): bid is number => bid !== null),
     ];
 
-    const avgWinningBid = allSales.length > 0
-      ? Math.round(allSales.reduce((sum, bid) => sum + bid, 0) / allSales.length)
-      : 0;
+    const totalMoneySpent = allSales.reduce((sum, bid) => sum + bid, 0);
 
     const result = {
       uniqueDrafts,
       uniquePlayers,
       totalWinningAuctions: allSales.length,
-      avgWinningBid,
+      totalMoneySpent,
     };
 
     console.log('[Stats] KPIs computed:', {
       uniqueDrafts,
       uniquePlayers,
       totalWinningAuctions: allSales.length,
-      avgWinningBid,
+      totalMoneySpent,
     });
 
     return result;
@@ -528,8 +586,8 @@ const Stats: React.FC = () => {
             <div className="kpi-value">{kpis.totalWinningAuctions}</div>
           </article>
           <article className="kpi-card">
-            <div className="kpi-label">Average Winning Bid</div>
-            <div className="kpi-value">${kpis.avgWinningBid.toLocaleString()}</div>
+            <div className="kpi-label">Total Money Spent</div>
+            <div className="kpi-value">${kpis.totalMoneySpent.toLocaleString()}</div>
           </article>
         </section>
 
@@ -560,11 +618,14 @@ const Stats: React.FC = () => {
         {activeTab === 'pokemon' && (
           <section className="stats-content-grid">
             <article className="stats-panel">
-              <h2>Pokemon Auction Outcomes</h2>
+              <h2>Cost Breakdown</h2>
               <div className="table-wrap">
                 <table>
                   <thead>
                     <tr>
+                      <th className="sortable" onClick={() => handleSort('rank')}>
+                        Rank {sortConfig.key === 'rank' ? (sortConfig.direction === 'asc' ? '↑' : '↓') : ''}
+                      </th>
                       <th className="sortable" onClick={() => handleSort('name')}>
                         Pokemon {sortConfig.key === 'name' ? (sortConfig.direction === 'asc' ? '↑' : '↓') : ''}
                       </th>
@@ -588,14 +649,17 @@ const Stats: React.FC = () => {
                   <tbody>
                     {pokemonSummary.map((entry) => (
                       <tr key={entry.key}>
+                        <td style={{ backgroundColor: getPriceColor(entry.avgWinningBid) }}>{entry.rank}</td>
                         <td>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                            <img
-                              src={`/MiniIcons/${formatPokemonName(entry.name)}.png`}
-                              alt={entry.name}
-                              style={{ width: 'auto', height: 'auto', maxWidth: '20px', maxHeight: '20px', objectFit: 'contain' }}
-                              onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
-                            />
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                            <div style={{ width: '32px', display: 'flex', justifyContent: 'center', flexShrink: 0 }}>
+                              <img
+                                src={`/MiniIcons/${formatPokemonName(entry.name)}.png`}
+                                alt={entry.name}
+                                style={{ width: 'auto', height: 'auto', maxWidth: '32px', maxHeight: '32px', objectFit: 'contain' }}
+                                onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+                              />
+                            </div>
                             <span>{entry.name} {entry.form && entry.form !== 'base' ? `(${toLabel(entry.form)})` : ''}</span>
                           </div>
                         </td>
@@ -608,7 +672,7 @@ const Stats: React.FC = () => {
                     ))}
                     {pokemonSummary.length === 0 && (
                       <tr>
-                        <td colSpan={6} className="empty-cell">No pokemon stats available.</td>
+                        <td colSpan={7} className="empty-cell">No pokemon stats available.</td>
                       </tr>
                     )}
                   </tbody>

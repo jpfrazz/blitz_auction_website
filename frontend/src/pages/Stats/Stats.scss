@@ -135,7 +135,7 @@
     padding: 0.58rem 0.62rem;
     text-align: left;
     border-bottom: 1px solid #273138;
-    font-size: 0.96rem;
+    font-size: 1.2rem;
   }
 
   th {
@@ -144,6 +144,11 @@
     text-transform: uppercase;
     letter-spacing: 0.05em;
     background: #0f1318;
+  }
+
+  tbody tr:hover {
+    background-color: rgba(255, 255, 255, 0.05);
+    transition: background-color 0.1s ease;
   }
 }
 
