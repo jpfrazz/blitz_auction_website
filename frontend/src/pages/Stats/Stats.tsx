@@ -50,7 +50,11 @@ const excludedPokemonNames = new Set([
 ]);
 
 function formatPokemonName(name: string): string {
-  return name.toLowerCase().replace(/'/g, '');
+  const cleaned = name.toLowerCase().replace(/'/g, '');
+  if (cleaned === 'farfetchd galar' || cleaned === 'farfetchd-galar') {
+    return 'farfetch\'d';
+  }
+  return cleaned;
 }
 
 function toLabel(value: string): string {
@@ -121,6 +125,21 @@ const Stats: React.FC = () => {
           auctionCount: data.auctions.length,
           legacyCount: data.legacy?.length ?? 0,
         });
+
+        // Preload mini icons so the animation doesn't start until they are ready
+        const uniqueNames = new Set<string>();
+        data.auctions.forEach((a) => uniqueNames.add(a.name));
+        data.legacy?.forEach((l: any) => uniqueNames.add(l.pokemon));
+
+        await Promise.all(Array.from(uniqueNames).map((name) => {
+          return new Promise<void>((resolve) => {
+            const img = new Image();
+            img.src = `/MiniIcons/${formatPokemonName(name)}.png`;
+            img.onload = () => resolve();
+            img.onerror = () => resolve();
+          });
+        }));
+
         setStats(data);
       } catch (e: any) {
         console.error('[Stats] Error fetching stats data:', e);
@@ -281,8 +300,12 @@ const Stats: React.FC = () => {
 
     let results = Array.from(grouped.values())
       .map((entry) => {
-        let bids = entry.bids;
+        // Filter out sales of exactly 100
+        let bids = entry.bids.filter(b => b !== 100);
 
+        // If no bids remain after filtering, exclude this pokemon
+        if (bids.length === 0) return null;
+        
         if (bids.length > 1) {
           const sortedBids = [...bids].sort((a, b) => a - b);
           const q1 = calculateQuantile(sortedBids, 0.25);
@@ -291,6 +314,11 @@ const Stats: React.FC = () => {
           const lower = q1 - 1.5 * iqr;
           const upper = q3 + 2.0 * iqr;
           bids = sortedBids.filter((b) => b >= lower && b <= upper);
+        }
+
+        // If no bids remain after outlier removal, also exclude
+        if (bids.length === 0) {
+          return null;
         }
 
         const count = bids.length;
@@ -318,10 +346,7 @@ const Stats: React.FC = () => {
           priceVariance: Math.round(stdDev),
           rank: 0, // Placeholder
         };
-      });
-
-    // Filter out pokemon that sell for 100 (avg <= 100)
-    results = results.filter((p) => p.avgWinningBid > 100);
+      }).filter((p): p is PokemonAggregate => p !== null);
 
     // Calculate rank based on avgWinningBid descending
     results.sort((a, b) => b.avgWinningBid - a.avgWinningBid);
@@ -574,19 +599,19 @@ const Stats: React.FC = () => {
         </section>
 
         <section className="stats-kpi-grid">
-          <article className="kpi-card">
+          <article className="kpi-card stats-row-animate" style={{ animationDelay: '0ms' }}>
             <div className="kpi-label">Completed Drafts</div>
             <div className="kpi-value">{kpis.uniqueDrafts}</div>
           </article>
-          <article className="kpi-card">
+          <article className="kpi-card stats-row-animate" style={{ animationDelay: '50ms' }}>
             <div className="kpi-label">Tracked Players</div>
             <div className="kpi-value">{kpis.uniquePlayers}</div>
           </article>
-          <article className="kpi-card">
+          <article className="kpi-card stats-row-animate" style={{ animationDelay: '100ms' }}>
             <div className="kpi-label">Total Sales</div>
             <div className="kpi-value">{kpis.totalWinningAuctions}</div>
           </article>
-          <article className="kpi-card">
+          <article className="kpi-card stats-row-animate" style={{ animationDelay: '150ms' }}>
             <div className="kpi-label">Total Money Spent</div>
             <div className="kpi-value">${kpis.totalMoneySpent.toLocaleString()}</div>
           </article>
@@ -648,8 +673,8 @@ const Stats: React.FC = () => {
                     </tr>
                   </thead>
                   <tbody>
-                    {pokemonSummary.map((entry) => (
-                      <tr key={entry.key}>
+                    {pokemonSummary.map((entry, index) => (
+                      <tr key={entry.key} className="stats-row-animate" style={{ animationDelay: `${200 + index * 30}ms` }}>
                         <td style={{ backgroundColor: getPriceColor(entry.avgWinningBid) }}>{entry.rank}</td>
                         <td>
                           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
@@ -699,10 +724,11 @@ const Stats: React.FC = () => {
                     </tr>
                   </thead>
                   <tbody>
-                    {draftSummary.map((draft) => (
+                    {draftSummary.map((draft, index) => (
                       <React.Fragment key={draft.draftId}>
                         <tr
-                          className="draft-row-clickable"
+                          className="draft-row-clickable stats-row-animate"
+                          style={{ animationDelay: `${200 + index * 30}ms` }}
                           onClick={() => setExpandedDraftId((prev) => (prev === draft.draftId ? null : draft.draftId))}
                         >
                           <td className="mono">{draft.draftId}</td>
@@ -805,14 +831,18 @@ const Stats: React.FC = () => {
                         <div className="match-history-message">No match history found.</div>
                       )}
 
-                      {playerMatchHistory.map((team) => {
+                      {playerMatchHistory.map((team, index) => {
                         const auctions = team.pokemon_drafted || [];
                         const isRanked = team.pre_match_mmr !== null || team.placement !== null;
                         const result = !isRanked ? 'Unknown' : team.placement === 1 ? 'Win' : 'Loss';
                         const resultClass = result === 'Win' ? 'win' : result === 'Loss' ? 'loss' : 'unknown';
 
                         return (
-                          <div className={`match-timeline-row ${resultClass}`} key={team.team_id}>
+                          <div 
+                            className={`match-timeline-row ${resultClass} stats-row-animate`} 
+                            key={team.team_id}
+                            style={{ animationDelay: `${100 + index * 30}ms` }}
+                          >
                             <div className="match-result-badge">
                               <span className="result-text">{result}</span>
                             </div>
