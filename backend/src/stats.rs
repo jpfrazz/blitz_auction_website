@@ -16,6 +16,7 @@ pub struct StatsPageResponse {
 pub struct StatsPlayer {
     pub user_id: String,
     pub user_name: String,
+    pub is_guest: bool,
 }
 
 #[derive(Serialize, FromRow)]
@@ -51,7 +52,9 @@ pub async fn get_stats_page_data(
 ) -> Result<Json<StatsPageResponse>, AppError> {
     // Combine registered users and guests into a single player list
     let players = sqlx::query_as::<_, StatsPlayer>(
-        "SELECT user_id, user_name FROM users UNION SELECT user_id, user_name FROM guests"
+        "SELECT user_id, user_name, false AS is_guest FROM users
+         UNION ALL
+         SELECT user_id, user_name, true AS is_guest FROM guests"
     )
     .fetch_all(&state.db_pool)
     .await
