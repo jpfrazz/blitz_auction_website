@@ -1,10 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import { fetchStatsPageData } from '../../../../shared/api/stats';
 import { StatsPageResponse } from '../../../../types';
-import PokemonStatsTab from '../../../Stats/components/PokemonStatsTab';
-import './TierListTab.scss';
+import PlayerSearchStatsTab from '../../../Stats/components/PlayerSearchStatsTab';
+import './PlayerSearchTab.scss';
 
-const TierListTab = () => {
+const PlayerSearchTab = () => {
   const [stats, setStats] = useState<StatsPageResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -17,7 +17,7 @@ const TierListTab = () => {
         const data = await fetchStatsPageData();
         setStats(data);
       } catch (e: any) {
-        console.error('[TierListTab] Error fetching stats data:', e);
+        console.error('[PlayerSearchTab] Error fetching stats data:', e);
         setError('Failed to load stats data.');
       } finally {
         setLoading(false);
@@ -28,15 +28,14 @@ const TierListTab = () => {
   }, []);
 
   return (
-    <div className="auction-tier-list">
-      <PokemonStatsTab
+    <div className="auction-player-search-tab">
+      <PlayerSearchStatsTab
         stats={stats}
         loading={loading}
         error={error}
-        showDraftSizeFilter={false}
       />
     </div>
   );
 };
 
-export default TierListTab;
+export default PlayerSearchTab;

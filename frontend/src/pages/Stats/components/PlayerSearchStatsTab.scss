@@ -1,0 +1,248 @@
+@import '../../../shared/style/theme.scss';
+
+.player-search-stats-tab {
+  width: 100%;
+
+  .player-search-panel {
+    padding: 1rem !important;
+  }
+
+  .player-search-wrapper {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  .player-search-input-wrapper {
+    position: relative;
+    width: 100%;
+  }
+
+  .player-search-input {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 0.65rem 0.85rem;
+    border: 1px solid #32424c;
+    background: #0f1418;
+    color: $eb-text;
+    border-radius: 10px;
+    font-size: 1.05rem;
+
+    &::placeholder {
+      color: #7a8a93;
+    }
+
+    &:focus {
+      outline: none;
+      border-color: #40c9a2;
+      box-shadow: 0 0 0 2px rgba(64, 201, 162, 0.1);
+    }
+  }
+
+  .search-autocomplete {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background: #0f1418;
+    border: 1px solid #32424c;
+    border-top: none;
+    border-radius: 0 0 10px 10px;
+    max-height: 240px;
+    overflow-y: auto;
+    z-index: 10;
+  }
+
+  .autocomplete-item {
+    padding: 0.65rem 0.85rem;
+    color: $eb-text;
+    cursor: pointer;
+    border-bottom: 1px solid #1a1f24;
+    font-size: 0.98rem;
+
+    &:hover {
+      background: #1a1f24;
+    }
+
+    &:last-child {
+      border-bottom: none;
+    }
+  }
+
+  .match-history-message {
+    text-align: center;
+    color: $eb-text-muted;
+    padding: 1rem;
+    font-size: 1.05rem;
+
+    &.error {
+      color: #f85149;
+    }
+  }
+
+  .player-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-bottom: 0.75rem;
+    border-bottom: 1px solid #27323a;
+
+    h3 {
+      margin: 0;
+      font-size: 1.4rem;
+    }
+
+    .player-stats {
+      color: $eb-text-muted;
+      font-size: 0.95rem;
+    }
+  }
+
+  .match-timeline {
+    display: flex;
+    flex-direction: column;
+    gap: 0.65rem;
+    margin-top: 0.75rem;
+  }
+
+  .match-timeline-row {
+    display: grid;
+    grid-template-columns: 80px 1fr 1fr;
+    gap: 0.85rem;
+    align-items: center;
+    padding: 0.75rem;
+    background: #111519;
+    border: 1px solid #27323a;
+    border-radius: 10px;
+
+    &.win {
+      border-left: 4px solid #3fb950;
+    }
+
+    &.loss {
+      border-left: 4px solid #f85149;
+    }
+
+    &.unknown {
+      border-left: 4px solid #d1d5da;
+    }
+  }
+
+  .match-result-badge {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    min-height: 60px;
+
+    .result-text {
+      font-weight: 700;
+      font-size: 1.1rem;
+      text-align: center;
+    }
+  }
+
+  .match-info {
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+
+    .match-row-details {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 0.95rem;
+      color: $eb-text;
+
+      .draft-id {
+        font-size: 0.85rem;
+        color: #7a8a93;
+      }
+
+      .separator {
+        color: #4a545c;
+      }
+
+      .placement,
+      .mmr {
+        color: $eb-text-muted;
+      }
+    }
+
+    .budget-remaining {
+      font-size: 0.92rem;
+      color: $eb-text-muted;
+    }
+  }
+
+  .match-pokemon-picks {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+    align-items: center;
+    justify-content: flex-end;
+
+    .no-picks-label {
+      color: $eb-text-muted;
+      font-size: 0.9rem;
+    }
+  }
+
+  .match-pick {
+    width: 42px;
+    height: 42px;
+    border-radius: 8px;
+    overflow: hidden;
+    border: 1px solid #2a353f;
+    background: #0a0e12;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: 80ms ease;
+
+    &:hover {
+      transform: scale(1.08);
+      border-color: #40c9a2;
+    }
+
+    img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      padding: 2px;
+    }
+  }
+
+  @media (max-width: 950px) {
+    .match-timeline-row {
+      grid-template-columns: 65px 1fr;
+
+      .match-pokemon-picks {
+        grid-column: 1 / -1;
+        justify-content: flex-start;
+      }
+    }
+  }
+
+  @media (max-width: 640px) {
+    .match-timeline-row {
+      grid-template-columns: 1fr;
+      padding: 0.6rem;
+    }
+
+    .match-result-badge {
+      min-height: auto;
+      padding: 0.4rem;
+    }
+
+    .match-pokemon-picks {
+      justify-content: center;
+    }
+
+    .match-pick {
+      width: 36px;
+      height: 36px;
+    }
+  }
+}
