@@ -6,6 +6,10 @@ body.auction-page-active {
 		transform: translateY(-100%);
 		transition: transform 0.3s ease-in-out;
 
+		&.header-pinned {
+			transform: translateY(0);
+		}
+
 		&::before {
 			content: '';
 			position: absolute;
@@ -19,7 +23,7 @@ body.auction-page-active {
 			transform: translateY(0);
 		}
 	}
-	.header:hover ~ .auction-main-layout {
+	.header:hover ~ .auction-main-layout, .header.header-pinned ~ .auction-main-layout {
 		padding-top: 5.6rem;
 	}
 }

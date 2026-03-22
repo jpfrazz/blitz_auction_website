@@ -19,6 +19,7 @@ function Header() {
 
   const AUCTION_ALERT_SOUND_MUTED_KEY = 'auction_alert_sound_muted';
   const AUCTION_ALERT_SOUND_MUTED_EVENT = 'auction-alert-muted-changed';
+  const HEADER_PINNED_KEY = 'header_pinned';
 
   const scrollToTop = () => {
     window.scrollTo(0, 0);
@@ -47,12 +48,23 @@ function Header() {
     }
     return localStorage.getItem(AUCTION_ALERT_SOUND_MUTED_KEY) !== 'false';
   });
+  const [isHeaderPinned, setIsHeaderPinned] = useState<boolean>(() => {
+    if (typeof window === 'undefined') {
+      return true;
+    }
+    return localStorage.getItem(HEADER_PINNED_KEY) !== 'false';
+  });
 
   const toggleAuctionSoundMuted = () => {
     const nextMuted = !isAuctionSoundMuted;
     setIsAuctionSoundMuted(nextMuted);
     localStorage.setItem(AUCTION_ALERT_SOUND_MUTED_KEY, String(nextMuted));
     window.dispatchEvent(new CustomEvent(AUCTION_ALERT_SOUND_MUTED_EVENT, { detail: nextMuted }));
+  };
+  const toggleHeaderPinned = () => {
+    const nextPinned = !isHeaderPinned;
+    setIsHeaderPinned(nextPinned);
+    localStorage.setItem(HEADER_PINNED_KEY, String(nextPinned));
   };
 
   const handleChangeName = async () => {
@@ -73,7 +85,7 @@ function Header() {
   };
 
   return (
-    <header className="header">
+    <header className={`header${isAuctionPage && isHeaderPinned ? ' header-pinned' : ''}`}>
       <div className="headerInner">
         <Link to="/" className="logoLink" onClick={scrollToTop} target={linkTarget} rel={linkRel}>
           <img
@@ -160,15 +172,26 @@ function Header() {
             </div>
           )}
           {isAuctionPage && (
-            <button
-              type="button"
-              className="headerSoundToggle"
-              onClick={toggleAuctionSoundMuted}
-              title={isAuctionSoundMuted ? 'Unmute auction sound' : 'Mute auction sound'}
-              aria-label={isAuctionSoundMuted ? 'Unmute auction sound' : 'Mute auction sound'}
-            >
-              {isAuctionSoundMuted ? '🔇' : '🔊'}
-            </button>
+            <div style={{ display: 'flex', gap: '3px' }}>
+              <button
+                type="button"
+                className="headerSoundToggle"
+                onClick={toggleAuctionSoundMuted}
+                title={isAuctionSoundMuted ? 'Unmute auction sound' : 'Mute auction sound'}
+                aria-label={isAuctionSoundMuted ? 'Unmute auction sound' : 'Mute auction sound'}
+              >
+                {isAuctionSoundMuted ? '🔇' : '🔊'}
+              </button>
+              <button
+                type="button"
+                className="headerSoundToggle"
+                onClick={toggleHeaderPinned}
+                title={isHeaderPinned ? 'Unpin header' : 'Pin header'}
+                aria-label={isHeaderPinned ? 'Unpin header' : 'Pin header'}
+              >
+                {isHeaderPinned ? '📌' : '📍'}
+              </button>
+            </div>
           )}
         </nav>
       </div>

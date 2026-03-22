@@ -77,9 +77,9 @@ const AuctionChatBox: React.FC<AuctionChatBoxProps> = ({ draftId, isGuest, isLog
     }
 
     setIsSending(true);
+    setNewMessage('');
     try {
       const response = await createDraftChat(draftId, trimmed);
-      setNewMessage('');
       if (response) {
         setMessages((prev) => [...prev, response]);
       }
@@ -139,7 +139,7 @@ const AuctionChatBox: React.FC<AuctionChatBoxProps> = ({ draftId, isGuest, isLog
               value={newMessage}
               onChange={event => setNewMessage(event.target.value)}
               placeholder={isGuest ? 'Log in with Discord to chat!' : 'Type a message...'}
-              disabled={isGuest || isSending || !isLoggedIn}
+              disabled={isGuest || !isLoggedIn}
             />
             <button
               className="auction-chat-send button"
