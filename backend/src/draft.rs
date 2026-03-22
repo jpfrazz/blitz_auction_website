@@ -699,7 +699,7 @@ impl DraftActor {
     }
 
     async fn get_current_auction(&self) -> Result<Option<AuctionResponse>, AppError> {
-        if self.draft_state == DraftState::PENDING {
+        if self.draft_state == DraftState::PENDING || self.draft_state == DraftState::COMPLETED {
             return Ok(None);
         }
         let auction = &self.auctions[self.current_auction];
@@ -707,13 +707,13 @@ impl DraftActor {
     }
 
     async fn bid(&self, auction_id: i64, bid_value: u32, user: User) -> Result<(), AppError> {
-        let auction = &self.auctions[self.current_auction];
         if self.draft_state != DraftState::BIDDING {
             return Err((
                 StatusCode::PRECONDITION_FAILED,
                 format!("draft is not accepting bids"),
             ));
         }
+        let auction = &self.auctions[self.current_auction];
         if auction.auction_id != auction_id {
             return Err((
                 StatusCode::PRECONDITION_FAILED,
@@ -798,6 +798,12 @@ impl DraftActor {
                     format!("user is not the host")
             ));
         }
+        if self.draft_state != DraftState::BIDDING {
+            return Err((
+                StatusCode::PRECONDITION_FAILED,
+                format!("draft is not in bidding state")
+            ));
+        }
 
         let auction = &self.auctions[self.current_auction];
         self.db_writer.resume_auction(auction.auction_id).await?;
@@ -809,6 +815,12 @@ impl DraftActor {
             return Err((
                     StatusCode::UNAUTHORIZED,
                     format!("user is not the host")
+            ));
+        }
+        if self.draft_state != DraftState::BIDDING {
+            return Err((
+                StatusCode::PRECONDITION_FAILED,
+                format!("draft is not in bidding state")
             ));
         }
 

@@ -130,6 +130,9 @@ const AuctionInfoPanel: React.FC<AuctionInfoPanelProps> = ({
     return `/TypeIcons/${formattedType}IC_SV.png`;
   };
 
+  const highBidderId = getUserId(current_auction.highest_bidder);
+  const isCurrentUserHighBidder = highBidderId === currentUserId && highBidderId !== null;
+
   const handleBid100 = async () => {
     const newBid = current_auction.highest_bid + 100;
     if (newBid > userBudgetRemaining) {
@@ -142,12 +145,12 @@ const AuctionInfoPanel: React.FC<AuctionInfoPanelProps> = ({
         if (response.data?.toLowerCase().includes('brokie')) {
           showBidNotification("You don't have enough money for that bid.");
         } else {
-          showBidNotification(response.data || 'Bid failed. Please try again.');
+          showBidNotification(response.data || (isCurrentUserHighBidder ? "You're already the high bidder!" : 'Bid failed. Please try again.'));
         }
         console.error('Bid rejected:', response.data);
       }
     } catch (error) {
-      showBidNotification('Bid failed. Please try again.');
+      showBidNotification(isCurrentUserHighBidder ? "You're already the high bidder!" : 'Bid failed. Please try again.');
       console.error('Error placing bid:', error);
     }
   };
@@ -181,19 +184,17 @@ const AuctionInfoPanel: React.FC<AuctionInfoPanelProps> = ({
         if (response.data?.toLowerCase().includes('brokie')) {
           showBidNotification("You don't have enough money for that bid.");
         } else {
-          showBidNotification(response.data || 'Bid failed. Please try again.');
+          showBidNotification(response.data || (isCurrentUserHighBidder ? "You're already the high bidder!" : 'Bid failed. Please try again.'));
         }
         console.error('Bid rejected:', response.data);
       }
     } catch (error) {
-      showBidNotification('Bid failed. Please try again.');
+      showBidNotification(isCurrentUserHighBidder ? "You're already the high bidder!" : 'Bid failed. Please try again.');
       console.error('Error placing bid:', error);
     }
   };
 
   const showBidNow = !currentAuctionExpiresAt;
-  const highBidderId = getUserId(current_auction.highest_bidder);
-  const isCurrentUserHighBidder = highBidderId === currentUserId && highBidderId !== null;
 
   return (
     <div className="auction-info-box">
