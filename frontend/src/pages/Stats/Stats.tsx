@@ -114,6 +114,7 @@ const Stats: React.FC = () => {
     }
     const query = searchInput.toLowerCase();
     const filtered = stats.players
+      .filter((player) => !player.is_guest)
       .filter((player) => player.user_name.toLowerCase().includes(query))
       .slice(0, 10);
     console.log('[Stats] Filtered players for query "' + query + '":', filtered.length, 'results');
