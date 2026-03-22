@@ -9,6 +9,7 @@ pub struct StatsPageResponse {
     pub players: Vec<StatsPlayer>,
     pub teams: Vec<StatsTeam>,
     pub auctions: Vec<StatsAuction>,
+    pub legacy: Vec<StatsLegacyPick>,
 }
 
 #[derive(Serialize, FromRow)]
@@ -36,6 +37,13 @@ pub struct StatsAuction {
     pub winning_user_id: Option<String>,
     pub winning_guest_id: Option<String>,
     pub created_at: Option<chrono::DateTime<chrono::Utc>>,
+}
+
+#[derive(Serialize, FromRow)]
+pub struct StatsLegacyPick {
+    pub date: Option<chrono::NaiveDateTime>,
+    pub pokemon: String,
+    pub cost: String,
 }
 
 pub async fn get_stats_page_data(
@@ -77,9 +85,27 @@ pub async fn get_stats_page_data(
     .await
     .map_err(|e| (axum::http::StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
 
+    // If legacy migrations have not been applied in an environment yet,
+    // serve stats without legacy rows instead of failing the whole endpoint.
+    let legacy = match sqlx::query_as::<_, StatsLegacyPick>(
+        "SELECT date, pokemon, cost FROM legacy_pokemon_costs ORDER BY date DESC NULLS LAST"
+    )
+    .fetch_all(&state.db_pool)
+    .await
+    {
+        Ok(rows) => rows,
+        Err(sqlx::Error::Database(db_err)) if db_err.code().as_deref() == Some("42P01") => {
+            Vec::new()
+        }
+        Err(e) => {
+            return Err((axum::http::StatusCode::INTERNAL_SERVER_ERROR, e.to_string()));
+        }
+    };
+
     Ok(Json(StatsPageResponse {
         players,
         teams,
         auctions,
+        legacy,
     }))
 }
