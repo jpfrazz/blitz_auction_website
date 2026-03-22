@@ -99,11 +99,11 @@ function Header() {
               Documentation
             </button>
             <div className="navDropdownMenu">
-              <Link to="/BossBattles" className="navButton navDropdownItem" onClick={scrollToTop}>
-                Boss Battles
-              </Link>
               <Link to="/Info" className="navButton navDropdownItem" onClick={scrollToTop}>
                 Blitz Info
+              </Link>
+              <Link to="/BossBattles" className="navButton navDropdownItem" onClick={scrollToTop}>
+                Boss Battles
               </Link>
               <Link to="/PatchNotes" className="navButton navDropdownItem" onClick={scrollToTop}>
                 Patch Notes

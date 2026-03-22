@@ -825,7 +825,10 @@ impl DraftActor {
         }
 
         let auction = &self.auctions[self.current_auction];
-        let time_remaining = auction.pause().await?;
+        let mut time_remaining = auction.pause().await?;
+        if time_remaining < 9 {
+            time_remaining += 1;
+        }
         self.db_writer.pause_auction(auction.auction_id, time_remaining).await
     }
 
