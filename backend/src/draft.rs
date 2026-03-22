@@ -456,6 +456,11 @@ impl Draft {
         ))?
     }
 
+    pub async fn update_user_name(&self, user_id: String, new_name: String) {
+        let cmd = DraftCommand::UpdateUserName { user_id, new_name };
+        let _ = self.actor_sender.send(cmd).await;
+    }
+
 }
 
 struct DraftActor {
@@ -530,6 +535,10 @@ enum DraftCommand {
         num_teams: u32,
         num_auctions: u32,
         remove_team_ids: Vec<String>,
+    },
+    UpdateUserName {
+        user_id: String,
+        new_name: String,
     },
 }
 
@@ -677,6 +686,12 @@ impl DraftActor {
                     } => {
                         let res = self.update_pending_settings(user_id, num_teams, num_auctions, remove_team_ids).await;
                         let _ = response_sender.send(res);
+                    }
+                    DraftCommand::UpdateUserName { user_id, new_name } => {
+                        if let Some(team) = self.teams.get_mut(&user_id) {
+                            team.username = new_name;
+                            self.broadcast();
+                        }
                     }
                 }
             }

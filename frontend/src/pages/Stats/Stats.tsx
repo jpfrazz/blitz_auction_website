@@ -4,7 +4,7 @@ import { fetchStatsPageData, fetchMatchHistoryByUserId } from '../../shared/api/
 import { StatsAuction, StatsPagePlayer, StatsPageResponse, StatsPageTeamRow, MatchHistoryTeam } from '../../types';
 import './Stats.scss';
 
-type StatsTab = 'overview' | 'pokemon' | 'drafts' | 'player-search';
+type StatsTab = 'pokemon' | 'drafts' | 'player-search';
 
 interface PokemonAggregate {
   key: string;
@@ -49,7 +49,7 @@ const Stats: React.FC = () => {
   const [stats, setStats] = useState<StatsPageResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<StatsTab>('overview');
+  const [activeTab, setActiveTab] = useState<StatsTab>('pokemon');
   const [searchInput, setSearchInput] = useState('');
   const [selectedPlayer, setSelectedPlayer] = useState<StatsPagePlayer | null>(null);
   const [playerMatchHistory, setPlayerMatchHistory] = useState<MatchHistoryTeam[] | null>(null);
@@ -233,10 +233,6 @@ const Stats: React.FC = () => {
     return result;
   }, [aggregatedPokemon, sortConfig]);
 
-  const topPokemon = useMemo(() => {
-    return [...aggregatedPokemon].sort((a, b) => b.avgWinningBid - a.avgWinningBid).slice(0, 8);
-  }, [aggregatedPokemon]);
-
   const playerSummary = useMemo<PlayerAggregate[]>(() => {
     const grouped = new Map<string, {
       key: string;
@@ -394,8 +390,6 @@ const Stats: React.FC = () => {
     return result;
   }, [sortedAuctions, stats?.teams, validDraftIds]);
 
-  const recentWinningAuctions = sortedAuctions.slice(0, 12);
-
   const kpis = useMemo(() => {
     const uniqueDrafts = new Set((stats?.teams ?? []).filter(t => validDraftIds.has(t.draft_id)).map((team) => team.draft_id)).size;
     const uniquePlayers = playerSummary.length;
@@ -487,13 +481,6 @@ const Stats: React.FC = () => {
 
         <section className="stats-tab-bar" aria-label="Stats tabs">
           <button
-            className={`tab-chip ${activeTab === 'overview' ? 'active' : ''}`}
-            type="button"
-            onClick={() => setActiveTab('overview')}
-          >
-            Overview
-          </button>
-          <button
             className={`tab-chip ${activeTab === 'pokemon' ? 'active' : ''}`}
             type="button"
             onClick={() => setActiveTab('pokemon')}
@@ -515,61 +502,6 @@ const Stats: React.FC = () => {
             Player Search
           </button>
         </section>
-
-        {activeTab === 'overview' && (
-          <section className="stats-content-grid two-col">
-            <article className="stats-panel">
-              <h2>Most Sold Pokemon</h2>
-              <div className="panel-list">
-                {topPokemon.map((entry) => (
-                  <div className="stats-pokemon-row" key={entry.key}>
-                    <div className="stats-pokemon-ident">
-                      <img
-                        src={`/baseforms/${entry.name}.png`}
-                        alt={entry.name}
-                        style={{ width: '40px', height: '40px', objectFit: 'contain' }}
-                        onError={(ev) => {
-                          (ev.currentTarget as HTMLImageElement).style.display = 'none';
-                        }}
-                      />
-                      <div>
-                        <div className="strong">{entry.name}</div>
-                        {entry.form && entry.form !== 'base' && <div className="muted">{toLabel(entry.form)}</div>}
-                      </div>
-                    </div>
-                    <div className="stats-pokemon-metrics">
-                      <span>{entry.bidsWon} sales</span>
-                      <span>${entry.avgWinningBid.toLocaleString()} avg</span>
-                    </div>
-                  </div>
-                ))}
-                {topPokemon.length === 0 && <div className="match-history-empty">No auction data yet.</div>}
-              </div>
-            </article>
-            <article className="stats-panel">
-              <h2>Recent Winning Auctions</h2>
-              <div className="panel-list compact">
-                {recentWinningAuctions.map((auction: StatsAuction) => {
-                  const winnerKey = auction.winning_user_id || auction.winning_guest_id || '';
-                  const winnerName = playersById.get(winnerKey)?.user_name || winnerKey || 'Unknown';
-                  return (
-                    <div className="auction-row" key={auction.auction_id}>
-                      <div>
-                        <div className="strong">{auction.name} {auction.form && auction.form !== 'base' ? toLabel(auction.form) : ''}</div>
-                        <div className="muted mono">Draft {auction.draft_id}</div>
-                      </div>
-                      <div className="auction-metrics">
-                        <span>${(auction.winning_bid ?? 0).toLocaleString()}</span>
-                        <span>{winnerName}</span>
-                      </div>
-                    </div>
-                  );
-                })}
-                {recentWinningAuctions.length === 0 && <div className="match-history-empty">No recent wins yet.</div>}
-              </div>
-            </article>
-          </section>
-        )}
 
         {activeTab === 'pokemon' && (
           <section className="stats-content-grid">
@@ -641,8 +573,8 @@ const Stats: React.FC = () => {
                   <thead>
                     <tr>
                       <th>Draft ID</th>
-                      <th>Teams</th>
-                      <th>Winning Auctions</th>
+                      <th>Players</th>
+                      <th>Pokemon Sold</th>
                       <th>Avg Winning Bid</th>
                       <th>Highest Bid</th>
                     </tr>

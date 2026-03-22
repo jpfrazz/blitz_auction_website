@@ -164,8 +164,8 @@ impl Server {
                 get(handlers::get_draft_chats).post(handlers::create_draft_chat),
             )
             .route_layer(middleware::from_fn(auto_login_guest))
-            .route("/logout", get(handlers::logout));
-            // .route("/guests/change-name", post(handlers::change_guest_name));
+            .route("/logout", get(handlers::logout))
+            .route("/guests/change-name", post(handlers::change_guest_name));
 
         Router::new()
             .merge(public_routes)
