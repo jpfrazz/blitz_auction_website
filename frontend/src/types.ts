@@ -157,8 +157,15 @@ export interface StatsPagePlayer {
   is_guest: boolean;
 }
 
+export interface StatsLegacyPick {
+  date: string | null;
+  pokemon: string;
+  cost: string;
+}
+
 export interface StatsPageResponse {
   players: StatsPagePlayer[];
   teams: StatsPageTeamRow[];
   auctions: StatsAuction[];
+  legacy: StatsLegacyPick[];
 }
