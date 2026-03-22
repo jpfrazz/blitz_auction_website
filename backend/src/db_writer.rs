@@ -376,8 +376,8 @@ impl Actor {
             self.draft_id,
             settings.draft_name,
             settings.password,
-            settings.starting_money as i32,
             settings.num_teams as i32,
+            settings.starting_money as i32,
             settings.ranked,
             user_id,
             guest_id
