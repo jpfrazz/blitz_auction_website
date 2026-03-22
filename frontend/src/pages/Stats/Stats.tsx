@@ -8,7 +8,6 @@ type StatsTab = 'pokemon' | 'drafts' | 'player-search';
 
 interface PokemonAggregate {
   key: string;
-  pokedex_id: number;
   name: string;
   form: string;
   bidsWon: number;
@@ -30,6 +29,13 @@ interface PlayerAggregate {
   avgSpendPerDraft: number;
 }
 
+interface PokemonSaleRow {
+  key: string;
+  name: string;
+  form: string;
+  bid: number;
+}
+
 function formatPokemonName(name: string): string {
   return name.toLowerCase()
     .replace(/ /g, '-')
@@ -43,6 +49,11 @@ function toLabel(value: string): string {
     .split('_')
     .map((part) => part.charAt(0).toUpperCase() + part.slice(1).toLowerCase())
     .join(' ');
+}
+
+function parseLegacyCost(cost: string): number | null {
+  const normalized = cost.trim().replace(/,/g, '');
+  return /^\d+$/.test(normalized) ? Number(normalized) : null;
 }
 
 const Stats: React.FC = () => {
@@ -72,6 +83,7 @@ const Stats: React.FC = () => {
           playerCount: data.players.length,
           teamCount: data.teams.length,
           auctionCount: data.auctions.length,
+          legacyCount: data.legacy?.length ?? 0,
         });
         setStats(data);
       } catch (e: any) {
@@ -138,24 +150,35 @@ const Stats: React.FC = () => {
     }));
   };
 
-  const validDraftIds = useMemo(() => {
-    if (!stats?.auctions) return new Set<string>();
-
+  const draftAuctionCounts = useMemo(() => {
     const counts = new Map<string, number>();
-    stats.auctions.forEach((a) => {
+    (stats?.auctions ?? []).forEach((a) => {
       if (a.winning_bid !== null) {
         counts.set(a.draft_id, (counts.get(a.draft_id) || 0) + 1);
       }
     });
+    return counts;
+  }, [stats?.auctions]);
 
+  const validDraftIds = useMemo(() => {
     const valid = new Set<string>();
-    counts.forEach((count, id) => {
+    draftAuctionCounts.forEach((count, id) => {
       if (count >= minAuctionsFilter) {
         valid.add(id);
       }
     });
     return valid;
-  }, [stats?.auctions, minAuctionsFilter]);
+  }, [draftAuctionCounts, minAuctionsFilter]);
+
+  const hiddenDraftCount = useMemo(() => {
+    let hidden = 0;
+    draftAuctionCounts.forEach((count) => {
+      if (count < minAuctionsFilter) {
+        hidden += 1;
+      }
+    });
+    return hidden;
+  }, [draftAuctionCounts, minAuctionsFilter]);
 
   const sortedAuctions = useMemo(() => {
     const sorted = [...(stats?.auctions ?? [])]
@@ -166,30 +189,54 @@ const Stats: React.FC = () => {
   }, [stats?.auctions, validDraftIds]);
 
   const aggregatedPokemon = useMemo<PokemonAggregate[]>(() => {
+    const sales: PokemonSaleRow[] = [];
+
+    sortedAuctions.forEach((auction) => {
+      const bid = auction.winning_bid;
+      if (bid === null) {
+        return;
+      }
+      sales.push({
+        key: `${auction.pokedex_id}:${auction.form || ''}`,
+        name: auction.name,
+        form: auction.form || '',
+        bid,
+      });
+    });
+
+    (stats?.legacy ?? []).forEach((legacyRow) => {
+      const bid = parseLegacyCost(legacyRow.cost);
+      if (bid === null) {
+        return;
+      }
+      sales.push({
+        key: `legacy:${legacyRow.pokemon}`,
+        name: legacyRow.pokemon,
+        form: '',
+        bid,
+      });
+    });
+
     const grouped = new Map<string, {
       key: string;
-      pokedex_id: number;
       name: string;
       form: string;
       bids: number[];
     }>();
 
-    sortedAuctions.forEach((auction) => {
-      const key = `${auction.pokedex_id}:${auction.form || ''}`;
+    sales.forEach((sale) => {
+      const key = sale.key;
       let existing = grouped.get(key);
       if (!existing) {
         existing = {
           key,
-          pokedex_id: auction.pokedex_id,
-          name: auction.name,
-          form: auction.form,
+          name: sale.name,
+          form: sale.form,
           bids: []
         };
         grouped.set(key, existing);
       }
-      if (auction.winning_bid !== null) {
-        existing.bids.push(auction.winning_bid);
-      }
+      existing.bids.push(sale.bid);
     });
 
     return Array.from(grouped.values())
@@ -209,7 +256,6 @@ const Stats: React.FC = () => {
 
         return {
           key: entry.key,
-          pokedex_id: entry.pokedex_id,
           name: entry.name,
           form: entry.form,
           bidsWon: count,
@@ -220,7 +266,7 @@ const Stats: React.FC = () => {
           priceVariance: Math.round(stdDev),
         };
       });
-  }, [sortedAuctions]);
+  }, [sortedAuctions, stats?.legacy]);
 
   const pokemonSummary = useMemo<PokemonAggregate[]>(() => {
     const result = [...aggregatedPokemon].sort((a, b) => {
@@ -393,28 +439,36 @@ const Stats: React.FC = () => {
   const kpis = useMemo(() => {
     const uniqueDrafts = new Set((stats?.teams ?? []).filter(t => validDraftIds.has(t.draft_id)).map((team) => team.draft_id)).size;
     const uniquePlayers = playerSummary.length;
-    const avgWinningBid = sortedAuctions.length > 0
-      ? Math.round(
-        sortedAuctions.reduce((sum, auction) => sum + (auction.winning_bid ?? 0), 0) / sortedAuctions.length,
-      )
+
+    const allSales = [
+      ...sortedAuctions
+        .map((auction) => auction.winning_bid)
+        .filter((bid): bid is number => bid !== null),
+      ...(stats?.legacy ?? [])
+        .map((legacyRow) => parseLegacyCost(legacyRow.cost))
+        .filter((bid): bid is number => bid !== null),
+    ];
+
+    const avgWinningBid = allSales.length > 0
+      ? Math.round(allSales.reduce((sum, bid) => sum + bid, 0) / allSales.length)
       : 0;
 
     const result = {
       uniqueDrafts,
       uniquePlayers,
-      totalWinningAuctions: sortedAuctions.length,
+      totalWinningAuctions: allSales.length,
       avgWinningBid,
     };
 
     console.log('[Stats] KPIs computed:', {
       uniqueDrafts,
       uniquePlayers,
-      totalWinningAuctions: sortedAuctions.length,
+      totalWinningAuctions: allSales.length,
       avgWinningBid,
     });
 
     return result;
-  }, [playerSummary.length, sortedAuctions, stats?.teams, validDraftIds]);
+  }, [playerSummary.length, sortedAuctions, stats?.legacy, stats?.teams, validDraftIds]);
 
   if (loading) {
     return (
@@ -442,7 +496,7 @@ const Stats: React.FC = () => {
       <main className="match-history-main">
         <div className="stats-filter-bar">
           <label className="stats-filter-label">
-            Include only drafts of minimum size
+            Include only drafts of minimum size ({hiddenDraftCount} hidden)
             <input
               className="stats-filter-input"
               type="number"
