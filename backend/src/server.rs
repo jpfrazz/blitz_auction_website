@@ -32,6 +32,7 @@ pub enum ServerError {
     CannotServe(String),
     MissingEnv(String),
     PokemonData(String),
+    MigrationError(String),
 }
 
 impl std::error::Error for ServerError {}
@@ -54,12 +55,18 @@ impl Server {
         let db_pool = PgPool::connect(&db_conn_string)
             .await
             .map_err(|e| ServerError::PgConnection(e.to_string()))?;
+        sqlx::migrate!("./migrations")
+            .run(&db_pool)
+            .await
+            .map_err(|e| ServerError::MigrationError(e.to_string()))?;
         if let Err(e) = pokemon::init_pokemon_data(&db_pool).await {
             return Err(ServerError::PokemonData(format!(
                 "failed to init pokemon data, {}",
                 e.to_string()
             )));
         };
+
+
         let drafts = DraftCache::new(DashMap::new());
         let server_state = ServerState {
             db_pool,

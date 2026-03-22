@@ -20,6 +20,7 @@ RUN --mount=type=cache,target=/usr/local/cargo/registry,sharing=locked \
 
 COPY Cargo.toml Cargo.lock .
 COPY src ./src
+COPY migrations ./migrations
 COPY .sqlx ./.sqlx
 ENV SQLX_OFFLINE=true
 
