@@ -226,17 +226,26 @@ const PokemonStatsTab: React.FC<PokemonStatsTabProps> = ({
       existing.bids.push(sale.bid);
     });
 
-    // Calculate Recent Ranks
-    const recentGrouped = new Map<string, number[]>();
+    // Calculate Historic Ranks (All auctions EXCLUDING recent 20 drafts)
+    const historicGrouped = new Map<string, number[]>();
+
+    (stats?.legacy ?? []).forEach((legacyRow) => {
+      const bid = parseLegacyCost(legacyRow.cost);
+      if (bid === null || excludedPokemonNames.has(legacyRow.pokemon)) return;
+      const key = legacyRow.pokemon;
+      if (!historicGrouped.has(key)) historicGrouped.set(key, []);
+      historicGrouped.get(key)!.push(bid);
+    });
+
     sortedAuctions.forEach((auction) => {
-      if (recentDraftIds.has(auction.draft_id) && auction.winning_bid !== null) {
+      if (!recentDraftIds.has(auction.draft_id) && auction.winning_bid !== null) {
         const key = `${auction.name}${auction.form && auction.form !== 'base' ? '-' + auction.form : ''}`;
-        if (!recentGrouped.has(key)) recentGrouped.set(key, []);
-        recentGrouped.get(key)!.push(auction.winning_bid);
+        if (!historicGrouped.has(key)) historicGrouped.set(key, []);
+        historicGrouped.get(key)!.push(auction.winning_bid);
       }
     });
 
-    let recentStats = Array.from(recentGrouped.entries()).map(([key, bids]) => {
+    let historicStats = Array.from(historicGrouped.entries()).map(([key, bids]) => {
       let filteredBids = bids.filter(b => b !== 100);
       if (filteredBids.length === 0) return null;
 
@@ -257,11 +266,11 @@ const PokemonStatsTab: React.FC<PokemonStatsTabProps> = ({
       return { key, avg };
     }).filter((s): s is { key: string; avg: number } => s !== null && s.avg > 100);
 
-    recentStats.sort((a, b) => b.avg - a.avg);
+    historicStats.sort((a, b) => b.avg - a.avg);
     
-    const recentRankMap = new Map<string, number>();
-    recentStats.forEach((s, index) => {
-      recentRankMap.set(s.key, index + 1);
+    const historicRankMap = new Map<string, number>();
+    historicStats.forEach((s, index) => {
+      historicRankMap.set(s.key, index + 1);
     });
 
     // Calculate Overall Stats
@@ -305,8 +314,8 @@ const PokemonStatsTab: React.FC<PokemonStatsTabProps> = ({
     results.sort((a, b) => b.avgWinningBid - a.avgWinningBid);
     results.forEach((p, i) => {
       p.rank = i + 1;
-      const recentRank = recentRankMap.get(p.key);
-      p.recentMovement = recentRank ? p.rank - recentRank : 0;
+      const prevRank = historicRankMap.get(p.key);
+      p.recentMovement = prevRank ? prevRank - p.rank : 0;
     });
     return results;
   }, [sortedAuctions, stats?.legacy, recentDraftIds]);
