@@ -170,3 +170,40 @@ export interface StatsPageResponse {
   auctions: StatsAuction[];
   legacy: StatsLegacyPick[];
 }
+
+export interface AdminDraftSummary {
+  draft_id: string;
+  draft_name: string;
+  ranked: boolean;
+  state: string;
+  created_at: string;
+}
+
+export interface AdminDraftTeamPlacement {
+  team_id: number;
+  draft_id: string;
+  user_id: string | null;
+  guest_id: string | null;
+  user_name: string | null;
+  placement: number | null;
+  pre_match_mmr: number | null;
+}
+
+export interface AdminTeamPlacementUpdate {
+  team_id: number;
+  placement: number;
+  pre_match_mmr: number;
+}
+
+export interface AdminDiscordUser {
+  user_id: string;
+  user_name: string;
+  discriminator: string;
+  global_name: string | null;
+  avatar: string | null;
+  wins: number;
+  losses: number;
+  mmr: number;
+  updated_at: string;
+  created_at: string;
+}

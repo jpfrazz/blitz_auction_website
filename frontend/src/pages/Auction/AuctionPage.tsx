@@ -594,7 +594,7 @@ const AuctionPage: React.FC = () => {
                       >
                         Claim Eeveelution
                       </button>
-                      {hasRefereeRole && (
+                      {hasRefereeRole && draft.ranked && (
                         <button
                           className="button"
                           onClick={() => setShowResultsSubmissionModal(true)}

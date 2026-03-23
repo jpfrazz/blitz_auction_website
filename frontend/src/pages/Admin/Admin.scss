@@ -1,0 +1,99 @@
+.admin-page-root {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+.admin-main {
+  flex: 1;
+  padding: 2rem 1rem;
+}
+
+.admin-panel {
+  max-width: 1400px;
+  margin: 0 auto;
+  background: #101a24;
+  border: 1px solid #243242;
+  border-radius: 14px;
+  padding: 1.2rem;
+  color: #eef4fb;
+}
+
+.admin-tab-bar {
+  display: flex;
+  gap: 0.6rem;
+  margin: 0.8rem 0 1.1rem;
+}
+
+.admin-tab {
+  background: #172637;
+  color: #eef4fb;
+  border: 1px solid #2b3e52;
+  border-radius: 8px;
+  padding: 0.5rem 0.9rem;
+  cursor: pointer;
+}
+
+.admin-tab.active {
+  background: #224161;
+  border-color: #3c6a94;
+}
+
+.admin-tab-content h2 {
+  margin: 0 0 0.8rem;
+}
+
+.admin-controls-row {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  margin-bottom: 0.8rem;
+}
+
+.admin-controls-row label {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.admin-controls-row select,
+.admin-table-wrap input {
+  background: #0d1620;
+  color: #eef4fb;
+  border: 1px solid #32485f;
+  border-radius: 6px;
+  padding: 0.35rem 0.5rem;
+}
+
+.admin-table-wrap {
+  overflow-x: auto;
+}
+
+.admin-table-wrap table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 860px;
+}
+
+.admin-table-wrap th,
+.admin-table-wrap td {
+  border: 1px solid #283848;
+  padding: 0.45rem 0.55rem;
+  text-align: left;
+}
+
+.admin-table-wrap th {
+  background: #162636;
+}
+
+.admin-message {
+  margin: 0.5rem 0;
+}
+
+.admin-error {
+  color: #ff8f8f;
+}
+
+.admin-success {
+  color: #73e89e;
+}

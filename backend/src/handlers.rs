@@ -148,6 +148,59 @@ pub struct ChangeGuestNameRequest {
     pub new_name: String,
 }
 
+#[derive(Clone, Debug, Serialize)]
+pub struct AdminDraftSummary {
+    pub draft_id: String,
+    pub draft_name: String,
+    pub ranked: bool,
+    pub state: String,
+    pub created_at: chrono::DateTime<chrono::Utc>,
+}
+
+#[derive(Clone, Debug, Serialize)]
+pub struct AdminDraftTeamPlacement {
+    pub team_id: i64,
+    pub draft_id: String,
+    pub user_id: Option<String>,
+    pub guest_id: Option<String>,
+    pub user_name: Option<String>,
+    pub placement: Option<i32>,
+    pub pre_match_mmr: Option<i32>,
+}
+
+#[derive(Clone, Debug, Deserialize)]
+pub struct AdminTeamPlacementUpdate {
+    pub team_id: i64,
+    pub placement: i32,
+    pub pre_match_mmr: i32,
+}
+
+#[derive(Clone, Debug, Deserialize)]
+pub struct AdminUpdateDraftPlacementsRequest {
+    pub placements: Vec<AdminTeamPlacementUpdate>,
+}
+
+#[derive(Clone, Debug, Serialize)]
+pub struct AdminDiscordUser {
+    pub user_id: String,
+    pub user_name: String,
+    pub discriminator: String,
+    pub global_name: Option<String>,
+    pub avatar: Option<String>,
+    pub wins: i32,
+    pub losses: i32,
+    pub mmr: i32,
+    pub updated_at: chrono::DateTime<chrono::Utc>,
+    pub created_at: chrono::DateTime<chrono::Utc>,
+}
+
+#[derive(Clone, Debug, Deserialize)]
+pub struct AdminUpdateDiscordUserRequest {
+    pub mmr: i32,
+    pub wins: i32,
+    pub losses: i32,
+}
+
 fn expected_score(player_rating: i32, opponent_rating: i32) -> f64 {
     1.0 / (1.0 + 10f64.powf((opponent_rating - player_rating) as f64 / 400.0))
 }
@@ -161,6 +214,21 @@ fn require_non_guest_user_id(user: Option<User>) -> Result<String, AppError> {
         )),
         None => Err((StatusCode::UNAUTHORIZED, "user not authenticated".to_string())),
     }
+}
+
+fn require_referee_user(user: Option<User>) -> Result<User, AppError> {
+    let Some(user) = user else {
+        return Err((StatusCode::UNAUTHORIZED, "user not authenticated".to_string()));
+    };
+
+    if !user.has_role_name("Referee") {
+        return Err((
+            StatusCode::FORBIDDEN,
+            "user must have Referee role".to_string(),
+        ));
+    }
+
+    Ok(user)
 }
 
 async fn get_user_won_auctions_for_draft(
@@ -849,211 +917,554 @@ pub async fn unpause_draft(
     draft.resume(user.get_user_id_string()).await
 }
 
-// #[debug_handler]
-// pub async fn submit_race_results(
-//     State(state): State<ServerState>,
-//     Path(draft_id): Path<String>,
-//     auth_session: AuthSession<AuthBackend>,
-//     Json(placements): Json<HashMap<String, u32>>,
-// ) -> Result<(), (StatusCode, String)> {
-//     let Some(user) = auth_session.user else {
-//         return Err((StatusCode::FORBIDDEN, "user is not logged in".to_string()));
-//     };
-//
-//     if !user.has_role_name("Referee") {
-//         return Err((
-//             StatusCode::FORBIDDEN,
-//             "user must have Referee role".to_string(),
-//         ));
-//     }
-//
-//     let Some(draft_lock) = state.drafts.get(&draft_id) else {
-//         return Err((StatusCode::NOT_FOUND, "draft does not exist".to_string()));
-//     };
-//
-//     let draft = draft_lock.read().await;
-//
-//     if draft.draft_state != DraftState::COMPLETED {
-//         return Err((
-//             StatusCode::PRECONDITION_FAILED,
-//             "draft must be completed before submitting results".to_string(),
-//         ));
-//     }
-//
-//     if !draft.is_ranked() {
-//         return Err((
-//             StatusCode::PRECONDITION_FAILED,
-//             "results submission only applies to ranked drafts".to_string(),
-//         ));
-//     }
-//
-//     let team_user_ids: Vec<String> = draft
-//         .teams
-//         .values()
-//         .map(|team| team.user_id.clone())
-//         .collect();
-//     let team_count = team_user_ids.len();
-//
-//     if team_count == 0 {
-//         return Err((StatusCode::BAD_REQUEST, "draft has no teams".to_string()));
-//     }
-//
-//     if placements.len() != team_count {
-//         return Err((
-//             StatusCode::BAD_REQUEST,
-//             "placements must be provided for every team".to_string(),
-//         ));
-//     }
-//
-//     let mut seen_places: HashSet<u32> = HashSet::new();
-//     for user_id in &team_user_ids {
-//         let Some(place) = placements.get(user_id) else {
-//             return Err((
-//                 StatusCode::BAD_REQUEST,
-//                 format!("missing placement for team {}", user_id),
-//             ));
-//         };
-//
-//         if *place == 0 || *place > team_count as u32 {
-//             return Err((
-//                 StatusCode::BAD_REQUEST,
-//                 "placements must be between 1 and number of teams".to_string(),
-//             ));
-//         }
-//
-//         if !seen_places.insert(*place) {
-//             return Err((
-//                 StatusCode::BAD_REQUEST,
-//                 "placements must be unique".to_string(),
-//             ));
-//         }
-//     }
-//
-//     let mmr_rows = sqlx::query("SELECT user_id, mmr FROM users WHERE user_id = ANY($1)")
-//         .bind(&team_user_ids)
-//         .fetch_all(&state.db_pool)
-//         .await
-//         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-//
-//     let mut mmr_by_user: HashMap<String, i32> = HashMap::with_capacity(mmr_rows.len());
-//     for row in mmr_rows {
-//         let user_id: String = row
-//             .try_get("user_id")
-//             .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-//         let mmr: i32 = row
-//             .try_get("mmr")
-//             .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-//         mmr_by_user.insert(user_id, mmr);
-//     }
-//
-//     if mmr_by_user.len() != team_count {
-//         return Err((
-//             StatusCode::BAD_REQUEST,
-//             "all submitted teams must map to users with MMR".to_string(),
-//         ));
-//     }
-//
-//     let mut updates: HashMap<String, (i32, i32, i32)> = HashMap::with_capacity(team_count);
-//     for user_id in &team_user_ids {
-//         let user_rating = *mmr_by_user
-//             .get(user_id)
-//             .ok_or((StatusCode::BAD_REQUEST, "missing user MMR".to_string()))?;
-//         let user_place = *placements
-//             .get(user_id)
-//             .ok_or((StatusCode::BAD_REQUEST, "missing placement".to_string()))?;
-//
-//         let mut wins = 0_i32;
-//         let mut losses = 0_i32;
-//         let mut mmr_delta = 0.0_f64;
-//
-//         for opponent_id in &team_user_ids {
-//             if opponent_id == user_id {
-//                 continue;
-//             }
-//
-//             let opponent_rating = *mmr_by_user
-//                 .get(opponent_id)
-//                 .ok_or((StatusCode::BAD_REQUEST, "missing opponent MMR".to_string()))?;
-//             let opponent_place = *placements.get(opponent_id).ok_or((
-//                 StatusCode::BAD_REQUEST,
-//                 "missing opponent placement".to_string(),
-//             ))?;
-//
-//             let result = if user_place < opponent_place {
-//                 wins += 1;
-//                 1.0
-//             } else {
-//                 losses += 1;
-//                 0.0
-//             };
-//
-//             let expected = expected_score(user_rating, opponent_rating);
-//             mmr_delta += 20.0 * (result - expected);
-//         }
-//
-//         updates.insert(user_id.clone(), (mmr_delta.round() as i32, wins, losses));
-//     }
-//
-//     let mut tx = state
-//         .db_pool
-//         .begin()
-//         .await
-//         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-//
-//     for user_id in &team_user_ids {
-//         let Some((mmr_delta, wins, losses)) = updates.get(user_id) else {
-//             return Err((
-//                 StatusCode::INTERNAL_SERVER_ERROR,
-//                 "missing computed update".to_string(),
-//             ));
-//         };
-//
-//         sqlx::query(
-//             "UPDATE users
-//              SET mmr = mmr + $1,
-//                  wins = wins + $2,
-//                  losses = losses + $3
-//              WHERE user_id = $4",
-//         )
-//         .bind(*mmr_delta)
-//         .bind(*wins)
-//         .bind(*losses)
-//         .bind(user_id)
-//         .execute(&mut *tx)
-//         .await
-//         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-//     }
-//
-//     for user_id in &team_user_ids {
-//         let Some(place) = placements.get(user_id) else {
-//             return Err((StatusCode::BAD_REQUEST, "missing placement".to_string()));
-//         };
-//         let Some(original_mmr) = mmr_by_user.get(user_id) else {
-//             return Err((StatusCode::BAD_REQUEST, "missing user MMR".to_string()));
-//         };
-//
-//         sqlx::query(
-//             "UPDATE teams
-//              SET placement = $1,
-//                  pre_result_mmr = $2
-//                          WHERE draft_id = $3
-//                              AND user_id = $4",
-//         )
-//         .bind(*place as i32)
-//         .bind(*original_mmr)
-//         .bind(&draft_id)
-//         .bind(user_id)
-//         .execute(&mut *tx)
-//         .await
-//         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-//     }
-//
-//     tx.commit()
-//         .await
-//         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-//
-//     Ok(())
-// }
+#[debug_handler]
+pub async fn submit_race_results(
+    State(state): State<ServerState>,
+    Path(draft_id): Path<String>,
+    auth_session: AuthSession<AuthBackend>,
+    Json(placements): Json<HashMap<String, u32>>,
+) -> Result<(), (StatusCode, String)> {
+    let Some(user) = auth_session.user else {
+        return Err((StatusCode::FORBIDDEN, "user is not logged in".to_string()));
+    };
+
+    if !user.has_role_name("Referee") {
+        return Err((
+            StatusCode::FORBIDDEN,
+            "user must have Referee role".to_string(),
+        ));
+    }
+
+    let draft_uuid = Uuid::from_str(&draft_id)
+        .map_err(|_| (StatusCode::BAD_REQUEST, "requested draft does not exist".to_string()))?;
+
+    let draft_row = sqlx::query(
+        "SELECT state, ranked
+         FROM drafts
+         WHERE draft_id = $1",
+    )
+    .bind(draft_uuid)
+    .fetch_optional(&state.db_pool)
+    .await
+    .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?
+    .ok_or((StatusCode::NOT_FOUND, "draft does not exist".to_string()))?;
+
+    let draft_state: String = draft_row
+        .try_get("state")
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let is_ranked: bool = draft_row
+        .try_get("ranked")
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    if draft_state != DraftState::COMPLETED.to_string() {
+        return Err((
+            StatusCode::PRECONDITION_FAILED,
+            "draft must be completed before submitting results".to_string(),
+        ));
+    }
+
+    if !is_ranked {
+        return Err((
+            StatusCode::PRECONDITION_FAILED,
+            "results submission only applies to ranked drafts".to_string(),
+        ));
+    }
+
+    let team_rows = sqlx::query(
+        "SELECT user_id
+         FROM teams
+         WHERE draft_id = $1",
+    )
+    .bind(draft_uuid)
+    .fetch_all(&state.db_pool)
+    .await
+    .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    let mut team_user_ids: Vec<String> = Vec::with_capacity(team_rows.len());
+    for row in team_rows {
+        let team_user_id: Option<String> = row
+            .try_get("user_id")
+            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+        let Some(team_user_id) = team_user_id else {
+            return Err((
+                StatusCode::BAD_REQUEST,
+                "ranked draft teams must map to registered users".to_string(),
+            ));
+        };
+        team_user_ids.push(team_user_id);
+    }
+
+    let team_count = team_user_ids.len();
+    if team_count == 0 {
+        return Err((StatusCode::BAD_REQUEST, "draft has no teams".to_string()));
+    }
+
+    if placements.len() != team_count {
+        return Err((
+            StatusCode::BAD_REQUEST,
+            "placements must be provided for every team".to_string(),
+        ));
+    }
+
+    let team_user_id_set: HashSet<String> = team_user_ids.iter().cloned().collect();
+    for submitted_user_id in placements.keys() {
+        if !team_user_id_set.contains(submitted_user_id) {
+            return Err((
+                StatusCode::BAD_REQUEST,
+                format!("submitted placement for non-draft user {}", submitted_user_id),
+            ));
+        }
+    }
+
+    let mut seen_places: HashSet<u32> = HashSet::new();
+    for user_id in &team_user_ids {
+        let Some(place) = placements.get(user_id) else {
+            return Err((
+                StatusCode::BAD_REQUEST,
+                format!("missing placement for team {}", user_id),
+            ));
+        };
+
+        if *place == 0 || *place > team_count as u32 {
+            return Err((
+                StatusCode::BAD_REQUEST,
+                "placements must be between 1 and number of teams".to_string(),
+            ));
+        }
+
+        if !seen_places.insert(*place) {
+            return Err((
+                StatusCode::BAD_REQUEST,
+                "placements must be unique".to_string(),
+            ));
+        }
+    }
+
+    let mmr_rows = sqlx::query("SELECT user_id, mmr FROM users WHERE user_id = ANY($1)")
+        .bind(&team_user_ids)
+        .fetch_all(&state.db_pool)
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    let mut mmr_by_user: HashMap<String, i32> = HashMap::with_capacity(mmr_rows.len());
+    for row in mmr_rows {
+        let user_id: String = row
+            .try_get("user_id")
+            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+        let mmr: i32 = row
+            .try_get("mmr")
+            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+        mmr_by_user.insert(user_id, mmr);
+    }
+
+    if mmr_by_user.len() != team_count {
+        return Err((
+            StatusCode::BAD_REQUEST,
+            "all submitted teams must map to users with MMR".to_string(),
+        ));
+    }
+
+    let mut updates: HashMap<String, (i32, i32, i32)> = HashMap::with_capacity(team_count);
+    for user_id in &team_user_ids {
+        let user_rating = *mmr_by_user
+            .get(user_id)
+            .ok_or((StatusCode::BAD_REQUEST, "missing user MMR".to_string()))?;
+        let user_place = *placements
+            .get(user_id)
+            .ok_or((StatusCode::BAD_REQUEST, "missing placement".to_string()))?;
+
+        let mut wins = 0_i32;
+        let mut losses = 0_i32;
+        let mut mmr_delta = 0.0_f64;
+
+        for opponent_id in &team_user_ids {
+            if opponent_id == user_id {
+                continue;
+            }
+
+            let opponent_rating = *mmr_by_user
+                .get(opponent_id)
+                .ok_or((StatusCode::BAD_REQUEST, "missing opponent MMR".to_string()))?;
+            let opponent_place = *placements.get(opponent_id).ok_or((
+                StatusCode::BAD_REQUEST,
+                "missing opponent placement".to_string(),
+            ))?;
+
+            let result = if user_place < opponent_place {
+                wins += 1;
+                1.0
+            } else {
+                losses += 1;
+                0.0
+            };
+
+            let expected = expected_score(user_rating, opponent_rating);
+            mmr_delta += 20.0 * (result - expected);
+        }
+
+        updates.insert(user_id.clone(), (mmr_delta.round() as i32, wins, losses));
+    }
+
+    let mut tx = state
+        .db_pool
+        .begin()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    for user_id in &team_user_ids {
+        let Some((mmr_delta, wins, losses)) = updates.get(user_id) else {
+            return Err((
+                StatusCode::INTERNAL_SERVER_ERROR,
+                "missing computed update".to_string(),
+            ));
+        };
+
+        sqlx::query(
+            "UPDATE users
+             SET mmr = mmr + $1,
+                 wins = wins + $2,
+                 losses = losses + $3
+             WHERE user_id = $4",
+        )
+        .bind(*mmr_delta)
+        .bind(*wins)
+        .bind(*losses)
+        .bind(user_id)
+        .execute(&mut *tx)
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    }
+
+    for user_id in &team_user_ids {
+        let Some(place) = placements.get(user_id) else {
+            return Err((StatusCode::BAD_REQUEST, "missing placement".to_string()));
+        };
+        let Some(original_mmr) = mmr_by_user.get(user_id) else {
+            return Err((StatusCode::BAD_REQUEST, "missing user MMR".to_string()));
+        };
+
+        sqlx::query(
+            "UPDATE teams
+             SET placement = $1,
+                 pre_match_mmr = $2
+             WHERE draft_id = $3
+               AND user_id = $4",
+        )
+        .bind(*place as i32)
+        .bind(*original_mmr)
+        .bind(draft_uuid)
+        .bind(user_id)
+        .execute(&mut *tx)
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    }
+
+    tx.commit()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    Ok(())
+}
+
+#[debug_handler]
+pub async fn get_admin_completed_drafts(
+    State(state): State<ServerState>,
+    auth_session: AuthSession<AuthBackend>,
+) -> Result<Json<Vec<AdminDraftSummary>>, AppError> {
+    let _ = require_referee_user(auth_session.user)?;
+
+    let rows = sqlx::query(
+        "SELECT draft_id, draft_name, ranked, state, created_at
+         FROM drafts
+         WHERE state = 'COMPLETED'
+         ORDER BY created_at DESC",
+    )
+    .fetch_all(&state.db_pool)
+    .await
+    .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    let mut drafts = Vec::with_capacity(rows.len());
+    for row in rows {
+        drafts.push(AdminDraftSummary {
+            draft_id: row
+                .try_get::<Uuid, _>("draft_id")
+                .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?
+                .to_string(),
+            draft_name: row
+                .try_get("draft_name")
+                .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?,
+            ranked: row
+                .try_get("ranked")
+                .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?,
+            state: row
+                .try_get("state")
+                .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?,
+            created_at: row
+                .try_get("created_at")
+                .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?,
+        });
+    }
+
+    Ok(Json(drafts))
+}
+
+#[debug_handler]
+pub async fn get_admin_draft_team_placements(
+    State(state): State<ServerState>,
+    Path(draft_id): Path<String>,
+    auth_session: AuthSession<AuthBackend>,
+) -> Result<Json<Vec<AdminDraftTeamPlacement>>, AppError> {
+    let _ = require_referee_user(auth_session.user)?;
+
+    let draft_uuid = Uuid::from_str(&draft_id)
+        .map_err(|_| (StatusCode::BAD_REQUEST, "invalid draft id".to_string()))?;
+
+    let rows = sqlx::query(
+        "SELECT t.team_id, t.draft_id, t.user_id, t.guest_id,
+                COALESCE(u.user_name, g.user_name) AS user_name,
+                t.placement, t.pre_match_mmr
+         FROM teams t
+         LEFT JOIN users u ON u.user_id = t.user_id
+         LEFT JOIN guests g ON g.user_id = t.guest_id
+         WHERE t.draft_id = $1
+         ORDER BY COALESCE(t.placement, 9999) ASC, COALESCE(u.user_name, g.user_name) ASC",
+    )
+    .bind(draft_uuid)
+    .fetch_all(&state.db_pool)
+    .await
+    .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    let mut teams = Vec::with_capacity(rows.len());
+    for row in rows {
+        teams.push(AdminDraftTeamPlacement {
+            team_id: row
+                .try_get("team_id")
+                .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?,
+            draft_id: row
+                .try_get::<Uuid, _>("draft_id")
+                .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?
+                .to_string(),
+            user_id: row
+                .try_get("user_id")
+                .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?,
+            guest_id: row
+                .try_get("guest_id")
+                .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?,
+            user_name: row
+                .try_get("user_name")
+                .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?,
+            placement: row
+                .try_get("placement")
+                .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?,
+            pre_match_mmr: row
+                .try_get("pre_match_mmr")
+                .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?,
+        });
+    }
+
+    Ok(Json(teams))
+}
+
+#[debug_handler]
+pub async fn update_admin_draft_team_placements(
+    State(state): State<ServerState>,
+    Path(draft_id): Path<String>,
+    auth_session: AuthSession<AuthBackend>,
+    Json(request): Json<AdminUpdateDraftPlacementsRequest>,
+) -> Result<(), AppError> {
+    let _ = require_referee_user(auth_session.user)?;
+
+    let draft_uuid = Uuid::from_str(&draft_id)
+        .map_err(|_| (StatusCode::BAD_REQUEST, "invalid draft id".to_string()))?;
+
+    let draft_row = sqlx::query(
+        "SELECT state
+         FROM drafts
+         WHERE draft_id = $1",
+    )
+    .bind(draft_uuid)
+    .fetch_optional(&state.db_pool)
+    .await
+    .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?
+    .ok_or((StatusCode::NOT_FOUND, "draft does not exist".to_string()))?;
+
+    let draft_state: String = draft_row
+        .try_get("state")
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    if draft_state != DraftState::COMPLETED.to_string() {
+        return Err((
+            StatusCode::PRECONDITION_FAILED,
+            "only completed drafts can be edited".to_string(),
+        ));
+    }
+
+    let team_rows = sqlx::query(
+        "SELECT team_id
+         FROM teams
+         WHERE draft_id = $1",
+    )
+    .bind(draft_uuid)
+    .fetch_all(&state.db_pool)
+    .await
+    .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    let team_count = team_rows.len();
+    if team_count == 0 {
+        return Err((StatusCode::BAD_REQUEST, "draft has no teams".to_string()));
+    }
+
+    if request.placements.len() != team_count {
+        return Err((
+            StatusCode::BAD_REQUEST,
+            "placements must be provided for every team".to_string(),
+        ));
+    }
+
+    let valid_team_ids: HashSet<i64> = team_rows
+        .into_iter()
+        .map(|row| row.try_get::<i64, _>("team_id"))
+        .collect::<Result<HashSet<_>, _>>()
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    let mut seen_team_ids: HashSet<i64> = HashSet::new();
+    let mut seen_places: HashSet<i32> = HashSet::new();
+    for entry in &request.placements {
+        if !valid_team_ids.contains(&entry.team_id) {
+            return Err((
+                StatusCode::BAD_REQUEST,
+                format!("team {} does not belong to this draft", entry.team_id),
+            ));
+        }
+
+        if !seen_team_ids.insert(entry.team_id) {
+            return Err((StatusCode::BAD_REQUEST, "duplicate team ids submitted".to_string()));
+        }
+
+        if entry.placement <= 0 || entry.placement > team_count as i32 {
+            return Err((
+                StatusCode::BAD_REQUEST,
+                "placements must be between 1 and number of teams".to_string(),
+            ));
+        }
+
+        if !seen_places.insert(entry.placement) {
+            return Err((StatusCode::BAD_REQUEST, "placements must be unique".to_string()));
+        }
+    }
+
+    let mut tx = state
+        .db_pool
+        .begin()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    for entry in &request.placements {
+        sqlx::query(
+            "UPDATE teams
+             SET placement = $1,
+                 pre_match_mmr = $2
+             WHERE team_id = $3
+               AND draft_id = $4",
+        )
+        .bind(entry.placement)
+        .bind(entry.pre_match_mmr)
+        .bind(entry.team_id)
+        .bind(draft_uuid)
+        .execute(&mut *tx)
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    }
+
+    tx.commit()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    Ok(())
+}
+
+#[debug_handler]
+pub async fn get_admin_discord_users(
+    State(state): State<ServerState>,
+    auth_session: AuthSession<AuthBackend>,
+) -> Result<Json<Vec<AdminDiscordUser>>, AppError> {
+    let _ = require_referee_user(auth_session.user)?;
+
+    let rows = sqlx::query(
+        "SELECT user_id, user_name, discriminator, global_name, avatar,
+                wins, losses, mmr, updated_at, created_at
+         FROM users
+         ORDER BY mmr DESC, user_name ASC",
+    )
+    .fetch_all(&state.db_pool)
+    .await
+    .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    let mut users = Vec::with_capacity(rows.len());
+    for row in rows {
+        users.push(AdminDiscordUser {
+            user_id: row
+                .try_get("user_id")
+                .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?,
+            user_name: row
+                .try_get("user_name")
+                .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?,
+            discriminator: row
+                .try_get("discriminator")
+                .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?,
+            global_name: row
+                .try_get("global_name")
+                .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?,
+            avatar: row
+                .try_get("avatar")
+                .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?,
+            wins: row
+                .try_get("wins")
+                .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?,
+            losses: row
+                .try_get("losses")
+                .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?,
+            mmr: row
+                .try_get("mmr")
+                .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?,
+            updated_at: row
+                .try_get("updated_at")
+                .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?,
+            created_at: row
+                .try_get("created_at")
+                .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?,
+        });
+    }
+
+    Ok(Json(users))
+}
+
+#[debug_handler]
+pub async fn update_admin_discord_user(
+    State(state): State<ServerState>,
+    Path(user_id): Path<String>,
+    auth_session: AuthSession<AuthBackend>,
+    Json(request): Json<AdminUpdateDiscordUserRequest>,
+) -> Result<(), AppError> {
+    let _ = require_referee_user(auth_session.user)?;
+
+    sqlx::query(
+        "UPDATE users
+         SET mmr = $1,
+             wins = $2,
+             losses = $3
+         WHERE user_id = $4",
+    )
+    .bind(request.mmr)
+    .bind(request.wins)
+    .bind(request.losses)
+    .bind(&user_id)
+    .execute(&state.db_pool)
+    .await
+    .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    Ok(())
+}
 
 #[debug_handler]
 pub async fn update_pending_draft_settings(

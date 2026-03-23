@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import './Header.scss';
 import { Link, useLocation } from 'react-router-dom';
 import { fetchCurrentUser, changeGuestName } from '../api/draftData';
+import { UserRole } from '../../types';
 
 const navButtons = [
   // { label: "Team Planner", link: "/TeamPlanner" },
@@ -26,7 +27,13 @@ function Header() {
   };
 
   type UserState =
-    | { is_guest: boolean; user_id: string | null; username: string | null; avatar?: string };
+    | {
+      is_guest: boolean;
+      user_id: string | null;
+      username: string | null;
+      avatar?: string;
+      roles?: UserRole[];
+    };
   const [user, setUser] = useState<UserState | null>(null);
   useEffect(() => {
     fetchCurrentUser().then(user => {
@@ -136,6 +143,17 @@ function Header() {
               {btn.label}
             </Link>
           ))}
+          {user && (user.roles ?? []).some((role) => role.role_name === 'Referee') && (
+            <Link
+              to="/Admin"
+              className="navButton"
+              onClick={scrollToTop}
+              target={linkTarget}
+              rel={linkRel}
+            >
+              Admin
+            </Link>
+          )}
           {!user && (
             <a href="/api/login" className="navButton" target={linkTarget} rel={linkRel}>Login</a>
           )}

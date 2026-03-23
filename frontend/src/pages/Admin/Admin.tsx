@@ -1,0 +1,337 @@
+import React, { useEffect, useMemo, useState } from 'react';
+import Header from '../../shared/components/Header';
+import Footer from '../../shared/components/Footer';
+import {
+  fetchAdminCompletedDrafts,
+  fetchAdminDiscordUsers,
+  fetchAdminDraftTeamPlacements,
+  updateAdminDiscordUser,
+  updateAdminDraftPlacements,
+} from '../../shared/api/users';
+import {
+  AdminDiscordUser,
+  AdminDraftSummary,
+  AdminDraftTeamPlacement,
+} from '../../types';
+import './Admin.scss';
+import { fetchCurrentUser } from '../../shared/api/draftData';
+
+type AdminTab = 'draft-results' | 'discord-users';
+
+const Admin: React.FC = () => {
+  const [hasRefereeRole, setHasRefereeRole] = useState<boolean | null>(null);
+  const [tab, setTab] = useState<AdminTab>('draft-results');
+
+  const [drafts, setDrafts] = useState<AdminDraftSummary[]>([]);
+  const [draftsLoading, setDraftsLoading] = useState(false);
+  const [selectedDraftId, setSelectedDraftId] = useState('');
+  const [draftTeams, setDraftTeams] = useState<AdminDraftTeamPlacement[]>([]);
+  const [draftTeamsLoading, setDraftTeamsLoading] = useState(false);
+  const [draftError, setDraftError] = useState<string | null>(null);
+  const [draftSuccess, setDraftSuccess] = useState<string | null>(null);
+
+  const [discordUsers, setDiscordUsers] = useState<AdminDiscordUser[]>([]);
+  const [usersLoading, setUsersLoading] = useState(false);
+  const [usersError, setUsersError] = useState<string | null>(null);
+  const [usersSuccess, setUsersSuccess] = useState<string | null>(null);
+
+  useEffect(() => {
+    fetchCurrentUser()
+      .then((user) => {
+        const roles = user.roles ?? [];
+        setHasRefereeRole(roles.some((role) => role.role_name === 'Referee'));
+      })
+      .catch(() => setHasRefereeRole(false));
+  }, []);
+
+  useEffect(() => {
+    if (!hasRefereeRole) return;
+
+    setDraftsLoading(true);
+    setDraftError(null);
+    fetchAdminCompletedDrafts()
+      .then((rows) => {
+        setDrafts(rows);
+        if (rows.length > 0) {
+          setSelectedDraftId((current) => current || rows[0].draft_id);
+        }
+      })
+      .catch((err: any) => setDraftError(err?.message ?? 'Failed to load drafts.'))
+      .finally(() => setDraftsLoading(false));
+  }, [hasRefereeRole]);
+
+  useEffect(() => {
+    if (!hasRefereeRole || !selectedDraftId) return;
+
+    setDraftTeamsLoading(true);
+    setDraftError(null);
+    setDraftSuccess(null);
+    fetchAdminDraftTeamPlacements(selectedDraftId)
+      .then((rows) => setDraftTeams(rows))
+      .catch((err: any) => setDraftError(err?.message ?? 'Failed to load draft teams.'))
+      .finally(() => setDraftTeamsLoading(false));
+  }, [hasRefereeRole, selectedDraftId]);
+
+  useEffect(() => {
+    if (!hasRefereeRole || tab !== 'discord-users') return;
+
+    setUsersLoading(true);
+    setUsersError(null);
+    fetchAdminDiscordUsers()
+      .then((rows) => setDiscordUsers(rows))
+      .catch((err: any) => setUsersError(err?.message ?? 'Failed to load users.'))
+      .finally(() => setUsersLoading(false));
+  }, [hasRefereeRole, tab]);
+
+  const sortedTeams = useMemo(
+    () => [...draftTeams].sort((a, b) => (a.placement ?? 9999) - (b.placement ?? 9999)),
+    [draftTeams],
+  );
+
+  const handlePlacementChange = (teamId: number, placementText: string) => {
+    const value = Number(placementText);
+    setDraftTeams((current) =>
+      current.map((team) => (team.team_id === teamId ? { ...team, placement: value || null } : team)),
+    );
+  };
+
+  const handleSavePlacements = async () => {
+    setDraftError(null);
+    setDraftSuccess(null);
+
+    if (!selectedDraftId || draftTeams.length === 0) return;
+
+    const placements = draftTeams.map((team) => ({
+      team_id: team.team_id,
+      placement: team.placement ?? 0,
+      pre_match_mmr: team.pre_match_mmr ?? 0,
+    }));
+
+    if (placements.some((entry) => entry.placement <= 0)) {
+      setDraftError('All teams must have a placement greater than 0.');
+      return;
+    }
+
+    if (placements.some((entry) => entry.pre_match_mmr <= 0)) {
+      setDraftError('All teams must have a pre-match MMR value.');
+      return;
+    }
+
+    const uniquePlacements = new Set(placements.map((entry) => entry.placement));
+    if (uniquePlacements.size !== placements.length) {
+      setDraftError('Placements must be unique.');
+      return;
+    }
+
+    try {
+      await updateAdminDraftPlacements(selectedDraftId, placements);
+      setDraftSuccess('Placements updated.');
+    } catch (err: any) {
+      setDraftError(err?.message ?? 'Failed to update placements.');
+    }
+  };
+
+  const handleUserFieldChange = (
+    userId: string,
+    field: 'mmr' | 'wins' | 'losses',
+    value: string,
+  ) => {
+    const asNumber = Number(value);
+    setDiscordUsers((current) =>
+      current.map((user) =>
+        user.user_id === userId
+          ? {
+              ...user,
+              [field]: Number.isFinite(asNumber) ? asNumber : user[field],
+            }
+          : user,
+      ),
+    );
+  };
+
+  const handleSaveUser = async (user: AdminDiscordUser) => {
+    setUsersError(null);
+    setUsersSuccess(null);
+
+    try {
+      await updateAdminDiscordUser(user.user_id, {
+        mmr: user.mmr,
+        wins: user.wins,
+        losses: user.losses,
+      });
+      setUsersSuccess(`Saved ${user.user_name}.`);
+    } catch (err: any) {
+      setUsersError(err?.message ?? 'Failed to update user.');
+    }
+  };
+
+  return (
+    <div className="admin-page-root">
+      <Header />
+      <main className="admin-main">
+        <section className="admin-panel">
+          <h1>Admin</h1>
+
+          {hasRefereeRole === null && <div className="admin-message">Checking permissions...</div>}
+          {hasRefereeRole === false && (
+            <div className="admin-message admin-error">This page is only available to referees.</div>
+          )}
+
+          {hasRefereeRole && (
+            <>
+              <div className="admin-tab-bar">
+                <button
+                  className={`admin-tab ${tab === 'draft-results' ? 'active' : ''}`}
+                  onClick={() => setTab('draft-results')}
+                  type="button"
+                >
+                  Draft Results
+                </button>
+                <button
+                  className={`admin-tab ${tab === 'discord-users' ? 'active' : ''}`}
+                  onClick={() => setTab('discord-users')}
+                  type="button"
+                >
+                  Discord Users
+                </button>
+              </div>
+
+              {tab === 'draft-results' && (
+                <div className="admin-tab-content">
+                  <h2>Edit Draft Placements</h2>
+                  {draftError && <div className="admin-message admin-error">{draftError}</div>}
+                  {draftSuccess && <div className="admin-message admin-success">{draftSuccess}</div>}
+
+                  <div className="admin-controls-row">
+                    <label>
+                      Draft:
+                      <select
+                        value={selectedDraftId}
+                        onChange={(e) => setSelectedDraftId(e.target.value)}
+                        disabled={draftsLoading || drafts.length === 0}
+                      >
+                        {drafts.map((draft) => (
+                          <option key={draft.draft_id} value={draft.draft_id}>
+                            {draft.draft_name} ({draft.draft_id.slice(0, 8)})
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                    <button type="button" className="button" onClick={handleSavePlacements}>
+                      Save Placements
+                    </button>
+                  </div>
+
+                  {draftTeamsLoading ? (
+                    <div className="admin-message">Loading draft teams...</div>
+                  ) : (
+                    <div className="admin-table-wrap">
+                      <table>
+                        <thead>
+                          <tr>
+                            <th>Team ID</th>
+                            <th>User ID</th>
+                            <th>User</th>
+                            <th>Pre-Match MMR</th>
+                            <th>Placement</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {sortedTeams.map((team) => (
+                            <tr key={team.team_id}>
+                              <td>{team.team_id}</td>
+                              <td>{team.user_id ?? team.guest_id ?? '-'}</td>
+                              <td>{team.user_name ?? '-'}</td>
+                              <td>{team.pre_match_mmr ?? '-'}</td>
+                              <td>
+                                <input
+                                  type="number"
+                                  min={1}
+                                  max={draftTeams.length}
+                                  value={team.placement ?? ''}
+                                  onChange={(e) => handlePlacementChange(team.team_id, e.target.value)}
+                                />
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {tab === 'discord-users' && (
+                <div className="admin-tab-content">
+                  <h2>Discord Users</h2>
+                  {usersError && <div className="admin-message admin-error">{usersError}</div>}
+                  {usersSuccess && <div className="admin-message admin-success">{usersSuccess}</div>}
+
+                  {usersLoading ? (
+                    <div className="admin-message">Loading users...</div>
+                  ) : (
+                    <div className="admin-table-wrap">
+                      <table>
+                        <thead>
+                          <tr>
+                            <th>User ID</th>
+                            <th>User Name</th>
+                            <th>Discriminator</th>
+                            <th>Global Name</th>
+                            <th>Wins</th>
+                            <th>Losses</th>
+                            <th>MMR</th>
+                            <th>Save</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {discordUsers.map((user) => (
+                            <tr key={user.user_id}>
+                              <td>{user.user_id}</td>
+                              <td>{user.user_name}</td>
+                              <td>{user.discriminator}</td>
+                              <td>{user.global_name ?? '-'}</td>
+                              <td>
+                                <input
+                                  type="number"
+                                  value={user.wins}
+                                  onChange={(e) => handleUserFieldChange(user.user_id, 'wins', e.target.value)}
+                                />
+                              </td>
+                              <td>
+                                <input
+                                  type="number"
+                                  value={user.losses}
+                                  onChange={(e) => handleUserFieldChange(user.user_id, 'losses', e.target.value)}
+                                />
+                              </td>
+                              <td>
+                                <input
+                                  type="number"
+                                  value={user.mmr}
+                                  onChange={(e) => handleUserFieldChange(user.user_id, 'mmr', e.target.value)}
+                                />
+                              </td>
+                              <td>
+                                <button type="button" className="button" onClick={() => handleSaveUser(user)}>
+                                  Save
+                                </button>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+                </div>
+              )}
+            </>
+          )}
+        </section>
+      </main>
+      <Footer />
+    </div>
+  );
+};
+
+export default Admin;
