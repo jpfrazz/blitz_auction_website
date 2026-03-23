@@ -3,7 +3,7 @@ import { StatsPageResponse } from '../../../types';
 import '../Stats.scss';
 import './PokemonStatsTab.scss';
 
-type SortKey = 'rank' | 'name' | 'avgWinningBid' | 'minBid' | 'maxBid' | 'priceVariance' | 'bidsWon';
+type SortKey = 'rank' | 'name' | 'avgWinningBid' | 'minBid' | 'maxBid' | 'priceVariance' | 'bidsWon' | 'recentMovement';
 
 interface PokemonAggregate {
   key: string;
@@ -16,6 +16,7 @@ interface PokemonAggregate {
   maxBid: number;
   priceVariance: number;
   rank: number;
+  recentMovement: number;
 }
 
 interface PokemonSaleRow {
@@ -158,6 +159,19 @@ const PokemonStatsTab: React.FC<PokemonStatsTabProps> = ({
       .sort((a, b) => (b.created_at || '').localeCompare(a.created_at || ''));
   }, [stats?.auctions, validDraftIds]);
 
+  const recentDraftIds = useMemo(() => {
+    const seen = new Set<string>();
+    const recent = new Set<string>();
+    for (const auction of sortedAuctions) {
+      if (!seen.has(auction.draft_id)) {
+        seen.add(auction.draft_id);
+        recent.add(auction.draft_id);
+        if (recent.size >= 20) break;
+      }
+    }
+    return recent;
+  }, [sortedAuctions]);
+
   const aggregatedPokemon = useMemo<PokemonAggregate[]>(() => {
     const sales: PokemonSaleRow[] = [];
 
@@ -212,6 +226,45 @@ const PokemonStatsTab: React.FC<PokemonStatsTabProps> = ({
       existing.bids.push(sale.bid);
     });
 
+    // Calculate Recent Ranks
+    const recentGrouped = new Map<string, number[]>();
+    sortedAuctions.forEach((auction) => {
+      if (recentDraftIds.has(auction.draft_id) && auction.winning_bid !== null) {
+        const key = `${auction.name}${auction.form && auction.form !== 'base' ? '-' + auction.form : ''}`;
+        if (!recentGrouped.has(key)) recentGrouped.set(key, []);
+        recentGrouped.get(key)!.push(auction.winning_bid);
+      }
+    });
+
+    let recentStats = Array.from(recentGrouped.entries()).map(([key, bids]) => {
+      let filteredBids = bids.filter(b => b !== 100);
+      if (filteredBids.length === 0) return null;
+
+      if (filteredBids.length > 1) {
+        const sortedBids = [...filteredBids].sort((a, b) => a - b);
+        const q1 = calculateQuantile(sortedBids, 0.25);
+        const q3 = calculateQuantile(sortedBids, 0.75);
+        const iqr = q3 - q1;
+        const lower = q1 - 1.5 * iqr;
+        const upper = q3 + 2.0 * iqr;
+        filteredBids = sortedBids.filter((b) => b >= lower && b <= upper);
+      }
+
+      if (filteredBids.length === 0) return null;
+
+      const sum = filteredBids.reduce((a, b) => a + b, 0);
+      const avg = Math.round(sum / filteredBids.length);
+      return { key, avg };
+    }).filter((s): s is { key: string; avg: number } => s !== null && s.avg > 100);
+
+    recentStats.sort((a, b) => b.avg - a.avg);
+    
+    const recentRankMap = new Map<string, number>();
+    recentStats.forEach((s, index) => {
+      recentRankMap.set(s.key, index + 1);
+    });
+
+    // Calculate Overall Stats
     let results = Array.from(grouped.values()).map((entry) => {
       let bids = entry.bids;
 
@@ -244,6 +297,7 @@ const PokemonStatsTab: React.FC<PokemonStatsTabProps> = ({
         maxBid: max,
         priceVariance,
         rank: 0,
+        recentMovement: 0,
       };
     });
 
@@ -251,9 +305,11 @@ const PokemonStatsTab: React.FC<PokemonStatsTabProps> = ({
     results.sort((a, b) => b.avgWinningBid - a.avgWinningBid);
     results.forEach((p, i) => {
       p.rank = i + 1;
+      const recentRank = recentRankMap.get(p.key);
+      p.recentMovement = recentRank ? p.rank - recentRank : 0;
     });
     return results;
-  }, [sortedAuctions, stats?.legacy]);
+  }, [sortedAuctions, stats?.legacy, recentDraftIds]);
 
   const pokemonSummary = useMemo<PokemonAggregate[]>(() => {
     return [...aggregatedPokemon].sort((a, b) => {
@@ -342,6 +398,9 @@ const PokemonStatsTab: React.FC<PokemonStatsTabProps> = ({
                   <th className="sortable" onClick={() => handleSort('bidsWon')}>
                     Total Sales {sortConfig.key === 'bidsWon' ? (sortConfig.direction === 'asc' ? '↑' : '↓') : ''}
                   </th>
+                  <th className="sortable" onClick={() => handleSort('recentMovement')}>
+                    Recent Movement {sortConfig.key === 'recentMovement' ? (sortConfig.direction === 'asc' ? '↑' : '↓') : ''}
+                  </th>
                 </tr>
               </thead>
               <tbody>
@@ -360,7 +419,7 @@ const PokemonStatsTab: React.FC<PokemonStatsTabProps> = ({
                             }}
                           />
                         </div>
-                        <span>{entry.name} {entry.form && entry.form !== 'base' ? `(${toLabel(entry.form)})` : ''}</span>
+                        <span>{entry.name === "Farfetch'd-Galar" ? "Farfetch'd" : entry.name} {entry.form && entry.form !== 'base' && entry.name !== "Farfetch'd" ? `(${toLabel(entry.form)})` : ''}</span>
                       </div>
                     </td>
                     <td>${entry.avgWinningBid.toLocaleString()}</td>
@@ -368,6 +427,13 @@ const PokemonStatsTab: React.FC<PokemonStatsTabProps> = ({
                     <td>${entry.maxBid.toLocaleString()}</td>
                     <td>{entry.priceVariance.toLocaleString()}</td>
                     <td>{entry.bidsWon}</td>
+                    <td style={{
+                      backgroundColor: entry.recentMovement > 0 ? 'rgba(0, 255, 0, 0.15)' : entry.recentMovement < 0 ? 'rgba(255, 0, 0, 0.15)' : undefined,
+                      fontWeight: entry.recentMovement !== 0 ? 'bold' : 'normal',
+                      color: entry.recentMovement > 0 ? '#4caf50' : entry.recentMovement < 0 ? '#f44336' : 'inherit'
+                    }}>
+                      {entry.recentMovement > 0 ? `+${entry.recentMovement}` : entry.recentMovement}
+                    </td>
                   </tr>
                 ))}
                 {filteredPokemonSummary.length === 0 && (
