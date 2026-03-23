@@ -324,3 +324,23 @@
     width: 100%;
   }
 }
+
+@keyframes blitz-load-in {
+  0% {
+    opacity: 0;
+    transform: translateY(15px) scale(0.98);
+    filter: blur(4px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    filter: blur(0);
+  }
+}
+
+.stats-row-animate {
+  opacity: 0; /* Start hidden */
+  animation: blitz-load-in 0.4s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+  // Glass effect enhancement
+  backdrop-filter: blur(2px);
+}

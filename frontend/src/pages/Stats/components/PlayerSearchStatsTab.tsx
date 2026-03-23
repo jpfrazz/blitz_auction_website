@@ -11,7 +11,11 @@ interface PlayerSearchStatsTabProps {
 }
 
 function formatPokemonName(name: string): string {
-  return name.toLowerCase().replace(/'/g, '');
+  const cleaned = name.toLowerCase().replace(/'/g, '');
+  if (cleaned === 'farfetchd galar' || cleaned === 'farfetchd-galar') {
+    return 'farfetch\'d';
+  }
+  return cleaned;
 }
 
 const PlayerSearchStatsTab: React.FC<PlayerSearchStatsTabProps> = ({

@@ -32,7 +32,11 @@ const excludedPokemonNames = new Set([
 ]);
 
 function formatPokemonName(name: string): string {
-  return name.toLowerCase().replace(/'/g, '');
+  const cleaned = name.toLowerCase().replace(/'/g, '');
+  if (cleaned === 'farfetchd galar' || cleaned === 'farfetchd-galar') {
+    return 'farfetch\'d';
+  }
+  return cleaned;
 }
 
 function parseLegacyCost(cost: string): number | null {
@@ -60,6 +64,21 @@ const Stats: React.FC = () => {
           auctionCount: data.auctions.length,
           legacyCount: data.legacy?.length ?? 0,
         });
+
+        // Preload mini icons so the animation doesn't start until they are ready
+        const uniqueNames = new Set<string>();
+        data.auctions.forEach((a) => uniqueNames.add(a.name));
+        data.legacy?.forEach((l: any) => uniqueNames.add(l.pokemon));
+
+        await Promise.all(Array.from(uniqueNames).map((name) => {
+          return new Promise<void>((resolve) => {
+            const img = new Image();
+            img.src = `/MiniIcons/${formatPokemonName(name)}.png`;
+            img.onload = () => resolve();
+            img.onerror = () => resolve();
+          });
+        }));
+
         setStats(data);
       } catch (e: any) {
         console.error('[Stats] Error fetching stats data:', e);
@@ -332,19 +351,19 @@ const Stats: React.FC = () => {
         </section>
 
         <section className="stats-kpi-grid">
-          <article className="kpi-card">
+          <article className="kpi-card stats-row-animate" style={{ animationDelay: '0ms' }}>
             <div className="kpi-label">Completed Drafts</div>
             <div className="kpi-value">{kpis.uniqueDrafts}</div>
           </article>
-          <article className="kpi-card">
+          <article className="kpi-card stats-row-animate" style={{ animationDelay: '50ms' }}>
             <div className="kpi-label">Tracked Players</div>
             <div className="kpi-value">{kpis.uniquePlayers}</div>
           </article>
-          <article className="kpi-card">
+          <article className="kpi-card stats-row-animate" style={{ animationDelay: '100ms' }}>
             <div className="kpi-label">Total Sales</div>
             <div className="kpi-value">{kpis.totalWinningAuctions}</div>
           </article>
-          <article className="kpi-card">
+          <article className="kpi-card stats-row-animate" style={{ animationDelay: '150ms' }}>
             <div className="kpi-label">Total Money Spent</div>
             <div className="kpi-value">${kpis.totalMoneySpent.toLocaleString()}</div>
           </article>
@@ -401,10 +420,11 @@ const Stats: React.FC = () => {
                     </tr>
                   </thead>
                   <tbody>
-                    {draftSummary.map((draft) => (
+                    {draftSummary.map((draft, index) => (
                       <React.Fragment key={draft.draftId}>
                         <tr
-                          className="draft-row-clickable"
+                          className="draft-row-clickable stats-row-animate"
+                          style={{ animationDelay: `${200 + index * 30}ms` }}
                           onClick={() => setExpandedDraftId((prev) => (prev === draft.draftId ? null : draft.draftId))}
                         >
                           <td className="mono">{draft.draftId}</td>

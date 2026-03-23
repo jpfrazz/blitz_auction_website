@@ -47,7 +47,11 @@ const excludedPokemonNames = new Set([
 ]);
 
 function formatPokemonName(name: string): string {
-  return name.toLowerCase().replace(/'/g, '');
+  const cleaned = name.toLowerCase().replace(/'/g, '');
+  if (cleaned === 'farfetchd galar' || cleaned === 'farfetchd-galar') {
+    return 'farfetch\'d';
+  }
+  return cleaned;
 }
 
 function toLabel(value: string): string {
@@ -344,8 +348,8 @@ const PokemonStatsTab: React.FC<PokemonStatsTabProps> = ({
                 </tr>
               </thead>
               <tbody>
-                {filteredPokemonSummary.map((entry) => (
-                  <tr key={entry.key}>
+                {filteredPokemonSummary.map((entry, index) => (
+                  <tr key={entry.key} className="stats-row-animate" style={{ animationDelay: `${200 + index * 30}ms` }}>
                     <td style={{ backgroundColor: getPriceColor(entry.avgWinningBid) }}>{entry.rank}</td>
                     <td>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
