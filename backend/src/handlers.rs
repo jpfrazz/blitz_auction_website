@@ -615,7 +615,9 @@ pub async fn get_match_history_by_user_id(
                 t.money_remaining, t.placement,
                 pre_match_mmr, updated_at, created_at
          FROM teams t
-         WHERE t.user_id = $1 OR t.guest_id = $1
+          JOIN drafts d ON d.draft_id = t.draft_id
+                 WHERE (t.user_id = $1 OR t.guest_id = $1)
+            AND d.state = 'COMPLETED'
          ORDER BY t.created_at DESC",
     )
     .bind(&user_id)
