@@ -1,6 +1,8 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { fetchMatchHistoryByUserId } from '../../../shared/api/stats';
 import { MatchHistoryTeam, StatsAuction, StatsPagePlayer, StatsPageResponse } from '../../../types';
+import type { PlayerStatPill } from './playerStatPills';
+import { getPlayerStatPills } from './playerStatPills';
 import '../Stats.scss';
 import './PlayerSearchStatsTab.scss';
 
@@ -120,6 +122,22 @@ const PlayerSearchStatsTab: React.FC<PlayerSearchStatsTabProps> = ({
       return getPokemonLabel(left.name, left.form).localeCompare(getPokemonLabel(right.name, right.form));
     });
   }, [playerMatchHistory]);
+
+  const [playerStatPills, setPlayerStatPills] = useState<PlayerStatPill[]>([]);
+
+  useEffect(() => {
+    if (!pokemonDraftSummary.length) {
+      setPlayerStatPills([]);
+      return;
+    }
+
+    let cancelled = false;
+    getPlayerStatPills(pokemonDraftSummary).then((pills) => {
+      if (!cancelled) setPlayerStatPills(pills);
+    });
+
+    return () => { cancelled = true; };
+  }, [pokemonDraftSummary]);
 
   const featuredPokemon = pokemonDraftSummary[0] ?? null;
 
@@ -252,6 +270,20 @@ const PlayerSearchStatsTab: React.FC<PlayerSearchStatsTabProps> = ({
                         </div>
                       )}
                     </div>
+
+                    {playerStatPills.length > 0 && (
+                      <div className="player-stat-pill-grid">
+                        {playerStatPills.map((pill: PlayerStatPill) => (
+                          <div
+                            className={`player-stat-pill player-stat-pill--${pill.tone}`}
+                            key={pill.key}
+                            title={pill.title}
+                          >
+                            {pill.label}
+                          </div>
+                        ))}
+                      </div>
+                    )}
 
                     <div className="player-draft-overview-table">
                       <div className="player-draft-overview-table-header">

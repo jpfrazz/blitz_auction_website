@@ -200,6 +200,71 @@
         font-size: 0.97rem;
     }
 
+    .player-stat-pill-grid {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.65rem;
+        margin-top: 0.35rem;
+    }
+
+    .player-stat-pill {
+        padding: 0.55rem 0.9rem;
+        border-radius: 8px;
+        font-size: 0.95rem;
+        font-weight: 700;
+        letter-spacing: 0.01em;
+        border: 1px solid transparent;
+        background: rgba(255, 255, 255, 0.08);
+    }
+
+    .player-stat-pill--green {
+        color: #53df62;
+        background: rgba(91, 150, 96, 0.32);
+        border-color: rgba(91, 150, 96, 0.45);
+    }
+
+    .player-stat-pill--gold {
+        color: #ffc72c;
+        background: rgba(173, 124, 42, 0.34);
+        border-color: rgba(173, 124, 42, 0.46);
+    }
+
+    .player-stat-pill--rose {
+        color: #ff3e8a;
+        background: rgba(157, 48, 103, 0.34);
+        border-color: rgba(157, 48, 103, 0.46);
+    }
+
+    .player-stat-pill--teal {
+        color: #53d8c8;
+        background: rgba(53, 118, 127, 0.34);
+        border-color: rgba(53, 118, 127, 0.46);
+    }
+
+    .player-stat-pill--blue {
+        color: #7ec8ff;
+        background: rgba(62, 92, 148, 0.34);
+        border-color: rgba(62, 92, 148, 0.46);
+    }
+
+    .player-stat-pill--purple {
+        color: #c084fc;
+        background: rgba(109, 49, 161, 0.34);
+        border-color: rgba(109, 49, 161, 0.46);
+    }
+
+    .player-stat-pill--orange {
+        color: #fb923c;
+        background: rgba(154, 82, 28, 0.34);
+        border-color: rgba(154, 82, 28, 0.46);
+    }
+
+    .player-stat-pill--indigo {
+        color: #a5b4fc;
+        background: rgba(63, 71, 173, 0.34);
+        border-color: rgba(63, 71, 173, 0.46);
+    }
+
     .player-header {
         display: flex;
         justify-content: space-between;
@@ -459,6 +524,15 @@
             grid-template-columns: minmax(0, 1fr) 54px 72px;
             gap: 0.5rem;
             font-size: 0.9rem;
+        }
+
+        .player-stat-pill-grid {
+            gap: 0.5rem;
+        }
+
+        .player-stat-pill {
+            font-size: 0.88rem;
+            padding: 0.48rem 0.72rem;
         }
 
         .match-timeline-row {
