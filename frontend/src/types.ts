@@ -130,6 +130,7 @@ export interface MatchHistoryTeam {
   user_id: string | null;
   guest_id: string | null;
   draft_id: string;
+  team_count: number;
   money_remaining: number;
   pokemon_drafted: StatsAuction[];
   placement: number | null;
