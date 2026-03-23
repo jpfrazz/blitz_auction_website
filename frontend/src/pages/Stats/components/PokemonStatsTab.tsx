@@ -183,24 +183,10 @@ const PokemonStatsTab: React.FC<PokemonStatsTabProps> = ({
         return;
       }
 
-      let name = legacyRow.pokemon;
-      let form = '';
-
-      // Normalize legacy data that has the form baked into the name
-      // e.g. "Farfetch'd-Galar" -> Name: "Farfetch'd", Form: "Galar"
-      const formSuffixes = ['-Galar', '-Alola', '-Hisui', '-Paldea'];
-      for (const suffix of formSuffixes) {
-        if (name.endsWith(suffix)) {
-          name = name.slice(0, -suffix.length);
-          form = suffix.slice(1); // Remove the dash
-          break;
-        }
-      }
-
       sales.push({
-        key: `${name}${form ? '-' + form : ''}`,
-        name,
-        form,
+        key: legacyRow.pokemon,
+        name: legacyRow.pokemon,
+        form: '',
         bid,
       });
     });
@@ -245,11 +231,7 @@ const PokemonStatsTab: React.FC<PokemonStatsTabProps> = ({
       const min = count > 0 ? Math.min(...bids) : 0;
       const max = count > 0 ? Math.max(...bids) : 0;
 
-      let stdDev = 0;
-      if (count > 0) {
-        const sqDiffSum = bids.reduce((a, b) => a + Math.pow(b - avg, 2), 0);
-        stdDev = Math.sqrt(sqDiffSum / count);
-      }
+      const priceVariance = max - min;
 
       return {
         key: entry.key,
@@ -260,7 +242,7 @@ const PokemonStatsTab: React.FC<PokemonStatsTabProps> = ({
         avgWinningBid: avg,
         minBid: min,
         maxBid: max,
-        priceVariance: Math.round(stdDev),
+        priceVariance,
         rank: 0,
       };
     });
@@ -384,7 +366,7 @@ const PokemonStatsTab: React.FC<PokemonStatsTabProps> = ({
                     <td>${entry.avgWinningBid.toLocaleString()}</td>
                     <td>${entry.minBid.toLocaleString()}</td>
                     <td>${entry.maxBid.toLocaleString()}</td>
-                    <td>±${entry.priceVariance.toLocaleString()}</td>
+                    <td>{entry.priceVariance.toLocaleString()}</td>
                     <td>{entry.bidsWon}</td>
                   </tr>
                 ))}
