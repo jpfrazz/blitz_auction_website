@@ -167,7 +167,7 @@ const PokemonStatsTab: React.FC<PokemonStatsTabProps> = ({
         return;
       }
       sales.push({
-        key: `${auction.pokedex_id}:${auction.form || ''}`,
+        key: `${auction.name}${auction.form && auction.form !== 'base' ? '-' + auction.form : ''}`,
         name: auction.name,
         form: auction.form || '',
         bid,
@@ -182,10 +182,25 @@ const PokemonStatsTab: React.FC<PokemonStatsTabProps> = ({
       if (excludedPokemonNames.has(legacyRow.pokemon)) {
         return;
       }
+
+      let name = legacyRow.pokemon;
+      let form = '';
+
+      // Normalize legacy data that has the form baked into the name
+      // e.g. "Farfetch'd-Galar" -> Name: "Farfetch'd", Form: "Galar"
+      const formSuffixes = ['-Galar', '-Alola', '-Hisui', '-Paldea'];
+      for (const suffix of formSuffixes) {
+        if (name.endsWith(suffix)) {
+          name = name.slice(0, -suffix.length);
+          form = suffix.slice(1); // Remove the dash
+          break;
+        }
+      }
+
       sales.push({
-        key: `legacy:${legacyRow.pokemon}`,
-        name: legacyRow.pokemon,
-        form: '',
+        key: `${name}${form ? '-' + form : ''}`,
+        name,
+        form,
         bid,
       });
     });
