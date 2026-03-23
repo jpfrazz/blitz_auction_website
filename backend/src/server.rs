@@ -151,10 +151,24 @@ impl Server {
             .route("/drafts/{draft_id}/start", post(handlers::start_draft))
             .route("/drafts/{draft_id}/pause", post(handlers::pause_draft))
             .route("/drafts/{draft_id}/unpause", post(handlers::unpause_draft))
-            // .route(
-            //     "/drafts/{draft_id}/submit-results",
-            //     post(handlers::submit_race_results),
-            // )
+            .route(
+                "/drafts/{draft_id}/submit-results",
+                post(handlers::submit_race_results),
+            )
+            .route("/admin/drafts/completed", get(handlers::get_admin_completed_drafts))
+            .route(
+                "/admin/drafts/{draft_id}/teams",
+                get(handlers::get_admin_draft_team_placements),
+            )
+            .route(
+                "/admin/drafts/{draft_id}/teams/update-placements",
+                post(handlers::update_admin_draft_team_placements),
+            )
+            .route("/admin/users", get(handlers::get_admin_discord_users))
+            .route(
+                "/admin/users/{user_id}/update",
+                post(handlers::update_admin_discord_user),
+            )
             .route(
                 "/drafts/{draft_id}/pending-settings",
                 post(handlers::update_pending_draft_settings),

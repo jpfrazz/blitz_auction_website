@@ -10,7 +10,7 @@ import './AuctionSetup.scss';
 import '../../shared/style/theme.scss';
 import { createDraft, CreateDraftRequest } from '../../shared/api/draft';
 
-const MIN_TEAM_SIZE = 7;
+const MIN_TEAM_SIZE = 2;
 const MAX_TEAM_SIZE = 10;
 const DEFAULT_STARTING_MONEY = 20000;
 const DEFAULT_AUCTION_SECONDS = 10;

@@ -15,6 +15,7 @@ import AuctionPage from './pages/Auction/AuctionPage';
 import LobbyViewer from './pages/LobbyViewer/LobbyViewer';
 import LeaderboardPage from './pages/LeaderboardPage';
 import Stats from './pages/Stats/Stats';
+import Admin from './pages/Admin/Admin';
 
 const container = document.getElementById('root');
 if (container) {
@@ -36,6 +37,7 @@ if (container) {
           <Route path="/BossBattles" element={<BossBattles />} />
           <Route path="/SpeedTest" element={<SpeedTest />} />
           <Route path="/PatchNotes" element={<PatchNotes />} />
+          <Route path="/Admin" element={<Admin />} />
         </Routes>
       </Router>
     </React.StrictMode>

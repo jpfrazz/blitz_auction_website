@@ -1,5 +1,11 @@
-import { Pokemon } from '../../types';
-import axios from 'axios';
+import axios, {AxiosError} from 'axios';
+import {
+  AdminDiscordUser,
+  AdminDraftSummary,
+  AdminDraftTeamPlacement,
+  AdminTeamPlacementUpdate,
+  Pokemon,
+} from "../../types";
 
 export interface LeaderboardEntry {
 	user_id: string;
@@ -198,4 +204,33 @@ export async function fetchLeaderboard(): Promise<LeaderboardEntry[]> {
 	}
 
 	return response.data;
+}
+
+export async function fetchAdminCompletedDrafts(): Promise<AdminDraftSummary[]> {
+  const response = await axios.get('/api/admin/drafts/completed');
+  return response.data;
+}
+
+export async function fetchAdminDraftTeamPlacements(draft_id: string): Promise<AdminDraftTeamPlacement[]> {
+  const response = await axios.get(`/api/admin/drafts/${draft_id}/teams`);
+  return response.data;
+}
+
+export async function updateAdminDraftPlacements(
+  draft_id: string,
+  placements: AdminTeamPlacementUpdate[],
+): Promise<void> {
+  await axios.post(`/api/admin/drafts/${draft_id}/teams/update-placements`, { placements });
+}
+
+export async function fetchAdminDiscordUsers(): Promise<AdminDiscordUser[]> {
+  const response = await axios.get('/api/admin/users');
+  return response.data;
+}
+
+export async function updateAdminDiscordUser(
+  user_id: string,
+  payload: { mmr: number; wins: number; losses: number },
+): Promise<void> {
+  await axios.post(`/api/admin/users/${user_id}/update`, payload);
 }
