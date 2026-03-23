@@ -326,13 +326,7 @@ const Stats: React.FC = () => {
         const avg = count > 0 ? Math.round(sum / count) : 0;
         const min = count > 0 ? Math.min(...bids) : 0;
         const max = count > 0 ? Math.max(...bids) : 0;
-        
-        // Calculate Standard Deviation for Price Variance
-        let stdDev = 0;
-        if (count > 0) {
-          const sqDiffSum = bids.reduce((a, b) => a + Math.pow(b - avg, 2), 0);
-          stdDev = Math.sqrt(sqDiffSum / count);
-        }
+        const priceVariance = max - min;
 
         return {
           key: entry.key,
@@ -343,7 +337,7 @@ const Stats: React.FC = () => {
           avgWinningBid: avg,
           minBid: min,
           maxBid: max,
-          priceVariance: Math.round(stdDev),
+          priceVariance: priceVariance,
           rank: 0, // Placeholder
         };
       }).filter((p): p is PokemonAggregate => p !== null);
@@ -692,7 +686,7 @@ const Stats: React.FC = () => {
                         <td>${entry.avgWinningBid.toLocaleString()}</td>
                         <td>${entry.minBid.toLocaleString()}</td>
                         <td>${entry.maxBid.toLocaleString()}</td>
-                        <td>±${entry.priceVariance.toLocaleString()}</td>
+                        <td>${entry.priceVariance.toLocaleString()}</td>
                         <td>{entry.bidsWon}</td>
                       </tr>
                     ))}

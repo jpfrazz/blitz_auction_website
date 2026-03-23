@@ -52,9 +52,9 @@ const Pokedex: React.FC = () => {
               </button>
             </div>
             <div className="pokedex-content">
-              {activeTab === 'all' && <AllPokemonTab pokemon={pokemon} auctions={auctions} />}
+              {activeTab === 'all' && <AllPokemonTab pokemon={pokemon} auctions={auctions} isPokedex={true} />}
               {activeTab === 'rental' && (
-                <AllPokemonTab pokemon={rentalPokemon} auctions={auctions} />
+                <AllPokemonTab pokemon={rentalPokemon} auctions={auctions} isPokedex={true} />
               )}
             </div>
           </div>

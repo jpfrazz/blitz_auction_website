@@ -17,6 +17,7 @@ import {
 interface AllPokemonTabProps {
   pokemon: Pokemon[];
   auctions: Auction[];
+  isPokedex?: boolean;
 }
 
 const getTypeIconSrc = (type: string) => {
@@ -24,7 +25,7 @@ const getTypeIconSrc = (type: string) => {
   return `/TypeIcons/${formattedType}IC_SV.png`;
 };
 
-const AllPokemonTab: React.FC<AllPokemonTabProps> = ({ pokemon, auctions }) => {
+const AllPokemonTab: React.FC<AllPokemonTabProps> = ({ pokemon, auctions, isPokedex = false }) => {
   const [selectedPokemon, setSelectedPokemon] = useState<Pokemon | null>(null);
   const allPokemon = useMemo(() => pokemon, [pokemon]);
 
@@ -107,7 +108,8 @@ const AllPokemonTab: React.FC<AllPokemonTabProps> = ({ pokemon, auctions }) => {
     };
 
   const columns = useMemo<ColumnDef<any, any>[]>(
-    () => [
+    () => {
+      const cols: ColumnDef<any, any>[] = [
       { accessorKey: 'name', header: 'Name' },
       { accessorKey: 'ability', header: 'Ability' },
       {
@@ -144,16 +146,20 @@ const AllPokemonTab: React.FC<AllPokemonTabProps> = ({ pokemon, auctions }) => {
           const evolutionTypesKey = (row.getValue(columnId) as string | undefined) ?? '';
           return evolutionTypesKey.includes(filter);
         },
-      },
-      {
+      }
+    ];
+
+    if (!isPokedex) {
+      cols.push({
         accessorKey: 'cost',
         header: 'Cost',
         sortingFn: 'basic',
         sortUndefined: 'last',
-      },
-      { accessorKey: 'draftedBy', header: 'Drafted By' },
-    ],
-    [allPokemon]
+      }, { accessorKey: 'draftedBy', header: 'Drafted By' });
+    }
+    return cols;
+  },
+    [allPokemon, isPokedex]
   );
 
   const [sorting, setSorting] = useState<SortingState>([{ id: 'name', desc: false }]);
