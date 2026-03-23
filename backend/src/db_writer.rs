@@ -651,18 +651,20 @@ impl Actor {
     
     async fn join_draft(&self, user: User) -> Result<(), AppError> {
         let (user_id, guest_id) = user.get_user_and_guest_id();
-        let _ = sqlx::query(
+        let _ = sqlx::query!(
             r#"
                 INSERT INTO teams (
-                    user_id, guest_id, draft_id, money_remaining
+                    user_id, guest_id, draft_id, money_remaining, pre_match_mmr
                 )
-                VALUES ($1, $2, $3, $4)
+                VALUES ($1, $2, $3, $4,
+                    (SELECT mmr FROM users WHERE user_id = $1)
+                )
             "#,
+            user_id,
+            guest_id,
+            self.draft_id,
+            self.starting_money as i32,
         )
-        .bind(user_id)
-        .bind(guest_id)
-        .bind(self.draft_id)
-        .bind(self.starting_money as i32)
         .execute(&self.pool)
         .await
         .map_err(|e| (
