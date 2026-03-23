@@ -389,6 +389,9 @@ const PokemonStatsTab: React.FC<PokemonStatsTabProps> = ({
                   <th className="sortable" onClick={() => handleSort('rank')}>
                     Rank {sortConfig.key === 'rank' ? (sortConfig.direction === 'asc' ? '↑' : '↓') : ''}
                   </th>
+                  <th className="sortable" onClick={() => handleSort('recentMovement')}>
+                    {sortConfig.key === 'recentMovement' ? (sortConfig.direction === 'asc' ? '↑' : '↓') : ''}
+                  </th>
                   <th className="sortable" onClick={() => handleSort('name')}>
                     Pokemon {sortConfig.key === 'name' ? (sortConfig.direction === 'asc' ? '↑' : '↓') : ''}
                   </th>
@@ -407,15 +410,23 @@ const PokemonStatsTab: React.FC<PokemonStatsTabProps> = ({
                   <th className="sortable" onClick={() => handleSort('bidsWon')}>
                     Total Sales {sortConfig.key === 'bidsWon' ? (sortConfig.direction === 'asc' ? '↑' : '↓') : ''}
                   </th>
-                  <th className="sortable" onClick={() => handleSort('recentMovement')}>
-                    Recent Movement {sortConfig.key === 'recentMovement' ? (sortConfig.direction === 'asc' ? '↑' : '↓') : ''}
-                  </th>
                 </tr>
               </thead>
               <tbody>
                 {filteredPokemonSummary.map((entry, index) => (
                   <tr key={entry.key} className="stats-row-animate" style={{ animationDelay: `${200 + index * 30}ms` }}>
                     <td style={{ backgroundColor: getPriceColor(entry.avgWinningBid) }}>{entry.rank}</td>
+                    <td style={{
+                      backgroundColor: entry.recentMovement > 0 ? 'rgba(0, 255, 0, 0.15)' : entry.recentMovement < 0 ? 'rgba(255, 0, 0, 0.15)' : undefined,
+                      fontWeight: entry.recentMovement !== 0 ? 'bold' : 'normal',
+                      color: entry.recentMovement > 0 ? '#4caf50' : entry.recentMovement < 0 ? '#f44336' : 'inherit'
+                    }}>
+                      {entry.recentMovement > 0
+                        ? `↑ ${entry.recentMovement}`
+                        : entry.recentMovement < 0
+                          ? `↓ ${Math.abs(entry.recentMovement)}`
+                          : '-'}
+                    </td>
                     <td>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                         <div style={{ width: '32px', display: 'flex', justifyContent: 'center', flexShrink: 0 }}>
@@ -436,18 +447,11 @@ const PokemonStatsTab: React.FC<PokemonStatsTabProps> = ({
                     <td>${entry.maxBid.toLocaleString()}</td>
                     <td>{entry.priceVariance.toLocaleString()}</td>
                     <td>{entry.bidsWon}</td>
-                    <td style={{
-                      backgroundColor: entry.recentMovement > 0 ? 'rgba(0, 255, 0, 0.15)' : entry.recentMovement < 0 ? 'rgba(255, 0, 0, 0.15)' : undefined,
-                      fontWeight: entry.recentMovement !== 0 ? 'bold' : 'normal',
-                      color: entry.recentMovement > 0 ? '#4caf50' : entry.recentMovement < 0 ? '#f44336' : 'inherit'
-                    }}>
-                      {entry.recentMovement > 0 ? `+${entry.recentMovement}` : entry.recentMovement}
-                    </td>
                   </tr>
                 ))}
                 {filteredPokemonSummary.length === 0 && (
                   <tr>
-                    <td colSpan={7} className="empty-cell">No pokemon stats available.</td>
+                    <td colSpan={8} className="empty-cell">No pokemon stats available.</td>
                   </tr>
                 )}
               </tbody>
