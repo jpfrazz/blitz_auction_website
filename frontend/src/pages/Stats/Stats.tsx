@@ -129,127 +129,6 @@ const Stats: React.FC = () => {
     return sorted;
   }, [stats?.auctions, validDraftIds]);
 
-  const aggregatedPokemon = useMemo<PokemonAggregate[]>(() => {
-    const sales: PokemonSaleRow[] = [];
-
-    sortedAuctions.forEach((auction) => {
-      const bid = auction.winning_bid;
-      if (bid === null) {
-        return;
-      }
-      sales.push({
-        key: `${auction.pokedex_id}:${auction.form || ''}`,
-        name: auction.name,
-        form: auction.form || '',
-        bid,
-      });
-    });
-
-    (stats?.legacy ?? []).forEach((legacyRow) => {
-      const bid = parseLegacyCost(legacyRow.cost);
-      if (bid === null) {
-        return;
-      }
-      if (excludedPokemonNames.has(legacyRow.pokemon)) {
-        return;
-      }
-      sales.push({
-        key: `legacy:${legacyRow.pokemon}`,
-        name: legacyRow.pokemon,
-        form: '',
-        bid,
-      });
-    });
-
-    const grouped = new Map<string, {
-      key: string;
-      name: string;
-      form: string;
-      bids: number[];
-    }>();
-
-    sales.forEach((sale) => {
-      const key = sale.key;
-      let existing = grouped.get(key);
-      if (!existing) {
-        existing = {
-          key,
-          name: sale.name,
-          form: sale.form,
-          bids: []
-        };
-        grouped.set(key, existing);
-      }
-      existing.bids.push(sale.bid);
-    });
-
-    let results = Array.from(grouped.values())
-      .map((entry) => {
-        // Filter out sales of exactly 100
-        let bids = entry.bids.filter(b => b !== 100);
-
-        // If no bids remain after filtering, exclude this pokemon
-        if (bids.length === 0) return null;
-        
-        if (bids.length > 1) {
-          const sortedBids = [...bids].sort((a, b) => a - b);
-          const q1 = calculateQuantile(sortedBids, 0.25);
-          const q3 = calculateQuantile(sortedBids, 0.75);
-          const iqr = q3 - q1;
-          const lower = q1 - 1.5 * iqr;
-          const upper = q3 + 2.0 * iqr;
-          bids = sortedBids.filter((b) => b >= lower && b <= upper);
-        }
-
-        // If no bids remain after outlier removal, also exclude
-        if (bids.length === 0) {
-          return null;
-        }
-
-        const count = bids.length;
-        const sum = bids.reduce((a, b) => a + b, 0);
-        const avg = count > 0 ? Math.round(sum / count) : 0;
-        const min = count > 0 ? Math.min(...bids) : 0;
-        const max = count > 0 ? Math.max(...bids) : 0;
-        
-        // Calculate Standard Deviation for Price Variance
-        let stdDev = 0;
-        if (count > 0) {
-          const sqDiffSum = bids.reduce((a, b) => a + Math.pow(b - avg, 2), 0);
-          stdDev = Math.sqrt(sqDiffSum / count);
-        }
-
-        return {
-          key: entry.key,
-          name: entry.name,
-          form: entry.form,
-          bidsWon: count,
-          totalSpend: sum,
-          avgWinningBid: avg,
-          minBid: min,
-          maxBid: max,
-          priceVariance: Math.round(stdDev),
-          rank: 0, // Placeholder
-        };
-      }).filter((p): p is PokemonAggregate => p !== null);
-
-    // Calculate rank based on avgWinningBid descending
-    results.sort((a, b) => b.avgWinningBid - a.avgWinningBid);
-    results.forEach((p, i) => p.rank = i + 1);
-    return results;
-  }, [sortedAuctions, stats?.legacy]);
-
-  const pokemonSummary = useMemo<PokemonAggregate[]>(() => {
-    const result = [...aggregatedPokemon].sort((a, b) => {
-      const { key, direction } = sortConfig;
-      if (a[key] < b[key]) return direction === 'asc' ? -1 : 1;
-      if (a[key] > b[key]) return direction === 'asc' ? 1 : -1;
-      return 0;
-    });
-    console.log('[Stats] Computed pokemonSummary:', result.length, 'unique pokemon');
-    return result;
-  }, [aggregatedPokemon, sortConfig]);
-
   const playerSummary = useMemo<PlayerAggregate[]>(() => {
     const grouped = new Map<string, {
       key: string;
@@ -515,70 +394,14 @@ const Stats: React.FC = () => {
         </section>
 
         {activeTab === 'pokemon' && (
-          <section className="stats-content-grid">
-            <article className="stats-panel">
-              <h2>Cost Breakdown</h2>
-              <div className="table-wrap">
-                <table>
-                  <thead>
-                    <tr>
-                      <th className="sortable" onClick={() => handleSort('rank')}>
-                        Rank {sortConfig.key === 'rank' ? (sortConfig.direction === 'asc' ? '↑' : '↓') : ''}
-                      </th>
-                      <th className="sortable" onClick={() => handleSort('name')}>
-                        Pokemon {sortConfig.key === 'name' ? (sortConfig.direction === 'asc' ? '↑' : '↓') : ''}
-                      </th>
-                      <th className="sortable" onClick={() => handleSort('avgWinningBid')}>
-                        Avg Winning Bid {sortConfig.key === 'avgWinningBid' ? (sortConfig.direction === 'asc' ? '↑' : '↓') : ''}
-                      </th>
-                      <th className="sortable" onClick={() => handleSort('minBid')}>
-                        Lowest Cost {sortConfig.key === 'minBid' ? (sortConfig.direction === 'asc' ? '↑' : '↓') : ''}
-                      </th>
-                      <th className="sortable" onClick={() => handleSort('maxBid')}>
-                        Highest Cost {sortConfig.key === 'maxBid' ? (sortConfig.direction === 'asc' ? '↑' : '↓') : ''}
-                      </th>
-                      <th className="sortable" onClick={() => handleSort('priceVariance')}>
-                        Price Variance {sortConfig.key === 'priceVariance' ? (sortConfig.direction === 'asc' ? '↑' : '↓') : ''}
-                      </th>
-                      <th className="sortable" onClick={() => handleSort('bidsWon')}>
-                        Total Sales {sortConfig.key === 'bidsWon' ? (sortConfig.direction === 'asc' ? '↑' : '↓') : ''}
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {pokemonSummary.map((entry, index) => (
-                      <tr key={entry.key} className="stats-row-animate" style={{ animationDelay: `${200 + index * 30}ms` }}>
-                        <td style={{ backgroundColor: getPriceColor(entry.avgWinningBid) }}>{entry.rank}</td>
-                        <td>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                            <div style={{ width: '32px', display: 'flex', justifyContent: 'center', flexShrink: 0 }}>
-                              <img
-                                src={`/MiniIcons/${formatPokemonName(entry.name)}.png`}
-                                alt={entry.name}
-                                style={{ width: 'auto', height: 'auto', maxWidth: '32px', maxHeight: '32px', objectFit: 'contain' }}
-                                onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
-                              />
-                            </div>
-                            <span>{entry.name} {entry.form && entry.form !== 'base' ? `(${toLabel(entry.form)})` : ''}</span>
-                          </div>
-                        </td>
-                        <td>${entry.avgWinningBid.toLocaleString()}</td>
-                        <td>${entry.minBid.toLocaleString()}</td>
-                        <td>${entry.maxBid.toLocaleString()}</td>
-                        <td>±${entry.priceVariance.toLocaleString()}</td>
-                        <td>{entry.bidsWon}</td>
-                      </tr>
-                    ))}
-                    {pokemonSummary.length === 0 && (
-                      <tr>
-                        <td colSpan={7} className="empty-cell">No pokemon stats available.</td>
-                      </tr>
-                    )}
-                  </tbody>
-                </table>
-              </div>
-            </article>
-          </section>
+          <PokemonStatsTab
+            stats={stats}
+            loading={loading}
+            error={error}
+            minAuctionsFilter={minAuctionsFilter}
+            onMinAuctionsFilterChange={setMinAuctionsFilter}
+            showDraftSizeFilter={true}
+          />
         )}
 
         {activeTab === 'drafts' && (
