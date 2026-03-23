@@ -82,6 +82,7 @@ pub struct LeaderboardEntry {
 pub struct MatchHistoryAuction {
     pub auction_id: i64,
     pub pokedex_id: i32,
+    pub name: String,
     pub form: String,
     pub draft_id: String,
     pub draft_order: i32,
@@ -100,6 +101,7 @@ pub struct MatchHistoryTeam {
     pub user_id: Option<String>,
     pub guest_id: Option<String>,
     pub draft_id: String,
+    pub team_count: i32,
     pub money_remaining: i32,
     pub pokemon_drafted: Vec<MatchHistoryAuction>,
     pub placement: Option<i32>,
@@ -167,13 +169,14 @@ async fn get_user_won_auctions_for_draft(
     user_id: &str,
 ) -> Result<Vec<MatchHistoryAuction>, AppError> {
     let auction_rows = sqlx::query(
-        "SELECT auction_id, pokedex_id, form, draft_id, draft_order, state,
-                paused_time_remaining, winning_bid, winning_user_id, winning_guest_id,
-                updated_at, created_at
-         FROM auctions
-         WHERE draft_id = $1
-           AND winning_user_id = $2
-         ORDER BY draft_order ASC",
+        "SELECT a.auction_id, a.pokedex_id, p.name, a.form, a.draft_id, a.draft_order, a.state,
+                a.paused_time_remaining, a.winning_bid, a.winning_user_id, a.winning_guest_id,
+                a.updated_at, a.created_at
+         FROM auctions a
+         JOIN pokemon p ON p.pokedex_id = a.pokedex_id AND p.form = a.form
+         WHERE a.draft_id = $1
+           AND a.winning_user_id = $2
+         ORDER BY a.draft_order ASC",
     )
     .bind(draft_id)
     .bind(user_id)
@@ -193,6 +196,9 @@ async fn get_user_won_auctions_for_draft(
                 .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?,
             pokedex_id: row
                 .try_get("pokedex_id")
+                .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?,
+            name: row
+                .try_get("name")
                 .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?,
             form: row
                 .try_get("form")
@@ -530,11 +536,12 @@ pub async fn get_stats_page_data(
     }
 
     let auction_rows = sqlx::query(
-        "SELECT a.auction_id, a.pokedex_id, a.form, a.draft_id, a.draft_order, a.state,
+        "SELECT a.auction_id, a.pokedex_id, p.name, a.form, a.draft_id, a.draft_order, a.state,
                 a.paused_time_remaining, a.winning_bid, a.winning_user_id, a.winning_guest_id,
                 a.updated_at, a.created_at
          FROM auctions a
          JOIN drafts d ON d.draft_id = a.draft_id
+         JOIN pokemon p ON p.pokedex_id = a.pokedex_id AND p.form = a.form
          WHERE d.state = 'COMPLETED'
            AND a.winning_bid IS NOT NULL
          ORDER BY a.created_at DESC",
@@ -555,6 +562,9 @@ pub async fn get_stats_page_data(
                 .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?,
             pokedex_id: row
                 .try_get("pokedex_id")
+                .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?,
+            name: row
+                .try_get("name")
                 .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?,
             form: row
                 .try_get("form")
@@ -600,11 +610,13 @@ pub async fn get_match_history_by_user_id(
     Path(user_id): Path<String>,
 ) -> Result<Json<Vec<MatchHistoryTeam>>, AppError> {
     let team_rows = sqlx::query(
-        "SELECT team_id, user_id, guest_id, draft_id, money_remaining, placement,
+        "SELECT t.team_id, t.user_id, t.guest_id, t.draft_id,
+                (SELECT COUNT(*)::INT FROM teams team_counts WHERE team_counts.draft_id = t.draft_id) AS team_count,
+                t.money_remaining, t.placement,
                 pre_match_mmr, updated_at, created_at
-         FROM teams
-         WHERE user_id = $1 OR guest_id = $1
-         ORDER BY created_at DESC",
+         FROM teams t
+         WHERE t.user_id = $1 OR t.guest_id = $1
+         ORDER BY t.created_at DESC",
     )
     .bind(&user_id)
     .fetch_all(&state.db_pool)
@@ -629,6 +641,9 @@ pub async fn get_match_history_by_user_id(
                 .try_get("guest_id")
                 .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?,
             draft_id: draft_uuid.to_string(),
+            team_count: row
+                .try_get("team_count")
+                .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?,
             money_remaining: row
                 .try_get("money_remaining")
                 .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?,
