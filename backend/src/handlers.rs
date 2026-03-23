@@ -1177,6 +1177,7 @@ pub async fn get_admin_completed_drafts(
         "SELECT draft_id, draft_name, ranked, state, created_at
          FROM drafts
          WHERE state = 'COMPLETED'
+           AND ranked = TRUE
          ORDER BY created_at DESC",
     )
     .fetch_all(&state.db_pool)
@@ -1224,9 +1225,12 @@ pub async fn get_admin_draft_team_placements(
                 COALESCE(u.user_name, g.user_name) AS user_name,
                 t.placement, t.pre_match_mmr
          FROM teams t
+          JOIN drafts d ON d.draft_id = t.draft_id
          LEFT JOIN users u ON u.user_id = t.user_id
          LEFT JOIN guests g ON g.user_id = t.guest_id
          WHERE t.draft_id = $1
+            AND d.state = 'COMPLETED'
+            AND d.ranked = TRUE
          ORDER BY COALESCE(t.placement, 9999) ASC, COALESCE(u.user_name, g.user_name) ASC",
     )
     .bind(draft_uuid)
@@ -1278,7 +1282,7 @@ pub async fn update_admin_draft_team_placements(
         .map_err(|_| (StatusCode::BAD_REQUEST, "invalid draft id".to_string()))?;
 
     let draft_row = sqlx::query(
-        "SELECT state
+        "SELECT state, ranked
          FROM drafts
          WHERE draft_id = $1",
     )
@@ -1291,11 +1295,21 @@ pub async fn update_admin_draft_team_placements(
     let draft_state: String = draft_row
         .try_get("state")
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let is_ranked: bool = draft_row
+        .try_get("ranked")
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
 
     if draft_state != DraftState::COMPLETED.to_string() {
         return Err((
             StatusCode::PRECONDITION_FAILED,
             "only completed drafts can be edited".to_string(),
+        ));
+    }
+
+    if !is_ranked {
+        return Err((
+            StatusCode::PRECONDITION_FAILED,
+            "only ranked drafts can be edited here".to_string(),
         ));
     }
 
