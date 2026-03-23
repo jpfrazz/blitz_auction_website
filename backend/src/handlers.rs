@@ -613,7 +613,7 @@ pub async fn get_match_history_by_user_id(
         "SELECT t.team_id, t.user_id, t.guest_id, t.draft_id,
                 (SELECT COUNT(*)::INT FROM teams team_counts WHERE team_counts.draft_id = t.draft_id) AS team_count,
                 t.money_remaining, t.placement,
-                pre_match_mmr, updated_at, created_at
+                t.pre_match_mmr, t.updated_at, t.created_at
          FROM teams t
           JOIN drafts d ON d.draft_id = t.draft_id
                  WHERE (t.user_id = $1 OR t.guest_id = $1)
