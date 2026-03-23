@@ -5,11 +5,13 @@ import DraftHistoryTab from './DraftHistoryTab';
 import { Auction, Pokemon, Team } from '../../../../types';
 import './PokemonTablePanel.scss';
 import TierListTab from './TierListTab';
+import PlayerSearchTab from './PlayerSearchTab';
 
 const TAB_ALL = 'all';
 const TAB_TEAM = 'team';
 const TAB_HISTORY = 'history';
 const TIER_LIST = 'tierlist';
+const PLAYER_SEARCH = 'player-search';
 
 
 interface PokemonTablePanelProps {
@@ -49,7 +51,13 @@ const PokemonTablePanel: React.FC<PokemonTablePanelProps> = ({ auctions, pokemon
           className={tab === TIER_LIST ? 'active' : ''}
           onClick={() => setTab(TIER_LIST)}
         >
-          Tier List
+          Stats
+        </button>
+        <button
+          className={tab === PLAYER_SEARCH ? 'active' : ''}
+          onClick={() => setTab(PLAYER_SEARCH)}
+        >
+          Player Search
         </button>
       </div>
       <div className="auction-pokemon-table-box">
@@ -58,6 +66,7 @@ const PokemonTablePanel: React.FC<PokemonTablePanelProps> = ({ auctions, pokemon
           {tab === TAB_TEAM && <TeamPlannerTab teams={teams} currentUserId={currentUserId} allPokemon={pokemon} />}
           {tab === TAB_HISTORY && <DraftHistoryTab auctions={auctions} />}
           {tab === TIER_LIST && <TierListTab />}
+          {tab === PLAYER_SEARCH && <PlayerSearchTab />}
         </div>
       </div>
     </div>
