@@ -275,7 +275,7 @@ const PokemonStatsTab: React.FC<PokemonStatsTabProps> = ({
 
     // Calculate Overall Stats
     let results = Array.from(grouped.values()).map((entry) => {
-      let bids = entry.bids;
+      let bids = entry.bids.filter((b) => b !== 100);
 
       if (bids.length > 1) {
         const sortedBids = [...bids].sort((a, b) => a - b);
