@@ -1,5 +1,4 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { CSSTransition } from 'react-transition-group';
 import { connectDraftWebSocket } from '../../shared/api/draftWebSocket';
 import { useLocation } from 'react-router-dom';
 import Header from '../../shared/components/Header';
@@ -69,15 +68,6 @@ const AuctionPage: React.FC = () => {
   const previousAuctionIdRef = useRef<string | null>(null);
   const prevCompletedAuctionsLengthRef = useRef<number | null>(null);
   const hasInitializedAuctionTrackingRef = useRef(false);
-  const pokemonPanelRef = useRef<HTMLDivElement>(null);
-
-  const [lastKnownAuction, setLastKnownAuction] = useState<Auction | null>(null);
-
-  useEffect(() => {
-    if (currentAuction) {
-      setLastKnownAuction(currentAuction);
-    }
-  }, [currentAuction]);
 
   useEffect(() => {
     document.body.classList.add('auction-page-active');
@@ -426,8 +416,6 @@ const AuctionPage: React.FC = () => {
     await submitRaceResults(draft.draft_id, placements);
   };
 
-  const showCurrentPokemon = Boolean(draft && currentAuction && draft.draft_state !== 'COMPLETED');
-
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100vh' }}>
       <Header />
@@ -564,17 +552,12 @@ const AuctionPage: React.FC = () => {
             <div className="auction-content-grid">
               {/* Left: Current auctioned Pokémon and table */}
               <div className="auction-left-panel">
-                <CSSTransition
-                  in={showCurrentPokemon}
-                  timeout={500}
-                  classNames="pokemon-panel-transition"
-                  unmountOnExit
-                  nodeRef={pokemonPanelRef}
-                >
-                  <div ref={pokemonPanelRef} className="pokemon-panel-wrapper">
-                    {(currentAuction || lastKnownAuction) && <CurrentPokemonPanel current_auction={(currentAuction || lastKnownAuction)!} all_pokemon={pokemon} />}
-                  </div>
-                </CSSTransition>
+                {currentAuction && draft.draft_state !== 'COMPLETED' && (
+                  <CurrentPokemonPanel
+                    current_auction={currentAuction}
+                    all_pokemon={pokemon}
+                  />
+                )}
                 <PokemonTablePanel
                   auctions={draft.completed_auctions}
                   pokemon={pokemon}
