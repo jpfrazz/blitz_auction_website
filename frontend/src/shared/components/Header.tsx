@@ -5,10 +5,8 @@ import { fetchCurrentUser, changeGuestName } from '../api/draftData';
 import { UserRole } from '../../types';
 
 const navButtons = [
-  { label: "Team Planner", link: "/TeamPlanner" },
   { label: "Leaderboard", link: "/Leaderboard" },
   { label: "Stats", link: "/Stats" },
-  { label: "Pokédex", link: "/Pokedex" },
   { label: "FAQ", link: "/FAQ" },
 ];
 
@@ -128,6 +126,19 @@ function Header() {
               </Link>
               <Link to="/PatchNotes" className="navButton navDropdownItem" onClick={scrollToTop} target={linkTarget} rel={linkRel}>
                 Patch Notes
+              </Link>
+            </div>
+          </div>
+          <div className="navDropdown">
+            <button className="navButton navDropdownTrigger" type="button">
+              Pokémon
+            </button>
+            <div className="navDropdownMenu">
+              <Link to="/Pokedex" className="navButton navDropdownItem" onClick={scrollToTop} target={linkTarget} rel={linkRel}>
+                Pokédex
+              </Link>
+              <Link to="/TeamPlanner" className="navButton navDropdownItem" onClick={scrollToTop} target={linkTarget} rel={linkRel}>
+                Team Planner
               </Link>
             </div>
           </div>

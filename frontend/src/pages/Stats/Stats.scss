@@ -120,6 +120,8 @@
 .stats-panel {
   .table-wrap {
     overflow-x: auto;
+    overflow-y: auto;
+    max-height: 750px;
     border: 1px solid #29353d;
     border-radius: 10px;
   }
@@ -139,6 +141,9 @@
   }
 
   th {
+    position: sticky;
+    top: 0;
+    z-index: 10;
     color: #92a6b0;
     font-weight: 700;
     text-transform: uppercase;

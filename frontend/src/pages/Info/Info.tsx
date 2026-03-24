@@ -681,7 +681,7 @@ const Info = () => (
               <tr><td>Gym 4</td><td>29</td><td>7,250</td></tr>
               <tr><td>Gym 5</td><td>32</td><td>8,000</td></tr>
               <tr><td>Gym 6</td><td>35</td><td>8,750</td></tr>
-              <tr><td>Gym 7</td><td>42</td><td>10,250</td></tr>
+              <tr><td>Gym 7</td><td>42</td><td>10,500</td></tr>
               <tr><td>Gym 8</td><td>48</td><td>12,000</td></tr>
               <tr><td>Elite 4</td><td>58</td><td>-</td></tr>
             </tbody>
