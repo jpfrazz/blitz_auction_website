@@ -32,11 +32,11 @@ const excludedPokemonNames = new Set([
 ]);
 
 function formatPokemonName(name: string): string {
-  const cleaned = name.toLowerCase().replace(/'/g, '');
-  if (cleaned === 'farfetchd galar' || cleaned === 'farfetchd-galar') {
-    return 'farfetch\'d';
+  const lower = name.toLowerCase();
+  if (lower.startsWith("farfetch'd")) {
+    return "farfetch'd";
   }
-  return cleaned;
+  return lower.replace(/'/g, '');
 }
 
 function parseLegacyCost(cost: string): number | null {

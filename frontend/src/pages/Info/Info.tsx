@@ -262,7 +262,7 @@ const Info = () => (
             <div className="slateport-market-title">Badge 4 — 8000</div>
             <ul className="slateport-list">
               <li className="tm-ground">Earthquake</li>
-              <li className="tm-normal">Hone Claws</li>
+              <li className="tm-dark">Hone Claws</li>
             </ul>
           </div>
         </div>

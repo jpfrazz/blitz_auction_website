@@ -48,11 +48,11 @@ const excludedPokemonNames = new Set([
 ]);
 
 function formatPokemonName(name: string): string {
-  const cleaned = name.toLowerCase().replace(/'/g, '');
-  if (cleaned === 'farfetchd galar' || cleaned === 'farfetchd-galar') {
-    return 'farfetch\'d';
+  const lower = name.toLowerCase();
+  if (lower.startsWith("farfetch'd")) {
+    return "farfetch'd";
   }
-  return cleaned;
+  return lower.replace(/'/g, '');
 }
 
 function toLabel(value: string): string {
@@ -175,15 +175,50 @@ const PokemonStatsTab: React.FC<PokemonStatsTabProps> = ({
   const aggregatedPokemon = useMemo<PokemonAggregate[]>(() => {
     const sales: PokemonSaleRow[] = [];
 
+    // Per user request, map certain base names to their regional forms.
+    // This applies to both legacy data (which is formless) and live data (if it defaults to base).
+    const formOverrides: Record<string, { form: string; key: string }> = {
+      'Wooper': { form: 'Paldea', key: 'Wooper-Paldea' },
+      'Vulpix': { form: 'Alola', key: 'Vulpix-Alola' },
+      'Voltorb': { form: 'Hisui', key: 'Voltorb-Hisui' },
+      "Farfetch'd": { form: 'Galar', key: "Farfetch'd-Galar" },
+      'Sandshrew': { form: 'Alola', key: 'Sandshrew-Alola' },
+      'Meowth': { form: 'Galar', key: 'Meowth-Galar' },
+      'Zigzagoon': { form: 'Galar', key: 'Zigzagoon-Galar' },
+    };
+
+    const resolveIdentity = (name: string, form: string) => {
+      let currentName = name;
+      let currentForm = form;
+
+      // Handle names that include the form, e.g., "Farfetch'd-Galar"
+      const knownForms = ['Alola', 'Galar', 'Hisui', 'Paldea'];
+      for (const f of knownForms) {
+        if (currentName.endsWith(`-${f}`)) {
+          currentName = currentName.slice(0, -(f.length + 1));
+          currentForm = f;
+          break;
+        }
+      }
+
+      if ((!currentForm || currentForm === 'base') && formOverrides[currentName]) {
+        return { name: currentName, ...formOverrides[currentName] };
+      }
+      const effectiveForm = currentForm && currentForm !== 'base' ? currentForm : '';
+      const key = `${currentName}${effectiveForm ? '-' + effectiveForm : ''}`;
+      return { name: currentName, form: effectiveForm, key };
+    };
+
     sortedAuctions.forEach((auction) => {
       const bid = auction.winning_bid;
       if (bid === null) {
         return;
       }
+      const { key, name, form } = resolveIdentity(auction.name, auction.form || '');
       sales.push({
-        key: `${auction.name}${auction.form && auction.form !== 'base' ? '-' + auction.form : ''}`,
-        name: auction.name,
-        form: auction.form || '',
+        key,
+        name,
+        form,
         bid,
       });
     });
@@ -197,10 +232,12 @@ const PokemonStatsTab: React.FC<PokemonStatsTabProps> = ({
         return;
       }
 
+      const { name, form, key } = resolveIdentity(legacyRow.pokemon, '');
+
       sales.push({
-        key: legacyRow.pokemon,
-        name: legacyRow.pokemon,
-        form: '',
+        key,
+        name,
+        form,
         bid,
       });
     });
@@ -232,14 +269,14 @@ const PokemonStatsTab: React.FC<PokemonStatsTabProps> = ({
     (stats?.legacy ?? []).forEach((legacyRow) => {
       const bid = parseLegacyCost(legacyRow.cost);
       if (bid === null || excludedPokemonNames.has(legacyRow.pokemon)) return;
-      const key = legacyRow.pokemon;
+      const { key } = resolveIdentity(legacyRow.pokemon, '');
       if (!historicGrouped.has(key)) historicGrouped.set(key, []);
       historicGrouped.get(key)!.push(bid);
     });
 
     sortedAuctions.forEach((auction) => {
       if (!recentDraftIds.has(auction.draft_id) && auction.winning_bid !== null) {
-        const key = `${auction.name}${auction.form && auction.form !== 'base' ? '-' + auction.form : ''}`;
+        const { key } = resolveIdentity(auction.name, auction.form || '');
         if (!historicGrouped.has(key)) historicGrouped.set(key, []);
         historicGrouped.get(key)!.push(auction.winning_bid);
       }
@@ -439,7 +476,7 @@ const PokemonStatsTab: React.FC<PokemonStatsTabProps> = ({
                             }}
                           />
                         </div>
-                        <span>{entry.name === "Farfetch'd-Galar" ? "Farfetch'd" : entry.name} {entry.form && entry.form !== 'base' && entry.name !== "Farfetch'd" ? `(${toLabel(entry.form)})` : ''}</span>
+                        <span>{entry.name} {entry.form && entry.form !== 'base' ? `(${toLabel(entry.form)})` : ''}</span>
                       </div>
                     </td>
                     <td>${entry.avgWinningBid.toLocaleString()}</td>

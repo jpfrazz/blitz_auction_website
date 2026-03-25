@@ -63,7 +63,7 @@ const FAQ = () => (
             </ul>
           </li>
           <li>
-            Besides your starter Eevee, you can only use Pokemon you purchased at auction. They’re all in your notebook at the start of the game. You can’t catch Pokemon.
+            Besides your starter Eevee and <a href="/Pokedex?tab=rental">rental Pokemon:</a>, you can only use Pokemon you purchased at auction. They’re all in your notebook at the start of the game. You can’t catch Pokemon.
           </li>
           <li>The first player to beat the game wins.</li>
           <li>

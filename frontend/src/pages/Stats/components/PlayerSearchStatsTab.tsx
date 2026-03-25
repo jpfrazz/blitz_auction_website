@@ -23,11 +23,11 @@ interface PokemonDraftSummary {
 
 function formatPokemonName(name: string | undefined): string {
   if (!name) return '';
-  const cleaned = name.toLowerCase().replace(/'/g, '');
-  if (cleaned === 'farfetchd galar' || cleaned === 'farfetchd-galar') {
-    return 'farfetch\'d';
+  const lower = name.toLowerCase();
+  if (lower.startsWith("farfetch'd")) {
+    return "farfetch'd";
   }
-  return cleaned;
+  return lower.replace(/'/g, '');
 }
 
 function getPlacementLabel(placement: number | null, isRanked: boolean): string {
