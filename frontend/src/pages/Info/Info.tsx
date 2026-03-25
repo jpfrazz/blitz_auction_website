@@ -202,7 +202,7 @@ const Info = () => (
           The following items are available for purchase at the Slateport Market. At each badge threshold, the items below are added to the merchant's stock.
         </p>
         <h3 className="info-subheading">TMs</h3>
-        <div className="slateport-market-grid">
+        <div className="slateport-market-grid tms">
           <div className="slateport-market-card">
             <div className="slateport-market-title">Game Start — 1000</div>
             <ul className="slateport-list">
