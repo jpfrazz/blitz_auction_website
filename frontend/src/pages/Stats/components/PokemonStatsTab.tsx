@@ -123,35 +123,44 @@ const PokemonStatsTab: React.FC<PokemonStatsTabProps> = ({
     }));
   };
 
-  const draftAuctionCounts = useMemo(() => {
-    const counts = new Map<string, number>();
+  const draftStats = useMemo(() => {
+    const statsMap = new Map<string, { total: number; minBidCount: number }>();
     (stats?.auctions ?? []).forEach((a) => {
       if (a.winning_bid !== null) {
-        counts.set(a.draft_id, (counts.get(a.draft_id) || 0) + 1);
+        const curr = statsMap.get(a.draft_id) || { total: 0, minBidCount: 0 };
+        curr.total += 1;
+        if (a.winning_bid === 100) {
+          curr.minBidCount += 1;
+        }
+        statsMap.set(a.draft_id, curr);
       }
     });
-    return counts;
+    return statsMap;
   }, [stats?.auctions]);
 
   const validDraftIds = useMemo(() => {
     const valid = new Set<string>();
-    draftAuctionCounts.forEach((count, id) => {
-      if (count >= resolvedMinAuctionsFilter) {
+    // Threshold: Exclude drafts where:
+    // 1. More than 3 Pokemon sold for the minimum $100.
+    // 2. The total number of Pokemon sold is not a multiple of 8.
+    draftStats.forEach((data, id) => {
+      if (data.total >= resolvedMinAuctionsFilter && data.minBidCount <= 3 && data.total % 8 === 0) {
         valid.add(id);
       }
     });
     return valid;
-  }, [draftAuctionCounts, resolvedMinAuctionsFilter]);
+  }, [draftStats, resolvedMinAuctionsFilter]);
 
   const hiddenDraftCount = useMemo(() => {
     let hidden = 0;
-    draftAuctionCounts.forEach((count) => {
-      if (count < resolvedMinAuctionsFilter) {
+    draftStats.forEach((data) => {
+      // Count as hidden if it fails the size filter OR the quality check OR the multiple-of-8 check
+      if (data.total < resolvedMinAuctionsFilter || data.minBidCount > 3 || data.total % 8 !== 0) {
         hidden += 1;
       }
     });
     return hidden;
-  }, [draftAuctionCounts, resolvedMinAuctionsFilter]);
+  }, [draftStats, resolvedMinAuctionsFilter]);
 
   const sortedAuctions = useMemo(() => {
     return [...(stats?.auctions ?? [])]
@@ -184,6 +193,7 @@ const PokemonStatsTab: React.FC<PokemonStatsTabProps> = ({
       "Farfetch'd": { form: 'Galar', key: "Farfetch'd-Galar" },
       'Sandshrew': { form: 'Alola', key: 'Sandshrew-Alola' },
       'Meowth': { form: 'Galar', key: 'Meowth-Galar' },
+      'Slowpoke': { form: 'Galar', key: 'Slowpoke-Galar' },
       'Zigzagoon': { form: 'Galar', key: 'Zigzagoon-Galar' },
     };
 

@@ -101,25 +101,34 @@ const Stats: React.FC = () => {
     return map;
   }, [stats?.players]);
 
-  const draftAuctionCounts = useMemo(() => {
-    const counts = new Map<string, number>();
+  const draftStats = useMemo(() => {
+    const statsMap = new Map<string, { total: number; minBidCount: number }>();
     (stats?.auctions ?? []).forEach((a) => {
       if (a.winning_bid !== null) {
-        counts.set(a.draft_id, (counts.get(a.draft_id) || 0) + 1);
+        const curr = statsMap.get(a.draft_id) || { total: 0, minBidCount: 0 };
+        curr.total += 1;
+        if (a.winning_bid === 100) {
+          curr.minBidCount += 1;
+        }
+        statsMap.set(a.draft_id, curr);
       }
     });
-    return counts;
+    return statsMap;
   }, [stats?.auctions]);
 
   const validDraftIds = useMemo(() => {
     const valid = new Set<string>();
-    draftAuctionCounts.forEach((count, id) => {
-      if (count >= minAuctionsFilter) {
+    // Threshold: Exclude drafts where:
+    // 1. More than 3 Pokemon sold for the minimum $100.
+    // 2. The total number of Pokemon sold is not a multiple of 8.
+    // This filters out test drafts or incomplete "junk" data.
+    draftStats.forEach((data, id) => {
+      if (data.total >= minAuctionsFilter && data.minBidCount <= 3 && data.total % 8 === 0) {
         valid.add(id);
       }
     });
     return valid;
-  }, [draftAuctionCounts, minAuctionsFilter]);
+  }, [draftStats, minAuctionsFilter]);
 
   const sortedAuctions = useMemo(() => {
     const sorted = [...(stats?.auctions ?? [])]
@@ -231,37 +240,44 @@ const Stats: React.FC = () => {
       draftId: string;
       teamCount: number;
       auctionCount: number;
-      winningBidSum: number;
       highestBid: number;
+      date: string | null;
     }>();
 
     (stats?.teams ?? []).forEach((team) => {
-      if (!validDraftIds.has(team.draft_id)) return;
+      const dStat = draftStats.get(team.draft_id);
+      if (!dStat || dStat.total < minAuctionsFilter) return;
       const existing = drafts.get(team.draft_id) || {
         draftId: team.draft_id,
         teamCount: 0,
         auctionCount: 0,
-        winningBidSum: 0,
         highestBid: 0,
+        date: null,
       };
       existing.teamCount += 1;
       drafts.set(team.draft_id, existing);
     });
 
-    sortedAuctions.forEach((auction) => {
+    (stats?.auctions ?? []).forEach((auction) => {
+      if (auction.winning_bid === null) return;
+      const dStat = draftStats.get(auction.draft_id);
+      if (!dStat || dStat.total < minAuctionsFilter) return;
+
       const existing = drafts.get(auction.draft_id) || {
         draftId: auction.draft_id,
         teamCount: 0,
         auctionCount: 0,
-        winningBidSum: 0,
         highestBid: 0,
+        date: null,
       };
 
       const winningBid = auction.winning_bid ?? 0;
       existing.auctionCount += 1;
-      existing.winningBidSum += winningBid;
       if (winningBid > existing.highestBid) {
         existing.highestBid = winningBid;
+      }
+      if (!existing.date && auction.created_at) {
+        existing.date = auction.created_at;
       }
 
       drafts.set(auction.draft_id, existing);
@@ -270,9 +286,7 @@ const Stats: React.FC = () => {
     const result = Array.from(drafts.values())
       .map((draft) => ({
         ...draft,
-        avgWinningBid: draft.auctionCount > 0
-          ? Math.round(draft.winningBidSum / draft.auctionCount)
-          : 0,
+        formattedDate: draft.date ? new Date(draft.date).toLocaleDateString() : '-',
       }))
       .sort((a, b) => b.auctionCount - a.auctionCount);
 
@@ -284,10 +298,11 @@ const Stats: React.FC = () => {
     });
 
     return result;
-  }, [sortedAuctions, stats?.teams, validDraftIds]);
+  }, [stats?.auctions, stats?.teams, minAuctionsFilter, draftStats]);
 
   const kpis = useMemo(() => {
-    const uniqueDrafts = new Set((stats?.teams ?? []).filter((t) => validDraftIds.has(t.draft_id)).map((team) => team.draft_id)).size;
+    // Adding 152 to account for legacy drafts
+    const uniqueDrafts = new Set((stats?.teams ?? []).filter((t) => validDraftIds.has(t.draft_id)).map((team) => team.draft_id)).size + 152;
     const uniquePlayers = playerSummary.length;
 
     const allSales = [
@@ -415,7 +430,7 @@ const Stats: React.FC = () => {
                       <th>Draft ID</th>
                       <th>Players</th>
                       <th>Pokemon Sold</th>
-                      <th>Avg Winning Bid</th>
+                      <th>Date</th>
                       <th>Highest Bid</th>
                     </tr>
                   </thead>
@@ -424,21 +439,24 @@ const Stats: React.FC = () => {
                       <React.Fragment key={draft.draftId}>
                         <tr
                           className="draft-row-clickable stats-row-animate"
-                          style={{ animationDelay: `${200 + index * 30}ms` }}
+                          style={{ 
+                            animationDelay: `${200 + index * 30}ms`,
+                            backgroundColor: !validDraftIds.has(draft.draftId) ? 'rgba(255, 0, 0, 0.1)' : undefined
+                          }}
                           onClick={() => setExpandedDraftId((prev) => (prev === draft.draftId ? null : draft.draftId))}
                         >
                           <td className="mono">{draft.draftId}</td>
                           <td>{draft.teamCount}</td>
                           <td>{draft.auctionCount}</td>
-                          <td>${draft.avgWinningBid.toLocaleString()}</td>
+                          <td>{draft.formattedDate}</td>
                           <td>${draft.highestBid.toLocaleString()}</td>
                         </tr>
                         {expandedDraftId === draft.draftId && (
                           <tr className="draft-details-row">
                             <td colSpan={5}>
                               <div className="draft-details-grid">
-                                {sortedAuctions
-                                  .filter((a) => a.draft_id === draft.draftId)
+                                {(stats?.auctions ?? [])
+                                  .filter((a) => a.draft_id === draft.draftId && a.winning_bid !== null)
                                   .sort((a, b) => (b.winning_bid ?? 0) - (a.winning_bid ?? 0))
                                   .map((auction) => {
                                     const winnerKey = auction.winning_user_id || auction.winning_guest_id || '';
