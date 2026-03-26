@@ -121,9 +121,10 @@ const Stats: React.FC = () => {
     // Threshold: Exclude drafts where:
     // 1. More than 3 Pokemon sold for the minimum $100.
     // 2. The total number of Pokemon sold is not a multiple of 8.
+    // 3. Fewer than 16 Pokemon were sold.
     // This filters out test drafts or incomplete "junk" data.
     draftStats.forEach((data, id) => {
-      if (data.total >= minAuctionsFilter && data.minBidCount <= 3 && data.total % 8 === 0) {
+      if (data.total >= minAuctionsFilter && data.total >= 16 && data.minBidCount <= 3 && data.total % 8 === 0) {
         valid.add(id);
       }
     });
@@ -284,10 +285,20 @@ const Stats: React.FC = () => {
     });
 
     const result = Array.from(drafts.values())
-      .map((draft) => ({
-        ...draft,
-        formattedDate: draft.date ? new Date(draft.date).toLocaleDateString() : '-',
-      }))
+      .map((draft) => {
+        const dStat = draftStats.get(draft.draftId);
+        const errors = [];
+        if (dStat) {
+          if (dStat.total < 16) errors.push("Fewer than 16 Pokemon sold");
+          if (dStat.minBidCount > 3) errors.push("More than 3 Pokemon sold for $100");
+          if (dStat.total % 8 !== 0) errors.push("Total Pokemon sold is not a multiple of 8");
+        }
+        return {
+          ...draft,
+          formattedDate: draft.date ? new Date(draft.date).toLocaleDateString() : '-',
+          validationError: errors.join('. '),
+        };
+      })
       .sort((a, b) => b.auctionCount - a.auctionCount);
 
     console.log('[Stats] draftSummary computed:', {
@@ -428,9 +439,9 @@ const Stats: React.FC = () => {
                   <thead>
                     <tr>
                       <th>Draft ID</th>
+                      <th>Date</th>
                       <th>Players</th>
                       <th>Pokemon Sold</th>
-                      <th>Date</th>
                       <th>Highest Bid</th>
                     </tr>
                   </thead>
@@ -439,6 +450,7 @@ const Stats: React.FC = () => {
                       <React.Fragment key={draft.draftId}>
                         <tr
                           className="draft-row-clickable stats-row-animate"
+                          title={!validDraftIds.has(draft.draftId) ? `Excluded from stats: ${draft.validationError}` : undefined}
                           style={{ 
                             animationDelay: `${200 + index * 30}ms`,
                             backgroundColor: !validDraftIds.has(draft.draftId) ? 'rgba(255, 0, 0, 0.1)' : undefined
@@ -446,9 +458,9 @@ const Stats: React.FC = () => {
                           onClick={() => setExpandedDraftId((prev) => (prev === draft.draftId ? null : draft.draftId))}
                         >
                           <td className="mono">{draft.draftId}</td>
+                          <td>{draft.formattedDate}</td>
                           <td>{draft.teamCount}</td>
                           <td>{draft.auctionCount}</td>
-                          <td>{draft.formattedDate}</td>
                           <td>${draft.highestBid.toLocaleString()}</td>
                         </tr>
                         {expandedDraftId === draft.draftId && (

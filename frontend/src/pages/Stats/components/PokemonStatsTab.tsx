@@ -143,8 +143,9 @@ const PokemonStatsTab: React.FC<PokemonStatsTabProps> = ({
     // Threshold: Exclude drafts where:
     // 1. More than 3 Pokemon sold for the minimum $100.
     // 2. The total number of Pokemon sold is not a multiple of 8.
+    // 3. Fewer than 16 Pokemon were sold.
     draftStats.forEach((data, id) => {
-      if (data.total >= resolvedMinAuctionsFilter && data.minBidCount <= 3 && data.total % 8 === 0) {
+      if (data.total >= resolvedMinAuctionsFilter && data.total >= 16 && data.minBidCount <= 3 && data.total % 8 === 0) {
         valid.add(id);
       }
     });
@@ -154,8 +155,8 @@ const PokemonStatsTab: React.FC<PokemonStatsTabProps> = ({
   const hiddenDraftCount = useMemo(() => {
     let hidden = 0;
     draftStats.forEach((data) => {
-      // Count as hidden if it fails the size filter OR the quality check OR the multiple-of-8 check
-      if (data.total < resolvedMinAuctionsFilter || data.minBidCount > 3 || data.total % 8 !== 0) {
+      // Count as hidden if it fails the size filter OR the floor filter OR the quality check OR the multiple-of-8 check
+      if (data.total < resolvedMinAuctionsFilter || data.total < 16 || data.minBidCount > 3 || data.total % 8 !== 0) {
         hidden += 1;
       }
     });
