@@ -50,6 +50,7 @@ const Stats: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<StatsTab>('pokemon');
   const [expandedDraftId, setExpandedDraftId] = useState<string | null>(null);
+  const [competitiveOnly, setCompetitiveOnly] = useState(true);
 
   useEffect(() => {
     const load = async () => {
@@ -459,7 +460,19 @@ const Stats: React.FC = () => {
         {activeTab === 'drafts' && (
           <section className="stats-content-grid">
             <article className="stats-panel">
-              <h2>Draft Breakdown</h2>
+              <div className="stats-panel-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+                <h2 style={{ margin: 0 }}>Draft Breakdown</h2>
+                <div className="competitive-toggle-wrapper" style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '1.1rem' }}>
+                  <label htmlFor="competitive-toggle" style={{ cursor: 'pointer', fontWeight: 500 }}>Competitive Drafts only</label>
+                  <input
+                    id="competitive-toggle"
+                    type="checkbox"
+                    checked={competitiveOnly}
+                    onChange={(e) => setCompetitiveOnly(e.target.checked)}
+                    style={{ width: '16px', height: '16px', cursor: 'pointer' }}
+                  />
+                </div>
+              </div>
               <div className="table-wrap">
                 <table>
                   <thead>
@@ -473,7 +486,9 @@ const Stats: React.FC = () => {
                     </tr>
                   </thead>
                   <tbody>
-                    {draftSummary.map((draft, index) => (
+                    {draftSummary
+                      .filter((draft) => !competitiveOnly || validDraftIds.has(draft.draftId))
+                      .map((draft, index) => (
                       <React.Fragment key={draft.draftId}>
                         <tr
                           className="draft-row-clickable stats-row-animate"
