@@ -33,7 +33,6 @@ const TierListTab = () => {
         stats={stats}
         loading={loading}
         error={error}
-        showDraftSizeFilter={false}
       />
     </div>
   );

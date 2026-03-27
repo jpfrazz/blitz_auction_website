@@ -49,7 +49,6 @@ const Stats: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<StatsTab>('pokemon');
-  const [minAuctionsFilter, setMinAuctionsFilter] = useState<number>(40);
   const [expandedDraftId, setExpandedDraftId] = useState<string | null>(null);
 
   useEffect(() => {
@@ -121,15 +120,15 @@ const Stats: React.FC = () => {
     // Threshold: Exclude drafts where:
     // 1. More than 3 Pokemon sold for the minimum $100.
     // 2. The total number of Pokemon sold is not a multiple of 8.
-    // 3. Fewer than 16 Pokemon were sold.
+    // 3. Fewer than 40 Pokemon were sold.
     // This filters out test drafts or incomplete "junk" data.
     draftStats.forEach((data, id) => {
-      if (data.total >= minAuctionsFilter && data.total >= 16 && data.minBidCount <= 3 && data.total % 8 === 0) {
+      if (data.total >= 40 && data.minBidCount <= 3 && data.total % 8 === 0) {
         valid.add(id);
       }
     });
     return valid;
-  }, [draftStats, minAuctionsFilter]);
+  }, [draftStats]);
 
   const sortedAuctions = useMemo(() => {
     const sorted = [...(stats?.auctions ?? [])]
@@ -247,7 +246,8 @@ const Stats: React.FC = () => {
 
     (stats?.teams ?? []).forEach((team) => {
       const dStat = draftStats.get(team.draft_id);
-      if (!dStat || dStat.total < minAuctionsFilter) return;
+      if (!dStat || dStat.total < 1) return;
+      if (!dStat || dStat.total < 16) return;
       const existing = drafts.get(team.draft_id) || {
         draftId: team.draft_id,
         teamCount: 0,
@@ -262,7 +262,8 @@ const Stats: React.FC = () => {
     (stats?.auctions ?? []).forEach((auction) => {
       if (auction.winning_bid === null) return;
       const dStat = draftStats.get(auction.draft_id);
-      if (!dStat || dStat.total < minAuctionsFilter) return;
+      if (!dStat || dStat.total < 1) return;
+      if (!dStat || dStat.total < 16) return;
 
       const existing = drafts.get(auction.draft_id) || {
         draftId: auction.draft_id,
@@ -289,7 +290,7 @@ const Stats: React.FC = () => {
         const dStat = draftStats.get(draft.draftId);
         const errors = [];
         if (dStat) {
-          if (dStat.total < 16) errors.push("Fewer than 16 Pokemon sold");
+          if (dStat.total < 40) errors.push("Fewer than 40 Pokemon sold");
           if (dStat.minBidCount > 3) errors.push("More than 3 Pokemon sold for $100");
           if (dStat.total % 8 !== 0) errors.push("Total Pokemon sold is not a multiple of 8");
         }
@@ -309,7 +310,7 @@ const Stats: React.FC = () => {
     });
 
     return result;
-  }, [stats?.auctions, stats?.teams, minAuctionsFilter, draftStats]);
+  }, [stats?.auctions, stats?.teams, draftStats]);
 
   const kpis = useMemo(() => {
     // Adding 152 to account for legacy drafts
@@ -452,9 +453,6 @@ const Stats: React.FC = () => {
             stats={stats}
             loading={loading}
             error={error}
-            minAuctionsFilter={minAuctionsFilter}
-            onMinAuctionsFilterChange={setMinAuctionsFilter}
-            showDraftSizeFilter={true}
           />
         )}
 

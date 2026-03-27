@@ -30,9 +30,6 @@ interface PokemonStatsTabProps {
   stats: StatsPageResponse | null;
   loading?: boolean;
   error?: string | null;
-  minAuctionsFilter?: number;
-  onMinAuctionsFilterChange?: (value: number) => void;
-  showDraftSizeFilter?: boolean;
 }
 
 const excludedPokemonNames = new Set([
@@ -95,26 +92,12 @@ const PokemonStatsTab: React.FC<PokemonStatsTabProps> = ({
   stats,
   loading = false,
   error = null,
-  minAuctionsFilter,
-  onMinAuctionsFilterChange,
-  showDraftSizeFilter = true,
 }) => {
-  const [internalMinAuctionsFilter, setInternalMinAuctionsFilter] = useState<number>(40);
   const [pokemonSearch, setPokemonSearch] = useState('');
   const [sortConfig, setSortConfig] = useState<{ key: SortKey; direction: 'asc' | 'desc' }>({
     key: 'avgWinningBid',
     direction: 'desc',
   });
-
-  const resolvedMinAuctionsFilter = minAuctionsFilter ?? internalMinAuctionsFilter;
-
-  const setResolvedMinAuctionsFilter = (nextValue: number) => {
-    if (onMinAuctionsFilterChange) {
-      onMinAuctionsFilterChange(nextValue);
-      return;
-    }
-    setInternalMinAuctionsFilter(nextValue);
-  };
 
   const handleSort = (key: SortKey) => {
     setSortConfig((current) => ({
@@ -143,25 +126,14 @@ const PokemonStatsTab: React.FC<PokemonStatsTabProps> = ({
     // Threshold: Exclude drafts where:
     // 1. More than 3 Pokemon sold for the minimum $100.
     // 2. The total number of Pokemon sold is not a multiple of 8.
-    // 3. Fewer than 16 Pokemon were sold.
+    // 3. Fewer than 40 Pokemon were sold.
     draftStats.forEach((data, id) => {
-      if (data.total >= resolvedMinAuctionsFilter && data.total >= 16 && data.minBidCount <= 3 && data.total % 8 === 0) {
+      if (data.total >= 40 && data.minBidCount <= 3 && data.total % 8 === 0) {
         valid.add(id);
       }
     });
     return valid;
-  }, [draftStats, resolvedMinAuctionsFilter]);
-
-  const hiddenDraftCount = useMemo(() => {
-    let hidden = 0;
-    draftStats.forEach((data) => {
-      // Count as hidden if it fails the size filter OR the floor filter OR the quality check OR the multiple-of-8 check
-      if (data.total < resolvedMinAuctionsFilter || data.total < 16 || data.minBidCount > 3 || data.total % 8 !== 0) {
-        hidden += 1;
-      }
-    });
-    return hidden;
-  }, [draftStats, resolvedMinAuctionsFilter]);
+  }, [draftStats]);
 
   const sortedAuctions = useMemo(() => {
     return [...(stats?.auctions ?? [])]
@@ -400,36 +372,20 @@ const PokemonStatsTab: React.FC<PokemonStatsTabProps> = ({
 
   return (
     <section className="pokemon-stats-tab">
-      <div className="pokemon-stats-controls">
-        {showDraftSizeFilter && (
-          <div className="stats-filter-bar">
-            <label className="stats-filter-label">
-              Include only drafts of minimum size ({hiddenDraftCount} hidden)
-              <input
-                className="stats-filter-input"
-                type="number"
-                min={0}
-                value={resolvedMinAuctionsFilter}
-                onChange={(e) => setResolvedMinAuctionsFilter(Math.max(0, Number(e.target.value)))}
-              />
-            </label>
-          </div>
-        )}
-
-        <div className="pokemon-search-bar">
-          <input
-            className="pokemon-search-input"
-            type="text"
-            placeholder="Search Pokemon name..."
-            value={pokemonSearch}
-            onChange={(e) => setPokemonSearch(e.target.value)}
-          />
-        </div>
-      </div>
-
       <section className="stats-content-grid">
         <article className="stats-panel">
-          <h2>Cost Breakdown</h2>
+          <div className="stats-panel-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+            <h2 style={{ margin: 0 }}>Cost Breakdown</h2>
+            <div className="pokemon-search-bar">
+              <input
+                className="pokemon-search-input"
+                type="text"
+                placeholder="Search Pokemon name..."
+                value={pokemonSearch}
+                onChange={(e) => setPokemonSearch(e.target.value)}
+              />
+            </div>
+          </div>
           <div className="table-wrap">
             <table>
               <thead>

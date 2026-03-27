@@ -19,6 +19,8 @@ const FAQ = () => (
           <li><a href="#how-do-i-play">How do I play?</a></li>
           <li><a href="#what-are-the-rules">What are the rules?</a></li>
           <li><a href="#how-do-i-draft-with-my-friends">How do I draft with my friends?</a></li>
+          <li><a href="#why-is-my-draft-red">Why is my draft shaded red in the stats tab?</a></li>
+          <li><a href="#can-you-add-a-skip-button">Can you add a skip button to the draft?</a></li>
           <li><a href="#can-i-play-by-myself">Can I play by myself without drafting?</a></li>
           <li><a href="#whats-changed">So, what's changed from vanilla Emerald?</a></li>
           <li><a href="#what-do-the-new-items-do">What do the new items do?</a></li>
@@ -86,9 +88,8 @@ const FAQ = () => (
             Head to <a href="/auctionsetup" target="_blank" rel="noopener noreferrer">Auction Setup</a>.
           </li>
           <li>
-            The official ruleset uses the following settings:
+            The official ruleset uses the following setting:
             <ul>
-              <li>Default Funds: 20,000 per player</li>
               <li>Total Pokémon: 8 * Number of players (64 for 8-player drafts)</li>
             </ul>
           </li>
@@ -101,11 +102,44 @@ const FAQ = () => (
         </ol>
       </section>
 
+      <section id="why-is-my-draft-red" className="faq-section" style={{ scrollMarginTop: '120px' }}>
+        <h2 className="faq-question">Why is my draft shaded red in the stats tab?</h2>
+        <hr />
+        <p className="faq-answer">
+          The goal of the stats section is to calculate average prices for Pokémon when drafted in races using the official ruleset. The following characteristics disqualify a draft from the statistics:
+        </p>
+        <ol className="faq-answer">
+          <li>Fewer than 40 Pokémon sold</li>
+          <li>More than 3 Pokémon sold for $100</li>
+          <li>Total Pokémon sold is not a multiple of 8</li>
+        </ol>
+        <p className="faq-answer" style={{ marginTop: '1rem' }}>
+          That said, "red" drafts are still preserved in the draft tab for you and your friends to look at! They just don't contribute to Pokémon-price calculations.
+        </p>
+      </section>
+
+      <section id="can-you-add-a-skip-button" className="faq-section" style={{ scrollMarginTop: '120px' }}>
+        <h2 className="faq-question">Can you add a skip button to the draft?</h2>
+        <hr />
+        <p className="faq-answer">
+          If you're wondering this, you're probably misunderstanding how to draft! You're allowed to use as many Pokémon as you draft in your race; getting Pokémon for cheap puts you at a huge advantage! Even the weakest Pokémon in Blitz are worth a few 100; nothing is worthless. There's never a situation where you'd want to skip a Pokémon.
+        </p>
+        <p className="faq-answer" style={{ marginTop: '1rem' }}>
+          For example, if you're drafting with five players (and 40 Pokémon are for sale), and you win 10 Pokémon, not only do you have more Pokemon to use than your opponents, but some of your opponents will be stuck playing with fewer than eight!
+        </p>
+        <p className="faq-answer" style={{ marginTop: '1rem' }}>
+          For this reason, the draft forces players to make a decision: do you want to play with fewer than eight pokemon with lots of powerful top tiers, or more than eight with some low tier heroes?
+        </p>
+      </section>
+
       <section id="can-i-play-by-myself" className="faq-section" style={{ scrollMarginTop: '120px' }}>
         <h2 className="faq-question">Can I play by myself without drafting?</h2>
         <hr />
         <p className="faq-answer">
           Yes! The notebook includes a "Random" option at the bottom of its list. Choose this option eight times to generate yourself a random team of Pokémon, then get racing!
+        </p>
+        <p className="faq-answer" style={{ marginTop: '1rem' }}>
+          Additionally, a "Solo Mode" is accessible by interacting the television in the starting room. This mode adjusts all Pokemon to cost "points," challenging you to construct a team of your choice within an 80 point limit (without any need to draft).
         </p>
       </section>
 
