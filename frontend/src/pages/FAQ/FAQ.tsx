@@ -19,7 +19,7 @@ const FAQ = () => (
           <li><a href="#how-do-i-play">How do I play?</a></li>
           <li><a href="#what-are-the-rules">What are the rules?</a></li>
           <li><a href="#how-do-i-draft-with-my-friends">How do I draft with my friends?</a></li>
-          <li><a href="#why-is-my-draft-red">Why is my draft shaded red in the stats tab?</a></li>
+          <li><a href="#why-is-my-draft-not-green">Why isn't my draft shaded green in the stats tab?</a></li>
           <li><a href="#can-you-add-a-skip-button">Can you add a skip button to the draft?</a></li>
           <li><a href="#can-i-play-by-myself">Can I play by myself without drafting?</a></li>
           <li><a href="#whats-changed">So, what's changed from vanilla Emerald?</a></li>
@@ -102,8 +102,8 @@ const FAQ = () => (
         </ol>
       </section>
 
-      <section id="why-is-my-draft-red" className="faq-section" style={{ scrollMarginTop: '120px' }}>
-        <h2 className="faq-question">Why is my draft shaded red in the stats tab?</h2>
+      <section id="why-is-my-draft-not-green" className="faq-section" style={{ scrollMarginTop: '120px' }}>
+        <h2 className="faq-question">Why isn't my draft shaded green in the stats tab?</h2>
         <hr />
         <p className="faq-answer">
           The goal of the stats section is to calculate average prices for Pokémon when drafted in races using the official ruleset. The following characteristics disqualify a draft from the statistics:
@@ -114,7 +114,7 @@ const FAQ = () => (
           <li>Total Pokémon sold is not a multiple of 8</li>
         </ol>
         <p className="faq-answer" style={{ marginTop: '1rem' }}>
-          That said, "red" drafts are still preserved in the draft tab for you and your friends to look at! They just don't contribute to Pokémon-price calculations.
+          That said, all drafts are still preserved in the draft tab for you and your friends to look at! They just don't contribute to Pokémon-price calculations.
         </p>
       </section>
 

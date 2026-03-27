@@ -493,9 +493,9 @@ const Stats: React.FC = () => {
                         <tr
                           className="draft-row-clickable stats-row-animate"
                           title={!validDraftIds.has(draft.draftId) ? `Excluded from stats: ${draft.validationError}` : undefined}
-                          style={{ 
+                          style={{
                             animationDelay: `${200 + index * 30}ms`,
-                            backgroundColor: !validDraftIds.has(draft.draftId) ? 'rgba(255, 0, 0, 0.1)' : undefined
+                            backgroundColor: validDraftIds.has(draft.draftId) ? 'rgba(76, 175, 80, 0.1)' : undefined
                           }}
                           onClick={() => setExpandedDraftId((prev) => (prev === draft.draftId ? null : draft.draftId))}
                         >
