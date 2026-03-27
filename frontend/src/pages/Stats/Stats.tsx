@@ -299,7 +299,7 @@ const Stats: React.FC = () => {
           validationError: errors.join('. '),
         };
       })
-      .sort((a, b) => b.auctionCount - a.auctionCount);
+      .sort((a, b) => (b.date || '').localeCompare(a.date || ''));
 
     console.log('[Stats] draftSummary computed:', {
       draftCount: result.length,
@@ -343,6 +343,34 @@ const Stats: React.FC = () => {
 
     return result;
   }, [playerSummary.length, sortedAuctions, stats?.legacy, stats?.teams, validDraftIds]);
+
+  const handleDownloadCSV = (draft: any) => {
+    const auctions = (stats?.auctions ?? [])
+      .filter((a) => a.draft_id === draft.draftId && a.winning_bid !== null)
+      .sort((a, b) => (a.created_at || '').localeCompare(b.created_at || ''));
+
+    let csvContent = `Draft ID: ${draft.draftId}\n`;
+    csvContent += `Date: ${draft.formattedDate}\n`;
+    csvContent += `Total Pokemon Sold: ${draft.auctionCount}\n\n`;
+    csvContent += `Order,Pokemon,Drafted By,Cost\n`;
+
+    auctions.forEach((a, index) => {
+      const winnerKey = a.winning_user_id || a.winning_guest_id || '';
+      const winnerName = playersById.get(winnerKey)?.user_name || winnerKey || '-';
+      const safeWinnerName = winnerName.includes(',') ? `"${winnerName.replace(/"/g, '""')}"` : winnerName;
+      csvContent += `${index + 1},${a.name},${safeWinnerName},${a.winning_bid}\n`;
+    });
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', `draft-results-${draft.draftId}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  };
 
   if (loading) {
     return (
@@ -443,6 +471,7 @@ const Stats: React.FC = () => {
                       <th>Players</th>
                       <th>Pokemon Sold</th>
                       <th>Highest Bid</th>
+                      <th style={{ width: '60px' }}></th>
                     </tr>
                   </thead>
                   <tbody>
@@ -462,6 +491,19 @@ const Stats: React.FC = () => {
                           <td>{draft.teamCount}</td>
                           <td>{draft.auctionCount}</td>
                           <td>${draft.highestBid.toLocaleString()}</td>
+                          <td style={{ textAlign: 'center' }}>
+                            <button
+                              className="tab-chip"
+                              style={{ padding: '2px 8px', fontSize: '0.7rem', minWidth: 'auto', margin: 0 }}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleDownloadCSV(draft);
+                              }}
+                              title="Download Results as CSV"
+                            >
+                              CSV
+                            </button>
+                          </td>
                         </tr>
                         {expandedDraftId === draft.draftId && (
                           <tr className="draft-details-row">
