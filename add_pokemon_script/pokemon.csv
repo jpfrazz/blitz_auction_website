@@ -395,6 +395,8 @@ dex_number,name,form,evolves_from_id,evolves_from_form,type1,type2,stage,ability
 542,Leavanny,,541,,Bug,Grass,evo,Swarm,Chlorophyll,Overcoat,75,103,80,70,80,92,"Soothe Bell",,,
 90,Shellder,,,,Water,,base,Shell Armor,Skill Link,Overcoat,30,65,100,45,25,40,,,,
 91,Cloyster,,90,,Water,Ice,evo,Shell Armor,Skill Link,Overcoat,50,95,180,85,45,70,"Water Stone",,,
+422,Shellos,,,,Water,,base,Sticky Hold,Storm Drain,Sand Force,76,48,48,57,62,34,,,,
+423,Gastrodon,,422,,Water,Ground,evo,Sticky Hold,Storm Drain,Sand Force,111,83,68,92,82,39,"Level 30",,,
 403,Shinx,,,,Electric,,base,Rivalry,Intimidate,Guts,45,65,34,40,34,45,,,,
 404,Luxio,,403,,Electric,,evo,Rivalry,Intimidate,Guts,60,85,49,60,49,60,"Level 15",,,
 405,Luxray,,404,,Electric,,evo,Rivalry,Intimidate,Guts,80,120,79,95,79,70,"Level 30",,,

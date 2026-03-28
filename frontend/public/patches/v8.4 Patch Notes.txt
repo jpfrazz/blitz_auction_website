@@ -1,0 +1,53 @@
+3/28/2026
+
+
+-----------------------------------------------
+Balance Adjustments
+-----------------------------------------------
+
+Phoebe Banette Shadow Ball > Phantom Force
+There's nothing to be done about this Banette to make it threatening, but it might as well have the capacity to hit hard
+
+
+Mega Froslass Ability: Snow Warning
+//Revealed in a recent Champions trailer
+
+
+Boomburst added to Learnsets
+Some Pokémon who received the move in ZA have had it added to their sets, including...
+Chimecho (48)
+Flygon (68)
+Komoo-o (78)
+//For a full write-up on how learnsets are handled, see the notes for patch 8.0
+
+
+-----------------------------------------------
+QoL
+-----------------------------------------------
+
+The Pokémon summary screen now displays a Pokémon's attack and special attack stats above its name. This allows players to see at a glance which type of attacker a Pokémon is when learning new moves.
+
+
+-----------------------------------------------
+Bug Fixes
+-----------------------------------------------
+
+Renter NPC can now see if a Pokémon is fainted in your PC
+//Preventing you from dodging the fine for letting a rental Pokémon faint
+
+The Daycare woman now rejects fainted Pokémon
+//Preventing you from dodging the fine for letting a rental Pokémon faint
+
+Solo Mode Eevee now comes at level 15, not 5
+//Oops.
+
+
+-----------------------------------------------
+Pool Additions
+-----------------------------------------------
+
+Shellos
+//Look at that smile!
+//We're a little low on water ever since all of those babies got added. Water is an important type to have readily available in draft, and Shellos was next in line.
+
+

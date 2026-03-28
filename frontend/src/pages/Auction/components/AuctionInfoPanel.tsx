@@ -177,7 +177,7 @@ const AuctionInfoPanel: React.FC<AuctionInfoPanelProps> = ({
       showBidNotification("You don't have enough money for that bid.");
       return;
     }
-    if (bidValue - current_auction.highest_bid > 2000) {
+    if (bidValue - current_auction.highest_bid > 3000) {
       setPendingBid(bidValue);
       setShowBidWarning(true);
       return;
@@ -310,7 +310,7 @@ const AuctionInfoPanel: React.FC<AuctionInfoPanelProps> = ({
       <div className="auction-modal-overlay">
         <div className="auction-modal-content">
           <h3>Whoa, that's a big bid!</h3>
-          <p>Your bid is more than $2000 above the current bid. Are you sure you want to bid so much?</p>
+          <p>Your bid is more than $3000 above the current bid. Are you sure you want to bid so much?</p>
           <div className="auction-modal-actions">
             <button
               className="auction-modal-confirm"

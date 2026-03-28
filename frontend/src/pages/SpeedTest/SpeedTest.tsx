@@ -34,7 +34,7 @@ const SpeedTest = () => (
         Download Patch
       </a>
       <div style={{ color: '#fff', fontSize: '1.1rem', marginBottom: '8px' }}>
-        Current Release: v8.32
+        Current Release:
       </div>
       <div style={{ color: '#ccc', fontSize: '1rem', marginBottom: '8px' }}>
         Once downloaded, apply the patch online using <a href="https://www.marcrobledo.com/RomPatcher.js/" target="_blank" rel="noopener noreferrer" style={{ color: '#4fc3f7' }}>this ROM Patcher</a>

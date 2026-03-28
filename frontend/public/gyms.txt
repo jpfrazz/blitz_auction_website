@@ -4006,7 +4006,7 @@ Level: 53
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
 Ability: Cursed Body
-- Shadow Ball
+- Phantom Force
 - Spite
 - Will O Wisp
 - Feint Attack
