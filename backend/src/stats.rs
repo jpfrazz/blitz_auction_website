@@ -32,6 +32,7 @@ pub struct StatsAuction {
     pub auction_id: i64,
     pub draft_id: uuid::Uuid,
     pub pokedex_id: i32,
+    pub draft_order: i32,
     pub name: String,
     pub form: Option<String>,
     pub winning_bid: Option<i32>,
@@ -72,7 +73,8 @@ pub async fn get_stats_page_data(
         SELECT 
             auction_id, 
             draft_id, 
-            a.pokedex_id, 
+            a.pokedex_id,
+            a.draft_order,
             p.name,
             a.form, 
             winning_bid, 
@@ -82,6 +84,7 @@ pub async fn get_stats_page_data(
         FROM auctions AS a
         JOIN pokemon AS p ON a.pokedex_id = p.pokedex_id AND COALESCE(a.form, '') = p.form
         WHERE winning_bid IS NOT NULL
+        ORDER BY a.draft_id, a.draft_order ASC
         "#
     )
     .fetch_all(&state.db_pool)
