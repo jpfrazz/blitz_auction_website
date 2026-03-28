@@ -349,7 +349,14 @@ const Stats: React.FC = () => {
   const handleDownloadCSV = (draft: any) => {
     const auctions = (stats?.auctions ?? [])
       .filter((a) => a.draft_id === draft.draftId && a.winning_bid !== null)
-      .sort((a, b) => (a.created_at || '').localeCompare(b.created_at || ''));
+      .sort((a, b) => {
+        // Primary sort: sequence in the auction
+        if (a.draft_order !== undefined && b.draft_order !== undefined) {
+          return a.draft_order - b.draft_order;
+        }
+        // Fallback: chronological creation time
+        return (a.created_at || '').localeCompare(b.created_at || '');
+      });
 
     let csvContent = `Draft ID: ${draft.draftId}\n`;
     csvContent += `Date: ${draft.formattedDate}\n`;
