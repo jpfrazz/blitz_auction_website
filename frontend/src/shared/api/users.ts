@@ -188,7 +188,7 @@ const mockLeaderboardData: LeaderboardEntry[] = [
 	},
 ];
 
-const USE_MOCK_LEADERBOARD_API = true; // Set to false to use real API when available
+const USE_MOCK_LEADERBOARD_API = false; // Set to false to use real API when available
 
 export async function fetchLeaderboard(): Promise<LeaderboardEntry[]> {
 	if (USE_MOCK_LEADERBOARD_API) {

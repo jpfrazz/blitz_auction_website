@@ -136,7 +136,7 @@ impl Server {
             .route("/login", get(handlers::discord_oauth_redirect))
             .route("/auth/discord/callback", get(handlers::discord_callback))
             .route("/me", get(handlers::me))
-            .route("/leaderboard", get(handlers::get_leaderboard))
+            .route("/leaderboard", get(stats::get_leaderboard))
             .route("/stats", get(stats::get_stats_page_data))
             .route("/match-history/{user_id}", get(handlers::get_match_history_by_user_id));
 

@@ -3,6 +3,14 @@ import { fetchLeaderboard, LeaderboardEntry } from '../shared/api/users';
 import Header from '../shared/components/Header';
 import './LeaderboardPage.scss';
 
+function formatPokemonName(name: string): string {
+  const lower = name.toLowerCase();
+  if (lower.startsWith("farfetch'd")) {
+    return "farfetch'd";
+  }
+  return lower.replace(/'/g, '');
+}
+
 const LeaderboardPage = () => {
     const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
     const [minGames, setMinGames] = useState(0);
@@ -54,7 +62,7 @@ const LeaderboardPage = () => {
             <Header />
             <div className="leaderboard-container">
             <div className="leaderboard-header">
-                <h1>Blitz Season One is coming soon! Check back at the end of the month to see who's the best of the best.</h1>
+                <h1>Blitz Leaderboard</h1>
                 <div className="filter-container">
                     <label htmlFor="min-games-filter">Minimum Games Played: </label>
                     <input
@@ -86,7 +94,7 @@ const LeaderboardPage = () => {
                                     {player.most_drafted_pokemon.map(p => (
                                         <img
                                             key={`${p.id}-${p.form}`}
-                                            src={`/baseforms/${p.name}.png`}
+                                            src={`/MiniIcons/${formatPokemonName(p.name)}.png`}
                                             alt={p.name}
                                             title={p.name + (p.form ? ` (${p.form})` : '')}
                                             className="leaderboard-pokemon-img"

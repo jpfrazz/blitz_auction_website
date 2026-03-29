@@ -102,10 +102,18 @@ const Stats: React.FC = () => {
   }, [stats?.players]);
 
   const draftStats = useMemo(() => {
-    const statsMap = new Map<string, { total: number; minBidCount: number }>();
+    const statsMap = new Map<string, { total: number; minBidCount: number; teamCount: number }>();
+
+    // Count teams (players) per draft
+    (stats?.teams ?? []).forEach((t) => {
+      const curr = statsMap.get(t.draft_id) || { total: 0, minBidCount: 0, teamCount: 0 };
+      curr.teamCount += 1;
+      statsMap.set(t.draft_id, curr);
+    });
+
     (stats?.auctions ?? []).forEach((a) => {
       if (a.winning_bid !== null) {
-        const curr = statsMap.get(a.draft_id) || { total: 0, minBidCount: 0 };
+        const curr = statsMap.get(a.draft_id) || { total: 0, minBidCount: 0, teamCount: 0 };
         curr.total += 1;
         if (a.winning_bid === 100) {
           curr.minBidCount += 1;
@@ -114,17 +122,17 @@ const Stats: React.FC = () => {
       }
     });
     return statsMap;
-  }, [stats?.auctions]);
+  }, [stats?.auctions, stats?.teams]);
 
   const validDraftIds = useMemo(() => {
     const valid = new Set<string>();
     // Threshold: Exclude drafts where:
     // 1. More than 3 Pokemon sold for the minimum $100.
-    // 2. The total number of Pokemon sold is not a multiple of 8.
+    // 2. The total number of Pokemon sold is not 8 * players.
     // 3. Fewer than 40 Pokemon were sold.
     // This filters out test drafts or incomplete "junk" data.
     draftStats.forEach((data, id) => {
-      if (data.total >= 40 && data.minBidCount <= 3 && data.total % 8 === 0) {
+      if (data.total >= 40 && data.minBidCount <= 3 && data.total === 8 * data.teamCount) {
         valid.add(id);
       }
     });
@@ -293,7 +301,7 @@ const Stats: React.FC = () => {
         if (dStat) {
           if (dStat.total < 40) errors.push("Fewer than 40 Pokemon sold");
           if (dStat.minBidCount > 3) errors.push("More than 3 Pokemon sold for $100");
-          if (dStat.total % 8 !== 0) errors.push("Total Pokemon sold is not a multiple of 8");
+          if (dStat.total !== 8 * dStat.teamCount) errors.push(`Total Pokemon sold (${dStat.total}) is not 8 * players (${dStat.teamCount})`);
         }
         return {
           ...draft,

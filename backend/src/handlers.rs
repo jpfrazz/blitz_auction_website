@@ -1314,7 +1314,7 @@ pub async fn update_admin_draft_team_placements(
     }
 
     let team_rows = sqlx::query(
-        "SELECT team_id
+        "SELECT team_id, user_id, placement
          FROM teams
          WHERE draft_id = $1",
     )
@@ -1335,11 +1335,16 @@ pub async fn update_admin_draft_team_placements(
         ));
     }
 
-    let valid_team_ids: HashSet<i64> = team_rows
-        .into_iter()
-        .map(|row| row.try_get::<i64, _>("team_id"))
-        .collect::<Result<HashSet<_>, _>>()
-        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    // Map old state for win/loss correction and validation
+    let mut old_team_data = HashMap::new();
+    for row in &team_rows {
+        let tid: i64 = row.try_get("team_id").map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+        let uid: Option<String> = row.try_get("user_id").map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+        let place: Option<i32> = row.try_get("placement").map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+        old_team_data.insert(tid, (uid, place));
+    }
+
+    let valid_team_ids: HashSet<i64> = old_team_data.keys().cloned().collect();
 
     let mut seen_team_ids: HashSet<i64> = HashSet::new();
     let mut seen_places: HashSet<i32> = HashSet::new();
@@ -1367,6 +1372,40 @@ pub async fn update_admin_draft_team_placements(
         }
     }
 
+    // Calculate MMR changes using multiplayer ELO logic
+    let mut user_updates = HashMap::new();
+    for entry_i in &request.placements {
+        let (uid_opt, old_place) = old_team_data.get(&entry_i.team_id).unwrap();
+        let Some(user_id) = uid_opt else { continue; };
+
+        let mut mmr_delta = 0.0;
+        let mut wins_adj = 0;
+        let mut losses_adj = 0;
+
+        for entry_j in &request.placements {
+            if entry_i.team_id == entry_j.team_id { continue; }
+            
+            let expected = expected_score(entry_i.pre_match_mmr, entry_j.pre_match_mmr);
+            let result = if entry_i.placement < entry_j.placement { 1.0 } else { 0.0 };
+            mmr_delta += 20.0 * (result - expected);
+        }
+
+        // Adjust wins/losses based on whether they moved into or out of 1st place
+        if let Some(op) = old_place {
+            if *op == 1 && entry_i.placement != 1 {
+                wins_adj = -1;
+                losses_adj = 1;
+            } else if *op != 1 && entry_i.placement == 1 {
+                wins_adj = 1;
+                losses_adj = -1;
+            }
+        } else {
+            if entry_i.placement == 1 { wins_adj = 1; } else { losses_adj = 1; }
+        }
+
+        user_updates.insert(user_id.clone(), (mmr_delta.round() as i32, wins_adj, losses_adj, entry_i.pre_match_mmr));
+    }
+
     let mut tx = state
         .db_pool
         .begin()
@@ -1374,6 +1413,7 @@ pub async fn update_admin_draft_team_placements(
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
 
     for entry in &request.placements {
+        // 1. Update teams table
         sqlx::query(
             "UPDATE teams
              SET placement = $1,
@@ -1388,6 +1428,27 @@ pub async fn update_admin_draft_team_placements(
         .execute(&mut *tx)
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+        // 2. Update users table with new MMR and win/loss tallies
+        if let (Some(uid), _) = old_team_data.get(&entry.team_id).unwrap() {
+            if let Some((delta, w_adj, l_adj, pre_mmr)) = user_updates.get(uid) {
+                sqlx::query(
+                    "UPDATE users
+                     SET mmr = $1 + $2,
+                         wins = wins + $3,
+                         losses = losses + $4
+                     WHERE user_id = $5",
+                )
+                .bind(pre_mmr)
+                .bind(delta)
+                .bind(w_adj)
+                .bind(l_adj)
+                .bind(uid)
+                .execute(&mut *tx)
+                .await
+                .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+            }
+        }
     }
 
     tx.commit()

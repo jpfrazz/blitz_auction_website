@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use axum::{extract::State, Json};
 use serde::Serialize;
 use sqlx::FromRow;
@@ -46,6 +47,41 @@ pub struct StatsLegacyPick {
     pub date: Option<chrono::NaiveDateTime>,
     pub pokemon: String,
     pub cost: String,
+}
+
+#[derive(Serialize)]
+pub struct LeaderboardEntry {
+    pub user_id: String,
+    pub username: String,
+    pub win: i32,
+    pub loss: i32,
+    pub mmr: i32,
+    pub games_played: i32,
+    pub most_drafted_pokemon: Vec<LeaderboardPokemon>,
+}
+
+#[derive(Serialize, FromRow)]
+pub struct LeaderboardPokemon {
+    pub id: i32,
+    pub name: String,
+    pub form: String,
+}
+
+#[derive(FromRow)]
+struct LeaderboardUserRow {
+    pub user_id: String,
+    pub user_name: String,
+    pub wins: i32,
+    pub losses: i32,
+    pub mmr: i32,
+}
+
+#[derive(FromRow)]
+struct UserPokemonRow {
+    pub user_id: String,
+    pub id: i32,
+    pub name: String,
+    pub form: String,
 }
 
 pub async fn get_stats_page_data(
@@ -114,4 +150,64 @@ pub async fn get_stats_page_data(
         auctions,
         legacy,
     }))
+}
+
+pub async fn get_leaderboard(
+    State(state): State<ServerState>,
+) -> Result<Json<Vec<LeaderboardEntry>>, AppError> {
+    let user_rows = sqlx::query_as::<_, LeaderboardUserRow>(
+        "SELECT user_id, user_name, wins, losses, mmr FROM users WHERE (wins + losses) > 0 ORDER BY mmr DESC"
+    )
+    .fetch_all(&state.db_pool)
+    .await
+    .map_err(|e| (axum::http::StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    let pokemon_rows = sqlx::query_as::<_, UserPokemonRow>(
+        r#"
+        WITH user_pokemon_counts AS (
+            SELECT 
+                a.winning_user_id as user_id, 
+                a.pokedex_id as id, 
+                p.name, 
+                COALESCE(a.form, '') as form, 
+                COUNT(*) as count,
+                ROW_NUMBER() OVER(PARTITION BY a.winning_user_id ORDER BY COUNT(*) DESC, p.name ASC) as rank
+            FROM auctions a
+            JOIN pokemon p ON a.pokedex_id = p.pokedex_id AND COALESCE(a.form, '') = p.form
+            WHERE a.winning_user_id IS NOT NULL
+            GROUP BY a.winning_user_id, a.pokedex_id, p.name, a.form
+        )
+        SELECT user_id, id, name, form
+        FROM user_pokemon_counts
+        WHERE rank <= 5
+        "#
+    )
+    .fetch_all(&state.db_pool)
+    .await
+    .map_err(|e| (axum::http::StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    let mut pokemon_map: HashMap<String, Vec<LeaderboardPokemon>> = HashMap::new();
+    for row in pokemon_rows {
+        pokemon_map.entry(row.user_id).or_default().push(LeaderboardPokemon {
+            id: row.id,
+            name: row.name,
+            form: row.form,
+        });
+    }
+
+    let leaderboard = user_rows.into_iter().map(|u| {
+        let games_played = u.wins + u.losses;
+        let user_id = u.user_id.clone();
+        LeaderboardEntry {
+            user_id: u.user_id,
+            username: u.user_name,
+            win: u.wins,
+            loss: u.losses,
+            mmr: u.mmr,
+            games_played,
+            most_drafted_pokemon: pokemon_map.remove(&user_id).unwrap_or_default(),
+        }
+    }).collect();
+
+    Ok(Json(leaderboard))
 }
