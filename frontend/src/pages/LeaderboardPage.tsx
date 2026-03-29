@@ -62,7 +62,7 @@ const LeaderboardPage = () => {
             <Header />
             <div className="leaderboard-container">
             <div className="leaderboard-header">
-                <h1>Blitz Leaderboard</h1>
+                <h1>Ever Grande Prix Season One Leaderboard</h1>
                 <div className="filter-container">
                     <label htmlFor="min-games-filter">Minimum Games Played: </label>
                     <input
@@ -79,7 +79,7 @@ const LeaderboardPage = () => {
                     <tr>
                         <th>Rank</th>
                         <th>Username</th>
-                        <th>Global Name</th>
+                        <th>Display Name</th>
                         <th>Win-Loss</th>
                         <th>Most Drafted Pokémon</th>
                     </tr>
