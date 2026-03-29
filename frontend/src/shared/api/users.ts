@@ -10,6 +10,7 @@ import {
 export interface LeaderboardEntry {
 	user_id: string;
 	username: string;
+	global_name?: string | null;
 	win: number;
 	loss: number;
 	mmr: number;

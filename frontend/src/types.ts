@@ -29,6 +29,7 @@ export interface Pokemon {
   evolution_method?: string;
   mega?: string;
   obtain_method?: string;
+  count?: number;
 }
 
 export interface KeyMove {
@@ -130,6 +131,7 @@ export interface MatchHistoryTeam {
   user_id: string | null;
   guest_id: string | null;
   draft_id: string;
+  ranked: boolean;
   team_count: number;
   money_remaining: number;
   pokemon_drafted: StatsAuction[];
@@ -155,6 +157,7 @@ export interface StatsPageTeamRow {
 export interface StatsPagePlayer {
   user_id: string;
   user_name: string;
+  global_name?: string | null;
   is_guest: boolean;
 }
 

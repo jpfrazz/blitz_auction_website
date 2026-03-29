@@ -79,6 +79,7 @@ const LeaderboardPage = () => {
                     <tr>
                         <th>Rank</th>
                         <th>Username</th>
+                        <th>Global Name</th>
                         <th>Win-Loss</th>
                         <th>Most Drafted Pokémon</th>
                     </tr>
@@ -88,17 +89,39 @@ const LeaderboardPage = () => {
                         <tr key={player.user_id} className={getRowClass(index)}>
                             <td>{index + 1}</td>
                             <td>{player.username}</td>
+                            <td>{player.global_name ?? '-'}</td>
                             <td>{`${player.win} - ${player.loss}`}</td>
                             <td>
                                 <div className="pokemon-list">
-                                    {player.most_drafted_pokemon.map(p => (
-                                        <img
-                                            key={`${p.id}-${p.form}`}
-                                            src={`/MiniIcons/${formatPokemonName(p.name)}.png`}
-                                            alt={p.name}
-                                            title={p.name + (p.form ? ` (${p.form})` : '')}
-                                            className="leaderboard-pokemon-img"
-                                        />
+                                    {player.most_drafted_pokemon.map((p) => (
+                                        <div key={`${p.id}-${p.form}`} style={{ position: 'relative', display: 'inline-block' }}>
+                                            <img
+                                                src={`/MiniIcons/${formatPokemonName(p.name)}.png`}
+                                                alt={p.name}
+                                                title={`${p.name}${p.form ? ` (${p.form})` : ''} - Drafted ${p.count} times`}
+                                                className="leaderboard-pokemon-img"
+                                                style={{ width: '24px', height: '24px', objectFit: 'contain' }}
+                                            />
+                                            {p.count !== undefined && (
+                                                <span style={{
+                                                    position: 'absolute',
+                                                    top: '-5px',
+                                                    right: '-5px',
+                                                    backgroundColor: 'rgba(0, 0, 0, 0.85)',
+                                                    color: '#fff',
+                                                    fontSize: '0.65rem',
+                                                    padding: '1px 3px',
+                                                    borderRadius: '4px',
+                                                    border: '1px solid #444',
+                                                    lineHeight: '1',
+                                                    fontWeight: 'bold',
+                                                    zIndex: 1,
+                                                    pointerEvents: 'none'
+                                                }}>
+                                                    {p.count}
+                                                </span>
+                                            )}
+                                        </div>
                                     ))}
                                 </div>
                             </td>

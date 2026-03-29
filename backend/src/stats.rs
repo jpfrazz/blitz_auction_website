@@ -17,6 +17,7 @@ pub struct StatsPageResponse {
 pub struct StatsPlayer {
     pub user_id: String,
     pub user_name: String,
+    pub global_name: Option<String>,
     pub is_guest: bool,
 }
 
@@ -53,6 +54,7 @@ pub struct StatsLegacyPick {
 pub struct LeaderboardEntry {
     pub user_id: String,
     pub username: String,
+    pub global_name: Option<String>,
     pub win: i32,
     pub loss: i32,
     pub mmr: i32,
@@ -65,12 +67,14 @@ pub struct LeaderboardPokemon {
     pub id: i32,
     pub name: String,
     pub form: String,
+    pub count: i32,
 }
 
 #[derive(FromRow)]
 struct LeaderboardUserRow {
     pub user_id: String,
     pub user_name: String,
+    pub global_name: Option<String>,
     pub wins: i32,
     pub losses: i32,
     pub mmr: i32,
@@ -82,6 +86,7 @@ struct UserPokemonRow {
     pub id: i32,
     pub name: String,
     pub form: String,
+    pub count: i32,
 }
 
 pub async fn get_stats_page_data(
@@ -89,9 +94,9 @@ pub async fn get_stats_page_data(
 ) -> Result<Json<StatsPageResponse>, AppError> {
     // Combine registered users and guests into a single player list
     let players = sqlx::query_as::<_, StatsPlayer>(
-        "SELECT user_id, user_name, false AS is_guest FROM users
+        "SELECT user_id, user_name, global_name, false AS is_guest FROM users
          UNION ALL
-         SELECT user_id, user_name, true AS is_guest FROM guests"
+         SELECT user_id, user_name, NULL AS global_name, true AS is_guest FROM guests"
     )
     .fetch_all(&state.db_pool)
     .await
@@ -156,7 +161,7 @@ pub async fn get_leaderboard(
     State(state): State<ServerState>,
 ) -> Result<Json<Vec<LeaderboardEntry>>, AppError> {
     let user_rows = sqlx::query_as::<_, LeaderboardUserRow>(
-        "SELECT user_id, user_name, wins, losses, mmr FROM users WHERE (wins + losses) > 0 ORDER BY mmr DESC"
+        "SELECT user_id, user_name, global_name, wins, losses, mmr FROM users WHERE (wins + losses) > 0 ORDER BY mmr DESC"
     )
     .fetch_all(&state.db_pool)
     .await
@@ -174,12 +179,15 @@ pub async fn get_leaderboard(
                 ROW_NUMBER() OVER(PARTITION BY a.winning_user_id ORDER BY COUNT(*) DESC, p.name ASC) as rank
             FROM auctions a
             JOIN pokemon p ON a.pokedex_id = p.pokedex_id AND COALESCE(a.form, '') = p.form
+            JOIN drafts d ON d.draft_id = a.draft_id
             WHERE a.winning_user_id IS NOT NULL
+              AND d.ranked = TRUE
+              AND d.state = 'COMPLETED'
             GROUP BY a.winning_user_id, a.pokedex_id, p.name, a.form
         )
-        SELECT user_id, id, name, form
+        SELECT user_id, id, name, form, count
         FROM user_pokemon_counts
-        WHERE rank <= 5
+        WHERE rank <= 10
         "#
     )
     .fetch_all(&state.db_pool)
@@ -192,6 +200,7 @@ pub async fn get_leaderboard(
             id: row.id,
             name: row.name,
             form: row.form,
+            count: row.count,
         });
     }
 
@@ -201,6 +210,7 @@ pub async fn get_leaderboard(
         LeaderboardEntry {
             user_id: u.user_id,
             username: u.user_name,
+            global_name: u.global_name,
             win: u.wins,
             loss: u.losses,
             mmr: u.mmr,

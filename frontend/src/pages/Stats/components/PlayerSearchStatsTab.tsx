@@ -92,6 +92,9 @@ const PlayerSearchStatsTab: React.FC<PlayerSearchStatsTabProps> = ({
     const summary = new Map<string, PokemonDraftSummary>();
 
     playerMatchHistory.forEach((team) => {
+      // Only pull pokemon from ranked races
+      if (!team.ranked) return;
+
       (team.pokemon_drafted ?? []).forEach((auction) => {
         const key = `${auction.name}::${auction.form}`;
         const existing = summary.get(key);
@@ -238,7 +241,7 @@ const PlayerSearchStatsTab: React.FC<PlayerSearchStatsTabProps> = ({
             <>
               {pokemonDraftSummary.length > 0 && (
                 <div className="player-draft-overview">
-                  {featuredPokemon && (
+                 pla {featuredPokemon && (
                     <div
                       className="player-draft-overview-background"
                       style={{
@@ -252,7 +255,10 @@ const PlayerSearchStatsTab: React.FC<PlayerSearchStatsTabProps> = ({
                     <div className="player-draft-overview-header">
                       <div>
                         {selectedPlayer && (
-                          <div className="player-draft-overview-profile-name">{selectedPlayer.user_name}</div>
+                          <div className="player-draft-overview-profile-name">
+                            {selectedPlayer.user_name}
+                            {selectedPlayer.global_name && <span style={{ fontSize: '0.9em', opacity: 0.8, marginLeft: '8px' }}>({selectedPlayer.global_name})</span>}
+                          </div>
                         )}
                         <span className="player-draft-overview-kicker">Most Drafted Pokemon</span>
                         {featuredPokemon && (
@@ -292,9 +298,31 @@ const PlayerSearchStatsTab: React.FC<PlayerSearchStatsTabProps> = ({
                         <span>Avg</span>
                       </div>
 
-                      {pokemonDraftSummary.slice(0, 5).map((pokemon) => (
+                      {pokemonDraftSummary.slice(0, 10).map((pokemon) => (
                         <div className="player-draft-overview-row" key={pokemon.key}>
-                          <span>{getPokemonLabel(pokemon.name, pokemon.form)}</span>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+                              <img
+                                src={`/MiniIcons/${formatPokemonName(pokemon.name)}.png`}
+                                alt={pokemon.name}
+                                style={{ width: '20px', height: '20px', objectFit: 'contain' }}
+                              />
+                              <span style={{
+                                position: 'absolute',
+                                top: '-6px',
+                                right: '-6px',
+                                background: '#222',
+                                color: '#fff',
+                                fontSize: '0.6rem',
+                                padding: '1px 3px',
+                                borderRadius: '3px',
+                                fontWeight: 'bold',
+                                border: '1px solid #555',
+                                lineHeight: '1'
+                              }}>{pokemon.games}</span>
+                            </div>
+                            <span>{getPokemonLabel(pokemon.name, pokemon.form)}</span>
+                          </div>
                           <span>{pokemon.games}</span>
                           <span>${Math.round(pokemon.avgSpend).toLocaleString()}</span>
                         </div>
@@ -305,7 +333,10 @@ const PlayerSearchStatsTab: React.FC<PlayerSearchStatsTabProps> = ({
               )}
 
               <div className="player-header">
-                <h3>{selectedPlayer.user_name}</h3>
+                <h3>
+                  {selectedPlayer.user_name}
+                  {selectedPlayer.global_name && <span style={{ fontSize: '0.8em', opacity: 0.7, marginLeft: '8px' }}>({selectedPlayer.global_name})</span>}
+                </h3>
                 <span className="player-stats">
                   {playerMatchHistory.length} game{playerMatchHistory.length !== 1 ? 's' : ''}
                 </span>

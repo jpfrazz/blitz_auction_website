@@ -101,6 +101,7 @@ pub struct MatchHistoryTeam {
     pub user_id: Option<String>,
     pub guest_id: Option<String>,
     pub draft_id: String,
+    pub ranked: bool,
     pub team_count: i32,
     pub money_remaining: i32,
     pub pokemon_drafted: Vec<MatchHistoryAuction>,
@@ -679,7 +680,7 @@ pub async fn get_match_history_by_user_id(
 ) -> Result<Json<Vec<MatchHistoryTeam>>, AppError> {
     let team_rows = sqlx::query(
         "SELECT t.team_id, t.user_id, t.guest_id, t.draft_id,
-                (SELECT COUNT(*)::INT FROM teams team_counts WHERE team_counts.draft_id = t.draft_id) AS team_count,
+                d.ranked, (SELECT COUNT(*)::INT FROM teams team_counts WHERE team_counts.draft_id = t.draft_id) AS team_count,
                 t.money_remaining, t.placement,
                 t.pre_match_mmr, t.updated_at, t.created_at
          FROM teams t
@@ -711,6 +712,9 @@ pub async fn get_match_history_by_user_id(
                 .try_get("guest_id")
                 .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?,
             draft_id: draft_uuid.to_string(),
+            ranked: row
+                .try_get("ranked")
+                .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?,
             team_count: row
                 .try_get("team_count")
                 .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?,
