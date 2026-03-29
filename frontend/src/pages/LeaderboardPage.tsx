@@ -88,7 +88,20 @@ const LeaderboardPage = () => {
                     {filteredAndSortedLeaderboard.map((player, index) => (
                         <tr key={player.user_id} className={getRowClass(index)}>
                             <td>{index + 1}</td>
-                            <td>{player.username}</td>
+                            <td>
+                                <div className="leaderboard-username-cell">
+                                    {player.avatar ? (
+                                        <img
+                                            src={`https://cdn.discordapp.com/avatars/${player.user_id}/${player.avatar}.png`}
+                                            alt=""
+                                            className="leaderboard-avatar"
+                                        />
+                                    ) : (
+                                        <div className="leaderboard-avatar-placeholder" />
+                                    )}
+                                    <span>{player.username}</span>
+                                </div>
+                            </td>
                             <td>{player.global_name ?? '-'}</td>
                             <td>{`${player.win} - ${player.loss}`}</td>
                             <td>

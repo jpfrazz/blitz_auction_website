@@ -55,6 +55,7 @@ pub struct LeaderboardEntry {
     pub user_id: String,
     pub username: String,
     pub global_name: Option<String>,
+    pub avatar: Option<String>,
     pub win: i32,
     pub loss: i32,
     pub mmr: i32,
@@ -75,6 +76,7 @@ struct LeaderboardUserRow {
     pub user_id: String,
     pub user_name: String,
     pub global_name: Option<String>,
+    pub avatar: Option<String>,
     pub wins: i32,
     pub losses: i32,
     pub mmr: i32,
@@ -161,7 +163,7 @@ pub async fn get_leaderboard(
     State(state): State<ServerState>,
 ) -> Result<Json<Vec<LeaderboardEntry>>, AppError> {
     let user_rows = sqlx::query_as::<_, LeaderboardUserRow>(
-        "SELECT user_id, user_name, global_name, wins, losses, mmr FROM users WHERE (wins + losses) > 0 ORDER BY mmr DESC"
+        "SELECT user_id, user_name, global_name, avatar, wins, losses, mmr FROM users WHERE (wins + losses) > 0 ORDER BY mmr DESC"
     )
     .fetch_all(&state.db_pool)
     .await
@@ -211,6 +213,7 @@ pub async fn get_leaderboard(
             user_id: u.user_id,
             username: u.user_name,
             global_name: u.global_name,
+            avatar: u.avatar,
             win: u.wins,
             loss: u.losses,
             mmr: u.mmr,

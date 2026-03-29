@@ -121,3 +121,21 @@
 .leaderboard-pokemon-img:hover {
     transform: scale(1.2);
 }
+
+.leaderboard-username-cell {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.leaderboard-avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background-color: #222;
+    flex-shrink: 0;
+}
+
+.leaderboard-avatar-placeholder {
+    @extend .leaderboard-avatar;
+}
