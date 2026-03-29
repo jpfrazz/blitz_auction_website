@@ -175,7 +175,7 @@ pub async fn get_leaderboard(
                 a.pokedex_id as id, 
                 p.name, 
                 COALESCE(a.form, '') as form, 
-                COUNT(*) as count,
+                COUNT(*)::INT as count,
                 ROW_NUMBER() OVER(PARTITION BY a.winning_user_id ORDER BY COUNT(*) DESC, p.name ASC) as rank
             FROM auctions a
             JOIN pokemon p ON a.pokedex_id = p.pokedex_id AND COALESCE(a.form, '') = p.form
