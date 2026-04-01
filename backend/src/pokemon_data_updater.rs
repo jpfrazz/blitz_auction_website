@@ -54,12 +54,12 @@ pub async fn update_pokemon_data(
     })?;
 
     let mut csv_ids: Vec<i32> = Vec::new();
-    let mut csv_forms: Vec<Option<String>> = Vec::new();
+    let mut csv_forms: Vec<String> = Vec::new();
 
     // updates db from the csv
     for pokemon in pokemon_data.iter() {
         csv_ids.push(pokemon.pokedex_id);
-        csv_forms.push(pokemon.form.clone());
+        csv_forms.push(pokemon.form.clone().unwrap_or_default());
 
         let _ = sqlx::query!(
             r#"
@@ -129,20 +129,16 @@ pub async fn update_pokemon_data(
     }
 
     if !pokemon_data.is_empty() {
-        let _ = sqlx::query(
+        let _ = sqlx::query!(
             r#"
             UPDATE pokemon
             SET obtain_method = 'Vaulted'
-            WHERE NOT EXISTS (
-                SELECT 1
-                FROM UNNEST($1::int[], $2::text[]) AS uploaded(u_id, u_form)
-                WHERE pokemon.pokedex_id = uploaded.u_id
-                  AND pokemon.form IS NOT DISTINCT FROM uploaded.u_form
+            WHERE (pokedex_id, form) NOT IN (
+                SELECT * FROM UNNEST($1::int[], $2::text[])
             )
             "#,
-        )
-        .bind(&csv_ids[..])
-        .bind(&csv_forms[..])
+            &csv_ids[..],
+            &csv_forms[..])
         .execute(&mut *tx)
         .await
         .map_err(|e| {
@@ -175,12 +171,12 @@ pub async fn update_pokemon_key_moves_data(
     })?;
 
     let mut csv_ids: Vec<i32> = Vec::new();
-    let mut csv_forms: Vec<Option<String>> = Vec::new();
+    let mut csv_forms: Vec<String> = Vec::new();
     let mut csv_moves: Vec<String> = Vec::new();
 
     for key_move in key_move_data.iter() {
         csv_ids.push(key_move.pokedex_id);
-        csv_forms.push(key_move.form.clone());
+        csv_forms.push(key_move.form.clone().unwrap_or_default());
         csv_moves.push(key_move.move_name.clone());
 
         let _ = sqlx::query!(
@@ -207,29 +203,31 @@ pub async fn update_pokemon_key_moves_data(
         })?;
     }
 
-    let _ = sqlx::query(
-        r#"
-            DELETE FROM key_moves
-            WHERE NOT EXISTS (
-                SELECT 1 
-                FROM UNNEST($1::int[], $2::text[], $3::text[]) AS uploaded(u_id, u_form, u_move)
-                WHERE key_moves.pokedex_id = uploaded.u_id 
-                  AND key_moves.form IS NOT DISTINCT FROM uploaded.u_form
-                  AND key_moves.move_name = uploaded.u_move
-            )
-            "#,
-    )
-    .bind(&csv_ids)
-    .bind(&csv_forms)
-    .bind(&csv_moves)
-    .execute(&mut *tx)
-    .await
-    .map_err(|e| {
-        (
-            StatusCode::INTERNAL_SERVER_ERROR,
-            format!("failed to delete key moves in db, {}", e),
+    if !key_move_data.is_empty() {
+        let _ = sqlx::query(
+            r#"
+                DELETE FROM key_moves
+                WHERE NOT EXISTS (
+                    SELECT 1 
+                    FROM UNNEST($1::int[], $2::text[], $3::text[]) AS uploaded(u_id, u_form, u_move)
+                    WHERE key_moves.pokedex_id = uploaded.u_id 
+                      AND key_moves.form = uploaded.u_form
+                      AND key_moves.move_name = uploaded.u_move
+                )
+                "#,
         )
-    })?;
+        .bind(&csv_ids)
+        .bind(&csv_forms)
+        .bind(&csv_moves)
+        .execute(&mut *tx)
+        .await
+        .map_err(|e| {
+            (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                format!("failed to delete key moves in db, {}", e),
+            )
+        })?;
+    }
 
     tx.commit().await.map_err(|e| {
         (

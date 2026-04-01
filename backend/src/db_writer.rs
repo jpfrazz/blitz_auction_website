@@ -466,7 +466,7 @@ impl Actor {
                     RETURNING auction_id
                 "#,
                 p.pokedex_id as i32,
-                p.form.clone(),
+                p.form.clone().unwrap_or_default(),
                 i as i32,
                 self.draft_id.clone()
             )
@@ -830,7 +830,7 @@ impl Actor {
                 "INSERT INTO auctions (pokedex_id, form, draft_order, draft_id) VALUES ($1, $2, $3, $4) RETURNING auction_id"
             )
             .bind(p.pokedex_id as i32)
-            .bind(p.form.clone())
+            .bind(p.form.clone().unwrap_or_default())
             .bind(order)
             .bind(self.draft_id)
             .fetch_one(&mut *tx)
