@@ -37,15 +37,13 @@ pub async fn init_pokemon_data(pool: &PgPool) -> Result<(), sqlx::Error> {
         pokedex_id: u32::try_from(row.pokedex_id).unwrap_or_else(|_| {
             panic!(
                 "Pokemon {} {} has invalid pokedex_id: {}",
-                row.name, row.form, row.pokedex_id
+                row.name,
+                row.form.clone().unwrap_or_default(),
+                row.pokedex_id
             )
         }),
         name: row.name.clone(),
-        form: if row.form.is_empty() {
-            None
-        } else {
-            Some(row.form.clone())
-        },
+        form: row.form.clone(),
         stage: row
             .stage
             .parse()
@@ -65,37 +63,49 @@ pub async fn init_pokemon_data(pool: &PgPool) -> Result<(), sqlx::Error> {
             hp: u8::try_from(row.hp).unwrap_or_else(|_| {
                 panic!(
                     "Pokemon {} {} has invalid hp: {}",
-                    row.name, row.form, row.hp
+                    row.name,
+                    row.form.clone().unwrap_or_default(),
+                    row.hp
                 )
             }),
             attack: u8::try_from(row.attack).unwrap_or_else(|_| {
                 panic!(
                     "Pokemon {} {} has invalid attack: {}",
-                    row.name, row.form, row.attack
+                    row.name,
+                    row.form.clone().unwrap_or_default(),
+                    row.attack
                 )
             }),
             defense: u8::try_from(row.defense).unwrap_or_else(|_| {
                 panic!(
                     "Pokemon {} {} has invalid defense: {}",
-                    row.name, row.form, row.defense
+                    row.name,
+                    row.form.clone().unwrap_or_default(),
+                    row.defense
                 )
             }),
             sp_attack: u8::try_from(row.sp_attack).unwrap_or_else(|_| {
                 panic!(
                     "Pokemon {} {} has invalid sp_attack: {}",
-                    row.name, row.form, row.sp_attack
+                    row.name,
+                    row.form.clone().unwrap_or_default(),
+                    row.sp_attack
                 )
             }),
             sp_defense: u8::try_from(row.sp_defense).unwrap_or_else(|_| {
                 panic!(
                     "Pokemon {} {} has invalid sp_defense: {}",
-                    row.name, row.form, row.sp_defense
+                    row.name,
+                    row.form.clone().unwrap_or_default(),
+                    row.sp_defense
                 )
             }),
             speed: u8::try_from(row.speed).unwrap_or_else(|_| {
                 panic!(
                     "Pokemon {} {} has invalid speed: {}",
-                    row.name, row.form, row.speed
+                    row.name,
+                    row.form.clone().unwrap_or_default(),
+                    row.speed
                 )
             }),
         },

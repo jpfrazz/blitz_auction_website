@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { ChangeEvent, Dispatch, SetStateAction, useEffect, useMemo, useState } from 'react';
 import Header from '../../shared/components/Header';
 import Footer from '../../shared/components/Footer';
 import {
@@ -16,7 +16,7 @@ import {
 import './Admin.scss';
 import { fetchCurrentUser } from '../../shared/api/draftData';
 
-type AdminTab = 'draft-results' | 'discord-users';
+type AdminTab = 'draft-results' | 'discord-users' | 'upload-pokemon-data';
 
 const Admin: React.FC = () => {
   const [hasRefereeRole, setHasRefereeRole] = useState<boolean | null>(null);
@@ -34,6 +34,11 @@ const Admin: React.FC = () => {
   const [usersLoading, setUsersLoading] = useState(false);
   const [usersError, setUsersError] = useState<string | null>(null);
   const [usersSuccess, setUsersSuccess] = useState<string | null>(null);
+
+  const [uploadingPokemon, setUploadingPokemon] = useState(false);
+  const [uploadingMoves, setUploadingMoves] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
+  const [uploadSuccess, setUploadSuccess] = useState<string | null>(null);
 
   useEffect(() => {
     fetchCurrentUser()
@@ -165,6 +170,35 @@ const Admin: React.FC = () => {
     }
   };
 
+  const handleFileUpload = async (e: ChangeEvent<HTMLInputElement>, endpoint: string, setUploadingStatus: Dispatch<SetStateAction<boolean>>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setUploadingStatus(true);
+
+    const form_data = new FormData();
+    form_data.append('file', file);
+
+    try {
+        const response = await fetch(endpoint, {
+            method: 'POST',
+            body: form_data
+        });
+
+        if (response.ok) {
+            setUploadSuccess(`${file.name} uploaded successfull`);
+        } else {
+            setUploadError(`failed to upload file: ${response.body}`);
+        }
+    } catch (error) {
+        const error_message = error instanceof Error ? error.message : 'An unknown error occured';
+        setUploadError(`Failed to send file to server, ${error_message}`);
+    } finally {
+        setUploadingStatus(false);
+        e.target.value = '';
+    }
+  };
+
   return (
     <div className="admin-page-root">
       <Header />
@@ -193,6 +227,13 @@ const Admin: React.FC = () => {
                   type="button"
                 >
                   Discord Users
+                </button>
+                <button
+                  className={`admin-tab ${tab === 'upload-pokemon-data' ? 'active' : ''}`}
+                  onClick={() => setTab('upload-pokemon-data')}
+                  type="button"
+                >
+                  Upload Pokemon Data
                 </button>
               </div>
 
@@ -323,6 +364,68 @@ const Admin: React.FC = () => {
                       </table>
                     </div>
                   )}
+                </div>
+              )}
+              {tab === 'upload-pokemon-data' && (
+                <div className="admin-tab-content">
+                    <h2>Upload Pokemon Data</h2>
+
+                  {uploadError && <div className="admin-message admin-error">{uploadError}</div>}
+                  {uploadSuccess && <div className="admin-message admin-success">{uploadSuccess}</div>}
+
+                  <div className="admin-controls-row" style={{ alignItems: 'flex-start', marginTop: '20px', gap: '40px' }}>
+                    
+                    <div className="upload-section">
+                      <h3>Pokémon Roster</h3>
+                      <p style={{ marginBottom: '15px' }}>Upload the main <code>pokemon.csv</code> database file.</p>
+                      
+                      <input
+                        type="file"
+                        accept=".csv"
+                        id="pokemon-csv-upload"
+                        style={{ display: 'none' }}
+                        onChange={(e) => handleFileUpload(e, '/api/pokemon', setUploadingPokemon)}
+                        disabled={uploadingPokemon}
+                      />
+                      <label 
+                        htmlFor="pokemon-csv-upload" 
+                        className="button"
+                        style={{ 
+                          display: 'inline-block', 
+                          cursor: uploadingPokemon ? 'wait' : 'pointer',
+                          opacity: uploadingPokemon ? 0.7 : 1
+                        }}
+                      >
+                        {uploadingPokemon ? 'Uploading...' : 'Upload Pokémon CSV'}
+                      </label>
+                    </div>
+
+                    <div className="upload-section">
+                      <h3>Key Moves</h3>
+                      <p style={{ marginBottom: '15px' }}>Upload the <code>key_moves.csv</code> file.</p>
+                      
+                      <input
+                        type="file"
+                        accept=".csv"
+                        id="moves-csv-upload"
+                        style={{ display: 'none' }}
+                        onChange={(e) => handleFileUpload(e, '/api/pokemon_key_moves', setUploadingMoves)}
+                        disabled={uploadingMoves}
+                      />
+                      <label 
+                        htmlFor="moves-csv-upload" 
+                        className="button"
+                        style={{ 
+                          display: 'inline-block', 
+                          cursor: uploadingMoves ? 'wait' : 'pointer',
+                          opacity: uploadingMoves ? 0.7 : 1
+                        }}
+                      >
+                        {uploadingMoves ? 'Uploading...' : 'Upload Moves CSV'}
+                      </label>
+                    </div>
+
+                  </div>
                 </div>
               )}
             </>

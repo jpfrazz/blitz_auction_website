@@ -1,9 +1,9 @@
-use std::collections::HashMap;
-use axum::{extract::State, Json};
+use axum::{Json, extract::State};
 use serde::Serialize;
 use sqlx::FromRow;
+use std::collections::HashMap;
 
-use crate::{server::ServerState, AppError};
+use crate::{AppError, server::ServerState};
 
 #[derive(Serialize)]
 pub struct StatsPageResponse {
@@ -98,18 +98,17 @@ pub async fn get_stats_page_data(
     let players = sqlx::query_as::<_, StatsPlayer>(
         "SELECT user_id, user_name, global_name, false AS is_guest FROM users
          UNION ALL
-         SELECT user_id, user_name, NULL AS global_name, true AS is_guest FROM guests"
+         SELECT user_id, user_name, NULL AS global_name, true AS is_guest FROM guests",
     )
     .fetch_all(&state.db_pool)
     .await
     .map_err(|e| (axum::http::StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
 
-    let teams = sqlx::query_as::<_, StatsTeam>(
-        "SELECT user_id, guest_id, draft_id, placement FROM teams"
-    )
-    .fetch_all(&state.db_pool)
-    .await
-    .map_err(|e| (axum::http::StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let teams =
+        sqlx::query_as::<_, StatsTeam>("SELECT user_id, guest_id, draft_id, placement FROM teams")
+            .fetch_all(&state.db_pool)
+            .await
+            .map_err(|e| (axum::http::StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
 
     let auctions = sqlx::query_as::<_, StatsAuction>(
         r#"
@@ -128,7 +127,7 @@ pub async fn get_stats_page_data(
         JOIN pokemon AS p ON a.pokedex_id = p.pokedex_id AND COALESCE(a.form, '') = p.form
         WHERE winning_bid IS NOT NULL
         ORDER BY a.draft_id, a.draft_order ASC
-        "#
+        "#,
     )
     .fetch_all(&state.db_pool)
     .await
@@ -137,7 +136,7 @@ pub async fn get_stats_page_data(
     // If legacy migrations have not been applied in an environment yet,
     // serve stats without legacy rows instead of failing the whole endpoint.
     let legacy = match sqlx::query_as::<_, StatsLegacyPick>(
-        "SELECT date, pokemon, cost FROM legacy_pokemon_costs ORDER BY date DESC NULLS LAST"
+        "SELECT date, pokemon, cost FROM legacy_pokemon_costs ORDER BY date DESC NULLS LAST",
     )
     .fetch_all(&state.db_pool)
     .await
@@ -198,29 +197,35 @@ pub async fn get_leaderboard(
 
     let mut pokemon_map: HashMap<String, Vec<LeaderboardPokemon>> = HashMap::new();
     for row in pokemon_rows {
-        pokemon_map.entry(row.user_id).or_default().push(LeaderboardPokemon {
-            id: row.id,
-            name: row.name,
-            form: row.form,
-            count: row.count,
-        });
+        pokemon_map
+            .entry(row.user_id)
+            .or_default()
+            .push(LeaderboardPokemon {
+                id: row.id,
+                name: row.name,
+                form: row.form,
+                count: row.count,
+            });
     }
 
-    let leaderboard = user_rows.into_iter().map(|u| {
-        let games_played = u.wins + u.losses;
-        let user_id = u.user_id.clone();
-        LeaderboardEntry {
-            user_id: u.user_id,
-            username: u.user_name,
-            global_name: u.global_name,
-            avatar: u.avatar,
-            win: u.wins,
-            loss: u.losses,
-            mmr: u.mmr,
-            games_played,
-            most_drafted_pokemon: pokemon_map.remove(&user_id).unwrap_or_default(),
-        }
-    }).collect();
+    let leaderboard = user_rows
+        .into_iter()
+        .map(|u| {
+            let games_played = u.wins + u.losses;
+            let user_id = u.user_id.clone();
+            LeaderboardEntry {
+                user_id: u.user_id,
+                username: u.user_name,
+                global_name: u.global_name,
+                avatar: u.avatar,
+                win: u.wins,
+                loss: u.losses,
+                mmr: u.mmr,
+                games_played,
+                most_drafted_pokemon: pokemon_map.remove(&user_id).unwrap_or_default(),
+            }
+        })
+        .collect();
 
     Ok(Json(leaderboard))
 }

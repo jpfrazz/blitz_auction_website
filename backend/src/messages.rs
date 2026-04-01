@@ -1,9 +1,7 @@
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 
-use crate::{
-    auction, draft, users::User
-};
+use crate::{auction, draft, users::User};
 
 #[derive(Clone, Debug, Serialize)]
 #[serde(tag = "type", content = "data")]
