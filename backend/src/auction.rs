@@ -287,8 +287,6 @@ impl AuctionActor {
         }
 
         self.expires_at = Some(Instant::now() + Duration::from_secs(self.length as u64));
-        dbg!(self.expires_at);
-        dbg!(get_expiry_time_from_instant(self.expires_at.unwrap()));
         let auction_timer = tokio::time::sleep_until(self.expires_at.unwrap());
         tokio::pin!(auction_timer);
         let msg = AuctionResponse::from(&self);

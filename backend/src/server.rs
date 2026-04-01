@@ -62,7 +62,7 @@ impl Server {
         if let Err(e) = pokemon::init_pokemon_data(&db_pool).await {
             return Err(ServerError::PokemonData(format!(
                 "failed to init pokemon data, {}",
-                e.to_string()
+                e.1
             )));
         };
 

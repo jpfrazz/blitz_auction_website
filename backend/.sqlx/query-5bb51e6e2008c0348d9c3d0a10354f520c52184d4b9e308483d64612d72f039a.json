@@ -110,11 +110,6 @@
       },
       {
         "ordinal": 21,
-        "name": "internal_id",
-        "type_info": "Int4"
-      },
-      {
-        "ordinal": 22,
         "name": "key_moves!: Json<Vec<KeyMoveRow>>",
         "type_info": "Json"
       }
@@ -125,7 +120,7 @@
     "nullable": [
       false,
       false,
-      true,
+      false,
       false,
       true,
       false,
@@ -138,7 +133,6 @@
       true,
       true,
       true,
-      false,
       false,
       false,
       false,

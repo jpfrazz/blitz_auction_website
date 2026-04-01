@@ -98,7 +98,7 @@ pub async fn update_pokemon_data(
             "#,
             pokemon.pokedex_id,
             pokemon.name,
-            pokemon.form,
+            pokemon.form.clone().unwrap_or_default(),
             pokemon.stage,
             pokemon.description,
             pokemon.type1,
@@ -192,7 +192,7 @@ pub async fn update_pokemon_key_moves_data(
                 species = EXCLUDED.species
             "#,
             key_move.pokedex_id,
-            key_move.form,
+            key_move.form.clone().unwrap_or_default(),
             key_move.move_name,
             key_move.learn_method.clone().unwrap_or_default(),
             key_move.species

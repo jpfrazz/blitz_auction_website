@@ -39,12 +39,16 @@ pub async fn read_pokemon_data_from_db(pool: &PgPool) -> Result<Vec<Arc<Pokemon>
             panic!(
                 "Pokemon {} {} has invalid pokedex_id: {}",
                 row.name,
-                row.form.clone().unwrap_or_default(),
+                row.form.clone(),
                 row.pokedex_id
             )
         }),
         name: row.name.clone(),
-        form: row.form.clone(),
+        form: if row.form.trim().is_empty() {
+            None
+        } else {
+            Some(row.form.clone())
+        },
         stage: row
             .stage
             .parse()
@@ -65,7 +69,7 @@ pub async fn read_pokemon_data_from_db(pool: &PgPool) -> Result<Vec<Arc<Pokemon>
                 panic!(
                     "Pokemon {} {} has invalid hp: {}",
                     row.name,
-                    row.form.clone().unwrap_or_default(),
+                    row.form.clone(),
                     row.hp
                 )
             }),
@@ -73,7 +77,7 @@ pub async fn read_pokemon_data_from_db(pool: &PgPool) -> Result<Vec<Arc<Pokemon>
                 panic!(
                     "Pokemon {} {} has invalid attack: {}",
                     row.name,
-                    row.form.clone().unwrap_or_default(),
+                    row.form.clone(),
                     row.attack
                 )
             }),
@@ -81,7 +85,7 @@ pub async fn read_pokemon_data_from_db(pool: &PgPool) -> Result<Vec<Arc<Pokemon>
                 panic!(
                     "Pokemon {} {} has invalid defense: {}",
                     row.name,
-                    row.form.clone().unwrap_or_default(),
+                    row.form.clone(),
                     row.defense
                 )
             }),
@@ -89,7 +93,7 @@ pub async fn read_pokemon_data_from_db(pool: &PgPool) -> Result<Vec<Arc<Pokemon>
                 panic!(
                     "Pokemon {} {} has invalid sp_attack: {}",
                     row.name,
-                    row.form.clone().unwrap_or_default(),
+                    row.form.clone(),
                     row.sp_attack
                 )
             }),
@@ -97,7 +101,7 @@ pub async fn read_pokemon_data_from_db(pool: &PgPool) -> Result<Vec<Arc<Pokemon>
                 panic!(
                     "Pokemon {} {} has invalid sp_defense: {}",
                     row.name,
-                    row.form.clone().unwrap_or_default(),
+                    row.form.clone(),
                     row.sp_defense
                 )
             }),
@@ -105,7 +109,7 @@ pub async fn read_pokemon_data_from_db(pool: &PgPool) -> Result<Vec<Arc<Pokemon>
                 panic!(
                     "Pokemon {} {} has invalid speed: {}",
                     row.name,
-                    row.form.clone().unwrap_or_default(),
+                    row.form.clone(),
                     row.speed
                 )
             }),
