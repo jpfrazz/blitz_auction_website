@@ -4,7 +4,7 @@ use axum::http::StatusCode;
 use serde::Deserialize;
 use sqlx::PgPool;
 
-use crate::AppError;
+use crate::{AppError, pokemon};
 
 #[derive(Deserialize, Debug)]
 pub struct PokemonCsvRecord {
@@ -158,7 +158,9 @@ pub async fn update_pokemon_data(
             StatusCode::INTERNAL_SERVER_ERROR,
             format!("failed to commit transaction for pokemon update, {}", e),
         )
-    })
+    })?;
+
+    pokemon::reload_pokemon_data(&pool).await
 }
 
 pub async fn update_pokemon_key_moves_data(
@@ -234,5 +236,7 @@ pub async fn update_pokemon_key_moves_data(
             StatusCode::INTERNAL_SERVER_ERROR,
             format!("failed to commit transaction for pokemon update, {}", e),
         )
-    })
+    })?;
+
+    pokemon::reload_pokemon_data(&pool).await
 }

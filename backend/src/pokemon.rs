@@ -1,14 +1,15 @@
 use std::sync::{Arc, OnceLock, RwLock};
+use axum::http::StatusCode;
 use strum::{Display, EnumString};
 
 use serde::{Deserialize, Serialize};
 use sqlx::{PgPool, prelude::FromRow, types::Json};
 
-use crate::draft::ExcludedPokemon;
+use crate::{AppError, draft::ExcludedPokemon};
 
 static POKEMON_DATA: OnceLock<RwLock<Vec<Arc<Pokemon>>>> = OnceLock::new();
 
-pub async fn init_pokemon_data(pool: &PgPool) -> Result<(), sqlx::Error> {
+pub async fn read_pokemon_data_from_db(pool: &PgPool) -> Result<Vec<Arc<Pokemon>>, AppError> {
     let pokemon_list = sqlx::query!(
         r#"
         SELECT
@@ -117,9 +118,36 @@ pub async fn init_pokemon_data(pool: &PgPool) -> Result<(), sqlx::Error> {
         obtain_method: row.obtain_method,
     })
     .fetch_all(pool)
-    .await?;
+    .await
+    .map_err(|e| (
+        StatusCode::INTERNAL_SERVER_ERROR,
+        format!("failed to read pokemon data from db: {}", e)
+    ))?;
 
-    let pokemon_vec: Vec<Arc<Pokemon>> = pokemon_list.into_iter().map(|p| Arc::new(p)).collect();
+    Ok(pokemon_list.into_iter().map(|p| Arc::new(p)).collect())
+}
+
+pub async fn reload_pokemon_data(pool: &PgPool) -> Result<(), AppError> {
+    let pokemon_vec = read_pokemon_data_from_db(pool).await?;
+    let Some(rw_lock) = POKEMON_DATA.get() else {
+        return Err((
+            StatusCode::INTERNAL_SERVER_ERROR,
+            format!("pokemon data is not initialized")
+        ));
+    };
+
+    let mut vec = rw_lock.write().map_err(|e| (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            format!("couldn't get write lock on pokemon vec, {}", e)
+    ))?;
+
+    *vec = pokemon_vec;
+
+    Ok(())
+}
+
+pub async fn init_pokemon_data(pool: &PgPool) -> Result<(), AppError> {
+    let pokemon_vec = read_pokemon_data_from_db(pool).await?;
 
     let rw_lock = RwLock::new(pokemon_vec);
 
