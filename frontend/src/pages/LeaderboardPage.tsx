@@ -100,7 +100,6 @@ const LeaderboardPage = () => {
             const pInfo = playersMap.get(uid);
             draft.participants.push({
                 userId: uid,
-                username: pInfo?.user_name || uid || 'Guest',
                 username: pInfo?.global_name || pInfo?.user_name || uid || 'Guest',
                 placement: t.placement
             });
@@ -155,8 +154,6 @@ const LeaderboardPage = () => {
             <Header />
             <style>{`
                 @keyframes slideDown {
-                    from { opacity: 0; transform: translateY(-10px); }
-                    to { opacity: 1; transform: translateY(0); }
                     from { opacity: 0; max-height: 0; transform: translateY(-10px); }
                     to { opacity: 1; max-height: 1000px; transform: translateY(0); }
                 }
