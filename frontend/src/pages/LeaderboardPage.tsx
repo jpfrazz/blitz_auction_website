@@ -157,6 +157,14 @@ const LeaderboardPage = () => {
                     from { opacity: 0; max-height: 0; }
                     to { opacity: 1; max-height: 1000px; }
                 }
+                .leaderboard-history-dropdown-row:hover {
+                    background-color: rgba(0, 0, 0, 0.15) !important;
+                    color: inherit !important;
+                }
+                .leaderboard-history-table tr:hover {
+                    background: transparent !important;
+                    color: inherit !important;
+                }
             `}</style>
             <div className="leaderboard-container">
             <div className="leaderboard-header">
@@ -172,13 +180,13 @@ const LeaderboardPage = () => {
                     />
                 </div>
             </div>
-            <table className="leaderboard-table">
+            <table className="leaderboard-table" style={{ tableLayout: 'fixed' }}>
                 <thead>
                     <tr>
-                        <th>Rank</th>
-                        <th>Username</th>
-                        <th>Display Name</th>
-                        <th>Win-Loss</th>
+                        <th style={{ width: '80px' }}>Rank</th>
+                        <th style={{ width: '250px' }}>Username</th>
+                        <th style={{ width: '250px' }}>Display Name</th>
+                        <th style={{ width: '150px' }}>Win-Loss</th>
                         <th>Most Drafted Pokémon</th>
                     </tr>
                 </thead>
@@ -257,11 +265,11 @@ const LeaderboardPage = () => {
                                         ) : userMatches.length === 0 ? (
                                             <div style={{ textAlign: 'center', color: '#888', padding: '20px' }}>No ranked match history found.</div>
                                         ) : (
-                                            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.85rem' }}>
+                                            <table className="leaderboard-history-table" style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.85rem', tableLayout: 'fixed' }}>
                                                 <thead>
                                                     <tr style={{ textAlign: 'left', color: '#666', borderBottom: '1px solid rgba(255, 255, 255, 0.1)' }}>
-                                                        <th style={{ padding: '12px' }}>Date</th>
-                                                        <th style={{ padding: '12px' }}>Race Standings</th>
+                                                        <th style={{ padding: '12px', width: '80px' }}>Date</th>
+                                                        <th style={{ padding: '12px', width: '500px' }}>Race Standings</th>
                                                         <th style={{ padding: '12px' }}>Draft</th>
                                                     </tr>
                                                 </thead>
@@ -306,7 +314,7 @@ const LeaderboardPage = () => {
                                                                                 alt={a.name} 
                                                                                 style={{ maxWidth: '20px', maxHeight: '20px', width: 'auto', height: 'auto', objectFit: 'contain', marginRight: '6px' }} 
                                                                             />
-                                                                            <span style={{ fontSize: '0.9rem', color: 'inherit', opacity: 0.7 }}>${a.winning_bid}</span>
+                                                                            <span style={{ fontSize: '1.1rem', color: 'inherit', opacity: 0.7 }}>${a.winning_bid}</span>
                                                                         </div>
                                                                     ))}
                                                                 </div>

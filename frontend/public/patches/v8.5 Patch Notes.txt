@@ -40,7 +40,7 @@ Gluttony Reworked
 
 
 Charm added as a Move Relearner move for all Eeveelutions
-//Previously, Eevee could learn Charm at level 29, and that was the only way to have it on an Eeveelution. While I liked this mechanic for giving the player a reason to level up their Eevee to the cap before evolving, in practice it just feels bad when a player accidentally evolves their Eevee before it's level 29. I'm trying to cut down on situations where small oversights lead to catastrophic consequences, as Pokémon has enough of these as is...
+//Previously, Eevee could learn Charm at level 29, and that was the only way to have it on an Eeveelution. While I liked this mechanic for giving the player a reason to level up their Eevee to the cap before evolving, in practice, it just feels bad when a player accidentally evolves their Eevee before it's level 29. I'm trying to cut down on situations where small oversights lead to catastrophic consequences, as Pokémon has enough of these as is...
 //Players evolving an underleveled Eevee to get Draining Kiss or Leech Seed at level 20 on their Sylveon/Leafeon will still need to visit the Move Relearner to get Charm, so it doesn't make much of a difference strategy wise.
 
 
