@@ -1,7 +1,5 @@
 4/2/2026
 
-//Return returns alongside some Quality of Life features
-
 -----------------------------------------------
 Balance Adjustments
 -----------------------------------------------
@@ -46,7 +44,7 @@ Charm added as a Move Relearner move for all Eeveelutions
 //Players evolving an underleveled Eevee to get Draining Kiss or Leech Seed at level 20 on their Sylveon/Leafeon will still need to visit the Move Relearner to get Charm, so it doesn't make much of a difference strategy wise.
 
 
-In game trades removed
+In-game Trades Removed
 //Prevents the player from trading for DOTS the Seedot or SKYLAR the Horsea from in-game NPCs.
 
 

@@ -154,8 +154,8 @@ const LeaderboardPage = () => {
             <Header />
             <style>{`
                 @keyframes slideDown {
-                    from { opacity: 0; max-height: 0; transform: translateY(-10px); }
-                    to { opacity: 1; max-height: 1000px; transform: translateY(0); }
+                    from { opacity: 0; max-height: 0; }
+                    to { opacity: 1; max-height: 1000px; }
                 }
             `}</style>
             <div className="leaderboard-container">
@@ -262,14 +262,14 @@ const LeaderboardPage = () => {
                                                     <tr style={{ textAlign: 'left', color: '#666', borderBottom: '1px solid rgba(255, 255, 255, 0.1)' }}>
                                                         <th style={{ padding: '12px' }}>Date</th>
                                                         <th style={{ padding: '12px' }}>Race Standings</th>
-                                                        <th style={{ padding: '12px' }}>Team & Costs</th>
+                                                        <th style={{ padding: '12px' }}>Draft</th>
                                                     </tr>
                                                 </thead>
                                                 <tbody>
                                                     {userMatches.map(match => (
                                                         <tr key={match.draftId} style={{ borderBottom: '1px solid rgba(255, 255, 255, 0.05)' }}>
                                                             <td style={{ padding: '12px', whiteSpace: 'nowrap', verticalAlign: 'top' }}>
-                                                                {match.date ? new Date(match.date).toLocaleDateString() : '-'}
+                                                                {match.date ? new Date(match.date).toLocaleDateString('en-US', { month: 'numeric', day: 'numeric', year: '2-digit' }) : '-'}
                                                             </td>
                                                             <td style={{ padding: '12px' }}>
                                                                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
@@ -304,7 +304,7 @@ const LeaderboardPage = () => {
                                                                             <img 
                                                                                 src={`/MiniIcons/${formatPokemonName(a.name)}.png`} 
                                                                                 alt={a.name} 
-                                                                                style={{ width: '24px', height: '24px', marginRight: '6px' }} 
+                                                                                style={{ maxWidth: '20px', maxHeight: '20px', width: 'auto', height: 'auto', objectFit: 'contain', marginRight: '6px' }} 
                                                                             />
                                                                             <span style={{ fontSize: '0.9rem', color: 'inherit', opacity: 0.7 }}>${a.winning_bid}</span>
                                                                         </div>
