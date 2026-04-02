@@ -1,0 +1,34 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n                INSERT INTO pokemon (\n                    pokedex_id, name, form, stage, description, type1, type2,\n                    ability1, ability2, hidden_ability, evolution_method, evolves_from_id,\n                    evolves_from_form, mega, obtain_method, hp, attack, defense,\n                    sp_attack, sp_defense, speed\n                )\n                VALUES (\n                    $1, $2, $3, $4, $5, $6, $7,\n                    $8, $9, $10, $11, $12,\n                    $13, $14, $15, $16, $17, $18,\n                    $19, $20, $21\n                )\n                ON CONFLICT (pokedex_id, form) DO UPDATE SET\n                    name = EXCLUDED.name,\n                    stage = EXCLUDED.stage,\n                    description = EXCLUDED.description,\n                    type1 = EXCLUDED.type1,\n                    type2 = EXCLUDED.type2,\n                    ability1 = EXCLUDED.ability1,\n                    ability2 = EXCLUDED.ability2,\n                    hidden_ability = EXCLUDED.hidden_ability,\n                    evolution_method = EXCLUDED.evolution_method,\n                    evolves_from_id = EXCLUDED.evolves_from_id,\n                    evolves_from_form = EXCLUDED.evolves_from_form,\n                    mega = EXCLUDED.mega,\n                    obtain_method = EXCLUDED.obtain_method,\n                    hp = EXCLUDED.hp,\n                    attack = EXCLUDED.attack,\n                    defense = EXCLUDED.defense,\n                    sp_attack = EXCLUDED.sp_attack,\n                    sp_defense = EXCLUDED.sp_defense,\n                    speed = EXCLUDED.speed\n            ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Int4",
+        "Text",
+        "Text",
+        "Text",
+        "Text",
+        "Text",
+        "Text",
+        "Text",
+        "Text",
+        "Text",
+        "Text",
+        "Int4",
+        "Text",
+        "Text",
+        "Text",
+        "Int4",
+        "Int4",
+        "Int4",
+        "Int4",
+        "Int4",
+        "Int4"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "42311f4f9e3147cc2c185244e8d1ffb18a27100d12d84cc07f32d57842b67054"
+}

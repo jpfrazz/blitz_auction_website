@@ -28,7 +28,7 @@ pub struct Draft {
     pub host: User,
     pub broadcast_tx: broadcast::Sender<ServerMessage>,
     pub pokemon: Vec<Arc<Pokemon>>,
-    actor_sender: mpsc::Sender<DraftCommand>
+    actor_sender: mpsc::Sender<DraftCommand>,
 }
 
 #[derive(Clone, Debug, Serialize)]
@@ -104,14 +104,21 @@ struct Team {
 }
 
 impl Draft {
-    fn new(draft_id: Uuid, draft_name: String, host: User, pokemon: Vec<Arc<Pokemon>>, actor_sender: mpsc::Sender<DraftCommand>, broadcast_tx: broadcast::Sender<ServerMessage>) -> Draft {
+    fn new(
+        draft_id: Uuid,
+        draft_name: String,
+        host: User,
+        pokemon: Vec<Arc<Pokemon>>,
+        actor_sender: mpsc::Sender<DraftCommand>,
+        broadcast_tx: broadcast::Sender<ServerMessage>,
+    ) -> Draft {
         Draft {
             draft_id,
             draft_name,
             host,
             pokemon,
             broadcast_tx,
-            actor_sender
+            actor_sender,
         }
     }
 
@@ -158,11 +165,26 @@ impl Draft {
         }
         let (actor_sender, actor_receiver) = mpsc::channel(1_000);
         let (broadcast_tx, _) = broadcast::channel(10_000);
-        let draft = Arc::new(Draft::new(draft_id, draft_name, host.clone(), pokemon, actor_sender, broadcast_tx.clone()));
+        let draft = Arc::new(Draft::new(
+            draft_id,
+            draft_name,
+            host.clone(),
+            pokemon,
+            actor_sender,
+            broadcast_tx.clone(),
+        ));
         let actor_draft = draft.clone();
 
         tokio::spawn(async move {
-            let actor = DraftActor::new(actor_draft, host, settings, auctions, db_writer, actor_receiver, broadcast_tx);
+            let actor = DraftActor::new(
+                actor_draft,
+                host,
+                settings,
+                auctions,
+                db_writer,
+                actor_receiver,
+                broadcast_tx,
+            );
             actor.run().await;
         });
 
@@ -172,77 +194,93 @@ impl Draft {
     pub fn get_pokemon(&self) -> Vec<Arc<Pokemon>> {
         self.pokemon.clone()
     }
-    
+
     pub async fn get_current_auction(&self) -> Result<Option<AuctionResponse>, AppError> {
         let (response_sender, response_receiver) = oneshot::channel();
         let cmd = DraftCommand::GetCurrentAuction(response_sender);
-        let _ = self.actor_sender.send(cmd).await
-            .map_err(|e| (
-                    StatusCode::INTERNAL_SERVER_ERROR,
-                    format!("failed to send resolve auction cmd, {}", e)
-            ))?;
+        let _ = self.actor_sender.send(cmd).await.map_err(|e| {
+            (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                format!("failed to send resolve auction cmd, {}", e),
+            )
+        })?;
 
-        response_receiver.await
-            .map_err(|e| (
-                    StatusCode::INTERNAL_SERVER_ERROR,
-                    format!("failed to listen to resolve auction response, {}", e)
-            ))?
+        response_receiver.await.map_err(|e| {
+            (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                format!("failed to listen to resolve auction response, {}", e),
+            )
+        })?
     }
 
-    pub async fn resolve_auction(&self, completed_auction: AuctionResponse) -> Result<(), AppError> {
+    pub async fn resolve_auction(
+        &self,
+        completed_auction: AuctionResponse,
+    ) -> Result<(), AppError> {
         let (response_sender, response_receiver) = oneshot::channel();
-        let cmd = DraftCommand::ResolveAuction { response_sender,  completed_auction };
-        let _ = self.actor_sender.send(cmd).await
-            .map_err(|e| (
-                    StatusCode::INTERNAL_SERVER_ERROR,
-                    format!("failed to send resolve auction cmd, {}", e)
-            ))?;
+        let cmd = DraftCommand::ResolveAuction {
+            response_sender,
+            completed_auction,
+        };
+        let _ = self.actor_sender.send(cmd).await.map_err(|e| {
+            (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                format!("failed to send resolve auction cmd, {}", e),
+            )
+        })?;
 
-        response_receiver.await
-            .map_err(|e| (
-                    StatusCode::INTERNAL_SERVER_ERROR,
-                    format!("failed to listen to resolve auction response, {}", e)
-            ))?
+        response_receiver.await.map_err(|e| {
+            (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                format!("failed to listen to resolve auction response, {}", e),
+            )
+        })?
     }
 
     pub async fn join_draft(&self, user: User, password: Option<String>) -> Result<(), AppError> {
         let (response_sender, response_receiver) = oneshot::channel();
-        let cmd = DraftCommand::Join { response_sender , user, password };
-        let _ = self.actor_sender.send(cmd).await
-            .map_err(|e| (
-                    StatusCode::INTERNAL_SERVER_ERROR,
-                    format!("failed to send join draft cmd, {}", e)
-            ))?;
+        let cmd = DraftCommand::Join {
+            response_sender,
+            user,
+            password,
+        };
+        let _ = self.actor_sender.send(cmd).await.map_err(|e| {
+            (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                format!("failed to send join draft cmd, {}", e),
+            )
+        })?;
 
-        response_receiver.await
-            .map_err(|e| (
-                    StatusCode::INTERNAL_SERVER_ERROR,
-                    format!("failed to listen to join draft response, {}", e)
-            ))?
+        response_receiver.await.map_err(|e| {
+            (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                format!("failed to listen to join draft response, {}", e),
+            )
+        })?
     }
 
     pub async fn kick(&self, user: User) -> Result<(), AppError> {
         let (response_sender, response_receiver) = oneshot::channel();
-        let cmd = DraftCommand::Kick { response_sender , user };
-        let _ = self.actor_sender.send(cmd).await
-            .map_err(|e| (
-                    StatusCode::INTERNAL_SERVER_ERROR,
-                    format!("failed to send join draft cmd, {}", e)
-            ))?;
+        let cmd = DraftCommand::Kick {
+            response_sender,
+            user,
+        };
+        let _ = self.actor_sender.send(cmd).await.map_err(|e| {
+            (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                format!("failed to send join draft cmd, {}", e),
+            )
+        })?;
 
-        response_receiver.await
-            .map_err(|e| (
-                    StatusCode::INTERNAL_SERVER_ERROR,
-                    format!("failed to listen to join draft response, {}", e)
-            ))?
+        response_receiver.await.map_err(|e| {
+            (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                format!("failed to listen to join draft response, {}", e),
+            )
+        })?
     }
 
-    pub async fn bid(
-        &self,
-        auction_id: i64,
-        bid_value: u32,
-        user: User,
-    ) -> Result<(), AppError> {
+    pub async fn bid(&self, auction_id: i64, bid_value: u32, user: User) -> Result<(), AppError> {
         let (response_sender, response_receiver) = oneshot::channel();
         let cmd = DraftCommand::Bid {
             response_sender,
@@ -366,7 +404,10 @@ impl Draft {
 
     pub async fn ready_up(&self, user_id: String) -> Result<(), AppError> {
         let (response_sender, response_receiver) = oneshot::channel();
-        let cmd = DraftCommand::ReadyUp { response_sender, user_id };
+        let cmd = DraftCommand::ReadyUp {
+            response_sender,
+            user_id,
+        };
         self.actor_sender.send(cmd).await.map_err(|e| {
             (
                 StatusCode::INTERNAL_SERVER_ERROR,
@@ -386,7 +427,7 @@ impl Draft {
         &self,
         user: User,
         pokedex_id: i32,
-        form: Option<String>
+        form: Option<String>,
     ) -> Result<serde_json::Value, AppError> {
         let (response_sender, response_receiver) = oneshot::channel();
         let cmd = DraftCommand::ClaimEeveelution {
@@ -395,22 +436,26 @@ impl Draft {
             pokedex_id,
             form,
         };
-        self.actor_sender.send(cmd).await.map_err(|e| (
-            StatusCode::INTERNAL_SERVER_ERROR,
-            format!("failed to send claim eeveelution to actor, {}", e),
-        ))?;
+        self.actor_sender.send(cmd).await.map_err(|e| {
+            (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                format!("failed to send claim eeveelution to actor, {}", e),
+            )
+        })?;
 
-        response_receiver.await.map_err(|e| (
-            StatusCode::INTERNAL_SERVER_ERROR,
-            format!("failed to wait for actor response, {}", e),
-        ))?
+        response_receiver.await.map_err(|e| {
+            (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                format!("failed to wait for actor response, {}", e),
+            )
+        })?
     }
 
     pub async fn unclaim_eeveelution(
         &self,
         user: User,
         pokedex_id: i32,
-        form: Option<String>
+        form: Option<String>,
     ) -> Result<serde_json::Value, AppError> {
         let (response_sender, response_receiver) = oneshot::channel();
         let cmd = DraftCommand::UnclaimEeveelution {
@@ -419,15 +464,19 @@ impl Draft {
             pokedex_id,
             form,
         };
-        self.actor_sender.send(cmd).await.map_err(|e| (
-            StatusCode::INTERNAL_SERVER_ERROR,
-            format!("failed to send unclaim eeveelution to actor, {}", e),
-        ))?;
+        self.actor_sender.send(cmd).await.map_err(|e| {
+            (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                format!("failed to send unclaim eeveelution to actor, {}", e),
+            )
+        })?;
 
-        response_receiver.await.map_err(|e| (
-            StatusCode::INTERNAL_SERVER_ERROR,
-            format!("failed to wait for actor response, {}", e),
-        ))?
+        response_receiver.await.map_err(|e| {
+            (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                format!("failed to wait for actor response, {}", e),
+            )
+        })?
     }
 
     pub async fn update_pending_settings(
@@ -445,22 +494,25 @@ impl Draft {
             num_auctions,
             remove_team_ids,
         };
-        self.actor_sender.send(cmd).await.map_err(|e| (
-            StatusCode::INTERNAL_SERVER_ERROR,
-            format!("failed to send update pending settings cmd to actor, {}", e)
-        ))?;
+        self.actor_sender.send(cmd).await.map_err(|e| {
+            (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                format!("failed to send update pending settings cmd to actor, {}", e),
+            )
+        })?;
 
-        response_receiver.await.map_err(|e| (
-            StatusCode::INTERNAL_SERVER_ERROR,
-            format!("failed to wait for response, {}", e)
-        ))?
+        response_receiver.await.map_err(|e| {
+            (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                format!("failed to wait for response, {}", e),
+            )
+        })?
     }
 
     pub async fn update_user_name(&self, user_id: String, new_name: String) {
         let cmd = DraftCommand::UpdateUserName { user_id, new_name };
         let _ = self.actor_sender.send(cmd).await;
     }
-
 }
 
 struct DraftActor {
@@ -475,7 +527,7 @@ struct DraftActor {
     teams: HashMap<String, Team>,
     spectators: Vec<User>,
     receiver: mpsc::Receiver<DraftCommand>,
-    broadcast_tx: broadcast::Sender<ServerMessage>
+    broadcast_tx: broadcast::Sender<ServerMessage>,
 }
 
 enum DraftCommand {
@@ -543,17 +595,28 @@ enum DraftCommand {
 }
 
 impl DraftActor {
-    pub fn new(draft: Arc<Draft>, host: User, settings: DraftSettings, auctions: Vec<Auction>, db_writer: DbWriter, receiver: mpsc::Receiver<DraftCommand>, broadcast_tx: broadcast::Sender<ServerMessage>) -> Self {
+    pub fn new(
+        draft: Arc<Draft>,
+        host: User,
+        settings: DraftSettings,
+        auctions: Vec<Auction>,
+        db_writer: DbWriter,
+        receiver: mpsc::Receiver<DraftCommand>,
+        broadcast_tx: broadcast::Sender<ServerMessage>,
+    ) -> Self {
         let host_id = host.get_user_id_string();
         let mut teams = HashMap::new();
         if !settings.ranked {
-            teams.insert(host_id.clone(), Team {
-                user_id: host_id.clone(),
-                username: host.get_user_name_string(),
-                ready: true,
-                budget_remaining: settings.starting_money,
-                auctions_won: vec![],
-            });
+            teams.insert(
+                host_id.clone(),
+                Team {
+                    user_id: host_id.clone(),
+                    username: host.get_user_name_string(),
+                    ready: true,
+                    budget_remaining: settings.starting_money,
+                    auctions_won: vec![],
+                },
+            );
         }
         Self {
             draft,
@@ -596,7 +659,9 @@ impl DraftActor {
                         let res = self.start(user_id).await;
                         let ok = res.is_ok();
                         let _ = response_sender.send(res);
-                        if ok { self.broadcast(); } ;
+                        if ok {
+                            self.broadcast();
+                        };
                     }
                     DraftCommand::Pause {
                         response_sender,
@@ -620,7 +685,9 @@ impl DraftActor {
                         let res = self.join(user, password).await;
                         let ok = res.is_ok();
                         let _ = response_sender.send(res);
-                        if ok { self.broadcast(); } ;
+                        if ok {
+                            self.broadcast();
+                        };
                     }
                     DraftCommand::Kick {
                         response_sender,
@@ -629,11 +696,13 @@ impl DraftActor {
                         let res = self.kick(user).await;
                         let ok = res.is_ok();
                         let _ = response_sender.send(res);
-                        if ok { self.broadcast(); } ;
-                    },
+                        if ok {
+                            self.broadcast();
+                        };
+                    }
                     DraftCommand::Get(response_sender) => {
                         let _ = response_sender.send(Ok(DraftResponse::from(&self)));
-                    },
+                    }
                     DraftCommand::GetLobby(response_sender) => {
                         let _ = response_sender.send(Ok(DraftLobbyResponse::from(&self)));
                     }
@@ -644,7 +713,9 @@ impl DraftActor {
                         let res = self.resolve_auction(completed_auction).await;
                         let ok = res.is_ok();
                         let _ = response_sender.send(res);
-                        if ok { self.broadcast(); } ;
+                        if ok {
+                            self.broadcast();
+                        };
                     }
                     DraftCommand::ReadyUp {
                         response_sender,
@@ -653,12 +724,14 @@ impl DraftActor {
                         let res = self.ready_up(user_id).await;
                         let ok = res.is_ok();
                         let _ = response_sender.send(res);
-                        if ok { self.broadcast(); } ;
-                    },
+                        if ok {
+                            self.broadcast();
+                        };
+                    }
                     DraftCommand::GetCurrentAuction(response_sender) => {
                         let res = self.get_current_auction().await;
                         let _ = response_sender.send(res);
-                    },
+                    }
                     DraftCommand::ClaimEeveelution {
                         response_sender,
                         user,
@@ -684,7 +757,14 @@ impl DraftActor {
                         num_auctions,
                         remove_team_ids,
                     } => {
-                        let res = self.update_pending_settings(user_id, num_teams, num_auctions, remove_team_ids).await;
+                        let res = self
+                            .update_pending_settings(
+                                user_id,
+                                num_teams,
+                                num_auctions,
+                                remove_team_ids,
+                            )
+                            .await;
                         let _ = response_sender.send(res);
                     }
                     DraftCommand::UpdateUserName { user_id, new_name } => {
@@ -749,30 +829,30 @@ impl DraftActor {
     async fn start(&mut self, user_id: String) -> Result<(), AppError> {
         if user_id != self.host {
             return Err((
-                    StatusCode::PRECONDITION_FAILED,
-                    format!("user is not the host")
+                StatusCode::PRECONDITION_FAILED,
+                format!("user is not the host"),
             ));
         }
         if self.draft_state != DraftState::PENDING {
             return Err((
-                    StatusCode::PRECONDITION_FAILED,
-                    format!("draft is not pending")
+                StatusCode::PRECONDITION_FAILED,
+                format!("draft is not pending"),
             ));
         }
         if self.teams.len() < self.settings.num_teams as usize {
             return Err((
-                    StatusCode::PRECONDITION_FAILED,
-                    format!(
-                        "only {} of {} teams have joined the draft",
-                        self.teams.len(),
-                        self.settings.num_teams
-                    )
+                StatusCode::PRECONDITION_FAILED,
+                format!(
+                    "only {} of {} teams have joined the draft",
+                    self.teams.len(),
+                    self.settings.num_teams
+                ),
             ));
         }
         if self.teams.values().any(|t| !t.ready) {
             return Err((
-                    StatusCode::PRECONDITION_FAILED,
-                    format!("not all teams are ready")
+                StatusCode::PRECONDITION_FAILED,
+                format!("not all teams are ready"),
             ));
         }
 
@@ -780,10 +860,7 @@ impl DraftActor {
 
         let auction = &self.auctions[self.current_auction];
         auction
-            .start(
-                self.draft.clone(),
-                self.settings.auction_length,
-            )
+            .start(self.draft.clone(), self.settings.auction_length)
             .await?;
 
         self.draft_state = DraftState::BIDDING;
@@ -793,15 +870,12 @@ impl DraftActor {
 
     async fn resume(&self, user_id: String) -> Result<(), AppError> {
         if user_id != self.host {
-            return Err((
-                    StatusCode::UNAUTHORIZED,
-                    format!("user is not the host")
-            ));
+            return Err((StatusCode::UNAUTHORIZED, format!("user is not the host")));
         }
         if self.draft_state != DraftState::BIDDING {
             return Err((
                 StatusCode::PRECONDITION_FAILED,
-                format!("draft is not in bidding state")
+                format!("draft is not in bidding state"),
             ));
         }
 
@@ -812,35 +886,34 @@ impl DraftActor {
 
     async fn pause(&self, user_id: String) -> Result<(), AppError> {
         if user_id != self.host {
-            return Err((
-                    StatusCode::UNAUTHORIZED,
-                    format!("user is not the host")
-            ));
+            return Err((StatusCode::UNAUTHORIZED, format!("user is not the host")));
         }
         if self.draft_state != DraftState::BIDDING {
             return Err((
                 StatusCode::PRECONDITION_FAILED,
-                format!("draft is not in bidding state")
+                format!("draft is not in bidding state"),
             ));
         }
 
         let auction = &self.auctions[self.current_auction];
         let time_remaining = auction.pause().await?;
-        self.db_writer.pause_auction(auction.auction_id, time_remaining).await
+        self.db_writer
+            .pause_auction(auction.auction_id, time_remaining)
+            .await
     }
 
     async fn join(&mut self, user: User, password: Option<String>) -> Result<(), AppError> {
         let user_id = user.get_user_id_string();
         if self.teams.iter().any(|(u_id, _)| *u_id == user_id) {
             return Err((
-                    StatusCode::PRECONDITION_FAILED,
-                    format!("user is already in this draft")
+                StatusCode::PRECONDITION_FAILED,
+                format!("user is already in this draft"),
             ));
         }
         if self.teams.len() >= self.settings.num_teams as usize {
             return Err((
-                    StatusCode::PRECONDITION_FAILED,
-                    format!("draft is already full")
+                StatusCode::PRECONDITION_FAILED,
+                format!("draft is already full"),
             ));
         }
 
@@ -851,17 +924,11 @@ impl DraftActor {
                     .map(|p| p.trim().to_string())
                     .filter(|p| !p.is_empty())
                 else {
-                    return Err((
-                            StatusCode::BAD_REQUEST,
-                            format!("password required")
-                    ));
+                    return Err((StatusCode::BAD_REQUEST, format!("password required")));
                 };
 
                 if password != *draft_password {
-                    return Err((
-                            StatusCode::BAD_REQUEST,
-                            format!("password is incorrect")
-                    ));
+                    return Err((StatusCode::BAD_REQUEST, format!("password is incorrect")));
                 }
             }
         }
@@ -883,19 +950,16 @@ impl DraftActor {
         if !self.teams.iter().any(|(u_id, _)| *u_id == user_id) {
             return Err((
                 StatusCode::PRECONDITION_FAILED,
-                format!("user is not in draft")
+                format!("user is not in draft"),
             ));
         }
         if user_id == self.host {
-            return Err((
-                StatusCode::BAD_REQUEST,
-                format!("cannot kick host")
-            ));
+            return Err((StatusCode::BAD_REQUEST, format!("cannot kick host")));
         }
         if self.draft_state != DraftState::PENDING {
             return Err((
                 StatusCode::PRECONDITION_FAILED,
-                format!("cannot kick after draft starts")
+                format!("cannot kick after draft starts"),
             ));
         }
 
@@ -904,33 +968,44 @@ impl DraftActor {
         Ok(())
     }
 
-    async fn resolve_auction(&mut self, completed_auction: AuctionResponse) -> Result<(), AppError> {
+    async fn resolve_auction(
+        &mut self,
+        completed_auction: AuctionResponse,
+    ) -> Result<(), AppError> {
         if self.draft_state != DraftState::BIDDING {
             return Err((
                 StatusCode::PRECONDITION_FAILED,
-                format!("draft is not in the bidding state")
+                format!("draft is not in the bidding state"),
             ));
         }
         let current_auction = &self.auctions[self.current_auction];
         if current_auction.auction_id != completed_auction.auction_id {
             return Err((
-                    StatusCode::PRECONDITION_FAILED,
-                    format!("completed auction {}, different than current auction {}",
-                        completed_auction.auction_id, current_auction.auction_id)
+                StatusCode::PRECONDITION_FAILED,
+                format!(
+                    "completed auction {}, different than current auction {}",
+                    completed_auction.auction_id, current_auction.auction_id
+                ),
             ));
         }
-        self.db_writer.resolve_auction(completed_auction.auction_id).await?;
+        self.db_writer
+            .resolve_auction(completed_auction.auction_id)
+            .await?;
 
         if let Some(winner) = &completed_auction.highest_bidder {
             if let Some(team) = self.teams.get_mut(&winner.get_user_id_string()) {
                 team.auctions_won.push(current_auction.pokemon.clone());
-                team.budget_remaining = team.budget_remaining.saturating_sub(completed_auction.highest_bid);
+                team.budget_remaining = team
+                    .budget_remaining
+                    .saturating_sub(completed_auction.highest_bid);
             }
         }
         self.current_auction += 1;
         self.completed_auctions.push(completed_auction);
         if let Some(auction) = self.auctions.get(self.current_auction) {
-            let _ = auction.start(self.draft.clone(), self.settings.auction_length).await;
+            let _ = auction
+                .start(self.draft.clone(), self.settings.auction_length)
+                .await;
         } else {
             if let Ok(_) = self.db_writer.finish_draft().await {
                 self.draft_state = DraftState::COMPLETED;
@@ -944,8 +1019,8 @@ impl DraftActor {
     async fn ready_up(&mut self, user_id: String) -> Result<(), AppError> {
         let Some(team) = self.teams.get_mut(&user_id) else {
             return Err((
-                    StatusCode::BAD_REQUEST,
-                    format!("user is not a participant in this draft")
+                StatusCode::BAD_REQUEST,
+                format!("user is not a participant in this draft"),
             ));
         };
 
@@ -953,7 +1028,12 @@ impl DraftActor {
         Ok(())
     }
 
-    async fn claim_eeveelution(&mut self, user: User, pokedex_id: i32, form: Option<String>) -> Result<serde_json::Value, AppError> {
+    async fn claim_eeveelution(
+        &mut self,
+        user: User,
+        pokedex_id: i32,
+        form: Option<String>,
+    ) -> Result<serde_json::Value, AppError> {
         if self.draft_state != DraftState::COMPLETED {
             return Err((
                 StatusCode::PRECONDITION_FAILED,
@@ -964,7 +1044,11 @@ impl DraftActor {
         let user_id = user.get_user_id_string();
         if let Some(team) = self.teams.get(&user_id) {
             let eeveelutions = [133, 134, 135, 136, 196, 197, 470, 471, 700];
-            if team.auctions_won.iter().any(|p| eeveelutions.contains(&(p.pokedex_id as i32))) {
+            if team
+                .auctions_won
+                .iter()
+                .any(|p| eeveelutions.contains(&(p.pokedex_id as i32)))
+            {
                 return Ok(serde_json::json!({
                     "success": false,
                     "error": "You have already claimed an Eeveelution"
@@ -972,20 +1056,33 @@ impl DraftActor {
             }
         }
 
-        let target_pokemon = self.draft.pokemon.iter().find(|p| p.pokedex_id as i32 == pokedex_id && p.form == form).cloned();
+        let target_pokemon = self
+            .draft
+            .pokemon
+            .iter()
+            .find(|p| p.pokedex_id as i32 == pokedex_id && p.form == form)
+            .cloned();
         let target_pokemon = match target_pokemon {
             Some(p) => p,
-            None => return Err((StatusCode::NOT_FOUND, "pokemon not found in draft".to_string())),
+            None => {
+                return Err((
+                    StatusCode::NOT_FOUND,
+                    "pokemon not found in draft".to_string(),
+                ));
+            }
         };
 
         // Check if claimed
-        let already_claimed_by = self.teams.values().find_map(|team| {
-            if team.auctions_won.iter().any(|p| p.pokedex_id == target_pokemon.pokedex_id && p.form == target_pokemon.form) {
-                Some(team.username.clone())
-            } else {
-                None
-            }
-        });
+        let already_claimed_by =
+            self.teams.values().find_map(|team| {
+                if team.auctions_won.iter().any(|p| {
+                    p.pokedex_id == target_pokemon.pokedex_id && p.form == target_pokemon.form
+                }) {
+                    Some(team.username.clone())
+                } else {
+                    None
+                }
+            });
 
         if let Some(claimer_name) = already_claimed_by {
             return Ok(serde_json::json!({
@@ -1012,7 +1109,12 @@ impl DraftActor {
         }
     }
 
-    async fn unclaim_eeveelution(&mut self, user: User, pokedex_id: i32, form: Option<String>) -> Result<serde_json::Value, AppError> {
+    async fn unclaim_eeveelution(
+        &mut self,
+        user: User,
+        pokedex_id: i32,
+        form: Option<String>,
+    ) -> Result<serde_json::Value, AppError> {
         if self.draft_state != DraftState::COMPLETED {
             return Err((
                 StatusCode::PRECONDITION_FAILED,
@@ -1020,10 +1122,20 @@ impl DraftActor {
             ));
         }
 
-        let target_pokemon = self.draft.pokemon.iter().find(|p| p.pokedex_id as i32 == pokedex_id && p.form == form).cloned();
+        let target_pokemon = self
+            .draft
+            .pokemon
+            .iter()
+            .find(|p| p.pokedex_id as i32 == pokedex_id && p.form == form)
+            .cloned();
         let target_pokemon = match target_pokemon {
             Some(p) => p,
-            None => return Err((StatusCode::NOT_FOUND, "pokemon not found in draft".to_string())),
+            None => {
+                return Err((
+                    StatusCode::NOT_FOUND,
+                    "pokemon not found in draft".to_string(),
+                ));
+            }
         };
 
         let user_id = user.get_user_id_string();
@@ -1031,7 +1143,9 @@ impl DraftActor {
             return Err((StatusCode::NOT_FOUND, "team not found".to_string()));
         };
 
-        let maybe_index = team.auctions_won.iter().position(|p| p.pokedex_id == target_pokemon.pokedex_id && p.form == target_pokemon.form);
+        let maybe_index = team.auctions_won.iter().position(|p| {
+            p.pokedex_id == target_pokemon.pokedex_id && p.form == target_pokemon.form
+        });
 
         if let Some(index) = maybe_index {
             team.auctions_won.remove(index);
@@ -1048,7 +1162,11 @@ impl DraftActor {
         }
 
         let claimed_by_other = self.teams.values().find_map(|other_team| {
-            if other_team.user_id != user_id && other_team.auctions_won.iter().any(|p| p.pokedex_id == target_pokemon.pokedex_id && p.form == target_pokemon.form) {
+            if other_team.user_id != user_id
+                && other_team.auctions_won.iter().any(|p| {
+                    p.pokedex_id == target_pokemon.pokedex_id && p.form == target_pokemon.form
+                })
+            {
                 Some(other_team.username.clone())
             } else {
                 None
@@ -1056,10 +1174,16 @@ impl DraftActor {
         });
 
         if let Some(owner_name) = claimed_by_other {
-            return Err((StatusCode::FORBIDDEN, format!("eeveelution is claimed by {}", owner_name)));
+            return Err((
+                StatusCode::FORBIDDEN,
+                format!("eeveelution is claimed by {}", owner_name),
+            ));
         }
 
-        Err((StatusCode::NOT_FOUND, "you have not claimed this eeveelution".to_string()))
+        Err((
+            StatusCode::NOT_FOUND,
+            "you have not claimed this eeveelution".to_string(),
+        ))
     }
 
     async fn update_pending_settings(
@@ -1070,7 +1194,10 @@ impl DraftActor {
         remove_team_ids: Vec<String>,
     ) -> Result<DraftResponse, AppError> {
         if self.draft_state != DraftState::PENDING {
-            return Err((StatusCode::PRECONDITION_FAILED, "draft must be in PENDING state".to_string()));
+            return Err((
+                StatusCode::PRECONDITION_FAILED,
+                "draft must be in PENDING state".to_string(),
+            ));
         }
         if user_id != self.host {
             return Err((StatusCode::FORBIDDEN, "user is not host".to_string()));
@@ -1081,19 +1208,30 @@ impl DraftActor {
 
         let mut unique_remove_ids = Vec::new();
         for team_id in remove_team_ids {
-            if unique_remove_ids.contains(&team_id) { continue; }
+            if unique_remove_ids.contains(&team_id) {
+                continue;
+            }
             if team_id == self.host {
-                return Err((StatusCode::BAD_REQUEST, "host cannot be removed".to_string()));
+                return Err((
+                    StatusCode::BAD_REQUEST,
+                    "host cannot be removed".to_string(),
+                ));
             }
             if !self.teams.contains_key(&team_id) {
-                return Err((StatusCode::BAD_REQUEST, format!("team {} not in draft", team_id)));
+                return Err((
+                    StatusCode::BAD_REQUEST,
+                    format!("team {} not in draft", team_id),
+                ));
             }
             unique_remove_ids.push(team_id);
         }
 
         let teams_after = self.teams.len().saturating_sub(unique_remove_ids.len()) as u32;
         if num_teams < teams_after {
-            return Err((StatusCode::BAD_REQUEST, "num_teams less than remaining teams".to_string()));
+            return Err((
+                StatusCode::BAD_REQUEST,
+                "num_teams less than remaining teams".to_string(),
+            ));
         }
 
         let current_auctions_len = self.auctions.len() as u32;
@@ -1104,7 +1242,8 @@ impl DraftActor {
             let needed = num_auctions - current_auctions_len;
             let mut count_suitable = 0;
             for p in self.draft.pokemon.iter() {
-                if p.stage == pokemon::PokemonStage::base && p.obtain_method == Some("".to_string()) {
+                if p.stage == pokemon::PokemonStage::base && p.obtain_method == Some("".to_string())
+                {
                     if count_suitable >= current_auctions_len {
                         new_auctions_data.push((p.clone(), count_suitable as i32));
                         if new_auctions_data.len() == needed as usize {
@@ -1114,16 +1253,30 @@ impl DraftActor {
                     count_suitable += 1;
                 }
             }
-            
+
             if new_auctions_data.len() < needed as usize {
-                 return Err((StatusCode::BAD_REQUEST, format!("Not enough suitable pokemon to increase auctions to {}", num_auctions)));
+                return Err((
+                    StatusCode::BAD_REQUEST,
+                    format!(
+                        "Not enough suitable pokemon to increase auctions to {}",
+                        num_auctions
+                    ),
+                ));
             }
         } else if num_auctions < current_auctions_len {
             truncate_to = Some(num_auctions);
         }
 
         // Update DB
-        let new_ids = self.db_writer.update_draft_settings(num_teams, unique_remove_ids.clone(), new_auctions_data.clone(), truncate_to).await?;
+        let new_ids = self
+            .db_writer
+            .update_draft_settings(
+                num_teams,
+                unique_remove_ids.clone(),
+                new_auctions_data.clone(),
+                truncate_to,
+            )
+            .await?;
 
         // Update state
         for team_id in unique_remove_ids {

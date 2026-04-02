@@ -62,16 +62,12 @@ impl Server {
         if let Err(e) = pokemon::init_pokemon_data(&db_pool).await {
             return Err(ServerError::PokemonData(format!(
                 "failed to init pokemon data, {}",
-                e.to_string()
+                e.1
             )));
         };
 
-
         let drafts = DraftCache::new(DashMap::new());
-        let server_state = ServerState {
-            db_pool,
-            drafts,
-        };
+        let server_state = ServerState { db_pool, drafts };
         let server = Self::new(server_state);
 
         Ok(server)
@@ -130,15 +126,24 @@ impl Server {
             .route("/pokemon", get(handlers::get_pokemon))
             .route("/pokemon/rental", get(handlers::get_rental_pokemon))
             .route("/drafts/{draft_id}", get(handlers::get_draft))
-            .route("/drafts/{draft_id}/pokemon", get(handlers::get_draft_pokemon))
-            .route("/drafts/{draft_id}/current_auction", get(handlers::get_current_auction))
+            .route(
+                "/drafts/{draft_id}/pokemon",
+                get(handlers::get_draft_pokemon),
+            )
+            .route(
+                "/drafts/{draft_id}/current_auction",
+                get(handlers::get_current_auction),
+            )
             .route("/ws/{draft_id}", any(handlers::websocket_handler))
             .route("/login", get(handlers::discord_oauth_redirect))
             .route("/auth/discord/callback", get(handlers::discord_callback))
             .route("/me", get(handlers::me))
             .route("/leaderboard", get(stats::get_leaderboard))
             .route("/stats", get(stats::get_stats_page_data))
-            .route("/match-history/{user_id}", get(handlers::get_match_history_by_user_id));
+            .route(
+                "/match-history/{user_id}",
+                get(handlers::get_match_history_by_user_id),
+            );
 
         let private_routes = Router::new()
             .route(
@@ -155,7 +160,10 @@ impl Server {
                 "/drafts/{draft_id}/submit-results",
                 post(handlers::submit_race_results),
             )
-            .route("/admin/drafts/completed", get(handlers::get_admin_completed_drafts))
+            .route(
+                "/admin/drafts/completed",
+                get(handlers::get_admin_completed_drafts),
+            )
             .route(
                 "/admin/drafts/{draft_id}/teams",
                 get(handlers::get_admin_draft_team_placements),
@@ -184,6 +192,11 @@ impl Server {
             .route(
                 "/drafts/{draft_id}/chats",
                 get(handlers::get_draft_chats).post(handlers::create_draft_chat),
+            )
+            .route("/pokemon", post(handlers::post_pokemon_data))
+            .route(
+                "/pokemon_key_moves",
+                post(handlers::post_pokemon_key_moves_data),
             )
             .route_layer(middleware::from_fn(auto_login_guest))
             .route("/logout", get(handlers::logout))

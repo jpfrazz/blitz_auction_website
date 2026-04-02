@@ -1,12 +1,21 @@
 use crate::{
-    AppError, CSRF_STATE_KEY, auction::AuctionResponse, draft::{Draft, DraftLobbyResponse, DraftResponse, DraftSettings, DraftState}, messages::{ChatMessage, ClientBidRequest, ClientBidResponse, ClientJoinResponse, ServerMessage}, pokemon::{self, Pokemon}, server::ServerState, users::{AuthBackend, Credentials, DiscordCreds, User}
+    AppError, CSRF_STATE_KEY,
+    auction::AuctionResponse,
+    draft::{Draft, DraftLobbyResponse, DraftResponse, DraftSettings, DraftState},
+    messages::{
+        ChatMessage, ClientBidRequest, ClientBidResponse, ClientJoinResponse, ServerMessage,
+    },
+    pokemon::{self, Pokemon},
+    pokemon_data_updater::{self, KeyMoveCsvRecord, PokemonCsvRecord},
+    server::ServerState,
+    users::{AuthBackend, Credentials, DiscordCreds, User},
 };
 use axum::{
     Json,
     body::Body,
     debug_handler,
     extract::{
-        Path, Query, State, WebSocketUpgrade,
+        Multipart, Path, Query, State, WebSocketUpgrade,
         ws::{Message, WebSocket, close_code::STATUS},
     },
     http::StatusCode,
@@ -18,12 +27,14 @@ use dashmap::mapref::entry;
 use oauth2::CsrfToken;
 use serde::{Deserialize, Serialize};
 use sqlx::Row;
-use uuid::Uuid;
 use std::{
-    collections::{HashMap, HashSet}, str::FromStr, sync::Arc
+    collections::{HashMap, HashSet},
+    str::FromStr,
+    sync::Arc,
 };
 use tokio::sync::{RwLock, broadcast};
 use tower_sessions::Session;
+use uuid::Uuid;
 
 #[derive(Clone, Debug, Deserialize)]
 pub struct JoinDraftRequest {
@@ -213,13 +224,19 @@ fn require_non_guest_user_id(user: Option<User>) -> Result<String, AppError> {
             StatusCode::FORBIDDEN,
             "guests cannot access match history".to_string(),
         )),
-        None => Err((StatusCode::UNAUTHORIZED, "user not authenticated".to_string())),
+        None => Err((
+            StatusCode::UNAUTHORIZED,
+            "user not authenticated".to_string(),
+        )),
     }
 }
 
 fn require_referee_user(user: Option<User>) -> Result<User, AppError> {
     let Some(user) = user else {
-        return Err((StatusCode::UNAUTHORIZED, "user not authenticated".to_string()));
+        return Err((
+            StatusCode::UNAUTHORIZED,
+            "user not authenticated".to_string(),
+        ));
     };
 
     if !user.has_role_name("Referee") {
@@ -335,15 +352,16 @@ pub async fn get_draft(
     State(state): State<ServerState>,
     Path(draft_id): Path<String>,
 ) -> Result<Json<DraftResponse>, AppError> {
-    let draft_uuid = Uuid::from_str(&draft_id)
-        .map_err(|e| (
-                StatusCode::BAD_REQUEST,
-                format!("requested draft does not exist")
-        ))?;
+    let draft_uuid = Uuid::from_str(&draft_id).map_err(|e| {
+        (
+            StatusCode::BAD_REQUEST,
+            format!("requested draft does not exist"),
+        )
+    })?;
     let Some(draft) = state.drafts.get(&draft_uuid) else {
         return Err((
-                StatusCode::BAD_REQUEST,
-                format!("requested draft does not exist")
+            StatusCode::BAD_REQUEST,
+            format!("requested draft does not exist"),
         ));
     };
 
@@ -370,8 +388,7 @@ pub async fn get_pokemon() -> Result<Json<Vec<Arc<pokemon::Pokemon>>>, AppError>
 }
 
 #[debug_handler]
-pub async fn get_rental_pokemon() -> Result<Json<Vec<Arc<pokemon::Pokemon>>>, AppError>
-{
+pub async fn get_rental_pokemon() -> Result<Json<Vec<Arc<pokemon::Pokemon>>>, AppError> {
     let Some(pokemon) = pokemon::get_pokemon_data(&Vec::new()) else {
         return Err((
             StatusCode::NOT_FOUND,
@@ -749,15 +766,16 @@ pub async fn join_draft(
 ) -> Result<(), AppError> {
     let user = auth_session.user.expect("user should exist");
     let password = join_request.and_then(|Json(req)| req.password);
-    let draft_uuid = Uuid::from_str(&draft_id)
-        .map_err(|e| (
-                StatusCode::BAD_REQUEST,
-                format!("requested draft does not exist")
-        ))?;
+    let draft_uuid = Uuid::from_str(&draft_id).map_err(|e| {
+        (
+            StatusCode::BAD_REQUEST,
+            format!("requested draft does not exist"),
+        )
+    })?;
     let Some(draft) = state.drafts.get(&draft_uuid) else {
         return Err((
-                StatusCode::BAD_REQUEST,
-                format!("requested draft does not exist")
+            StatusCode::BAD_REQUEST,
+            format!("requested draft does not exist"),
         ));
     };
 
@@ -765,19 +783,20 @@ pub async fn join_draft(
 }
 
 #[debug_handler]
-pub async fn get_draft_pokemon (
+pub async fn get_draft_pokemon(
     State(state): State<ServerState>,
     Path(draft_id): Path<String>,
 ) -> Result<Json<Vec<Arc<Pokemon>>>, AppError> {
-    let draft_uuid = Uuid::from_str(&draft_id)
-        .map_err(|_e| (
-                StatusCode::BAD_REQUEST,
-                format!("requested draft does not exist")
-        ))?;
+    let draft_uuid = Uuid::from_str(&draft_id).map_err(|_e| {
+        (
+            StatusCode::BAD_REQUEST,
+            format!("requested draft does not exist"),
+        )
+    })?;
     let Some(draft) = state.drafts.get(&draft_uuid) else {
         return Err((
-                StatusCode::BAD_REQUEST,
-                format!("requested draft does not exist")
+            StatusCode::BAD_REQUEST,
+            format!("requested draft does not exist"),
         ));
     };
 
@@ -785,19 +804,20 @@ pub async fn get_draft_pokemon (
 }
 
 #[debug_handler]
-pub async fn get_current_auction (
+pub async fn get_current_auction(
     State(state): State<ServerState>,
     Path(draft_id): Path<String>,
 ) -> Result<Json<Option<AuctionResponse>>, AppError> {
-    let draft_uuid = Uuid::from_str(&draft_id)
-        .map_err(|_e| (
-                StatusCode::BAD_REQUEST,
-                format!("requested draft does not exist")
-        ))?;
+    let draft_uuid = Uuid::from_str(&draft_id).map_err(|_e| {
+        (
+            StatusCode::BAD_REQUEST,
+            format!("requested draft does not exist"),
+        )
+    })?;
     let Some(draft) = state.drafts.get(&draft_uuid) else {
         return Err((
-                StatusCode::BAD_REQUEST,
-                format!("requested draft does not exist")
+            StatusCode::BAD_REQUEST,
+            format!("requested draft does not exist"),
         ));
     };
 
@@ -814,15 +834,16 @@ pub async fn ready_up(
     let user = auth_session.user.expect("user should exist");
     let ready = ready_request.map(|Json(req)| req.ready).unwrap_or(true);
 
-    let draft_uuid = Uuid::from_str(&draft_id)
-        .map_err(|e| (
-                StatusCode::BAD_REQUEST,
-                format!("requested draft does not exist")
-        ))?;
+    let draft_uuid = Uuid::from_str(&draft_id).map_err(|e| {
+        (
+            StatusCode::BAD_REQUEST,
+            format!("requested draft does not exist"),
+        )
+    })?;
     let Some(draft) = state.drafts.get(&draft_uuid) else {
         return Err((
-                StatusCode::BAD_REQUEST,
-                format!("requested draft does not exist")
+            StatusCode::BAD_REQUEST,
+            format!("requested draft does not exist"),
         ));
     };
 
@@ -838,15 +859,16 @@ pub async fn bid(
 ) -> Result<(), AppError> {
     let user = auth_session.user.expect("user should exist");
     let auction_id = bid_request.auction_id;
-    let draft_uuid = Uuid::from_str(&draft_id)
-        .map_err(|e| (
-                StatusCode::BAD_REQUEST,
-                format!("requested draft does not exist")
-        ))?;
+    let draft_uuid = Uuid::from_str(&draft_id).map_err(|e| {
+        (
+            StatusCode::BAD_REQUEST,
+            format!("requested draft does not exist"),
+        )
+    })?;
     let Some(draft) = state.drafts.get(&draft_uuid) else {
         return Err((
-                StatusCode::BAD_REQUEST,
-                format!("requested draft does not exist")
+            StatusCode::BAD_REQUEST,
+            format!("requested draft does not exist"),
         ));
     };
     draft.bid(auction_id, bid_request.value, user).await
@@ -863,8 +885,8 @@ pub async fn start_draft(
 
     let Ok(draft_id) = Uuid::from_str(&draft_id) else {
         return Err((
-                StatusCode::BAD_REQUEST,
-                format!("requested draft does not exist")
+            StatusCode::BAD_REQUEST,
+            format!("requested draft does not exist"),
         ));
     };
 
@@ -886,8 +908,8 @@ pub async fn pause_draft(
 
     let Ok(draft_id) = Uuid::from_str(&draft_id) else {
         return Err((
-                StatusCode::BAD_REQUEST,
-                format!("requested draft does not exist")
+            StatusCode::BAD_REQUEST,
+            format!("requested draft does not exist"),
         ));
     };
 
@@ -909,8 +931,8 @@ pub async fn unpause_draft(
 
     let Ok(draft_id) = Uuid::from_str(&draft_id) else {
         return Err((
-                StatusCode::NOT_FOUND,
-                format!("requested draft does not exist")
+            StatusCode::NOT_FOUND,
+            format!("requested draft does not exist"),
         ));
     };
 
@@ -939,8 +961,12 @@ pub async fn submit_race_results(
         ));
     }
 
-    let draft_uuid = Uuid::from_str(&draft_id)
-        .map_err(|_| (StatusCode::BAD_REQUEST, "requested draft does not exist".to_string()))?;
+    let draft_uuid = Uuid::from_str(&draft_id).map_err(|_| {
+        (
+            StatusCode::BAD_REQUEST,
+            "requested draft does not exist".to_string(),
+        )
+    })?;
 
     let draft_row = sqlx::query(
         "SELECT state, ranked
@@ -1015,7 +1041,10 @@ pub async fn submit_race_results(
         if !team_user_id_set.contains(submitted_user_id) {
             return Err((
                 StatusCode::BAD_REQUEST,
-                format!("submitted placement for non-draft user {}", submitted_user_id),
+                format!(
+                    "submitted placement for non-draft user {}",
+                    submitted_user_id
+                ),
             ));
         }
     }
@@ -1342,9 +1371,15 @@ pub async fn update_admin_draft_team_placements(
     // Map old state for win/loss correction and validation
     let mut old_team_data = HashMap::new();
     for row in &team_rows {
-        let tid: i64 = row.try_get("team_id").map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-        let uid: Option<String> = row.try_get("user_id").map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-        let place: Option<i32> = row.try_get("placement").map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+        let tid: i64 = row
+            .try_get("team_id")
+            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+        let uid: Option<String> = row
+            .try_get("user_id")
+            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+        let place: Option<i32> = row
+            .try_get("placement")
+            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
         old_team_data.insert(tid, (uid, place));
     }
 
@@ -1361,7 +1396,10 @@ pub async fn update_admin_draft_team_placements(
         }
 
         if !seen_team_ids.insert(entry.team_id) {
-            return Err((StatusCode::BAD_REQUEST, "duplicate team ids submitted".to_string()));
+            return Err((
+                StatusCode::BAD_REQUEST,
+                "duplicate team ids submitted".to_string(),
+            ));
         }
 
         if entry.placement <= 0 || entry.placement > team_count as i32 {
@@ -1372,7 +1410,10 @@ pub async fn update_admin_draft_team_placements(
         }
 
         if !seen_places.insert(entry.placement) {
-            return Err((StatusCode::BAD_REQUEST, "placements must be unique".to_string()));
+            return Err((
+                StatusCode::BAD_REQUEST,
+                "placements must be unique".to_string(),
+            ));
         }
     }
 
@@ -1380,17 +1421,25 @@ pub async fn update_admin_draft_team_placements(
     let mut user_updates = HashMap::new();
     for entry_i in &request.placements {
         let (uid_opt, old_place) = old_team_data.get(&entry_i.team_id).unwrap();
-        let Some(user_id) = uid_opt else { continue; };
+        let Some(user_id) = uid_opt else {
+            continue;
+        };
 
         let mut mmr_delta = 0.0;
         let mut wins_adj = 0;
         let mut losses_adj = 0;
 
         for entry_j in &request.placements {
-            if entry_i.team_id == entry_j.team_id { continue; }
-            
+            if entry_i.team_id == entry_j.team_id {
+                continue;
+            }
+
             let expected = expected_score(entry_i.pre_match_mmr, entry_j.pre_match_mmr);
-            let result = if entry_i.placement < entry_j.placement { 1.0 } else { 0.0 };
+            let result = if entry_i.placement < entry_j.placement {
+                1.0
+            } else {
+                0.0
+            };
             mmr_delta += 20.0 * (result - expected);
         }
 
@@ -1404,10 +1453,22 @@ pub async fn update_admin_draft_team_placements(
                 losses_adj = -1;
             }
         } else {
-            if entry_i.placement == 1 { wins_adj = 1; } else { losses_adj = 1; }
+            if entry_i.placement == 1 {
+                wins_adj = 1;
+            } else {
+                losses_adj = 1;
+            }
         }
 
-        user_updates.insert(user_id.clone(), (mmr_delta.round() as i32, wins_adj, losses_adj, entry_i.pre_match_mmr));
+        user_updates.insert(
+            user_id.clone(),
+            (
+                mmr_delta.round() as i32,
+                wins_adj,
+                losses_adj,
+                entry_i.pre_match_mmr,
+            ),
+        );
     }
 
     let mut tx = state
@@ -1556,11 +1617,12 @@ pub async fn update_pending_draft_settings(
         return Err((StatusCode::FORBIDDEN, "user is not logged in".to_string()));
     };
 
-    let draft_uuid = Uuid::from_str(&draft_id)
-        .map_err(|e| (
-                StatusCode::BAD_REQUEST,
-                format!("requested draft does not exist")
-        ))?;
+    let draft_uuid = Uuid::from_str(&draft_id).map_err(|e| {
+        (
+            StatusCode::BAD_REQUEST,
+            format!("requested draft does not exist"),
+        )
+    })?;
     let draft = state.drafts.get(&draft_uuid).map(|d| d.value().clone());
     let Some(draft) = draft else {
         return Err((StatusCode::NOT_FOUND, "draft does not exist".to_string()));
@@ -1590,17 +1652,20 @@ pub async fn claim_eeveelution(
         "user not authenticated".to_string(),
     ))?;
 
-    let draft_uuid = Uuid::from_str(&draft_id)
-        .map_err(|e| (
-                StatusCode::BAD_REQUEST,
-                format!("requested draft does not exist")
-        ))?;
+    let draft_uuid = Uuid::from_str(&draft_id).map_err(|e| {
+        (
+            StatusCode::BAD_REQUEST,
+            format!("requested draft does not exist"),
+        )
+    })?;
     let draft = state.drafts.get(&draft_uuid).map(|d| d.value().clone());
     let Some(draft) = draft else {
         return Err((StatusCode::NOT_FOUND, "draft not found".to_string()));
     };
 
-    let result = draft.claim_eeveelution(user, claim_request.pokedex_id, claim_request.form).await?;
+    let result = draft
+        .claim_eeveelution(user, claim_request.pokedex_id, claim_request.form)
+        .await?;
     Ok(Json(result))
 }
 
@@ -1616,17 +1681,20 @@ pub async fn unclaim_eeveelution(
         "user not authenticated".to_string(),
     ))?;
 
-    let draft_uuid = Uuid::from_str(&draft_id)
-        .map_err(|e| (
-                StatusCode::BAD_REQUEST,
-                format!("requested draft does not exist")
-        ))?;
+    let draft_uuid = Uuid::from_str(&draft_id).map_err(|e| {
+        (
+            StatusCode::BAD_REQUEST,
+            format!("requested draft does not exist"),
+        )
+    })?;
     let draft = state.drafts.get(&draft_uuid).map(|d| d.value().clone());
     let Some(draft) = draft else {
         return Err((StatusCode::NOT_FOUND, "draft not found".to_string()));
     };
 
-    let result = draft.unclaim_eeveelution(user, claim_request.pokedex_id, claim_request.form).await?;
+    let result = draft
+        .unclaim_eeveelution(user, claim_request.pokedex_id, claim_request.form)
+        .await?;
     Ok(Json(result))
 }
 
@@ -1677,7 +1745,7 @@ pub async fn create_draft_chat(
 ) -> Result<Json<ChatMessage>, (StatusCode, String)> {
     let draft_uuid = Uuid::from_str(&draft_id)
         .map_err(|_| (StatusCode::BAD_REQUEST, "invalid draft id".to_string()))?;
-        
+
     let user = auth_session.user.ok_or((
         StatusCode::UNAUTHORIZED,
         "user not authenticated".to_string(),
@@ -1742,7 +1810,9 @@ pub async fn create_draft_chat(
     };
 
     if let Some(draft) = state.drafts.get(&draft_uuid) {
-        let _ = draft.broadcast_tx.send(ServerMessage::NewMessage(chat_message.clone()));
+        let _ = draft
+            .broadcast_tx
+            .send(ServerMessage::NewMessage(chat_message.clone()));
     }
 
     Ok(Json(chat_message))
@@ -1815,15 +1885,16 @@ pub async fn websocket_handler(
     Path(draft_id): Path<String>,
     ws: WebSocketUpgrade,
 ) -> Result<Response<Body>, (StatusCode, String)> {
-    let draft_uuid = Uuid::from_str(&draft_id)
-        .map_err(|e| (
-                StatusCode::BAD_REQUEST,
-                format!("requested draft does not exist")
-        ))?;
+    let draft_uuid = Uuid::from_str(&draft_id).map_err(|e| {
+        (
+            StatusCode::BAD_REQUEST,
+            format!("requested draft does not exist"),
+        )
+    })?;
     let Some(draft) = state.drafts.get(&draft_uuid) else {
         return Err((
-                StatusCode::BAD_REQUEST,
-                format!("requested draft does not exist")
+            StatusCode::BAD_REQUEST,
+            format!("requested draft does not exist"),
         ));
     };
     let tx = draft.broadcast_tx.clone();
@@ -1889,13 +1960,11 @@ pub async fn change_guest_name(
             "Name must be 1-32 characters".to_string(),
         ));
     }
-    let res = sqlx::query(
-        "UPDATE guests SET user_name = $1 WHERE user_id = $2",
-    )
-    .bind(new_name)
-    .bind(&user_id)
-    .execute(&state.db_pool)
-    .await;
+    let res = sqlx::query("UPDATE guests SET user_name = $1 WHERE user_id = $2")
+        .bind(new_name)
+        .bind(&user_id)
+        .execute(&state.db_pool)
+        .await;
     match res {
         Ok(_) => {
             // Update the auth session with the new name
@@ -1905,7 +1974,9 @@ pub async fn change_guest_name(
             // Update all teams in active drafts for this guest
             for draft_ref in state.drafts.iter() {
                 let draft = draft_ref.value();
-                draft.update_user_name(user_id.clone(), new_name.to_string()).await;
+                draft
+                    .update_user_name(user_id.clone(), new_name.to_string())
+                    .await;
             }
             Ok(Json(new_name.to_string()))
         }
@@ -1914,4 +1985,102 @@ pub async fn change_guest_name(
             format!("DB error: {}", e),
         )),
     }
+}
+
+#[debug_handler]
+pub async fn post_pokemon_data(
+    auth_session: AuthSession<AuthBackend>,
+    State(state): State<ServerState>,
+    mut multipart: Multipart,
+) -> Result<(), AppError> {
+    let Some(user) = auth_session.user else {
+        return Err((StatusCode::UNAUTHORIZED, format!("user must be logged in")));
+    };
+    if !user.has_role_name("Website Dev") {
+        return Err((StatusCode::UNAUTHORIZED, format!("user must be a dev")));
+    }
+
+    while let Some(field) = multipart.next_field().await.map_err(|e| {
+        (
+            StatusCode::BAD_REQUEST,
+            format!("failed to parse multipart payload, {}", e),
+        )
+    })? {
+        if field.name() == Some("file") {
+            let data = field.bytes().await.map_err(|e| {
+                (
+                    StatusCode::BAD_REQUEST,
+                    format!("failed to parse file, {}", e),
+                )
+            })?;
+            let mut rdr = csv::Reader::from_reader(data.as_ref());
+
+            let mut records = Vec::new();
+
+            for result in rdr.deserialize() {
+                let record: PokemonCsvRecord = result.map_err(|e| {
+                    (
+                        StatusCode::BAD_REQUEST,
+                        format!("failed to parse multipart payload, {}", e),
+                    )
+                })?;
+                records.push(record);
+            }
+
+            return pokemon_data_updater::update_pokemon_data(state.db_pool.clone(), records).await;
+        }
+    }
+
+    Err((StatusCode::BAD_REQUEST, format!("missing csv file")))
+}
+
+#[debug_handler]
+pub async fn post_pokemon_key_moves_data(
+    auth_session: AuthSession<AuthBackend>,
+    State(state): State<ServerState>,
+    mut multipart: Multipart,
+) -> Result<(), AppError> {
+    let Some(user) = auth_session.user else {
+        return Err((StatusCode::UNAUTHORIZED, format!("user must be logged in")));
+    };
+    if !user.has_role_name("Website Dev") {
+        return Err((StatusCode::UNAUTHORIZED, format!("user must be a dev")));
+    }
+
+    while let Some(field) = multipart.next_field().await.map_err(|e| {
+        (
+            StatusCode::BAD_REQUEST,
+            format!("failed to parse multipart payload, {}", e),
+        )
+    })? {
+        if field.name() == Some("file") {
+            let data = field.bytes().await.map_err(|e| {
+                (
+                    StatusCode::BAD_REQUEST,
+                    format!("failed to parse file, {}", e),
+                )
+            })?;
+            let mut rdr = csv::Reader::from_reader(data.as_ref());
+
+            let mut records = Vec::new();
+
+            for result in rdr.deserialize() {
+                let record: KeyMoveCsvRecord = result.map_err(|e| {
+                    (
+                        StatusCode::BAD_REQUEST,
+                        format!("failed to parse multipart payload, {}", e),
+                    )
+                })?;
+                records.push(record);
+            }
+
+            return pokemon_data_updater::update_pokemon_key_moves_data(
+                state.db_pool.clone(),
+                records,
+            )
+            .await;
+        }
+    }
+
+    Err((StatusCode::BAD_REQUEST, format!("missing csv file")))
 }

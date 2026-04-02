@@ -1,14 +1,15 @@
 use std::sync::{Arc, OnceLock, RwLock};
+use axum::http::StatusCode;
 use strum::{Display, EnumString};
 
 use serde::{Deserialize, Serialize};
 use sqlx::{PgPool, prelude::FromRow, types::Json};
 
-use crate::draft::ExcludedPokemon;
+use crate::{AppError, draft::ExcludedPokemon};
 
 static POKEMON_DATA: OnceLock<RwLock<Vec<Arc<Pokemon>>>> = OnceLock::new();
 
-pub async fn init_pokemon_data(pool: &PgPool) -> Result<(), sqlx::Error> {
+pub async fn read_pokemon_data_from_db(pool: &PgPool) -> Result<Vec<Arc<Pokemon>>, AppError> {
     let pokemon_list = sqlx::query!(
         r#"
         SELECT
@@ -21,7 +22,8 @@ pub async fn init_pokemon_data(pool: &PgPool) -> Result<(), sqlx::Error> {
                             'form', km.form,
                             'move_name', km.move_name,
                             'learn_method', km.learn_method,
-                            'species', km.species
+                            'species', km.species,
+                            'display_order', km.display_order
                         )
                     )
                     FROM key_moves km
@@ -37,11 +39,13 @@ pub async fn init_pokemon_data(pool: &PgPool) -> Result<(), sqlx::Error> {
         pokedex_id: u32::try_from(row.pokedex_id).unwrap_or_else(|_| {
             panic!(
                 "Pokemon {} {} has invalid pokedex_id: {}",
-                row.name, row.form, row.pokedex_id
+                row.name,
+                row.form.clone(),
+                row.pokedex_id
             )
         }),
         name: row.name.clone(),
-        form: if row.form.is_empty() {
+        form: if row.form.trim().is_empty() {
             None
         } else {
             Some(row.form.clone())
@@ -65,37 +69,49 @@ pub async fn init_pokemon_data(pool: &PgPool) -> Result<(), sqlx::Error> {
             hp: u8::try_from(row.hp).unwrap_or_else(|_| {
                 panic!(
                     "Pokemon {} {} has invalid hp: {}",
-                    row.name, row.form, row.hp
+                    row.name,
+                    row.form.clone(),
+                    row.hp
                 )
             }),
             attack: u8::try_from(row.attack).unwrap_or_else(|_| {
                 panic!(
                     "Pokemon {} {} has invalid attack: {}",
-                    row.name, row.form, row.attack
+                    row.name,
+                    row.form.clone(),
+                    row.attack
                 )
             }),
             defense: u8::try_from(row.defense).unwrap_or_else(|_| {
                 panic!(
                     "Pokemon {} {} has invalid defense: {}",
-                    row.name, row.form, row.defense
+                    row.name,
+                    row.form.clone(),
+                    row.defense
                 )
             }),
             sp_attack: u8::try_from(row.sp_attack).unwrap_or_else(|_| {
                 panic!(
                     "Pokemon {} {} has invalid sp_attack: {}",
-                    row.name, row.form, row.sp_attack
+                    row.name,
+                    row.form.clone(),
+                    row.sp_attack
                 )
             }),
             sp_defense: u8::try_from(row.sp_defense).unwrap_or_else(|_| {
                 panic!(
                     "Pokemon {} {} has invalid sp_defense: {}",
-                    row.name, row.form, row.sp_defense
+                    row.name,
+                    row.form.clone(),
+                    row.sp_defense
                 )
             }),
             speed: u8::try_from(row.speed).unwrap_or_else(|_| {
                 panic!(
                     "Pokemon {} {} has invalid speed: {}",
-                    row.name, row.form, row.speed
+                    row.name,
+                    row.form.clone(),
+                    row.speed
                 )
             }),
         },
@@ -107,9 +123,36 @@ pub async fn init_pokemon_data(pool: &PgPool) -> Result<(), sqlx::Error> {
         obtain_method: row.obtain_method,
     })
     .fetch_all(pool)
-    .await?;
+    .await
+    .map_err(|e| (
+        StatusCode::INTERNAL_SERVER_ERROR,
+        format!("failed to read pokemon data from db: {}", e)
+    ))?;
 
-    let pokemon_vec: Vec<Arc<Pokemon>> = pokemon_list.into_iter().map(|p| Arc::new(p)).collect();
+    Ok(pokemon_list.into_iter().map(|p| Arc::new(p)).collect())
+}
+
+pub async fn reload_pokemon_data(pool: &PgPool) -> Result<(), AppError> {
+    let pokemon_vec = read_pokemon_data_from_db(pool).await?;
+    let Some(rw_lock) = POKEMON_DATA.get() else {
+        return Err((
+            StatusCode::INTERNAL_SERVER_ERROR,
+            format!("pokemon data is not initialized")
+        ));
+    };
+
+    let mut vec = rw_lock.write().map_err(|e| (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            format!("couldn't get write lock on pokemon vec, {}", e)
+    ))?;
+
+    *vec = pokemon_vec;
+
+    Ok(())
+}
+
+pub async fn init_pokemon_data(pool: &PgPool) -> Result<(), AppError> {
+    let pokemon_vec = read_pokemon_data_from_db(pool).await?;
 
     let rw_lock = RwLock::new(pokemon_vec);
 
@@ -165,6 +208,7 @@ pub struct KeyMoveRow {
     pub move_name: String,
     pub learn_method: String,
     pub species: Option<String>,
+    pub display_order: i32,
 }
 
 #[derive(EnumString, Display, Clone, Copy, Debug, Serialize, Deserialize)]

@@ -11,7 +11,12 @@ use tokio::{
 use uuid::Uuid;
 
 use crate::{
-    AppError, draft::Draft, get_expiry_time_from_instant, messages::ServerMessage, pokemon::{self, Pokemon}, users::User
+    AppError,
+    draft::Draft,
+    get_expiry_time_from_instant,
+    messages::ServerMessage,
+    pokemon::{self, Pokemon},
+    users::User,
 };
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -202,7 +207,7 @@ struct AuctionActor {
     highest_bidder: Option<User>,
     expires_at: Option<Instant>,
     receiver: mpsc::Receiver<AuctionCommand>,
-    broadcast_tx: broadcast::Sender<ServerMessage>
+    broadcast_tx: broadcast::Sender<ServerMessage>,
 }
 
 enum AuctionCommand {
@@ -282,8 +287,6 @@ impl AuctionActor {
         }
 
         self.expires_at = Some(Instant::now() + Duration::from_secs(self.length as u64));
-        dbg!(self.expires_at);
-        dbg!(get_expiry_time_from_instant(self.expires_at.unwrap()));
         let auction_timer = tokio::time::sleep_until(self.expires_at.unwrap());
         tokio::pin!(auction_timer);
         let msg = AuctionResponse::from(&self);
@@ -410,7 +413,10 @@ impl AuctionActor {
 
     async fn resolve_auction(&mut self) {
         self.state = AuctionState::CLOSED;
-        let _ = self.draft.resolve_auction(AuctionResponse::from(&*self)).await;
+        let _ = self
+            .draft
+            .resolve_auction(AuctionResponse::from(&*self))
+            .await;
     }
 }
 
@@ -429,6 +435,6 @@ impl From<&AuctionActor> for AuctionResponse {
             pokemon: (*value.pokemon).clone(),
             expires_at: expires_at,
             current_server_time: Utc::now(),
-          }
+        }
     }
 }
