@@ -543,9 +543,10 @@ const AuctionPage: React.FC = () => {
             <div className="auction-top-row-wrapper">
               <PlayerRow
                 teams={draft.teams}
-                numPlayers={draft.teams.length}
+                numPlayers={requiredTeams}
                 highestBidderId={currentAuction ? getUserId(currentAuction.highest_bidder) : null}
                 wsConnected={wsConnected}
+                currentUserId={currentUserId}
               />
             </div>
             {/* Main content grid */}

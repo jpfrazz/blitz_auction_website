@@ -7,13 +7,26 @@ interface PlayerRowProps {
   numPlayers: number;
   highestBidderId?: string | null;
   wsConnected?: boolean;
+  currentUserId?: string | null;
 }
 
-const PlayerRow: React.FC<PlayerRowProps> = ({ teams, numPlayers, highestBidderId, wsConnected = true }) => {
+const PlayerRow: React.FC<PlayerRowProps> = ({ teams, numPlayers, highestBidderId, wsConnected = true, currentUserId }) => {
+  const sortedTeams = React.useMemo(() => {
+    if (!currentUserId) return teams;
+    const myTeamIdx = teams.findIndex(t => t?.user_id === currentUserId);
+    // If not found or already at the start, return original
+    if (myTeamIdx <= 0) return teams;
+
+    const newTeams = [...teams];
+    const [myTeam] = newTeams.splice(myTeamIdx, 1);
+    newTeams.unshift(myTeam);
+    return newTeams;
+  }, [teams, currentUserId]);
+
   return (
     <div className="auction-players-row">
       {Array.from({ length: numPlayers }).map((_, idx) => {
-        const team = teams[idx];
+        const team = sortedTeams[idx];
         const playerName = (team as any)?.global_name || team?.username || team?.user_id;
         const isFilled = Boolean(team);
         const readinessClass = isFilled && team?.ready ? 'player-ready' : 'player-not-ready';

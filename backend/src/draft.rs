@@ -1245,7 +1245,7 @@ impl DraftActor {
             let needed = num_auctions - current_auctions_len;
             let mut count_suitable = 0;
             for p in self.draft.pokemon.iter() {
-                if p.stage == pokemon::PokemonStage::base && p.obtain_method == Some("".to_string())
+                if p.stage == pokemon::PokemonStage::base && p.obtain_method.is_none()
                 {
                     if count_suitable >= current_auctions_len {
                         new_auctions_data.push((p.clone(), count_suitable as i32));
