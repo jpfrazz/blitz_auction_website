@@ -245,14 +245,12 @@ const LeaderboardPage = () => {
                         {expandedUserId === player.user_id && (
                             <tr className="leaderboard-history-dropdown-row" style={{ backgroundColor: 'rgba(0, 0, 0, 0.15)' }}>
                                 <td colSpan={5} style={{ padding: 0 }}>
-                                    <div style={{ 
-                                        padding: '1.5rem', 
+                                    <div style={{
                                         maxHeight: '400px', 
                                         overflowY: 'auto',
                                         borderTop: '1px solid rgba(255, 255, 255, 0.05)',
                                         borderBottom: '1px solid rgba(255, 255, 255, 0.05)',
                                         animation: 'slideDown 0.3s ease-out',
-                                        backgroundColor: 'rgba(0, 0, 0, 0.2)'
                                     }}>
                                         {statsLoading && !stats ? (
                                             <div style={{ textAlign: 'center', color: '#888', padding: '20px' }}>Loading match history...</div>
@@ -262,28 +260,25 @@ const LeaderboardPage = () => {
                                             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.85rem' }}>
                                                 <thead>
                                                     <tr style={{ textAlign: 'left', color: '#666', borderBottom: '1px solid rgba(255, 255, 255, 0.1)' }}>
-                                                        <th style={{ padding: '8px' }}>Date</th>
-                                                        <th style={{ padding: '8px' }}>Draft ID</th>
-                                                        <th style={{ padding: '8px' }}>Race Standings</th>
-                                                        <th style={{ padding: '8px' }}>Team & Costs</th>
+                                                        <th style={{ padding: '12px' }}>Date</th>
+                                                        <th style={{ padding: '12px' }}>Race Standings</th>
+                                                        <th style={{ padding: '12px' }}>Team & Costs</th>
                                                     </tr>
                                                 </thead>
                                                 <tbody>
                                                     {userMatches.map(match => (
                                                         <tr key={match.draftId} style={{ borderBottom: '1px solid rgba(255, 255, 255, 0.05)' }}>
-                                                            <td style={{ padding: '8px', whiteSpace: 'nowrap', verticalAlign: 'top' }}>
+                                                            <td style={{ padding: '12px', whiteSpace: 'nowrap', verticalAlign: 'top' }}>
                                                                 {match.date ? new Date(match.date).toLocaleDateString() : '-'}
                                                             </td>
-                                                            <td style={{ padding: '8px', fontFamily: 'monospace', color: '#777', verticalAlign: 'top' }}>
-                                                                {match.draftId.slice(0, 8)}...
-                                                            </td>
-                                                            <td style={{ padding: '8px' }}>
+                                                            <td style={{ padding: '12px' }}>
                                                                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
                                                                     {match.participants.map(p => (
                                                                         <span 
                                                                             key={p.userId} 
                                                                             style={{ 
-                                                                                color: p.userId === player.user_id ? '#fff' : '#aaa',
+                                                                                color: p.userId === player.user_id ? '#fff' : 'inherit',
+                                                                                opacity: p.userId === player.user_id ? 1 : 0.7,
                                                                                 fontWeight: p.userId === player.user_id ? 'bold' : 'normal',
                                                                                 backgroundColor: p.userId === player.user_id ? 'rgba(76, 175, 80, 0.2)' : 'rgba(255, 255, 255, 0.05)',
                                                                                 padding: '2px 6px',
@@ -296,22 +291,22 @@ const LeaderboardPage = () => {
                                                                     ))}
                                                                 </div>
                                                             </td>
-                                                            <td style={{ padding: '8px' }}>
-                                                                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
+                                                            <td style={{ padding: '12px' }}>
+                                                                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
                                                                     {(userTeamsByDraft.get(match.draftId)?.get(player.user_id) || [])
                                                                         .sort((a, b) => (b.winning_bid ?? 0) - (a.winning_bid ?? 0))
                                                                         .map(a => (
                                                                         <div 
                                                                             key={a.auction_id} 
-                                                                            style={{ display: 'flex', alignItems: 'center', backgroundColor: 'rgba(255, 255, 255, 0.03)', padding: '2px 6px', borderRadius: '4px', border: '1px solid rgba(255, 255, 255, 0.05)' }}
+                                                                            style={{ display: 'flex', alignItems: 'center', backgroundColor: 'rgba(255, 255, 255, 0.03)', padding: '4px 8px', borderRadius: '4px', border: '1px solid rgba(255, 255, 255, 0.05)' }}
                                                                             title={`${a.name}${a.form ? ` (${a.form})` : ''}: $${a.winning_bid}`}
                                                                         >
                                                                             <img 
                                                                                 src={`/MiniIcons/${formatPokemonName(a.name)}.png`} 
                                                                                 alt={a.name} 
-                                                                                style={{ width: '16px', height: '16px', marginRight: '4px' }} 
+                                                                                style={{ width: '24px', height: '24px', marginRight: '6px' }} 
                                                                             />
-                                                                            <span style={{ fontSize: '0.7rem', color: '#888' }}>${a.winning_bid}</span>
+                                                                            <span style={{ fontSize: '0.9rem', color: 'inherit', opacity: 0.7 }}>${a.winning_bid}</span>
                                                                         </div>
                                                                     ))}
                                                                 </div>
