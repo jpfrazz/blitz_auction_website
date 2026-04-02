@@ -6,8 +6,8 @@ dex_number,name,form,evolves_from_id,evolves_from_form,type1,type2,stage,ability
 842,Appletun,,840,,Grass,Dragon,evo,Ripen,Gluttony,Thick Fat,110,85,80,100,80,30,"Level up in Lavaridge Gym",,,
 843,Dipplin,,840,,Grass,Dragon,evo,Supersweet Syrup,Gluttony,Sticky Hold,80,80,110,95,80,40,"Level up in Rustboro Gym",,,
 844,Hydrapple,,843,,Grass,Dragon,evo,Supersweet Syrup,Regenerator,Sticky Hold,106,80,110,120,80,44,"Level 42",,,
-566,Archen,,,,Rock,Flying,base,Defeatist,,,55,112,45,74,45,70,,,
-567,Archeops,,566,,Rock,Flying,evo,Defeatist,,,75,140,65,112,65,110,"Level 37 (Oracle)",,
+566,Archen,,,,Rock,Flying,base,Defeatist,,,55,112,45,74,45,70,,,,
+567,Archeops,,566,,Rock,Flying,evo,Defeatist,,,75,140,65,112,65,110,"Level 37 (Oracle)",,,
 304,Aron,,,,Steel,Rock,base,Sturdy,Rock Head,Heavy Metal,50,70,100,40,40,30,,"Stage 2",,
 305,Lairon,,304,,Steel,Rock,evo,Sturdy,Rock Head,Heavy Metal,60,90,140,50,50,40,"Level 32 (Guru)","Stage 2",,
 306,Aggron,,305,,Steel,Rock,evo,Sturdy,Rock Head,Heavy Metal,70,110,180,60,60,50,"Level 42","Stage 2",,
@@ -556,6 +556,8 @@ dex_number,name,form,evolves_from_id,evolves_from_form,type1,type2,stage,ability
 42,Golbat,,41,,Poison,Flying,evo,Inner Focus,,Infiltrator,75,80,70,65,75,90,"Level 22",,,
 169,Crobat,,42,,Poison,Flying,evo,Inner Focus,,Infiltrator,85,90,80,70,80,130,"Level 30",,,
 65536,Egg,,,,Egg,,base,,,,,,,,,,,,,"Tip: Baby Pokemon\nAn egg can hatch into any of these baby Pokemon: Azurill, Cleffa, Igglybuff, and Togepi."
+169,Crobat,,42,,Poison,Flying,evo,Inner Focus,,Infiltrator,85,90,80,70,80,130,"Soothe Bell",,,
+65536,Egg,,,,Egg,,base,,,,0,0,0,0,0,0,,,,"Tip: Baby Pokemon\nAn egg can hatch into any of these baby Pokemon: Azurill, Cleffa, Igglybuff, and Togepi."
 298,Azurill,,,,Normal,Fairy,base,Thick Fat,Huge Power,Sap Sipper,50,20,40,20,40,20,,,Baby,
 183,Marill,,298,,Water,Fairy,evo,Thick Fat,Huge Power,Sap Sipper,70,20,50,20,50,40,"Level 10",,Baby,
 184,Azumarill,,183,,Water,Fairy,evo,Thick Fat,Huge Power,Sap Sipper,100,50,80,60,80,50,"Level 18",,Baby,

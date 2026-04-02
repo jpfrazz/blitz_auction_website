@@ -1,0 +1,15 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            UPDATE pokemon\n            SET obtain_method = 'Vaulted'\n            WHERE (pokedex_id, form) NOT IN (\n                SELECT * FROM UNNEST($1::int[], $2::text[])\n            )\n            ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Int4Array",
+        "TextArray"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "ab3814ee163b46d47e8b8dff9ebba0ee98d3d5bb74797dfa79fdf186874d6b33"
+}

@@ -36,12 +36,12 @@ enum DbCommand {
     StartDraft(oneshot::Sender<Result<(), AppError>>),
     FinishDraft,
     StartAuction(i64),
-    PauseAuction{
+    PauseAuction {
         response_sender: oneshot::Sender<Result<(), AppError>>,
         auction_id: i64,
-        time_remaining: u32
+        time_remaining: u32,
     },
-    ResumeAuction{
+    ResumeAuction {
         response_sender: oneshot::Sender<Result<(), AppError>>,
         auction_id: i64,
     },
@@ -58,7 +58,7 @@ enum DbCommand {
         response_sender: oneshot::Sender<Result<(), AppError>>,
         user: User,
     },
-    ResolveAuction{
+    ResolveAuction {
         response_sender: oneshot::Sender<Result<(), AppError>>,
         auction_id: i64,
     },
@@ -117,11 +117,12 @@ impl DbWriter {
             )
         })?;
 
-        response_receiver.await
-            .map_err(|e| (
-                    StatusCode::INTERNAL_SERVER_ERROR,
-                    format!("failed to wait for draft start response, {}", e)
-            ))?
+        response_receiver.await.map_err(|e| {
+            (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                format!("failed to wait for draft start response, {}", e),
+            )
+        })?
     }
 
     pub async fn finish_draft(&self) -> Result<(), AppError> {
@@ -136,34 +137,42 @@ impl DbWriter {
     }
     pub async fn join_draft(&self, user: User) -> Result<(), AppError> {
         let (response_sender, response_receiver) = oneshot::channel();
-        let cmd = DbCommand::JoinDraft { response_sender, user };
+        let cmd = DbCommand::JoinDraft {
+            response_sender,
+            user,
+        };
         let _ = self.actor_sender.send(cmd).await.map_err(|e| {
             (
                 StatusCode::INTERNAL_SERVER_ERROR,
                 format!("couldn't send draft join command to actor, {}", e),
             )
         })?;
-        response_receiver.await
-            .map_err(|e| (
-                    StatusCode::INTERNAL_SERVER_ERROR,
-                    format!("failed to wait for draft join response, {}", e)
-            ))?
+        response_receiver.await.map_err(|e| {
+            (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                format!("failed to wait for draft join response, {}", e),
+            )
+        })?
     }
 
     pub async fn kick_draft(&self, user: User) -> Result<(), AppError> {
         let (response_sender, response_receiver) = oneshot::channel();
-        let cmd = DbCommand::KickDraft { response_sender, user };
+        let cmd = DbCommand::KickDraft {
+            response_sender,
+            user,
+        };
         let _ = self.actor_sender.send(cmd).await.map_err(|e| {
             (
                 StatusCode::INTERNAL_SERVER_ERROR,
                 format!("couldn't send draft kick command to actor, {}", e),
             )
         })?;
-        response_receiver.await
-            .map_err(|e| (
-                    StatusCode::INTERNAL_SERVER_ERROR,
-                    format!("failed to wait for draft kick response, {}", e)
-            ))?
+        response_receiver.await.map_err(|e| {
+            (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                format!("failed to wait for draft kick response, {}", e),
+            )
+        })?
     }
 
     pub async fn start_auction(&self, auction_id: i64) -> Result<(), AppError> {
@@ -181,7 +190,7 @@ impl DbWriter {
         let (response_sender, response_receiver) = oneshot::channel();
         let cmd = DbCommand::ResumeAuction {
             response_sender,
-            auction_id
+            auction_id,
         };
         let _ = self.actor_sender.send(cmd).await.map_err(|e| {
             (
@@ -189,18 +198,19 @@ impl DbWriter {
                 format!("couldn't send auction resume command to actor, {}", e),
             )
         })?;
-        response_receiver.await
-            .map_err(|e| (
-                    StatusCode::INTERNAL_SERVER_ERROR,
-                    format!("failed to wait for auction resume response, {}", e)
-            ))?
+        response_receiver.await.map_err(|e| {
+            (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                format!("failed to wait for auction resume response, {}", e),
+            )
+        })?
     }
 
     pub async fn resolve_auction(&self, auction_id: i64) -> Result<(), AppError> {
         let (response_sender, response_receiver) = oneshot::channel();
         let cmd = DbCommand::ResolveAuction {
             response_sender,
-            auction_id
+            auction_id,
         };
         let _ = self.actor_sender.send(cmd).await.map_err(|e| {
             (
@@ -208,19 +218,24 @@ impl DbWriter {
                 format!("couldn't send auction resolve command to actor, {}", e),
             )
         })?;
-        response_receiver.await
-            .map_err(|e| (
-                    StatusCode::INTERNAL_SERVER_ERROR,
-                    format!("failed to wait for auction resolve response, {}", e)
-            ))?
+        response_receiver.await.map_err(|e| {
+            (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                format!("failed to wait for auction resolve response, {}", e),
+            )
+        })?
     }
 
-    pub async fn pause_auction(&self, auction_id: i64, time_remaining: u32) -> Result<(), AppError> {
+    pub async fn pause_auction(
+        &self,
+        auction_id: i64,
+        time_remaining: u32,
+    ) -> Result<(), AppError> {
         let (response_sender, response_receiver) = oneshot::channel();
         let cmd = DbCommand::PauseAuction {
             response_sender,
             auction_id,
-            time_remaining
+            time_remaining,
         };
         let _ = self.actor_sender.send(cmd).await.map_err(|e| {
             (
@@ -228,11 +243,12 @@ impl DbWriter {
                 format!("couldn't send auction pause command to actor, {}", e),
             )
         })?;
-        response_receiver.await
-            .map_err(|e| (
-                    StatusCode::INTERNAL_SERVER_ERROR,
-                    format!("failed to wait for auction pause response, {}", e)
-            ))?
+        response_receiver.await.map_err(|e| {
+            (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                format!("failed to wait for auction pause response, {}", e),
+            )
+        })?
     }
 
     pub async fn write_bid(&self, auction_id: i64, bid_value: u32, user: User) {
@@ -260,14 +276,27 @@ impl DbWriter {
             truncate_auctions,
         };
         self.actor_sender.send(cmd).await.map_err(|e| {
-            (StatusCode::INTERNAL_SERVER_ERROR, format!("failed to send update draft settings command, {}", e))
+            (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                format!("failed to send update draft settings command, {}", e),
+            )
         })?;
-        response_receiver.await.map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, format!("failed to wait for response, {}", e)))?
+        response_receiver.await.map_err(|e| {
+            (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                format!("failed to wait for response, {}", e),
+            )
+        })?
     }
 }
 
 impl Actor {
-    pub fn new(pool: PgPool, draft_id: Uuid, command_recv: mpsc::Receiver<DbCommand>, starting_money: u32) -> Self {
+    pub fn new(
+        pool: PgPool,
+        draft_id: Uuid,
+        command_recv: mpsc::Receiver<DbCommand>,
+        starting_money: u32,
+    ) -> Self {
         Self {
             pool,
             draft_id,
@@ -299,7 +328,10 @@ impl Actor {
                     DbCommand::StartAuction(auction_id) => {
                         self.start_auction(auction_id).await;
                     }
-                    DbCommand::ResolveAuction { response_sender, auction_id } => {
+                    DbCommand::ResolveAuction {
+                        response_sender,
+                        auction_id,
+                    } => {
                         let res = self.resolve_auction(auction_id).await;
                         let _ = response_sender.send(res);
                     }
@@ -309,25 +341,51 @@ impl Actor {
                         user,
                     } => {
                         self.write_bid(auction_id, bid_value, user).await;
-                    },
-                    DbCommand::ResumeAuction { response_sender, auction_id } => {
+                    }
+                    DbCommand::ResumeAuction {
+                        response_sender,
+                        auction_id,
+                    } => {
                         let res = self.resume_auction(auction_id).await;
                         let _ = response_sender.send(res);
-                    },
-                    DbCommand::PauseAuction { response_sender, auction_id, time_remaining } => {
+                    }
+                    DbCommand::PauseAuction {
+                        response_sender,
+                        auction_id,
+                        time_remaining,
+                    } => {
                         let res = self.pause_auction(auction_id, time_remaining).await;
                         let _ = response_sender.send(res);
-                    },
-                    DbCommand::JoinDraft { response_sender, user } => {
+                    }
+                    DbCommand::JoinDraft {
+                        response_sender,
+                        user,
+                    } => {
                         let res = self.join_draft(user).await;
                         let _ = response_sender.send(res);
-                    },
-                    DbCommand::KickDraft { response_sender, user } => {
+                    }
+                    DbCommand::KickDraft {
+                        response_sender,
+                        user,
+                    } => {
                         let res = self.kick_draft(user).await;
                         let _ = response_sender.send(res);
-                    },
-                    DbCommand::UpdateDraftSettings { response_sender, num_teams, remove_team_ids, new_auctions, truncate_auctions } => {
-                        let res = self.update_draft_settings(num_teams, remove_team_ids, new_auctions, truncate_auctions).await;
+                    }
+                    DbCommand::UpdateDraftSettings {
+                        response_sender,
+                        num_teams,
+                        remove_team_ids,
+                        new_auctions,
+                        truncate_auctions,
+                    } => {
+                        let res = self
+                            .update_draft_settings(
+                                num_teams,
+                                remove_team_ids,
+                                new_auctions,
+                                truncate_auctions,
+                            )
+                            .await;
                         let _ = response_sender.send(res);
                     }
                 }
@@ -393,7 +451,7 @@ impl Actor {
 
         for (i, p) in pokemon
             .iter()
-            .filter(|p| p.stage == PokemonStage::base && p.obtain_method == Some("".to_string()))
+            .filter(|p| p.stage == PokemonStage::base && p.obtain_method == None)
             .enumerate()
         {
             if i >= settings.num_auctions as usize {
@@ -446,10 +504,12 @@ impl Actor {
         )
         .execute(&self.pool)
         .await
-        .map_err(|e| (
+        .map_err(|e| {
+            (
                 StatusCode::INTERNAL_SERVER_ERROR,
-                format!("failed to start draft in db, {}", e)
-        ))?;
+                format!("failed to start draft in db, {}", e),
+            )
+        })?;
         Ok(())
     }
 
@@ -484,11 +544,12 @@ impl Actor {
     }
 
     async fn resolve_auction(&self, auction_id: i64) -> Result<(), AppError> {
-        let mut tx = self.pool.begin().await
-            .map_err(|e| (
-                    StatusCode::INTERNAL_SERVER_ERROR,
-                    format!("failed to start transaction to resolve auction, {}", e)
-            ))?;
+        let mut tx = self.pool.begin().await.map_err(|e| {
+            (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                format!("failed to start transaction to resolve auction, {}", e),
+            )
+        })?;
 
         let row = sqlx::query!(
             r#"
@@ -502,10 +563,12 @@ impl Actor {
         )
         .fetch_one(&mut *tx)
         .await
-        .map_err(|e| (
+        .map_err(|e| {
+            (
                 StatusCode::INTERNAL_SERVER_ERROR,
-                format!("failed to update auction state in db, {}", e)
-        ))?;
+                format!("failed to update auction state in db, {}", e),
+            )
+        })?;
 
         let user_id = row.winning_user_id;
         let guest_id = row.winning_guest_id;
@@ -526,10 +589,12 @@ impl Actor {
         )
         .execute(&mut *tx)
         .await
-        .map_err(|e| (
+        .map_err(|e| {
+            (
                 StatusCode::INTERNAL_SERVER_ERROR,
-                format!("failed to update team money remaining in db, {}", e)
-        ))?;
+                format!("failed to update team money remaining in db, {}", e),
+            )
+        })?;
 
         let _ = sqlx::query!(
             r#"
@@ -541,16 +606,19 @@ impl Actor {
         )
         .execute(&mut *tx)
         .await
-        .map_err(|e| (
+        .map_err(|e| {
+            (
                 StatusCode::INTERNAL_SERVER_ERROR,
-                format!("failed to update draft pokemon drafter in db, {}", e)
-        ))?;
+                format!("failed to update draft pokemon drafter in db, {}", e),
+            )
+        })?;
 
-        tx.commit().await
-            .map_err(|e| (
-                    StatusCode::INTERNAL_SERVER_ERROR,
-                    format!("failed to commit auction close transaction in db, {}", e)
-            ))
+        tx.commit().await.map_err(|e| {
+            (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                format!("failed to commit auction close transaction in db, {}", e),
+            )
+        })
     }
 
     async fn write_bid(&self, auction_id: i64, bid_value: u32, user: User) -> bool {
@@ -622,10 +690,12 @@ impl Actor {
         )
         .execute(&self.pool)
         .await
-        .map_err(|e| (
+        .map_err(|e| {
+            (
                 StatusCode::INTERNAL_SERVER_ERROR,
-                format!("failed to resume auction in db, {}", e)
-        ))?;
+                format!("failed to resume auction in db, {}", e),
+            )
+        })?;
         Ok(())
     }
 
@@ -642,13 +712,15 @@ impl Actor {
         )
         .execute(&self.pool)
         .await
-        .map_err(|e| (
+        .map_err(|e| {
+            (
                 StatusCode::INTERNAL_SERVER_ERROR,
-                format!("failed to resume auction in db, {}", e)
-        ))?;
+                format!("failed to resume auction in db, {}", e),
+            )
+        })?;
         Ok(())
     }
-    
+
     async fn join_draft(&self, user: User) -> Result<(), AppError> {
         let (user_id, guest_id) = user.get_user_and_guest_id();
         let _ = sqlx::query!(
@@ -667,10 +739,12 @@ impl Actor {
         )
         .execute(&self.pool)
         .await
-        .map_err(|e| (
+        .map_err(|e| {
+            (
                 StatusCode::INTERNAL_SERVER_ERROR,
-                format!("failed to add team to draft in db, {}", e)
-        ))?;
+                format!("failed to add team to draft in db, {}", e),
+            )
+        })?;
         Ok(())
     }
 
@@ -687,10 +761,12 @@ impl Actor {
         )
         .execute(&self.pool)
         .await
-        .map_err(|e| (
+        .map_err(|e| {
+            (
                 StatusCode::INTERNAL_SERVER_ERROR,
-                format!("failed to kick team from draft in db, {}", e)
-        ))?;
+                format!("failed to kick team from draft in db, {}", e),
+            )
+        })?;
         Ok(())
     }
 
@@ -699,12 +775,14 @@ impl Actor {
         num_teams: u32,
         remove_team_ids: Vec<String>,
         new_auctions: Vec<(Arc<Pokemon>, i32)>,
-        truncate_auctions: Option<u32>
+        truncate_auctions: Option<u32>,
     ) -> Result<Vec<i64>, AppError> {
-        let mut tx = self.pool.begin().await.map_err(|e| (
-            StatusCode::INTERNAL_SERVER_ERROR,
-            format!("failed to begin transaction: {}", e)
-        ))?;
+        let mut tx = self.pool.begin().await.map_err(|e| {
+            (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                format!("failed to begin transaction: {}", e),
+            )
+        })?;
 
         if !remove_team_ids.is_empty() {
             let _ = sqlx::query(
@@ -720,24 +798,30 @@ impl Actor {
             ))?;
         }
 
-        let _ = sqlx::query(
-            "UPDATE drafts SET num_teams = $1 WHERE draft_id = $2"
-        )
-        .bind(num_teams as i32)
-        .bind(self.draft_id)
-        .execute(&mut *tx)
-        .await
-        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, format!("failed to update draft settings: {}", e)))?;
-
-        if let Some(limit) = truncate_auctions {
-            let _ = sqlx::query(
-                "DELETE FROM auctions WHERE draft_id = $1 AND draft_order >= $2"
-            )
+        let _ = sqlx::query("UPDATE drafts SET num_teams = $1 WHERE draft_id = $2")
+            .bind(num_teams as i32)
             .bind(self.draft_id)
-            .bind(limit as i32)
             .execute(&mut *tx)
             .await
-            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, format!("failed to remove excess auctions: {}", e)))?;
+            .map_err(|e| {
+                (
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    format!("failed to update draft settings: {}", e),
+                )
+            })?;
+
+        if let Some(limit) = truncate_auctions {
+            let _ = sqlx::query("DELETE FROM auctions WHERE draft_id = $1 AND draft_order >= $2")
+                .bind(self.draft_id)
+                .bind(limit as i32)
+                .execute(&mut *tx)
+                .await
+                .map_err(|e| {
+                    (
+                        StatusCode::INTERNAL_SERVER_ERROR,
+                        format!("failed to remove excess auctions: {}", e),
+                    )
+                })?;
         }
 
         let mut new_ids = Vec::new();
@@ -752,12 +836,22 @@ impl Actor {
             .fetch_one(&mut *tx)
             .await
             .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, format!("failed to insert new auction: {}", e)))?;
-            
-            let id: i64 = row.try_get("auction_id").map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, format!("failed to get auction_id: {}", e)))?;
+
+            let id: i64 = row.try_get("auction_id").map_err(|e| {
+                (
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    format!("failed to get auction_id: {}", e),
+                )
+            })?;
             new_ids.push(id);
         }
 
-        tx.commit().await.map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, format!("failed to commit transaction: {}", e)))?;
+        tx.commit().await.map_err(|e| {
+            (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                format!("failed to commit transaction: {}", e),
+            )
+        })?;
         Ok(new_ids)
     }
 }

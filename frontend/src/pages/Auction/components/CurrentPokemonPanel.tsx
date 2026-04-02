@@ -269,7 +269,8 @@ const CurrentPokemonPanel: React.FC<CurrentPokemonPanelProps> = ({ current_aucti
   const [showTipModal, setShowTipModal] = React.useState(false);
   // Build the evolution tree for the current Pokémon
   const evoTree = buildEvolutionTree(pokemonData, all_pokemon);
-  const keyMoves = pokemonData.key_moves ?? [];
+  const keyMoves = (pokemonData.key_moves ?? [])
+    .sort((a, b) => a.display_order - b.display_order);
 
   const formatLearnMethod = (method?: string) => {
     if (!method) return '';
