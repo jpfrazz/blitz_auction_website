@@ -53,7 +53,6 @@ const TeamPlannerTab: React.FC<TeamPlannerTabProps> = ({ teams, currentUserId, a
       'Whipped Dream',
       'Dragon Scale',
       'Metal Coat',
-      'Soothe Bell',
       "King's Rock"
     ];
     if (specialItems.some(item => method === item)) {

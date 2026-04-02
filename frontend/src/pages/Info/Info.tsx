@@ -559,15 +559,6 @@ const Info = () => (
                 <li>Goomy &gt; Sliggoo-Hisui</li>
               </ul>
             </details>
-            <details>
-              <summary className='slateport-market-dropdown'>Soothe Bell</summary>
-              <ul>
-                <li>Buneary &gt; Lopunny</li>
-                <li>Swadloon &gt; Leavanny</li>
-                <li>Chansey &gt; Blissey</li>
-                <li>Golbat &gt; Crobat</li>
-              </ul>
-            </details>
           </div>
           <div className="slateport-market-card">
             <div className="slateport-market-title">Badge 6</div>
@@ -781,6 +772,7 @@ const Info = () => (
           <li><strong>Ball Fetch:</strong> Finds a held Sitrus Berry at the end of a boss battle.</li>
           <li><strong>Forecast:</strong> Sets weather on entry based on the first move in the Pokémon's learnset (sun for fire, rain for water, hail for ice).</li>
           <li><strong>Frisk:</strong> Steals the opponent's held item on switch in.</li>
+          <li><strong>Gluttony:</strong> Consuming a berry causes the pokemon to ransack the bag, eating 3-5 additional Oran Berries.</li>
           <li><strong>Grassy Pelt:</strong> Boosts 1.5x defense in Sun, not in Grassy Terrain.</li>
           <li><strong>Honey Gather:</strong> Finds a held Sitrus Berry at the end of a boss battle.</li>
           <li><strong>Pickup:</strong> Finds a held Sitrus Berry at the end of a boss battle.</li>
