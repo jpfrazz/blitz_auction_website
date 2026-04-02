@@ -55,7 +55,7 @@ pokedex_id,pokemon_name,form,move_name,learn_method,species,display_order
 371,Bagon,,Headbutt,17,,3
 371,Bagon,,Dragon Claw,29,,4
 371,Bagon,,Rock Slide,TM,,5
-371,Bagon,,Return,TM,6
+371,Bagon,,Return,TM,,6
 371,Bagon,,Protect,30,,7
 371,Bagon,,Hone Claws,TM,,8
 371,Bagon,,Earthquake,TM,,9
@@ -1731,7 +1731,7 @@ pokedex_id,pokemon_name,form,move_name,learn_method,species,display_order
 396,Starly,,Thief,TM,,3
 396,Starly,,Aerial Ace,28/TM,,4
 396,Starly,,Close Combat,Evo.,,5
-396,Starly,,Return,TM,6
+396,Starly,,Return,TM,,6
 396,Starly,,Fly,HM,,7
 396,Starly,,Brave Bird,49,,8
 396,Starly,,Detect,Egg,,9

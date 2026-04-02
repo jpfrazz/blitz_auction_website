@@ -555,7 +555,7 @@ dex_number,name,form,evolves_from_id,evolves_from_form,type1,type2,stage,ability
 41,Zubat,,,,Poison,Flying,base,Inner Focus,,Infiltrator,40,45,35,30,40,55,,,,
 42,Golbat,,41,,Poison,Flying,evo,Inner Focus,,Infiltrator,75,80,70,65,75,90,"Level 22",,,
 169,Crobat,,42,,Poison,Flying,evo,Inner Focus,,Infiltrator,85,90,80,70,80,130,"Level 30",,,
-65536,Egg,,,,Egg,,base,,,,,,,,,,,,,"Tip: Baby Pokemon\nAn egg can hatch into any of these baby Pokemon: Azurill, Cleffa, Igglybuff, and Togepi."
+65536,Egg,,,,Egg,,base,,,,0,0,0,0,0,0,,,,"Tip: Baby Pokemon\nAn egg can hatch into any of these baby Pokemon: Azurill, Cleffa, Igglybuff, and Togepi."
 169,Crobat,,42,,Poison,Flying,evo,Inner Focus,,Infiltrator,85,90,80,70,80,130,"Soothe Bell",,,
 65536,Egg,,,,Egg,,base,,,,0,0,0,0,0,0,,,,"Tip: Baby Pokemon\nAn egg can hatch into any of these baby Pokemon: Azurill, Cleffa, Igglybuff, and Togepi."
 298,Azurill,,,,Normal,Fairy,base,Thick Fat,Huge Power,Sap Sipper,50,20,40,20,40,20,,,Baby,
