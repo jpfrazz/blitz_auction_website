@@ -98,6 +98,7 @@ pub struct DraftSettings {
 struct Team {
     pub user_id: String,
     pub username: String,
+    pub global_name: Option<String>,
     pub ready: bool,
     budget_remaining: u32,
     pub auctions_won: Vec<Arc<Pokemon>>,
@@ -612,6 +613,7 @@ impl DraftActor {
                 Team {
                     user_id: host_id.clone(),
                     username: host.get_user_name_string(),
+                    global_name: host.get_global_name(),
                     ready: true,
                     budget_remaining: settings.starting_money,
                     auctions_won: vec![],
@@ -936,6 +938,7 @@ impl DraftActor {
         let team = Team {
             user_id: user_id.clone(),
             username: user.get_user_name_string(),
+            global_name: user.get_global_name(),
             ready: user_id == self.host,
             budget_remaining: self.settings.starting_money,
             auctions_won: vec![],

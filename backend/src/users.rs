@@ -54,6 +54,13 @@ impl User {
         }
     }
 
+    pub fn get_global_name(&self) -> Option<String> {
+        match self {
+            Self::DiscordUser(user) => user.global_name.clone(),
+            Self::GuestUser(_) => None,
+        }
+    }
+
     pub fn has_role_name(&self, role_name: &str) -> bool {
         match self {
             Self::DiscordUser(user) => user.roles.iter().any(|role| role.role_name == role_name),
@@ -159,6 +166,7 @@ impl AuthBackend {
     }
 
     async fn insert_user_in_db(&self, user: &User) -> Result<(), AuthError> {
+        println!("inserting user into db, {}", user.get_user_name_string());
         match user {
             User::GuestUser(user) => {
                 let _res = sqlx::query!(
@@ -239,6 +247,11 @@ impl AuthBackend {
                 tx.commit().await.map_err(|_| AuthError::SqlxError)?;
             }
         }
+
+        println!(
+            "inserted user successfully, {}",
+            user.get_user_name_string()
+        );
 
         Ok(())
     }
@@ -350,6 +363,7 @@ impl AuthnBackend for AuthBackend {
                     return Ok(None);
                 }
 
+                println!("getting user from discord");
 
                 let token_res = self
                     .client
@@ -388,6 +402,7 @@ impl AuthnBackend for AuthBackend {
                     roles: discord_roles,
                 };
 
+                println!("got user {} from discord", discord_user.user_name);
 
                 user = User::DiscordUser(discord_user);
             }
@@ -422,6 +437,7 @@ impl AuthnBackend for AuthBackend {
                 User::GuestUser(guest_user)
             }
             UserId::DiscordId(user_id) => {
+                println!("getting user {}", user_id);
                 let row = sqlx::query!(
                     r#"
                         SELECT u.user_id, u.user_name, u.discriminator, u.global_name, u.avatar,
@@ -457,6 +473,7 @@ impl AuthnBackend for AuthBackend {
                     })?,
                 };
 
+                println!("got user {}", user_id);
                 User::DiscordUser(discord_user)
             }
         };

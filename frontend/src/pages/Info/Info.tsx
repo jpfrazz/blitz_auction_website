@@ -237,6 +237,7 @@ const Info = () => (
               <li className="tm-grass">Giga Drain</li>
               <li className="tm-normal">Hyper Beam</li>
               <li className="tm-steel">Iron Tail</li>
+              <li className="tm-normal">Return</li>
               <li className="tm-rock">Rock Slide</li>
               <li className="tm-ghost">Shadow Ball</li>
               <li className="tm-dark">Snarl</li>
@@ -281,12 +282,12 @@ const Info = () => (
                 <img src="/MiniIcons/helioptile.png" alt="Helioptile" />
                 <img src="/MiniIcons/litwick.png" alt="Litwick" />
                 <img src="/MiniIcons/joltik.png" alt="Joltik" />
-                <img src="/MiniIcons/shinx.png" alt="Shinx" />
                 <img src="/MiniIcons/mawile.png" alt="Mawile" />
                 <img src="/MiniIcons/minccino.png" alt="Minccino" />
                 <img src="/MiniIcons/mudbray.png" alt="Mudbray" />
                 <img src="/MiniIcons/scatterbug.png" alt="Scatterbug" />
                 <img src="/MiniIcons/shellder.png" alt="Shellder" />
+                <img src="/MiniIcons/shellos.png" alt="Shellos" />
                 <img src="/MiniIcons/shinx.png" alt="Shinx" />
                 <img src="/MiniIcons/shroomish.png" alt="Shroomish" />
                 <img src="/MiniIcons/snubbull.png" alt="Snubbull" />
@@ -312,6 +313,7 @@ const Info = () => (
                 <li>Mudbray (Stamina)</li>
                 <li>Scatterbug (Compound Eyes)</li>
                 <li>Shellder (Skill Link)</li>
+                <li>Shellos (Storm Drain)</li>
                 <li>Shinx (Intimidate)</li>
                 <li>Shroomish (Poison Heal)</li>
                 <li>Snubbull (Intimidate)</li>
