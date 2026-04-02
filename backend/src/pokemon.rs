@@ -22,7 +22,8 @@ pub async fn read_pokemon_data_from_db(pool: &PgPool) -> Result<Vec<Arc<Pokemon>
                             'form', km.form,
                             'move_name', km.move_name,
                             'learn_method', km.learn_method,
-                            'species', km.species
+                            'species', km.species,
+                            'display_order', km.display_order
                         )
                     )
                     FROM key_moves km
@@ -207,6 +208,7 @@ pub struct KeyMoveRow {
     pub move_name: String,
     pub learn_method: String,
     pub species: Option<String>,
+    pub display_order: i32,
 }
 
 #[derive(EnumString, Display, Clone, Copy, Debug, Serialize, Deserialize)]

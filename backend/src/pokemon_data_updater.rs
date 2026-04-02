@@ -40,6 +40,7 @@ pub struct KeyMoveCsvRecord {
     pub move_name: String,
     pub learn_method: Option<String>,
     pub species: Option<String>,
+    pub display_order: i32,
 }
 
 pub async fn update_pokemon_data(
@@ -181,17 +182,19 @@ pub async fn update_pokemon_key_moves_data(
 
         let _ = sqlx::query!(
             r#"
-            INSERT INTO key_moves (pokedex_id, form, move_name, learn_method, species)
-            VALUES ($1, $2, $3, $4, $5)
+            INSERT INTO key_moves (pokedex_id, form, move_name, learn_method, species, display_order)
+            VALUES ($1, $2, $3, $4, $5, $6)
             ON CONFLICT (pokedex_id, form, move_name) DO UPDATE SET
                 learn_method = EXCLUDED.learn_method,
-                species = EXCLUDED.species
+                species = EXCLUDED.species,
+                display_order = EXCLUDED.display_order
             "#,
             key_move.pokedex_id,
             key_move.form.clone().unwrap_or_default(),
             key_move.move_name,
             key_move.learn_method.clone().unwrap_or_default(),
-            key_move.species
+            key_move.species,
+            key_move.display_order
         )
         .execute(&mut *tx)
         .await
