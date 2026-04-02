@@ -44,6 +44,8 @@ const excludedPokemonNames = new Set([
   'Turtonator',
 ]);
 
+const RECENT_DRAFT_COUNT_THRESHOLD = 10;
+
 function formatPokemonName(name: string): string {
   const lower = name.toLowerCase();
   if (lower.startsWith("farfetch'd")) {
@@ -156,7 +158,7 @@ const PokemonStatsTab: React.FC<PokemonStatsTabProps> = ({
       if (!seen.has(auction.draft_id)) {
         seen.add(auction.draft_id);
         recent.add(auction.draft_id);
-        if (recent.size >= 20) break;
+        if (recent.size >= RECENT_DRAFT_COUNT_THRESHOLD) break;
       }
     }
     return recent;
@@ -254,7 +256,7 @@ const PokemonStatsTab: React.FC<PokemonStatsTabProps> = ({
       existing.bids.push(sale.bid);
     });
 
-    // Calculate Historic Ranks (All auctions EXCLUDING recent 20 drafts)
+    // Calculate Historic Ranks
     const historicGrouped = new Map<string, number[]>();
 
     (stats?.legacy ?? []).forEach((legacyRow) => {

@@ -543,13 +543,14 @@ pokedex_id,pokemon_name,form,move_name,learn_method,species,display_order
 349,Feebas,,Mirror Coat,Egg,,10
 653,Fennekin,,Flame Charge,14,,1
 653,Fennekin,,Psybeam,18,,2
-653,Fennekin,,Flamethrower,45/TM,,3
-653,Fennekin,,Dazzling Gleam,TM,,4
-653,Fennekin,,Shadow Ball,MR/TM,Delphox,5
-653,Fennekin,,Psychic,TM/57,,6
-653,Fennekin,,Calm Mind,TM,Delphox,7
-653,Fennekin,,Overheat,TM,,8
-653,Fennekin,,Hypnosis,Egg,,9
+653,Fennekin,,Mystical Fire,Evo.,Delphox,3
+653,Fennekin,,Flamethrower,TM/45,,4
+653,Fennekin,,Dazzling Gleam,TM,,5
+653,Fennekin,,Shadow Ball,MR/TM,Delphox,6
+653,Fennekin,,Psychic,TM/57,,7
+653,Fennekin,,Calm Mind,TM,Delphox,8
+653,Fennekin,,Overheat,TM,,9
+653,Fennekin,,Hypnosis,Egg,,10
 926,Fidough,,Play Rough,18,,1
 926,Fidough,,Work Up,22,,2
 926,Fidough,,Baton Pass,26,,3

@@ -1,0 +1,85 @@
+4/2/2026
+
+//Return returns alongside some Quality of Life features
+
+-----------------------------------------------
+Balance Adjustments
+-----------------------------------------------
+
+Soothe Bell Removed
+//Previously, the Soothe Bell could be used like a Water Stone on Pokémon who required high friendship to evolve. Now, all friendship-evolution Pokémon evolve at either level 10, 20, or 30, not just babies. This affects the following Pokémon:
+Buneary > Lopunny (20)
+Golbat > Crobat (30)
+Swadloon > Leavanny (30)
+//Overdue cleanup. It doesn't make sense to have an item for allowing just 3 Pokémon to evolve when we already have a precedent for handling friendship evolutions.
+//This changes nothing for Swadloon or Golbat besides saving you the $1000 and the time of buying the item. It's a buff to Buneary, and not the only one coming...
+
+
+Return Returns
+//Once upon a time, I removed Return because I didn't want to deal with friendship mechanics. With normal types being so weak, let's add it back into the mix.
+
+Return always has 102 base power
+//Instead of changing its power based on friendship, the move has a flat base 102 power.
+
+Return TM for sale
+//After earning 4 badges, Return is for sale in Slateport for 3000.
+
+Return added back to move lists
+//Lopunny now learns Return on evolution.
+
+
+Dragonize Added
+//Mega Feraligatr's new signature ability, which turns all normal-type moves to dragon, is implemented. Just in time for Return.
+
+
+Gluttony Reworked
+//Flipping Gluttony as your ability is effectively a blank (the only way to make use of it currently is to steal the Salac Berry from Lucy's Seviper). As you know, I've tried to go through and make sure that every useless ability has some use. Gluttony now has an additional effect:
+//When a Pokemon with gluttony eats a berry, it immediately proceeds to eat 3-5 Oran Berries from the player's bag.
+//If your Gluttonous Pokémon reaches full HP, or your bag runs out of Oran Berries, the effect will stop prematurely.
+//Gluttony could theoretically proc multiple timer per battle. If, for example, your Gluttonous Pokémon goes below half health to proc Gluttony, then later in the fight Thiefs an opposing Pokémon's held berry and consumes it as well, Gluttony would trigger again.
+//Gluttony can trigger on any berry type, including Cheri, Chesto, Rawst, etc.
+//For a full list of ability changes, check out https://emeraldblitz.com/Info#ability-reworks
+
+
+Charm added as a Move Relearner move for all Eeveelutions
+//Previously, Eevee could learn Charm at level 29, and that was the only way to have it on an Eeveelution. While I liked this mechanic for giving the player a reason to level up their Eevee to the cap before evolving, in practice it just feels bad when a player accidentally evolves their Eevee before it's level 29. I'm trying to cut down on situations where small oversights lead to catastrophic consequences, as Pokémon has enough of these as is...
+//Players evolving an underleveled Eevee to get Draining Kiss or Leech Seed at level 20 on their Sylveon/Leafeon will still need to visit the Move Relearner to get Charm, so it doesn't make much of a difference strategy wise.
+
+
+In game trades removed
+//Prevents the player from trading for DOTS the Seedot or SKYLAR the Horsea from in-game NPCs.
+
+
+-----------------------------------------------
+QoL
+-----------------------------------------------
+
+Animation Acceleration
+//I've been meaning to do this for ages and finally have a clean solution under the hood for how to accelerate repetitive or overly long animations.
+The following animations have had their speed adjusted to 2x:
+--Leech Seed HP Drain
+--Item consumption (Pokémon consuming berries, White Herb, etc.)
+--Stat Change (the colorful animation that signifies a stat raising or lowering)
+--Weather Effects (Hail, Sun, Rain, etc.)
+--Lunge
+--Smog
+//In part because of this change, the time limit on EGP races will now be 2 hours and 30 minutes, reduced from 3 hours.
+
+
+Hall of Fame Screen Accessible in Museum
+//Talk to the new Victini in the upper right of the museum to replay the Hall of Fame sequence, including seeing your MVP and final time.
+
+Wally's overworld sprite now has green hair
+//I tried to make this sprite at least somewhat resemble Wally.
+
+
+-----------------------------------------------
+Bug Fix
+-----------------------------------------------
+
+Fixed a bug where choosing Random in the notebook crashed the game
+//Random was limited to just 200 options before. We've grown too powerful for its puny constraints...
+
+Fixed a bug where starting a double battle with just one non-fainted Pokémon caused fainted Pokémon to trigger their abilities
+//For example, if you were down to your last Pokemon, you could previously lead a fainted Growlithe into Tate & Liza to get an intimidate off. This is fixed.
+

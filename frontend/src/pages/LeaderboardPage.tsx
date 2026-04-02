@@ -1,6 +1,8 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { fetchLeaderboard, LeaderboardEntry } from '../shared/api/users';
+import { fetchStatsPageData } from '../shared/api/stats';
 import Header from '../shared/components/Header';
+import { StatsPageResponse } from '../types';
 import './LeaderboardPage.scss';
 
 function formatPokemonName(name: string): string {
@@ -11,11 +13,29 @@ function formatPokemonName(name: string): string {
   return lower.replace(/'/g, '');
 }
 
+function getPlacementLabel(placement: number | null): string {
+  if (placement === null) return '-';
+
+  const suffix = placement % 10 === 1 && placement % 100 !== 11
+    ? 'st'
+    : placement % 10 === 2 && placement % 100 !== 12
+      ? 'nd'
+      : placement % 10 === 3 && placement % 100 !== 13
+        ? 'rd'
+        : 'th';
+
+  return `${placement}${suffix}`;
+}
+
 const LeaderboardPage = () => {
     const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
     const [minGames, setMinGames] = useState(0);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+
+    const [stats, setStats] = useState<StatsPageResponse | null>(null);
+    const [statsLoading, setStatsLoading] = useState(false);
+    const [expandedUserId, setExpandedUserId] = useState<string | null>(null);
 
     useEffect(() => {
         const getLeaderboard = async () => {
@@ -34,11 +54,68 @@ const LeaderboardPage = () => {
         getLeaderboard();
     }, []);
 
+    useEffect(() => {
+        setStatsLoading(true);
+        fetchStatsPageData()
+            .then(setStats)
+            .catch(console.error)
+            .finally(() => setStatsLoading(false));
+    }, []);
+
     const filteredAndSortedLeaderboard = useMemo(() => {
         return leaderboard
             .filter(player => player.games_played >= minGames)
             .sort((a, b) => b.mmr - a.mmr);
     }, [leaderboard, minGames]);
+
+    const draftsInfo = useMemo(() => {
+        if (!stats) return new Map<string, { date: string, participants: { userId: string, username: string, placement: number }[] }>();
+        const map = new Map<string, { date: string, participants: { userId: string, username: string, placement: number }[] }>();
+        
+        const playersMap = new Map();
+        stats.players.forEach(p => playersMap.set(p.user_id, p));
+
+        stats.teams.forEach(t => {
+            if (t.placement === null) return;
+            if (!map.has(t.draft_id)) {
+                map.set(t.draft_id, { date: '', participants: [] });
+            }
+            const draft = map.get(t.draft_id)!;
+            const uid = t.user_id || t.guest_id || '';
+            const pInfo = playersMap.get(uid);
+            draft.participants.push({
+                userId: uid,
+                username: pInfo?.user_name || uid || 'Guest',
+                placement: t.placement
+            });
+        });
+
+        const seenDrafts = new Set();
+        stats.auctions.forEach(a => {
+            if (seenDrafts.has(a.draft_id)) return;
+            const draft = map.get(a.draft_id);
+            if (draft) {
+                draft.date = a.created_at || '';
+                seenDrafts.add(a.draft_id);
+            }
+        });
+
+        map.forEach(d => d.participants.sort((a, b) => a.placement - b.placement));
+        
+        return map;
+    }, [stats]);
+
+    const userMatches = useMemo(() => {
+        if (!expandedUserId || !stats) return [];
+        return Array.from(draftsInfo.entries())
+            .filter(([_, info]) => info.participants.some(p => p.userId === expandedUserId))
+            .map(([id, info]) => ({ draftId: id, ...info }))
+            .sort((a, b) => (b.date || '').localeCompare(a.date || ''));
+    }, [expandedUserId, draftsInfo, stats]);
+
+    const handleRowClick = useCallback((userId: string) => {
+        setExpandedUserId(prev => prev === userId ? null : userId);
+    }, []);
 
     const getRowClass = (index: number) => {
         switch (index) {
@@ -60,6 +137,12 @@ const LeaderboardPage = () => {
     return (
         <div className="leaderboard-page-wrapper">
             <Header />
+            <style>{`
+                @keyframes slideDown {
+                    from { opacity: 0; transform: translateY(-10px); }
+                    to { opacity: 1; transform: translateY(0); }
+                }
+            `}</style>
             <div className="leaderboard-container">
             <div className="leaderboard-header">
                 <h1>Ever Grande Prix Season One Leaderboard</h1>
@@ -86,8 +169,13 @@ const LeaderboardPage = () => {
                 </thead>
                 <tbody>
                     {filteredAndSortedLeaderboard.map((player, index) => (
-                        <tr key={player.user_id} className={getRowClass(index)}>
-                            <td>{index + 1}</td>
+                        <React.Fragment key={player.user_id}>
+                            <tr 
+                                className={`${getRowClass(index)} ${expandedUserId === player.user_id ? 'expanded' : ''}`}
+                                onClick={() => handleRowClick(player.user_id)}
+                                style={{ cursor: 'pointer' }}
+                            >
+                                <td>{index + 1}</td>
                             <td>
                                 <div className="leaderboard-username-cell">
                                     {player.avatar ? (
@@ -139,6 +227,69 @@ const LeaderboardPage = () => {
                                 </div>
                             </td>
                         </tr>
+                        {expandedUserId === player.user_id && (
+                            <tr className="leaderboard-history-dropdown-row" style={{ backgroundColor: 'rgba(0, 0, 0, 0.15)' }}>
+                                <td colSpan={5} style={{ padding: 0 }}>
+                                    <div style={{ 
+                                        padding: '1.5rem', 
+                                        maxHeight: '400px', 
+                                        overflowY: 'auto',
+                                        borderTop: '1px solid rgba(255, 255, 255, 0.05)',
+                                        borderBottom: '1px solid rgba(255, 255, 255, 0.05)',
+                                        animation: 'slideDown 0.3s ease-out',
+                                        backgroundColor: 'rgba(0, 0, 0, 0.2)'
+                                    }}>
+                                        {statsLoading && !stats ? (
+                                            <div style={{ textAlign: 'center', color: '#888', padding: '20px' }}>Loading match history...</div>
+                                        ) : userMatches.length === 0 ? (
+                                            <div style={{ textAlign: 'center', color: '#888', padding: '20px' }}>No ranked match history found.</div>
+                                        ) : (
+                                            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.85rem' }}>
+                                                <thead>
+                                                    <tr style={{ textAlign: 'left', color: '#666', borderBottom: '1px solid rgba(255, 255, 255, 0.1)' }}>
+                                                        <th style={{ padding: '8px' }}>Date</th>
+                                                        <th style={{ padding: '8px' }}>Draft ID</th>
+                                                        <th style={{ padding: '8px' }}>Race Standings</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    {userMatches.map(match => (
+                                                        <tr key={match.draftId} style={{ borderBottom: '1px solid rgba(255, 255, 255, 0.05)' }}>
+                                                            <td style={{ padding: '8px', whiteSpace: 'nowrap', verticalAlign: 'top' }}>
+                                                                {match.date ? new Date(match.date).toLocaleDateString() : '-'}
+                                                            </td>
+                                                            <td style={{ padding: '8px', fontFamily: 'monospace', color: '#777', verticalAlign: 'top' }}>
+                                                                {match.draftId.slice(0, 8)}...
+                                                            </td>
+                                                            <td style={{ padding: '8px' }}>
+                                                                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+                                                                    {match.participants.map(p => (
+                                                                        <span 
+                                                                            key={p.userId} 
+                                                                            style={{ 
+                                                                                color: p.userId === player.user_id ? '#fff' : '#aaa',
+                                                                                fontWeight: p.userId === player.user_id ? 'bold' : 'normal',
+                                                                                backgroundColor: p.userId === player.user_id ? 'rgba(76, 175, 80, 0.2)' : 'rgba(255, 255, 255, 0.05)',
+                                                                                padding: '2px 6px',
+                                                                                borderRadius: '4px',
+                                                                                border: p.userId === player.user_id ? '1px solid rgba(76, 175, 80, 0.3)' : '1px solid transparent'
+                                                                            }}
+                                                                        >
+                                                                            {getPlacementLabel(p.placement)}: {p.username}
+                                                                        </span>
+                                                                    ))}
+                                                                </div>
+                                                            </td>
+                                                        </tr>
+                                                    ))}
+                                                </tbody>
+                                            </table>
+                                        )}
+                                    </div>
+                                </td>
+                            </tr>
+                        )}
+                        </React.Fragment>
                     ))}
                 </tbody>
             </table>
