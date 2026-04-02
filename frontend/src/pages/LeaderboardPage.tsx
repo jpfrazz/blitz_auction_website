@@ -54,6 +54,21 @@ const LeaderboardPage = () => {
         getLeaderboard();
     }, []);
 
+    const userTeamsByDraft = useMemo(() => {
+        if (!stats) return new Map<string, Map<string, any[]>>();
+        // Map<draftId, Map<userId, Auction[]>>
+        const map = new Map<string, Map<string, any[]>>();
+        stats.auctions.forEach(a => {
+            if (a.winning_bid === null) return;
+            if (!map.has(a.draft_id)) map.set(a.draft_id, new Map());
+            const draftMap = map.get(a.draft_id)!;
+            const uid = a.winning_user_id || a.winning_guest_id || '';
+            if (!draftMap.has(uid)) draftMap.set(uid, []);
+            draftMap.get(uid)!.push(a);
+        });
+        return map;
+    }, [stats]);
+
     useEffect(() => {
         setStatsLoading(true);
         fetchStatsPageData()
@@ -86,6 +101,7 @@ const LeaderboardPage = () => {
             draft.participants.push({
                 userId: uid,
                 username: pInfo?.user_name || uid || 'Guest',
+                username: pInfo?.global_name || pInfo?.user_name || uid || 'Guest',
                 placement: t.placement
             });
         });
@@ -141,6 +157,8 @@ const LeaderboardPage = () => {
                 @keyframes slideDown {
                     from { opacity: 0; transform: translateY(-10px); }
                     to { opacity: 1; transform: translateY(0); }
+                    from { opacity: 0; max-height: 0; transform: translateY(-10px); }
+                    to { opacity: 1; max-height: 1000px; transform: translateY(0); }
                 }
             `}</style>
             <div className="leaderboard-container">
@@ -250,6 +268,7 @@ const LeaderboardPage = () => {
                                                         <th style={{ padding: '8px' }}>Date</th>
                                                         <th style={{ padding: '8px' }}>Draft ID</th>
                                                         <th style={{ padding: '8px' }}>Race Standings</th>
+                                                        <th style={{ padding: '8px' }}>Team & Costs</th>
                                                     </tr>
                                                 </thead>
                                                 <tbody>
@@ -277,6 +296,26 @@ const LeaderboardPage = () => {
                                                                         >
                                                                             {getPlacementLabel(p.placement)}: {p.username}
                                                                         </span>
+                                                                    ))}
+                                                                </div>
+                                                            </td>
+                                                            <td style={{ padding: '8px' }}>
+                                                                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
+                                                                    {(userTeamsByDraft.get(match.draftId)?.get(player.user_id) || [])
+                                                                        .sort((a, b) => (b.winning_bid ?? 0) - (a.winning_bid ?? 0))
+                                                                        .map(a => (
+                                                                        <div 
+                                                                            key={a.auction_id} 
+                                                                            style={{ display: 'flex', alignItems: 'center', backgroundColor: 'rgba(255, 255, 255, 0.03)', padding: '2px 6px', borderRadius: '4px', border: '1px solid rgba(255, 255, 255, 0.05)' }}
+                                                                            title={`${a.name}${a.form ? ` (${a.form})` : ''}: $${a.winning_bid}`}
+                                                                        >
+                                                                            <img 
+                                                                                src={`/MiniIcons/${formatPokemonName(a.name)}.png`} 
+                                                                                alt={a.name} 
+                                                                                style={{ width: '16px', height: '16px', marginRight: '4px' }} 
+                                                                            />
+                                                                            <span style={{ fontSize: '0.7rem', color: '#888' }}>${a.winning_bid}</span>
+                                                                        </div>
                                                                     ))}
                                                                 </div>
                                                             </td>
