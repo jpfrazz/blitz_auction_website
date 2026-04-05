@@ -196,14 +196,14 @@
   }
 
   .home-main {
-    padding: 2rem 1rem 0; // Adjusted padding for mobile: top 2rem, horizontal 1rem, bottom 0
-    justify-content: flex-start;
+    padding: 1rem;
+    justify-content: center;
     flex: 1; /* Allow main content to grow and fill available space */
     overflow-y: auto; /* Enable vertical scrolling if content overflows */
   }
 
   .home-logo {
-    width: 45vw;
+    width: 55vw;
     margin-bottom: 2rem;
   }
 
