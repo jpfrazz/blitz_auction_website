@@ -121,15 +121,16 @@ pokedex_id,pokemon_name,form,move_name,learn_method,species,display_order
 418,Buizel,,Crunch,MR,,7
 418,Buizel,,Waterfall,HM,,8
 418,Buizel,,Aqua Tail,Egg,,9
-427,Buneary,,Quick Attack,16,,1
-427,Buneary,,Return,Evo.,,2
-427,Buneary,,Jump Kick,23,,3
-427,Buneary,,Facade,TM,,4
-427,Buneary,,Dizzy Punch,36,,5
-427,Buneary,,Charm,46,,6
-427,Buneary,,Bounce,56,,7
-427,Buneary,,High Jump Kick,MR!,,8
-427,Buneary,,Sky Uppercut,Egg,,9
+427,Buneary,,Baby-Doll Eyes,13,,1
+427,Buneary,,Quick Attack,16,,2
+427,Buneary,,Return,Evo.,,3
+427,Buneary,,Jump Kick,23,,4
+427,Buneary,,Facade,TM,,5
+427,Buneary,,Dizzy Punch,36,,6
+427,Buneary,,Charm,46,,7
+427,Buneary,,Bounce,56,,8
+427,Buneary,,High Jump Kick,MR!,,9
+427,Buneary,,Sky Uppercut,Egg,,10
 1,Bulbasaur,,Leech Seed,7,,1
 1,Bulbasaur,,Vine Whip,9,,2
 1,Bulbasaur,,Razor Leaf,Evo.,,3
@@ -809,18 +810,19 @@ pokedex_id,pokemon_name,form,move_name,learn_method,species,display_order
 246,Larvitar,,Stone Edge,MR!,,12
 246,Larvitar,,Outrage,Egg,,13
 506,Lillipup,,Bite,8,,1
-506,Lillipup,,Take Down,15,,2
-506,Lillipup,,Work Up,20,,3
-506,Lillipup,,Crunch,24,,4
-506,Lillipup,,Strength,HM,,5
-506,Lillipup,,Fire Fang,MR,,6
-506,Lillipup,,Ice Fang,MR,,7
-506,Lillipup,,Thunder Fang,MR,,8
-506,Lillipup,,Return,TM,,9
-506,Lillipup,,Snarl,TM,,10
-506,Lillipup,,Retaliate,36,,11
-506,Lillipup,,Play Rough,MR!,,12
-506,Lillipup,,Psychic Fangs,Egg,,13
+506,Lillipup,,Baby-Doll Eyes,8,,2
+506,Lillipup,,Take Down,15,,3
+506,Lillipup,,Work Up,20,,4
+506,Lillipup,,Crunch,24,,5
+506,Lillipup,,Strength,HM,,6
+506,Lillipup,,Fire Fang,MR,,7
+506,Lillipup,,Ice Fang,MR,,8
+506,Lillipup,,Thunder Fang,MR,,9
+506,Lillipup,,Return,TM,,10
+506,Lillipup,,Snarl,TM,,11
+506,Lillipup,,Retaliate,36,,12
+506,Lillipup,,Play Rough,MR!,,13
+506,Lillipup,,Psychic Fangs,Egg,,14
 667,Litleo,,Ember,5,,1
 667,Litleo,,Work Up,8,,2
 667,Litleo,,Flamethrower,TM/38,,3
@@ -1233,14 +1235,15 @@ pokedex_id,pokemon_name,form,move_name,learn_method,species,display_order
 261,Poochyena,,Play Rough,56,,9
 261,Poochyena,,Poison Fang,Egg,,10
 728,Popplio,,Disarming Voice,8,,1
-728,Popplio,,Aqua Jet,14,,2
-728,Popplio,,Bubble Beam,24,,3
-728,Popplio,,Ice Beam,TM,,4
-728,Popplio,,Surf,HM,,5
-728,Popplio,,Water Pulse,TM,,6
-728,Popplio,,Moonblast,44,,7
-728,Popplio,,Captivate,49,,8
-728,Popplio,,Perish Song,Egg,,9
+728,Popplio,,Baby-Doll Eyes,8,,2
+728,Popplio,,Aqua Jet,14,,3
+728,Popplio,,Bubble Beam,24,,4
+728,Popplio,,Ice Beam,TM,,5
+728,Popplio,,Surf,HM,,6
+728,Popplio,,Water Pulse,TM,,7
+728,Popplio,,Moonblast,44,,8
+728,Popplio,,Captivate,49,,9
+728,Popplio,,Perish Song,Egg,,10
 137,Porygon,,Psybeam,7,,1
 137,Porygon,,Recover,18,,2
 137,Porygon,,Ice Beam,TM,,3
@@ -1454,14 +1457,15 @@ pokedex_id,pokemon_name,form,move_name,learn_method,species,display_order
 422,Shellos,,Sludge Bomb,TM,,7
 422,Shellos,,Surf,HM,,8
 422,Shellos,,Mirror Coat,Egg,,9
-403,Shinx,,Spark,13,,1
-403,Shinx,,Thief,TM,,2
-403,Shinx,,Snarl,TM,,3
-403,Shinx,,Volt Switch,30,,4
-403,Shinx,,Thunder Fang,35,,5
-403,Shinx,,Facade,TM,,6
-403,Shinx,,Crunch,42,,7
-403,Shinx,,Ice Fang,Egg,,8
+403,Shinx,,Baby-Doll Eyes,11,,1
+403,Shinx,,Spark,13,,2
+403,Shinx,,Thief,TM,,3
+403,Shinx,,Snarl,TM,,4
+403,Shinx,,Volt Switch,30,,5
+403,Shinx,,Thunder Fang,35,,6
+403,Shinx,,Facade,TM,,7
+403,Shinx,,Crunch,42,,8
+403,Shinx,,Ice Fang,Egg,,9
 948,Shroodle,,Acid Spray,5,,1
 948,Shroodle,,Poison Fang,14,,2
 948,Shroodle,,Taunt,TM,,3
@@ -1820,16 +1824,17 @@ pokedex_id,pokemon_name,form,move_name,learn_method,species,display_order
 532,Timburr,,Hammer Arm,45,,8
 532,Timburr,,Stone Edge,49,,9
 532,Timburr,,Power-Up Punch,Egg,,10
-957,Tinkatink,,Metal Claw,8,,1
-957,Tinkatink,,Draining Kiss,17,,2
-957,Tinkatink,,Brutal Swing,24,,3
-957,Tinkatink,,Protect,TM,,4
-957,Tinkatink,,Rock Slide,TM,,5
-957,Tinkatink,,Play Rough,35,,6
-957,Tinkatink,,Gigaton Hammer,Evo.,,7
-957,Tinkatink,,Skitter Smack,47,,8
-957,Tinkatink,,Knock Off,52,,9
-957,Tinkatink,,Ice Hammer,Egg,,10
+957,Tinkatink,,Baby-Doll Eyes,8,,1
+957,Tinkatink,,Metal Claw,8,,2
+957,Tinkatink,,Draining Kiss,17,,3
+957,Tinkatink,,Brutal Swing,24,,4
+957,Tinkatink,,Protect,TM,,5
+957,Tinkatink,,Rock Slide,TM,,6
+957,Tinkatink,,Play Rough,35,,7
+957,Tinkatink,,Gigaton Hammer,Evo.,,8
+957,Tinkatink,,Skitter Smack,47,,9
+957,Tinkatink,,Knock Off,52,,10
+957,Tinkatink,,Ice Hammer,Egg,,11
 564,Tirtouga,,Rollout,5,,1
 564,Tirtouga,,Protect,11,,2
 564,Tirtouga,,Aqua Jet,15,,3
@@ -1995,13 +2000,14 @@ pokedex_id,pokemon_name,form,move_name,learn_method,species,display_order
 100,Voltorb,Hisui,Electro Ball,22,,5
 100,Voltorb,Hisui,Giga Drain,TM,,6
 100,Voltorb,Hisui,Discharge,34,,7
-37,Vulpix,Alola,Ice Shard,10,,1
-37,Vulpix,Alola,Icy Wind,15,,2
-37,Vulpix,Alola,Dazzling Gleam,Evo.,,3
-37,Vulpix,Alola,Ice Beam,MR/TM,,4
-37,Vulpix,Alola,Blizzard,TM,,5
-37,Vulpix,Alola,Calm Mind,TM,,6
-37,Vulpix,Alola,Freeze-Dry,EGG/MR,,7
+37,Vulpix,Alola,Baby-Doll Eyes,9,,1
+37,Vulpix,Alola,Ice Shard,10,,2
+37,Vulpix,Alola,Icy Wind,15,,3
+37,Vulpix,Alola,Dazzling Gleam,Evo.,,4
+37,Vulpix,Alola,Ice Beam,MR/TM,,5
+37,Vulpix,Alola,Blizzard,TM,,6
+37,Vulpix,Alola,Calm Mind,TM,,7
+37,Vulpix,Alola,Freeze-Dry,EGG/MR,,8
 320,Wailmer,,Water Gun,7,,1
 320,Wailmer,,Water Pulse,19,,2
 320,Wailmer,,Ice Beam,TM,,3
@@ -2077,13 +2083,14 @@ pokedex_id,pokemon_name,form,move_name,learn_method,species,display_order
 193,Yanma,,Signal Beam,Egg,,10
 263,Zigzagoon,,Snarl,9,,1
 263,Zigzagoon,,Headbutt,12,,2
-263,Zigzagoon,,Taunt,TM,,3
-263,Zigzagoon,,Night Slash,Evo.,,4
-263,Zigzagoon,,Hone Claws,MR,,5
-263,Zigzagoon,,Obstruct,Evo.,Obstagoon,6
-263,Zigzagoon,,Facade,TM,,7
-263,Zigzagoon,,Bulk Up,TM,,8
-263,Zigzagoon,,Knock Off,Egg,,9
+263,Zigzagoon,,Baby-Doll Eyes,15,,3
+263,Zigzagoon,,Taunt,TM,,4
+263,Zigzagoon,,Night Slash,Evo.,,5
+263,Zigzagoon,,Hone Claws,MR,,6
+263,Zigzagoon,,Obstruct,Evo.,Obstagoon,7
+263,Zigzagoon,,Facade,TM,,8
+263,Zigzagoon,,Bulk Up,TM,,9
+263,Zigzagoon,,Knock Off,Egg,,10
 570,Zorua,,Pursuit,5,,1
 570,Zorua,,Thief,TM,,2
 570,Zorua,,Taunt,25/TM,,3

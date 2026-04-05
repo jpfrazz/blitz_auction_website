@@ -59,6 +59,7 @@ function Header() {
     }
     return localStorage.getItem(HEADER_PINNED_KEY) !== 'false';
   });
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   const toggleAuctionSoundMuted = () => {
     const nextMuted = !isAuctionSoundMuted;
@@ -70,6 +71,16 @@ function Header() {
     const nextPinned = !isHeaderPinned;
     setIsHeaderPinned(nextPinned);
     localStorage.setItem(HEADER_PINNED_KEY, String(nextPinned));
+  };
+
+  const toggleMobileMenu = () => {
+    setIsMobileMenuOpen(prev => !prev);
+  };
+
+  // Close mobile menu when a link is clicked
+  const handleNavLinkClick = () => {
+    scrollToTop();
+    setIsMobileMenuOpen(false);
   };
 
   const handleChangeName = async () => {
@@ -99,16 +110,24 @@ function Header() {
             className="logoImg"
           />
         </Link>
-        <nav className="nav">
+        <button className={`mobileMenuToggle ${isMobileMenuOpen ? 'open' : ''}`} onClick={toggleMobileMenu} aria-label="Toggle navigation menu">
+          <span></span>
+          <span></span>
+          <span></span>
+        </button>
+        <nav className={`nav ${isMobileMenuOpen ? 'mobileOpen' : ''}`}>
+          <Link to="/" className="navButton mobile-only" onClick={handleNavLinkClick}>
+            Home
+          </Link>
           <div className="navDropdown">
             <button className="navButton navDropdownTrigger" type="button">
               Auctions
             </button>
             <div className="navDropdownMenu">
-              <Link to="/AuctionSetup" className="navButton navDropdownItem" onClick={scrollToTop} target={linkTarget} rel={linkRel}>
+              <Link to="/AuctionSetup" className="navButton navDropdownItem" onClick={handleNavLinkClick} target={linkTarget} rel={linkRel}>
                 Auction Setup
               </Link>
-              <Link to="/LobbyViewer" className="navButton navDropdownItem" onClick={scrollToTop} target={linkTarget} rel={linkRel}>
+              <Link to="/LobbyViewer" className="navButton navDropdownItem" onClick={handleNavLinkClick} target={linkTarget} rel={linkRel}>
                 Lobby Viewer
               </Link>
             </div>
@@ -118,13 +137,13 @@ function Header() {
               Documentation
             </button>
             <div className="navDropdownMenu">
-              <Link to="/Info" className="navButton navDropdownItem" onClick={scrollToTop} target={linkTarget} rel={linkRel}>
+              <Link to="/Info" className="navButton navDropdownItem" onClick={handleNavLinkClick} target={linkTarget} rel={linkRel}>
                 Blitz Info
               </Link>
-              <Link to="/BossBattles" className="navButton navDropdownItem" onClick={scrollToTop} target={linkTarget} rel={linkRel}>
+              <Link to="/BossBattles" className="navButton navDropdownItem" onClick={handleNavLinkClick} target={linkTarget} rel={linkRel}>
                 Boss Battles
               </Link>
-              <Link to="/PatchNotes" className="navButton navDropdownItem" onClick={scrollToTop} target={linkTarget} rel={linkRel}>
+              <Link to="/PatchNotes" className="navButton navDropdownItem" onClick={handleNavLinkClick} target={linkTarget} rel={linkRel}>
                 Patch Notes
               </Link>
             </div>
@@ -134,10 +153,10 @@ function Header() {
               Pokémon
             </button>
             <div className="navDropdownMenu">
-              <Link to="/Pokedex" className="navButton navDropdownItem" onClick={scrollToTop} target={linkTarget} rel={linkRel}>
+              <Link to="/Pokedex" className="navButton navDropdownItem" onClick={handleNavLinkClick} target={linkTarget} rel={linkRel}>
                 Pokédex
               </Link>
-              <Link to="/TeamPlanner" className="navButton navDropdownItem" onClick={scrollToTop} target={linkTarget} rel={linkRel}>
+              <Link to="/TeamPlanner" className="navButton navDropdownItem" onClick={handleNavLinkClick} target={linkTarget} rel={linkRel}>
                 Team Planner
               </Link>
             </div>
@@ -147,7 +166,7 @@ function Header() {
               key={btn.label}
               to={btn.link}
               className="navButton"
-              onClick={scrollToTop}
+              onClick={handleNavLinkClick}
               target={linkTarget}
               rel={linkRel}
             >
@@ -158,7 +177,7 @@ function Header() {
             <Link
               to="/Admin"
               className="navButton"
-              onClick={scrollToTop}
+              onClick={handleNavLinkClick}
               target={linkTarget}
               rel={linkRel}
             >
@@ -166,7 +185,7 @@ function Header() {
             </Link>
           )}
           {!user && (
-            <a href="/api/login" className="navButton" target={linkTarget} rel={linkRel}>Login</a>
+            <a href="/api/login" className="navButton" onClick={handleNavLinkClick} target={linkTarget} rel={linkRel}>Login</a>
           )}
           {user && !user.is_guest && (
             <div className="userDropdown">
@@ -179,7 +198,7 @@ function Header() {
                 <h1>{user.username}</h1>
               </button>
               <div className="userDropdownMenu navDropdownMenu">
-                <button className="navButton userDropdownItem" onClick={() => window.location.href = '/api/logout'}>
+                <button className="navButton userDropdownItem" onClick={() => { window.location.href = '/api/logout'; handleNavLinkClick(); }}>
                   Logout
                 </button>
               </div>
@@ -191,10 +210,10 @@ function Header() {
                 <h1>{user.username}</h1>
               </button>
               <div className="userDropdownMenu navDropdownMenu">
-                <button className="navButton userDropdownItem" onClick={() => setShowNameModal(true)}>
+                <button className="navButton userDropdownItem" onClick={() => { setShowNameModal(true); handleNavLinkClick(); }}>
                   Change Name
                 </button>
-                <button className="navButton userDropdownItem" onClick={() => window.location.href = '/api/logout'}>
+                <button className="navButton userDropdownItem" onClick={() => { window.location.href = '/api/logout'; handleNavLinkClick(); }}>
                   Logout
                 </button>
               </div>

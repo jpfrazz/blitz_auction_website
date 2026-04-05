@@ -187,3 +187,32 @@
   0%, 100% { transform: translateY(0); }
   50% { transform: translateY(-2px); }
 }
+
+@media (max-width: 1024px) {
+  .home-page {
+    height: 100vh; /* Ensure the page takes full viewport height */
+    display: flex;
+    flex-direction: column; /* Arrange children vertically */
+  }
+
+  .home-main {
+    padding: 2rem 1rem 0; // Adjusted padding for mobile: top 2rem, horizontal 1rem, bottom 0
+    justify-content: flex-start;
+    flex: 1; /* Allow main content to grow and fill available space */
+    overflow-y: auto; /* Enable vertical scrolling if content overflows */
+  }
+
+  .home-logo {
+    width: 45vw;
+    margin-bottom: 2rem;
+  }
+
+  .home-download-btn {
+    padding: 0.75rem 2rem; /* Smaller padding */
+    font-size: 1.2rem; /* Smaller font size */
+  }
+
+  .space-hint {
+    display: none;
+  }
+}
