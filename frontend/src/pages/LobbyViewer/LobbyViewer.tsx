@@ -49,6 +49,14 @@ const LobbyViewer: React.FC = () => {
       .catch(() => setIsGuest(null));
   }, []);
 
+  const filteredDrafts = useMemo(() => {
+    const sixHoursAgo = new Date(Date.now() - 6 * 60 * 60 * 1000);
+    return drafts.filter(draft => {
+      if (!draft.created_at) return true;
+      return new Date(draft.created_at) > sixHoursAgo;
+    });
+  }, [drafts]);
+
   const columns = useMemo<ColumnDef<DraftLobby>[]>(() => [
     {
       header: 'Draft Name',
@@ -99,7 +107,7 @@ const LobbyViewer: React.FC = () => {
   ], [isGuest]);
 
   const table = useReactTable({
-    data: drafts,
+    data: filteredDrafts,
     columns,
     state: { sorting, columnFilters },
     onSortingChange: setSorting,

@@ -109,6 +109,7 @@ export interface DraftLobby {
   teams_joined: number;
   total_teams: number;
   draft_state: DraftState;
+  created_at: string;
 }
 
 export interface StatsAuction {

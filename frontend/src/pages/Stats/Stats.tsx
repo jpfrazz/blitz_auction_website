@@ -462,6 +462,7 @@ const Stats: React.FC = () => {
             stats={stats}
             loading={loading}
             error={error}
+            validDraftIds={validDraftIds}
           />
         )}
 
@@ -471,14 +472,30 @@ const Stats: React.FC = () => {
               <div className="stats-panel-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
                 <h2 style={{ margin: 0 }}>Draft Breakdown</h2>
                 <div className="competitive-toggle-wrapper" style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '1.1rem' }}>
-                  <label htmlFor="competitive-toggle" style={{ cursor: 'pointer', fontWeight: 500 }}>Competitive Drafts only</label>
-                  <input
-                    id="competitive-toggle"
-                    type="checkbox"
-                    checked={competitiveOnly}
-                    onChange={(e) => setCompetitiveOnly(e.target.checked)}
-                    style={{ width: '16px', height: '16px', cursor: 'pointer' }}
-                  />
+                  <label style={{ cursor: 'pointer', fontWeight: 500, color: '#888' }}>Competitive Drafts only</label>
+                  <div 
+                    onClick={() => setCompetitiveOnly(!competitiveOnly)}
+                    style={{ 
+                      position: 'relative', 
+                      width: '40px', 
+                      height: '20px', 
+                      backgroundColor: competitiveOnly ? '#4caf50' : '#333', 
+                      borderRadius: '20px', 
+                      cursor: 'pointer', 
+                      transition: 'background-color 0.3s ease' 
+                    }}
+                  >
+                    <div style={{ 
+                      position: 'absolute', 
+                      top: '2px', 
+                      left: competitiveOnly ? '22px' : '2px', 
+                      width: '16px', 
+                      height: '16px', 
+                      backgroundColor: 'white', 
+                      borderRadius: '50%', 
+                      transition: 'left 0.3s ease' 
+                    }} />
+                  </div>
                 </div>
               </div>
               <div className="table-wrap">

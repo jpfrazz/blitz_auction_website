@@ -28,6 +28,7 @@ pub struct Draft {
     pub host: User,
     pub broadcast_tx: broadcast::Sender<ServerMessage>,
     pub pokemon: Vec<Arc<Pokemon>>,
+    pub created_at: chrono::DateTime<Utc>,
     actor_sender: mpsc::Sender<DraftCommand>,
 }
 
@@ -58,6 +59,7 @@ pub struct DraftLobbyResponse {
     total_teams: u32,
     total_auctions: u32,
     draft_state: DraftState,
+    created_at: chrono::DateTime<Utc>,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq, Display)]
@@ -112,6 +114,7 @@ impl Draft {
         pokemon: Vec<Arc<Pokemon>>,
         actor_sender: mpsc::Sender<DraftCommand>,
         broadcast_tx: broadcast::Sender<ServerMessage>,
+        created_at: chrono::DateTime<Utc>,
     ) -> Draft {
         Draft {
             draft_id,
@@ -120,6 +123,7 @@ impl Draft {
             pokemon,
             broadcast_tx,
             actor_sender,
+            created_at,
         }
     }
 
@@ -166,6 +170,7 @@ impl Draft {
         }
         let (actor_sender, actor_receiver) = mpsc::channel(1_000);
         let (broadcast_tx, _) = broadcast::channel(10_000);
+        let created_at = Utc::now();
         let draft = Arc::new(Draft::new(
             draft_id,
             draft_name,
@@ -173,6 +178,7 @@ impl Draft {
             pokemon,
             actor_sender,
             broadcast_tx.clone(),
+            created_at,
         ));
         let actor_draft = draft.clone();
 
@@ -1331,6 +1337,7 @@ impl From<&DraftActor> for DraftLobbyResponse {
             total_auctions: value.settings.num_auctions,
             draft_state: value.draft_state.clone(),
             teams_joined: value.teams.len() as u32,
+            created_at: value.draft.created_at,
         }
     }
 }
