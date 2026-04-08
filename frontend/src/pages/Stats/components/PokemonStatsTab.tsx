@@ -138,15 +138,15 @@ const PokemonStatsTab: React.FC<PokemonStatsTabProps> = ({
   const sortedAuctions = useMemo(() => {
     let auctionsToFilter = stats?.auctions ?? [];
 
-    // If rankedOnly is true, filter by validDraftIds. If false, consider all auctions.
+    // If rankedOnly is true, filter by matches that were ranked. If false, consider all auctions.
     if (rankedOnly) {
-      auctionsToFilter = auctionsToFilter.filter((auction) => effectiveValidDraftIds.has(auction.draft_id));
+      auctionsToFilter = auctionsToFilter.filter((auction) => (auction as any).is_ranked);
     }
 
     return [...auctionsToFilter]
       .filter((auction) => auction.winning_bid !== null && !excludedPokemonNames.has(auction.name))
       .sort((a, b) => (b.created_at || '').localeCompare(a.created_at || ''));
-  }, [stats?.auctions, effectiveValidDraftIds, rankedOnly]);
+  }, [stats?.auctions, rankedOnly]);
 
   const recentDraftIds = useMemo(() => {
     const seen = new Set<string>();
@@ -351,7 +351,7 @@ const PokemonStatsTab: React.FC<PokemonStatsTabProps> = ({
       p.recentMovement = prevRank ? prevRank - p.rank : 0;
     });
     return results;
-  }, [sortedAuctions, stats?.legacy, recentDraftIds, rankedOnly, effectiveValidDraftIds]); // Use effectiveValidDraftIds
+  }, [sortedAuctions, stats?.legacy, recentDraftIds, rankedOnly]);
 
   const handleSort = (key: SortKey) => {
     setSortConfig((current) => ({
