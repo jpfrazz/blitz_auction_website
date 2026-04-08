@@ -135,18 +135,29 @@ const PokemonStatsTab: React.FC<PokemonStatsTabProps> = ({
     return valid;
   }, [propValidDraftIds, stats]);
 
+  const rankedDraftIds = useMemo(() => {
+    const ids = new Set<string>();
+    if (!stats?.teams) return ids;
+    stats.teams.forEach((team: any) => {
+      if (team.ranked) {
+        ids.add(team.draft_id);
+      }
+    });
+    return ids;
+  }, [stats?.teams]);
+
   const sortedAuctions = useMemo(() => {
     let auctionsToFilter = stats?.auctions ?? [];
 
     // If rankedOnly is true, filter by matches that were ranked. If false, consider all auctions.
     if (rankedOnly) {
-      auctionsToFilter = auctionsToFilter.filter((auction) => (auction as any).is_ranked);
+      auctionsToFilter = auctionsToFilter.filter((auction) => rankedDraftIds.has(auction.draft_id));
     }
 
     return [...auctionsToFilter]
       .filter((auction) => auction.winning_bid !== null && !excludedPokemonNames.has(auction.name))
       .sort((a, b) => (b.created_at || '').localeCompare(a.created_at || ''));
-  }, [stats?.auctions, rankedOnly]);
+  }, [stats?.auctions, rankedOnly, rankedDraftIds]);
 
   const recentDraftIds = useMemo(() => {
     const seen = new Set<string>();
