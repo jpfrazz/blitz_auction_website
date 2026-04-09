@@ -30,7 +30,6 @@ interface PokemonStatsTabProps {
   stats: StatsPageResponse | null;
   loading?: boolean;
   error?: string | null;
-  validDraftIds?: Set<string>; // Make this optional to fix build errors in other files
 }
 
 const excludedPokemonNames = new Set([
@@ -95,69 +94,62 @@ const PokemonStatsTab: React.FC<PokemonStatsTabProps> = ({
   stats,
   loading = false,
   error = null,
-  validDraftIds: propValidDraftIds, // Rename to avoid collision with internal memo
 }) => {
   const [pokemonSearch, setPokemonSearch] = useState('');
-  const [rankedOnly, setRankedOnly] = useState(true); // Add rankedOnly state, default to true as per request
   const [sortConfig, setSortConfig] = useState<{ key: SortKey; direction: 'asc' | 'desc' }>({
     key: 'avgWinningBid',
     direction: 'desc',
   });
 
-  // Fallback logic: If the parent doesn't provide validDraftIds, calculate them here.
-  const effectiveValidDraftIds = useMemo(() => {
-    if (propValidDraftIds) return propValidDraftIds;
-    if (!stats) return new Set<string>();
+  const handleSort = (key: SortKey) => {
+    setSortConfig((current) => ({
+      key,
+      direction: current.key === key && current.direction === 'desc' ? 'asc' : 'desc',
+    }));
+  };
 
+  const draftStats = useMemo(() => {
     const statsMap = new Map<string, { total: number; minBidCount: number; teamCount: number }>();
 
-    (stats.teams ?? []).forEach((t) => {
+    // Count teams (players) per draft
+    (stats?.teams ?? []).forEach((t) => {
       const curr = statsMap.get(t.draft_id) || { total: 0, minBidCount: 0, teamCount: 0 };
       curr.teamCount += 1;
       statsMap.set(t.draft_id, curr);
     });
 
-    (stats.auctions ?? []).forEach((a) => {
+    (stats?.auctions ?? []).forEach((a) => {
       if (a.winning_bid !== null) {
         const curr = statsMap.get(a.draft_id) || { total: 0, minBidCount: 0, teamCount: 0 };
         curr.total += 1;
-        if (a.winning_bid === 100) curr.minBidCount += 1;
+        if (a.winning_bid === 100) {
+          curr.minBidCount += 1;
+        }
         statsMap.set(a.draft_id, curr);
       }
     });
+    return statsMap;
+  }, [stats?.auctions, stats?.teams]);
 
+  const validDraftIds = useMemo(() => {
     const valid = new Set<string>();
-    statsMap.forEach((data, id) => {
+    // Threshold: Exclude drafts where:
+    // 1. More than 3 Pokemon sold for the minimum $100.
+    // 2. The total number of Pokemon sold is not 8 * players.
+    // 3. Fewer than 40 Pokemon were sold.
+    draftStats.forEach((data, id) => {
       if (data.total >= 40 && data.minBidCount <= 3 && data.total === 8 * data.teamCount) {
         valid.add(id);
       }
     });
     return valid;
-  }, [propValidDraftIds, stats]);
-
-  const rankedDraftIds = useMemo(() => {
-    const ids = new Set<string>();
-    if (!stats?.teams) return ids;
-    stats.teams.forEach((team: any) => {
-      if (team.ranked) {
-        ids.add(team.draft_id);
-      }
-    });
-    return ids;
-  }, [stats?.teams]);
+  }, [draftStats]);
 
   const sortedAuctions = useMemo(() => {
-    let auctionsToFilter = stats?.auctions ?? [];
-
-    // If rankedOnly is true, filter by matches that were ranked. If false, consider all auctions.
-    if (rankedOnly) {
-      auctionsToFilter = auctionsToFilter.filter((auction) => rankedDraftIds.has(auction.draft_id));
-    }
-
-    return [...auctionsToFilter]
-      .filter((auction) => auction.winning_bid !== null && !excludedPokemonNames.has(auction.name))
+    return [...(stats?.auctions ?? [])]
+      .filter((auction) => auction.winning_bid !== null && validDraftIds.has(auction.draft_id) && !excludedPokemonNames.has(auction.name))
       .sort((a, b) => (b.created_at || '').localeCompare(a.created_at || ''));
-  }, [stats?.auctions, rankedOnly, rankedDraftIds]);
+  }, [stats?.auctions, validDraftIds]);
 
   const recentDraftIds = useMemo(() => {
     const seen = new Set<string>();
@@ -170,7 +162,7 @@ const PokemonStatsTab: React.FC<PokemonStatsTabProps> = ({
       }
     }
     return recent;
-  }, [sortedAuctions]); // This depends on sortedAuctions, which now respects rankedOnly
+  }, [sortedAuctions]);
 
   const aggregatedPokemon = useMemo<PokemonAggregate[]>(() => {
     const sales: PokemonSaleRow[] = [];
@@ -210,7 +202,7 @@ const PokemonStatsTab: React.FC<PokemonStatsTabProps> = ({
       return { name: currentName, form: effectiveForm, key };
     };
 
-    sortedAuctions.forEach((auction) => { // This uses the sortedAuctions which is already filtered by rankedOnly
+    sortedAuctions.forEach((auction) => {
       const bid = auction.winning_bid;
       if (bid === null) {
         return;
@@ -224,27 +216,24 @@ const PokemonStatsTab: React.FC<PokemonStatsTabProps> = ({
       });
     });
 
-    // Only include legacy data if not in rankedOnly mode
-    if (!rankedOnly) {
-      (stats?.legacy ?? []).forEach((legacyRow) => {
-        const bid = parseLegacyCost(legacyRow.cost);
-        if (bid === null) {
-          return;
-        }
-        if (excludedPokemonNames.has(legacyRow.pokemon)) {
-          return;
-        }
+    (stats?.legacy ?? []).forEach((legacyRow) => {
+      const bid = parseLegacyCost(legacyRow.cost);
+      if (bid === null) {
+        return;
+      }
+      if (excludedPokemonNames.has(legacyRow.pokemon)) {
+        return;
+      }
 
-        const { name, form, key } = resolveIdentity(legacyRow.pokemon, '');
+      const { name, form, key } = resolveIdentity(legacyRow.pokemon, '');
 
-        sales.push({
-          key,
-          name,
-          form,
-          bid,
-        });
+      sales.push({
+        key,
+        name,
+        form,
+        bid,
       });
-    }
+    });
 
     const grouped = new Map<string, {
       key: string;
@@ -270,16 +259,13 @@ const PokemonStatsTab: React.FC<PokemonStatsTabProps> = ({
     // Calculate Historic Ranks
     const historicGrouped = new Map<string, number[]>();
 
-    // Only include legacy data in historic calculations if not in rankedOnly mode
-    if (!rankedOnly) {
-      (stats?.legacy ?? []).forEach((legacyRow) => {
-        const bid = parseLegacyCost(legacyRow.cost);
-        if (bid === null || excludedPokemonNames.has(legacyRow.pokemon)) return;
-        const { key } = resolveIdentity(legacyRow.pokemon, '');
-        if (!historicGrouped.has(key)) historicGrouped.set(key, []);
-        historicGrouped.get(key)!.push(bid);
-      });
-    }
+    (stats?.legacy ?? []).forEach((legacyRow) => {
+      const bid = parseLegacyCost(legacyRow.cost);
+      if (bid === null || excludedPokemonNames.has(legacyRow.pokemon)) return;
+      const { key } = resolveIdentity(legacyRow.pokemon, '');
+      if (!historicGrouped.has(key)) historicGrouped.set(key, []);
+      historicGrouped.get(key)!.push(bid);
+    });
 
     sortedAuctions.forEach((auction) => {
       if (!recentDraftIds.has(auction.draft_id) && auction.winning_bid !== null) {
@@ -362,14 +348,7 @@ const PokemonStatsTab: React.FC<PokemonStatsTabProps> = ({
       p.recentMovement = prevRank ? prevRank - p.rank : 0;
     });
     return results;
-  }, [sortedAuctions, stats?.legacy, recentDraftIds, rankedOnly]);
-
-  const handleSort = (key: SortKey) => {
-    setSortConfig((current) => ({
-      key,
-      direction: current.key === key && current.direction === 'desc' ? 'asc' : 'desc',
-    }));
-  };
+  }, [sortedAuctions, stats?.legacy, recentDraftIds]);
 
   const pokemonSummary = useMemo<PokemonAggregate[]>(() => {
     return [...aggregatedPokemon].sort((a, b) => {
@@ -405,36 +384,8 @@ const PokemonStatsTab: React.FC<PokemonStatsTabProps> = ({
     <section className="pokemon-stats-tab">
       <section className="stats-content-grid">
         <article className="stats-panel">
-          <div className="stats-panel-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', flexWrap: 'wrap' }}>
+          <div className="stats-panel-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
             <h2 style={{ margin: 0 }}>Cost Breakdown</h2>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '15px', flexWrap: 'wrap' }}> {/* Wrap for responsiveness */}
-              {/* New "Ranked only" toggle */}
-              <div className="competitive-toggle-wrapper" style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '1.1rem' }}>
-                <label style={{ cursor: 'pointer', fontWeight: 500, color: '#888' }}>Ranked only</label>
-                <div 
-                  onClick={() => setRankedOnly(!rankedOnly)}
-                  style={{ 
-                    position: 'relative', 
-                    width: '40px', 
-                    height: '20px', 
-                    backgroundColor: rankedOnly ? '#4caf50' : '#333', 
-                    borderRadius: '20px', 
-                    cursor: 'pointer', 
-                    transition: 'background-color 0.3s ease' 
-                  }}
-                >
-                  <div style={{ 
-                    position: 'absolute', 
-                    top: '2px', 
-                    left: rankedOnly ? '22px' : '2px', 
-                    width: '16px', 
-                    height: '16px', 
-                    backgroundColor: 'white', 
-                    borderRadius: '50%', 
-                    transition: 'left 0.3s ease' 
-                  }} />
-                </div>
-              </div>
             <div className="pokemon-search-bar">
               <input
                 className="pokemon-search-input"
@@ -445,7 +396,6 @@ const PokemonStatsTab: React.FC<PokemonStatsTabProps> = ({
               />
             </div>
           </div>
-        </div>
           <div className="table-wrap">
             <table>
               <thead>

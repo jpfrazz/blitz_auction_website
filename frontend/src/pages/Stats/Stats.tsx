@@ -462,7 +462,6 @@ const Stats: React.FC = () => {
             stats={stats}
             loading={loading}
             error={error}
-            validDraftIds={validDraftIds}
           />
         )}
 
@@ -472,8 +471,13 @@ const Stats: React.FC = () => {
               <div className="stats-panel-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
                 <h2 style={{ margin: 0 }}>Draft Breakdown</h2>
                 <div className="competitive-toggle-wrapper" style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '1.1rem' }}>
-                  <label style={{ cursor: 'pointer', fontWeight: 500, color: '#888' }}>Competitive Drafts only</label>
-                  <div 
+                  <span 
+                    style={{ cursor: 'pointer', fontWeight: 500 }} 
+                    onClick={() => setCompetitiveOnly(!competitiveOnly)}
+                  >
+                    Competitive Drafts only
+                  </span>
+                  <div
                     onClick={() => setCompetitiveOnly(!competitiveOnly)}
                     style={{ 
                       position: 'relative', 
