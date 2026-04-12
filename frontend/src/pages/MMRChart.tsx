@@ -49,7 +49,11 @@ const CustomTooltip = ({ active, payload, label, highlightedUser }: any) => {
         </p>
         <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
           {relevantEntries
-            .sort((a: any, b: any) => b.value - a.value)
+            .sort((a: any, b: any) => {
+              const pA = raceData[`${a.dataKey}_placement`] ?? 999;
+              const pB = raceData[`${b.dataKey}_placement`] ?? 999;
+              return pA - pB;
+            })
             .map((entry: any) => {
               const delta = raceData[`${entry.dataKey}_delta`];
               const deltaText = delta >= 0 ? `+${delta}` : `${delta}`;
@@ -162,6 +166,11 @@ const MMRChart: React.FC<MMRChartProps> = ({ leaderboard, stats, minGames }) => 
         race: index + 1,
         date: new Date(draft.date).toLocaleDateString('en-US')
       };
+
+      participants.forEach(p => {
+        entry[`${p.user_id}_placement`] = p.placement;
+      });
+
       currentMMRs.forEach((mmr, uid) => {
         entry[uid] = mmr;
         if (deltas.has(uid)) {

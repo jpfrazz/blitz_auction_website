@@ -7,9 +7,11 @@ interface TeamPlannerTabProps {
   teams: Team[];
   currentUserId: string | null;
   allPokemon: Pokemon[];
+  minimizedPokemon?: Set<string>;
+  onToggleMinimize?: (pokemonName: string) => void;
 }
 
-const TeamPlannerTab: React.FC<TeamPlannerTabProps> = ({ teams, currentUserId, allPokemon }) => {
+const TeamPlannerTab: React.FC<TeamPlannerTabProps> = ({ teams, currentUserId, allPokemon, minimizedPokemon = new Set(), onToggleMinimize }) => {
   if (!currentUserId) {
     return <div className="auction-team-planner-placeholder">Loading your team...</div>;
   }
@@ -86,6 +88,7 @@ const TeamPlannerTab: React.FC<TeamPlannerTabProps> = ({ teams, currentUserId, a
 
   const evoItemMap = new Map<string, Set<string>>();
   sortedTeamPokemon.forEach(pokemon => {
+    if (minimizedPokemon.has(pokemon.name)) return;
     collectEvoItemsFromTree(pokemon, allPokemon, evoItemMap);
   });
 
@@ -98,6 +101,7 @@ const TeamPlannerTab: React.FC<TeamPlannerTabProps> = ({ teams, currentUserId, a
   const eggMovesMap = new Map<string, Set<string>>();
 
   sortedTeamPokemon.forEach(pokemon => {
+    if (minimizedPokemon.has(pokemon.name)) return;
     (pokemon.key_moves ?? [])
       .filter(move => (move.learn_method ?? '').toLowerCase().includes('egg'))
       .forEach(move => {
@@ -160,13 +164,43 @@ const TeamPlannerTab: React.FC<TeamPlannerTabProps> = ({ teams, currentUserId, a
         </div>
       </div>
 
-      {teamPokemonAuctions.map(teamPokemonAuction => (
-        <CurrentPokemonPanel
-          key={teamPokemonAuction.auction_id}
-          current_auction={teamPokemonAuction}
-          all_pokemon={allPokemon}
-        />
-      ))}
+      {teamPokemonAuctions.map(teamPokemonAuction => {
+        const pokemonName = teamPokemonAuction.pokemon.name;
+        const isMinimized = minimizedPokemon.has(pokemonName);
+        
+        return (
+          <div 
+            key={teamPokemonAuction.auction_id} 
+            className={`team-planner-pokemon-wrapper ${isMinimized ? 'is-minimized' : ''}`}
+            style={{ 
+              position: 'relative',
+              height: isMinimized ? '60px' : 'auto',
+              overflow: 'hidden',
+              transition: 'height 0.3s ease',
+              border: '1px solid rgba(255, 255, 255, 0.1)',
+              borderRadius: '8px',
+              marginBottom: '12px',
+              background: 'rgba(255, 255, 255, 0.02)'
+            }}
+          >
+            <div style={{ pointerEvents: isMinimized ? 'none' : 'auto' }}>
+              <CurrentPokemonPanel
+                current_auction={teamPokemonAuction}
+                all_pokemon={allPokemon}
+              />
+            </div>
+            {onToggleMinimize && (
+              <button 
+                className="team-planner-minimize-btn"
+                onClick={() => onToggleMinimize(pokemonName)}
+                title={isMinimized ? "Expand" : "Minimize"}
+              >
+                {isMinimized ? '+' : '-'}
+              </button>
+            )}
+          </div>
+        );
+      })}
     </div>
   );
 };

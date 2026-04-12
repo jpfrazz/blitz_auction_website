@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import Select, { MultiValue, ActionMeta } from 'react-select';
 import Header from '../../shared/components/Header';
@@ -19,6 +19,7 @@ const TeamPlanner = () => {
   const [allPokemon, setAllPokemon] = useState<Pokemon[]>([]);
   const [loading, setLoading] = useState(true);
   const [modalOpen, setModalOpen] = useState(false);
+  const [minimizedPokemon, setMinimizedPokemon] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     fetchPokemonList()
@@ -27,18 +28,26 @@ const TeamPlanner = () => {
       .finally(() => setLoading(false));
   }, []);
 
-  const baseFormPokemon = allPokemon.filter((p) => !p.stage || p.stage === 'base');
+  const baseFormPokemon = useMemo(() => 
+    allPokemon.filter((p) => !p.stage || p.stage === 'base'),
+    [allPokemon]
+  );
 
-  const pokemonOptions: PokemonOption[] = baseFormPokemon.map(p => ({
-    value: p.name.toLowerCase(),
-    label: p.name,
-    pokemon: p,
-  }));
+  const pokemonOptions: PokemonOption[] = useMemo(() => 
+    baseFormPokemon.map(p => ({
+      value: p.name.toLowerCase(),
+      label: p.name,
+      pokemon: p,
+    })),
+    [baseFormPokemon]
+  );
 
-  const urlPokemonNames = searchParams.getAll('pokemon');
-  const selectedPokemon: PokemonOption[] = urlPokemonNames
-    .map(name => pokemonOptions.find(o => o.value === name))
-    .filter((o): o is PokemonOption => o !== undefined);
+  const selectedPokemon: PokemonOption[] = useMemo(() => {
+    const urlPokemonNames = searchParams.getAll('pokemon');
+    return urlPokemonNames
+      .map(name => pokemonOptions.find(o => o.value === name))
+      .filter((o): o is PokemonOption => o !== undefined);
+  }, [searchParams, pokemonOptions]);
 
   const handleOpenModal = () => setModalOpen(true);
 
@@ -52,6 +61,15 @@ const TeamPlanner = () => {
     newValue.forEach(o => params.append('pokemon', o.value));
     setSearchParams(params);
   };
+
+  const handleToggleMinimize = useCallback((pokemonName: string) => {
+    setMinimizedPokemon(prev => {
+      const next = new Set(prev);
+      if (next.has(pokemonName)) next.delete(pokemonName);
+      else next.add(pokemonName);
+      return next;
+    });
+  }, []);
 
   const soloTeam: Team[] = [
     {
@@ -79,7 +97,13 @@ const TeamPlanner = () => {
           {!loading && (
             <section className="teamplanner-team-section">
               <h2 className="teamplanner-team-subtitle">Your Team ({selectedPokemon.length})</h2>
-              <TeamPlannerTab teams={soloTeam} currentUserId="solo-user" allPokemon={allPokemon} />
+              <TeamPlannerTab 
+                teams={soloTeam} 
+                currentUserId="solo-user" 
+                allPokemon={allPokemon} 
+                minimizedPokemon={minimizedPokemon}
+                onToggleMinimize={handleToggleMinimize}
+              />
             </section>
           )}
         </div>
