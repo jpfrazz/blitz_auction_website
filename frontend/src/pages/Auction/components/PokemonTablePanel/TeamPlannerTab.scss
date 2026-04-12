@@ -1,7 +1,7 @@
 @import '../../../../shared/style/theme.scss';
 
 .auction-team-planner-list {
-    padding-right: 16px;
+    padding: 0 24px; // Symmetrical padding for clearance
     box-sizing: border-box;
     width: 100%;
 }
@@ -65,7 +65,7 @@
 .team-planner-minimize-btn {
     position: absolute;
     top: 8px;
-    right: 12px;
+    right: 16px; // Moved further in to stay clear of scrollbars
     z-index: 100; // Ensure it's above the panel content
     cursor: pointer;
     background: rgba(255, 255, 255, 0.1);

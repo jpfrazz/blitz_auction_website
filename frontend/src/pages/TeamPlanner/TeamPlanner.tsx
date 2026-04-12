@@ -84,7 +84,7 @@ const TeamPlanner = () => {
     <div className="teamplanner-page">
       <Header />
       <main className="teamplanner-main">
-        <div className="teamplanner-card">
+        <div className="teamplanner-card" style={{ maxWidth: '1250px', margin: '0 auto', width: 'calc(100% - 2rem)', boxSizing: 'border-box' }}>
           <h1 className="teamplanner-title">Team Planner</h1>
           {loading ? (
             <p className="teamplanner-loading">Loading Pokémon...</p>
