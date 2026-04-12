@@ -191,7 +191,18 @@ const MMRChart: React.FC<MMRChartProps> = ({ leaderboard, stats, minGames }) => 
   if (!stats) return <div style={{ color: '#888', padding: '40px', textAlign: 'center' }}>Loading chart data...</div>;
 
   return (
-    <div className="mmr-progression-chart" style={{ width: '100%', height: '500px', marginTop: '20px', background: 'rgba(0,0,0,0.2)', padding: '20px', borderRadius: '8px' }}>
+    <div 
+      className="mmr-progression-chart" 
+      style={{ 
+        width: 'calc(100% - 2rem)', 
+        margin: '20px auto 0', 
+        height: '500px', 
+        background: 'rgba(0,0,0,0.2)', 
+        padding: '20px', 
+        borderRadius: '8px',
+        boxSizing: 'border-box'
+      }}
+    >
       <ResponsiveContainer width="100%" height="100%">
         <LineChart data={processedData}>
           <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
