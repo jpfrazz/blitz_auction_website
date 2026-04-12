@@ -24,7 +24,7 @@ const COLORS = [
   '#DAAD86', '#659DBD', '#BC986A', '#8D8741', '#FBEEC1'
 ];
 
-const CustomTooltip = ({ active, payload, label }: any) => {
+const CustomTooltip = ({ active, payload, label, highlightedUser }: any) => {
   if (active && payload && payload.length) {
     const raceData = payload[0].payload;
     // Only show users who actually participated in this specific race (had a delta)
@@ -45,7 +45,7 @@ const CustomTooltip = ({ active, payload, label }: any) => {
         zIndex: 100
       }}>
         <p style={{ margin: '0 0 8px', fontWeight: 'bold', borderBottom: '1px solid #444', paddingBottom: '4px', color: '#fff' }}>
-          Race #{label}
+          {raceData.date === 'Initial' ? 'Initial Rating' : raceData.date}
         </p>
         <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
           {relevantEntries
@@ -54,11 +54,12 @@ const CustomTooltip = ({ active, payload, label }: any) => {
               const delta = raceData[`${entry.dataKey}_delta`];
               const deltaText = delta >= 0 ? `+${delta}` : `${delta}`;
               const deltaColor = delta >= 0 ? '#4caf50' : '#f44336';
+              const isHighlighted = entry.dataKey === highlightedUser;
               
               return (
                 <div key={entry.dataKey} style={{ fontSize: '0.85rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '16px' }}>
-                  <span style={{ color: entry.color, fontWeight: 600 }}>{entry.name}:</span>
-                  <span style={{ color: '#fff' }}>
+                  <span style={{ color: entry.color, fontWeight: isHighlighted ? 900 : 600, textDecoration: isHighlighted ? 'underline' : 'none' }}>{entry.name}:</span>
+                  <span style={{ color: '#fff', fontWeight: isHighlighted ? 900 : 400 }}>
                     {entry.value} 
                     <span style={{ color: deltaColor, marginLeft: '6px', fontSize: '0.75rem', fontWeight: 'bold' }}>
                       ({deltaText})
@@ -106,7 +107,10 @@ const MMRChart: React.FC<MMRChartProps> = ({ leaderboard, stats, minGames }) => 
     leaderboard.forEach(u => currentMMRs.set(u.user_id, 1500));
 
     // Point 0: The beginning
-    const initialEntry: any = { race: 0 };
+    const initialEntry: any = { 
+      race: 0,
+      date: 'Initial'
+    };
     leaderboard.forEach(u => {
       initialEntry[u.user_id] = 1500;
     });
@@ -142,7 +146,10 @@ const MMRChart: React.FC<MMRChartProps> = ({ leaderboard, stats, minGames }) => 
       });
 
       // Snapshot MMRs at this race index for all users
-      const entry: any = { race: index + 1 };
+      const entry: any = { 
+        race: index + 1,
+        date: new Date(draft.date).toLocaleDateString('en-US')
+      };
       currentMMRs.forEach((mmr, uid) => {
         entry[uid] = mmr;
         if (deltas.has(uid)) {
@@ -170,14 +177,14 @@ const MMRChart: React.FC<MMRChartProps> = ({ leaderboard, stats, minGames }) => 
           <XAxis 
             dataKey="race" 
             stroke="#888" 
-            label={{ value: 'Race #', position: 'insideBottom', offset: -5 }} 
+            label={{ value: 'Race #', position: 'insideBottom', offset: -10, fontSize: '1.25rem', fill: '#bbb' }} 
           />
           <YAxis 
             stroke="#888" 
             domain={['auto', 'auto']}
-            label={{ value: 'ELO', angle: -90, position: 'insideLeft' }} 
+            label={{ value: 'ELO', angle: -90, position: 'insideLeft', fontSize: '1.25rem', fill: '#bbb' }} 
           />
-          <Tooltip content={<CustomTooltip />} />
+          <Tooltip content={<CustomTooltip highlightedUser={highlightedUser} />} />
           <Legend 
             content={(props) => (
               <ul style={{ listStyle: 'none', display: 'flex', flexWrap: 'wrap', gap: '15px', justifyContent: 'center', marginTop: '20px' }}>
