@@ -61,11 +61,11 @@ const CustomTooltip = ({ active, payload, label, highlightedUser }: any) => {
               const isHighlighted = entry.dataKey === highlightedUser;
               
               return (
-                <div key={entry.dataKey} style={{ fontSize: '0.85rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '16px' }}>
+                <div key={entry.dataKey} style={{ fontSize: '1rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '16px' }}>
                   <span style={{ color: entry.color, fontWeight: isHighlighted ? 900 : 600, textDecoration: isHighlighted ? 'underline' : 'none' }}>{entry.name}:</span>
                   <span style={{ color: '#fff', fontWeight: isHighlighted ? 900 : 400 }}>
                     {entry.value} 
-                    <span style={{ color: deltaColor, marginLeft: '6px', fontSize: '0.75rem', fontWeight: 'bold' }}>
+                    <span style={{ color: deltaColor, marginLeft: '6px', fontSize: '0.85rem', fontWeight: 'bold' }}>
                       ({deltaText})
                     </span>
                   </span>
@@ -228,7 +228,7 @@ const MMRChart: React.FC<MMRChartProps> = ({ leaderboard, stats, minGames }) => 
                       style={{ width: '20px', height: '20px', borderRadius: '50%', background: '#444' }}
                       alt=""
                     />
-                    <span style={{ fontSize: '0.85rem', fontWeight: highlightedUser === player.user_id ? 'bold' : 'normal', textDecoration: highlightedUser === player.user_id ? 'underline' : 'none' }}>
+                    <span style={{ fontSize: '1rem', fontWeight: highlightedUser === player.user_id ? 'bold' : 'normal', textDecoration: highlightedUser === player.user_id ? 'underline' : 'none' }}>
                       {player.global_name || player.username}
                     </span>
                   </li>
