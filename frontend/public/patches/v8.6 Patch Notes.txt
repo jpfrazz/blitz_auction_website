@@ -88,13 +88,14 @@ All Mega Sprites now in game
 
 
 -----------------------------------------------
-QoL
+Bug Fix
 -----------------------------------------------
 
 Fixed a bug where obtaining the Burmy Binders made it impossible to obtain the Rotom Catalogs
 
 Fixed a bug where saving and reloading the game would reroll the offered rental Pokémon
 
+Fixed a bug where releasing a fainted rental Pokemon stopped you from having to the shady salesman extra
 
 -----------------------------------------------
 Pool Additions
