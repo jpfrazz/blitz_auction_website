@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import {
   LineChart,
   Line,
@@ -24,7 +24,59 @@ const COLORS = [
   '#DAAD86', '#659DBD', '#BC986A', '#8D8741', '#FBEEC1'
 ];
 
+const CustomTooltip = ({ active, payload, label }: any) => {
+  if (active && payload && payload.length) {
+    const raceData = payload[0].payload;
+    // Only show users who actually participated in this specific race (had a delta)
+    const relevantEntries = payload.filter((item: any) => {
+      const deltaKey = `${item.dataKey}_delta`;
+      return raceData[deltaKey] !== undefined;
+    });
+
+    if (relevantEntries.length === 0) return null;
+
+    return (
+      <div style={{ 
+        backgroundColor: '#222', 
+        border: '1px solid #444', 
+        padding: '10px', 
+        borderRadius: '4px',
+        boxShadow: '0 4px 12px rgba(0,0,0,0.5)',
+        zIndex: 100
+      }}>
+        <p style={{ margin: '0 0 8px', fontWeight: 'bold', borderBottom: '1px solid #444', paddingBottom: '4px', color: '#fff' }}>
+          Race #{label}
+        </p>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+          {relevantEntries
+            .sort((a: any, b: any) => b.value - a.value)
+            .map((entry: any) => {
+              const delta = raceData[`${entry.dataKey}_delta`];
+              const deltaText = delta >= 0 ? `+${delta}` : `${delta}`;
+              const deltaColor = delta >= 0 ? '#4caf50' : '#f44336';
+              
+              return (
+                <div key={entry.dataKey} style={{ fontSize: '0.85rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '16px' }}>
+                  <span style={{ color: entry.color, fontWeight: 600 }}>{entry.name}:</span>
+                  <span style={{ color: '#fff' }}>
+                    {entry.value} 
+                    <span style={{ color: deltaColor, marginLeft: '6px', fontSize: '0.75rem', fontWeight: 'bold' }}>
+                      ({deltaText})
+                    </span>
+                  </span>
+                </div>
+              );
+            })}
+        </div>
+      </div>
+    );
+  }
+  return null;
+};
+
 const MMRChart: React.FC<MMRChartProps> = ({ leaderboard, stats, minGames }) => {
+  const [highlightedUser, setHighlightedUser] = useState<string | null>(null);
+
   const processedData = useMemo(() => {
     if (!stats || leaderboard.length === 0) return [];
 
@@ -93,6 +145,9 @@ const MMRChart: React.FC<MMRChartProps> = ({ leaderboard, stats, minGames }) => 
       const entry: any = { race: index + 1 };
       currentMMRs.forEach((mmr, uid) => {
         entry[uid] = mmr;
+        if (deltas.has(uid)) {
+          entry[`${uid}_delta`] = deltas.get(uid);
+        }
       });
       data.push(entry);
     });
@@ -100,8 +155,8 @@ const MMRChart: React.FC<MMRChartProps> = ({ leaderboard, stats, minGames }) => 
     return data;
   }, [stats, leaderboard]);
 
-  const topPlayers = useMemo(() => 
-    leaderboard.filter(p => p.games_played >= minGames).slice(0, 15), 
+  const chartPlayers = useMemo(() => 
+    leaderboard.filter(p => p.games_played >= minGames), 
     [leaderboard, minGames]
   );
 
@@ -122,35 +177,48 @@ const MMRChart: React.FC<MMRChartProps> = ({ leaderboard, stats, minGames }) => 
             domain={['auto', 'auto']}
             label={{ value: 'ELO', angle: -90, position: 'insideLeft' }} 
           />
-          <Tooltip 
-            contentStyle={{ backgroundColor: '#222', border: '1px solid #444', color: '#fff' }}
-            itemStyle={{ color: '#fff' }}
-          />
+          <Tooltip content={<CustomTooltip />} />
           <Legend 
             content={(props) => (
               <ul style={{ listStyle: 'none', display: 'flex', flexWrap: 'wrap', gap: '15px', justifyContent: 'center', marginTop: '20px' }}>
-                {topPlayers.map((player, index) => (
-                  <li key={player.user_id} style={{ display: 'flex', alignItems: 'center', gap: '8px', color: COLORS[index % COLORS.length] }}>
+                {chartPlayers.map((player, index) => (
+                  <li 
+                    key={player.user_id} 
+                    onClick={() => setHighlightedUser(prev => prev === player.user_id ? null : player.user_id)}
+                    style={{ 
+                      display: 'flex', 
+                      alignItems: 'center', 
+                      gap: '8px', 
+                      color: COLORS[index % COLORS.length],
+                      cursor: 'pointer',
+                      opacity: highlightedUser === null || highlightedUser === player.user_id ? 1 : 0.35,
+                      transition: 'opacity 0.2s ease-in-out'
+                    }}
+                  >
                     <img 
                       src={player.avatar ? `https://cdn.discordapp.com/avatars/${player.user_id}/${player.avatar}.png` : ''} 
                       style={{ width: '20px', height: '20px', borderRadius: '50%', background: '#444' }}
                       alt=""
                     />
-                    <span style={{ fontSize: '0.85rem' }}>{player.global_name || player.username}</span>
+                    <span style={{ fontSize: '0.85rem', fontWeight: highlightedUser === player.user_id ? 'bold' : 'normal', textDecoration: highlightedUser === player.user_id ? 'underline' : 'none' }}>
+                      {player.global_name || player.username}
+                    </span>
                   </li>
                 ))}
               </ul>
             )}
           />
-          {topPlayers.map((player, index) => (
+          {chartPlayers.map((player, index) => (
             <Line
               key={player.user_id}
               type="monotone"
               dataKey={player.user_id}
               name={player.global_name || player.username}
               stroke={COLORS[index % COLORS.length]}
-              strokeWidth={2}
+              strokeWidth={highlightedUser === player.user_id ? 5 : 2}
+              strokeOpacity={highlightedUser === null || highlightedUser === player.user_id ? 1 : 0.15}
               dot={{ r: 3 }}
+              activeDot={{ r: highlightedUser === player.user_id ? 7 : 4 }}
             />
           ))}
         </LineChart>
