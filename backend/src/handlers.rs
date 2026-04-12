@@ -587,7 +587,7 @@ pub async fn get_stats_page_data(
 
     let team_rows = sqlx::query(
         "SELECT t.team_id, t.user_id, t.guest_id, t.draft_id, d.ranked, t.money_remaining,
-                t.pokemon_drafted, t.placement, t.pre_match_mmr, t.updated_at, t.created_at
+                t.pokemon_drafted, t.placement, t.pre_match_mmr, t.updated_at, d.created_at
          FROM teams t
          JOIN drafts d ON d.draft_id = t.draft_id
          WHERE d.state = 'COMPLETED'
@@ -597,7 +597,7 @@ pub async fn get_stats_page_data(
                 WHERE a.draft_id = t.draft_id
                   AND a.winning_bid IS NOT NULL
            )
-         ORDER BY t.created_at DESC",
+         ORDER BY d.created_at DESC",
     )
     .fetch_all(&state.db_pool)
     .await
@@ -647,13 +647,13 @@ pub async fn get_stats_page_data(
     let auction_rows = sqlx::query(
         "SELECT a.auction_id, a.pokedex_id, p.name, a.form, a.draft_id, a.draft_order, a.state,
                 a.paused_time_remaining, a.winning_bid, a.winning_user_id, a.winning_guest_id,
-                a.updated_at, a.created_at
+                a.updated_at, d.created_at
          FROM auctions a
          JOIN drafts d ON d.draft_id = a.draft_id
          JOIN pokemon p ON p.pokedex_id = a.pokedex_id AND p.form = a.form
          WHERE d.state = 'COMPLETED'
            AND a.winning_bid IS NOT NULL
-         ORDER BY a.created_at DESC",
+         ORDER BY d.created_at DESC, a.draft_order ASC",
     )
     .fetch_all(&state.db_pool)
     .await
@@ -722,12 +722,12 @@ pub async fn get_match_history_by_user_id(
         "SELECT t.team_id, t.user_id, t.guest_id, t.draft_id,
                 d.ranked, (SELECT COUNT(*)::INT FROM teams team_counts WHERE team_counts.draft_id = t.draft_id) AS team_count,
                 t.money_remaining, t.placement,
-                t.pre_match_mmr, t.updated_at, t.created_at
+                t.pre_match_mmr, t.updated_at, d.created_at
          FROM teams t
           JOIN drafts d ON d.draft_id = t.draft_id
                  WHERE (t.user_id = $1 OR t.guest_id = $1)
             AND d.state = 'COMPLETED'
-         ORDER BY t.created_at DESC",
+         ORDER BY d.created_at DESC",
     )
     .bind(&user_id)
     .fetch_all(&state.db_pool)
