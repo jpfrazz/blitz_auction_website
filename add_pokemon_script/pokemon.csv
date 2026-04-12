@@ -372,6 +372,9 @@ dex_number,name,form,evolves_from_id,evolves_from_form,type1,type2,stage,ability
 723,Dartrix,,722,,Grass,Flying,evo,Overgrow,,Long Reach,78,75,75,70,70,52,"Level 17",,,
 724,Decidueye,,723,,Grass,Ghost,evo,Overgrow,,Long Reach,78,107,75,100,100,70,"Level 34 at night",,,
 724,Decidueye,Hisui,723,,Grass,Fighting,evo,Overgrow,,Scrappy,88,112,80,95,95,60,"Level 34 at day",,,
+627,Rufflet,,,,Normal,Flying,base,Keen Eye,Sheer Force,Hustle,70,83,50,37,50,60,,,,
+628,Braviary,,627,,Normal,Flying,evo,Keen Eye,Sheer Force,Defiant,100,123,75,57,75,80,"Level 54 at day (Oracle)",,,
+628,Braviary,Hisui,627,,Psychic,Flying,evo,Keen Eye,Sheer Force,Defiant,110,83,70,112,70,65,"Level 54 at night (Oracle)",,,
 302,Sableye,,,,Dark,Ghost,base,Keen Eye,Stall,Prankster,50,75,75,65,65,50,,"base",,"Tip: Early Mega Evolution\nMawile and Sableye are the only two Pokémon in Emerald Blitz who can Mega Evolve before the 7th gym. Their Mega stones are available from the start. However, you won't earn enough money to purchase them until after beating gym 3, since they cost a steep 10,000."
 302,Mega Sableye,Mega,302,,Dark,Ghost,mega,Magic Bounce,,,50,85,125,85,115,20,Sablenite,"base",,
 757,Salandit,,,,Poison,Fire,base,Corrosion,,Oblivious,48,44,40,71,40,77,,,,
