@@ -83,22 +83,34 @@ const MMRChart: React.FC<MMRChartProps> = ({ leaderboard, stats, minGames }) => 
 
     // Group ranked team entries by draft
     const drafts = new Map<string, { date: string, teams: any[] }>();
+
+    // Create a map of draft_id -> date from auctions as a fallback
+    const draftDates = new Map<string, string>();
+    stats.auctions.forEach(a => {
+      if (a.created_at && !draftDates.has(a.draft_id)) {
+        draftDates.set(a.draft_id, a.created_at);
+      }
+    });
+
     stats.teams.forEach(t => {
       // Filter for ranked drafts with results. We don't check pre_match_mmr here
       // because we are simulating history and want this to work even if the
       // database hasn't been recalculated yet.
-      if (!t.user_id || t.placement === null || (t as any).ranked === false) return;
+      const team = t as any; // Cast to access fields that might be missing in older frontend types
+      if (!team.user_id || team.placement === null || team.ranked === false) return;
 
-      if (!drafts.has(t.draft_id)) {
-        drafts.set(t.draft_id, { date: t.created_at, teams: [] });
+      if (!drafts.has(team.draft_id)) {
+        // Use team.created_at if available, otherwise fall back to the draft's auction date
+        const date = team.created_at || draftDates.get(team.draft_id) || '';
+        drafts.set(team.draft_id, { date, teams: [] });
       }
-      drafts.get(t.draft_id)!.teams.push(t);
+      drafts.get(team.draft_id)!.teams.push(team);
     });
 
     // Sort drafts chronologically
-    const sortedDrafts = Array.from(drafts.values()).sort((a, b) => 
-      new Date(a.date).getTime() - new Date(b.date).getTime()
-    );
+    const sortedDrafts = Array.from(drafts.values())
+      .filter(d => d.date !== '') // Ensure we only sort and simulate valid dates
+      .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
 
     const currentMMRs = new Map<string, number>();
     const userRaceCounts = new Map<string, number>();
