@@ -28,51 +28,76 @@ const MMRChart: React.FC<MMRChartProps> = ({ leaderboard, stats, minGames }) => 
   const processedData = useMemo(() => {
     if (!stats || leaderboard.length === 0) return [];
 
-    const filteredLeaderboard = leaderboard.filter(p => p.games_played >= minGames);
-    const userMap = new Map<string, number[]>();
-    
-    filteredLeaderboard.forEach(user => {
-      userMap.set(user.user_id, []);
-    });
+    // Group ranked team entries by draft
+    const drafts = new Map<string, { date: string, teams: any[] }>();
+    stats.teams.forEach(t => {
+      // pre_match_mmr is only populated for ranked drafts when results are submitted
+      if (t.pre_match_mmr === null || t.pre_match_mmr === undefined) return;
+      if (!t.user_id || t.placement === null) return;
 
-    // Sort teams chronologically
-    const sortedTeams = [...stats.teams]
-      .filter(t => t.user_id && userMap.has(t.user_id))
-      .sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
-
-    // Group pre-match MMRs by user
-    sortedTeams.forEach(t => {
-      if (t.user_id) {
-        userMap.get(t.user_id)?.push(t.pre_match_mmr ?? 1500);
+      if (!drafts.has(t.draft_id)) {
+        drafts.set(t.draft_id, { date: t.created_at, teams: [] });
       }
+      drafts.get(t.draft_id)!.teams.push(t);
     });
 
-    // Add final current MMR
-    filteredLeaderboard.forEach(user => {
-      userMap.get(user.user_id)?.push(user.mmr);
-    });
+    // Sort drafts chronologically
+    const sortedDrafts = Array.from(drafts.values()).sort((a, b) => 
+      new Date(a.date).getTime() - new Date(b.date).getTime()
+    );
 
-    let maxPoints = 0;
-    userMap.forEach(points => {
-      if (points.length > maxPoints) maxPoints = points.length;
-    });
+    const currentMMRs = new Map<string, number>();
+    const userRaceCounts = new Map<string, number>();
+    
+    // Everyone starts at 1500
+    leaderboard.forEach(u => currentMMRs.set(u.user_id, 1500));
 
-    const data = [];
-    for (let i = 0; i < maxPoints; i++) {
-      const entry: any = { race: i };
-      userMap.forEach((points, userId) => {
-        if (i < points.length) {
-          entry[userId] = points[i];
-        } else if (points.length > 0) {
-          // Pad with last known value to keep lines going
-          entry[userId] = points[points.length - 1];
-        }
+    // Point 0: The beginning
+    const initialEntry: any = { race: 0 };
+    leaderboard.forEach(u => {
+      initialEntry[u.user_id] = 1500;
+    });
+    const data = [initialEntry];
+
+    // Simulate each race to find the MMR history snapshots
+    sortedDrafts.forEach((draft, index) => {
+      const participants = draft.teams;
+      const deltas = new Map<string, number>();
+
+      participants.forEach(p_i => {
+        let delta = 0;
+        const raceNum = (userRaceCounts.get(p_i.user_id) || 0) + 1;
+        userRaceCounts.set(p_i.user_id, raceNum);
+        
+        const k = raceNum <= 5 ? 40 : 20;
+        const rating_i = currentMMRs.get(p_i.user_id) || 1500;
+
+        participants.forEach(p_j => {
+          if (p_i.user_id === p_j.user_id) return;
+          const rating_j = currentMMRs.get(p_j.user_id) || 1500;
+          
+          const expected = 1 / (1 + Math.pow(10, (rating_j - rating_i) / 400));
+          const result = p_i.placement < p_j.placement ? 1 : 0;
+          delta += k * (result - expected);
+        });
+        deltas.set(p_i.user_id, Math.round(delta));
+      });
+
+      // Apply draft updates to the running simulation
+      deltas.forEach((delta, uid) => {
+        currentMMRs.set(uid, (currentMMRs.get(uid) || 1500) + delta);
+      });
+
+      // Snapshot MMRs at this race index for all users
+      const entry: any = { race: index + 1 };
+      currentMMRs.forEach((mmr, uid) => {
+        entry[uid] = mmr;
       });
       data.push(entry);
-    }
+    });
 
     return data;
-  }, [stats, leaderboard, minGames]);
+  }, [stats, leaderboard]);
 
   const topPlayers = useMemo(() => 
     leaderboard.filter(p => p.games_played >= minGames).slice(0, 15), 
@@ -89,7 +114,7 @@ const MMRChart: React.FC<MMRChartProps> = ({ leaderboard, stats, minGames }) => 
           <XAxis 
             dataKey="race" 
             stroke="#888" 
-            label={{ value: 'Race Number', position: 'insideBottom', offset: -5 }} 
+            label={{ value: 'Race #', position: 'insideBottom', offset: -5 }} 
           />
           <YAxis 
             stroke="#888" 
@@ -121,6 +146,7 @@ const MMRChart: React.FC<MMRChartProps> = ({ leaderboard, stats, minGames }) => 
               key={player.user_id}
               type="monotone"
               dataKey={player.user_id}
+              name={player.global_name || player.username}
               stroke={COLORS[index % COLORS.length]}
               strokeWidth={2}
               dot={{ r: 3 }}
