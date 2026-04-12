@@ -1,10 +1,10 @@
-4/13/2026
+4/12/2026
 
 -----------------------------------------------
 Balance Adjustments
 -----------------------------------------------
 
-Move and Ability date updated to Pokémon Champions
+Move and Ability data updated to Pokémon Champions
 //Champions is here, and it's brought a variety of tweaks to existing moves...
 
 Secondary Effect changes:
@@ -41,7 +41,7 @@ Spin Out 5>10
     Mega Chimecho - Levitate
     Mega Chandelure - Infiltrator
     Mega Drampa - Beserk
-    Mega Excadrill - Piercing Drill (contact moves bypass protection and deal 1/4 of the expected damage)
+    Mega Excadrill - Piercing Drill (contact moves bypass protection and deal 1/4 damage)
     Mega Hawlucha - No Guard
     Mega Feraligatr - Dragonize
     Mega Froslass - Snow Warning
