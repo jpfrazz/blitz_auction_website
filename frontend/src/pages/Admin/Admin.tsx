@@ -136,6 +136,19 @@ const Admin: React.FC = () => {
     }
   };
 
+  const handleRecalculateAll = async () => {
+    if (!window.confirm("This will wipe all current MMR/Win/Loss records and recalculate them from the beginning of time based on draft history. Proceed?")) return;
+    setDraftTeamsLoading(true);
+    try {
+      await fetch('/api/admin/recalculate-stats', { method: 'POST' });
+      setDraftSuccess('All stats recalculated successfully.');
+    } catch (err: any) {
+      setDraftError('Recalculation failed.');
+    } finally {
+      setDraftTeamsLoading(false);
+    }
+  };
+
   const handleUserFieldChange = (
     userId: string,
     field: 'mmr' | 'wins' | 'losses',
@@ -260,6 +273,9 @@ const Admin: React.FC = () => {
                     </label>
                     <button type="button" className="button" onClick={handleSavePlacements}>
                       Save Placements
+                    </button>
+                    <button type="button" className="button danger" onClick={handleRecalculateAll}>
+                      Recalculate All History
                     </button>
                   </div>
 

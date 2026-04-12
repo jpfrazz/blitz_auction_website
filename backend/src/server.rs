@@ -172,6 +172,10 @@ impl Server {
                 "/admin/drafts/{draft_id}/teams/update-placements",
                 post(handlers::update_admin_draft_team_placements),
             )
+            .route(
+                "/admin/recalculate-stats",
+                post(handlers::admin_recalculate_all_stats),
+            )
             .route("/admin/users", get(handlers::get_admin_discord_users))
             .route(
                 "/admin/users/{user_id}/update",

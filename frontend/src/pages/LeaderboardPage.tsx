@@ -4,6 +4,7 @@ import { fetchStatsPageData } from '../shared/api/stats';
 import Header from '../shared/components/Header';
 import { StatsPageResponse } from '../types';
 import './LeaderboardPage.scss';
+import MMRChart from './MMRChart';
 
 function formatPokemonName(name: string): string {
   const lower = name.toLowerCase();
@@ -28,6 +29,7 @@ function getPlacementLabel(placement: number | null): string {
 }
 
 const LeaderboardPage = () => {
+    const [activeTab, setActiveTab] = useState<'table' | 'progression'>('table');
     const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
     const [minGames, setMinGames] = useState(0);
     const [loading, setLoading] = useState(true);
@@ -152,34 +154,42 @@ const LeaderboardPage = () => {
     return (
         <div className="leaderboard-page-wrapper">
             <Header />
-            <style>{`
-                @keyframes slideDown {
-                    from { opacity: 0; max-height: 0; }
-                    to { opacity: 1; max-height: 1000px; }
-                }
-                .leaderboard-history-dropdown-row:hover {
-                    background-color: rgba(0, 0, 0, 0.15) !important;
-                    color: inherit !important;
-                }
-                .leaderboard-history-table tr:hover {
-                    background: transparent !important;
-                    color: inherit !important;
-                }
-            `}</style>
+            <div className="leaderboard-tabs-container">
+                <button 
+                    className={`leaderboard-tab-btn ${activeTab === 'table' ? 'active' : ''}`} 
+                            onClick={() => setActiveTab('table')}
+                        >
+                            Standings
+                        </button>
+                <button 
+                    className={`leaderboard-tab-btn ${activeTab === 'progression' ? 'active' : ''}`} 
+                            onClick={() => setActiveTab('progression')}
+                        >
+                            ELO Progression
+                        </button>
+            </div>
             <div className="leaderboard-container">
             <div className="leaderboard-header">
                 <h1>Ever Grande Prix Season One Leaderboard</h1>
-                <div className="filter-container">
-                    <label htmlFor="min-games-filter">Minimum Games Played: </label>
-                    <input
-                        id="min-games-filter"
-                        type="number"
-                        value={minGames}
-                        onChange={(e) => setMinGames(Number(e.target.value) >= 0 ? Number(e.target.value) : 0)}
-                        min="0"
-                    />
+                <div className="leaderboard-controls">
+                    <div className="filter-container">
+                        <label htmlFor="min-games-filter">Min Games: </label>
+                        <input
+                            id="min-games-filter"
+                            type="number"
+                            value={minGames}
+                            onChange={(e) => setMinGames(Number(e.target.value) >= 0 ? Number(e.target.value) : 0)}
+                            min="0"
+                        />
+                    </div>
                 </div>
             </div>
+
+            {activeTab === 'progression' ? (
+                <div className="progression-container">
+                    <MMRChart leaderboard={leaderboard} stats={stats} minGames={minGames} />
+                </div>
+            ) : (
             <table className="leaderboard-table" style={{ tableLayout: 'fixed' }}>
                 <thead>
                     <tr>
@@ -332,6 +342,7 @@ const LeaderboardPage = () => {
                     ))}
                 </tbody>
             </table>
+            )}
             </div>
         </div>
     );

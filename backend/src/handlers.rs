@@ -36,6 +36,15 @@ use tokio::sync::{RwLock, broadcast};
 use tower_sessions::Session;
 use uuid::Uuid;
 
+/// Returns the K-factor based on how many ranked races the user has participated in (including the current one).
+fn get_k_factor(races_played_including_this_one: i32) -> f64 {
+    if races_played_including_this_one <= 5 {
+        40.0
+    } else {
+        20.0
+    }
+}
+
 #[derive(Clone, Debug, Deserialize)]
 pub struct JoinDraftRequest {
     pub password: Option<String>,
@@ -82,6 +91,8 @@ pub struct LeaderboardPokemon {
 pub struct LeaderboardEntry {
     pub user_id: String,
     pub username: String,
+    pub global_name: Option<String>,
+    pub avatar: Option<String>,
     pub win: i32,
     pub loss: i32,
     pub mmr: i32,
@@ -268,7 +279,7 @@ async fn get_user_won_auctions_for_draft(
     .bind(user_id)
     .fetch_all(&state.db_pool)
     .await
-    .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    .map_err(|e: sqlx::Error| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
 
     let mut auctions: Vec<MatchHistoryAuction> = Vec::with_capacity(auction_rows.len());
     for row in auction_rows {
@@ -409,26 +420,26 @@ pub async fn get_leaderboard(
     State(state): State<ServerState>,
 ) -> Result<Json<Vec<LeaderboardEntry>>, AppError> {
     let user_rows = sqlx::query(
-        "SELECT user_id, user_name, wins, losses, mmr
+        "SELECT user_id, user_name, global_name, avatar, wins, losses, mmr
          FROM users
          ORDER BY mmr DESC, wins DESC, losses ASC, user_name ASC",
     )
     .fetch_all(&state.db_pool)
     .await
-    .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    .map_err(|e: sqlx::Error| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
 
     let games_rows = sqlx::query(
         "SELECT t.user_id, COUNT(*)::INT AS games_played
          FROM teams t
          JOIN drafts d ON d.draft_id = t.draft_id
          WHERE t.user_id IS NOT NULL
-           AND d.status = 'COMPLETED'
+           AND d.state = 'COMPLETED'
            AND d.ranked = TRUE
          GROUP BY t.user_id",
     )
     .fetch_all(&state.db_pool)
     .await
-    .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    .map_err(|e: sqlx::Error| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
 
     let mut games_played_by_user: HashMap<String, i32> = HashMap::new();
     for row in games_rows {
@@ -452,14 +463,14 @@ pub async fn get_leaderboard(
          JOIN drafts d ON d.draft_id = a.draft_id
          JOIN pokemon p ON p.pokedex_id = a.pokedex_id AND p.form = a.form
          WHERE a.winning_user_id IS NOT NULL
-           AND d.status = 'COMPLETED'
+           AND d.state = 'COMPLETED'
            AND d.ranked = TRUE
          GROUP BY a.winning_user_id, a.pokedex_id, p.name, a.form
          ORDER BY a.winning_user_id, drafted_count DESC, p.name ASC",
     )
     .fetch_all(&state.db_pool)
     .await
-    .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    .map_err(|e: sqlx::Error| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
 
     let mut most_drafted_by_user: HashMap<String, Vec<LeaderboardPokemon>> = HashMap::new();
     for row in pokemon_rows {
@@ -497,6 +508,12 @@ pub async fn get_leaderboard(
         let username: String = row
             .try_get("user_name")
             .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+        let global_name: Option<String> = row
+            .try_get("global_name")
+            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+        let avatar: Option<String> = row
+            .try_get("avatar")
+            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
         let win: i32 = row
             .try_get("wins")
             .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
@@ -513,6 +530,8 @@ pub async fn get_leaderboard(
         leaderboard.push(LeaderboardEntry {
             user_id,
             username,
+            global_name,
+            avatar,
             win,
             loss,
             mmr,
@@ -548,7 +567,7 @@ pub async fn get_stats_page_data(
     )
     .fetch_all(&state.db_pool)
     .await
-    .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    .map_err(|e: sqlx::Error| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
 
     let mut players: Vec<StatsPagePlayer> = Vec::with_capacity(player_rows.len());
     for row in player_rows {
@@ -581,7 +600,7 @@ pub async fn get_stats_page_data(
     )
     .fetch_all(&state.db_pool)
     .await
-    .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    .map_err(|e: sqlx::Error| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
 
     let mut teams: Vec<MatchHistoryTeamRow> = Vec::with_capacity(team_rows.len());
     for row in team_rows {
@@ -634,7 +653,7 @@ pub async fn get_stats_page_data(
     )
     .fetch_all(&state.db_pool)
     .await
-    .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    .map_err(|e: sqlx::Error| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
 
     let mut auctions: Vec<MatchHistoryAuction> = Vec::with_capacity(auction_rows.len());
     for row in auction_rows {
@@ -709,7 +728,7 @@ pub async fn get_match_history_by_user_id(
     .bind(&user_id)
     .fetch_all(&state.db_pool)
     .await
-    .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    .map_err(|e: sqlx::Error| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
 
     let mut history: Vec<MatchHistoryTeam> = Vec::with_capacity(team_rows.len());
     for row in team_rows {
@@ -976,7 +995,7 @@ pub async fn submit_race_results(
     .bind(draft_uuid)
     .fetch_optional(&state.db_pool)
     .await
-    .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?
+    .map_err(|e: sqlx::Error| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?
     .ok_or((StatusCode::NOT_FOUND, "draft does not exist".to_string()))?;
 
     let draft_state: String = draft_row
@@ -1008,7 +1027,7 @@ pub async fn submit_race_results(
     .bind(draft_uuid)
     .fetch_all(&state.db_pool)
     .await
-    .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    .map_err(|e: sqlx::Error| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
 
     let mut team_user_ids: Vec<String> = Vec::with_capacity(team_rows.len());
     for row in team_rows {
@@ -1077,7 +1096,7 @@ pub async fn submit_race_results(
         .bind(&team_user_ids)
         .fetch_all(&state.db_pool)
         .await
-        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+        .map_err(|e: sqlx::Error| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
 
     let mut mmr_by_user: HashMap<String, i32> = HashMap::with_capacity(mmr_rows.len());
     for row in mmr_rows {
@@ -1097,6 +1116,25 @@ pub async fn submit_race_results(
         ));
     }
 
+    // Fetch how many ranked races each user has completed (including this one)
+    let race_counts_rows = sqlx::query(
+        "SELECT t.user_id, COUNT(d.draft_id)::INT as count
+         FROM teams t
+         JOIN drafts d ON d.draft_id = t.draft_id
+         WHERE t.user_id = ANY($1)
+           AND d.state = 'COMPLETED'
+           AND d.ranked = TRUE
+         GROUP BY t.user_id"
+    )
+    .bind(&team_user_ids)
+    .fetch_all(&state.db_pool)
+    .await
+    .map_err(|e: sqlx::Error| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    let race_counts: HashMap<String, i32> = race_counts_rows.into_iter().map(|r| {
+        (r.get::<String, _>("user_id"), r.get::<i32, _>("count"))
+    }).collect();
+
     let mut updates: HashMap<String, (i32, i32, i32)> = HashMap::with_capacity(team_count);
     for user_id in &team_user_ids {
         let user_rating = *mmr_by_user
@@ -1106,9 +1144,10 @@ pub async fn submit_race_results(
             .get(user_id)
             .ok_or((StatusCode::BAD_REQUEST, "missing placement".to_string()))?;
 
+        let mut mmr_delta = 0.0_f64;
         let mut wins = 0_i32;
         let mut losses = 0_i32;
-        let mut mmr_delta = 0.0_f64;
+        let k_factor = get_k_factor(*race_counts.get(user_id).unwrap_or(&1));
 
         for opponent_id in &team_user_ids {
             if opponent_id == user_id {
@@ -1132,7 +1171,7 @@ pub async fn submit_race_results(
             };
 
             let expected = expected_score(user_rating, opponent_rating);
-            mmr_delta += 20.0 * (result - expected);
+            mmr_delta += k_factor * (result - expected);
         }
 
         updates.insert(user_id.clone(), (mmr_delta.round() as i32, wins, losses));
@@ -1142,7 +1181,7 @@ pub async fn submit_race_results(
         .db_pool
         .begin()
         .await
-        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+        .map_err(|e: sqlx::Error| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
 
     for user_id in &team_user_ids {
         let Some((mmr_delta, wins, losses)) = updates.get(user_id) else {
@@ -1165,7 +1204,7 @@ pub async fn submit_race_results(
         .bind(user_id)
         .execute(&mut *tx)
         .await
-        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+        .map_err(|e: sqlx::Error| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
     }
 
     for user_id in &team_user_ids {
@@ -1189,12 +1228,12 @@ pub async fn submit_race_results(
         .bind(user_id)
         .execute(&mut *tx)
         .await
-        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+        .map_err(|e: sqlx::Error| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
     }
 
     tx.commit()
         .await
-        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+        .map_err(|e: sqlx::Error| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
 
     Ok(())
 }
@@ -1215,7 +1254,7 @@ pub async fn get_admin_completed_drafts(
     )
     .fetch_all(&state.db_pool)
     .await
-    .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    .map_err(|e: sqlx::Error| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
 
     let mut drafts = Vec::with_capacity(rows.len());
     for row in rows {
@@ -1269,7 +1308,7 @@ pub async fn get_admin_draft_team_placements(
     .bind(draft_uuid)
     .fetch_all(&state.db_pool)
     .await
-    .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    .map_err(|e: sqlx::Error| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
 
     let mut teams = Vec::with_capacity(rows.len());
     for row in rows {
@@ -1322,7 +1361,7 @@ pub async fn update_admin_draft_team_placements(
     .bind(draft_uuid)
     .fetch_optional(&state.db_pool)
     .await
-    .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?
+    .map_err(|e: sqlx::Error| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?
     .ok_or((StatusCode::NOT_FOUND, "draft does not exist".to_string()))?;
 
     let draft_state: String = draft_row
@@ -1354,7 +1393,7 @@ pub async fn update_admin_draft_team_placements(
     .bind(draft_uuid)
     .fetch_all(&state.db_pool)
     .await
-    .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    .map_err(|e: sqlx::Error| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
 
     let team_count = team_rows.len();
     if team_count == 0 {
@@ -1382,6 +1421,28 @@ pub async fn update_admin_draft_team_placements(
             .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
         old_team_data.insert(tid, (uid, place));
     }
+
+    // For manual updates, we need to know what "Race Number" this was for each user at the time it was created
+    let race_numbers_rows = sqlx::query(
+        "SELECT t.user_id, COUNT(past_drafts.draft_id)::INT as count
+         FROM teams t
+         JOIN drafts current_draft ON t.draft_id = current_draft.draft_id
+         JOIN teams past_teams ON t.user_id = past_teams.user_id
+         JOIN drafts past_drafts ON past_teams.draft_id = past_drafts.draft_id
+         WHERE t.draft_id = $1
+           AND past_drafts.ranked = TRUE
+           AND past_drafts.state = 'COMPLETED'
+           AND past_drafts.created_at <= current_draft.created_at
+         GROUP BY t.user_id"
+    )
+    .bind(draft_uuid)
+    .fetch_all(&state.db_pool)
+    .await
+    .map_err(|e: sqlx::Error| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    let race_numbers: HashMap<String, i32> = race_numbers_rows.into_iter().map(|r| {
+        (r.get::<String, _>("user_id"), r.get::<i32, _>("count"))
+    }).collect();
 
     let valid_team_ids: HashSet<i64> = old_team_data.keys().cloned().collect();
 
@@ -1420,14 +1481,17 @@ pub async fn update_admin_draft_team_placements(
     // Calculate MMR changes using multiplayer ELO logic
     let mut user_updates = HashMap::new();
     for entry_i in &request.placements {
-        let (uid_opt, old_place) = old_team_data.get(&entry_i.team_id).unwrap();
+        let (uid_opt, old_place_opt) = old_team_data.get(&entry_i.team_id).unwrap();
         let Some(user_id) = uid_opt else {
             continue;
         };
 
+        let old_place = old_place_opt.unwrap_or(0);
+
         let mut mmr_delta = 0.0;
-        let mut wins_adj = 0;
-        let mut losses_adj = 0;
+        let mut new_wins = 0;
+        let mut new_losses = 0;
+        let k_factor = get_k_factor(*race_numbers.get(user_id).unwrap_or(&1));
 
         for entry_j in &request.placements {
             if entry_i.team_id == entry_j.team_id {
@@ -1436,34 +1500,43 @@ pub async fn update_admin_draft_team_placements(
 
             let expected = expected_score(entry_i.pre_match_mmr, entry_j.pre_match_mmr);
             let result = if entry_i.placement < entry_j.placement {
+                new_wins += 1;
                 1.0
             } else {
+                new_losses += 1;
                 0.0
             };
-            mmr_delta += 20.0 * (result - expected);
+            mmr_delta += k_factor * (result - expected);
         }
 
-        // Adjust wins/losses based on whether they moved into or out of 1st place
-        if let Some(op) = old_place {
-            if *op == 1 && entry_i.placement != 1 {
-                wins_adj = -1;
-                losses_adj = 1;
-            } else if *op != 1 && entry_i.placement == 1 {
-                wins_adj = 1;
-                losses_adj = -1;
+        // Calculate what the OLD delta was to find the net change
+        let mut old_mmr_delta = 0.0;
+        let mut old_wins = 0;
+        let mut old_losses = 0;
+        for entry_j in &request.placements {
+            if entry_i.team_id == entry_j.team_id {
+                continue;
             }
-        } else {
-            if entry_i.placement == 1 {
-                wins_adj = 1;
+            let expected = expected_score(entry_i.pre_match_mmr, entry_j.pre_match_mmr);
+            let other_old_place = old_team_data.get(&entry_j.team_id).unwrap().1.unwrap_or(99);
+            let old_result = if old_place != 0 && old_place < other_old_place {
+                old_wins += 1;
+                1.0
             } else {
-                losses_adj = 1;
-            }
+                if old_place != 0 { old_losses += 1; }
+                0.0
+            };
+            old_mmr_delta += k_factor * (old_result - expected);
         }
+
+        let net_mmr_adjustment = (mmr_delta - old_mmr_delta).round() as i32;
+        let wins_adj = new_wins - old_wins;
+        let losses_adj = new_losses - old_losses;
 
         user_updates.insert(
             user_id.clone(),
             (
-                mmr_delta.round() as i32,
+                net_mmr_adjustment,
                 wins_adj,
                 losses_adj,
                 entry_i.pre_match_mmr,
@@ -1492,34 +1565,149 @@ pub async fn update_admin_draft_team_placements(
         .bind(draft_uuid)
         .execute(&mut *tx)
         .await
-        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+        .map_err(|e: sqlx::Error| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
 
         // 2. Update users table with new MMR and win/loss tallies
         if let (Some(uid), _) = old_team_data.get(&entry.team_id).unwrap() {
-            if let Some((delta, w_adj, l_adj, pre_mmr)) = user_updates.get(uid) {
+            if let Some((net_adjustment, w_adj, l_adj, _pre_mmr)) = user_updates.get(uid) {
                 sqlx::query(
                     "UPDATE users
-                     SET mmr = $1 + $2,
-                         wins = wins + $3,
-                         losses = losses + $4
-                     WHERE user_id = $5",
+                     SET mmr = mmr + $1,
+                         wins = wins + $2,
+                         losses = losses + $3
+                     WHERE user_id = $4",
                 )
-                .bind(pre_mmr)
-                .bind(delta)
+                .bind(net_adjustment)
                 .bind(w_adj)
                 .bind(l_adj)
                 .bind(uid)
                 .execute(&mut *tx)
                 .await
-                .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+                .map_err(|e: sqlx::Error| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
             }
         }
     }
 
     tx.commit()
         .await
-        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+        .map_err(|e: sqlx::Error| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
 
+    Ok(())
+}
+
+#[debug_handler]
+pub async fn admin_recalculate_all_stats(
+    State(state): State<ServerState>,
+    auth_session: AuthSession<AuthBackend>,
+) -> Result<(), AppError> {
+    let _ = require_referee_user(auth_session.user.clone())?;
+
+    let mut tx = state.db_pool.begin().await.map_err(|e| {
+        (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            format!("failed to start transaction: {}", e),
+        )
+    })?;
+
+    // 1. Reset all users to base stats
+    sqlx::query("UPDATE users SET mmr = 1500, wins = 0, losses = 0")
+        .execute(&mut *tx)
+        .await
+        .map_err(|e: sqlx::Error| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    // 2. Fetch all completed ranked drafts in chronological order
+    let drafts = sqlx::query(
+        "SELECT draft_id FROM drafts WHERE state = 'COMPLETED' AND ranked = TRUE ORDER BY created_at ASC"
+    )
+    .fetch_all(&mut *tx)
+    .await
+    .map_err(|e: sqlx::Error| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    let mut user_race_counts: HashMap<String, i32> = HashMap::new();
+
+    for draft_row in drafts {
+        let draft_id = draft_row.get::<Uuid, _>("draft_id");
+
+        // 3. Fetch team placements for this draft
+        let teams = sqlx::query(
+            "SELECT user_id, placement FROM teams WHERE draft_id = $1 AND user_id IS NOT NULL",
+        )
+        .bind(draft_id)
+        .fetch_all(&mut *tx)
+        .await
+        .map_err(|e: sqlx::Error| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+        if teams.is_empty() {
+            continue;
+        }
+
+        let team_user_ids: Vec<String> = teams.iter().map(|t| t.get::<String, _>("user_id")).collect();
+
+        // Fetch current user ratings from DB (these reflect the results of all previous drafts in loop)
+        let mmr_rows = sqlx::query(
+            "SELECT user_id, mmr FROM users WHERE user_id = ANY($1)",
+        )
+        .bind(&team_user_ids)
+        .fetch_all(&mut *tx)
+        .await
+        .map_err(|e: sqlx::Error| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+        let mmr_by_user: HashMap<String, i32> = mmr_rows.into_iter().map(|r| (r.get::<String, _>("user_id"), r.get::<i32, _>("mmr"))).collect();
+        let placements: HashMap<String, i32> = teams.into_iter().map(|t| (t.get::<String, _>("user_id"), t.get::<Option<i32>, _>("placement").unwrap_or(0))).collect();
+
+        let mut draft_updates = HashMap::new();
+
+        for user_id in &team_user_ids {
+            let user_rating = *mmr_by_user.get(user_id).unwrap();
+            let user_place = *placements.get(user_id).unwrap();
+
+            let count = user_race_counts.entry(user_id.clone()).or_insert(0);
+            *count += 1;
+            let k_factor = get_k_factor(*count);
+
+            let mut mmr_delta = 0.0;
+            let mut wins = 0;
+            let mut losses = 0;
+            for opponent_id in &team_user_ids {
+                if opponent_id == user_id { continue; }
+                let opponent_rating = *mmr_by_user.get(opponent_id).unwrap();
+                let opponent_place = *placements.get(opponent_id).unwrap();
+
+                let result = if user_place < opponent_place {
+                    wins += 1;
+                    1.0
+                } else {
+                    losses += 1;
+                    0.0
+                };
+                let expected = expected_score(user_rating, opponent_rating);
+                mmr_delta += k_factor * (result - expected);
+            }
+
+            draft_updates.insert(user_id.clone(), (mmr_delta.round() as i32, wins, losses, user_rating));
+        }
+
+        for (uid, (delta, w, l, pre_mmr)) in draft_updates {
+            sqlx::query(
+                "UPDATE users SET mmr = mmr + $1, wins = wins + $2, losses = losses + $3 WHERE user_id = $4",
+            )
+            .bind(delta)
+            .bind(w)
+            .bind(l)
+            .bind(uid.clone())
+            .execute(&mut *tx).await.map_err(|e: sqlx::Error| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+            
+            sqlx::query(
+                "UPDATE teams SET pre_match_mmr = $1 WHERE draft_id = $2 AND user_id = $3",
+            )
+            .bind(pre_mmr)
+            .bind(draft_id)
+            .bind(uid)
+            .execute(&mut *tx).await.map_err(|e: sqlx::Error| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+        }
+    }
+
+    tx.commit().await.map_err(|e: sqlx::Error| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
     Ok(())
 }
 
@@ -1538,7 +1726,7 @@ pub async fn get_admin_discord_users(
     )
     .fetch_all(&state.db_pool)
     .await
-    .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    .map_err(|e: sqlx::Error| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
 
     let mut users = Vec::with_capacity(rows.len());
     for row in rows {
@@ -1601,7 +1789,7 @@ pub async fn update_admin_discord_user(
     .bind(&user_id)
     .execute(&state.db_pool)
     .await
-    .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    .map_err(|e: sqlx::Error| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
 
     Ok(())
 }
@@ -1716,7 +1904,7 @@ pub async fn get_draft_chats(
     .bind(draft_uuid)
     .fetch_all(&state.db_pool)
     .await
-    .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    .map_err(|e: sqlx::Error| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
 
     let chats = rows
         .into_iter()
@@ -1782,7 +1970,7 @@ pub async fn create_draft_chat(
     .bind(message)
     .fetch_one(&state.db_pool)
     .await
-    .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    .map_err(|e: sqlx::Error| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
 
     let chat_id = row
         .try_get("chat_id")
