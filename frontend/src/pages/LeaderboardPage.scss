@@ -132,27 +132,36 @@
     background: $eb-surface;
 }
 
-.leaderboard-table tbody tr.gold-row {
+.leaderboard-table > tbody > tr.gold-row {
     background-color: #3E3924;
 }
 
-.leaderboard-table tbody tr.silver-row {
+.leaderboard-table > tbody > tr.silver-row {
     background-color: #41464B;
 }
 
-.leaderboard-table tbody tr.bronze-row {
+.leaderboard-table > tbody > tr.bronze-row {
     background-color: #4B3B2F;
 }
 
-.leaderboard-table tbody tr.gold-row:hover,
-.leaderboard-table tbody tr.silver-row:hover,
-.leaderboard-table tbody tr.bronze-row:hover {
+.leaderboard-table > tbody > tr.gold-row:hover,
+.leaderboard-table > tbody > tr.silver-row:hover,
+.leaderboard-table > tbody > tr.bronze-row:hover {
     background: $eb-accent;
 }
 
-.leaderboard-table tbody tr:hover {
+.leaderboard-table > tbody > tr:not(.leaderboard-history-dropdown-row):hover {
     background: $eb-accent;
     color: $eb-text-black;
+}
+
+.leaderboard-history-table tbody tr {
+    cursor: default;
+    transition: background-color 0.2s ease;
+
+    &:hover {
+        background-color: rgba(255, 255, 255, 0.05);
+    }
 }
 
 .pokemon-list {

@@ -2149,7 +2149,7 @@ Double Battle: No
 AI: Basic Trainer
 
 Spinda
-Level: 16
+Level: 15
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
 Ability: Own Tempo
@@ -2199,7 +2199,7 @@ Double Battle: No
 AI: Basic Trainer
 
 Spinda
-Level: 21
+Level: 20
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
 Ability: Own Tempo

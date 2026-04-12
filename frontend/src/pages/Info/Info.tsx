@@ -415,6 +415,7 @@ const Info = () => (
                 <img src="/MiniIcons/frillish.png" alt="Frillish" />
                 <img src="/MiniIcons/meditite.png" alt="Meditite" />
                 <img src="/MiniIcons/ponyta.png" alt="Ponyta" />
+                <img src="/MiniIcons/rufflet.png" alt="Rufflet" />
                 <img src="/MiniIcons/sandygast.png" alt="Sandygast" />
                 <img src="/MiniIcons/shuppet.png" alt="Shuppet" />
                 <img src="/MiniIcons/skorupi.png" alt="Skorupi" />
@@ -436,6 +437,7 @@ const Info = () => (
                 <li>Frillish &gt; Jellicent</li>
                 <li>Meditite &gt; Medicham</li>
                 <li>Ponyta &gt; Rapidash</li>
+                <li>Rufflet &gt; Braviary</li>
                 <li>Sandygast &gt; Palossand</li>
                 <li>Shuppet &gt; Banette</li>
                 <li>Skorupi &gt; Drapion</li>
@@ -724,7 +726,7 @@ const Info = () => (
           <li>You can no longer rent Pokémon after obtaining the 7th badge.</li>
           <li>Once renter NPC chooses a Pokémon to offer to you, he'll continue to offer that same Pokémon until you rent it (it doesn't randomize each time you speak to him).</li>
           <li>Mega Stones for the eight Pokémon in the pool who can mega evolve are available for purchase in Slateport's outdoor market after you obtain the 6th gym badge.</li>
-          <li>Stealing a Pokémon effectively locks you out of the Slateport outdoor market, as renter NPC will reclaim his Pokémon on entrance. Because of this, doing so by renting at the latest possible point costs ¥28,250 (the cost of the rental plus the prize money you're no longer able to spend).</li>
+          <li>Stealing a Pokémon effectively locks you out of the Slateport outdoor market, as renter NPC will reclaim his Pokémon on entrance. Because of this, doing so by renting at the latest possible point costs ¥30,250 (the cost of the rental plus the prize money you're no longer able to spend).</li>
         </ul>
       </section>
 

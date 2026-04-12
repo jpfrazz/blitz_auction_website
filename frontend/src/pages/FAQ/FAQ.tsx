@@ -156,7 +156,7 @@ const FAQ = () => (
               <b>Elite... eight!?</b> Battle Frontier Brains join the Elite Four for a more diverse lineup of final bosses.
             </li>
               <li>
-                <b>Rental Pokemon:</b> For ¥5000, a shady salesman will allow you to rent a random Pokémon from his powerful collection. You'd better not try to steal it!
+                <b>Rental Pokemon:</b> For ¥8000, a shady salesman will allow you to rent a random Pokémon from his powerful collection. You'd better not try to steal it!
               </li>
 
           </ul>

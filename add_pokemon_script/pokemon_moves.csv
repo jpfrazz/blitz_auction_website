@@ -1358,6 +1358,21 @@ pokedex_id,pokemon_name,form,move_name,learn_method,species,display_order
 722,Rowlet,,Feather Dance,49,,11
 722,Rowlet,,Brave Bird,55,,12
 722,Rowlet,,Curse,Egg,,13
+627,Rufflet,,Wing Attack,10,,1
+627,Rufflet,,Hone Claws,14,,2
+627,Rufflet,,Rock Smash,HM,,3
+627,Rufflet,,Superpower,Evo.,Braviary,4
+627,Rufflet,,Esper Wing,Evo.,Braviary-Hisui,5
+627,Rufflet,,Shadow Ball,TM,Braviary-Hisui,6
+627,Rufflet,,Calm Mind,TM,Braviary-Hisui,7
+627,Rufflet,,Return,TM,,8
+627,Rufflet,,Rock Slide,TM,,9
+627,Rufflet,,Rock Tomb,TM,,10
+627,Rufflet,,Tailwind,37,,11
+627,Rufflet,,Air Slash,41,,12
+627,Rufflet,,Brave Bird,MR!,,13
+627,Rufflet,,Hurricane,MR!,Braviary-Hisui,14
+627,Rufflet,,Roost,Egg,,15
 302,Sableye,,Detect,14,,1
 302,Sableye,,Shadow Sneak,16,,2
 302,Sableye,,Feint Attack,19,,3
