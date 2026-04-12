@@ -109,7 +109,7 @@ const MMRChart: React.FC<MMRChartProps> = ({ leaderboard, stats, minGames }) => 
 
     // Sort drafts chronologically
     const sortedDrafts = Array.from(drafts.values())
-      .filter(d => d.date !== '') // Ensure we only sort and simulate valid dates
+      .filter(d => d.date !== '' && d.teams.length >= 6) // Filter for valid dates and minimum 6 participants
       .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
 
     const currentMMRs = new Map<string, number>();

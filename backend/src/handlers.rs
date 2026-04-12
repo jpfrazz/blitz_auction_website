@@ -1634,14 +1634,14 @@ pub async fn admin_recalculate_all_stats(
 
         // 3. Fetch team placements for this draft
         let teams = sqlx::query(
-            "SELECT user_id, placement FROM teams WHERE draft_id = $1 AND user_id IS NOT NULL",
+            "SELECT user_id, placement FROM teams WHERE draft_id = $1 AND user_id IS NOT NULL AND placement IS NOT NULL",
         )
         .bind(draft_id)
         .fetch_all(&mut *tx)
         .await
         .map_err(|e: sqlx::Error| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
 
-        if teams.is_empty() {
+        if teams.len() < 6 {
             continue;
         }
 
