@@ -31,9 +31,10 @@ const MMRChart: React.FC<MMRChartProps> = ({ leaderboard, stats, minGames }) => 
     // Group ranked team entries by draft
     const drafts = new Map<string, { date: string, teams: any[] }>();
     stats.teams.forEach(t => {
-      // pre_match_mmr is only populated for ranked drafts when results are submitted
-      if (t.pre_match_mmr === null || t.pre_match_mmr === undefined) return;
-      if (!t.user_id || t.placement === null) return;
+      // Filter for ranked drafts with results. We don't check pre_match_mmr here
+      // because we are simulating history and want this to work even if the
+      // database hasn't been recalculated yet.
+      if (!t.user_id || t.placement === null || (t as any).ranked === false) return;
 
       if (!drafts.has(t.draft_id)) {
         drafts.set(t.draft_id, { date: t.created_at, teams: [] });

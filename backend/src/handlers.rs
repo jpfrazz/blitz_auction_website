@@ -139,6 +139,7 @@ pub struct MatchHistoryTeamRow {
     pub user_id: Option<String>,
     pub guest_id: Option<String>,
     pub draft_id: String,
+    pub ranked: bool,
     pub money_remaining: i32,
     pub pokemon_drafted: i32,
     pub placement: Option<i32>,
@@ -585,7 +586,7 @@ pub async fn get_stats_page_data(
     }
 
     let team_rows = sqlx::query(
-        "SELECT t.team_id, t.user_id, t.guest_id, t.draft_id, t.money_remaining,
+        "SELECT t.team_id, t.user_id, t.guest_id, t.draft_id, d.ranked, t.money_remaining,
                 t.pokemon_drafted, t.placement, t.pre_match_mmr, t.updated_at, t.created_at
          FROM teams t
          JOIN drafts d ON d.draft_id = t.draft_id
@@ -619,6 +620,9 @@ pub async fn get_stats_page_data(
                 .try_get("guest_id")
                 .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?,
             draft_id: draft_uuid.to_string(),
+            ranked: row
+                .try_get("ranked")
+                .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?,
             money_remaining: row
                 .try_get("money_remaining")
                 .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?,
