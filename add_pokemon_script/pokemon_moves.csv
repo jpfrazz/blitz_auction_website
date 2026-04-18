@@ -505,11 +505,11 @@ pokedex_id,pokemon_name,form,move_name,learn_method,species,display_order
 677,Espurr,,Psybeam,17,,3
 677,Espurr,,Fake Out,19,,4
 677,Espurr,,Psyshock,25,,5
-677,Espurr,,Charm,28,mmeowstic,6
+677,Espurr,,Charm,28,Meowstic-M,6
 677,Espurr,,Moonblast,MR,,7
-677,Espurr,,Charge Beam,28,fmeowstic,8
-677,Espurr,,Shadow Ball,31/TM,fmeowstic,9
-677,Espurr,,Signal Beam,45,fmeowstic,10
+677,Espurr,,Charge Beam,28,Meowstic-F,8
+677,Espurr,,Shadow Ball,31/TM,Meowstic-F,9
+677,Espurr,,Signal Beam,45,Meowstic-F,10
 677,Espurr,,Thunderbolt,TM,,11
 677,Espurr,,Calm Mind,TM,,12
 677,Espurr,,Psychic,40,,13
