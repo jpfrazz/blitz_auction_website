@@ -505,11 +505,11 @@ pokedex_id,pokemon_name,form,move_name,learn_method,species,display_order
 677,Espurr,,Psybeam,17,,3
 677,Espurr,,Fake Out,19,,4
 677,Espurr,,Psyshock,25,,5
-677,Espurr,,Charm,28,Mewostic-M,6
+677,Espurr,,Charm,28,Meowstic-M,6
 677,Espurr,,Moonblast,MR,,7
-677,Espurr,,Charge Beam,28,Mewostic-F,8
-677,Espurr,,Shadow Ball,31/TM,Mewostic-F,9
-677,Espurr,,Signal Beam,45,Mewostic-F,10
+677,Espurr,,Charge Beam,28,Meowstic-F,8
+677,Espurr,,Shadow Ball,31/TM,Meowstic-F,9
+677,Espurr,,Signal Beam,45,Meowstic-F,10
 677,Espurr,,Thunderbolt,TM,,11
 677,Espurr,,Calm Mind,TM,,12
 677,Espurr,,Psychic,40,,13
@@ -1194,13 +1194,14 @@ pokedex_id,pokemon_name,form,move_name,learn_method,species,display_order
 311,Plusle and Minun,,Spark,7,,3
 311,Plusle and Minun,,Encore,10,,4
 311,Plusle and Minun,,Electro Ball,19,,5
-311,Plusle and Minun,,Charm,25,,6
-311,Plusle and Minun,,Fake Tears,25,,7
+311,Plusle and Minun,,Charm,25,Plusle,6
+311,Plusle and Minun,,Fake Tears,25,Minun,7
 311,Plusle and Minun,,Thunderbolt,TM,,8
 311,Plusle and Minun,,Discharge,31,,9
-311,Plusle and Minun,,Nuzzle,MR,,10
-311,Plusle and Minun,,Wish,Egg,,11
-311,Plusle and Minun,,Tearful Look,Egg,,12
+311,Plusle and Minun,,Thunder,43/TM,,10
+311,Plusle and Minun,,Nuzzle,MR,,11
+311,Plusle and Minun,,Wish,Egg,Plusle,12
+311,Plusle and Minun,,Tearful Look,Egg,Minun,13
 60,Poliwag,,Water Sport,1,,1
 60,Poliwag,,Bubble,11,,2
 60,Poliwag,,Rain Dance,18,,3
@@ -2385,13 +2386,14 @@ pokedex_id,pokemon_name,form,move_name,learn_method,species,display_order
 336,Seviper,,Glare,19,,7
 336,Seviper,,Poison Fang,21,,8
 336,Seviper,,Venom Drench,24,,9
-336,Seviper,,Night Slash,26,,10
-336,Seviper,,Poison Jab,31,,11
-336,Seviper,,Swords Dance,36,,12
-336,Seviper,,Crunch,39,,13
-336,Seviper,,Belch,41,,14
-336,Seviper,,Coil,44,,15
-336,Seviper,,Wring Out,46,,16
+336,Seviper,,Breaking Swipe,24,,10
+336,Seviper,,Night Slash,26,,11
+336,Seviper,,Poison Jab,31,,12
+336,Seviper,,Swords Dance,36,,13
+336,Seviper,,Crunch,39,,14
+336,Seviper,,Belch,41,,15
+336,Seviper,,Coil,44,,16
+336,Seviper,,Wring Out,46,,17
 227,Skarmory,,Leer,1,,1
 227,Skarmory,,Sand Attack,6,,2
 227,Skarmory,,Metal Claw,9,,3
