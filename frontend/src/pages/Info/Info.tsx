@@ -371,6 +371,7 @@ const Info = () => (
               <summary className='slateport-market-dropdown'>Energy Guru</summary>
               <div className="evo-icons">
                 <img src="/MiniIcons/aron.png" alt="Aron" />
+                <img src="/MiniIcons/aron.png" alt="Duskull" />
                 <img src="/MiniIcons/goomy.png" alt="Goomy" />
                 <img src="/MiniIcons/hatenna.png" alt="Hatenna" />
                 <img src="/MiniIcons/honedge.png" alt="Honedge" />
@@ -386,6 +387,7 @@ const Info = () => (
               </div>
               <ul>
                 <li>Aron &gt; Lairon</li>
+                <li>Duskull &gt; Dusclops</li>
                 <li>Goomy &gt; Sliggoo</li>
                 <li>Hatenna &gt; Hattrem</li>
                 <li>Honedge &gt; Doublade</li>
@@ -570,6 +572,7 @@ const Info = () => (
               <summary className='slateport-market-dropdown'>Linking Cord</summary>
               <div className="evo-icons">
                 <img src="/MiniIcons/boldore.png" alt="Boldore" />
+                <img src="/MiniIcons/dusclops.png" alt="Dusclops" />
                 <img src="/MiniIcons/graveler.png" alt="Graveler" />
                 <img src="/MiniIcons/gurdurr.png" alt="Gurdurr" />
                 <img src="/MiniIcons/haunter.png" alt="Haunter" />
@@ -580,6 +583,7 @@ const Info = () => (
               </div>
               <ul>
                 <li>Boldore &gt; Gigalith</li>
+                <li>Dusclops &gt; Dusknoir</li>
                 <li>Graveler &gt; Golem</li>
                 <li>Gurdurr &gt; Conkeldurr</li>
                 <li>Haunter &gt; Gengar</li>

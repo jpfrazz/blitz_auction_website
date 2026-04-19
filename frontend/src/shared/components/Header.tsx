@@ -146,6 +146,9 @@ function Header() {
               <Link to="/PatchNotes" className="navButton navDropdownItem" onClick={handleNavLinkClick} target={linkTarget} rel={linkRel}>
                 Patch Notes
               </Link>
+              <Link to="/SourceCode" className="navButton navDropdownItem" onClick={handleNavLinkClick} target={linkTarget} rel={linkRel}>
+                Source Code
+              </Link>
             </div>
           </div>
           <div className="navDropdown">
