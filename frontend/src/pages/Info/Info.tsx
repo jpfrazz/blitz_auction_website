@@ -20,7 +20,6 @@ const Info = () => (
           <li><a href="#sitrus-berries">Sitrus Berries</a></li>
           <li><a href="#slateport-market-items">Slateport Market Items</a></li>
           <li><a href="#gym-benchmarks">Gym Benchmarks</a></li>
-          <li><a href="#complete-learnset">Complete Learnsets</a></li>
           <li><a href="#inter-gym-mechanics">Inter-Gym Mechanics</a></li>
           <li><a href="#ai-logic">AI Logic</a></li>
           <li><a href="#key-binds">Input Tips</a></li>
@@ -410,6 +409,7 @@ const Info = () => (
               <div className="evo-icons">
                 <img src="/MiniIcons/amaura.png" alt="Amaura" />
                 <img src="/MiniIcons/archen.png" alt="Archen" />
+                <img src="/MiniIcons/binacle.png" alt="Binacle" />
                 <img src="/MiniIcons/clauncher.png" alt="Clauncher" />
                 <img src="/MiniIcons/corsola-galar.png" alt="Corsola-Galar" />
                 <img src="/MiniIcons/croagunk.png" alt="Croagunk" />
@@ -432,6 +432,7 @@ const Info = () => (
               <ul>
                 <li>Amaura &gt; Aurorus</li>
                 <li>Archen &gt; Archeops</li>
+                <li>Binacle &gt; Barbaracle</li>
                 <li>Clauncher &gt; Clawitzer</li>
                 <li>Corsola-Galar &gt; Cursola</li>
                 <li>Croagunk &gt; Toxicroak</li>
@@ -609,6 +610,7 @@ const Info = () => (
             <ul className="slateport-list">
               <li>Abomasite</li>
               <li>Banettite</li>
+              <li>Barbaracite</li>
               <li>Cameruptite</li>
               <li>Chimechite</li>
               <li>Dragalgyite</li>
@@ -686,19 +688,6 @@ const Info = () => (
             </tbody>
           </table>
         </div>
-      </section>
-
-      <section id="complete-learnset" className="info-section">
-        <h2 className="info-question">Complete Learnsets</h2>
-        <hr />
-        <p className="info-answer">
-          Emerald Blitz uses custom learnsets for all Pokémon based on generation 7. For a complete list of moves each Pokémon can learn, see:
-        </p>
-        <ul>
-          <li><a href="https://github.com/FranklyNathan/EmeraldBlitz/blob/main/src/data/pokemon/level_up_learnsets/gen_7.h" target="_blank" rel="noopener noreferrer">Level-Up Moves</a></li>
-          <li><a href="https://github.com/FranklyNathan/EmeraldBlitz/blob/main/src/data/pokemon/teachable_learnsets.h" target="_blank" rel="noopener noreferrer">Teachable Moves</a></li>
-          <li><a href="https://github.com/FranklyNathan/EmeraldBlitz/blob/main/src/data/pokemon/egg_moves.h" target="_blank" rel="noopener noreferrer">Egg Moves</a></li>
-        </ul>
       </section>
 
       <section id="inter-gym-mechanics" className="info-section">
