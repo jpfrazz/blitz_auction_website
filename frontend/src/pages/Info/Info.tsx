@@ -23,7 +23,7 @@ const Info = () => (
           <li><a href="#complete-learnset">Complete Learnsets</a></li>
           <li><a href="#inter-gym-mechanics">Inter-Gym Mechanics</a></li>
           <li><a href="#ai-logic">AI Logic</a></li>
-          <li><a href="#key-binds">Key Binds</a></li>
+          <li><a href="#key-binds">Input Tips</a></li>
           <li><a href="#ability-reworks">Reworked Abilities</a></li>
         </ul>
       </nav>
@@ -760,12 +760,13 @@ const Info = () => (
       </section>
 
       <section id="key-binds" className="info-section">
-        <h2 className="info-question">Key Binds</h2>
+        <h2 className="info-question">Input Tips</h2>
         <hr />
         <ul>
           <li>Holding "B" on your Gameboy while riding Flygon urges him to move at 1.5x speed</li>
-          <li>Pressing "L" while riding Flygon instantly takes you to the Fly map</li>
+          <li>Pressing "L" while riding Flygon instantly opens the Fly map</li>
           <li>Pressing "Select" while viewing the overworld map instantly snaps the cursor to Slateport City</li>
+          <li>Holding "Select" while in the party menu prevents Pokemon from evolving (useful for delaying evolutions)</li>
         </ul>
       </section>
 

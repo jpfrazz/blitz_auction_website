@@ -17,6 +17,7 @@ import LeaderboardPage from './pages/LeaderboardPage';
 import Stats from './pages/Stats/Stats';
 import Admin from './pages/Admin/Admin';
 import SourceCodePage from './pages/SourceCodePage';
+import ScrollToTop from './shared/components/ScrollToTop';
 
 const container = document.getElementById('root');
 if (container) {
@@ -24,6 +25,7 @@ if (container) {
   root.render(
     <React.StrictMode>
       <Router>
+        <ScrollToTop />
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/AuctionSetup" element={<AuctionSetup />} />

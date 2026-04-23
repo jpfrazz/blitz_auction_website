@@ -71,6 +71,18 @@ pokedex_id,pokemon_name,form,move_name,learn_method,species,display_order
 374,Beldum,,Earthquake,TM,,6
 374,Beldum,,Zen Headbutt,32,,7
 374,Beldum,,Meteor Mash,44,,8
+688,Binacle,,Water Gun,4,,1
+688,Binacle,,Ancient Power,28,,2
+688,Binacle,,Brick Break,TM,,3
+688,Binacle,,Earthquake,TM,,4
+688,Binacle,,Rock Slide,TM,,5
+688,Binacle,,Hone Claws,32,,6
+688,Binacle,,Rock Tomb,TM,,7
+688,Binacle,,Waterfall,HM,,8
+688,Binacle,,Night Slash,44,,9
+688,Binacle,,Cross Chop,55,,10
+688,Binacle,,Stone Edge,MR!,,11
+688,Binacle,,Tickle,Egg,,12
 522,Blitzle,,Charge,8,,1
 522,Blitzle,,Shock Wave,11,,2
 522,Blitzle,,Flame Charge,18,,3
@@ -153,9 +165,12 @@ pokedex_id,pokemon_name,form,move_name,learn_method,species,display_order
 412,Burmy,,Bug Bite,15,,2
 412,Burmy,,Hidden Power,20,,3
 412,Burmy,,Quiver Dance,Evo.,,4
-412,Burmy,,Giga Drain,TM,,5
-412,Burmy,,Metal Sound,29,Wormadam-Trash,6
-412,Burmy,,Bug Buzz,50,,7
+412,Burmy,,Confusion,23,,5
+412,Burmy,,Mirror Shot,26,Wormadam-Trash,6
+412,Burmy,,Metal Sound,29,Wormadam-Trash,7
+412,Burmy,,Giga Drain,TM,,8
+412,Burmy,,Psychic,44,,9
+412,Burmy,,Bug Buzz,50,,10
 351,Castform,,Water Gun,10,,1
 351,Castform,,Ember,10,,2
 351,Castform,,Powder Snow,10,,3
@@ -370,14 +385,16 @@ pokedex_id,pokemon_name,form,move_name,learn_method,species,display_order
 104,Cubone,,Earthquake,TM,,4
 104,Cubone,,Flare Blitz,53,Marowak-Alola,5
 104,Cubone,,Iron Head,Egg,,6
-878,Cufant,,Bulldoze,15,,1
-878,Cufant,,Heavy Slam,Evo.,,2
-878,Cufant,,Brick Break,TM,,3
-878,Cufant,,Earthquake,TM,,4
-878,Cufant,,Iron Head,44,,5
-878,Cufant,,Play Rough,51,,6
-878,Cufant,,High Horsepower,58,,7
-878,Cufant,,Curse,Egg,,8
+878,Cufant,,Rollout,5,,1
+878,Cufant,,Rock Smash,10,,2
+878,Cufant,,Bulldoze,15,,3
+878,Cufant,,Heavy Slam,Evo.,,4
+878,Cufant,,Brick Break,TM,,5
+878,Cufant,,Earthquake,TM,,6
+878,Cufant,,Iron Head,44,,7
+878,Cufant,,Play Rough,51,,8
+878,Cufant,,High Horsepower,58,,9
+878,Cufant,,Curse,Egg,,10
 742,Cutiefly,,Draining Kiss,16,,1
 742,Cutiefly,,Bug Buzz,28,,2
 742,Cutiefly,,Calm Mind,TM,,3
@@ -711,9 +728,9 @@ pokedex_id,pokemon_name,form,move_name,learn_method,species,display_order
 856,Hatenna,,Trick Room,TM,,3
 856,Hatenna,,Psybeam,20,,4
 856,Hatenna,,Dazzling Gleam,30,,5
-856,Hatenna,,Psychic,TM,,6
-856,Hatenna,,Giga Drain,TM,,7
-856,Hatenna,,Calm Mind,TM,,8
+856,Hatenna,,Giga Drain,TM,,6
+856,Hatenna,,Psychic,37/TM,,7
+856,Hatenna,,Calm Mind,46/TM,,8
 856,Hatenna,,Nuzzle,Egg,,9
 694,Helioptile,,Mud-Slap,13,,1
 694,Helioptile,,Parabolic Charge,25,,2
@@ -940,14 +957,16 @@ pokedex_id,pokemon_name,form,move_name,learn_method,species,display_order
 458,Mantyke,,Surf,HM,,4
 458,Mantyke,,Air Slash,36,,5
 458,Mantyke,,Tailwind,Egg,,6
-303,Mawile,,Bite,9,,1
-303,Mawile,,Crunch,29,,2
-303,Mawile,,Rock Tomb,TM,,3
-303,Mawile,,Rock Slide,TM,,4
-303,Mawile,,Sucker Punch,37,,5
-303,Mawile,,Iron Head,45,,6
-303,Mawile,,Play Rough,49,,7
-303,Mawile,,Thunder Fang,Egg,,8
+303,Mawile,,Fairy Wind,1,,1
+303,Mawile,,Fake Tears,5,,2
+303,Mawile,,Bite,9,,3
+303,Mawile,,Crunch,29,,4
+303,Mawile,,Rock Tomb,TM,,5
+303,Mawile,,Rock Slide,TM,,6
+303,Mawile,,Sucker Punch,37,,7
+303,Mawile,,Iron Head,45,,8
+303,Mawile,,Play Rough,49,,9
+303,Mawile,,Thunder Fang,Egg,,10
 307,Meditite,,Confusion,7,,1
 307,Meditite,,Force Palm,17,,2
 307,Meditite,,High Jump Kick,28,,3
@@ -971,9 +990,14 @@ pokedex_id,pokemon_name,form,move_name,learn_method,species,display_order
 439,Mime Jr,,Encore,18,,2
 439,Mime Jr,,Ice Beam,TM,,3
 439,Mime Jr,,Thunderbolt,TM,,4
-439,Mime Jr,,Calm Mind,TM,,5
-439,Mime Jr,,Freeze-Dry,44,,6
-439,Mime Jr,,Charm,Egg,,7
+439,Mime Jr,,Dazzling Gleam,MR/TM,,5
+439,Mime Jr,,Protect,MR,,6
+439,Mime Jr,,Slack Off,MR,,7
+439,Mime Jr,,Light Screen,MR,,8
+439,Mime Jr,,Reflect,MR,,9
+439,Mime Jr,,Calm Mind,TM,,10
+439,Mime Jr,,Freeze-Dry,44,,11
+439,Mime Jr,,Charm,Egg,,12
 572,Minccino,,Tickle,9,,1
 572,Minccino,,Double Slap,13,,2
 572,Minccino,,Encore,15,,3
@@ -1421,10 +1445,11 @@ pokedex_id,pokemon_name,form,move_name,learn_method,species,display_order
 551,Sandile,,Fire Fang,Egg,,10
 27,Sandshrew,Alola,Rapid Spin,9,,1
 27,Sandshrew,Alola,Metal Claw,14,,2
-27,Sandshrew,Alola,Icicle Spear,Evo.,,3
-27,Sandshrew,Alola,Earthquake,TM,,4
-27,Sandshrew,Alola,Brick Break,TM,,5
-27,Sandshrew,Alola,Night Slash,Egg,,6
+27,Sandshrew,Alola,Metal Claw,30,Sandshrew-Alola,3
+27,Sandshrew,Alola,Icicle Spear,Evo.,,4
+27,Sandshrew,Alola,Earthquake,TM,,5
+27,Sandshrew,Alola,Brick Break,TM,,6
+27,Sandshrew,Alola,Night Slash,Egg,,7
 769,Sandygast,,Sand Tomb,14,,1
 769,Sandygast,,Mega Drain,18,,2
 769,Sandygast,,Bulldoze,23,,3
@@ -1791,12 +1816,13 @@ pokedex_id,pokemon_name,form,move_name,learn_method,species,display_order
 120,Staryu,,Waterfall,HM,,11
 759,Stufful,,Baby-Doll Eyes,10,,1
 759,Stufful,,Brutal Swing,14,,2
-759,Stufful,,Brick Break,TM,,3
-759,Stufful,,Earthquake,TM,,4
-759,Stufful,,Hammer Arm,32,,5
-759,Stufful,,Return,TM,,6
-759,Stufful,,Bulk Up,TM,,7
-759,Stufful,,Force Palm,Egg,,8
+759,Stufful,,Rock Smash,HM,,3
+759,Stufful,,Brick Break,TM,,4
+759,Stufful,,Earthquake,TM,,5
+759,Stufful,,Hammer Arm,32,,6
+759,Stufful,,Return,TM,,7
+759,Stufful,,Bulk Up,TM,,8
+759,Stufful,,Force Palm,Egg,,9
 283,Surskit,,Water Sport,14,,1
 283,Surskit,,Air Cutter,22,,2
 283,Surskit,,Ice Beam,TM,,3
@@ -1960,13 +1986,12 @@ pokedex_id,pokemon_name,form,move_name,learn_method,species,display_order
 535,Tympole,,Mud Shot,16,,2
 535,Tympole,,Muddy Water,28,,3
 535,Tympole,,Earthquake,TM,,4
-535,Tympole,,Ice Beam,TM,,5
-535,Tympole,,Sludge Bomb,TM,,6
-535,Tympole,,Rock Slide,TM,,7
-535,Tympole,,Surf,HM,,8
-535,Tympole,,Drain Punch,44,,9
-535,Tympole,,Hydro Pump,53,,10
-535,Tympole,,Earth Power,Egg,,11
+535,Tympole,,Sludge Bomb,TM,,5
+535,Tympole,,Rock Slide,TM,,6
+535,Tympole,,Surf,HM,,7
+535,Tympole,,Drain Punch,44,,8
+535,Tympole,,Hydro Pump,53,,9
+535,Tympole,,Earth Power,Egg,,10
 602,Tynamo,,Spark,1,,1
 602,Tynamo,,Charge Beam,1,,2
 602,Tynamo,,Crunch,Evo.,,3
