@@ -370,7 +370,7 @@ const Info = () => (
               <summary className='slateport-market-dropdown'>Energy Guru</summary>
               <div className="evo-icons">
                 <img src="/MiniIcons/aron.png" alt="Aron" />
-                <img src="/MiniIcons/aron.png" alt="Duskull" />
+                <img src="/MiniIcons/duskull.png" alt="Duskull" />
                 <img src="/MiniIcons/goomy.png" alt="Goomy" />
                 <img src="/MiniIcons/hatenna.png" alt="Hatenna" />
                 <img src="/MiniIcons/honedge.png" alt="Honedge" />
