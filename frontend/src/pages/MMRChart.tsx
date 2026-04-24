@@ -273,7 +273,7 @@ const MMRChart: React.FC<MMRChartProps> = ({ leaderboard, stats, minGames }) => 
                 // Only render an active dot if the user participated in this race
                 if (payload[deltaKey] !== undefined) {
                   return (
-                    <circle cx={cx} cy={cy} r={highlightedUser === dataKey ? 7 : 4} fill={stroke} stroke="#fff" strokeWidth={2} />
+                    <circle cx={cx} cy={cy} r={highlightedUser === dataKey ? 7 : 4} fill={stroke} stroke="currentColor" strokeWidth={1} />
                   );
                 }
                 return null;
