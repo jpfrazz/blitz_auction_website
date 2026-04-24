@@ -262,11 +262,22 @@ const MMRChart: React.FC<MMRChartProps> = ({ leaderboard, stats, minGames }) => 
                 // Only render a dot if the user participated in this race (i.e., has a delta)
                 if (payload[deltaKey] !== undefined) {
                   return (
-                    <circle cx={cx} cy={cy} r={3} fill={stroke} stroke="currentColor" strokeWidth={1} />
+                    <circle cx={cx} cy={cy} r={highlightedUser === dataKey ? 6 : 3} fill={stroke} stroke="currentColor" strokeWidth={1} />
                   );
                 }
                 return null;
-              }}              activeDot={{ r: highlightedUser === player.user_id ? 7 : 4 }}
+              }}
+              activeDot={(props: any) => {
+                const { cx, cy, stroke, payload, dataKey } = props;
+                const deltaKey = `${dataKey}_delta`;
+                // Only render an active dot if the user participated in this race
+                if (payload[deltaKey] !== undefined) {
+                  return (
+                    <circle cx={cx} cy={cy} r={highlightedUser === dataKey ? 7 : 4} fill={stroke} stroke="#fff" strokeWidth={2} />
+                  );
+                }
+                return null;
+              }}
             />
           ))}
         </LineChart>
