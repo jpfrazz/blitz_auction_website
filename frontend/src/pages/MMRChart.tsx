@@ -257,23 +257,27 @@ const MMRChart: React.FC<MMRChartProps> = ({ leaderboard, stats, minGames }) => 
               strokeWidth={highlightedUser === player.user_id ? 5 : 2}
               strokeOpacity={highlightedUser === null || highlightedUser === player.user_id ? 1 : 0.15}
               dot={(props: any) => {
-                const { cx, cy, stroke, payload, dataKey } = props;
+                const { cx, cy, payload, dataKey } = props;
                 const deltaKey = `${dataKey}_delta`;
+                const lineColor = COLORS[index % COLORS.length];
+                const opacity = highlightedUser === null || highlightedUser === player.user_id ? 1 : 0.15;
                 // Only render a dot if the user participated in this race (i.e., has a delta)
                 if (payload[deltaKey] !== undefined) {
                   return (
-                    <circle cx={cx} cy={cy} r={highlightedUser === dataKey ? 6 : 3} fill={stroke} stroke={stroke} strokeWidth={1} />
+                    <circle cx={cx} cy={cy} r={highlightedUser === dataKey ? 6 : 3} fill={lineColor} stroke={lineColor} fillOpacity={opacity} strokeOpacity={opacity} strokeWidth={1} />
                   );
                 }
                 return null;
               }}
               activeDot={(props: any) => {
-                const { cx, cy, stroke, payload, dataKey } = props;
+                const { cx, cy, payload, dataKey } = props;
                 const deltaKey = `${dataKey}_delta`;
+                const lineColor = COLORS[index % COLORS.length];
+                const opacity = highlightedUser === null || highlightedUser === player.user_id ? 1 : 0.15;
                 // Only render an active dot if the user participated in this race
                 if (payload[deltaKey] !== undefined) {
                   return (
-                    <circle cx={cx} cy={cy} r={highlightedUser === dataKey ? 7 : 4} fill={stroke} stroke={stroke} strokeWidth={1} />
+                    <circle cx={cx} cy={cy} r={highlightedUser === dataKey ? 7 : 4} fill={lineColor} stroke={lineColor} fillOpacity={opacity} strokeOpacity={opacity} strokeWidth={1} />
                   );
                 }
                 return null;
