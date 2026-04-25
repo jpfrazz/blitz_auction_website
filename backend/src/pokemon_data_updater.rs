@@ -1,3 +1,5 @@
+use std::fmt::format;
+
 use axum::http::StatusCode;
 use serde::Deserialize;
 use sqlx::PgPool;
@@ -162,7 +164,7 @@ pub async fn update_pokemon_key_moves_data(
     pool: PgPool,
     key_move_data: Vec<KeyMoveCsvRecord>,
 ) -> Result<(), AppError> {
-    let mut tx: sqlx::Transaction<'_, sqlx::Postgres> = pool.begin().await.map_err(|e| {
+    let mut tx = pool.begin().await.map_err(|e| {
         (
             StatusCode::INTERNAL_SERVER_ERROR,
             format!("failed to begin db transaction: {}", e),
@@ -180,22 +182,21 @@ pub async fn update_pokemon_key_moves_data(
         csv_moves.push(key_move.move_name.clone());
         csv_orders.push(key_move.display_order);
 
-        let _ = sqlx::query!(
+        let _ = sqlx::query(
             r#"
             INSERT INTO key_moves (pokedex_id, form, move_name, learn_method, species, display_order)
             VALUES ($1, $2, $3, $4, $5, $6)
             ON CONFLICT (pokedex_id, form, move_name, display_order) DO UPDATE SET
                 learn_method = EXCLUDED.learn_method,
                 species = EXCLUDED.species
-            "#,
-            key_move.pokedex_id,
-            key_move.form.clone().unwrap_or_default(),
-            key_move.move_name,
-            key_move.learn_method.clone().unwrap_or_default(),
-            key_move.species,
-            key_move.display_order
-        )
-        .execute(&mut **tx)
+            "#)
+        .bind(key_move.pokedex_id)
+        .bind(key_move.form.clone().unwrap_or_default())
+        .bind(&key_move.move_name)
+        .bind(key_move.learn_method.clone().unwrap_or_default())
+        .bind(&key_move.species)
+        .bind(key_move.display_order)
+        .execute(&mut *tx)
         .await
         .map_err(|e| {
             (
@@ -210,7 +211,7 @@ pub async fn update_pokemon_key_moves_data(
             r#"
                 DELETE FROM key_moves
                 WHERE NOT EXISTS (
-                    SELECT 1 
+                    SELECT 1
                     FROM UNNEST($1::int[], $2::text[], $3::text[], $4::int[]) AS uploaded(u_id, u_form, u_move, u_order)
                     WHERE key_moves.pokedex_id = uploaded.u_id 
                       AND key_moves.form = uploaded.u_form
