@@ -174,28 +174,28 @@ pub async fn update_pokemon_key_moves_data(
     let mut csv_ids: Vec<i32> = Vec::new();
     let mut csv_forms: Vec<String> = Vec::new();
     let mut csv_moves: Vec<String> = Vec::new();
-    let mut csv_orders: Vec<i32> = Vec::new();
 
     for key_move in key_move_data.iter() {
         csv_ids.push(key_move.pokedex_id);
         csv_forms.push(key_move.form.clone().unwrap_or_default());
         csv_moves.push(key_move.move_name.clone());
-        csv_orders.push(key_move.display_order);
 
-        let _ = sqlx::query(
+        let _ = sqlx::query!(
             r#"
             INSERT INTO key_moves (pokedex_id, form, move_name, learn_method, species, display_order)
             VALUES ($1, $2, $3, $4, $5, $6)
-            ON CONFLICT (pokedex_id, form, move_name, display_order) DO UPDATE SET
+            ON CONFLICT (pokedex_id, form, move_name) DO UPDATE SET
                 learn_method = EXCLUDED.learn_method,
-                species = EXCLUDED.species
-            "#)
-        .bind(key_move.pokedex_id)
-        .bind(key_move.form.clone().unwrap_or_default())
-        .bind(&key_move.move_name)
-        .bind(key_move.learn_method.clone().unwrap_or_default())
-        .bind(&key_move.species)
-        .bind(key_move.display_order)
+                species = EXCLUDED.species,
+                display_order = EXCLUDED.display_order
+            "#,
+            key_move.pokedex_id,
+            key_move.form.clone().unwrap_or_default(),
+            key_move.move_name,
+            key_move.learn_method.clone().unwrap_or_default(),
+            key_move.species,
+            key_move.display_order
+        )
         .execute(&mut *tx)
         .await
         .map_err(|e| {
@@ -211,19 +211,17 @@ pub async fn update_pokemon_key_moves_data(
             r#"
                 DELETE FROM key_moves
                 WHERE NOT EXISTS (
-                    SELECT 1
-                    FROM UNNEST($1::int[], $2::text[], $3::text[], $4::int[]) AS uploaded(u_id, u_form, u_move, u_order)
+                    SELECT 1 
+                    FROM UNNEST($1::int[], $2::text[], $3::text[]) AS uploaded(u_id, u_form, u_move)
                     WHERE key_moves.pokedex_id = uploaded.u_id 
                       AND key_moves.form = uploaded.u_form
                       AND key_moves.move_name = uploaded.u_move
-                      AND key_moves.display_order = uploaded.u_order
                 )
                 "#,
         )
         .bind(&csv_ids)
         .bind(&csv_forms)
         .bind(&csv_moves)
-        .bind(&csv_orders)
         .execute(&mut *tx)
         .await
         .map_err(|e| {
