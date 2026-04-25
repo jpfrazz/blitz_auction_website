@@ -44,7 +44,7 @@ const CustomTooltip = ({ active, payload, label, highlightedUser }: any) => {
         boxShadow: '0 4px 12px rgba(0,0,0,0.5)',
         zIndex: 100
       }}>
-        <p style={{ margin: '0 0 8px', fontWeight: 'bold', borderBottom: '1px solid #444', paddingBottom: '4px', color: '#fff' }}>
+        <p style={{ margin: '0 0 8px', fontWeight: 'bold', borderBottom: '1px solid #444', paddingBottom: '4px', color: '#fff', fontSize: '1.25rem' }}>
           {raceData.date === 'Initial' ? 'Initial Rating' : raceData.date}
         </p>
         <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
