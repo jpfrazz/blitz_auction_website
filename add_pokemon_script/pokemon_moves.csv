@@ -1135,7 +1135,7 @@ pokedex_id,pokemon_name,form,move_name,learn_method,species,display_order
 919,Nymble,,Skitter Smack,Egg,,11
 43,Oddish,,Growth,1,,1
 43,Oddish,,Mega Drain,19,,2
-43,Oddish,,Moonblast,MR,,3
+43,Oddish,,Moonblast,32,,3
 43,Oddish,,Moonlight,MR,,4
 43,Oddish,,Dazzling Gleam,TM,,5
 43,Oddish,,Sludge Bomb,TM,,6
@@ -1160,8 +1160,9 @@ pokedex_id,pokemon_name,form,move_name,learn_method,species,display_order
 674,Pancham,,Earthquake,TM,,5
 674,Pancham,,Crunch,42,,6
 674,Pancham,,Bulk Up,TM,,7
-674,Pancham,,Sky Uppercut,52,,8
-674,Pancham,,Storm Throw,Egg,,9
+674,Pancham,,Parting Shot,48,,8
+674,Pancham,,Sky Uppercut,52,,9
+674,Pancham,,Storm Throw,Egg,,10
 513,Pansear,,Incinerate,10,,1
 513,Pansear,,Yawn,16,,2
 513,Pansear,,Bite,19,,3
