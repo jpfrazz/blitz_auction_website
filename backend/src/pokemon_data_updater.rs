@@ -1,5 +1,3 @@
-use std::fmt::format;
-
 use axum::http::StatusCode;
 use serde::Deserialize;
 use sqlx::PgPool;
@@ -164,7 +162,7 @@ pub async fn update_pokemon_key_moves_data(
     pool: PgPool,
     key_move_data: Vec<KeyMoveCsvRecord>,
 ) -> Result<(), AppError> {
-    let mut tx = pool.begin().await.map_err(|e| {
+    let mut tx: sqlx::Transaction<'_, sqlx::Postgres> = pool.begin().await.map_err(|e| {
         (
             StatusCode::INTERNAL_SERVER_ERROR,
             format!("failed to begin db transaction: {}", e),
@@ -186,9 +184,10 @@ pub async fn update_pokemon_key_moves_data(
             r#"
             INSERT INTO key_moves (pokedex_id, form, move_name, learn_method, species, display_order)
             VALUES ($1, $2, $3, $4, $5, $6)
-            ON CONFLICT (pokedex_id, form, move_name, display_order) DO UPDATE SET
+            ON CONFLICT (pokedex_id, form, move_name) DO UPDATE SET
                 learn_method = EXCLUDED.learn_method,
-                species = EXCLUDED.species
+                species = EXCLUDED.species,
+                display_order = EXCLUDED.display_order
             "#,
             key_move.pokedex_id,
             key_move.form.clone().unwrap_or_default(),
