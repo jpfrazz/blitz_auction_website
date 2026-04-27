@@ -72,20 +72,23 @@ interface PokemonPriceHistoryChartProps {
 const PokemonPriceHistoryChart: React.FC<PokemonPriceHistoryChartProps> = ({ pokemonKey, pokemonName, stats }) => {
   const chartData = useMemo(() => {
     // Determine valid (competitive) draft IDs
-    const draftStatsMap = new Map<string, { total: number; minBidCount: number; teamCount: number }>();
+    const draftStatsMap = new Map<string, { total: number; minBidCount: number; teamCount: number; maxBid: number }>();
 
     (stats.teams ?? []).forEach((t) => {
-      const curr = draftStatsMap.get(t.draft_id) || { total: 0, minBidCount: 0, teamCount: 0 };
+      const curr = draftStatsMap.get(t.draft_id) || { total: 0, minBidCount: 0, teamCount: 0, maxBid: 0 };
       curr.teamCount += 1;
       draftStatsMap.set(t.draft_id, curr);
     });
 
     (stats.auctions ?? []).forEach((a) => {
       if (a.winning_bid !== null) {
-        const curr = draftStatsMap.get(a.draft_id) || { total: 0, minBidCount: 0, teamCount: 0 };
+        const curr = draftStatsMap.get(a.draft_id) || { total: 0, minBidCount: 0, teamCount: 0, maxBid: 0 };
         curr.total += 1;
         if (a.winning_bid === 100) {
           curr.minBidCount += 1;
+        }
+        if (a.winning_bid > curr.maxBid) {
+          curr.maxBid = a.winning_bid;
         }
         draftStatsMap.set(a.draft_id, curr);
       }
@@ -93,7 +96,7 @@ const PokemonPriceHistoryChart: React.FC<PokemonPriceHistoryChartProps> = ({ pok
 
     const validDraftIds = new Set<string>();
     draftStatsMap.forEach((data, id) => {
-      if (data.total >= 40 && data.minBidCount <= 3 && data.total === 8 * data.teamCount) {
+      if (data.total >= 40 && data.minBidCount <= 3 && data.total === 8 * data.teamCount && data.maxBid <= 12000) {
         validDraftIds.add(id);
       }
     });
