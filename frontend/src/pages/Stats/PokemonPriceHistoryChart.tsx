@@ -11,6 +11,18 @@ import {
 } from 'recharts';
 import { StatsPageResponse } from '../../types';
 
+const excludedPokemonNames = new Set([
+  'Bombirdier',
+  'Larvesta',
+  'Hawlucha',
+  'Falinks',
+  'Absol',
+  'Miltank',
+  'Stonjourner',
+  'Klawf',
+  'Turtonator',
+]);
+
 const formOverrides: Record<string, { form: string; key: string }> = {
   'Wooper': { form: 'Paldea', key: 'Wooper-Paldea' },
   'Vulpix': { form: 'Alola', key: 'Vulpix-Alola' },
@@ -41,6 +53,16 @@ const resolveIdentity = (name: string, form: string) => {
   return { name: currentName, form: effectiveForm, key };
 };
 
+function calculateQuantile(sortedData: number[], q: number) {
+  const pos = (sortedData.length - 1) * q;
+  const base = Math.floor(pos);
+  const rest = pos - base;
+  if (sortedData[base + 1] !== undefined) {
+    return sortedData[base] + rest * (sortedData[base + 1] - sortedData[base]);
+  }
+  return sortedData[base];
+}
+
 interface PokemonPriceHistoryChartProps {
   pokemonKey: string;
   pokemonName: string;
@@ -49,9 +71,36 @@ interface PokemonPriceHistoryChartProps {
 
 const PokemonPriceHistoryChart: React.FC<PokemonPriceHistoryChartProps> = ({ pokemonKey, pokemonName, stats }) => {
   const chartData = useMemo(() => {
+    // Determine valid (competitive) draft IDs
+    const draftStatsMap = new Map<string, { total: number; minBidCount: number; teamCount: number }>();
+
+    (stats.teams ?? []).forEach((t) => {
+      const curr = draftStatsMap.get(t.draft_id) || { total: 0, minBidCount: 0, teamCount: 0 };
+      curr.teamCount += 1;
+      draftStatsMap.set(t.draft_id, curr);
+    });
+
+    (stats.auctions ?? []).forEach((a) => {
+      if (a.winning_bid !== null) {
+        const curr = draftStatsMap.get(a.draft_id) || { total: 0, minBidCount: 0, teamCount: 0 };
+        curr.total += 1;
+        if (a.winning_bid === 100) {
+          curr.minBidCount += 1;
+        }
+        draftStatsMap.set(a.draft_id, curr);
+      }
+    });
+
+    const validDraftIds = new Set<string>();
+    draftStatsMap.forEach((data, id) => {
+      if (data.total >= 40 && data.minBidCount <= 3 && data.total === 8 * data.teamCount) {
+        validDraftIds.add(id);
+      }
+    });
+
     // 1. Gather all sales including auctions and legacy data
     const auctionSales = stats.auctions
-      .filter(a => a.winning_bid !== null && resolveIdentity(a.name, a.form || '').key === pokemonKey)
+      .filter(a => a.winning_bid !== null && validDraftIds.has(a.draft_id) && !excludedPokemonNames.has(a.name) && resolveIdentity(a.name, a.form || '').key === pokemonKey)
       .map(a => ({
         cost: a.winning_bid as number,
         date: a.created_at ? new Date(a.created_at).getTime() : 0,
@@ -60,7 +109,7 @@ const PokemonPriceHistoryChart: React.FC<PokemonPriceHistoryChartProps> = ({ pok
       }));
 
     const legacySales = (stats.legacy || [])
-      .filter(l => resolveIdentity(l.pokemon, '').key === pokemonKey)
+      .filter(l => !excludedPokemonNames.has(l.pokemon) && resolveIdentity(l.pokemon, '').key === pokemonKey)
       .map(l => {
         const costStr = String(l.cost).replace(/[^0-9]/g, '');
         const cost = parseInt(costStr, 10);
@@ -77,20 +126,26 @@ const PokemonPriceHistoryChart: React.FC<PokemonPriceHistoryChartProps> = ({ pok
 
     if (allSales.length === 0) return null;
 
-    // 2. Statistical Outlier Detection (IQR Method)
-    const sortedCosts = [...allSales].map(s => s.cost).sort((a, b) => a - b);
-    const q1 = sortedCosts[Math.floor(sortedCosts.length * 0.25)];
-    const q3 = sortedCosts[Math.floor(sortedCosts.length * 0.75)];
-    const iqr = q3 - q1;
-    
-    // Standard 1.5 * IQR rule for bounds
-    const lowerBound = Math.max(0, q1 - 1.5 * iqr);
-    const upperBound = q3 + 1.5 * iqr;
+    // 2. Statistical Outlier Detection (align with PokemonStatsTab logic)
+    // Ignore $100 bids for the bound calculation
+    const filteredForBounds = allSales.map(s => s.cost).filter(c => c !== 100);
+    let lowerBound: number | null = null;
+    let upperBound: number | null = null;
+
+    if (filteredForBounds.length > 1) {
+      const sortedCosts = [...filteredForBounds].sort((a, b) => a - b);
+      const q1 = calculateQuantile(sortedCosts, 0.25);
+      const q3 = calculateQuantile(sortedCosts, 0.75);
+      const iqr = q3 - q1;
+      
+      lowerBound = q1 - 1.5 * iqr;
+      upperBound = q3 + 2.0 * iqr;
+    }
 
     const data = allSales.map((s, index) => ({
       saleNumber: index + 1,
       cost: s.cost,
-      isOutlier: s.cost < lowerBound || s.cost > upperBound,
+      isOutlier: s.cost === 100 || (lowerBound !== null && s.cost < lowerBound) || (upperBound !== null && s.cost > upperBound),
       date: s.formattedDate,
       draftId: s.draftId
     }));
@@ -136,8 +191,8 @@ const PokemonPriceHistoryChart: React.FC<PokemonPriceHistoryChartProps> = ({ pok
             labelFormatter={(label) => `Sale #${label}`}
           />
           
-          <ReferenceLine y={upperBound} stroke="#8B0000" strokeDasharray="5 5" label={{ value: 'Outlier Bound', position: 'right', fill: '#8B0000', fontSize: 10 }} />
-          <ReferenceLine y={lowerBound} stroke="#8B0000" strokeDasharray="5 5" />
+          {upperBound !== null && <ReferenceLine y={upperBound} stroke="#8B0000" strokeDasharray="5 5" label={{ value: 'Outlier Bound', position: 'right', fill: '#8B0000', fontSize: 10 }} />}
+          {lowerBound !== null && <ReferenceLine y={lowerBound} stroke="#8B0000" strokeDasharray="5 5" />}
 
           <Line 
             type="monotone" 
