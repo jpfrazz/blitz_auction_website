@@ -1,4 +1,5 @@
 import React, { useMemo, useState } from 'react';
+import PokemonPriceHistoryChart from '../PokemonPriceHistoryChart';
 import { StatsPageResponse } from '../../../types';
 import '../Stats.scss';
 import './PokemonStatsTab.scss';
@@ -100,6 +101,7 @@ const PokemonStatsTab: React.FC<PokemonStatsTabProps> = ({
     key: 'avgWinningBid',
     direction: 'desc',
   });
+  const [expandedPokemon, setExpandedPokemon] = useState<string | null>(null);
 
   const handleSort = (key: SortKey) => {
     setSortConfig((current) => ({
@@ -428,7 +430,12 @@ const PokemonStatsTab: React.FC<PokemonStatsTabProps> = ({
               </thead>
               <tbody>
                 {filteredPokemonSummary.map((entry, index) => (
-                  <tr key={entry.key} className="stats-row-animate" style={{ animationDelay: `${200 + index * 30}ms` }}>
+                  <React.Fragment key={entry.key}>
+                    <tr 
+                      className={`stats-row-animate ${expandedPokemon === entry.key ? 'expanded' : ''}`} 
+                      style={{ animationDelay: `${200 + index * 30}ms`, cursor: 'pointer' }}
+                      onClick={() => setExpandedPokemon(expandedPokemon === entry.key ? null : entry.key)}
+                    >
                     <td style={{ backgroundColor: getPriceColor(entry.avgWinningBid) }}>{entry.rank}</td>
                     <td style={{
                       backgroundColor: entry.recentMovement > 0 ? 'rgba(0, 255, 0, 0.15)' : entry.recentMovement < 0 ? 'rgba(255, 0, 0, 0.15)' : undefined,
@@ -462,6 +469,20 @@ const PokemonStatsTab: React.FC<PokemonStatsTabProps> = ({
                     <td>{entry.priceVariance.toLocaleString()}</td>
                     <td>{entry.bidsWon}</td>
                   </tr>
+                    {expandedPokemon === entry.key && (
+                      <tr className="price-history-dropdown-row">
+                        <td colSpan={8}>
+                          <div className="price-history-container">
+                            <PokemonPriceHistoryChart 
+                              pokemonKey={entry.key} 
+                              pokemonName={`${entry.name}${entry.form && entry.form !== 'base' ? ` (${toLabel(entry.form)})` : ''}`}
+                              stats={stats!} 
+                            />
+                          </div>
+                        </td>
+                      </tr>
+                    )}
+                  </React.Fragment>
                 ))}
                 {filteredPokemonSummary.length === 0 && (
                   <tr>

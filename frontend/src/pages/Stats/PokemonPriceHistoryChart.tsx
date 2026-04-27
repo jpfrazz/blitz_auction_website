@@ -1,0 +1,162 @@
+import React, { useMemo } from 'react';
+import {
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+  ReferenceLine,
+} from 'recharts';
+import { StatsPageResponse } from '../../types';
+
+const formOverrides: Record<string, { form: string; key: string }> = {
+  'Wooper': { form: 'Paldea', key: 'Wooper-Paldea' },
+  'Vulpix': { form: 'Alola', key: 'Vulpix-Alola' },
+  'Voltorb': { form: 'Hisui', key: 'Voltorb-Hisui' },
+  "Farfetch'd": { form: 'Galar', key: "Farfetch'd-Galar" },
+  'Sandshrew': { form: 'Alola', key: 'Sandshrew-Alola' },
+  'Meowth': { form: 'Galar', key: 'Meowth-Galar' },
+  'Slowpoke': { form: 'Galar', key: 'Slowpoke-Galar' },
+  'Zigzagoon': { form: 'Galar', key: 'Zigzagoon-Galar' },
+};
+
+const resolveIdentity = (name: string, form: string) => {
+  let currentName = name;
+  let currentForm = form;
+  const knownForms = ['Alola', 'Galar', 'Hisui', 'Paldea'];
+  for (const f of knownForms) {
+    if (currentName.endsWith(`-${f}`)) {
+      currentName = currentName.slice(0, -(f.length + 1));
+      currentForm = f;
+      break;
+    }
+  }
+  if ((!currentForm || currentForm === 'base') && formOverrides[currentName]) {
+    return { name: currentName, ...formOverrides[currentName] };
+  }
+  const effectiveForm = currentForm && currentForm !== 'base' ? currentForm : '';
+  const key = `${currentName}${effectiveForm ? '-' + effectiveForm : ''}`;
+  return { name: currentName, form: effectiveForm, key };
+};
+
+interface PokemonPriceHistoryChartProps {
+  pokemonKey: string;
+  pokemonName: string;
+  stats: StatsPageResponse;
+}
+
+const PokemonPriceHistoryChart: React.FC<PokemonPriceHistoryChartProps> = ({ pokemonKey, pokemonName, stats }) => {
+  const chartData = useMemo(() => {
+    // 1. Gather all sales including auctions and legacy data
+    const auctionSales = stats.auctions
+      .filter(a => a.winning_bid !== null && resolveIdentity(a.name, a.form || '').key === pokemonKey)
+      .map(a => ({
+        cost: a.winning_bid as number,
+        date: a.created_at ? new Date(a.created_at).getTime() : 0,
+        formattedDate: a.created_at ? new Date(a.created_at).toLocaleDateString() : 'Unknown',
+        draftId: a.draft_id
+      }));
+
+    const legacySales = (stats.legacy || [])
+      .filter(l => resolveIdentity(l.pokemon, '').key === pokemonKey)
+      .map(l => {
+        const costStr = String(l.cost).replace(/[^0-9]/g, '');
+        const cost = parseInt(costStr, 10);
+        return {
+          cost: isNaN(cost) ? 0 : cost,
+          date: 0,
+          formattedDate: 'Legacy Draft',
+          draftId: 'Legacy'
+        };
+      });
+
+    // Combine and sort chronologically
+    const allSales = [...legacySales, ...auctionSales].sort((a, b) => a.date - b.date);
+
+    if (allSales.length === 0) return null;
+
+    // 2. Statistical Outlier Detection (IQR Method)
+    const sortedCosts = [...allSales].map(s => s.cost).sort((a, b) => a - b);
+    const q1 = sortedCosts[Math.floor(sortedCosts.length * 0.25)];
+    const q3 = sortedCosts[Math.floor(sortedCosts.length * 0.75)];
+    const iqr = q3 - q1;
+    
+    // Standard 1.5 * IQR rule for bounds
+    const lowerBound = Math.max(0, q1 - 1.5 * iqr);
+    const upperBound = q3 + 1.5 * iqr;
+
+    const data = allSales.map((s, index) => ({
+      saleNumber: index + 1,
+      cost: s.cost,
+      isOutlier: s.cost < lowerBound || s.cost > upperBound,
+      date: s.formattedDate,
+      draftId: s.draftId
+    }));
+
+    const xAxisTicks = [];
+    for (let i = 5; i <= data.length; i += 5) {
+      xAxisTicks.push(i);
+    }
+    if (xAxisTicks.length === 0 && data.length > 0) xAxisTicks.push(1);
+
+    return { data, lowerBound, upperBound, xAxisTicks };
+  }, [pokemonKey, stats]);
+
+  if (!chartData || chartData.data.length === 0) return null;
+
+  const { data, lowerBound, upperBound, xAxisTicks } = chartData;
+
+  return (
+    <div className="pokemon-price-history-chart" style={{ width: '100%', height: '250px', marginTop: '10px', background: 'rgba(0,0,0,0.1)', borderRadius: '8px', padding: '15px', boxSizing: 'border-box' }}>
+      <h4 style={{ margin: '0 0 15px', fontSize: '1rem', color: '#888', textAlign: 'center', fontWeight: 600 }}>
+        Price History: {pokemonName}
+      </h4>
+      <ResponsiveContainer width="100%" height="100%">
+        <LineChart data={data} margin={{ top: 5, right: 40, left: 10, bottom: 5 }}>
+          <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
+          <XAxis 
+            dataKey="saleNumber" 
+            stroke="#666" 
+            tick={{ fontSize: 11 }}
+            ticks={xAxisTicks}
+            label={{ value: 'Sale #', position: 'insideBottom', offset: -5, fill: '#666', fontSize: 11 }}
+          />
+          <YAxis 
+            stroke="#666" 
+            tick={{ fontSize: 11 }}
+            label={{ value: 'Price ($)', angle: -90, position: 'insideLeft', fill: '#666', fontSize: 11 }}
+          />
+          <Tooltip 
+            contentStyle={{ backgroundColor: '#1a1a1a', border: '1px solid #333', fontSize: '12px', borderRadius: '4px' }}
+            itemStyle={{ color: '#fff' }}
+            labelStyle={{ color: '#888' }}
+            formatter={(value: any) => [`$${value}`, 'Price']}
+            labelFormatter={(label) => `Sale #${label}`}
+          />
+          
+          <ReferenceLine y={upperBound} stroke="#8B0000" strokeDasharray="5 5" label={{ value: 'Outlier Bound', position: 'right', fill: '#8B0000', fontSize: 10 }} />
+          <ReferenceLine y={lowerBound} stroke="#8B0000" strokeDasharray="5 5" />
+
+          <Line 
+            type="monotone" 
+            dataKey="cost" 
+            stroke="#36A2EB" 
+            strokeWidth={0}
+            dot={(props: any) => {
+              const { cx, cy, payload } = props;
+              const fill = payload.isOutlier ? '#8B0000' : '#36A2EB'; // Dark red for outliers
+              return (
+                <circle key={`dot-${payload.saleNumber}`} cx={cx} cy={cy} r={4} fill={fill} stroke="none" />
+              );
+            }}
+            activeDot={{ r: 6, fill: '#fff', stroke: '#36A2EB' }}
+          />
+        </LineChart>
+      </ResponsiveContainer>
+    </div>
+  );
+};
+
+export default PokemonPriceHistoryChart;

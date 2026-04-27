@@ -108,4 +108,30 @@
         // Glass effect enhancement
         backdrop-filter: blur(2px);
     }
+
+    .price-history-dropdown-row {
+        background: rgba(0, 0, 0, 0.1);
+        
+        td {
+            padding: 0;
+            border-bottom: 1px solid #273138;
+        }
+    }
+
+    .price-history-container {
+        overflow: hidden;
+        animation: slideInDown 0.3s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+        padding: 0 10px 10px;
+    }
+
+    @keyframes slideInDown {
+        from {
+            max-height: 0;
+            opacity: 0;
+        }
+        to {
+            max-height: 310px; // Sufficient for 250px chart + margins/padding
+            opacity: 1;
+        }
+    }
 }
