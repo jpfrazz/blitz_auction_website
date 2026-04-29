@@ -560,31 +560,23 @@ const Stats: React.FC = () => {
                         {expandedDraftId === draft.draftId && (
                           <tr className="draft-details-row">
                             <td colSpan={6}>
-                              <div className="draft-details-controls" style={{ display: 'flex', gap: '16px', marginBottom: '12px', padding: '10px 10px 0', fontSize: '0.9rem' }}>
-                                <span 
-                                  style={{ 
-                                    cursor: 'pointer', 
-                                    textDecoration: draftSortMode === 'order' ? 'underline' : 'none',
-                                    color: draftSortMode === 'order' ? '#4caf50' : '#888',
-                                    fontWeight: draftSortMode === 'order' ? 'bold' : 'normal',
-                                    transition: 'color 0.2s'
-                                  }}
+                              <div className="draft-details-controls" style={{ display: 'flex', gap: '8px', marginBottom: '12px', padding: '10px 10px 0' }}>
+                                <button
+                                  className={`tab-chip ${draftSortMode === 'order' ? 'active' : ''}`}
+                                  type="button"
+                                  style={{ padding: '2px 8px', fontSize: '0.7rem', minWidth: 'auto', margin: 0 }}
                                   onClick={() => setDraftSortMode('order')}
                                 >
                                   Sort by Sale Order
-                                </span>
-                                <span 
-                                  style={{ 
-                                    cursor: 'pointer', 
-                                    textDecoration: draftSortMode === 'price' ? 'underline' : 'none',
-                                    color: draftSortMode === 'price' ? '#4caf50' : '#888',
-                                    fontWeight: draftSortMode === 'price' ? 'bold' : 'normal',
-                                    transition: 'color 0.2s'
-                                  }}
+                                </button>
+                                <button
+                                  className={`tab-chip ${draftSortMode === 'price' ? 'active' : ''}`}
+                                  type="button"
+                                  style={{ padding: '2px 8px', fontSize: '0.7rem', minWidth: 'auto', margin: 0 }}
                                   onClick={() => setDraftSortMode('price')}
                                 >
                                   Sort by Price
-                                </span>
+                                </button>
                               </div>
                               <div className="draft-details-grid">
                                 {(stats?.auctions ?? [])

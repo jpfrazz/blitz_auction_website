@@ -167,19 +167,19 @@ const PokemonPriceHistoryChart: React.FC<PokemonPriceHistoryChartProps> = ({ pok
   const { data, lowerBound, upperBound, xAxisTicks } = chartData;
 
   return (
-    <div className="pokemon-price-history-chart" style={{ width: '100%', height: '250px', marginTop: '10px', background: 'rgba(0,0,0,0.1)', borderRadius: '8px', padding: '15px', boxSizing: 'border-box' }}>
+    <div className="pokemon-price-history-chart" style={{ width: '100%', height: '280px', marginTop: '10px', background: 'rgba(0,0,0,0.1)', borderRadius: '8px', padding: '15px', boxSizing: 'border-box' }}>
       <h4 style={{ margin: '0 0 15px', fontSize: '1rem', color: '#888', textAlign: 'center', fontWeight: 600 }}>
         Price History: {pokemonName}
       </h4>
       <ResponsiveContainer width="100%" height="100%">
-        <LineChart data={data} margin={{ top: 5, right: 40, left: 10, bottom: 5 }}>
+        <LineChart data={data} margin={{ top: 5, right: 40, left: 10, bottom: 25 }}>
           <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
           <XAxis 
             dataKey="saleNumber" 
             stroke="#666" 
             tick={{ fontSize: 11 }}
             ticks={xAxisTicks}
-            label={{ value: 'Sale #', position: 'insideBottom', offset: -5, fill: '#666', fontSize: 11 }}
+            label={{ value: 'Sale #', position: 'insideBottom', offset: -15, fill: '#666', fontSize: 11 }}
           />
           <YAxis 
             stroke="#666" 
