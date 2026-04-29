@@ -63,6 +63,35 @@ function calculateQuantile(sortedData: number[], q: number) {
   return sortedData[base];
 }
 
+const CustomTooltip = ({ active, payload, label }: any) => {
+  if (active && payload && payload.length) {
+    const data = payload[0].payload;
+    return (
+      <div style={{ 
+        backgroundColor: '#1a1a1a', 
+        border: '1px solid #333', 
+        padding: '10px', 
+        fontSize: '12px', 
+        borderRadius: '4px',
+        boxShadow: '0 4px 12px rgba(0,0,0,0.5)'
+      }}>
+        <p style={{ margin: '0 0 6px', color: '#888', fontWeight: 600 }}>Sale #{label}</p>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+          <p style={{ margin: 0, color: '#fff' }}>
+            <span style={{ color: '#888' }}>Price:</span> ${data.cost.toLocaleString()}
+          </p>
+          {data.winner !== 'Guest' && (
+            <p style={{ margin: 0, color: '#fff' }}>
+              <span style={{ color: '#888' }}>Winner:</span> {data.winner}
+            </p>
+          )}
+        </div>
+      </div>
+    );
+  }
+  return null;
+};
+
 interface PokemonPriceHistoryChartProps {
   pokemonKey: string;
   pokemonName: string;
@@ -101,15 +130,27 @@ const PokemonPriceHistoryChart: React.FC<PokemonPriceHistoryChartProps> = ({ pok
       }
     });
 
+    // Map of players for easy name lookup
+    const playersMap = new Map<string, string>();
+    (stats.players ?? []).forEach(p => {
+      if (!p.is_guest) {
+        playersMap.set(p.user_id, p.user_name);
+      }
+    });
+
     // 1. Gather all sales including auctions and legacy data
     const auctionSales = stats.auctions
       .filter(a => a.winning_bid !== null && validDraftIds.has(a.draft_id) && !excludedPokemonNames.has(a.name) && resolveIdentity(a.name, a.form || '').key === pokemonKey)
-      .map(a => ({
-        cost: a.winning_bid as number,
-        date: a.created_at ? new Date(a.created_at).getTime() : 0,
-        formattedDate: a.created_at ? new Date(a.created_at).toLocaleDateString() : 'Unknown',
-        draftId: a.draft_id
-      }));
+      .map(a => {
+        const winnerName = a.winning_user_id ? playersMap.get(a.winning_user_id) : null;
+        return {
+          cost: a.winning_bid as number,
+          date: a.created_at ? new Date(a.created_at).getTime() : 0,
+          formattedDate: a.created_at ? new Date(a.created_at).toLocaleDateString() : 'Unknown',
+          draftId: a.draft_id,
+          winner: winnerName || 'Guest'
+        };
+      });
 
     const legacySales = (stats.legacy || [])
       .filter(l => !excludedPokemonNames.has(l.pokemon) && resolveIdentity(l.pokemon, '').key === pokemonKey)
@@ -120,7 +161,8 @@ const PokemonPriceHistoryChart: React.FC<PokemonPriceHistoryChartProps> = ({ pok
           cost: isNaN(cost) ? 0 : cost,
           date: 0,
           formattedDate: 'Legacy Draft',
-          draftId: 'Legacy'
+          draftId: 'Legacy',
+          winner: 'Guest'
         };
       });
 
@@ -150,7 +192,8 @@ const PokemonPriceHistoryChart: React.FC<PokemonPriceHistoryChartProps> = ({ pok
       cost: s.cost,
       isOutlier: s.cost === 100 || (lowerBound !== null && s.cost < lowerBound) || (upperBound !== null && s.cost > upperBound),
       date: s.formattedDate,
-      draftId: s.draftId
+      draftId: s.draftId,
+      winner: s.winner
     }));
 
     const xAxisTicks = [];
@@ -186,13 +229,7 @@ const PokemonPriceHistoryChart: React.FC<PokemonPriceHistoryChartProps> = ({ pok
             tick={{ fontSize: 11 }}
             label={{ value: 'Price ($)', angle: -90, position: 'insideLeft', fill: '#666', fontSize: 11 }}
           />
-          <Tooltip 
-            contentStyle={{ backgroundColor: '#1a1a1a', border: '1px solid #333', fontSize: '12px', borderRadius: '4px' }}
-            itemStyle={{ color: '#fff' }}
-            labelStyle={{ color: '#888' }}
-            formatter={(value: any) => [`$${value}`, 'Price']}
-            labelFormatter={(label) => `Sale #${label}`}
-          />
+          <Tooltip content={<CustomTooltip />} />
           
           {upperBound !== null && <ReferenceLine y={upperBound} stroke="#8B0000" strokeDasharray="5 5" label={{ value: 'Outlier Bound', position: 'right', fill: '#8B0000', fontSize: 10 }} />}
           {lowerBound !== null && <ReferenceLine y={lowerBound} stroke="#8B0000" strokeDasharray="5 5" />}

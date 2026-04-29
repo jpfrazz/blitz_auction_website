@@ -564,7 +564,7 @@ const Stats: React.FC = () => {
                                 <button
                                   className={`tab-chip ${draftSortMode === 'order' ? 'active' : ''}`}
                                   type="button"
-                                  style={{ padding: '2px 8px', fontSize: '0.7rem', minWidth: 'auto', margin: 0 }}
+                                  style={{ padding: '2px 8px', fontSize: '0.85rem', minWidth: 'auto', margin: 0 }}
                                   onClick={() => setDraftSortMode('order')}
                                 >
                                   Sort by Sale Order
@@ -572,7 +572,7 @@ const Stats: React.FC = () => {
                                 <button
                                   className={`tab-chip ${draftSortMode === 'price' ? 'active' : ''}`}
                                   type="button"
-                                  style={{ padding: '2px 8px', fontSize: '0.7rem', minWidth: 'auto', margin: 0 }}
+                                  style={{ padding: '2px 8px', fontSize: '0.85rem', minWidth: 'auto', margin: 0 }}
                                   onClick={() => setDraftSortMode('price')}
                                 >
                                   Sort by Price
