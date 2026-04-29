@@ -252,6 +252,7 @@ const Stats: React.FC = () => {
   const draftSummary = useMemo(() => {
     const drafts = new Map<string, {
       draftId: string;
+      draftName: string | null;
       teamCount: number;
       auctionCount: number;
       highestBid: number;
@@ -264,6 +265,7 @@ const Stats: React.FC = () => {
       if (!dStat || dStat.total < 16) return;
       const existing = drafts.get(team.draft_id) || {
         draftId: team.draft_id,
+        draftName: (team as any).draft_name || null,
         teamCount: 0,
         auctionCount: 0,
         highestBid: 0,
@@ -273,7 +275,7 @@ const Stats: React.FC = () => {
       drafts.set(team.draft_id, existing);
     });
 
-    (stats?.auctions ?? []).forEach((auction) => {
+    (stats?.auctions ?? []).forEach((auction: any) => {
       if (auction.winning_bid === null) return;
       const dStat = draftStats.get(auction.draft_id);
       if (!dStat || dStat.total < 1) return;
@@ -281,6 +283,7 @@ const Stats: React.FC = () => {
 
       const existing = drafts.get(auction.draft_id) || {
         draftId: auction.draft_id,
+        draftName: auction.draft_name || null,
         teamCount: 0,
         auctionCount: 0,
         highestBid: 0,
@@ -288,6 +291,11 @@ const Stats: React.FC = () => {
       };
 
       const winningBid = auction.winning_bid ?? 0;
+
+      if (!existing.draftName && auction.draft_name) {
+        existing.draftName = auction.draft_name;
+      }
+
       existing.auctionCount += 1;
       if (winningBid > existing.highestBid) {
         existing.highestBid = winningBid;
@@ -512,7 +520,7 @@ const Stats: React.FC = () => {
                 <table>
                   <thead>
                     <tr>
-                      <th>Draft ID</th>
+                      <th>Draft Title</th>
                       <th>Date</th>
                       <th>Players</th>
                       <th>Pokemon Sold</th>
@@ -538,7 +546,7 @@ const Stats: React.FC = () => {
                             if (isOpening) setDraftSortMode('order');
                           }}
                         >
-                          <td className="mono">{draft.draftId}</td>
+                          <td>{draft.draftName || draft.draftId}</td>
                           <td>{draft.formattedDate}</td>
                           <td>{draft.teamCount}</td>
                           <td>{draft.auctionCount}</td>
