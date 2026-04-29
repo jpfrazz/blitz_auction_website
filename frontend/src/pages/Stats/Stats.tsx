@@ -50,6 +50,7 @@ const Stats: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<StatsTab>('pokemon');
   const [expandedDraftId, setExpandedDraftId] = useState<string | null>(null);
+  const [draftSortMode, setDraftSortMode] = useState<'order' | 'price'>('order');
   const [competitiveOnly, setCompetitiveOnly] = useState(true);
 
   useEffect(() => {
@@ -531,7 +532,11 @@ const Stats: React.FC = () => {
                             animationDelay: `${200 + index * 30}ms`,
                             backgroundColor: validDraftIds.has(draft.draftId) ? 'rgba(76, 175, 80, 0.1)' : undefined
                           }}
-                          onClick={() => setExpandedDraftId((prev) => (prev === draft.draftId ? null : draft.draftId))}
+                          onClick={() => {
+                            const isOpening = expandedDraftId !== draft.draftId;
+                            setExpandedDraftId(isOpening ? draft.draftId : null);
+                            if (isOpening) setDraftSortMode('order');
+                          }}
                         >
                           <td className="mono">{draft.draftId}</td>
                           <td>{draft.formattedDate}</td>
@@ -554,11 +559,42 @@ const Stats: React.FC = () => {
                         </tr>
                         {expandedDraftId === draft.draftId && (
                           <tr className="draft-details-row">
-                            <td colSpan={5}>
+                            <td colSpan={6}>
+                              <div className="draft-details-controls" style={{ display: 'flex', gap: '16px', marginBottom: '12px', padding: '10px 10px 0', fontSize: '0.9rem' }}>
+                                <span 
+                                  style={{ 
+                                    cursor: 'pointer', 
+                                    textDecoration: draftSortMode === 'order' ? 'underline' : 'none',
+                                    color: draftSortMode === 'order' ? '#4caf50' : '#888',
+                                    fontWeight: draftSortMode === 'order' ? 'bold' : 'normal',
+                                    transition: 'color 0.2s'
+                                  }}
+                                  onClick={() => setDraftSortMode('order')}
+                                >
+                                  Sort by Sale Order
+                                </span>
+                                <span 
+                                  style={{ 
+                                    cursor: 'pointer', 
+                                    textDecoration: draftSortMode === 'price' ? 'underline' : 'none',
+                                    color: draftSortMode === 'price' ? '#4caf50' : '#888',
+                                    fontWeight: draftSortMode === 'price' ? 'bold' : 'normal',
+                                    transition: 'color 0.2s'
+                                  }}
+                                  onClick={() => setDraftSortMode('price')}
+                                >
+                                  Sort by Price
+                                </span>
+                              </div>
                               <div className="draft-details-grid">
                                 {(stats?.auctions ?? [])
                                   .filter((a) => a.draft_id === draft.draftId && a.winning_bid !== null)
-                                  .sort((a, b) => (b.winning_bid ?? 0) - (a.winning_bid ?? 0))
+                                  .sort((a, b) => {
+                                    if (draftSortMode === 'price') {
+                                      return (b.winning_bid ?? 0) - (a.winning_bid ?? 0);
+                                    }
+                                    return a.draft_order - b.draft_order;
+                                  })
                                   .map((auction) => {
                                     const winnerKey = auction.winning_user_id || auction.winning_guest_id || '';
                                     const winnerName = playersById.get(winnerKey)?.user_name || winnerKey || '-';
