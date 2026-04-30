@@ -117,6 +117,7 @@ export interface StatsAuction {
   pokedex_id: number;
   name: string;
   form: string;
+  draft_name: string;
   draft_id: string;
   draft_order: number;
   state: string;
@@ -148,6 +149,7 @@ export interface StatsPageTeamRow {
   user_id: string | null;
   guest_id: string | null;
   draft_id: string;
+  draft_name: string;
   money_remaining: number;
   pokemon_drafted: number;
   placement: number | null;

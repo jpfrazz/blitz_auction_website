@@ -261,24 +261,28 @@ const Stats: React.FC = () => {
 
     (stats?.teams ?? []).forEach((team) => {
       const dStat = draftStats.get(team.draft_id);
-      if (!dStat || dStat.total < 1) return;
       if (!dStat || dStat.total < 16) return;
+
       const existing = drafts.get(team.draft_id) || {
         draftId: team.draft_id,
-        draftName: (team as any).draft_name || null,
+        draftName: null,
         teamCount: 0,
         auctionCount: 0,
         highestBid: 0,
         date: null,
       };
+
+      if (!existing.draftName && team.draft_name) {
+        existing.draftName = team.draft_name;
+      }
+
       existing.teamCount += 1;
       drafts.set(team.draft_id, existing);
     });
 
-    (stats?.auctions ?? []).forEach((auction: any) => {
+    (stats?.auctions ?? []).forEach((auction) => {
       if (auction.winning_bid === null) return;
       const dStat = draftStats.get(auction.draft_id);
-      if (!dStat || dStat.total < 1) return;
       if (!dStat || dStat.total < 16) return;
 
       const existing = drafts.get(auction.draft_id) || {

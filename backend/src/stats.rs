@@ -26,6 +26,7 @@ pub struct StatsTeam {
     pub user_id: Option<String>,
     pub guest_id: Option<String>,
     pub draft_id: uuid::Uuid,
+    pub draft_name: String,
     pub placement: Option<i32>,
 }
 
@@ -33,6 +34,7 @@ pub struct StatsTeam {
 pub struct StatsAuction {
     pub auction_id: i64,
     pub draft_id: uuid::Uuid,
+    pub draft_name: String,
     pub pokedex_id: i32,
     pub draft_order: i32,
     pub name: String,
@@ -104,17 +106,21 @@ pub async fn get_stats_page_data(
     .await
     .map_err(|e| (axum::http::StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
 
-    let teams =
-        sqlx::query_as::<_, StatsTeam>("SELECT user_id, guest_id, draft_id, placement FROM teams")
-            .fetch_all(&state.db_pool)
-            .await
-            .map_err(|e| (axum::http::StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let teams = sqlx::query_as::<_, StatsTeam>(
+        "SELECT t.user_id, t.guest_id, t.draft_id, d.draft_name, t.placement 
+         FROM teams t
+         JOIN drafts d ON d.draft_id = t.draft_id"
+    )
+    .fetch_all(&state.db_pool)
+    .await
+    .map_err(|e| (axum::http::StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
 
     let auctions = sqlx::query_as::<_, StatsAuction>(
         r#"
         SELECT 
             auction_id, 
-            draft_id, 
+            a.draft_id,
+            d.draft_name,
             a.pokedex_id,
             a.draft_order,
             p.name,
@@ -125,6 +131,7 @@ pub async fn get_stats_page_data(
             created_at 
         FROM auctions AS a
         JOIN pokemon AS p ON a.pokedex_id = p.pokedex_id AND COALESCE(a.form, '') = p.form
+        JOIN drafts AS d ON d.draft_id = a.draft_id
         WHERE winning_bid IS NOT NULL
         ORDER BY a.draft_id, a.draft_order ASC
         "#,
