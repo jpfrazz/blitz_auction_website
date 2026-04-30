@@ -261,28 +261,24 @@ const Stats: React.FC = () => {
 
     (stats?.teams ?? []).forEach((team) => {
       const dStat = draftStats.get(team.draft_id);
+      if (!dStat || dStat.total < 1) return;
       if (!dStat || dStat.total < 16) return;
-
       const existing = drafts.get(team.draft_id) || {
         draftId: team.draft_id,
-        draftName: null,
+        draftName: (team as any).draft_name || null,
         teamCount: 0,
         auctionCount: 0,
         highestBid: 0,
         date: null,
       };
-
-      if (!existing.draftName && team.draft_name) {
-        existing.draftName = team.draft_name;
-      }
-
       existing.teamCount += 1;
       drafts.set(team.draft_id, existing);
     });
 
-    (stats?.auctions ?? []).forEach((auction) => {
+    (stats?.auctions ?? []).forEach((auction: any) => {
       if (auction.winning_bid === null) return;
       const dStat = draftStats.get(auction.draft_id);
+      if (!dStat || dStat.total < 1) return;
       if (!dStat || dStat.total < 16) return;
 
       const existing = drafts.get(auction.draft_id) || {
@@ -524,7 +520,7 @@ const Stats: React.FC = () => {
                 <table>
                   <thead>
                     <tr>
-                      <th>Draft Title</th>
+                      <th>Draft ID</th>
                       <th>Date</th>
                       <th>Players</th>
                       <th>Pokemon Sold</th>
