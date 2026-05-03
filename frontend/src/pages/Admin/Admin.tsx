@@ -201,7 +201,8 @@ const Admin: React.FC = () => {
         if (response.ok) {
             setUploadSuccess(`${file.name} uploaded successfull`);
         } else {
-            setUploadError(`failed to upload file: ${response.body}`);
+            const errorText = await response.text();
+            setUploadError(`failed to upload file: ${errorText || response.statusText}`);
         }
     } catch (error) {
         const error_message = error instanceof Error ? error.message : 'An unknown error occured';

@@ -174,17 +174,19 @@ pub async fn update_pokemon_key_moves_data(
     let mut csv_ids: Vec<i32> = Vec::new();
     let mut csv_forms: Vec<String> = Vec::new();
     let mut csv_moves: Vec<String> = Vec::new();
+    let mut csv_species: Vec<String> = Vec::new();
 
     for key_move in key_move_data.iter() {
         csv_ids.push(key_move.pokedex_id);
         csv_forms.push(key_move.form.clone().unwrap_or_default());
         csv_moves.push(key_move.move_name.clone());
+        csv_species.push(key_move.species.clone().unwrap_or_default());
 
         let _ = sqlx::query!(
             r#"
             INSERT INTO key_moves (pokedex_id, form, move_name, learn_method, species, display_order)
             VALUES ($1, $2, $3, $4, $5, $6)
-            ON CONFLICT (pokedex_id, form, move_name) DO UPDATE SET
+            ON CONFLICT (pokedex_id, form, move_name, species) DO UPDATE SET
                 learn_method = EXCLUDED.learn_method,
                 species = EXCLUDED.species,
                 display_order = EXCLUDED.display_order
@@ -193,7 +195,7 @@ pub async fn update_pokemon_key_moves_data(
             key_move.form.clone().unwrap_or_default(),
             key_move.move_name,
             key_move.learn_method.clone().unwrap_or_default(),
-            key_move.species,
+            key_move.species.clone().unwrap_or_default(),
             key_move.display_order
         )
         .execute(&mut *tx)
@@ -212,16 +214,18 @@ pub async fn update_pokemon_key_moves_data(
                 DELETE FROM key_moves
                 WHERE NOT EXISTS (
                     SELECT 1 
-                    FROM UNNEST($1::int[], $2::text[], $3::text[]) AS uploaded(u_id, u_form, u_move)
+                    FROM UNNEST($1::int[], $2::text[], $3::text[], $4::text[]) AS uploaded(u_id, u_form, u_move, u_species)
                     WHERE key_moves.pokedex_id = uploaded.u_id 
                       AND key_moves.form = uploaded.u_form
                       AND key_moves.move_name = uploaded.u_move
+                      AND key_moves.species = uploaded.u_species
                 )
                 "#,
         )
         .bind(&csv_ids)
         .bind(&csv_forms)
         .bind(&csv_moves)
+        .bind(&csv_species)
         .execute(&mut *tx)
         .await
         .map_err(|e| {
