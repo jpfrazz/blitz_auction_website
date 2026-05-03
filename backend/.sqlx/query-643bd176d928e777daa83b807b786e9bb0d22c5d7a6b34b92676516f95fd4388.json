@@ -1,0 +1,19 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            INSERT INTO key_moves (pokedex_id, form, move_name, learn_method, species, display_order)\n            VALUES ($1, $2, $3, $4, $5, $6)\n            ON CONFLICT (pokedex_id, form, move_name, species) DO UPDATE SET\n                learn_method = EXCLUDED.learn_method,\n                species = EXCLUDED.species,\n                display_order = EXCLUDED.display_order\n            ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Int4",
+        "Text",
+        "Text",
+        "Text",
+        "Text",
+        "Int4"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "643bd176d928e777daa83b807b786e9bb0d22c5d7a6b34b92676516f95fd4388"
+}
