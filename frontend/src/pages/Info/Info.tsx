@@ -371,6 +371,7 @@ const Info = () => (
               <div className="evo-icons">
                 <img src="/MiniIcons/aron.png" alt="Aron" />
                 <img src="/MiniIcons/duskull.png" alt="Duskull" />
+                <img src="/MiniIcons/frigibax.png" alt="Frigibax" />
                 <img src="/MiniIcons/goomy.png" alt="Goomy" />
                 <img src="/MiniIcons/hatenna.png" alt="Hatenna" />
                 <img src="/MiniIcons/honedge.png" alt="Honedge" />
@@ -387,6 +388,7 @@ const Info = () => (
               <ul>
                 <li>Aron &gt; Lairon</li>
                 <li>Duskull &gt; Dusclops</li>
+                <li>Frigibax &gt; Arctibax</li>
                 <li>Goomy &gt; Sliggoo</li>
                 <li>Hatenna &gt; Hattrem</li>
                 <li>Honedge &gt; Doublade</li>
@@ -419,6 +421,7 @@ const Info = () => (
                 <img src="/MiniIcons/ponyta.png" alt="Ponyta" />
                 <img src="/MiniIcons/rufflet.png" alt="Rufflet" />
                 <img src="/MiniIcons/sandygast.png" alt="Sandygast" />
+                <img src="/MiniIcons/scraggy.png" alt="Scraggy" />
                 <img src="/MiniIcons/shuppet.png" alt="Shuppet" />
                 <img src="/MiniIcons/skorupi.png" alt="Skorupi" />
                 <img src="/MiniIcons/slowpoke.png" alt="Slowpoke" />
@@ -442,6 +445,7 @@ const Info = () => (
                 <li>Ponyta &gt; Rapidash</li>
                 <li>Rufflet &gt; Braviary</li>
                 <li>Sandygast &gt; Palossand</li>
+                <li>Scraggy &gt; Scrafty</li>
                 <li>Shuppet &gt; Banette</li>
                 <li>Skorupi &gt; Drapion</li>
                 <li>Slowpoke &gt; Slowbro-Galar</li>
