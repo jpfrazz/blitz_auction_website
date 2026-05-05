@@ -631,6 +631,7 @@ const Info = () => (
               <li>Pyroarite</li>
               <li>Raichunite X</li>
               <li>Scizorite</li>
+              <li>Scraftinite</li>
               <li>Sharpedonite</li>
               <li>Starmite</li>
               <li>Steelixite</li>
@@ -641,6 +642,7 @@ const Info = () => (
             <ul className="slateport-list">
               <li>Aggronite</li>
               <li>Ampharosite</li>
+              <li>Baxcalibrite</li>
               <li>Blastoisinite</li>
               <li>Blazikenite</li>
               <li>Chandelurite</li>
