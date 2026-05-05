@@ -32,10 +32,10 @@ Fixed a bug when returning a rental Pokémon when all other player Pokémon are 
 Pool Additions
 -----------------------------------------------
 
-Cyndaquil
-Frigibax
-Oshawott
-Scrafty
++Cyndaquil
++Frigibax
++Oshawott
++Scraggy
 
 //Samurott and Typhlosion evolve into their Hisuian forms at night, like Decidueye.
 //The streets are already saying that I'm afraid of Chikorita. No, I'm afraid of implementing its mega's ability.
