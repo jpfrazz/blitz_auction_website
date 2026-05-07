@@ -41,6 +41,16 @@ const getTypeIconSrc = (type: string) => {
   return `/TypeIcons/${formattedType}IC_SV.png`;
 };
 
+const getBulbapediaAbilityUrl = (abilityName: string) => {
+  const formattedName = abilityName.replace(/ /g, '_');
+  return `https://bulbapedia.bulbagarden.net/wiki/${formattedName}_(Ability)`;
+};
+
+const getBulbapediaMoveUrl = (moveName: string) => {
+  const formattedName = moveName.replace(/ /g, '_');
+  return `https://bulbapedia.bulbagarden.net/wiki/${formattedName}_(move)`;
+};
+
 function buildEvolutionTree(
   root: Pokemon,
   allPokemon: Pokemon[],
@@ -131,9 +141,27 @@ const EvolutionTree: React.FC<{ node: EvoNode }> = ({ node }) => {
           {!isBaseform && (
             <>
               <div className="evo-pokemon-ability">
-                {node.pokemon.ability1 && <div>{node.pokemon.ability1}</div>}
-                {node.pokemon.ability2 && <div>{node.pokemon.ability2}</div>}
-                {node.pokemon.hidden_ability && <div>{node.pokemon.hidden_ability} (H)</div>}
+                {node.pokemon.ability1 && (
+                  <div
+                    className="ability-name clickable"
+                    onClick={() => window.open(getBulbapediaAbilityUrl(node.pokemon.ability1!), '_blank')}
+                  >
+                    {node.pokemon.ability1}
+                  </div>
+                )}
+                {node.pokemon.ability2 && (
+                  <div
+                    className="ability-name clickable"
+                    onClick={() => window.open(getBulbapediaAbilityUrl(node.pokemon.ability2!), '_blank')}
+                  >
+                    {node.pokemon.ability2}
+                  </div>
+                )}
+                {node.pokemon.hidden_ability && (
+                  <div className="ability-name clickable"
+                    onClick={() => window.open(getBulbapediaAbilityUrl(node.pokemon.hidden_ability!), '_blank')}
+                  >{node.pokemon.hidden_ability} (H)</div>
+                )}
               </div>
               {node.pokemon.stats && (
                 <>
@@ -302,10 +330,35 @@ const CurrentPokemonPanel: React.FC<CurrentPokemonPanelProps> = ({ current_aucti
 
         <div className="pokemon-type-ability">
           <div className="ability-text">
-            {pokemonData.ability1 && <div>{pokemonData.ability1}</div>}
-            {pokemonData.ability2 && <div>{pokemonData.ability2}</div>}
-            {pokemonData.hidden_ability && <div>{pokemonData.hidden_ability} (H)</div>}
+            {pokemonData.ability1 && (
+              <div
+                className="ability-name clickable"
+                onClick={() => window.open(getBulbapediaAbilityUrl(pokemonData.ability1!), '_blank')}
+              >
+                {pokemonData.ability1}
+              </div>
+            )}
+            {pokemonData.ability2 && (
+              <div
+                className="ability-name clickable"
+                onClick={() => window.open(getBulbapediaAbilityUrl(pokemonData.ability2!), '_blank')}
+              >
+                {pokemonData.ability2}
+              </div>
+            )}
+            {pokemonData.hidden_ability && (
+              <div
+                className="ability-name clickable"
+                onClick={() => window.open(getBulbapediaAbilityUrl(pokemonData.hidden_ability!), '_blank')}
+              >
+                {pokemonData.hidden_ability} (H)
+              </div>
+            )}
           </div>
+        </div>
+
+        <div className="pokemon-type-ability">
+          {/* ... existing type icons ... */}
         </div>
 
         <div className="pokemon-stats">
@@ -426,10 +479,24 @@ const CurrentPokemonPanel: React.FC<CurrentPokemonPanelProps> = ({ current_aucti
                         className="key-move-species-img"
                         style={{ maxWidth: 20, maxHeight: 20, width: 'auto', height: 'auto', marginRight: 6, verticalAlign: 'middle' }}
                       />
-                      {move.move_name} ({formatLearnMethod(move.learn_method)})
+                      <span
+                        className="move-name clickable"
+                        onClick={() => window.open(getBulbapediaMoveUrl(move.move_name), '_blank')}
+                      >
+                        {move.move_name}
+                      </span>{" "}
+                      ({formatLearnMethod(move.learn_method)})
                     </>
                   ) : (
-                    <>{move.move_name} ({formatLearnMethod(move.learn_method)})</>
+                    <>
+                      <span
+                        className="move-name clickable"
+                        onClick={() => window.open(getBulbapediaMoveUrl(move.move_name), '_blank')}
+                      >
+                        {move.move_name}
+                      </span>{" "}
+                      ({formatLearnMethod(move.learn_method)})
+                    </>
                   )}
                 </div>
               ))}
