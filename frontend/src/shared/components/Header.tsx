@@ -131,6 +131,29 @@ function Header() {
   }, [notes, user?.user_id]);
 
   useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key.toLowerCase() === 'n') {
+        // Only trigger if user is logged in via Discord (not a guest)
+        if (!user || user.is_guest) return;
+        
+        // Prevent opening if the user is currently typing in a form field or chat
+        const activeElement = document.activeElement;
+        const isTyping =
+          activeElement instanceof HTMLInputElement ||
+          activeElement instanceof HTMLTextAreaElement ||
+          (activeElement as HTMLElement)?.isContentEditable;
+
+        if (!isTyping) {
+          setShowNotes(prev => !prev);
+        }
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [user]);
+
+  useEffect(() => {
     if (showNotes && modalPos.x === 0 && modalPos.y === 0) {
       setModalPos({
         x: (window.innerWidth - modalSize.width) / 2,
