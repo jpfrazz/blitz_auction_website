@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import './Header.scss';
 import { Link, useLocation } from 'react-router-dom';
 import { fetchCurrentUser, changeGuestName } from '../api/draftData';
@@ -47,6 +47,17 @@ function Header() {
   const [newGuestName, setNewGuestName] = useState('');
   const [nameError, setNameError] = useState<string | null>(null);
   const [changingName, setChangingName] = useState(false);
+  const [showNotes, setShowNotes] = useState(false);
+  const [notes, setNotes] = useState('');
+  const [fontSize, setFontSize] = useState(16);
+  const editorRef = useRef<HTMLDivElement>(null);
+
+  const [modalPos, setModalPos] = useState({ x: 0, y: 0 });
+  const [modalSize, setModalSize] = useState({ width: 560, height: 640 });
+  const [isDragging, setIsDragging] = useState(false);
+  const [isResizing, setIsResizing] = useState(false);
+  const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
+
   const [isAuctionSoundMuted, setIsAuctionSoundMuted] = useState<boolean>(() => {
     if (typeof window === 'undefined') {
       return true;
@@ -60,6 +71,104 @@ function Header() {
     return localStorage.getItem(HEADER_PINNED_KEY) !== 'false';
   });
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+
+  useEffect(() => {
+    if (user?.user_id) {
+      const savedNotes = localStorage.getItem(`user_notes_${user.user_id}`);
+      setNotes(savedNotes || '');
+
+      const savedFontSize = localStorage.getItem(`user_notes_font_size_${user.user_id}`);
+      if (savedFontSize) {
+        setFontSize(parseInt(savedFontSize, 10));
+      }
+
+      const savedPos = localStorage.getItem(`user_notes_pos_${user.user_id}`);
+      if (savedPos) {
+        try {
+          setModalPos(JSON.parse(savedPos));
+        } catch (e) {
+          console.error("Error loading notes position:", e);
+        }
+      }
+
+      const savedSize = localStorage.getItem(`user_notes_size_${user.user_id}`);
+      if (savedSize) {
+        try {
+          setModalSize(JSON.parse(savedSize));
+        } catch (e) {
+          console.error("Error loading notes size:", e);
+        }
+      }
+    }
+  }, [user?.user_id]);
+
+  useEffect(() => {
+    if (user?.user_id && (modalPos.x !== 0 || modalPos.y !== 0)) {
+      localStorage.setItem(`user_notes_pos_${user.user_id}`, JSON.stringify(modalPos));
+    }
+  }, [modalPos, user?.user_id]);
+
+  useEffect(() => {
+    if (user?.user_id) {
+      localStorage.setItem(`user_notes_size_${user.user_id}`, JSON.stringify(modalSize));
+    }
+  }, [modalSize, user?.user_id]);
+
+  useEffect(() => {
+    if (user?.user_id) {
+      localStorage.setItem(`user_notes_font_size_${user.user_id}`, fontSize.toString());
+    }
+  }, [fontSize, user?.user_id]);
+
+  useEffect(() => {
+    if (user?.user_id) {
+      const timer = setTimeout(() => {
+        localStorage.setItem(`user_notes_${user.user_id}`, notes);
+      }, 500); // Wait for 500ms of inactivity before saving
+
+      return () => clearTimeout(timer);
+    }
+  }, [notes, user?.user_id]);
+
+  useEffect(() => {
+    if (showNotes && modalPos.x === 0 && modalPos.y === 0) {
+      setModalPos({
+        x: (window.innerWidth - modalSize.width) / 2,
+        y: (window.innerHeight - modalSize.height) / 2,
+      });
+    }
+  }, [showNotes, modalSize.width, modalSize.height, modalPos.x, modalPos.y]);
+
+  useEffect(() => {
+    const handleMouseMove = (e: MouseEvent) => {
+      if (isDragging) {
+        setModalPos({
+          x: e.clientX - dragOffset.x,
+          y: e.clientY - dragOffset.y
+        });
+      }
+      if (isResizing) {
+        setModalSize({
+          width: Math.max(320, e.clientX - modalPos.x),
+          height: Math.max(320, e.clientY - modalPos.y)
+        });
+      }
+    };
+
+    const handleMouseUp = () => {
+      setIsDragging(false);
+      setIsResizing(false);
+    };
+
+    if (isDragging || isResizing) {
+      window.addEventListener('mousemove', handleMouseMove);
+      window.addEventListener('mouseup', handleMouseUp);
+    }
+    return () => {
+      window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('mouseup', handleMouseUp);
+    };
+  }, [isDragging, isResizing, dragOffset, modalPos]);
 
   const toggleAuctionSoundMuted = () => {
     const nextMuted = !isAuctionSoundMuted;
@@ -98,6 +207,11 @@ function Header() {
     } finally {
       setChangingName(false);
     }
+  };
+
+  const handleNotesChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    const value = e.target.value;
+    setNotes(value);
   };
 
   return (
@@ -244,6 +358,17 @@ function Header() {
               </button>
             </div>
           )}
+          {user && !user.is_guest && (
+            <button
+              type="button"
+              className="headerNotesToggle"
+              onClick={() => setShowNotes(true)}
+              title="Open Notes"
+              aria-label="Open Notes"
+            >
+              <img src="/generic/pencil.png" alt="Notes" />
+            </button>
+          )}
         </nav>
       </div>
       {showNameModal && (
@@ -269,6 +394,85 @@ function Header() {
                 {changingName ? 'Changing...' : 'Change Name'}
               </button>
             </div>
+          </div>
+        </div>
+      )}
+      {showNotes && (
+        <div className="notes-modal-overlay" onClick={() => setShowNotes(false)}>
+          <div 
+            className="notes-modal" 
+            onClick={e => e.stopPropagation()}
+            style={{
+              left: `${modalPos.x}px`,
+              top: `${modalPos.y}px`,
+              width: `${modalSize.width}px`,
+              height: `${modalSize.height}px`,
+            }}
+          >
+            <div className="notes-modal-header" onMouseDown={(e) => {
+              setIsDragging(true);
+              setDragOffset({ x: e.clientX - modalPos.x, y: e.clientY - modalPos.y });
+            }}>
+              <h3 className="notes-modal-title">Notes</h3>
+              <button 
+                className="notes-modal-minimize" 
+                onClick={() => setShowNotes(false)}
+                title="Minimize"
+              >
+                _
+              </button>
+            </div>
+            <div className="notes-toolbar">
+              <button 
+                type="button" 
+                onMouseDown={e => e.preventDefault()} 
+                onClick={() => document.execCommand('bold', false)}
+                title="Bold"
+              >B</button>
+              <button 
+                type="button" 
+                onMouseDown={e => e.preventDefault()} 
+                onClick={() => document.execCommand('italic', false)}
+                title="Italic"
+              >I</button>
+              <button 
+                type="button" 
+                onMouseDown={e => e.preventDefault()} 
+                onClick={() => document.execCommand('underline', false)}
+                title="Underline"
+              >U</button>
+              <select 
+                value={fontSize} 
+                onChange={(e) => setFontSize(parseInt(e.target.value, 10))}
+                title="Font Size"
+              >
+                {[14, 16, 18, 20, 24, 28, 32].map(size => (
+                  <option key={size} value={size}>{size}px</option>
+                ))}
+              </select>
+            </div>
+            <div className="notes-modal-content">
+              <div
+                className="notes-editor"
+                contentEditable
+                suppressContentEditableWarning
+                onInput={(e) => setNotes(e.currentTarget.innerHTML)}
+                onKeyDown={(e) => {
+                  // Stop propagation so Home.tsx space bar listener doesn't trigger
+                  e.stopPropagation();
+                }}
+                style={{ fontSize: `${fontSize}px` }}
+                ref={(el) => {
+                  if (el && !el.innerHTML && notes) {
+                    el.innerHTML = notes;
+                  }
+                }}
+              />
+            </div>
+            <div 
+              className="notes-modal-resizer" 
+              onMouseDown={(e) => { e.stopPropagation(); setIsResizing(true); }}
+            />
           </div>
         </div>
       )}
