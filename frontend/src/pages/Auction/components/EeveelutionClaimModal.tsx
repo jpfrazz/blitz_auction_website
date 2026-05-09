@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Team } from '../../../types';
+import React, { useState, useEffect } from 'react';
+import { Team, UserRole } from '../../../types';
 import './EeveelutionClaimModal.scss';
 
 interface Eeveelution {
@@ -13,8 +13,9 @@ interface EeveelutionClaimModalProps {
   eeveelutions: Eeveelution[];
   teams: Team[];
   currentUserId: string | null;
-  onClaim: (pokedexId: number, form: string | null) => Promise<void>;
-  onUnclaim: (pokedexId: number, form: string | null) => Promise<void>;
+  currentUserRoles?: UserRole[];
+  onClaim: (pokedexId: number, form: string | null, targetUserId: string) => Promise<void>;
+  onUnclaim: (pokedexId: number, form: string | null, targetUserId: string) => Promise<void>;
   onClose: () => void;
 }
 
@@ -22,12 +23,23 @@ const EeveelutionClaimModal: React.FC<EeveelutionClaimModalProps> = ({
   eeveelutions,
   teams,
   currentUserId,
+  currentUserRoles,
   onClaim,
   onUnclaim,
   onClose,
 }) => {
   const [claiming, setClaiming] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [targetUserId, setTargetUserId] = useState<string | null>(currentUserId);
+
+  const isReferee = currentUserRoles?.some(role => role === 'Referee' || role === 'Admin');
+
+  // Set default target user if referee is selecting
+  useEffect(() => {
+    if (isReferee && !targetUserId && teams.length > 0) {
+      setTargetUserId(currentUserId || teams[0].user_id);
+    }
+  }, [isReferee, teams, currentUserId]);
 
   // Determine which eeveelutions are already claimed by checking all teams
   const getClaimedInfo = (pokedexId: number, form: string | null): { username: string; userId: string } | null => {
@@ -48,8 +60,16 @@ const EeveelutionClaimModal: React.FC<EeveelutionClaimModalProps> = ({
     setError(null);
     setClaiming(`${eeveelution.pokedex_id}-${eeveelution.form}`);
 
+    const userIdToClaim = isReferee ? targetUserId : currentUserId;
+
+    if (!userIdToClaim) {
+      setError('No user selected to claim for');
+      setClaiming(null);
+      return;
+    }
+
     try {
-      await onClaim(eeveelution.pokedex_id, eeveelution.form);
+      await onClaim(eeveelution.pokedex_id, eeveelution.form, userIdToClaim);
     } catch (err: any) {
       setError(err?.message || 'Failed to claim Eeveelution');
     } finally {
@@ -57,12 +77,12 @@ const EeveelutionClaimModal: React.FC<EeveelutionClaimModalProps> = ({
     }
   };
 
-  const handleUnclaim = async (eeveelution: Eeveelution) => {
+  const handleUnclaim = async (eeveelution: Eeveelution, userId: string) => {
     setError(null);
     setClaiming(`${eeveelution.pokedex_id}-${eeveelution.form}`);
 
     try {
-      await onUnclaim(eeveelution.pokedex_id, eeveelution.form);
+      await onUnclaim(eeveelution.pokedex_id, eeveelution.form, userId);
     } catch (err: any) {
       setError(err?.message || 'Failed to unclaim Eeveelution');
     } finally {
@@ -92,6 +112,23 @@ const EeveelutionClaimModal: React.FC<EeveelutionClaimModalProps> = ({
           <p>Select which Eeveelution you want to use:</p>
         </div>
 
+        {isReferee && (
+          <div className="eeveelution-referee-controls">
+            <label htmlFor="user-select">Acting as Referee - Claiming for:</label>
+            <select 
+              id="user-select"
+              value={targetUserId || ''} 
+              onChange={(e) => setTargetUserId(e.target.value)}
+            >
+              {teams.map(team => (
+                <option key={team.user_id} value={team.user_id}>
+                  {team.username}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
+
         {error && <div className="eeveelution-modal-error">{error}</div>}
 
         <div className="eeveelution-grid">
@@ -116,10 +153,10 @@ const EeveelutionClaimModal: React.FC<EeveelutionClaimModalProps> = ({
                 <div className="eeveelution-card-name">{eeveelution.name}</div>
 
                 {isClaimed ? (
-                  isCurrentUserClaim ? (
+                  (isCurrentUserClaim || isReferee) ? (
                     <button
                       className="eeveelution-button claimed current-user-unclaim"
-                      onClick={() => handleUnclaim(eeveelution)}
+                      onClick={() => handleUnclaim(eeveelution, claimedInfo.userId)}
                       disabled={isClaiming || claiming !== null}
                     >
                       {isClaiming ? 'Unclaiming...' : 'Unclaim'}

@@ -143,10 +143,11 @@ export async function placeBid(draft_id: string, auction_id: string, value: numb
   return response;
 }
 // Claim an eeveelution after draft completes
-export async function claimEeveelution(draft_id: string, pokedex_id: number, form: string | null): Promise<any> {
+export async function claimEeveelution(draft_id: string, pokedex_id: number, form: string | null, user_id?: string): Promise<any> {
   const response = await axios.post(`/api/drafts/${draft_id}/claim-eeveelution`, {
     pokedex_id,
-    form
+    form,
+    user_id,
   });
   const data = response.data as EeveelutionClaimResponse;
   if (typeof data?.success === 'boolean' && !data.success) {
@@ -155,10 +156,11 @@ export async function claimEeveelution(draft_id: string, pokedex_id: number, for
   return data;
 }
 
-export async function unclaimEeveelution(draft_id: string, pokedex_id: number, form: string | null): Promise<any> {
+export async function unclaimEeveelution(draft_id: string, pokedex_id: number, form: string | null, user_id?: string): Promise<any> {
   const response = await axios.post(`/api/drafts/${draft_id}/unclaim-eeveelution`, {
     pokedex_id,
-    form
+    form,
+    user_id,
   });
   const data = response.data as EeveelutionClaimResponse;
   if (typeof data?.success === 'boolean' && !data.success) {
