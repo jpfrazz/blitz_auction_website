@@ -91,6 +91,28 @@ const PlayerSearchStatsTab: React.FC<PlayerSearchStatsTabProps> = ({
     return playerMatchHistory.filter(team => validDraftIds.has(team.draft_id));
   }, [playerMatchHistory, validDraftIds]);
 
+  const playerGamesMap = useMemo(() => {
+    const map = new Map<string, number>();
+    if (!stats) return map;
+    stats.teams.forEach((team) => {
+      const id = team.user_id || team.guest_id;
+      if (id && validDraftIds.has(team.draft_id)) {
+        map.set(id, (map.get(id) || 0) + 1);
+      }
+    });
+    return map;
+  }, [stats, validDraftIds]);
+
+  const topPlayers = useMemo(() => {
+    if (!stats?.players) return [];
+    return stats.players
+      .filter((p) => !p.is_guest)
+      .map((p) => ({ ...p, gamesPlayed: playerGamesMap.get(p.user_id) || 0 }))
+      .filter((p) => p.gamesPlayed > 0)
+      .sort((a, b) => b.gamesPlayed - a.gamesPlayed)
+      .slice(0, 12);
+  }, [stats?.players, playerGamesMap]);
+
   const pokemonDraftSummary = useMemo<PokemonDraftSummary[]>(() => {
     if (!filteredMatchHistory?.length) {
       return [];
@@ -131,22 +153,6 @@ const PlayerSearchStatsTab: React.FC<PlayerSearchStatsTabProps> = ({
       return getPokemonLabel(left.name, left.form).localeCompare(getPokemonLabel(right.name, right.form));
     });
   }, [filteredMatchHistory]);
-
-  const [playerStatPills, setPlayerStatPills] = useState<PlayerStatPill[]>([]);
-
-  useEffect(() => {
-    if (!pokemonDraftSummary.length) {
-      setPlayerStatPills([]);
-      return;
-    }
-
-    let cancelled = false;
-    getPlayerStatPills(pokemonDraftSummary).then((pills) => {
-      if (!cancelled) setPlayerStatPills(pills);
-    });
-
-    return () => { cancelled = true; };
-  }, [pokemonDraftSummary]);
 
   const featuredPokemon = pokemonDraftSummary[0] ?? null;
 
@@ -243,11 +249,46 @@ const PlayerSearchStatsTab: React.FC<PlayerSearchStatsTabProps> = ({
             <div className="match-history-message error">{playerMatchHistoryError}</div>
           )}
 
+          {!selectedPlayer && !playerMatchHistoryLoading && topPlayers.length > 0 && (
+            <div className="player-search-suggestions" style={{ marginTop: '1.5rem' }}>
+              <p style={{ opacity: 0.6, fontSize: '0.9rem', marginBottom: '1rem' }}>Active Racers (Top Games Played)</p>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '10px' }}>
+                {topPlayers.map((player) => (
+                  <button
+                    key={player.user_id}
+                    type="button"
+                    className="suggestion-item"
+                    onClick={() => handleSelectPlayer(player as any)}
+                    style={{
+                      display: 'flex', alignItems: 'center', gap: '12px', background: 'rgba(255,255,255,0.05)',
+                      border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', padding: '10px',
+                      cursor: 'pointer', textAlign: 'left', color: 'inherit'
+                    }}
+                  >
+                    {(player as any).avatar ? (
+                      <img
+                        src={`https://cdn.discordapp.com/avatars/${player.user_id}/${(player as any).avatar}.png`}
+                        alt=""
+                        style={{ width: '32px', height: '32px', borderRadius: '50%' }}
+                      />
+                    ) : (
+                      <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: '#333' }} />
+                    )}
+                    <div style={{ display: 'flex', flexDirection: 'column' }}>
+                      <span style={{ fontWeight: 'bold', fontSize: '0.9rem' }}>{player.user_name}</span>
+                      <span style={{ fontSize: '0.75rem', opacity: 0.7 }}>{player.gamesPlayed} games</span>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
           {selectedPlayer && !playerMatchHistoryLoading && filteredMatchHistory && (
             <>
               {pokemonDraftSummary.length > 0 && (
                 <div className="player-draft-overview">
-                 pla {featuredPokemon && (
+                 {featuredPokemon && (
                     <div
                       className="player-draft-overview-background"
                       style={{
@@ -261,9 +302,18 @@ const PlayerSearchStatsTab: React.FC<PlayerSearchStatsTabProps> = ({
                     <div className="player-draft-overview-header">
                       <div>
                         {selectedPlayer && (
-                          <div className="player-draft-overview-profile-name">
-                            {selectedPlayer.user_name}
-                            {selectedPlayer.global_name && <span style={{ fontSize: '0.9em', opacity: 0.8, marginLeft: '8px' }}>({selectedPlayer.global_name})</span>}
+                          <div className="player-draft-overview-profile-name" style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '8px' }}>
+                            {(selectedPlayer as any).avatar && (
+                              <img
+                                src={`https://cdn.discordapp.com/avatars/${selectedPlayer.user_id}/${(selectedPlayer as any).avatar}.png`}
+                                alt=""
+                                style={{ width: '40px', height: '40px', borderRadius: '50%', border: '2px solid rgba(255,255,255,0.2)' }}
+                              />
+                            )}
+                            <div>
+                              <div style={{ fontSize: '1.2rem', fontWeight: 'bold' }}>{selectedPlayer.user_name}</div>
+                              {selectedPlayer.global_name && <div style={{ fontSize: '0.85rem', opacity: 0.8 }}>({selectedPlayer.global_name})</div>}
+                            </div>
                           </div>
                         )}
                         <span className="player-draft-overview-kicker">Most Drafted Pokemon</span>
@@ -282,20 +332,6 @@ const PlayerSearchStatsTab: React.FC<PlayerSearchStatsTabProps> = ({
                         </div>
                       )}
                     </div>
-
-                    {playerStatPills.length > 0 && (
-                      <div className="player-stat-pill-grid">
-                        {playerStatPills.map((pill: PlayerStatPill) => (
-                          <div
-                            className={`player-stat-pill player-stat-pill--${pill.tone}`}
-                            key={pill.key}
-                            title={pill.title}
-                          >
-                            {pill.label}
-                          </div>
-                        ))}
-                      </div>
-                    )}
 
                     <div className="player-draft-overview-table">
                       <div className="player-draft-overview-table-header">
@@ -339,13 +375,24 @@ const PlayerSearchStatsTab: React.FC<PlayerSearchStatsTabProps> = ({
               )}
 
               <div className="player-header">
-                <h3>
-                  {selectedPlayer.user_name}
-                  {selectedPlayer.global_name && <span style={{ fontSize: '0.8em', opacity: 0.7, marginLeft: '8px' }}>({selectedPlayer.global_name})</span>}
-                </h3>
-                <span className="player-stats">
-                  {filteredMatchHistory.length} game{filteredMatchHistory.length !== 1 ? 's' : ''}
-                </span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                  {(selectedPlayer as any).avatar && (
+                    <img
+                      src={`https://cdn.discordapp.com/avatars/${selectedPlayer.user_id}/${(selectedPlayer as any).avatar}.png`}
+                      alt=""
+                      style={{ width: '32px', height: '32px', borderRadius: '50%' }}
+                    />
+                  )}
+                  <div>
+                    <h3 style={{ margin: 0 }}>
+                      {selectedPlayer.user_name}
+                      {selectedPlayer.global_name && <span style={{ fontSize: '0.8em', opacity: 0.7, marginLeft: '8px' }}>({selectedPlayer.global_name})</span>}
+                    </h3>
+                    <span className="player-stats">
+                      {filteredMatchHistory.length} game{filteredMatchHistory.length !== 1 ? 's' : ''}
+                    </span>
+                  </div>
+                </div>
               </div>
 
               <div className="match-timeline">
