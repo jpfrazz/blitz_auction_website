@@ -255,7 +255,7 @@ const PlayerSearchStatsTab: React.FC<PlayerSearchStatsTabProps> = ({
           )}
 
           {!selectedPlayer && !playerMatchHistoryLoading && topPlayers.length > 0 && (
-            <div className="player-search-suggestions" style={{ marginTop: '1.5rem' }}>
+            <div className="player-search-suggestions" style={{ marginTop: '0.5rem' }}>
               <p style={{ opacity: 0.6, fontSize: '1.1rem', marginBottom: '1rem' }}>Active Racers (Top Games Played)</p>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '10px' }}>
                 {topPlayers.map((player) => (
@@ -280,8 +280,8 @@ const PlayerSearchStatsTab: React.FC<PlayerSearchStatsTabProps> = ({
                       <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: '#333' }} />
                     )}
                     <div style={{ display: 'flex', flexDirection: 'column' }}>
-                      <span style={{ fontWeight: 'bold', fontSize: '0.9rem' }}>{player.user_name}</span>
-                      <span style={{ fontSize: '0.75rem', opacity: 0.7 }}>{player.gamesPlayed} games</span>
+                      <span style={{ fontWeight: 'bold', fontSize: '1rem' }}>{player.user_name}</span>
+                      <span style={{ fontSize: '0.85rem', opacity: 0.7 }}>{player.gamesPlayed} games</span>
                     </div>
                   </button>
                 ))}
@@ -317,7 +317,7 @@ const PlayerSearchStatsTab: React.FC<PlayerSearchStatsTabProps> = ({
                             )}
                             <div>
                               <div style={{ fontSize: '1.2rem', fontWeight: 'bold' }}>{selectedPlayer.user_name}</div>
-                              {selectedPlayer.global_name && <div style={{ fontSize: '0.85rem', opacity: 0.8 }}>({selectedPlayer.global_name})</div>}
+                              {selectedPlayer.global_name && <div style={{ fontSize: '1rem', opacity: 0.8 }}>({selectedPlayer.global_name})</div>}
                             </div>
                           </div>
                         )}
@@ -360,7 +360,7 @@ const PlayerSearchStatsTab: React.FC<PlayerSearchStatsTabProps> = ({
                                 right: '-6px',
                                 background: '#222',
                                 color: '#fff',
-                                fontSize: '0.6rem',
+                                fontSize: '0.7rem',
                                 padding: '1px 3px',
                                 borderRadius: '3px',
                                 fontWeight: 'bold',

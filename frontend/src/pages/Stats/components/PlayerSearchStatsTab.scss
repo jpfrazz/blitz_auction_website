@@ -130,7 +130,7 @@
 
     .player-draft-overview-kicker {
         display: inline-block;
-        font-size: 0.76rem;
+        font-size: 0.9rem;
         font-weight: 700;
         letter-spacing: 0.08em;
         text-transform: uppercase;
@@ -140,7 +140,7 @@
     .player-draft-overview-profile-name {
         margin-bottom: 0.2rem;
         color: #f5fdfd;
-        font-size: 1rem;
+        font-size: 1.15rem;
         font-weight: 700;
     }
 
@@ -151,7 +151,7 @@
         border-radius: 999px;
         background: rgba(15, 20, 24, 0.72);
         color: $eb-text;
-        font-size: 0.9rem;
+        font-size: 1.05rem;
         font-weight: 600;
     }
 
@@ -188,7 +188,7 @@
         padding-bottom: 0.35rem;
         border-bottom: 1px solid #27323a;
         color: #8ea1ac;
-        font-size: 0.82rem;
+        font-size: 1rem;
         font-weight: 700;
         letter-spacing: 0.04em;
         text-transform: uppercase;
@@ -197,7 +197,7 @@
     .player-draft-overview-row {
         padding: 0.45rem 0;
         color: $eb-text;
-        font-size: 0.97rem;
+        font-size: 1.15rem;
     }
 
     .player-stat-pill-grid {
@@ -279,7 +279,7 @@
 
         .player-stats {
             color: $eb-text-muted;
-            font-size: 0.95rem;
+            font-size: 1.1rem;
         }
     }
 
@@ -420,11 +420,11 @@
             display: flex;
             align-items: center;
             gap: 0.5rem;
-            font-size: 0.95rem;
+            font-size: 1.15rem;
             color: $eb-text;
 
             .draft-id {
-                font-size: 0.85rem;
+                font-size: 1.05rem;
                 color: #7a8a93;
             }
 

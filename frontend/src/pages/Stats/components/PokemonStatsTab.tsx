@@ -417,23 +417,23 @@ const PokemonStatsTab: React.FC<PokemonStatsTabProps> = ({
                   <th className="sortable" onClick={() => handleSort('recentMovement')}>
                     {sortConfig.key === 'recentMovement' ? (sortConfig.direction === 'asc' ? '↑' : '↓') : ''}
                   </th>
-                  <th className="sortable" onClick={() => handleSort('priceMovement')}>
-                    Price +/- {sortConfig.key === 'priceMovement' ? (sortConfig.direction === 'asc' ? '↑' : '↓') : ''}
-                  </th>
                   <th className="sortable" onClick={() => handleSort('name')}>
                     Pokemon {sortConfig.key === 'name' ? (sortConfig.direction === 'asc' ? '↑' : '↓') : ''}
                   </th>
                   <th className="sortable" onClick={() => handleSort('avgWinningBid')}>
                     Avg Winning Bid {sortConfig.key === 'avgWinningBid' ? (sortConfig.direction === 'asc' ? '↑' : '↓') : ''}
                   </th>
-                  <th className="sortable" onClick={() => handleSort('priceVariance')}>
-                    Price Variance {sortConfig.key === 'priceVariance' ? (sortConfig.direction === 'asc' ? '↑' : '↓') : ''}
+                  <th className="sortable" onClick={() => handleSort('priceMovement')}>
+                    Price +/- {sortConfig.key === 'priceMovement' ? (sortConfig.direction === 'asc' ? '↑' : '↓') : ''}
                   </th>
                   <th className="sortable" onClick={() => handleSort('minBid')}>
                     Lowest Cost {sortConfig.key === 'minBid' ? (sortConfig.direction === 'asc' ? '↑' : '↓') : ''}
                   </th>
                   <th className="sortable" onClick={() => handleSort('maxBid')}>
                     Highest Cost {sortConfig.key === 'maxBid' ? (sortConfig.direction === 'asc' ? '↑' : '↓') : ''}
+                  </th>
+                  <th className="sortable" onClick={() => handleSort('priceVariance')}>
+                    Price Variance {sortConfig.key === 'priceVariance' ? (sortConfig.direction === 'asc' ? '↑' : '↓') : ''}
                   </th>
                   <th className="sortable" onClick={() => handleSort('bidsWon')}>
                     Total Sales {sortConfig.key === 'bidsWon' ? (sortConfig.direction === 'asc' ? '↑' : '↓') : ''}
@@ -460,17 +460,6 @@ const PokemonStatsTab: React.FC<PokemonStatsTabProps> = ({
                           ? `↓ ${Math.abs(entry.recentMovement)}`
                           : '-'}
                     </td>
-                    <td style={{
-                      backgroundColor: entry.priceMovement > 0 ? 'rgba(0, 255, 0, 0.15)' : entry.priceMovement < 0 ? 'rgba(255, 0, 0, 0.15)' : undefined,
-                      fontWeight: entry.priceMovement !== 0 ? 'bold' : 'normal',
-                      color: entry.priceMovement > 0 ? '#4caf50' : entry.priceMovement < 0 ? '#f44336' : 'inherit'
-                    }}>
-                      {entry.priceMovement > 0
-                        ? `↑ $${entry.priceMovement.toLocaleString()}`
-                        : entry.priceMovement < 0
-                          ? `↓ $${Math.abs(entry.priceMovement).toLocaleString()}`
-                          : '-'}
-                    </td>
                     <td>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                         <div style={{ width: '32px', display: 'flex', justifyContent: 'center', flexShrink: 0 }}>
@@ -487,9 +476,20 @@ const PokemonStatsTab: React.FC<PokemonStatsTabProps> = ({
                       </div>
                     </td>
                     <td>${entry.avgWinningBid.toLocaleString()}</td>
-                    <td>{entry.priceVariance.toLocaleString()}</td>
+                    <td style={{
+                      backgroundColor: entry.priceMovement > 0 ? 'rgba(0, 255, 0, 0.15)' : entry.priceMovement < 0 ? 'rgba(255, 0, 0, 0.15)' : undefined,
+                      fontWeight: entry.priceMovement !== 0 ? 'bold' : 'normal',
+                      color: entry.priceMovement > 0 ? '#4caf50' : entry.priceMovement < 0 ? '#f44336' : 'inherit'
+                    }}>
+                      {entry.priceMovement > 0
+                        ? `↑ $${entry.priceMovement.toLocaleString()}`
+                        : entry.priceMovement < 0
+                          ? `↓ $${Math.abs(entry.priceMovement).toLocaleString()}`
+                          : '-'}
+                    </td>
                     <td>${entry.minBid.toLocaleString()}</td>
                     <td>${entry.maxBid.toLocaleString()}</td>
+                    <td>{entry.priceVariance.toLocaleString()}</td>
                     <td>{entry.bidsWon}</td>
                   </tr>
                     {expandedPokemon === entry.key && (
@@ -509,7 +509,7 @@ const PokemonStatsTab: React.FC<PokemonStatsTabProps> = ({
                 ))}
                 {filteredPokemonSummary.length === 0 && (
                   <tr>
-                    <td colSpan={8} className="empty-cell">No pokemon stats available.</td>
+                    <td colSpan={9} className="empty-cell">No pokemon stats available.</td>
                   </tr>
                 )}
               </tbody>
