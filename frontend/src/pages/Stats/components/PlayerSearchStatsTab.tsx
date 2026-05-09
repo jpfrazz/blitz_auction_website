@@ -110,7 +110,7 @@ const PlayerSearchStatsTab: React.FC<PlayerSearchStatsTabProps> = ({
       .map((p) => ({ ...p, gamesPlayed: playerGamesMap.get(p.user_id) || 0 }))
       .filter((p) => p.gamesPlayed > 0)
       .sort((a, b) => b.gamesPlayed - a.gamesPlayed)
-      .slice(0, 12);
+      .slice(0, 30);
   }, [stats?.players, playerGamesMap]);
 
   const pokemonDraftSummary = useMemo<PokemonDraftSummary[]>(() => {
@@ -292,7 +292,7 @@ const PlayerSearchStatsTab: React.FC<PlayerSearchStatsTabProps> = ({
                     <div
                       className="player-draft-overview-background"
                       style={{
-                        backgroundImage: `url(/MiniIcons/${formatPokemonName(featuredPokemon.name)}.png)`,
+                        backgroundImage: `url(/baseforms/${featuredPokemon.name}.png)`,
                       }}
                       aria-hidden="true"
                     />

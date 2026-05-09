@@ -4,7 +4,7 @@ import { StatsPageResponse } from '../../../types';
 import '../Stats.scss';
 import './PokemonStatsTab.scss';
 
-type SortKey = 'rank' | 'name' | 'avgWinningBid' | 'minBid' | 'maxBid' | 'priceVariance' | 'bidsWon' | 'recentMovement';
+type SortKey = 'rank' | 'name' | 'avgWinningBid' | 'minBid' | 'maxBid' | 'priceVariance' | 'bidsWon' | 'recentMovement' | 'priceMovement';
 
 interface PokemonAggregate {
   key: string;
@@ -18,6 +18,7 @@ interface PokemonAggregate {
   priceVariance: number;
   rank: number;
   recentMovement: number;
+  priceMovement: number;
 }
 
 interface PokemonSaleRow {
@@ -343,6 +344,7 @@ const PokemonStatsTab: React.FC<PokemonStatsTabProps> = ({
         priceVariance,
         rank: 0,
         recentMovement: 0,
+        priceMovement: 0,
       };
     });
 
@@ -352,6 +354,9 @@ const PokemonStatsTab: React.FC<PokemonStatsTabProps> = ({
       p.rank = i + 1;
       const prevRank = historicRankMap.get(p.key);
       p.recentMovement = prevRank ? prevRank - p.rank : 0;
+
+      const histData = historicStats.find(s => s.key === p.key);
+      p.priceMovement = histData ? p.avgWinningBid - histData.avg : 0;
     });
     return results;
   }, [sortedAuctions, stats?.legacy, recentDraftIds]);
@@ -412,6 +417,9 @@ const PokemonStatsTab: React.FC<PokemonStatsTabProps> = ({
                   <th className="sortable" onClick={() => handleSort('recentMovement')}>
                     {sortConfig.key === 'recentMovement' ? (sortConfig.direction === 'asc' ? '↑' : '↓') : ''}
                   </th>
+                  <th className="sortable" onClick={() => handleSort('priceMovement')}>
+                    Price +/- {sortConfig.key === 'priceMovement' ? (sortConfig.direction === 'asc' ? '↑' : '↓') : ''}
+                  </th>
                   <th className="sortable" onClick={() => handleSort('name')}>
                     Pokemon {sortConfig.key === 'name' ? (sortConfig.direction === 'asc' ? '↑' : '↓') : ''}
                   </th>
@@ -452,6 +460,17 @@ const PokemonStatsTab: React.FC<PokemonStatsTabProps> = ({
                           ? `↓ ${Math.abs(entry.recentMovement)}`
                           : '-'}
                     </td>
+                    <td style={{
+                      backgroundColor: entry.priceMovement > 0 ? 'rgba(0, 255, 0, 0.15)' : entry.priceMovement < 0 ? 'rgba(255, 0, 0, 0.15)' : undefined,
+                      fontWeight: entry.priceMovement !== 0 ? 'bold' : 'normal',
+                      color: entry.priceMovement > 0 ? '#4caf50' : entry.priceMovement < 0 ? '#f44336' : 'inherit'
+                    }}>
+                      {entry.priceMovement > 0
+                        ? `↑ $${entry.priceMovement.toLocaleString()}`
+                        : entry.priceMovement < 0
+                          ? `↓ $${Math.abs(entry.priceMovement).toLocaleString()}`
+                          : '-'}
+                    </td>
                     <td>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                         <div style={{ width: '32px', display: 'flex', justifyContent: 'center', flexShrink: 0 }}>
@@ -475,7 +494,7 @@ const PokemonStatsTab: React.FC<PokemonStatsTabProps> = ({
                   </tr>
                     {expandedPokemon === entry.key && (
                       <tr className="price-history-dropdown-row">
-                        <td colSpan={8}>
+                        <td colSpan={9}>
                           <div className="price-history-container">
                             <PokemonPriceHistoryChart 
                               pokemonKey={entry.key} 
