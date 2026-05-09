@@ -196,7 +196,7 @@ const AuctionPage: React.FC = () => {
           .then(user => {
             setCurrentUserId(user.user_id);
             setIsGuest(user.is_guest);
-            setHasRefereeRole((user.roles ?? []).some((role) => role.role_name === 'Referee'));
+            setHasRefereeRole((user.roles ?? []).some((role) => role.role_name === 'Referee' || role.role_name === 'Admin'));
             setIsLoggedIn(true);
           })
       }
@@ -218,7 +218,7 @@ const AuctionPage: React.FC = () => {
       .then(user => {
         setCurrentUserId(user.user_id);
         setIsGuest(user.is_guest);
-        setHasRefereeRole((user.roles ?? []).some((role) => role.role_name === 'Referee'));
+        setHasRefereeRole((user.roles ?? []).some((role) => role.role_name === 'Referee' || role.role_name === 'Admin'));
         setIsLoggedIn(!!user.user_id);
         if(!user.is_guest) {
           setAvatar(user.avatar)
@@ -312,10 +312,10 @@ const AuctionPage: React.FC = () => {
     draft && requiredTeams > 0 && joinedTeams >= requiredTeams && readyTeams >= requiredTeams
   );
 
-  const handleClaimEeveelution = async (pokedexId: number, form: string | null) => {
+  const handleClaimEeveelution = async (pokedexId: number, form: string | null, targetUserId?: string | null) => {
     if (!draft) return;
     try {
-      await claimEeveelution(draft.draft_id, pokedexId, form);
+      await claimEeveelution(draft.draft_id, pokedexId, form, targetUserId);
       // Refresh draft data
       const updated = await fetchDraftById(draft.draft_id);
       setDraft(updated);
@@ -325,10 +325,10 @@ const AuctionPage: React.FC = () => {
     }
   };
 
-  const handleUnclaimEeveelution = async (pokedexId: number, form: string | null) => {
+  const handleUnclaimEeveelution = async (pokedexId: number, form: string | null, targetUserId?: string | null) => {
     if (!draft) return;
     try {
-      await unclaimEeveelution(draft.draft_id, pokedexId, form);
+      await unclaimEeveelution(draft.draft_id, pokedexId, form, targetUserId);
       const updated = await fetchDraftById(draft.draft_id);
       setDraft(updated);
     } catch (error) {
@@ -668,7 +668,10 @@ const AuctionPage: React.FC = () => {
                   { pokedex_id: 470, name: 'Leafeon', form: null },
                   { pokedex_id: 471, name: 'Glaceon', form: null },
                   { pokedex_id: 700, name: 'Sylveon', form: null },
-                ]} teams={draft.teams} currentUserId={currentUserId}
+                ]}
+                teams={draft.teams}
+                currentUserId={currentUserId}
+                isReferee={hasRefereeRole}
                 onClaim={handleClaimEeveelution}
                 onUnclaim={handleUnclaimEeveelution}
                 onClose={() => setShowEeveelutionModal(false)}

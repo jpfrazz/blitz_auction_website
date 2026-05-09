@@ -78,6 +78,7 @@ fn default_ready_true() -> bool {
 pub struct ClaimEeveelutionRequest {
     pub pokedex_id: i32,
     pub form: Option<String>,
+    pub target_user_id: Option<String>,
 }
 
 #[derive(Clone, Debug, Serialize)]
@@ -1856,7 +1857,12 @@ pub async fn claim_eeveelution(
     };
 
     let result = draft
-        .claim_eeveelution(user, claim_request.pokedex_id, claim_request.form)
+        .claim_eeveelution(
+            user,
+            claim_request.pokedex_id,
+            claim_request.form,
+            claim_request.target_user_id,
+        )
         .await?;
     Ok(Json(result))
 }
@@ -1885,7 +1891,12 @@ pub async fn unclaim_eeveelution(
     };
 
     let result = draft
-        .unclaim_eeveelution(user, claim_request.pokedex_id, claim_request.form)
+        .unclaim_eeveelution(
+            user,
+            claim_request.pokedex_id,
+            claim_request.form,
+            claim_request.target_user_id,
+        )
         .await?;
     Ok(Json(result))
 }

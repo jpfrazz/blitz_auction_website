@@ -435,6 +435,7 @@ impl Draft {
         user: User,
         pokedex_id: i32,
         form: Option<String>,
+        target_user_id: Option<String>,
     ) -> Result<serde_json::Value, AppError> {
         let (response_sender, response_receiver) = oneshot::channel();
         let cmd = DraftCommand::ClaimEeveelution {
@@ -442,6 +443,7 @@ impl Draft {
             user,
             pokedex_id,
             form,
+            target_user_id,
         };
         self.actor_sender.send(cmd).await.map_err(|e| {
             (
@@ -463,6 +465,7 @@ impl Draft {
         user: User,
         pokedex_id: i32,
         form: Option<String>,
+        target_user_id: Option<String>,
     ) -> Result<serde_json::Value, AppError> {
         let (response_sender, response_receiver) = oneshot::channel();
         let cmd = DraftCommand::UnclaimEeveelution {
@@ -470,6 +473,7 @@ impl Draft {
             user,
             pokedex_id,
             form,
+            target_user_id,
         };
         self.actor_sender.send(cmd).await.map_err(|e| {
             (
@@ -581,12 +585,14 @@ enum DraftCommand {
         user: User,
         pokedex_id: i32,
         form: Option<String>,
+        target_user_id: Option<String>,
     },
     UnclaimEeveelution {
         response_sender: oneshot::Sender<Result<serde_json::Value, AppError>>,
         user: User,
         pokedex_id: i32,
         form: Option<String>,
+        target_user_id: Option<String>,
     },
     UpdatePendingSettings {
         response_sender: oneshot::Sender<Result<DraftResponse, AppError>>,
@@ -745,8 +751,9 @@ impl DraftActor {
                         user,
                         pokedex_id,
                         form,
+                        target_user_id,
                     } => {
-                        let res = self.claim_eeveelution(user, pokedex_id, form).await;
+                        let res = self.claim_eeveelution(user, pokedex_id, form, target_user_id).await;
                         let _ = response_sender.send(res);
                     }
                     DraftCommand::UnclaimEeveelution {
@@ -754,8 +761,9 @@ impl DraftActor {
                         user,
                         pokedex_id,
                         form,
+                        target_user_id,
                     } => {
-                        let res = self.unclaim_eeveelution(user, pokedex_id, form).await;
+                        let res = self.unclaim_eeveelution(user, pokedex_id, form, target_user_id).await;
                         let _ = response_sender.send(res);
                     }
                     DraftCommand::UpdatePendingSettings {
@@ -1042,6 +1050,7 @@ impl DraftActor {
         user: User,
         pokedex_id: i32,
         form: Option<String>,
+        target_user_id: Option<String>,
     ) -> Result<serde_json::Value, AppError> {
         if self.draft_state != DraftState::COMPLETED {
             return Err((
@@ -1049,10 +1058,29 @@ impl DraftActor {
                 "draft must be completed".to_string(),
             ));
         }
+        if !self.settings.ranked {
+            return Err((
+                StatusCode::PRECONDITION_FAILED,
+                "Eeveelution claiming is only available for ranked drafts".to_string(),
+            ));
+        }
 
-        let user_id = user.get_user_id_string();
-        if let Some(team) = self.teams.get(&user_id) {
-            let eeveelutions = [133, 134, 135, 136, 196, 197, 470, 471, 700];
+        let eeveelutions = [133, 134, 135, 136, 196, 197, 470, 471, 700];
+        if !eeveelutions.contains(&pokedex_id) {
+            return Err((
+                StatusCode::BAD_REQUEST,
+                "Only Eeveelutions can be claimed through this method".to_string(),
+            ));
+        }
+
+        let is_ref = user.has_role_name("Referee") || user.has_role_name("Admin");
+        let actual_user_id = if let Some(tid) = target_user_id {
+            if is_ref { tid } else { user.get_user_id_string() }
+        } else {
+            user.get_user_id_string()
+        };
+
+        if let Some(team) = self.teams.get(&actual_user_id) {
             if team
                 .auctions_won
                 .iter()
@@ -1060,7 +1088,11 @@ impl DraftActor {
             {
                 return Ok(serde_json::json!({
                     "success": false,
-                    "error": "You have already claimed an Eeveelution"
+                    "error": if actual_user_id == user.get_user_id_string() {
+                        "You have already claimed an Eeveelution".to_string()
+                    } else {
+                        format!("{} has already claimed an Eeveelution", team.username)
+                    }
                 }));
             }
         }
@@ -1101,12 +1133,12 @@ impl DraftActor {
             }));
         }
 
-        if let Some(team) = self.teams.get_mut(&user_id) {
+        if let Some(team) = self.teams.get_mut(&actual_user_id) {
             team.auctions_won.push(target_pokemon.clone());
             self.broadcast();
             Ok(serde_json::json!({
                 "success": true,
-                "claimed_by": user_id,
+                "claimed_by": actual_user_id,
                 "pokemon": {
                     "pokedex_id": target_pokemon.pokedex_id,
                     "name": target_pokemon.name,
@@ -1123,11 +1155,26 @@ impl DraftActor {
         user: User,
         pokedex_id: i32,
         form: Option<String>,
+        target_user_id: Option<String>,
     ) -> Result<serde_json::Value, AppError> {
         if self.draft_state != DraftState::COMPLETED {
             return Err((
                 StatusCode::PRECONDITION_FAILED,
                 "draft must be completed".to_string(),
+            ));
+        }
+        if !self.settings.ranked {
+            return Err((
+                StatusCode::PRECONDITION_FAILED,
+                "Eeveelution claiming is only available for ranked drafts".to_string(),
+            ));
+        }
+
+        let eeveelutions = [133, 134, 135, 136, 196, 197, 470, 471, 700];
+        if !eeveelutions.contains(&pokedex_id) {
+            return Err((
+                StatusCode::BAD_REQUEST,
+                "Only Eeveelutions can be unclaimed through this method".to_string(),
             ));
         }
 
@@ -1147,52 +1194,66 @@ impl DraftActor {
             }
         };
 
-        let user_id = user.get_user_id_string();
-        let Some(team) = self.teams.get_mut(&user_id) else {
-            return Err((StatusCode::NOT_FOUND, "team not found".to_string()));
+        let is_ref = user.has_role_name("Referee") || user.has_role_name("Admin");
+        let actual_user_id = if let Some(tid) = target_user_id {
+            if is_ref { tid } else { user.get_user_id_string() }
+        } else {
+            user.get_user_id_string()
         };
 
-        let maybe_index = team.auctions_won.iter().position(|p| {
-            p.pokedex_id == target_pokemon.pokedex_id && p.form == target_pokemon.form
-        });
-
-        if let Some(index) = maybe_index {
-            team.auctions_won.remove(index);
-            self.broadcast();
-            return Ok(serde_json::json!({
-                "success": true,
-                "unclaimed_by": user_id,
-                "pokemon": {
-                    "pokedex_id": target_pokemon.pokedex_id,
-                    "name": target_pokemon.name,
-                    "form": target_pokemon.form
-                }
-            }));
-        }
-
-        let claimed_by_other = self.teams.values().find_map(|other_team| {
-            if other_team.user_id != user_id
-                && other_team.auctions_won.iter().any(|p| {
+        let team_status = self.teams.get(&actual_user_id).map(|team| {
+            (
+                team.username.clone(),
+                team.auctions_won.iter().any(|p| {
                     p.pokedex_id == target_pokemon.pokedex_id && p.form == target_pokemon.form
-                })
-            {
-                Some(other_team.username.clone())
-            } else {
-                None
-            }
+                }),
+            )
         });
 
-        if let Some(owner_name) = claimed_by_other {
-            return Err((
-                StatusCode::FORBIDDEN,
-                format!("eeveelution is claimed by {}", owner_name),
-            ));
-        }
+        match team_status {
+            Some((_, true)) => {
+                let team = self.teams.get_mut(&actual_user_id).unwrap();
+                let index = team.auctions_won.iter().position(|p| {
+                    p.pokedex_id == target_pokemon.pokedex_id && p.form == target_pokemon.form
+                }).unwrap();
+                team.auctions_won.remove(index);
+                self.broadcast();
+                Ok(serde_json::json!({
+                    "success": true,
+                    "unclaimed_by": actual_user_id,
+                    "pokemon": {
+                        "pokedex_id": target_pokemon.pokedex_id,
+                        "name": target_pokemon.name,
+                        "form": target_pokemon.form
+                    }
+                }))
+            }
+            Some((username, false)) => {
+                let claimed_by_other = self.teams.values().find_map(|other_team| {
+                    if other_team.user_id != actual_user_id
+                        && other_team.auctions_won.iter().any(|p| {
+                            p.pokedex_id == target_pokemon.pokedex_id && p.form == target_pokemon.form
+                        })
+                    {
+                        Some(other_team.username.clone())
+                    } else {
+                        None
+                    }
+                });
 
-        Err((
-            StatusCode::NOT_FOUND,
-            "you have not claimed this eeveelution".to_string(),
-        ))
+                if let Some(owner_name) = claimed_by_other {
+                    return Err((StatusCode::FORBIDDEN, format!("eeveelution is claimed by {}", owner_name)));
+                }
+
+                let error_msg = if actual_user_id == user.get_user_id_string() {
+                    "you have not claimed this eeveelution".to_string()
+                } else {
+                    format!("{} has not claimed this eeveelution", username)
+                };
+                Err((StatusCode::NOT_FOUND, error_msg))
+            }
+            None => Err((StatusCode::NOT_FOUND, "team not found".to_string())),
+        }
     }
 
     async fn update_pending_settings(
