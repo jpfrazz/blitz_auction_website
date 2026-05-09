@@ -15,7 +15,7 @@ import { StatsPageResponse } from '../types';
 interface MMRChartProps {
   leaderboard: LeaderboardEntry[];
   stats: StatsPageResponse | null;
-  minGames: number;
+  minRaces: number;
 }
 
 const COLORS = [
@@ -79,7 +79,7 @@ const CustomTooltip = ({ active, payload, label, highlightedUser }: any) => {
   return null;
 };
 
-const MMRChart: React.FC<MMRChartProps> = ({ leaderboard, stats, minGames }) => {
+const MMRChart: React.FC<MMRChartProps> = ({ leaderboard, stats, minRaces }) => {
   const [highlightedUser, setHighlightedUser] = useState<string | null>(null);
 
   const processedData = useMemo(() => {
@@ -183,10 +183,17 @@ const MMRChart: React.FC<MMRChartProps> = ({ leaderboard, stats, minGames }) => 
     return data;
   }, [stats, leaderboard]);
 
-  const chartPlayers = useMemo(() => 
-    leaderboard.filter(p => p.games_played >= minGames), 
-    [leaderboard, minGames]
-  );
+  const chartPlayers = useMemo(() => {
+    if (!stats) return leaderboard;
+    const raceCounts = new Map<string, number>();
+    stats.teams.forEach(t => {
+      const team = t as any;
+      if (team.user_id && team.placement !== null && team.ranked !== false) {
+        raceCounts.set(team.user_id, (raceCounts.get(team.user_id) || 0) + 1);
+      }
+    });
+    return leaderboard.filter(p => (raceCounts.get(p.user_id) || 0) >= minRaces);
+  }, [leaderboard, minRaces, stats]);
 
   if (!stats) return <div style={{ color: '#888', padding: '40px', textAlign: 'center' }}>Loading chart data...</div>;
 

@@ -31,7 +31,7 @@ function getPlacementLabel(placement: number | null): string {
 const LeaderboardPage = () => {
     const [activeTab, setActiveTab] = useState<'table' | 'progression'>('table');
     const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
-    const [minGames, setMinGames] = useState(0);
+    const [minRaces, setMinRaces] = useState(2); // Default to 2 races
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
@@ -79,11 +79,26 @@ const LeaderboardPage = () => {
             .finally(() => setStatsLoading(false));
     }, []);
 
+    const userRaceCounts = useMemo(() => {
+        if (!stats) return new Map<string, number>();
+        const map = new Map<string, number>();
+        stats.teams.forEach(t => {
+            const team = t as any;
+            if (team.user_id && team.placement !== null && team.ranked !== false) {
+                map.set(team.user_id, (map.get(team.user_id) || 0) + 1);
+            }
+        });
+        return map;
+    }, [stats]);
+
     const filteredAndSortedLeaderboard = useMemo(() => {
         return leaderboard
-            .filter(player => player.games_played >= minGames)
+            .filter(player => {
+                const raceCount = userRaceCounts.get(player.user_id) || 0;
+                return raceCount >= minRaces;
+            })
             .sort((a, b) => b.mmr - a.mmr);
-    }, [leaderboard, minGames]);
+    }, [leaderboard, minRaces, userRaceCounts]);
 
     const draftsInfo = useMemo(() => {
         if (!stats) return new Map<string, { date: string, participants: { userId: string, username: string, placement: number }[] }>();
@@ -171,23 +186,25 @@ const LeaderboardPage = () => {
             <div className="leaderboard-container">
             <div className="leaderboard-header">
                 <h1>Ever Grande Prix Season One Leaderboard</h1>
-                <div className="leaderboard-controls">
-                    <div className="filter-container">
-                        <label htmlFor="min-games-filter">Min Games: </label>
-                        <input
-                            id="min-games-filter"
-                            type="number"
-                            value={minGames}
-                            onChange={(e) => setMinGames(Number(e.target.value) >= 0 ? Number(e.target.value) : 0)}
-                            min="0"
-                        />
+                {activeTab === 'table' && (
+                    <div className="leaderboard-controls">
+                        <div className="filter-container">
+                            <label htmlFor="min-races-filter">Min Races: </label>
+                            <input
+                                id="min-races-filter"
+                                type="number"
+                                value={minRaces}
+                                onChange={(e) => setMinRaces(Number(e.target.value) >= 0 ? Number(e.target.value) : 0)}
+                                min="0"
+                            />
+                        </div>
                     </div>
-                </div>
+                )}
             </div>
 
             {activeTab === 'progression' ? (
                 <div className="progression-container">
-                    <MMRChart leaderboard={leaderboard} stats={stats} minGames={minGames} />
+                    <MMRChart leaderboard={leaderboard} stats={stats} minRaces={0} />
                 </div>
             ) : (
             <table className="leaderboard-table" style={{ tableLayout: 'fixed' }}>
