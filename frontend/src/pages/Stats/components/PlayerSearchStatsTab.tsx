@@ -110,7 +110,7 @@ const PlayerSearchStatsTab: React.FC<PlayerSearchStatsTabProps> = ({
       .map((p) => ({ ...p, gamesPlayed: playerGamesMap.get(p.user_id) || 0 }))
       .filter((p) => p.gamesPlayed > 0)
       .sort((a, b) => b.gamesPlayed - a.gamesPlayed)
-      .slice(0, 30);
+      .slice(0, 20);
   }, [stats?.players, playerGamesMap]);
 
   const pokemonDraftSummary = useMemo<PokemonDraftSummary[]>(() => {
@@ -220,8 +220,13 @@ const PlayerSearchStatsTab: React.FC<PlayerSearchStatsTabProps> = ({
                 placeholder="Search player name..."
                 value={searchInput}
                 onChange={(e) => {
-                  setSearchInput(e.target.value);
+                  const val = e.target.value;
+                  setSearchInput(val);
                   setIsAutocompleteOpen(true);
+                  if (!val.trim()) {
+                    setSelectedPlayer(null);
+                    setPlayerMatchHistory(null);
+                  }
                 }}
                 onFocus={() => setIsAutocompleteOpen(true)}
               />
@@ -251,7 +256,7 @@ const PlayerSearchStatsTab: React.FC<PlayerSearchStatsTabProps> = ({
 
           {!selectedPlayer && !playerMatchHistoryLoading && topPlayers.length > 0 && (
             <div className="player-search-suggestions" style={{ marginTop: '1.5rem' }}>
-              <p style={{ opacity: 0.6, fontSize: '0.9rem', marginBottom: '1rem' }}>Active Racers (Top Games Played)</p>
+              <p style={{ opacity: 0.6, fontSize: '1.1rem', marginBottom: '1rem' }}>Active Racers (Top Games Played)</p>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '10px' }}>
                 {topPlayers.map((player) => (
                   <button
