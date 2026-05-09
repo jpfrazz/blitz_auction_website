@@ -636,6 +636,7 @@ const Stats: React.FC = () => {
             stats={stats}
             loading={loading}
             error={error}
+            validDraftIds={validDraftIds}
           />
         )}
       </main>

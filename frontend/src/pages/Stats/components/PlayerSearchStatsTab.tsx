@@ -10,6 +10,7 @@ interface PlayerSearchStatsTabProps {
   stats: StatsPageResponse | null;
   loading?: boolean;
   error?: string | null;
+  validDraftIds: Set<string>;
 }
 
 interface PokemonDraftSummary {
@@ -64,6 +65,7 @@ const PlayerSearchStatsTab: React.FC<PlayerSearchStatsTabProps> = ({
   stats,
   loading = false,
   error = null,
+  validDraftIds,
 }) => {
   const [searchInput, setSearchInput] = useState('');
   const [isAutocompleteOpen, setIsAutocompleteOpen] = useState(false);
@@ -84,16 +86,20 @@ const PlayerSearchStatsTab: React.FC<PlayerSearchStatsTabProps> = ({
       .slice(0, 10);
   }, [searchInput, stats?.players]);
 
+  const filteredMatchHistory = useMemo(() => {
+    if (!playerMatchHistory) return null;
+    return playerMatchHistory.filter(team => validDraftIds.has(team.draft_id));
+  }, [playerMatchHistory, validDraftIds]);
+
   const pokemonDraftSummary = useMemo<PokemonDraftSummary[]>(() => {
-    if (!playerMatchHistory?.length) {
+    if (!filteredMatchHistory?.length) {
       return [];
     }
 
     const summary = new Map<string, PokemonDraftSummary>();
 
-    playerMatchHistory.forEach((team) => {
-      // Only pull pokemon from ranked races
-      if (!team.ranked) return;
+    filteredMatchHistory.forEach((team) => {
+      // Count pokemon from any valid draft
 
       (team.pokemon_drafted ?? []).forEach((auction) => {
         const key = `${auction.name}::${auction.form}`;
@@ -124,7 +130,7 @@ const PlayerSearchStatsTab: React.FC<PlayerSearchStatsTabProps> = ({
 
       return getPokemonLabel(left.name, left.form).localeCompare(getPokemonLabel(right.name, right.form));
     });
-  }, [playerMatchHistory]);
+  }, [filteredMatchHistory]);
 
   const [playerStatPills, setPlayerStatPills] = useState<PlayerStatPill[]>([]);
 
@@ -237,7 +243,7 @@ const PlayerSearchStatsTab: React.FC<PlayerSearchStatsTabProps> = ({
             <div className="match-history-message error">{playerMatchHistoryError}</div>
           )}
 
-          {selectedPlayer && !playerMatchHistoryLoading && playerMatchHistory && (
+          {selectedPlayer && !playerMatchHistoryLoading && filteredMatchHistory && (
             <>
               {pokemonDraftSummary.length > 0 && (
                 <div className="player-draft-overview">
@@ -338,16 +344,16 @@ const PlayerSearchStatsTab: React.FC<PlayerSearchStatsTabProps> = ({
                   {selectedPlayer.global_name && <span style={{ fontSize: '0.8em', opacity: 0.7, marginLeft: '8px' }}>({selectedPlayer.global_name})</span>}
                 </h3>
                 <span className="player-stats">
-                  {playerMatchHistory.length} game{playerMatchHistory.length !== 1 ? 's' : ''}
+                  {filteredMatchHistory.length} game{filteredMatchHistory.length !== 1 ? 's' : ''}
                 </span>
               </div>
 
               <div className="match-timeline">
-                {playerMatchHistory.length === 0 && (
+                {filteredMatchHistory.length === 0 && (
                   <div className="match-history-message">No match history found.</div>
                 )}
 
-                {playerMatchHistory.map((team) => {
+                {filteredMatchHistory.map((team) => {
                   const auctions = team.pokemon_drafted || [];
                   const isRanked = team.pre_match_mmr !== null || team.placement !== null;
                   const result = getPlacementLabel(team.placement, isRanked);
@@ -372,9 +378,6 @@ const PlayerSearchStatsTab: React.FC<PlayerSearchStatsTabProps> = ({
                             <span className="placement">{result}</span>
                             <span className="separator">•</span>
                             <span className="team-count">{team.team_count} teams</span>
-                          </div>
-                          <div>
-                            <span className="budget-remaining">${team.money_remaining.toLocaleString()} left</span>
                           </div>
                         </div>
 
