@@ -421,7 +421,7 @@ const PokemonStatsTab: React.FC<PokemonStatsTabProps> = ({
                     Pokemon {sortConfig.key === 'name' ? (sortConfig.direction === 'asc' ? '↑' : '↓') : ''}
                   </th>
                   <th className="sortable" onClick={() => handleSort('avgWinningBid')}>
-                    Avg Winning Bid {sortConfig.key === 'avgWinningBid' ? (sortConfig.direction === 'asc' ? '↑' : '↓') : ''}
+                    Avg Price {sortConfig.key === 'avgWinningBid' ? (sortConfig.direction === 'asc' ? '↑' : '↓') : ''}
                   </th>
                   <th className="sortable" onClick={() => handleSort('priceMovement')}>
                     Price +/- {sortConfig.key === 'priceMovement' ? (sortConfig.direction === 'asc' ? '↑' : '↓') : ''}

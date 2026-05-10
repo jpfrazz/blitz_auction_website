@@ -308,6 +308,11 @@
         color: inherit;
         text-align: left;
         cursor: pointer;
+        transition: background-color 0.15s ease;
+
+        &:hover {
+            background: #1c2329;
+        }
 
         &.first {
             border-left: 4px solid #d4af37;
