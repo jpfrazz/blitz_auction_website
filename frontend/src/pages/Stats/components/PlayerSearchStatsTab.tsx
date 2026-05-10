@@ -103,6 +103,17 @@ const PlayerSearchStatsTab: React.FC<PlayerSearchStatsTabProps> = ({
     return map;
   }, [stats, validDraftIds]);
 
+  const draftDateMap = useMemo(() => {
+    const map = new Map<string, string>();
+    if (!stats?.auctions) return map;
+    stats.auctions.forEach(a => {
+      if (a.created_at && !map.has(a.draft_id)) {
+        map.set(a.draft_id, new Date(a.created_at).toLocaleDateString());
+      }
+    });
+    return map;
+  }, [stats?.auctions]);
+
   const topPlayers = useMemo(() => {
     if (!stats?.players) return [];
     return stats.players
@@ -420,11 +431,11 @@ const PlayerSearchStatsTab: React.FC<PlayerSearchStatsTabProps> = ({
 
                         <div className="match-info">
                           <div className="match-row-details">
-                            <span className="draft-id mono">{team.draft_id}</span>
+                            <span className="draft-id">{draftDateMap.get(team.draft_id) || 'Unknown Date'}</span>
                             <span className="separator">•</span>
                             <span className="placement">{result}</span>
                             <span className="separator">•</span>
-                            <span className="team-count">{team.team_count} teams</span>
+                            <span className="team-count">{team.team_count} players</span>
                           </div>
                         </div>
 
