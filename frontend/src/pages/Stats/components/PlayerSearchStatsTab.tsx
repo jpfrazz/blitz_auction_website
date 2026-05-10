@@ -255,7 +255,7 @@ const PlayerSearchStatsTab: React.FC<PlayerSearchStatsTabProps> = ({
           )}
 
           {!selectedPlayer && !playerMatchHistoryLoading && topPlayers.length > 0 && (
-            <div className="player-search-suggestions" style={{ marginTop: '0.5rem' }}>
+            <div className="player-search-suggestions" style={{ marginTop: '0.3rem' }}>
               <p style={{ opacity: 0.6, fontSize: '1.1rem', marginBottom: '1rem' }}>Active Racers (Top Games Played)</p>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '10px' }}>
                 {topPlayers.map((player) => (
@@ -264,11 +264,6 @@ const PlayerSearchStatsTab: React.FC<PlayerSearchStatsTabProps> = ({
                     type="button"
                     className="suggestion-item"
                     onClick={() => handleSelectPlayer(player as any)}
-                    style={{
-                      display: 'flex', alignItems: 'center', gap: '12px', background: 'rgba(255,255,255,0.05)',
-                      border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', padding: '10px',
-                      cursor: 'pointer', textAlign: 'left', color: 'inherit'
-                    }}
                   >
                     {(player as any).avatar ? (
                       <img

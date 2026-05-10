@@ -85,6 +85,22 @@
         }
     }
 
+    .suggestion-item {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 8px;
+        padding: 10px;
+        cursor: pointer;
+        text-align: left;
+        color: inherit;
+        transition: background-color 0.15s ease;
+        &:hover {
+            background: rgba(255, 255, 255, 0.08);
+        }
+    }
     .player-draft-overview {
         position: relative;
         overflow: hidden;
