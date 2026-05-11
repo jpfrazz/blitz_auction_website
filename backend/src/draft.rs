@@ -1058,12 +1058,6 @@ impl DraftActor {
                 "draft must be completed".to_string(),
             ));
         }
-        if !self.settings.ranked {
-            return Err((
-                StatusCode::PRECONDITION_FAILED,
-                "Eeveelution claiming is only available for ranked drafts".to_string(),
-            ));
-        }
 
         let eeveelutions = [133, 134, 135, 136, 196, 197, 470, 471, 700];
         if !eeveelutions.contains(&pokedex_id) {
@@ -1161,12 +1155,6 @@ impl DraftActor {
             return Err((
                 StatusCode::PRECONDITION_FAILED,
                 "draft must be completed".to_string(),
-            ));
-        }
-        if !self.settings.ranked {
-            return Err((
-                StatusCode::PRECONDITION_FAILED,
-                "Eeveelution claiming is only available for ranked drafts".to_string(),
             ));
         }
 
