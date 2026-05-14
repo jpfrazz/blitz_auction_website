@@ -770,7 +770,7 @@ const Stats: React.FC = () => {
                                           .filter(a => (a.winning_user_id || a.winning_guest_id || '') === uid)
                                           .sort((a, b) => (b.winning_bid ?? 0) - (a.winning_bid ?? 0));
                                         return (
-                                          <div key={uid} className="user-draft-group">
+                                          <div key={uid} className="user-draft-group" style={{ marginBottom: '20px' }}>
                                             {renderListWithChart(userAuctions)}
                                           </div>
                                         );
