@@ -268,7 +268,7 @@
   transition: background-color 0.15s ease;
 
   &:hover {
-    background-color: #1e262c;
+    background-color: transparent !important;
   }
 }
 
@@ -296,6 +296,11 @@
   align-items: center;
   text-align: center;
   border: 1px solid #2a353f;
+  transition: background-color 0.2s ease;
+
+  &:hover {
+    background-color: rgba(255, 255, 255, 0.08);
+  }
 
   img {
     width: 40px;
