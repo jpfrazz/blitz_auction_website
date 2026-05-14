@@ -71,7 +71,7 @@ const getUserColor = (userId: string | null) => {
     hash = userId.charCodeAt(i) + ((hash << 5) - hash);
   }
   const h = Math.abs(hash) % 360;
-  return `hsla(${h}, 65%, 50%, 0.15)`;
+  return `hsla(${h}, 45%, 50%, 0.08)`;
 };
 
 function toLabel(value: string): string {
@@ -715,10 +715,8 @@ const Stats: React.FC = () => {
                                         const userAuctions = draftAuctions
                                           .filter(a => (a.winning_user_id || a.winning_guest_id || '') === uid)
                                           .sort((a, b) => (b.winning_bid ?? 0) - (a.winning_bid ?? 0));
-                                        const userName = playersById.get(uid)?.user_name || uid || '-';
                                         return (
-                                          <div key={uid} className="user-draft-group" style={{ marginBottom: '20px' }}>
-                                            <h3 style={{ margin: '0 0 10px 10px', fontSize: '1rem', color: '#888' }}>{userName}</h3>
+                                          <div key={uid} className="user-draft-group">
                                             <div className="draft-details-grid">
                                               {userAuctions.map(renderCard)}
                                             </div>
