@@ -647,52 +647,42 @@ const Stats: React.FC = () => {
                                     const isSelected = selectedPokemonForChart?.key === identity.key;
 
                                     return (
-                                      <React.Fragment key={auction.auction_id}>
-                                        <div 
-                                          className={`draft-detail-card ${isSelected ? 'selected' : ''}`} 
-                                          title={`${displayName} - $${(auction.winning_bid ?? 0).toLocaleString()} (Click to view price history)`}
-                                          style={{ cursor: 'pointer', border: isSelected ? '2px solid #4caf50' : undefined }}
-                                          onClick={() => {
-                                            if (isSelected) {
-                                              setSelectedPokemonForChart(null);
-                                            } else {
-                                              setSelectedPokemonForChart({ key: identity.key, name: displayName });
-                                            }
+                                      <div 
+                                        key={auction.auction_id}
+                                        className={`draft-detail-card ${isSelected ? 'selected' : ''}`} 
+                                        title={`${displayName} - $${(auction.winning_bid ?? 0).toLocaleString()} (Click to view price history)`}
+                                        style={{ cursor: 'pointer', border: isSelected ? '2px solid #4caf50' : undefined }}
+                                        onClick={() => {
+                                          if (isSelected) {
+                                            setSelectedPokemonForChart(null);
+                                          } else {
+                                            setSelectedPokemonForChart({ key: identity.key, name: displayName });
+                                          }
+                                        }}
+                                      >
+                                        <img
+                                          src={`/baseforms/${auction.name}.png`}
+                                          alt={auction.name}
+                                          onError={(ev) => {
+                                            (ev.currentTarget as HTMLImageElement).style.display = 'none';
                                           }}
-                                        >
-                                          <img
-                                            src={`/baseforms/${auction.name}.png`}
-                                            alt={auction.name}
-                                            onError={(ev) => {
-                                              (ev.currentTarget as HTMLImageElement).style.display = 'none';
-                                            }}
-                                          />
-                                          <div className="pokemon-name">{auction.name}</div>
-                                          <div className="pokemon-price">${(auction.winning_bid ?? 0).toLocaleString()}</div>
-                                          <div className="pokemon-winner">{winnerName}</div>
-                                        </div>
-                                        {isSelected && (
-                                          <div className="price-history-container" style={{ gridColumn: '1 / -1', padding: '15px 10px' }}>
-                                            <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '10px' }}>
-                                              <button 
-                                                className="tab-chip active" 
-                                                onClick={() => setSelectedPokemonForChart(null)} 
-                                                style={{ margin: 0, padding: '4px 12px', fontSize: '0.8rem', minWidth: 'auto' }}
-                                              >
-                                                Close Price History
-                                              </button>
-                                            </div>
-                                            <PokemonPriceHistoryChart 
-                                              pokemonKey={selectedPokemonForChart.key} 
-                                              pokemonName={selectedPokemonForChart.name}
-                                              stats={stats!} 
-                                            />
-                                          </div>
-                                        )}
-                                      </React.Fragment>
+                                        />
+                                        <div className="pokemon-name">{auction.name}</div>
+                                        <div className="pokemon-price">${(auction.winning_bid ?? 0).toLocaleString()}</div>
+                                        <div className="pokemon-winner">{winnerName}</div>
+                                      </div>
                                     );
                                   })}
                               </div>
+                              {selectedPokemonForChart && (stats?.auctions ?? []).some(a => a.draft_id === draft.draftId && resolveIdentity(a.name, a.form || '').key === selectedPokemonForChart.key) && (
+                                <div className="price-history-container" style={{ padding: '15px 10px' }}>
+                                  <PokemonPriceHistoryChart 
+                                    pokemonKey={selectedPokemonForChart.key} 
+                                    pokemonName={selectedPokemonForChart.name}
+                                    stats={stats!} 
+                                  />
+                                </div>
+                              )}
                             </td>
                           </tr>
                         )}

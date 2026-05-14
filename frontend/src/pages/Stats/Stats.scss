@@ -275,6 +275,10 @@
 .draft-details-row {
   background-color: #0d1115;
 
+  &:hover {
+    background-color: #0d1115 !important;
+  }
+
   td {
     padding: 1rem;
     border-bottom: 1px solid #273138;
