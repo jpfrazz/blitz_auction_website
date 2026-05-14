@@ -79,7 +79,7 @@ const LobbyViewer: React.FC = () => {
       cell: info => `${info.row.original.teams_joined}/${info.row.original.total_teams}`,
     },
     {
-      header: 'Draft Status',
+      header: 'Status',
       cell: info => formatDraftState(info.row.original.draft_state),
     },
     {

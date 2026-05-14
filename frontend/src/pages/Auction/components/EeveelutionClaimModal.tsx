@@ -92,7 +92,7 @@ const EeveelutionClaimModal: React.FC<EeveelutionClaimModalProps> = ({
         </div>
 
         <div className="eeveelution-modal-description">
-          <p>First person to evolve an Eevee into each evolution gets exclusive rights to that form!</p>
+          <p>The first person to evolve an Eevee into each evolution gets exclusive rights to that form!</p>
         </div>
 
         {isReferee && (
