@@ -3,6 +3,7 @@ import Header from '../../shared/components/Header';
 import { fetchStatsPageData } from '../../shared/api/stats';
 import { StatsPagePlayer, StatsPageResponse, StatsPageTeamRow } from '../../types';
 import PokemonStatsTab from './components/PokemonStatsTab';
+import PokemonPriceHistoryChart from './PokemonPriceHistoryChart';
 import PlayerSearchStatsTab from './components/PlayerSearchStatsTab';
 import './Stats.scss';
 
@@ -31,6 +32,45 @@ const excludedPokemonNames = new Set([
   'Turtonator',
 ]);
 
+const formOverrides: Record<string, { form: string; key: string }> = {
+  'Wooper': { form: 'Paldea', key: 'Wooper-Paldea' },
+  'Vulpix': { form: 'Alola', key: 'Vulpix-Alola' },
+  'Voltorb': { form: 'Hisui', key: 'Voltorb-Hisui' },
+  "Farfetch'd": { form: 'Galar', key: "Farfetch'd-Galar" },
+  'Sandshrew': { form: 'Alola', key: 'Sandshrew-Alola' },
+  'Meowth': { form: 'Galar', key: 'Meowth-Galar' },
+  'Slowpoke': { form: 'Galar', key: 'Slowpoke-Galar' },
+  'Zigzagoon': { form: 'Galar', key: 'Zigzagoon-Galar' },
+};
+
+const resolveIdentity = (name: string, form: string) => {
+  let currentName = name;
+  let currentForm = form;
+
+  const knownForms = ['Alola', 'Galar', 'Hisui', 'Paldea'];
+  for (const f of knownForms) {
+    if (currentName.endsWith(`-${f}`)) {
+      currentName = currentName.slice(0, -(f.length + 1));
+      currentForm = f;
+      break;
+    }
+  }
+
+  if ((!currentForm || currentForm === 'base') && formOverrides[currentName]) {
+    return { name: currentName, ...formOverrides[currentName] };
+  }
+  const effectiveForm = currentForm && currentForm !== 'base' ? currentForm : '';
+  const key = `${currentName}${effectiveForm ? '-' + effectiveForm : ''}`;
+  return { name: currentName, form: effectiveForm, key };
+};
+
+function toLabel(value: string): string {
+  return value
+    .split('_')
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1).toLowerCase())
+    .join(' ');
+}
+
 function formatPokemonName(name: string): string {
   const lower = name.toLowerCase();
   if (lower.startsWith("farfetch'd")) {
@@ -51,6 +91,7 @@ const Stats: React.FC = () => {
   const [activeTab, setActiveTab] = useState<StatsTab>('pokemon');
   const [expandedDraftId, setExpandedDraftId] = useState<string | null>(null);
   const [draftSortMode, setDraftSortMode] = useState<'order' | 'price'>('order');
+  const [selectedPokemonForChart, setSelectedPokemonForChart] = useState<{ key: string; name: string } | null>(null);
   const [competitiveOnly, setCompetitiveOnly] = useState(true);
 
   useEffect(() => {
@@ -543,7 +584,10 @@ const Stats: React.FC = () => {
                           onClick={() => {
                             const isOpening = expandedDraftId !== draft.draftId;
                             setExpandedDraftId(isOpening ? draft.draftId : null);
-                            if (isOpening) setDraftSortMode('order');
+                            if (isOpening) {
+                              setDraftSortMode('order');
+                              setSelectedPokemonForChart(null);
+                            }
                           }}
                         >
                           <td>{draft.draftName || draft.draftId}</td>
@@ -598,8 +642,24 @@ const Stats: React.FC = () => {
                                   .map((auction) => {
                                     const winnerKey = auction.winning_user_id || auction.winning_guest_id || '';
                                     const winnerName = playersById.get(winnerKey)?.user_name || winnerKey || '-';
+                                    const identity = resolveIdentity(auction.name, auction.form || '');
+                                    const displayName = `${identity.name}${identity.form && identity.form !== 'base' ? ` (${toLabel(identity.form)})` : ''}`;
+                                    const isSelected = selectedPokemonForChart?.key === identity.key;
+
                                     return (
-                                      <div className="draft-detail-card" key={auction.auction_id} title={`${auction.name} - $${auction.winning_bid}`}>
+                                      <div 
+                                        className={`draft-detail-card ${isSelected ? 'selected' : ''}`} 
+                                        key={auction.auction_id} 
+                                        title={`${displayName} - $${(auction.winning_bid ?? 0).toLocaleString()} (Click to view price history)`}
+                                        style={{ cursor: 'pointer', border: isSelected ? '2px solid #4caf50' : undefined }}
+                                        onClick={() => {
+                                          if (isSelected) {
+                                            setSelectedPokemonForChart(null);
+                                          } else {
+                                            setSelectedPokemonForChart({ key: identity.key, name: displayName });
+                                          }
+                                        }}
+                                      >
                                         <img
                                           src={`/baseforms/${auction.name}.png`}
                                           alt={auction.name}
@@ -614,6 +674,24 @@ const Stats: React.FC = () => {
                                     );
                                   })}
                               </div>
+                              {selectedPokemonForChart && (
+                                <div className="price-history-container" style={{ padding: '0 10px 15px' }}>
+                                  <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '10px' }}>
+                                    <button 
+                                      className="tab-chip active" 
+                                      onClick={() => setSelectedPokemonForChart(null)} 
+                                      style={{ margin: 0, padding: '4px 12px', fontSize: '0.8rem', minWidth: 'auto' }}
+                                    >
+                                      Close Price History
+                                    </button>
+                                  </div>
+                                  <PokemonPriceHistoryChart 
+                                    pokemonKey={selectedPokemonForChart.key} 
+                                    pokemonName={selectedPokemonForChart.name}
+                                    stats={stats!} 
+                                  />
+                                </div>
+                              )}
                             </td>
                           </tr>
                         )}

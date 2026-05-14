@@ -102,6 +102,7 @@
     flex-wrap: wrap;
     gap: 4px;
     justify-content: center;
+    //align-items: center;
 }
 
 .auction-player-icon {
@@ -109,4 +110,5 @@
     height: auto;
     max-width: 20px;
     max-height: 20px;
+    //object-fit: contain;
 }
