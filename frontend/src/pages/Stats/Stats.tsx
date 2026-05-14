@@ -64,6 +64,16 @@ const resolveIdentity = (name: string, form: string) => {
   return { name: currentName, form: effectiveForm, key };
 };
 
+const getUserColor = (userId: string | null) => {
+  if (!userId) return 'transparent';
+  let hash = 0;
+  for (let i = 0; i < userId.length; i++) {
+    hash = userId.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  const h = Math.abs(hash) % 360;
+  return `hsla(${h}, 65%, 50%, 0.15)`;
+};
+
 function toLabel(value: string): string {
   return value
     .split('_')
@@ -90,7 +100,7 @@ const Stats: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<StatsTab>('pokemon');
   const [expandedDraftId, setExpandedDraftId] = useState<string | null>(null);
-  const [draftSortMode, setDraftSortMode] = useState<'order' | 'price'>('order');
+  const [draftSortMode, setDraftSortMode] = useState<'order' | 'price' | 'user'>('order');
   const [selectedPokemonForChart, setSelectedPokemonForChart] = useState<{ key: string; name: string } | null>(null);
   const [competitiveOnly, setCompetitiveOnly] = useState(true);
 
@@ -629,61 +639,109 @@ const Stats: React.FC = () => {
                                 >
                                   Sort by Price
                                 </button>
+                                <button
+                                  className={`tab-chip ${draftSortMode === 'user' ? 'active' : ''}`}
+                                  type="button"
+                                  style={{ padding: '2px 8px', fontSize: '0.85rem', minWidth: 'auto', margin: 0 }}
+                                  onClick={() => setDraftSortMode('user')}
+                                >
+                                  Sort by User
+                                </button>
                               </div>
-                              <div className="draft-details-grid">
-                                {(stats?.auctions ?? [])
-                                  .filter((a) => a.draft_id === draft.draftId && a.winning_bid !== null)
-                                  .sort((a, b) => {
-                                    if (draftSortMode === 'price') {
-                                      return (b.winning_bid ?? 0) - (a.winning_bid ?? 0);
-                                    }
-                                    return a.draft_order - b.draft_order;
-                                  })
-                                  .map((auction) => {
-                                    const winnerKey = auction.winning_user_id || auction.winning_guest_id || '';
-                                    const winnerName = playersById.get(winnerKey)?.user_name || winnerKey || '-';
-                                    const identity = resolveIdentity(auction.name, auction.form || '');
-                                    const displayName = `${identity.name}${identity.form && identity.form !== 'base' ? ` (${toLabel(identity.form)})` : ''}`;
-                                    const isSelected = selectedPokemonForChart?.key === identity.key;
+                              {(() => {
+                                const draftAuctions = (stats?.auctions ?? [])
+                                  .filter((a) => a.draft_id === draft.draftId && a.winning_bid !== null);
 
-                                    return (
-                                      <React.Fragment key={auction.auction_id}>
-                                        <div
-                                          className={`draft-detail-card ${isSelected ? 'selected' : ''}`}
-                                          title={`${displayName} - $${(auction.winning_bid ?? 0).toLocaleString()} (Click to view price history)`}
-                                          style={{ cursor: 'pointer', border: isSelected ? '2px solid #4caf50' : undefined }}
-                                          onClick={() => {
-                                            if (isSelected) {
-                                              setSelectedPokemonForChart(null);
-                                            } else {
-                                              setSelectedPokemonForChart({ key: identity.key, name: displayName });
-                                            }
+                                const renderCard = (auction: any) => {
+                                  const winnerKey = auction.winning_user_id || auction.winning_guest_id || '';
+                                  const winnerName = playersById.get(winnerKey)?.user_name || winnerKey || '-';
+                                  const identity = resolveIdentity(auction.name, auction.form || '');
+                                  const displayName = `${identity.name}${identity.form && identity.form !== 'base' ? ` (${toLabel(identity.form)})` : ''}`;
+                                  const isSelected = selectedPokemonForChart?.key === identity.key;
+
+                                  return (
+                                    <React.Fragment key={auction.auction_id}>
+                                      <div
+                                        className={`draft-detail-card ${isSelected ? 'selected' : ''}`}
+                                        title={`${displayName} - $${(auction.winning_bid ?? 0).toLocaleString()} (Click to view price history)`}
+                                        style={{ 
+                                          cursor: 'pointer', 
+                                          border: isSelected ? '2px solid #4caf50' : undefined,
+                                          backgroundColor: getUserColor(winnerKey)
+                                        }}
+                                        onClick={() => {
+                                          if (isSelected) {
+                                            setSelectedPokemonForChart(null);
+                                          } else {
+                                            setSelectedPokemonForChart({ key: identity.key, name: displayName });
+                                          }
+                                        }}
+                                      >
+                                        <img
+                                          src={`/baseforms/${auction.name}.png`}
+                                          alt={auction.name}
+                                          onError={(ev) => {
+                                            (ev.currentTarget as HTMLImageElement).style.display = 'none';
                                           }}
-                                        >
-                                          <img
-                                            src={`/baseforms/${auction.name}.png`}
-                                            alt={auction.name}
-                                            onError={(ev) => {
-                                              (ev.currentTarget as HTMLImageElement).style.display = 'none';
-                                            }}
+                                        />
+                                        <div className="pokemon-name">{auction.name}</div>
+                                        <div className="pokemon-price">${(auction.winning_bid ?? 0).toLocaleString()}</div>
+                                        <div className="pokemon-winner">{winnerName}</div>
+                                      </div>
+                                      {isSelected && (
+                                        <div className="price-history-container" style={{ gridColumn: '1 / -1', width: '100%', padding: '15px 10px' }}>
+                                          <PokemonPriceHistoryChart
+                                            pokemonKey={selectedPokemonForChart.key}
+                                            pokemonName={selectedPokemonForChart.name}
+                                            stats={stats!}
                                           />
-                                          <div className="pokemon-name">{auction.name}</div>
-                                          <div className="pokemon-price">${(auction.winning_bid ?? 0).toLocaleString()}</div>
-                                          <div className="pokemon-winner">{winnerName}</div>
                                         </div>
-                                        {isSelected && (
-                                          <div className="price-history-container" style={{ gridColumn: '1 / -1', width: '100%', padding: '15px 10px' }}>
-                                            <PokemonPriceHistoryChart
-                                              pokemonKey={selectedPokemonForChart.key}
-                                              pokemonName={selectedPokemonForChart.name}
-                                              stats={stats!}
-                                            />
+                                      )}
+                                    </React.Fragment>
+                                  );
+                                };
+
+                                if (draftSortMode === 'user') {
+                                  const userIds = Array.from(new Set(draftAuctions.map(a => a.winning_user_id || a.winning_guest_id || '')))
+                                    .sort((a, b) => {
+                                      const nameA = playersById.get(a)?.user_name || a;
+                                      const nameB = playersById.get(b)?.user_name || b;
+                                      return nameA.localeCompare(nameB);
+                                    });
+
+                                  return (
+                                    <div className="draft-user-groups">
+                                      {userIds.map(uid => {
+                                        const userAuctions = draftAuctions
+                                          .filter(a => (a.winning_user_id || a.winning_guest_id || '') === uid)
+                                          .sort((a, b) => (b.winning_bid ?? 0) - (a.winning_bid ?? 0));
+                                        const userName = playersById.get(uid)?.user_name || uid || '-';
+                                        return (
+                                          <div key={uid} className="user-draft-group" style={{ marginBottom: '20px' }}>
+                                            <h3 style={{ margin: '0 0 10px 10px', fontSize: '1rem', color: '#888' }}>{userName}</h3>
+                                            <div className="draft-details-grid">
+                                              {userAuctions.map(renderCard)}
+                                            </div>
                                           </div>
-                                        )}
-                                      </React.Fragment>
-                                    );
-                                  })}
-                              </div>
+                                        );
+                                      })}
+                                    </div>
+                                  );
+                                }
+
+                                return (
+                                  <div className="draft-details-grid">
+                                    {draftAuctions
+                                      .sort((a, b) => {
+                                        if (draftSortMode === 'price') {
+                                          return (b.winning_bid ?? 0) - (a.winning_bid ?? 0);
+                                        }
+                                        return a.draft_order - b.draft_order;
+                                      })
+                                      .map(renderCard)}
+                                  </div>
+                                );
+                              })()}
                             </td>
                           </tr>
                         )}
