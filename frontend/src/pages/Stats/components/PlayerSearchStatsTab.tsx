@@ -249,7 +249,7 @@ const PlayerSearchStatsTab: React.FC<PlayerSearchStatsTabProps> = ({
                     className="autocomplete-item"
                     onClick={() => handleSelectPlayer(player)}
                   >
-                    {player.user_name}
+                    {player.global_name || player.user_name}
                   </div>
                 ))}
               </div>
@@ -289,7 +289,7 @@ const PlayerSearchStatsTab: React.FC<PlayerSearchStatsTabProps> = ({
                       <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: '#333' }} />
                     )}
                     <div style={{ display: 'flex', flexDirection: 'column' }}>
-                      <span style={{ fontWeight: 'bold', fontSize: '1rem' }}>{player.user_name}</span>
+                      <span style={{ fontWeight: 'bold', fontSize: '1rem' }}>{player.global_name || player.user_name}</span>
                       <span style={{ fontSize: '0.85rem', opacity: 0.7 }}>{player.gamesPlayed} games</span>
                     </div>
                   </button>
