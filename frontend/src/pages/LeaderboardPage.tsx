@@ -263,7 +263,7 @@ const LeaderboardPage = () => {
                                                     right: '-5px',
                                                     backgroundColor: 'rgba(0, 0, 0, 0.85)',
                                                     color: '#fff',
-                                                    fontSize: '0.65rem',
+                                                    fontSize: '0.8rem',
                                                     padding: '1px 3px',
                                                     borderRadius: '4px',
                                                     border: '1px solid #444',
