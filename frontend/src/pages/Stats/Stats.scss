@@ -300,10 +300,32 @@
   align-items: center;
   text-align: center;
   border: 1px solid #2a353f;
-  transition: filter 0.2s ease;
+  position: relative;
+  z-index: 0;
+
+  // Ensure content stays above the hover overlay
+  & > * {
+    position: relative;
+    z-index: 1;
+  }
+
+  // Background brightening overlay
+  &::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-color: rgba(255, 255, 255, 0.25);
+    opacity: 0;
+    transition: opacity 0.2s ease;
+    z-index: 0;
+    border-radius: inherit;
+    pointer-events: none;
+  }
 
   &:hover {
-    filter: brightness(1.2); // Lighten the existing background color
+    &::before {
+      opacity: 1;
+    }
   }
 
   img {

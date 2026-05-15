@@ -233,6 +233,9 @@ const LeaderboardPage = () => {
                                             src={`https://cdn.discordapp.com/avatars/${player.user_id}/${player.avatar}.png`}
                                             alt=""
                                             className="leaderboard-avatar"
+                                            onError={(e) => {
+                                                (e.target as HTMLImageElement).src = '/generic/DiscordAvatar.png';
+                                            }}
                                         />
                                     ) : (
                                         <div className="leaderboard-avatar-placeholder" />

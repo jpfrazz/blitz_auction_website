@@ -245,6 +245,9 @@ const MMRChart: React.FC<MMRChartProps> = ({ leaderboard, stats, minRaces }) => 
                       src={player.avatar ? `https://cdn.discordapp.com/avatars/${player.user_id}/${player.avatar}.png` : ''} 
                       style={{ width: '20px', height: '20px', borderRadius: '50%', background: '#444' }}
                       alt=""
+                      onError={(e) => {
+                        (e.target as HTMLImageElement).src = '/generic/DiscordAvatar.png';
+                      }}
                     />
                     <span style={{ fontSize: '1rem', fontWeight: highlightedUser === player.user_id ? 'bold' : 'normal', textDecoration: highlightedUser === player.user_id ? 'underline' : 'none' }}>
                       {player.global_name || player.username}

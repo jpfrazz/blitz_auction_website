@@ -477,6 +477,7 @@ const Info = () => (
             <details>
               <summary className='slateport-market-dropdown'>Thunder Stone</summary>
               <ul>
+                <li>Eelektrik &gt; Eelektross</li>
                 <li>Magneton &gt; Magnezone</li>
                 <li>Nosepass &gt; Probopass</li>
                 <li>Charjabug &gt; Vikavolt</li>

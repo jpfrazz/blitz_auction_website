@@ -334,6 +334,9 @@ function Header() {
                   src={`https://cdn.discordapp.com/avatars/${user.user_id}/${user.avatar}.png`}
                   alt="avatar"
                   className="userAvatar"
+                  onError={(e) => {
+                    (e.target as HTMLImageElement).src = '/generic/DiscordAvatar.png';
+                  }}
                 />
                 <h1>{user.username}</h1>
               </button>

@@ -281,6 +281,9 @@ const PlayerSearchStatsTab: React.FC<PlayerSearchStatsTabProps> = ({
                         src={`https://cdn.discordapp.com/avatars/${player.user_id}/${(player as any).avatar}.png`}
                         alt=""
                         style={{ width: '32px', height: '32px', borderRadius: '50%' }}
+                        onError={(e) => {
+                          (e.target as HTMLImageElement).src = '/generic/DiscordAvatar.png';
+                        }}
                       />
                     ) : (
                       <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: '#333' }} />
@@ -319,6 +322,9 @@ const PlayerSearchStatsTab: React.FC<PlayerSearchStatsTabProps> = ({
                                 src={`https://cdn.discordapp.com/avatars/${selectedPlayer.user_id}/${(selectedPlayer as any).avatar}.png`}
                                 alt=""
                                 style={{ width: '40px', height: '40px', borderRadius: '50%', border: '2px solid rgba(255,255,255,0.2)' }}
+                                onError={(e) => {
+                                  (e.target as HTMLImageElement).src = '/generic/DiscordAvatar.png';
+                                }}
                               />
                             )}
                             <div>
@@ -362,12 +368,12 @@ const PlayerSearchStatsTab: React.FC<PlayerSearchStatsTabProps> = ({
                               />
                               <span style={{
                                 position: 'absolute',
-                                top: '-6px',
-                                right: '-6px',
+                                top: '-8px',
+                                right: '-8px',
                                 background: '#222',
                                 color: '#fff',
-                                fontSize: '0.7rem',
-                                padding: '1px 3px',
+                                fontSize: '0.9rem',
+                                padding: '2px 4px',
                                 borderRadius: '3px',
                                 fontWeight: 'bold',
                                 border: '1px solid #555',
@@ -392,6 +398,9 @@ const PlayerSearchStatsTab: React.FC<PlayerSearchStatsTabProps> = ({
                       src={`https://cdn.discordapp.com/avatars/${selectedPlayer.user_id}/${(selectedPlayer as any).avatar}.png`}
                       alt=""
                       style={{ width: '32px', height: '32px', borderRadius: '50%' }}
+                      onError={(e) => {
+                        (e.target as HTMLImageElement).src = '/generic/DiscordAvatar.png';
+                      }}
                     />
                   )}
                   <div>
