@@ -1738,7 +1738,7 @@ Ability: Flame Body
 - Incinerate
 - Rock Throw
 
-Vulpix
+Vulpix (F) 
 Level: 16
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
@@ -1748,7 +1748,7 @@ Ability: Flash Fire
 - Quick Attack
 - Fire Spin
 
-Numel
+Numel (F) 
 Level: 17
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
@@ -1758,7 +1758,7 @@ Ability: Oblivious
 - Tackle
 - Amnesia
 
-Torkoal @ Oran Berry
+Torkoal (F) @ Oran Berry
 Level: 19
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
