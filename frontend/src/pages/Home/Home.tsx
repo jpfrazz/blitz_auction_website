@@ -163,7 +163,7 @@ const Home = () => {
         />
         <div className={`home-actions ${isLoaded ? 'animate' : ''}`}>
           <div className="home-version-pill">
-            Current Release: v8.8
+            Current Release: v8.9
           </div>
           <a
             href="/emeraldblitz.bps"

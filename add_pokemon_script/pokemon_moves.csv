@@ -464,6 +464,19 @@ pokedex_id,pokemon_name,form,move_name,learn_method,species,display_order
 529,Drilbur,,Earthquake,36/TM,,6
 529,Drilbur,,X-Scissor,TM,,7
 529,Drilbur,,Iron Defense,Egg,,8
+580,Ducklett,,Water Sport,3,,1
+580,Ducklett,,Water Pulse,13,,2
+580,Ducklett,,Aerial Ace,15,,3
+580,Ducklett,,Steel Wing,TM,,4
+580,Ducklett,,Feather Dance,21,,5
+580,Ducklett,,Ice Beam,TM,,6
+580,Ducklett,,Surf,HM,,7
+580,Ducklett,,Rain Dance,34,,8
+580,Ducklett,,Fly,HM,,9
+580,Ducklett,,Tailwind,40,,10
+580,Ducklett,,Brave Bird,47,,11
+580,Ducklett,,Hurricane,55,,12
+580,Ducklett,,Mirror Move,Egg,,13
 355,Duskull,,Night Shade,1,,1
 355,Duskull,,Disable,6,,2
 355,Duskull,,Shadow Sneak,17,,3

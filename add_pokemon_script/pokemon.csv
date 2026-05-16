@@ -69,8 +69,6 @@ dex_number,name,form,evolves_from_id,evolves_from_form,type1,type2,stage,ability
 5,Charmeleon,,4,,Fire,,evo,Blaze,,Solar Power,58,64,58,80,65,80,"Level 16","Stage 2",,
 6,Charizard,,5,,Fire,Flying,evo,Blaze,,Solar Power,78,84,78,109,85,100,"Level 36","Stage 2",,
 6,Charizard-Mega_X,"Mega X",6,,Fire,Dragon,mega,Tough Claws,,,78,130,111,130,85,100,"Charizardite X","Stage 2",,
-420,Cherubi,,,,Grass,,base,Chlorophyll,,,45,35,45,62,53,35,,,,
-421,Cherrim,,420,,Grass,,evo,Flower Gift,,,70,60,70,87,78,85,Level 25,,,
 833,Chewtle,,,,Water,,base,Strong Jaw,Shell Armor,Swift Swim,50,64,50,38,38,41,,,,
 834,Drednaw,,833,,Water,Rock,evo,Strong Jaw,Shell Armor,Swift Swim,90,115,90,48,68,74,"Level 22",,,
 650,Chespin,,,,Grass,,base,Overgrow,,Bulletproof,56,61,65,48,45,38,,"Stage 2",,
@@ -418,7 +416,7 @@ dex_number,name,form,evolves_from_id,evolves_from_form,type1,type2,stage,ability
 900,Kleavor,,123,,Bug,Rock,evo,Swarm,Sheer Force,Sharpness,70,135,95,45,70,85,"King's Rock","Stage 1",,
 212,Scizor,,123,,Bug,Steel,evo,Swarm,Technician,Light Metal,70,130,100,55,80,65,"Metal Coat","Stage 1",,
 212,Mega Scizor,Mega,212,,Bug,Steel,mega,Technician,,,70,150,140,65,100,75,Scizorite,"Stage 1",,
-540,Sewaddle,,,,Bug,Grass,base,Swarm,Chlorophyll,Overcoat,45,53,70,40,60,42,,,,"Tip: Delayed Evolution\nBy delaying Sewaddle's evolution until level 22, it can learn Struggle Bug before gym 3 while still evolving into Swadloon. Otherwise, Swadloon never learns the move."
+540,Sewaddle,,,,Bug,Grass,base,Swarm,Chlorophyll,Overcoat,45,53,70,40,60,42,,,,
 541,Swadloon,,540,,Bug,Grass,evo,Leaf Guard,Chlorophyll,Overcoat,55,63,90,50,80,42,"Level 20",,,
 542,Leavanny,,541,,Bug,Grass,evo,Swarm,Chlorophyll,Overcoat,75,103,80,70,80,92,"Level 30",,,
 90,Shellder,,,,Water,,base,Shell Armor,Skill Link,Overcoat,30,65,100,45,25,40,,,,
