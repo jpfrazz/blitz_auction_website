@@ -70,7 +70,7 @@ Fixed a bug where Pickup / Honey Gather / Ball Fetch Pokémon sometimes didn't p
 Fixed a bug where learning a move or evolving via Milk Drink allowed the player to pass the level cap a second time on another Pokémon
 //One of the most obscure bugs ever found by a player. Thanks freez!
 
-The player sprite no longer becomes invisible when talking to Slateport Market Salespeople
+The player sprite no longer turns invisible when talking to Slateport Market Salespeople
 //A remnant of an old work around to stop glitchy visuals. I've been meaning to apply a proper fix to this for ages and finally have it looking good.
 
 
@@ -106,4 +106,4 @@ Pool Additions
 -----------------------------------------------
 
 +Ducklett
-//This little guy starts with Water Sport, Water Pulse, and Aerial Ace, making him strong into Brawly, Viola and Flannery. Quack!
+//This little guy starts with Water Sport, Water Pulse and Aerial Ace, making him strong into Brawly, Viola and Flannery. Quack!
