@@ -38,6 +38,7 @@ const trainerTypeColors: Record<string, string> = {
 interface PokemonData {
   name: string;
   item: string;
+  gender?: 'M' | 'F';
   imageUrl: string;
   details: React.ReactNode[];
 }
@@ -154,7 +155,15 @@ const BossBattles = () => {
           if (currentPokemon) pokemonList.push(currentPokemon as PokemonData);
           
           const [pokemonNamePart, itemPart] = trimmedLine.split('@');
-          const pokemonName = pokemonNamePart.trim();
+          let pokemonName = pokemonNamePart.trim();
+          let gender: 'M' | 'F' | undefined = undefined;
+
+          const genderMatch = pokemonName.match(/^(.*?)\s*\(([FM])\)$/);
+          if (genderMatch) {
+            pokemonName = genderMatch[1].trim();
+            gender = genderMatch[2] as 'M' | 'F';
+          }
+
           const imageName = pokemonName.toLowerCase()
             .replace(/ /g, '-')
             .replace(/[.'’]/g, '')
@@ -167,6 +176,7 @@ const BossBattles = () => {
           currentPokemon = {
             name: pokemonName,
             item: itemPart ? itemPart.trim() : '',
+            gender,
             imageUrl: `https://img.pokemondb.net/sprites/home/normal/${imageName}.png`,
             details: []
           };
@@ -184,6 +194,16 @@ const BossBattles = () => {
               <div key={abilityName}>Ability: <a href={`https://pokemondb.net/ability/${abilityUrlName}`} target="_blank" rel="noopener noreferrer" className="move-link">{abilityName}</a></div>
             );
           } else {
+            if (trimmedLine.startsWith('Level:') && currentPokemon.gender) {
+              currentPokemon.details?.push(
+                <div key={trimmedLine}>
+                  {trimmedLine}
+                  {currentPokemon.gender === 'M' && <span style={{ color: '#6890F0', marginLeft: '5px', fontWeight: 'bold' }}>♂</span>}
+                  {currentPokemon.gender === 'F' && <span style={{ color: '#EE99AC', marginLeft: '5px', fontWeight: 'bold' }}>♀</span>}
+                </div>
+              );
+              continue;
+            }
             currentPokemon.details?.push(<div key={trimmedLine}>{trimmedLine}</div>);
           }
         } else {

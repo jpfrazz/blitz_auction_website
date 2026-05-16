@@ -8,7 +8,7 @@ Items: Potion
 Double Battle: No
 AI: Basic Trainer / Smart Mon Choices / Smart Switching
 
-Geodude
+Geodude (F)
 Level: 12
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
@@ -18,7 +18,7 @@ Ability: Rock Head
 - Rock Throw
 - Rock Tomb
 
-Growlithe-Hisui
+Growlithe-Hisui (F)
 Level: 12
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
@@ -28,7 +28,7 @@ Ability: Intimidate
 - Howl
 - Leer
 
-Nosepass @ Oran Berry
+Nosepass (F) @ Oran Berry
 Level: 15
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
@@ -48,7 +48,7 @@ Items: Super Potion
 Double Battle: No
 AI: Basic Trainer / Smart Mon Choices / Smart Switching
 
-Geodude
+Geodude (F)
 Level: 16
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
@@ -58,7 +58,7 @@ Ability: Rock Head
 - Rock Throw
 - Rock Tomb
 
-Relicanth
+Relicanth (F)
 Level: 16
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
@@ -68,7 +68,7 @@ Ability: Rock Head
 - Flail
 - Yawn
 
-Growlithe-Hisui
+Growlithe-Hisui (F)
 Level: 17
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
@@ -78,7 +78,7 @@ Ability: Intimidate
 - Howl
 - Leer
 
-Nosepass @ Oran Berry
+Nosepass (F) @ Oran Berry
 Level: 19
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
@@ -98,7 +98,7 @@ Items: Super Potion
 Double Battle: No
 AI: Basic Trainer / Smart Mon Choices / Smart Switching
 
-Graveler
+Graveler (F)
 Level: 21
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
@@ -108,7 +108,7 @@ Ability: Rock Head
 - Defense Curl
 - Rock Tomb
 
-Relicanth
+Relicanth (F)
 Level: 22
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
@@ -118,7 +118,7 @@ Ability: Rock Head
 - Flail
 - Ancient Power
 
-Growlithe-Hisui
+Growlithe-Hisui (F)
 Level: 23
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
@@ -128,7 +128,7 @@ Ability: Intimidate
 - Howl
 - Fire Fang
 
-Nosepass @ Sitrus Berry
+Nosepass (F) @ Sitrus Berry
 Level: 24
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
@@ -148,7 +148,7 @@ Items: Hyper Potion
 Double Battle: No
 AI: Basic Trainer / Smart Mon Choices / Smart Switching
 
-Graveler
+Graveler (F)
 Level: 26
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
@@ -158,7 +158,7 @@ Ability: Rock Head
 - Defense Curl
 - Rock Tomb
 
-Relicanth
+Relicanth (F)
 Level: 24
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
@@ -168,7 +168,7 @@ Ability: Rock Head
 - Flail
 - Ancient Power
 
-Arcanine-Hisui
+Arcanine-Hisui (F)
 Level: 26
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
@@ -178,7 +178,7 @@ Ability: Intimidate
 - Howl
 - Fire Fang
 
-Probopass @ Sitrus Berry
+Probopass (F) @ Sitrus Berry
 Level: 29
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
@@ -198,7 +198,7 @@ Items: Hyper Potion / Hyper Potion
 Double Battle: No
 AI: Basic Trainer / Smart Mon Choices / Smart Switching
 
-Graveler
+Graveler (F)
 Level: 28
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
@@ -208,7 +208,7 @@ Ability: Rock Head
 - Self Destruct
 - Rock Tomb
 
-Relicanth
+Relicanth (F)
 Level: 30
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
@@ -218,7 +218,7 @@ Ability: Rock Head
 - Flail
 - Ancient Power
 
-Arcanine-Hisui
+Arcanine-Hisui (F)
 Level: 30
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
@@ -228,7 +228,7 @@ Ability: Intimidate
 - Howl
 - Fire Fang
 
-Probopass @ Sitrus Berry
+Probopass (F) @ Sitrus Berry
 Level: 32
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
@@ -248,7 +248,7 @@ Items: Hyper Potion / Hyper Potion
 Double Battle: No
 AI: Basic Trainer / Smart Mon Choices / Smart Switching
 
-Graveler
+Graveler (F)
 Level: 32
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
@@ -258,7 +258,7 @@ Ability: Rock Head
 - Self Destruct
 - Rock Tomb
 
-Relicanth
+Relicanth (F)
 Level: 31
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
@@ -268,7 +268,7 @@ Ability: Rock Head
 - Flail
 - Ancient Power
 
-Kleavor
+Kleavor (F)
 Level: 33
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
@@ -278,7 +278,7 @@ Ability: Swarm
 - Slash
 - Rock Tomb
 
-Arcanine-Hisui
+Arcanine-Hisui (F)
 Level: 33
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
@@ -288,7 +288,7 @@ Ability: Intimidate
 - Howl
 - Fire Fang
 
-Probopass @ Sitrus Berry
+Probopass (F) @ Sitrus Berry
 Level: 35
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
@@ -308,7 +308,7 @@ Items: Hyper Potion / Hyper Potion
 Double Battle: No
 AI: Basic Trainer / Smart Mon Choices / Smart Switching
 
-Golem
+Golem (F)
 Level: 40
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
@@ -318,7 +318,7 @@ Ability: Rock Head
 - Self Destruct
 - Rock Tomb
 
-Relicanth
+Relicanth (F)
 Level: 39
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
@@ -328,7 +328,7 @@ Ability: Rock Head
 - Flail
 - Head Smash
 
-Kleavor
+Kleavor (F)
 Level: 41
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
@@ -338,7 +338,7 @@ Ability: Swarm
 - Slash
 - Rock Tomb
 
-Arcanine-Hisui
+Arcanine-Hisui (F)
 Level: 40
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
@@ -348,7 +348,7 @@ Ability: Intimidate
 - Play Rough
 - Fire Fang
 
-Probopass @ Sitrus Berry
+Probopass (F) @ Sitrus Berry
 Level: 42
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
@@ -368,7 +368,7 @@ Items: Hyper Potion / Hyper Potion
 Double Battle: No
 AI: Basic Trainer / Smart Mon Choices / Smart Switching
 
-Golem
+Golem (F)
 Level: 44
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
@@ -378,7 +378,7 @@ Ability: Rock Head
 - Explosion
 - Rock Tomb
 
-Relicanth
+Relicanth (F)
 Level: 43
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
@@ -388,7 +388,7 @@ Ability: Rock Head
 - Flail
 - Head Smash
 
-Kleavor
+Kleavor (F)
 Level: 46
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
@@ -398,7 +398,7 @@ Ability: Swarm
 - Slash
 - Rock Tomb
 
-Arcanine-Hisui
+Arcanine-Hisui (F)
 Level: 46
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
@@ -408,7 +408,7 @@ Ability: Intimidate
 - Play Rough
 - Flare Blitz
 
-Probopass @ Sitrus Berry
+Probopass (F) @ Sitrus Berry
 Level: 48
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
@@ -428,7 +428,7 @@ Items: Potion
 Double Battle: No
 AI: Basic Trainer / Smart Mon Choices / Smart Switching
 
-Surskit
+Surskit (F)
 Level: 12
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
@@ -438,7 +438,7 @@ Ability: Swift Swim
 - Bug Bite
 - Sticky Web
 
-Nincada
+Nincada (F)
 Level: 12
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
@@ -448,12 +448,12 @@ Ability: Compound Eyes
 - Bug Bite
 - Mud Slap
 
-Beautifly @ Oran Berry
+Beautifly (F) @ Oran Berry
 Level: 15
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
 Ability: Swarm
-- Mega Drain
+- Absorb
 - Gust
 - Bug Bite
 - Whirlwind
@@ -468,17 +468,17 @@ Items: Super Potion
 Double Battle: No
 AI: Basic Trainer / Smart Mon Choices / Smart Switching
 
-Surskit
+Surskit (F)
 Level: 16
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
 Ability: Swift Swim
-- Bubble Beam
+- Bubble
 - Quick Attack
 - Bug Bite
 - Sticky Web
 
-Volbeat
+Volbeat (M)
 Level: 17
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
@@ -488,7 +488,7 @@ Ability: Swarm
 - Double Team
 - Quick Attack
 
-Nincada
+Nincada (F)
 Level: 16
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
@@ -498,7 +498,7 @@ Ability: Compound Eyes
 - Bug Bite
 - Mud Slap
 
-Beautifly @ Oran Berry
+Beautifly (F) @ Oran Berry
 Level: 19
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
@@ -518,7 +518,7 @@ Items: Super Potion
 Double Battle: No
 AI: Basic Trainer / Smart Mon Choices / Smart Switching
 
-Surskit
+Surskit (F)
 Level: 21
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
@@ -528,7 +528,7 @@ Ability: Swift Swim
 - Bug Bite
 - Sticky Web
 
-Volbeat
+Volbeat (M)
 Level: 23
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
@@ -538,7 +538,7 @@ Ability: Swarm
 - Double Team
 - Aerial Ace
 
-Ninjask
+Ninjask (F)
 Level: 22
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
@@ -548,7 +548,7 @@ Ability: Speed Boost
 - Bug Bite
 - Double Team
 
-Beautifly @ Sitrus Berry
+Beautifly (F) @ Sitrus Berry
 Level: 24
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
@@ -568,7 +568,7 @@ Items: Hyper Potion
 Double Battle: No
 AI: Basic Trainer / Smart Mon Choices / Smart Switching
 
-Masquerain
+Masquerain (F)
 Level: 26
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
@@ -578,7 +578,7 @@ Ability: Intimidate
 - Silver Wind
 - Air Cutter
 
-Volbeat
+Volbeat (M)
 Level: 26
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
@@ -588,7 +588,7 @@ Ability: Swarm
 - Double Team
 - Aerial Ace
 
-Ninjask
+Ninjask (F)
 Level: 24
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
@@ -598,7 +598,7 @@ Ability: Speed Boost
 - Bug Bite
 - Aerial Ace
 
-Beautifly @ Sitrus Berry
+Beautifly (F) @ Sitrus Berry
 Level: 29
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
@@ -618,7 +618,7 @@ Items: Hyper Potion / Hyper Potion
 Double Battle: No
 AI: Basic Trainer / Smart Mon Choices / Smart Switching
 
-Masquerain
+Masquerain (F)
 Level: 30
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
@@ -628,7 +628,7 @@ Ability: Intimidate
 - Bug Buzz
 - Air Cutter
 
-Volbeat
+Volbeat (M)
 Level: 28
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
@@ -638,7 +638,7 @@ Ability: Swarm
 - Zen Headbutt
 - Aerial Ace
 
-Ninjask
+Ninjask (F)
 Level: 30
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
@@ -648,7 +648,7 @@ Ability: Speed Boost
 - Bug Bite
 - Aerial Ace
 
-Beautifly @ Sitrus Berry
+Beautifly (F) @ Sitrus Berry
 Level: 32
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
@@ -668,7 +668,7 @@ Items: Hyper Potion / Hyper Potion
 Double Battle: No
 AI: Basic Trainer / Smart Mon Choices / Smart Switching
 
-Masquerain
+Masquerain (F)
 Level: 33
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
@@ -678,7 +678,7 @@ Ability: Intimidate
 - Bug Buzz
 - Air Cutter
 
-Volbeat
+Volbeat (M)
 Level: 32
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
@@ -688,7 +688,7 @@ Ability: Swarm
 - Zen Headbutt
 - Aerial Ace
 
-Ninjask
+Ninjask (F)
 Level: 31
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
@@ -698,7 +698,7 @@ Ability: Speed Boost
 - Bug Bite
 - Aerial Ace
 
-Kleavor
+Kleavor (F)
 Level: 33
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
@@ -708,7 +708,7 @@ Ability: Swarm
 - Slash
 - Rock Slide
 
-Beautifly @ Sitrus Berry
+Beautifly (F) @ Sitrus Berry
 Level: 35
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
@@ -728,7 +728,7 @@ Items: Hyper Potion / Hyper Potion
 Double Battle: No
 AI: Basic Trainer / Smart Mon Choices / Smart Switching
 
-Masquerain
+Masquerain (F)
 Level: 39
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
@@ -738,7 +738,7 @@ Ability: Intimidate
 - Bug Buzz
 - Air Cutter
 
-Volbeat
+Volbeat (M)
 Level: 40
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
@@ -748,7 +748,7 @@ Ability: Swarm
 - Zen Headbutt
 - Aerial Ace
 
-Ninjask
+Ninjask (F)
 Level: 40
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
@@ -758,7 +758,7 @@ Ability: Speed Boost
 - Bug Bite
 - Aerial Ace
 
-Kleavor
+Kleavor (F)
 Level: 41
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
@@ -768,7 +768,7 @@ Ability: Swarm
 - Slash
 - Rock Slide
 
-Beautifly @ Sitrus Berry
+Beautifly (F) @ Sitrus Berry
 Level: 42
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
@@ -788,7 +788,7 @@ Items: Hyper Potion / Hyper Potion
 Double Battle: No
 AI: Basic Trainer / Smart Mon Choices / Smart Switching
 
-Masquerain
+Masquerain (F)
 Level: 44
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
@@ -798,7 +798,7 @@ Ability: Intimidate
 - Bug Buzz
 - Air Cutter
 
-Volbeat
+Volbeat (M)
 Level: 43
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
@@ -808,7 +808,7 @@ Ability: Swarm
 - Zen Headbutt
 - Aerial Ace
 
-Ninjask
+Ninjask (F)
 Level: 46
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
@@ -818,7 +818,7 @@ Ability: Speed Boost
 - Bug Bite
 - Aerial Ace
 
-Kleavor
+Kleavor (F)
 Level: 46
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
@@ -828,7 +828,7 @@ Ability: Swarm
 - Slash
 - Rock Slide
 
-Beautifly @ Sitrus Berry
+Beautifly (F) @ Sitrus Berry
 Level: 48
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
@@ -848,7 +848,7 @@ Items: Potion
 Double Battle: No
 AI: Basic Trainer / Smart Mon Choices / Smart Switching
 
-Machop
+Machop (M)
 Level: 12
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
@@ -858,7 +858,7 @@ Ability: Guts
 - Bullet Punch
 - Bulk Up
 
-Farfetch'd-Galar
+Farfetch'd-Galar (M)
 Level: 12
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
@@ -868,14 +868,14 @@ Ability: Inner Focus
 - Rock Smash
 - Roost
 
-Makuhita @ Oran Berry
+Makuhita (M) @ Oran Berry
 Level: 15
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
 Ability: Guts
 - Drain Punch
 - Fake Out
-- Fire Punch
+- Brine
 - Bulk Up
 
 === TRAINER_BRAWLY_2 ===
@@ -888,7 +888,7 @@ Items: Super Potion
 Double Battle: No
 AI: Basic Trainer / Smart Mon Choices / Smart Switching
 
-Machop
+Machop (M)
 Level: 16
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
@@ -898,7 +898,7 @@ Ability: Guts
 - Bullet Punch
 - Bulk Up
 
-Meditite
+Meditite (M)
 Level: 16
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
@@ -908,7 +908,7 @@ Ability: Pure Power
 - Reflect
 - Bulk Up
 
-Farfetch'd-Galar
+Farfetch'd-Galar (M)
 Level: 17
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
@@ -918,14 +918,14 @@ Ability: Inner Focus
 - Rock Smash
 - Roost
 
-Makuhita @ Oran Berry
+Makuhita (M) @ Oran Berry
 Level: 19
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
 Ability: Guts
 - Drain Punch
 - Fake Out
-- Fire Punch
+- Brine
 - Bulk Up
 
 === TRAINER_BRAWLY_3 ===
@@ -938,7 +938,7 @@ Items: Super Potion
 Double Battle: No
 AI: Basic Trainer / Smart Mon Choices / Smart Switching
 
-Machop
+Machop (M)
 Level: 21
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
@@ -948,7 +948,7 @@ Ability: Guts
 - Bullet Punch
 - Bulk Up
 
-Meditite
+Meditite (M)
 Level: 22
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
@@ -958,7 +958,7 @@ Ability: Pure Power
 - Reflect
 - Bulk Up
 
-Farfetch'd-Galar
+Farfetch'd-Galar (M)
 Level: 23
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
@@ -968,7 +968,7 @@ Ability: Inner Focus
 - Rock Smash
 - Roost
 
-Hariyama @ Sitrus Berry
+Hariyama (M) @ Sitrus Berry
 Level: 24
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
@@ -988,7 +988,7 @@ Items: Hyper Potion
 Double Battle: No
 AI: Basic Trainer / Smart Mon Choices / Smart Switching
 
-Machoke
+Machoke (M)
 Level: 26
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
@@ -998,7 +998,7 @@ Ability: Guts
 - Bullet Punch
 - Bulk Up
 
-Meditite
+Meditite (M)
 Level: 24
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
@@ -1008,7 +1008,7 @@ Ability: Pure Power
 - Reflect
 - Bulk Up
 
-Farfetch'd-Galar
+Farfetch'd-Galar (M)
 Level: 26
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
@@ -1018,7 +1018,7 @@ Ability: Inner Focus
 - Rock Smash
 - Roost
 
-Hariyama @ Sitrus Berry
+Hariyama (M) @ Sitrus Berry
 Level: 29
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
@@ -1038,7 +1038,7 @@ Items: Hyper Potion / Hyper Potion
 Double Battle: No
 AI: Basic Trainer / Smart Mon Choices / Smart Switching
 
-Machoke
+Machoke (M)
 Level: 30
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
@@ -1048,7 +1048,7 @@ Ability: Guts
 - Bullet Punch
 - Bulk Up
 
-Meditite
+Meditite (M)
 Level: 28
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
@@ -1058,7 +1058,7 @@ Ability: Pure Power
 - Reflect
 - Bulk Up
 
-Sirfetch'd @ Leek
+Sirfetch'd (M) @ Leek
 Level: 30
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
@@ -1068,7 +1068,7 @@ Ability: Steadfast
 - Rock Smash
 - Iron Defense
 
-Hariyama @ Sitrus Berry
+Hariyama (M) @ Sitrus Berry
 Level: 32
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
@@ -1088,7 +1088,7 @@ Items: Hyper Potion / Hyper Potion
 Double Battle: No
 AI: Basic Trainer / Smart Mon Choices / Smart Switching
 
-Machoke
+Machoke (M)
 Level: 33
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
@@ -1098,7 +1098,7 @@ Ability: Guts
 - Dual Chop
 - Bulk Up
 
-Meditite
+Meditite (M)
 Level: 31
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
@@ -1108,7 +1108,7 @@ Ability: Pure Power
 - Reflect
 - Bulk Up
 
-Combusken
+Combusken (M)
 Level: 32
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
@@ -1118,7 +1118,7 @@ Ability: Blaze
 - Flame Charge
 - Peck
 
-Sirfetch'd @ Leek
+Sirfetch'd (M) @ Leek
 Level: 33
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
@@ -1128,7 +1128,7 @@ Ability: Steadfast
 - Rock Smash
 - Iron Defense
 
-Hariyama @ Sitrus Berry
+Hariyama (M) @ Sitrus Berry
 Level: 35
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
@@ -1148,7 +1148,7 @@ Items: Hyper Potion / Hyper Potion
 Double Battle: No
 AI: Basic Trainer / Smart Mon Choices / Smart Switching
 
-Machamp
+Machamp (M)
 Level: 39
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
@@ -1158,7 +1158,7 @@ Ability: Guts
 - Dual Chop
 - Bulk Up
 
-Medicham
+Medicham (M)
 Level: 40
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
@@ -1168,7 +1168,7 @@ Ability: Pure Power
 - Reflect
 - Bulk Up
 
-Blaziken
+Blaziken (M)
 Level: 40
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
@@ -1178,7 +1178,7 @@ Ability: Blaze
 - Blaze Kick
 - Focus Energy
 
-Sirfetch'd @ Leek
+Sirfetch'd (M) @ Leek
 Level: 41
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
@@ -1188,7 +1188,7 @@ Ability: Steadfast
 - Brick Break
 - Iron Defense
 
-Hariyama @ Sitrus Berry
+Hariyama (M) @ Sitrus Berry
 Level: 42
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
@@ -1208,7 +1208,7 @@ Items: Hyper Potion / Hyper Potion
 Double Battle: No
 AI: Basic Trainer / Smart Mon Choices / Smart Switching
 
-Machamp
+Machamp (M)
 Level: 44
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
@@ -1218,7 +1218,7 @@ Ability: Guts
 - Dual Chop
 - Bulk Up
 
-Medicham
+Medicham (M)
 Level: 43
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
@@ -1228,7 +1228,7 @@ Ability: Pure Power
 - Reflect
 - Bulk Up
 
-Blaziken
+Blaziken (M)
 Level: 46
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
@@ -1238,7 +1238,7 @@ Ability: Blaze
 - Blaze Kick
 - Focus Energy
 
-Sirfetch'd @ Leek
+Sirfetch'd (M) @ Leek
 Level: 46
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
@@ -1248,7 +1248,7 @@ Ability: Steadfast
 - Brick Break
 - Leaf Blade
 
-Hariyama @ Sitrus Berry
+Hariyama (M) @ Sitrus Berry
 Level: 48
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
@@ -1288,7 +1288,7 @@ Ability: Magnet Pull
 - Thunder Wave
 - Magnet Bomb
 
-Electrike @ Oran Berry
+Electrike (M) @ Oran Berry
 Level: 15
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
@@ -1308,7 +1308,7 @@ Items: Super Potion
 Double Battle: No
 AI: Basic Trainer / Smart Mon Choices / Smart Switching
 
-Geodude-Alola
+Geodude-Alola (M)
 Level: 16
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
@@ -1338,7 +1338,7 @@ Ability: Magnet Pull
 - Thunder Wave
 - Magnet Bomb
 
-Electrike @ Oran Berry
+Electrike (M) @ Oran Berry
 Level: 19
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
@@ -1358,7 +1358,7 @@ Items: Super Potion
 Double Battle: No
 AI: Basic Trainer / Smart Mon Choices / Smart Switching
 
-Graveler-Alola
+Graveler-Alola (M)
 Level: 21
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
@@ -1388,7 +1388,7 @@ Ability: Magnet Pull
 - Thunder Wave
 - Magnet Bomb
 
-Manectric @ Sitrus Berry
+Manectric (M) @ Sitrus Berry
 Level: 24
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
@@ -1408,7 +1408,7 @@ Items: Hyper Potion
 Double Battle: No
 AI: Basic Trainer / Smart Mon Choices / Smart Switching
 
-Graveler-Alola
+Graveler-Alola (M)
 Level: 25
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
@@ -1438,7 +1438,7 @@ Ability: Magnet Pull
 - Thunder Wave
 - Mirror Shot
 
-Manectric @ Sitrus Berry
+Manectric (M) @ Sitrus Berry
 Level: 29
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
@@ -1458,7 +1458,7 @@ Items: Hyper Potion / Hyper Potion
 Double Battle: No
 AI: Basic Trainer / Smart Mon Choices / Smart Switching
 
-Graveler-Alola
+Graveler-Alola (M)
 Level: 28
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
@@ -1488,7 +1488,7 @@ Ability: Magnet Pull
 - Tri Attack
 - Mirror Shot
 
-Manectric @ Sitrus Berry
+Manectric (M) @ Sitrus Berry
 Level: 32
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
@@ -1508,7 +1508,7 @@ Items: Hyper Potion / Hyper Potion
 Double Battle: No
 AI: Basic Trainer / Smart Mon Choices / Smart Switching
 
-Graveler-Alola
+Graveler-Alola (M)
 Level: 31
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
@@ -1538,7 +1538,7 @@ Ability: Magnet Pull
 - Tri Attack
 - Flash Cannon
 
-Raichu-Alola
+Raichu-Alola (M)
 Level: 33
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
@@ -1548,7 +1548,7 @@ Ability: Surge Surfer
 - Surf
 - Quick Attack
 
-Manectric @ Sitrus Berry
+Manectric (M) @ Sitrus Berry
 Level: 35
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
@@ -1568,13 +1568,13 @@ Items: Hyper Potion / Hyper Potion
 Double Battle: No
 AI: Basic Trainer / Smart Mon Choices / Smart Switching
 
-Golem-Alola
+Golem-Alola (M)
 Level: 40
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
 Ability: Sturdy
 - Rock Blast
-- Explosion
+- Earthquake
 - Stealth Rock
 - Shock Wave
 
@@ -1598,7 +1598,7 @@ Ability: Magnet Pull
 - Tri Attack
 - Flash Cannon
 
-Raichu-Alola
+Raichu-Alola (M)
 Level: 41
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
@@ -1608,7 +1608,7 @@ Ability: Surge Surfer
 - Surf
 - Quick Attack
 
-Manectric @ Sitrus Berry
+Manectric (M) @ Sitrus Berry
 Level: 42
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
@@ -1628,13 +1628,13 @@ Items: Hyper Potion / Hyper Potion
 Double Battle: No
 AI: Basic Trainer / Smart Mon Choices / Smart Switching
 
-Golem-Alola
+Golem-Alola (M)
 Level: 44
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
 Ability: Sturdy
 - Stone Edge
-- Explosion
+- Earthquake
 - Stealth Rock
 - Shock Wave
 
@@ -1658,7 +1658,7 @@ Ability: Magnet Pull
 - Tri Attack
 - Flash Cannon
 
-Raichu-Alola
+Raichu-Alola (M)
 Level: 46
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
@@ -1668,7 +1668,7 @@ Ability: Surge Surfer
 - Surf
 - Nuzzle
 
-Manectric @ Sitrus Berry
+Manectric (M) @ Sitrus Berry
 Level: 48
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
@@ -1688,7 +1688,7 @@ Items: Potion
 Double Battle: No
 AI: Basic Trainer / Smart Mon Choices
 
-Slugma
+Slugma (F)
 Level: 12
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
@@ -1698,7 +1698,7 @@ Ability: Solid Rock
 - Ember
 - Rock Throw
 
-Numel
+Numel (F) 
 Level: 12
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
@@ -1708,7 +1708,7 @@ Ability: Oblivious
 - Tackle
 - Amnesia
 
-Torkoal @ Oran Berry
+Torkoal (F) @ Oran Berry
 Level: 15
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
@@ -1728,7 +1728,7 @@ Items: Super Potion
 Double Battle: No
 AI: Basic Trainer / Smart Mon Choices
 
-Slugma
+Slugma (F) 
 Level: 16
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
@@ -1778,7 +1778,7 @@ Items: Super Potion
 Double Battle: No
 AI: Basic Trainer / Smart Mon Choices
 
-Slugma
+Slugma (F) 
 Level: 22
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
@@ -1788,7 +1788,7 @@ Ability: Flame Body
 - Yawn
 - Sunny Day
 
-Vulpix
+Vulpix (F) 
 Level: 21
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
@@ -1798,7 +1798,7 @@ Ability: Flash Fire
 - Overheat
 - Fire Spin
 
-Numel
+Numel (F) 
 Level: 23
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
@@ -1808,7 +1808,7 @@ Ability: Oblivious
 - Sunny Day
 - Amnesia
 
-Torkoal @ Sitrus Berry
+Torkoal (F) @ Sitrus Berry
 Level: 24
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
@@ -1828,7 +1828,7 @@ Items: Hyper Potion
 Double Battle: No
 AI: Basic Trainer / Smart Mon Choices
 
-Marowak-Alola
+Marowak-Alola (F) 
 Level: 26
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
@@ -1838,7 +1838,7 @@ Ability: Cursed Body
 - Will O Wisp
 - Sunny Day
 
-Slugma
+Slugma (F) 
 Level: 24
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
@@ -1848,7 +1848,7 @@ Ability: Flame Body
 - Light Screen
 - Sunny Day
 
-Camerupt
+Camerupt (F) 
 Level: 26
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
@@ -1858,7 +1858,7 @@ Ability: Magma Armor
 - Sunny Day
 - Amnesia
 
-Torkoal @ White Herb
+Torkoal (F) @ White Herb
 Level: 29
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
@@ -1878,7 +1878,7 @@ Items: Hyper Potion / Hyper Potion
 Double Battle: No
 AI: Basic Trainer / Smart Mon Choices
 
-Marowak-Alola @ Thick Club
+Marowak-Alola (F) @ Thick Club
 Level: 30
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
@@ -1888,7 +1888,7 @@ Ability: Cursed Body
 - Will O Wisp
 - Sunny Day
 
-Slugma
+Slugma (F)
 Level: 28
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
@@ -1898,7 +1898,7 @@ Ability: Flame Body
 - Light Screen
 - Sunny Day
 
-Camerupt
+Camerupt (F) 
 Level: 30
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
@@ -1908,7 +1908,7 @@ Ability: Magma Armor
 - Sunny Day
 - Take Down
 
-Torkoal @ White Herb
+Torkoal (F) @ White Herb
 Level: 32
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
@@ -1928,7 +1928,7 @@ Items: Hyper Potion / Hyper Potion
 Double Battle: No
 AI: Basic Trainer / Smart Mon Choices
 
-Marowak-Alola @ Thick Club
+Marowak-Alola (F) @ Thick Club
 Level: 33
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
@@ -1938,7 +1938,7 @@ Ability: Cursed Body
 - Thrash
 - Sunny Day
 
-Slugma
+Slugma (F)
 Level: 31
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
@@ -1948,7 +1948,7 @@ Ability: Flame Body
 - Light Screen
 - Sunny Day
 
-Ninetales
+Ninetales (F)
 Level: 32
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
@@ -1958,7 +1958,7 @@ Ability: Drought
 - Hex
 - Will O Wisp
 
-Camerupt
+Camerupt (F)
 Level: 33
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
@@ -1968,7 +1968,7 @@ Ability: Magma Armor
 - Sunny Day
 - Rock Slide
 
-Torkoal @ White Herb
+Torkoal (F) @ White Herb
 Level: 35
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
@@ -1988,7 +1988,7 @@ Items: Hyper Potion / Hyper Potion
 Double Battle: No
 AI: Basic Trainer / Smart Mon Choices
 
-Marowak-Alola @ Thick Club
+Marowak-Alola (F) @ Thick Club
 Level: 41
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
@@ -1998,7 +1998,7 @@ Ability: Cursed Body
 - Stomping Tantrum
 - Sunny Day
 
-Magcargo
+Magcargo (F)
 Level: 39
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
@@ -2008,7 +2008,7 @@ Ability: Flame Body
 - Incinerate
 - Sunny Day
 
-Ninetales
+Ninetales (F)
 Level: 40
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
@@ -2018,7 +2018,7 @@ Ability: Drought
 - Hex
 - Will O Wisp
 
-Camerupt
+Camerupt (F)
 Level: 40
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
@@ -2028,7 +2028,7 @@ Ability: Magma Armor
 - Sunny Day
 - Rock Slide
 
-Torkoal @ White Herb
+Torkoal (F) @ White Herb
 Level: 42
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
@@ -2048,7 +2048,7 @@ Items: Hyper Potion / Hyper Potion
 Double Battle: No
 AI: Basic Trainer / Smart Mon Choices
 
-Marowak-Alola @ Thick Club
+Marowak-Alola (F) @ Thick Club
 Level: 46
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
@@ -2058,7 +2058,7 @@ Ability: Cursed Body
 - Stomping Tantrum
 - Bone Rush
 
-Magcargo
+Magcargo (F)
 Level: 43
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
@@ -2068,7 +2068,7 @@ Ability: Flame Body
 - Earth Power
 - Sunny Day
 
-Ninetales
+Ninetales (F)
 Level: 44
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
@@ -2078,7 +2078,7 @@ Ability: Drought
 - Hex
 - Will O Wisp
 
-Camerupt
+Camerupt (F)
 Level: 46
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
@@ -2088,7 +2088,7 @@ Ability: Magma Armor
 - Sunny Day
 - Rock Slide
 
-Torkoal @ White Herb
+Torkoal (F) @ White Herb
 Level: 48
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
@@ -2108,7 +2108,7 @@ Items: Potion
 Double Battle: No
 AI: Basic Trainer
 
-Zorua-Hisui
+Zorua-Hisui (M)
 Level: 12
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
@@ -2118,7 +2118,7 @@ Ability: Illusion
 - Copycat
 - Torment
 
-Zigzagoon-Galar
+Zigzagoon-Galar (M)
 Level: 12
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
@@ -2128,7 +2128,7 @@ Ability: Quick Feet
 - Facade
 - Sand Attack
 
-Slakoth @ Oran Berry
+Slakoth (M) @ Oran Berry
 Level: 15
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
@@ -2148,7 +2148,7 @@ Items: Super Potion
 Double Battle: No
 AI: Basic Trainer
 
-Spinda
+Spinda (M)
 Level: 15
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
@@ -2158,7 +2158,7 @@ Ability: Own Tempo
 - Facade
 - Encore
 
-Zorua-Hisui
+Zorua-Hisui (M)
 Level: 17
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
@@ -2168,7 +2168,7 @@ Ability: Illusion
 - Copycat
 - Torment
 
-Zigzagoon-Galar
+Zigzagoon-Galar (M)
 Level: 17
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
@@ -2178,7 +2178,7 @@ Ability: Quick Feet
 - Facade
 - Pin Missile
 
-Vigoroth @ Oran Berry
+Vigoroth (M) @ Oran Berry
 Level: 19
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
@@ -2198,7 +2198,7 @@ Items: Super Potion
 Double Battle: No
 AI: Basic Trainer
 
-Spinda
+Spinda (M)
 Level: 20
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
@@ -2208,7 +2208,7 @@ Ability: Own Tempo
 - Facade
 - Encore
 
-Zorua-Hisui
+Zorua-Hisui (M)
 Level: 23
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
@@ -2218,7 +2218,7 @@ Ability: Illusion
 - Copycat
 - Torment
 
-Linoone-Galar
+Linoone-Galar (M)
 Level: 23
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
@@ -2228,7 +2228,7 @@ Ability: Quick Feet
 - Facade
 - Hone Claws
 
-Vigoroth @ Sitrus Berry
+Vigoroth (M) @ Sitrus Berry
 Level: 24
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
@@ -2248,7 +2248,7 @@ Items: Hyper Potion
 Double Battle: No
 AI: Basic Trainer
 
-Spinda
+Spinda (M)
 Level: 24
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
@@ -2258,7 +2258,7 @@ Ability: Own Tempo
 - Facade
 - Encore
 
-Zorua-Hisui
+Zorua-Hisui (M)
 Level: 26
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
@@ -2268,7 +2268,7 @@ Ability: Illusion
 - Copycat
 - Torment
 
-Linoone-Galar
+Linoone-Galar (M)
 Level: 26
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
@@ -2278,7 +2278,7 @@ Ability: Quick Feet
 - Facade
 - Hone Claws
 
-Vigoroth @ Sitrus Berry
+Vigoroth (M) @ Sitrus Berry
 Level: 29
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
@@ -2298,7 +2298,7 @@ Items: Hyper Potion / Hyper Potion
 Double Battle: No
 AI: Basic Trainer
 
-Spinda
+Spinda (M)
 Level: 28
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
@@ -2308,7 +2308,7 @@ Ability: Own Tempo
 - Facade
 - Encore
 
-Zoroark-Hisui
+Zoroark-Hisui (M)
 Level: 30
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
@@ -2318,7 +2318,7 @@ Ability: Illusion
 - Torment
 - Nasty Plot
 
-Linoone-Galar
+Linoone-Galar (M)
 Level: 30
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
@@ -2328,7 +2328,7 @@ Ability: Quick Feet
 - Facade
 - Headbutt
 
-Slaking @ Sitrus Berry
+Slaking (M) @ Sitrus Berry
 Level: 32
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
@@ -2348,7 +2348,7 @@ Items: Hyper Potion / Hyper Potion
 Double Battle: No
 AI: Basic Trainer
 
-Spinda
+Spinda (M)
 Level: 31
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
@@ -2358,7 +2358,7 @@ Ability: Own Tempo
 - Facade
 - Encore
 
-Zoroark-Hisui
+Zoroark-Hisui (M)
 Level: 33
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
@@ -2368,7 +2368,7 @@ Ability: Illusion
 - Torment
 - Nasty Plot
 
-Loudred
+Loudred (M)
 Level: 32
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
@@ -2378,7 +2378,7 @@ Ability: Soundproof
 - Disarming Voice
 - Uproar
 
-Linoone-Galar
+Linoone-Galar (M)
 Level: 33
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
@@ -2388,7 +2388,7 @@ Ability: Quick Feet
 - Facade
 - Headbutt
 
-Slaking @ Sitrus Berry
+Slaking (M) @ Sitrus Berry
 Level: 35
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
@@ -2408,7 +2408,7 @@ Items: Hyper Potion / Hyper Potion
 Double Battle: No
 AI: Basic Trainer
 
-Spinda
+Spinda (M)
 Level: 40
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
@@ -2418,7 +2418,7 @@ Ability: Own Tempo
 - Facade
 - Encore
 
-Zoroark-Hisui
+Zoroark-Hisui (M)
 Level: 40
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
@@ -2428,7 +2428,7 @@ Ability: Illusion
 - Psychic
 - Nasty Plot
 
-Exploud
+Exploud (M)
 Level: 40
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
@@ -2438,7 +2438,7 @@ Ability: Soundproof
 - Hyper Voice
 - Thunder Fang
 
-Obstagoon
+Obstagoon (M)
 Level: 40
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
@@ -2448,7 +2448,7 @@ Ability: Guts
 - Facade
 - Submission
 
-Slaking @ Kings Rock
+Slaking (M) @ Kings Rock
 Level: 42
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
@@ -2468,7 +2468,7 @@ Items: Hyper Potion / Hyper Potion
 Double Battle: No
 AI: Basic Trainer
 
-Spinda
+Spinda (M)
 Level: 43
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
@@ -2478,7 +2478,7 @@ Ability: Own Tempo
 - Facade
 - Encore
 
-Zoroark-Hisui
+Zoroark-Hisui (M)
 Level: 46
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
@@ -2488,7 +2488,7 @@ Ability: Illusion
 - Psychic
 - Nasty Plot
 
-Exploud
+Exploud (M)
 Level: 46
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
@@ -2498,7 +2498,7 @@ Ability: Soundproof
 - Boomburst
 - Thunder Fang
 
-Obstagoon
+Obstagoon (M)
 Level: 46
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
@@ -2508,7 +2508,7 @@ Ability: Guts
 - Facade
 - Submission
 
-Slaking @ Kings Rock
+Slaking (M) @ Kings Rock
 Level: 48
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
@@ -2528,7 +2528,7 @@ Items: Potion
 Double Battle: No
 AI: Basic Trainer / Smart Mon Choices / Smart Switching
 
-Swablu
+Swablu (F)
 Level: 12
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
@@ -2538,7 +2538,7 @@ Ability: Natural Cure
 - Perish Song
 - Aerial Ace
 
-Wingull
+Wingull (F)
 Level: 12
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
@@ -2548,7 +2548,7 @@ Ability: Keen Eye
 - Quick Attack
 - Aerial Ace
 
-Tropius @ Oran Berry
+Tropius (F) @ Oran Berry
 Level: 15
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
@@ -2568,7 +2568,7 @@ Items: Super Potion
 Double Battle: No
 AI: Basic Trainer / Smart Mon Choices / Smart Switching
 
-Swablu
+Swablu (F)
 Level: 16
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
@@ -2578,7 +2578,7 @@ Ability: Natural Cure
 - Perish Song
 - Aerial Ace
 
-Wingull
+Wingull (F)
 Level: 16
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
@@ -2588,7 +2588,7 @@ Ability: Keen Eye
 - Quick Attack
 - Aerial Ace
 
-Taillow
+Taillow (F)
 Level: 17
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
@@ -2598,7 +2598,7 @@ Ability: Guts
 - Focus Energy
 - Double Team
 
-Tropius @ Oran Berry
+Tropius (F) @ Oran Berry
 Level: 19
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
@@ -2618,7 +2618,7 @@ Items: Super Potion
 Double Battle: No
 AI: Basic Trainer / Smart Mon Choices / Smart Switching
 
-Swablu
+Swablu (F)
 Level: 21
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
@@ -2628,7 +2628,7 @@ Ability: Natural Cure
 - Perish Song
 - Aerial Ace
 
-Wingull
+Wingull (F)
 Level: 22
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
@@ -2638,7 +2638,7 @@ Ability: Keen Eye
 - Quick Attack
 - Aerial Ace
 
-Swellow
+Swellow (F)
 Level: 23
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
@@ -2648,7 +2648,7 @@ Ability: Guts
 - Pluck
 - Double Team
 
-Tropius @ Sitrus Berry
+Tropius (F) @ Sitrus Berry
 Level: 24
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
@@ -2668,7 +2668,7 @@ Items: Hyper Potion
 Double Battle: No
 AI: Basic Trainer / Smart Mon Choices / Smart Switching
 
-Swablu
+Swablu (F)
 Level: 24
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
@@ -2678,7 +2678,7 @@ Ability: Natural Cure
 - Hyper Voice
 - Aerial Ace
 
-Pelipper @ Deep Sea Tooth
+Pelipper (F) @ Deep Sea Tooth
 Level: 26
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
@@ -2688,7 +2688,7 @@ Ability: Keen Eye
 - Fling
 - Aerial Ace
 
-Swellow
+Swellow (F)
 Level: 26
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
@@ -2698,7 +2698,7 @@ Ability: Guts
 - Pluck
 - Steel Wing
 
-Tropius @ Sitrus Berry
+Tropius (F) @ Sitrus Berry
 Level: 29
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
@@ -2718,7 +2718,7 @@ Items: Hyper Potion / Hyper Potion
 Double Battle: No
 AI: Basic Trainer / Smart Mon Choices / Smart Switching
 
-Swablu
+Swablu (F)
 Level: 28
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
@@ -2728,7 +2728,7 @@ Ability: Natural Cure
 - Hyper Voice
 - Aerial Ace
 
-Pelipper @ Deep Sea Tooth
+Pelipper (F) @ Deep Sea Tooth
 Level: 30
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
@@ -2738,7 +2738,7 @@ Ability: Keen Eye
 - Fling
 - Aerial Ace
 
-Swellow
+Swellow (F)
 Level: 30
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
@@ -2748,7 +2748,7 @@ Ability: Guts
 - Pluck
 - Double Team
 
-Tropius @ Sitrus Berry
+Tropius (F) @ Sitrus Berry
 Level: 32
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
@@ -2768,7 +2768,7 @@ Items: Hyper Potion / Hyper Potion
 Double Battle: No
 AI: Basic Trainer / Smart Mon Choices / Smart Switching
 
-Tropius
+Tropius (F)
 Level: 31
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
@@ -2778,7 +2778,7 @@ Ability: Chlorophyll
 - Solar Beam
 - Synthesis
 
-Braviary-Hisui
+Braviary-Hisui (M)
 Level: 33
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
@@ -2788,7 +2788,7 @@ Ability: Sheer Force
 - Tailwind
 - Aerial Ace
 
-Pelipper @ Deep Sea Tooth
+Pelipper (F) @ Deep Sea Tooth
 Level: 32
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
@@ -2798,7 +2798,7 @@ Ability: Keen Eye
 - Protect
 - Aerial Ace
 
-Skarmory
+Skarmory (F)
 Level: 33
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
@@ -2808,7 +2808,7 @@ Ability: Keen Eye
 - Steel Wing
 - Aerial Ace
 
-Altaria @ Sitrus Berry
+Altaria (F) @ Sitrus Berry
 Level: 35
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
@@ -2828,7 +2828,7 @@ Items: Hyper Potion / Hyper Potion
 Double Battle: No
 AI: Basic Trainer / Smart Mon Choices / Smart Switching
 
-Tropius
+Tropius (F)
 Level: 39
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
@@ -2838,7 +2838,7 @@ Ability: Chlorophyll
 - Solar Beam
 - Synthesis
 
-Braviary-Hisui
+Braviary-Hisui (M)
 Level: 40
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
@@ -2848,7 +2848,7 @@ Ability: Sheer Force
 - Tailwind
 - Aerial Ace
 
-Pelipper @ Deep Sea Tooth
+Pelipper (F) @ Deep Sea Tooth
 Level: 41
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
@@ -2858,7 +2858,7 @@ Ability: Keen Eye
 - Tailwind
 - Hurricane
 
-Skarmory
+Skarmory (F)
 Level: 40
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
@@ -2868,7 +2868,7 @@ Ability: Keen Eye
 - Steel Wing
 - Aerial Ace
 
-Altaria @ Sitrus Berry
+Altaria (F) @ Sitrus Berry
 Level: 42
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
@@ -2888,7 +2888,7 @@ Items: Hyper Potion / Hyper Potion
 Double Battle: No
 AI: Basic Trainer / Smart Mon Choices / Smart Switching
 
-Tropius
+Tropius (F)
 Level: 43
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
@@ -2898,7 +2898,7 @@ Ability: Chlorophyll
 - Solar Beam
 - Leaf Storm
 
-Braviary-Hisui
+Braviary-Hisui (M)
 Level: 44
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
@@ -2908,7 +2908,7 @@ Ability: Sheer Force
 - Tailwind
 - Shadow Ball
 
-Pelipper @ Deep Sea Tooth
+Pelipper (F) @ Deep Sea Tooth
 Level: 46
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
@@ -2918,7 +2918,7 @@ Ability: Keen Eye
 - Tailwind
 - Hurricane
 
-Skarmory
+Skarmory (F)
 Level: 46
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
@@ -2928,7 +2928,7 @@ Ability: Keen Eye
 - Steel Wing
 - Aerial Ace
 
-Altaria @ Sitrus Berry
+Altaria (F) @ Sitrus Berry
 Level: 48
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
@@ -3008,7 +3008,7 @@ Items: Super Potion
 Double Battle: Yes
 AI: Basic Trainer / Smart Mon Choices / Smart Switching
 
-Natu
+Natu (F)
 Level: 21
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
@@ -3024,7 +3024,7 @@ IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
 Ability: Levitate
 - Psybeam
-- Ancient Power
+- Bulldoze
 - Calm Mind
 - Rapid Spin
 
@@ -3058,7 +3058,7 @@ Items: Hyper Potion
 Double Battle: Yes
 AI: Basic Trainer / Smart Mon Choices / Smart Switching
 
-Natu
+Natu (F)
 Level: 25
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
@@ -3074,7 +3074,7 @@ IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
 Ability: Levitate
 - Psybeam
-- Ancient Power
+- Bulldoze
 - Calm Mind
 - Rapid Spin
 
@@ -3108,7 +3108,7 @@ Items: Hyper Potion / Hyper Potion
 Double Battle: Yes
 AI: Basic Trainer / Smart Mon Choices / Smart Switching
 
-Xatu
+Xatu (F)
 Level: 29
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
@@ -3124,7 +3124,7 @@ IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
 Ability: Levitate
 - Psybeam
-- Ancient Power
+- Bulldoze
 - Calm Mind
 - Rapid Spin
 
@@ -3158,7 +3158,7 @@ Items: Hyper Potion / Hyper Potion
 Double Battle: Yes
 AI: Basic Trainer / Smart Mon Choices / Smart Switching
 
-Xatu
+Xatu (F)
 Level: 33
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
@@ -3174,11 +3174,11 @@ IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
 Ability: Levitate
 - Psybeam
-- Ancient Power
+- Earthquake
 - Calm Mind
-- Self Destruct
+- Rapid Spin
 
-Oranguru
+Oranguru (M)
 Level: 32
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
@@ -3228,7 +3228,7 @@ Ability: Levitate
 - Psychic
 - Calm Mind
 
-Xatu
+Xatu (F)
 Level: 40
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
@@ -3238,7 +3238,7 @@ Ability: Synchronize
 - Air Slash
 - Calm Mind
 
-Oranguru
+Oranguru (M)
 Level: 38
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
@@ -3288,7 +3288,7 @@ Ability: Levitate
 - Psychic
 - Calm Mind
 
-Xatu
+Xatu (F)
 Level: 45
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
@@ -3298,7 +3298,7 @@ Ability: Synchronize
 - Air Slash
 - Calm Mind
 
-Oranguru
+Oranguru (M)
 Level: 43
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
@@ -3338,7 +3338,7 @@ Items: Full Heal
 Double Battle: Yes
 AI: Basic Trainer / Smart Mon Choices / Smart Switching
 
-Dondozo @ Oran Berry
+Dondozo (M) @ Oran Berry
 Level: 15
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
@@ -3348,7 +3348,7 @@ Ability: Unaware
 - Noble Roar
 - Water Gun
 
-Tatsugiri
+Tatsugiri (M)
 Level: 13
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
@@ -3368,7 +3368,7 @@ Items: Full Heal
 Double Battle: Yes
 AI: Basic Trainer / Smart Mon Choices / Smart Switching
 
-Dondozo @ Oran Berry
+Dondozo (M) @ Oran Berry
 Level: 19
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
@@ -3378,7 +3378,7 @@ Ability: Unaware
 - Noble Roar
 - Water Gun
 
-Tatsugiri
+Tatsugiri (M)
 Level: 17
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
@@ -3398,7 +3398,7 @@ Items: Full Heal
 Double Battle: Yes
 AI: Basic Trainer / Smart Mon Choices / Smart Switching
 
-Wailmer
+Wailmer (M)
 Level: 22
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
@@ -3408,7 +3408,7 @@ Ability: Water Veil
 - Rollout
 - Water Pulse
 
-Barboach
+Barboach (M)
 Level: 20
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
@@ -3418,7 +3418,7 @@ Ability: Oblivious
 - Amnesia
 - Dragon Dance
 
-Dondozo @ Sitrus Berry
+Dondozo (M) @ Sitrus Berry
 Level: 24
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
@@ -3428,7 +3428,7 @@ Ability: Unaware
 - Noble Roar
 - Water Gun
 
-Tatsugiri
+Tatsugiri (M)
 Level: 23
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
@@ -3448,7 +3448,7 @@ Items: Full Heal
 Double Battle: Yes
 AI: Basic Trainer / Smart Mon Choices / Smart Switching
 
-Wailmer
+Wailmer (M)
 Level: 26
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
@@ -3458,7 +3458,7 @@ Ability: Water Veil
 - Rollout
 - Water Pulse
 
-Barboach
+Barboach (M)
 Level: 25
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
@@ -3468,7 +3468,7 @@ Ability: Oblivious
 - Amnesia
 - Dragon Dance
 
-Dondozo @ Sitrus Berry
+Dondozo (M) @ Sitrus Berry
 Level: 29
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
@@ -3478,7 +3478,7 @@ Ability: Unaware
 - Order Up
 - Water Gun
 
-Tatsugiri
+Tatsugiri (M)
 Level: 27
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
@@ -3498,7 +3498,7 @@ Items: Full Heal / Full Heal
 Double Battle: Yes
 AI: Basic Trainer / Smart Mon Choices / Smart Switching
 
-Dondozo
+Dondozo (M)
 Level: 30
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
@@ -3508,7 +3508,7 @@ Ability: Unaware
 - Order Up
 - Surf
 
-Tatsugiri
+Tatsugiri (M)
 Level: 29
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
@@ -3518,7 +3518,7 @@ Ability: Commander
 - Rapid Spin
 - Dark Pulse
 
-Seadra @ Chesto Berry
+Seadra (M) @ Chesto Berry
 Level: 31
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
@@ -3528,7 +3528,7 @@ Ability: Poison Point
 - Bounce
 - Rest
 
-Milotic @ Sitrus Berry
+Milotic (M) @ Sitrus Berry
 Level: 32
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
@@ -3548,7 +3548,7 @@ Items: Full Heal / Full Heal
 Double Battle: Yes
 AI: Basic Trainer / Smart Mon Choices / Smart Switching
 
-Dondozo
+Dondozo (M)
 Level: 33
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
@@ -3558,7 +3558,7 @@ Ability: Unaware
 - Order Up
 - Surf
 
-Tatsugiri
+Tatsugiri (M)
 Level: 31
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
@@ -3568,7 +3568,7 @@ Ability: Commander
 - Rapid Spin
 - Dark Pulse
 
-Whiscash
+Whiscash (M)
 Level: 32
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
@@ -3578,7 +3578,7 @@ Ability: Oblivious
 - Waterfall
 - Rock Slide
 
-Kingdra @ Chesto Berry
+Kingdra (M) @ Chesto Berry
 Level: 34
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
@@ -3588,7 +3588,7 @@ Ability: Swift Swim
 - Bounce
 - Rest
 
-Milotic @ Sitrus Berry
+Milotic (M) @ Sitrus Berry
 Level: 35
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
@@ -3608,7 +3608,7 @@ Items: Full Heal / Full Heal
 Double Battle: Yes
 AI: Basic Trainer / Smart Mon Choices / Smart Switching
 
-Dondozo
+Dondozo (M)
 Level: 40
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
@@ -3618,7 +3618,7 @@ Ability: Unaware
 - Order Up
 - Surf
 
-Tatsugiri
+Tatsugiri (M)
 Level: 38
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
@@ -3628,7 +3628,7 @@ Ability: Commander
 - Rapid Spin
 - Dark Pulse
 
-Whiscash
+Whiscash (M)
 Level: 40
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
@@ -3638,7 +3638,7 @@ Ability: Oblivious
 - Waterfall
 - Rock Slide
 
-Milotic @ Sitrus Berry
+Milotic (M) @ Sitrus Berry
 Level: 42
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
@@ -3648,7 +3648,7 @@ Ability: Marvel Scale
 - Icy Wind
 - Recover
 
-Kingdra @ Chesto Berry
+Kingdra (M) @ Chesto Berry
 Level: 42
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
@@ -3668,7 +3668,7 @@ Items: Full Heal / Full Heal
 Double Battle: Yes
 AI: Basic Trainer / Smart Mon Choices / Smart Switching
 
-Dondozo
+Dondozo (M)
 Level: 45
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
@@ -3678,7 +3678,7 @@ Ability: Unaware
 - Order Up
 - Surf
 
-Tatsugiri
+Tatsugiri (M)
 Level: 43
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
@@ -3688,7 +3688,7 @@ Ability: Commander
 - Dragon Pulse
 - Dark Pulse
 
-Whiscash
+Whiscash (M)
 Level: 45
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
@@ -3698,7 +3698,7 @@ Ability: Oblivious
 - Waterfall
 - Rock Slide
 
-Milotic @ Sitrus Berry
+Milotic (M) @ Sitrus Berry
 Level: 48
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
@@ -3708,7 +3708,7 @@ Ability: Marvel Scale
 - Ice Beam
 - Recover
 
-Kingdra @ Chesto Berry
+Kingdra (M) @ Chesto Berry
 Level: 48
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
@@ -3728,7 +3728,7 @@ Items: Hyper Potion / Hyper Potion
 Double Battle: No
 AI: Basic Trainer / Smart Mon Choices / Smart Switching
 
-Mightyena
+Mightyena (M)
 Level: 46
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
@@ -3738,7 +3738,7 @@ Ability: Intimidate
 - Thief
 - Snarl
 
-Crobat
+Crobat (M)
 Level: 47
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
@@ -3748,7 +3748,7 @@ Ability: Inner Focus
 - Steel Wing
 - Mean Look
 
-Lanturn
+Lanturn (M)
 Level: 46
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
@@ -3758,7 +3758,7 @@ Ability: Water Absorb
 - Charge
 - Take Down
 
-Walrein
+Walrein (M)
 Level: 47
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
@@ -3768,7 +3768,7 @@ Ability: Thick Fat
 - Rest
 - Sleep Talk
 
-Sharpedo @ Sharpedonite
+Sharpedo (M) @ Sharpedonite
 Level: 48
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
@@ -3788,7 +3788,7 @@ Items: Hyper Potion / Hyper Potion
 Double Battle: No
 AI: Basic Trainer / Smart Mon Choices / Smart Switching
 
-Mightyena
+Mightyena (M)
 Level: 46
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
@@ -3798,7 +3798,7 @@ Ability: Intimidate
 - Thief
 - Snarl
 
-Crobat
+Crobat (M)
 Level: 47
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
@@ -3808,7 +3808,7 @@ Ability: Inner Focus
 - Steel Wing
 - Mean Look
 
-Aggron
+Aggron (M)
 Level: 46
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
@@ -3818,7 +3818,7 @@ Ability: Sturdy
 - Iron Defense
 - Double Edge
 
-Torkoal
+Torkoal (M)
 Level: 47
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
@@ -3828,7 +3828,7 @@ Ability: Drought
 - Smokescreen
 - Yawn
 
-Camerupt @ Cameruptite
+Camerupt (M) @ Cameruptite
 Level: 48
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
@@ -3849,7 +3849,7 @@ Double Battle: No
 AI: Basic Trainer / Smart Mon Choices / Smart Switching
 Mugshot: Purple
 
-Cacturne
+Cacturne (M)
 Level: 52
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
@@ -3859,7 +3859,7 @@ Ability: Sand Veil
 - Needle Arm
 - Spiky Shield
 
-Samurott-Hisui
+Samurott-Hisui (M)
 Level: 54
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
@@ -3869,7 +3869,7 @@ Ability: Torrent
 - Megahorn
 - Aqua Jet
 
-Crawdaunt
+Crawdaunt (M)
 Level: 53
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
@@ -3879,7 +3879,7 @@ Ability: Adaptability
 - Knock Off
 - Facade
 
-Grimmsnarl
+Grimmsnarl (M)
 Level: 53
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
@@ -3889,7 +3889,7 @@ Ability: Prankster
 - Sucker Punch
 - Torment
 
-Absol @ Sitrus Berry
+Absol (M) @ Sitrus Berry
 Level: 55
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
@@ -3910,7 +3910,7 @@ Double Battle: No
 AI: Basic Trainer / Smart Mon Choices / Smart Switching
 Mugshot: Green
 
-Shiftry
+Shiftry (M)
 Level: 52
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
@@ -3920,7 +3920,7 @@ Ability: Chlorophyll
 - Swagger
 - Hurricane
 
-Decidueye-Hisui
+Decidueye-Hisui (M)
 Level: 54
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
@@ -3930,7 +3930,7 @@ Ability: Overgrow
 - Feather Dance
 - Triple Arrows
 
-Sceptile
+Sceptile (M)
 Level: 53
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
@@ -3940,7 +3940,7 @@ Ability: Overgrow
 - Night Slash
 - Dual Chop
 
-Ludicolo
+Ludicolo (M)
 Level: 53
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
@@ -3950,7 +3950,7 @@ Ability: Own Tempo
 - Ice Beam
 - Astonish
 
-Breloom @ Sitrus Berry
+Breloom (M) @ Sitrus Berry
 Level: 55
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
@@ -3971,7 +3971,7 @@ Double Battle: No
 AI: Basic Trainer / Smart Mon Choices / Smart Switching
 Mugshot: Green
 
-Dusclops
+Dusclops (F)
 Level: 52
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
@@ -3981,7 +3981,7 @@ Ability: Pressure
 - Will O Wisp
 - Earthquake
 
-Typhlosion-Hisui
+Typhlosion-Hisui (F)
 Level: 54
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
@@ -3991,7 +3991,7 @@ Ability: Blaze
 - Smokescreen
 - Flamethrower
 
-Sableye
+Sableye (F)
 Level: 53
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
@@ -4001,7 +4001,7 @@ Ability: Keen Eye
 - Foul Play
 - Thief
 
-Banette
+Banette (F)
 Level: 53
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
@@ -4011,7 +4011,7 @@ Ability: Cursed Body
 - Will O Wisp
 - Feint Attack
 
-Dusknoir @ Sitrus Berry
+Dusknoir (F) @ Sitrus Berry
 Level: 55
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
@@ -4032,7 +4032,7 @@ Double Battle: No
 AI: Basic Trainer / Smart Mon Choices / Smart Switching
 Mugshot: Purple
 
-Seviper @ Salac Berry
+Seviper (F) @ Salac Berry
 Level: 52
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
@@ -4042,7 +4042,7 @@ Ability: Shed Skin
 - Giga Drain
 - Crunch
 
-Overqwil
+Overqwil (F)
 Level: 54
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
@@ -4052,7 +4052,7 @@ Ability: Poison Point
 - Crunch
 - Waterfall
 
-Swalot
+Swalot (F)
 Level: 53
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
@@ -4062,7 +4062,7 @@ Ability: Liquid Ooze
 - Shadow Ball
 - Toxic
 
-Dustox
+Dustox (F)
 Level: 53
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
@@ -4072,7 +4072,7 @@ Ability: Compound Eyes
 - Giga Drain
 - Sleep Powder
 
-Crobat @ Sitrus Berry
+Crobat (F) @ Sitrus Berry
 Level: 55
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
@@ -4093,7 +4093,7 @@ Double Battle: No
 AI: Basic Trainer / Smart Mon Choices / Smart Switching
 Mugshot: Pink
 
-Sandslash-Alola
+Sandslash-Alola (F)
 Level: 52
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
@@ -4103,7 +4103,7 @@ Ability: Snow Cloak
 - Hail
 - Icy Wind
 
-Ninetales-Alola
+Ninetales-Alola (F)
 Level: 54
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
@@ -4113,7 +4113,7 @@ Ability: Snow Warning
 - Dazzling Gleam
 - Ice Shard
 
-Froslass
+Froslass (F)
 Level: 53
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
@@ -4123,7 +4123,7 @@ Ability: Snow Cloak
 - Hail
 - Blizzard
 
-Glalie
+Glalie (F)
 Level: 53
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
@@ -4133,7 +4133,7 @@ Ability: Inner Focus
 - Hail
 - Freeze Dry
 
-Walrein @ Sitrus Berry
+Walrein (F) @ Sitrus Berry
 Level: 55
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
@@ -4154,7 +4154,7 @@ Double Battle: No
 AI: Basic Trainer / Smart Mon Choices / Smart Switching
 Mugshot: Pink
 
-Wigglytuff
+Wigglytuff (F)
 Level: 52
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
@@ -4164,7 +4164,7 @@ Ability: Cute Charm
 - Play Rough
 - Light Screen
 
-Rapidash-Galar
+Rapidash-Galar (F)
 Level: 54
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
@@ -4174,7 +4174,7 @@ Ability: Pastel Veil
 - Megahorn
 - Dazzling Gleam
 
-Togekiss
+Togekiss (F)
 Level: 53
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
@@ -4184,7 +4184,7 @@ Ability: Serene Grace
 - Air Slash
 - Encore
 
-Mawile
+Mawile (F)
 Level: 53
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
@@ -4194,7 +4194,7 @@ Ability: Intimidate
 - Iron Head
 - Attract
 
-Gardevoir @ Sitrus Berry
+Gardevoir (F) @ Sitrus Berry
 Level: 55
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
@@ -4215,7 +4215,7 @@ Double Battle: No
 AI: Basic Trainer / Smart Mon Choices / Smart Switching
 Mugshot: Blue
 
-Exeggutor-Alola @ Sitrus Berry
+Exeggutor-Alola (M) @ Sitrus Berry
 Level: 52
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
@@ -4225,7 +4225,7 @@ Ability: Harvest
 - Sludge Bomb
 - Seed Bomb
 
-Dragalge
+Dragalge (M)
 Level: 54
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
@@ -4235,7 +4235,7 @@ Ability: Poison Touch
 - Poison Tail
 - Dragon Tail
 
-Kingdra
+Kingdra (M)
 Level: 53
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
@@ -4245,7 +4245,7 @@ Ability: Swift Swim
 - Octazooka
 - Agility
 
-Flygon
+Flygon (M)
 Level: 53
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
@@ -4255,7 +4255,7 @@ Ability: Levitate
 - Dragon Breath
 - Earthquake
 
-Salamence @ Sitrus Berry
+Salamence (M) @ Sitrus Berry
 Level: 55
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
@@ -4276,7 +4276,7 @@ Double Battle: No
 AI: Basic Trainer / Smart Mon Choices / Smart Switching
 Mugshot: Yellow
 
-Dugtrio-Alola
+Dugtrio-Alola (M)
 Level: 52
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
@@ -4286,7 +4286,7 @@ Ability: Tangling Hair
 - Dig
 - Iron Head
 
-Swampert
+Swampert (M)
 Level: 54
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
@@ -4296,7 +4296,7 @@ Ability: Torrent
 - Protect
 - Rock Slide
 
-Flygon
+Flygon (M)
 Level: 53
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
@@ -4306,7 +4306,7 @@ Ability: Levitate
 - Earthquake
 - Giga Drain
 
-Rhyperior
+Rhyperior (M)
 Level: 53
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
@@ -4316,7 +4316,7 @@ Ability: Solid Rock
 - Earthquake
 - Hammer Arm
 
-Regirock @ Sitrus Berry
+Regirock (M) @ Sitrus Berry
 Level: 55
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
@@ -4328,7 +4328,7 @@ Ability: Clear Body
 
 === TRAINER_STEVEN ===
 Name: STEVEN
-Class: Rival
+Class: Champion
 Pic: Steven
 Gender: Male
 Music: Male
@@ -4337,7 +4337,7 @@ Double Battle: No
 AI: Basic Trainer / Smart Mon Choices / Smart Switching
 Mugshot: Yellow
 
-Skarmory
+Skarmory (M)
 Level: 57
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
@@ -4347,7 +4347,7 @@ Ability: Sturdy
 - Spikes
 - Steel Wing
 
-Goodra-Hisui
+Goodra-Hisui (M)
 Level: 55
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
@@ -4357,7 +4357,7 @@ Ability: Sap Sipper
 - Rain Dance
 - Dragon Breath
 
-Aggron
+Aggron (M)
 Level: 56
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
@@ -4367,7 +4367,7 @@ Ability: Sturdy
 - Dragon Claw
 - Rock Slide
 
-Cradily
+Cradily (M)
 Level: 56
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
@@ -4377,7 +4377,7 @@ Ability: Storm Drain
 - Recover
 - Confuse Ray
 
-Armaldo
+Armaldo (M)
 Level: 56
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
@@ -4399,7 +4399,7 @@ Ability: Clear Body
 
 === TRAINER_WALLY ===
 Name: WALLY
-Class: Rival
+Class: Champion
 Pic: Wally
 Gender: Male
 Music: Male
@@ -4408,7 +4408,7 @@ Double Battle: No
 AI: Basic Trainer / Smart Mon Choices / Smart Switching
 Mugshot: Yellow
 
-Roserade
+Roserade (M)
 Level: 57
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
@@ -4418,7 +4418,7 @@ Ability: Poison Point
 - Sludge Bomb
 - Toxic Spikes
 
-Azumarill
+Azumarill (M)
 Level: 55
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
@@ -4428,7 +4428,7 @@ Ability: Huge Power
 - Bounce
 - Double Edge
 
-Talonflame
+Talonflame (M)
 Level: 56
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
@@ -4448,7 +4448,7 @@ Ability: Sturdy
 - Discharge
 - Thunder Wave
 
-Garchomp
+Garchomp (M)
 Level: 56
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
@@ -4458,7 +4458,7 @@ Ability: Rough Skin
 - Flamethrower
 - Sandstorm
 
-Gallade @ Galladite
+Gallade (M) @ Galladite
 Level: 58
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
