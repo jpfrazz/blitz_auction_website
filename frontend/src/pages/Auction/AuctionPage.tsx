@@ -547,6 +547,7 @@ const AuctionPage: React.FC = () => {
                 highestBidderId={currentAuction ? getUserId(currentAuction.highest_bidder) : null}
                 wsConnected={wsConnected}
                 currentUserId={currentUserId}
+                highestBid={currentAuction?.highest_bid}
               />
             </div>
             {/* Main content grid */}

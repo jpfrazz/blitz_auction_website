@@ -112,3 +112,29 @@
     max-height: 20px;
     //object-fit: contain;
 }
+
+@keyframes player-bidding-animation {
+    0% {
+        transform: scale(1);
+    }
+    25% {
+        transform: scale(1.1) rotate(-3deg);
+        background-color: #ff69b4 !important; // Pink highlight
+    }
+    50% {
+        transform: scale(1.1) rotate(3deg);
+        background-color: #ff69b4 !important;
+    }
+    75% {
+        transform: scale(1.1) rotate(-3deg);
+        background-color: #ff69b4 !important;
+    }
+    100% {
+        transform: scale(1) rotate(0deg);
+    }
+}
+
+.player-bidding {
+    animation: player-bidding-animation 0.5s ease-in-out;
+    z-index: 10; // Ensure it stays on top while enlarged
+}

@@ -8,9 +8,26 @@ interface PlayerRowProps {
   highestBidderId?: string | null;
   wsConnected?: boolean;
   currentUserId?: string | null;
+  highestBid?: number;
 }
 
-const PlayerRow: React.FC<PlayerRowProps> = ({ teams, numPlayers, highestBidderId, wsConnected = true, currentUserId }) => {
+const PlayerRow: React.FC<PlayerRowProps> = ({ teams, numPlayers, highestBidderId, wsConnected = true, currentUserId, highestBid }) => {
+  const [animatingId, setAnimatingId] = React.useState<string | null>(null);
+  const isInitial = React.useRef(true);
+
+  React.useEffect(() => {
+    if (isInitial.current) {
+      isInitial.current = false;
+      return;
+    }
+
+    if (highestBid && highestBid > 0 && highestBidderId) {
+      setAnimatingId(highestBidderId);
+      const timer = setTimeout(() => setAnimatingId(null), 500);
+      return () => clearTimeout(timer);
+    }
+  }, [highestBid, highestBidderId]);
+
   const sortedTeams = React.useMemo(() => {
     if (!currentUserId) return teams;
     const myTeamIdx = teams.findIndex(t => t?.user_id === currentUserId);
@@ -40,7 +57,7 @@ const PlayerRow: React.FC<PlayerRowProps> = ({ teams, numPlayers, highestBidderI
         return (
           <div
             key={idx}
-            className={`auction-player-box ${playerStateClass} ${team?.user_id === highestBidderId ? 'highest-bidder' : ''} ${disconnectedClass}`}
+            className={`auction-player-box ${playerStateClass} ${team?.user_id === highestBidderId ? 'highest-bidder' : ''} ${disconnectedClass} ${team?.user_id === animatingId ? 'player-bidding' : ''}`}
           >
             <div className="auction-player-name">
               {playerName || 'Open Slot'}

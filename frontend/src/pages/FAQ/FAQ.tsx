@@ -97,7 +97,7 @@ const FAQ = () => (
           <li>Once you’re taken to the auction, tell your friends to find your auction in the Lobby Viewer.</li>
           <li>After everyone has joined and clicked "Ready Up," press "Start Draft" to begin!</li>
           <li>
-            <b>Note!</b> While the total number of Pokémon sold is 8 times the total number of players, if you're able to win more than 8 auctions, you can play with more than 8! Similarly, if you spend big on your picks, you might play with as few as 6 Pokémon...
+            <b>Note!</b> While the total number of Pokémon sold is 8 times the total number of players, if you're able to win more than 8 auctions, you can play with more than 8 Pokemon! Similarly, if you spend big on your picks, you might play with as few as 6 Pokémon...
           </li>
         </ol>
       </section>
