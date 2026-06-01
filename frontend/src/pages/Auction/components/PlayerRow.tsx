@@ -40,6 +40,11 @@ const PlayerRow: React.FC<PlayerRowProps> = ({ teams, numPlayers, highestBidderI
     return newTeams;
   }, [teams, currentUserId]);
 
+  const getIconName = (name: string) => {
+    if (name.toLowerCase().startsWith('egg')) return 'egg';
+    return name.toLowerCase();
+  };
+
   return (
     <div className="auction-players-row">
       {Array.from({ length: numPlayers }).map((_, idx) => {
@@ -67,7 +72,7 @@ const PlayerRow: React.FC<PlayerRowProps> = ({ teams, numPlayers, highestBidderI
               {wonPokemon.map(pokemon => (
                 <img
                   key={`${pokemon.name}-${pokemon.form ?? 'base'}`}
-                  src={`/MiniIcons/${pokemon.name.toLowerCase()}.png`}
+                  src={`/MiniIcons/${getIconName(pokemon.name)}.png`}
                   alt={pokemon.name}
                   className="auction-player-icon"
                   loading="lazy"

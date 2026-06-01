@@ -202,6 +202,11 @@ const AuctionInfoPanel: React.FC<AuctionInfoPanelProps> = ({
     }
   };
 
+  const getIconName = (name: string) => {
+    if (name.toLowerCase().startsWith('egg')) return 'egg';
+    return name.toLowerCase();
+  };
+
   return (
     <div className="auction-info-box" style={{ flexShrink: 0 }}>
       <div className="auction-countdown-container">
@@ -242,7 +247,7 @@ const AuctionInfoPanel: React.FC<AuctionInfoPanelProps> = ({
       <div className="auction-pokemon-section">
         <div className="pokemon-info-display">
           <img
-            src={`/MiniIcons/${current_auction.pokemon.name.toLowerCase()}.png`}
+            src={`/MiniIcons/${getIconName(current_auction.pokemon.name)}.png`}
             alt={current_auction.pokemon.name}
             className="pokemon-info-icon"
             onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}

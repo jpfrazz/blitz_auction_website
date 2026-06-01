@@ -18,6 +18,7 @@ interface AllPokemonTabProps {
   pokemon: Pokemon[];
   auctions: Auction[];
   isPokedex?: boolean;
+  allPokemon?: Pokemon[];
 }
 
 const getTypeIconSrc = (type: string) => {
@@ -25,9 +26,14 @@ const getTypeIconSrc = (type: string) => {
   return `/TypeIcons/${formattedType}IC_SV.png`;
 };
 
-const AllPokemonTab: React.FC<AllPokemonTabProps> = ({ pokemon, auctions, isPokedex = false }) => {
+const AllPokemonTab: React.FC<AllPokemonTabProps> = ({ pokemon, auctions, isPokedex = false, allPokemon: fullPokemonList }) => {
   const [selectedPokemon, setSelectedPokemon] = useState<Pokemon | null>(null);
-  const allPokemon = useMemo(() => pokemon, [pokemon]);
+  const lookupPokemonList = useMemo(() => fullPokemonList || pokemon, [fullPokemonList, pokemon]);
+
+  const getIconName = (name: string) => {
+    if (name.toLowerCase().startsWith('egg')) return 'egg';
+    return name.toLowerCase();
+  };
 
   // Add auction info to each row for table use
   const data = useMemo(() =>
@@ -69,7 +75,7 @@ const AllPokemonTab: React.FC<AllPokemonTabProps> = ({ pokemon, auctions, isPoke
       basePokemon.type2?.toLowerCase(),
     ].filter(Boolean));
     // Find all evolutions (direct and indirect, non-mega, non-base)
-    const evolutions = allPokemon.filter(
+    const evolutions = lookupPokemonList.filter(
       p => p.evolves_from_id?.toString() === (basePokemon.pokedex_id ?? basePokemon.id).toString() && (p.form ?? '').toLowerCase() !== 'mega'
     );
     // Recursively get types from all stages
@@ -81,7 +87,7 @@ const AllPokemonTab: React.FC<AllPokemonTabProps> = ({ pokemon, auctions, isPoke
       if (pkmn.type1) types.push(pkmn.type1.toLowerCase());
       if (pkmn.type2) types.push(pkmn.type2.toLowerCase());
       // Find further evolutions
-      const nextEvos = allPokemon.filter(
+      const nextEvos = lookupPokemonList.filter(
         p => p.evolves_from_id?.toString() === (pkmn.pokedex_id ?? pkmn.id).toString() && (p.form ?? '').toLowerCase() !== 'mega'
       );
       for (const evo of nextEvos) {
@@ -159,7 +165,7 @@ const AllPokemonTab: React.FC<AllPokemonTabProps> = ({ pokemon, auctions, isPoke
     }
     return cols;
   },
-    [allPokemon, isPokedex]
+    [lookupPokemonList, isPokedex]
   );
 
   const [sorting, setSorting] = useState<SortingState>([{ id: 'name', desc: false }]);
@@ -170,16 +176,21 @@ const AllPokemonTab: React.FC<AllPokemonTabProps> = ({ pokemon, auctions, isPoke
       return null;
     }
 
+    const currentPkmn = pokemon.find(p => 
+      (p.pokedex_id ?? p.id) === (selectedPokemon.pokedex_id ?? selectedPokemon.id) &&
+      p.form === selectedPokemon.form
+    ) || selectedPokemon;
+
     return {
       auction_id: 'preview',
       draft_id: 'preview',
       draft_order: 0,
       auction_state: 'PENDING',
-      pokemon: selectedPokemon,
+      pokemon: currentPkmn,
       highest_bid: 0,
       highest_bidder: null,
     };
-  }, [selectedPokemon]);
+  }, [selectedPokemon, pokemon]);
 
   const table = useReactTable({
     data,
@@ -266,7 +277,7 @@ const AllPokemonTab: React.FC<AllPokemonTabProps> = ({ pokemon, auctions, isPoke
                         <div className="pokemon-name-cell">
                           <div className="pokemon-icon-wrapper">
                             <img
-                              src={`/MiniIcons/${name.toLowerCase()}.png`}
+                              src={`/MiniIcons/${getIconName(name)}.png`}
                               alt={name}
                               className="pokemon-table-img"
                               onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }}
@@ -302,10 +313,11 @@ const AllPokemonTab: React.FC<AllPokemonTabProps> = ({ pokemon, auctions, isPoke
               type="button"
               className="all-pokemon-modal-close"
               onClick={() => setSelectedPokemon(null)}
+              style={{ zIndex: 110 }}
             >
               ×
             </button>
-            <CurrentPokemonPanel current_auction={selectedPokemonAuction} all_pokemon={allPokemon} />
+            <CurrentPokemonPanel current_auction={selectedPokemonAuction} all_pokemon={lookupPokemonList} />
           </div>
         </div>
       )}

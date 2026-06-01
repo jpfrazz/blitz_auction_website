@@ -9,9 +9,10 @@ interface TeamPlannerTabProps {
   allPokemon: Pokemon[];
   minimizedPokemon?: Set<string>;
   onToggleMinimize?: (pokemonName: string) => void;
+  onToggleEgg?: (id: number | null) => void;
 }
 
-const TeamPlannerTab: React.FC<TeamPlannerTabProps> = ({ teams, currentUserId, allPokemon, minimizedPokemon = new Set(), onToggleMinimize }) => {
+const TeamPlannerTab: React.FC<TeamPlannerTabProps> = ({ teams, currentUserId, allPokemon, minimizedPokemon = new Set(), onToggleMinimize, onToggleEgg }) => {
   if (!currentUserId) {
     return <div className="auction-team-planner-placeholder">Loading your team...</div>;
   }
@@ -119,7 +120,7 @@ const TeamPlannerTab: React.FC<TeamPlannerTabProps> = ({ teams, currentUserId, a
     );
 
   const teamPokemonAuctions: Auction[] = sortedTeamPokemon.map((pokemon, index) => ({
-    auction_id: `team-planner-${pokemon.name}-${pokemon.form ?? 'base'}-${index}`,
+    auction_id: `team-planner-slot-${index}`,
     pokemon,
     auction_state: 'COMPLETED',
     highest_bid: 0,
@@ -187,6 +188,7 @@ const TeamPlannerTab: React.FC<TeamPlannerTabProps> = ({ teams, currentUserId, a
               <CurrentPokemonPanel
                 current_auction={teamPokemonAuction}
                 all_pokemon={allPokemon}
+                onToggleEgg={onToggleEgg}
               />
             </div>
             {onToggleMinimize && (

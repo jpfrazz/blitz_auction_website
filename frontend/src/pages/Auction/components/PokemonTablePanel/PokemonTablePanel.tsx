@@ -19,9 +19,11 @@ interface PokemonTablePanelProps {
   pokemon: Pokemon[];
   teams: Team[];
   currentUserId: string | null;
+  onToggleEgg?: (id: number | null) => void;
+  allPokemon: Pokemon[];
 }
 
-const PokemonTablePanel: React.FC<PokemonTablePanelProps> = ({ auctions, pokemon, teams, currentUserId }) => {
+const PokemonTablePanel: React.FC<PokemonTablePanelProps> = ({ auctions, pokemon, teams, currentUserId, onToggleEgg, allPokemon }) => {
   const [tab, setTab] = useState<string>(TAB_ALL);
 
   const [minimizedPokemon, setMinimizedPokemon] = useState<Set<string>>(new Set());
@@ -73,14 +75,15 @@ const PokemonTablePanel: React.FC<PokemonTablePanelProps> = ({ auctions, pokemon
       </div>
       <div className="auction-pokemon-table-box">
         <div className="pokemon-table-tab-content">
-          {tab === TAB_ALL && <AllPokemonTab pokemon={nonRentalPokemon} auctions={auctions} />}
+          {tab === TAB_ALL && <AllPokemonTab pokemon={nonRentalPokemon} auctions={auctions} allPokemon={allPokemon} />}
           {tab === TAB_TEAM && (
             <TeamPlannerTab 
               teams={teams} 
               currentUserId={currentUserId} 
-              allPokemon={pokemon} 
+              allPokemon={allPokemon} 
               minimizedPokemon={minimizedPokemon}
               onToggleMinimize={handleToggleMinimize}
+              onToggleEgg={onToggleEgg}
             />
           )}
           {tab === TAB_HISTORY && <DraftHistoryTab auctions={auctions} />}

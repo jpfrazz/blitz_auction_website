@@ -20,6 +20,30 @@ const TeamPlanner = () => {
   const [loading, setLoading] = useState(true);
   const [modalOpen, setModalOpen] = useState(false);
   const [minimizedPokemon, setMinimizedPokemon] = useState<Set<string>>(new Set());
+  const [eggRevealId, setEggRevealId] = useState<number | null>(null);
+
+  const handleToggleEggView = useCallback((id: number | null) => {
+    setEggRevealId(id);
+  }, []);
+
+  const transformedPokemon = useMemo(() => {
+    if (!eggRevealId) return allPokemon;
+    const egg = allPokemon.find(p => p.name.trim().toLowerCase() === 'egg');
+    const revealTarget = allPokemon.find(p => String(p.pokedex_id ?? p.id) === String(eggRevealId));
+    if (!egg || !revealTarget) return allPokemon;
+
+    return allPokemon.map(p => {
+      if (p.name.trim().toLowerCase() === 'egg') {
+        return {
+          ...p,
+          ...revealTarget,
+          name: `Egg (${revealTarget.name})`,
+          isRevealedEgg: true
+        };
+      }
+      return p;
+    });
+  }, [allPokemon, eggRevealId]);
 
   useEffect(() => {
     fetchPokemonList()
@@ -71,14 +95,31 @@ const TeamPlanner = () => {
     });
   }, []);
 
-  const soloTeam: Team[] = [
-    {
-      user_id: 'solo-user',
-      username: 'Solo',
-      budget_remaining: 0,
-      auctions_won: selectedPokemon.map(o => o.pokemon),
-    },
-  ];
+  const soloTeam: Team[] = useMemo(() => {
+    const teamPokemon = selectedPokemon.map(o => {
+      if (o.pokemon.name.trim().toLowerCase() === 'egg' && eggRevealId) {
+        const target = allPokemon.find(p => String(p.pokedex_id ?? p.id) === String(eggRevealId));
+        if (target) {
+          return {
+            ...o.pokemon,
+            ...target,
+            name: `Egg (${target.name})`,
+            isRevealedEgg: true
+          };
+        }
+      }
+      return o.pokemon;
+    });
+
+    return [
+      {
+        user_id: 'solo-user',
+        username: 'Solo',
+        budget_remaining: 0,
+        auctions_won: teamPokemon,
+      },
+    ];
+  }, [selectedPokemon, eggRevealId, allPokemon]);
 
   return (
     <div className="teamplanner-page">
@@ -100,9 +141,10 @@ const TeamPlanner = () => {
               <TeamPlannerTab 
                 teams={soloTeam} 
                 currentUserId="solo-user" 
-                allPokemon={allPokemon} 
+                allPokemon={transformedPokemon} 
                 minimizedPokemon={minimizedPokemon}
                 onToggleMinimize={handleToggleMinimize}
+                onToggleEgg={handleToggleEggView}
               />
             </section>
           )}

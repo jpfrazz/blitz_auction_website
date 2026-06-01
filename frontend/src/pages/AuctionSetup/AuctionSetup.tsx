@@ -203,7 +203,34 @@ const AuctionSetupForm: React.FC = () => {
           <div className="auction-modal-overlay" onClick={() => setShowModal(false)}>
             <div className="auction-modal" onClick={e => e.stopPropagation()}>
               <div className="auction-modal-header">
-                <span>Select Pokémon</span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                  <span>Select Pokémon</span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const baseIds = pokemonList.filter(p => (p as any).stage === 'base').map(p => p.id);
+                      setExcludedPokemon(new Set(baseIds));
+                    }}
+                    disabled={excludedPokemon.size === pokemonList.filter(p => (p as any).stage === 'base').length}
+                    style={{
+                      fontSize: '0.75rem', padding: '2px 8px', background: '#333', border: '1px solid #555', color: '#fff', borderRadius: '4px', 
+                      cursor: excludedPokemon.size === pokemonList.filter(p => (p as any).stage === 'base').length ? 'default' : 'pointer', 
+                      opacity: excludedPokemon.size === pokemonList.filter(p => (p as any).stage === 'base').length ? 0.5 : 1
+                    }}
+                  >
+                    Exclude All
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setExcludedPokemon(new Set())}
+                    disabled={excludedPokemon.size === 0}
+                    style={{
+                      fontSize: '0.75rem', padding: '2px 8px', background: '#333', border: '1px solid #555', color: '#fff', borderRadius: '4px', cursor: excludedPokemon.size === 0 ? 'default' : 'pointer', opacity: excludedPokemon.size === 0 ? 0.5 : 1
+                    }}
+                  >
+                    Include All
+                  </button>
+                </div>
                 <button className="auction-modal-close" onClick={() => setShowModal(false)}>&times;</button>
               </div>
               <div className="auction-modal-grid">

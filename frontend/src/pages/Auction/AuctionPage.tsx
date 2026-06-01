@@ -1,8 +1,9 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState, useRef, useMemo, useCallback } from 'react';
 import { connectDraftWebSocket } from '../../shared/api/draftWebSocket';
 import { useLocation } from 'react-router-dom';
 import Header from '../../shared/components/Header';
 import { fetchDraftById, fetchDraftPokemon, fetchDraftCurrentAuction, readyUpDraft, joinDraft, fetchCurrentUser, claimEeveelution, unclaimEeveelution, startDraft, pauseDraft, unpauseDraft, submitRaceResults, updatePendingDraftSettings } from '../../shared/api/draftData';
+import { fetchPokemonList } from '../../shared/api/pokemon';
 import { getUserId } from '../../shared/utils/user';
 import './AuctionPage.scss';
 import '../../shared/style/theme.scss';
@@ -17,7 +18,7 @@ import ResultsSubmissionModal from './components/ResultsSubmissionModal';
 import { Draft, Auction, Pokemon } from '../../types';
 import confetti from 'canvas-confetti';
 
-const AUCTION_ALERT_SOUND_PATH = encodeURI('/14 Battle! (Wild Pokémon).mp3');
+const AUCTION_ALERT_SOUND_PATH = encodeURI('/pokeball.wav');
 const AUCTION_ALERT_SOUND_MUTED_KEY = 'auction_alert_sound_muted';
 const AUCTION_ALERT_SOUND_MUTED_EVENT = 'auction-alert-muted-changed';
 const AUCTION_ALERT_VOLUME = 0.1;
@@ -32,6 +33,7 @@ const AuctionPage: React.FC = () => {
   const [draft, setDraft] = useState<Draft | null>(null);
   const [currentAuction, setCurrentAuction] = useState<Auction | null>(null);
   const [pokemon, setPokemon] = useState<Pokemon[]>([]);
+  const [allPokemon, setAllPokemon] = useState<Pokemon[]>([]);
   const [loading, setLoading] = useState(false);
   const [startingDraft, setStartingDraft] = useState(false);
   const [readyingUp, setReadyingUp] = useState(false);
@@ -68,6 +70,82 @@ const AuctionPage: React.FC = () => {
   const previousAuctionIdRef = useRef<string | null>(null);
   const prevCompletedAuctionsLengthRef = useRef<number | null>(null);
   const hasInitializedAuctionTrackingRef = useRef(false);
+
+  const [eggRevealId, setEggRevealId] = useState<number | null>(null);
+
+  const handleToggleEggView = useCallback((id: number | null) => {
+    setEggRevealId(id);
+  }, []);
+
+  const transformedPokemon = useMemo(() => {
+    if (!eggRevealId) return pokemon;
+    const lookupSource = allPokemon.length > 0 ? allPokemon : pokemon;
+    const egg = lookupSource.find(p => p.name.trim().toLowerCase() === 'egg');
+    const revealTarget = lookupSource.find(p => String(p.pokedex_id ?? p.id).trim() === String(eggRevealId).trim());
+    if (!egg || !revealTarget) return pokemon;
+
+    return pokemon.map(p => {
+      if (p.name.trim().toLowerCase() === 'egg') {
+        return {
+          ...p,
+          ...revealTarget,
+          name: `Egg (${revealTarget.name})`,
+          isRevealedEgg: true
+        };
+      }
+      return p;
+    });
+  }, [pokemon, allPokemon, eggRevealId]);
+
+  const displayDraft = useMemo(() => {
+    if (!draft) return null;
+    if (!eggRevealId) return draft;
+
+    const transformPkmn = (p: Pokemon) => {
+      if (p.name.trim().toLowerCase() !== 'egg' && !p.name.startsWith('Egg (')) return p;
+      const lookupSource = allPokemon.length > 0 ? allPokemon : pokemon;
+      const target = lookupSource.find(tp => String(tp.pokedex_id ?? tp.id).trim() === String(eggRevealId).trim());
+      if (!target) return p;
+      return {
+        ...p,
+        ...target,
+        name: `Egg (${target.name})`,
+        isRevealedEgg: true
+      };
+    };
+
+    return {
+      ...draft,
+      teams: draft.teams.map(t => ({
+        ...t,
+        auctions_won: (t.auctions_won ?? []).map(transformPkmn),
+        pokemon: (t.pokemon ?? []).map(transformPkmn)
+      })),
+      completed_auctions: draft.completed_auctions.map(a => ({
+        ...a,
+        pokemon: transformPkmn(a.pokemon)
+      }))
+    };
+  }, [draft, pokemon, allPokemon, eggRevealId]);
+
+  const transformedCurrentAuction = useMemo(() => {
+    if (!currentAuction || !eggRevealId) return currentAuction;
+    if (currentAuction.pokemon.name.trim().toLowerCase() !== 'egg' && !currentAuction.pokemon.name.startsWith('Egg (')) return currentAuction;
+    
+    const lookupSource = allPokemon.length > 0 ? allPokemon : pokemon;
+    const revealTarget = lookupSource.find(p => String(p.pokedex_id ?? p.id).trim() === String(eggRevealId).trim());
+    if (!revealTarget) return currentAuction;
+
+    return {
+      ...currentAuction,
+      pokemon: {
+        ...currentAuction.pokemon,
+        ...revealTarget,
+        name: `Egg (${revealTarget.name})`,
+        isRevealedEgg: true
+      }
+    };
+  }, [currentAuction, pokemon, allPokemon, eggRevealId]);
 
   useEffect(() => {
     document.body.classList.add('auction-page-active');
@@ -226,13 +304,15 @@ const AuctionPage: React.FC = () => {
         return Promise.all([
             fetchDraftById(auctionId),
             fetchDraftPokemon(auctionId),
-            fetchDraftCurrentAuction(auctionId)
-        ]).then(([draftData, pokemonData, current_auction]) => ({ user, draftData, pokemonData, current_auction }));
+            fetchDraftCurrentAuction(auctionId),
+            fetchPokemonList()
+        ]).then(([draftData, pokemonData, current_auction, allPkmn]) => ({ user, draftData, pokemonData, current_auction, allPkmn }));
       })
-      .then(({ user, draftData, pokemonData, current_auction }) => {
+      .then(({ user, draftData, pokemonData, current_auction, allPkmn }) => {
         setDraft(draftData);
         setCurrentAuction(current_auction);
         setPokemon(pokemonData);
+        setAllPokemon(allPkmn);
         console.log('Fetched draft data:', draftData);
         connectWebSocket(auctionId);
         const alreadyOnTeam = draftData.teams.some(team => team.user_id === user.user_id);
@@ -542,7 +622,7 @@ const AuctionPage: React.FC = () => {
             {/* Top: Player boxes */}
             <div className="auction-top-row-wrapper">
               <PlayerRow
-                teams={draft.teams}
+                teams={displayDraft?.teams ?? draft.teams}
                 numPlayers={requiredTeams}
                 highestBidderId={currentAuction ? getUserId(currentAuction.highest_bidder) : null}
                 wsConnected={wsConnected}
@@ -556,15 +636,18 @@ const AuctionPage: React.FC = () => {
               <div className="auction-left-panel">
                 {currentAuction && draft.draft_state !== 'COMPLETED' && (
                   <CurrentPokemonPanel
-                    current_auction={currentAuction}
-                    all_pokemon={pokemon}
+                    current_auction={transformedCurrentAuction!}
+                    all_pokemon={allPokemon.length > 0 ? allPokemon : pokemon}
+                    onToggleEgg={handleToggleEggView}
                   />
                 )}
                 <PokemonTablePanel
-                  auctions={draft.completed_auctions}
-                  pokemon={pokemon}
-                  teams={draft.teams}
+                  auctions={displayDraft?.completed_auctions ?? draft.completed_auctions}
+                  pokemon={transformedPokemon}
+                  teams={displayDraft?.teams ?? draft.teams}
                   currentUserId={currentUserId}
+                  onToggleEgg={handleToggleEggView}
+                  allPokemon={allPokemon.length > 0 ? allPokemon : pokemon}
                 />
               </div>
               {/* Right: Current auction info or post-draft completion UI */}
@@ -626,7 +709,7 @@ const AuctionPage: React.FC = () => {
                     )}
                     {currentAuction && (
                       <AuctionInfoPanel
-                        current_auction={currentAuction}
+                        current_auction={transformedCurrentAuction!}
                         draft_id={draft.draft_id}
                         currentAuctionExpiresAt={currentAuction.expires_at}
                         currentServerTime={currentAuction.current_server_time}
@@ -640,14 +723,14 @@ const AuctionPage: React.FC = () => {
                         )}
                         currentUserId={currentUserId}
                         userBudgetRemaining={draft.teams.find(team => team.user_id === currentUserId)?.budget_remaining || 0}
-                        completed_auctions={draft.completed_auctions}
+                        completed_auctions={displayDraft?.completed_auctions ?? draft.completed_auctions}
                         total_auctions={draft.total_auctions}
                         auctionLength={draft.auction_length}
                       />
                     )}
                     {draft.draft_state !== 'PENDING' && currentAuction && (
                       <AuctionStatsPanel
-                        completed_auctions={draft.completed_auctions}
+                        completed_auctions={displayDraft?.completed_auctions ?? draft.completed_auctions}
                         total_auctions={draft.total_auctions}
                       />
                     )}

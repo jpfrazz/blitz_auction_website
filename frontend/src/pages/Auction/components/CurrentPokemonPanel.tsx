@@ -7,6 +7,7 @@ import './CurrentPokemonPanel.scss';
 interface CurrentPokemonPanelProps {
   current_auction: Auction;
   all_pokemon: Pokemon[];
+  onToggleEgg?: (id: number | null) => void;
 }
 
 
@@ -95,20 +96,23 @@ function buildEvolutionTree(
 const EvolutionTree: React.FC<{ node: EvoNode }> = ({ node }) => {
   // Use evolutions folder for all images
   const getImageSrc = (pokemon: Pokemon) => {
+    const nameForImg = pokemon.name.includes('(') 
+      ? pokemon.name.match(/\(([^)]+)\)/)?.[1] || pokemon.name 
+      : pokemon.name;
+
     if (pokemon.evolves_from_id && (pokemon.form === 'Alola' || pokemon.form === 'Galar' || pokemon.form === 'Hisui' || pokemon.form === 'Paldea')) {
-      return `/evolutions/${pokemon.name}-${pokemon.form}.png`;
+      return `/evolutions/${nameForImg}-${pokemon.form}.png`;
     } else if (pokemon.evolves_from_id && (pokemon.form !== 'Mega' && pokemon.form !== 'Mega X')) {
-      return `/evolutions/${pokemon.name}.png`;
+      return `/evolutions/${nameForImg}.png`;
     } else if (pokemon.form === 'Mega' || (pokemon.form === 'Mega X' && !pokemon.name.includes('Charizard'))) {
-      let baseName = pokemon.name.startsWith('Mega ')
-        ? pokemon.name.slice(5)
-        : pokemon.name;
+      let baseName = nameForImg.startsWith('Mega ')
+        ? nameForImg.slice(5)
+        : nameForImg;
       return `/evolutions/${baseName}-Mega.png`;
-    } else if (pokemon.name.includes('Charizard') && pokemon.form === 'Mega X') {
-      pokemon.name = 'Mega Charizard X';
+    } else if (nameForImg.includes('Charizard') && pokemon.form === 'Mega X') {
       return `/evolutions/Charizard X-Mega.png`;
     } else {
-      return `/baseforms/${pokemon.name}.png`;
+      return `/baseforms/${nameForImg}.png`;
     }
   };
   // Determine if this is a baseform or evolution
@@ -291,12 +295,25 @@ const EvolutionTree: React.FC<{ node: EvoNode }> = ({ node }) => {
   );
 };
 
-const CurrentPokemonPanel: React.FC<CurrentPokemonPanelProps> = ({ current_auction, all_pokemon }) => {
+const CurrentPokemonPanel: React.FC<CurrentPokemonPanelProps> = ({ current_auction, all_pokemon, onToggleEgg }) => {
   const pokemonData: Pokemon = current_auction.pokemon;
   const currentPokemonKey = getPokemonNodeKey(pokemonData);
   const [showTipModal, setShowTipModal] = React.useState(false);
+
+  const isEgg = pokemonData.name.trim().toLowerCase() === 'egg' || (pokemonData as any).isRevealedEgg;
+  const isUnrevealedEgg = pokemonData.name.trim().toLowerCase() === 'egg';
+
   // Build the evolution tree for the current Pokémon
-  const evoTree = buildEvolutionTree(pokemonData, all_pokemon);
+  const treeRoot = React.useMemo(() => {
+    if ((pokemonData as any).isRevealedEgg) {
+      // Find the base version of the revealed pokemon to get the full tree
+      const targetName = pokemonData.name.match(/\(([^)]+)\)/)?.[1];
+      return all_pokemon.find(p => p.name === targetName && !p.evolves_from_id) || pokemonData;
+    }
+    return pokemonData;
+  }, [pokemonData, all_pokemon]);
+
+  const evoTree = buildEvolutionTree(treeRoot, all_pokemon);
   const keyMoves = (pokemonData.key_moves ?? [])
     .sort((a, b) => a.display_order - b.display_order);
 
@@ -310,7 +327,40 @@ const CurrentPokemonPanel: React.FC<CurrentPokemonPanelProps> = ({ current_aucti
   };
 
   return (
-    <div className="auction-current-pokemon-box">
+    <div className="auction-current-pokemon-box" style={{ position: 'relative' }}>
+      {isEgg && onToggleEgg && (
+        <select 
+          className="egg-reveal-select"
+          value={(pokemonData as any).isRevealedEgg ? String(pokemonData.pokedex_id ?? pokemonData.id) : ""}
+          onClick={(e) => {
+            e.stopPropagation();
+          }}
+          onChange={(e) => {
+            const val = e.target.value === "" ? null : parseInt(e.target.value);
+            onToggleEgg(val);
+          }}
+          style={{
+            position: 'absolute',
+            top: '8px',
+            right: '44px',
+            zIndex: 100,
+            background: 'rgba(30, 32, 35, 0.9)',
+            color: '#f1f1f1',
+            border: '1px solid rgba(255,255,255,0.3)',
+            borderRadius: '4px',
+            cursor: 'pointer',
+            padding: '4px 8px',
+            fontSize: '0.85rem',
+            outline: 'none'
+          }}
+        >
+          <option value="">Egg</option>
+          <option value="298">Azurill</option>
+          <option value="173">Cleffa</option>
+          <option value="174">Igglybuff</option>
+          <option value="175">Togepi</option>
+        </select>
+      )}
       <div className="pokemon-left-column">
         <div className="pokemon-header">
           <div className="pokemon-left" style={{ display: 'flex', alignItems: 'center' }}>
@@ -362,7 +412,7 @@ const CurrentPokemonPanel: React.FC<CurrentPokemonPanelProps> = ({ current_aucti
         </div>
 
         <div className="pokemon-stats">
-          {pokemonData.stats && (
+          {pokemonData.stats && !isUnrevealedEgg && (
             <>
               <div className="stat-row">
                 <span className="stat-label">HP</span>

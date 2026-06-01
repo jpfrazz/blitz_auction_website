@@ -10,6 +10,11 @@ interface DraftHistoryTabProps {
 const DraftHistoryTab: React.FC<DraftHistoryTabProps> = ({ auctions }) => {
   const sortedAuctions = [...auctions].reverse();
 
+  const getIconName = (name: string) => {
+    if (name.toLowerCase().startsWith('egg')) return 'egg';
+    return name.toLowerCase();
+  };
+
   return (
     <div className="auction-draft-history-list" style={{ paddingTop: '1rem' }}>
       <ul>
@@ -18,7 +23,7 @@ const DraftHistoryTab: React.FC<DraftHistoryTabProps> = ({ auctions }) => {
             <div style={{ display: 'flex', alignItems: 'center' }}>
               <div style={{ width: '24px', display: 'flex', justifyContent: 'center', marginRight: '8px', flexShrink: 0 }}>
                 <img
-                  src={`/MiniIcons/${auction.pokemon.name.toLowerCase()}.png`}
+                  src={`/MiniIcons/${getIconName(auction.pokemon.name)}.png`}
                   alt={auction.pokemon.name}
                   className="draft-history-pokemon-icon"
                 />
