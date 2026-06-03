@@ -252,7 +252,7 @@ fn require_referee_user(user: Option<User>) -> Result<User, AppError> {
         ));
     };
 
-    if !user.has_role_name("Referee") {
+    if !user.has_role_name("Website Dev") {
         return Err((
             StatusCode::FORBIDDEN,
             "user must have Referee role".to_string(),
@@ -978,7 +978,7 @@ pub async fn submit_race_results(
         return Err((StatusCode::FORBIDDEN, "user is not logged in".to_string()));
     };
 
-    if !user.has_role_name("Referee") {
+    if !user.has_role_name("Website Dev") {
         return Err((
             StatusCode::FORBIDDEN,
             "user must have Referee role".to_string(),

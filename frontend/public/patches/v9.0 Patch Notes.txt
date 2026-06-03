@@ -1,0 +1,92 @@
+6/2/2026
+
+We've finally done it. We've counted to nine.
+
+-----------------------------------------------
+Map Changes
+-----------------------------------------------
+
+Renovated Elite Four Chambers
+//Each Elite Four member now sports their own uniquely-colored chamber (instead of the Frontier Brains sharing identical chambers with their counterparts)
+
+Renovated Rustboro Gym
+//Similarly, Viola now sports her own inverted, recolored version of Roxanne's gym.
+
+All warps in Lavaridge, Petalburg and Mossdeep Gyms go to Leader
+//Removes the ability for new players to accidentally take the wrong warp on their way to the boss.
+
+
+The woman who walks in the center of the shops in Slateport has been moved to the bottom left
+//She's often in the way. Now movement in this cramped space is easier.
+
+This lower-left Slateport woman now tells you her (randomly chosen) three favorite Eeveelutions when spoken to after gym 4
+//I thought that this might be interesting for single-player runs? Weekly box players, for example, could use this NPC to determine which 3 Eeveelutions they're allowed to pick between. (This way, you can simulate "real" runs where only some Eeveelutions would be available.) Of course, if you'd rather ignore her, that's fine too.
+
+
+-----------------------------------------------
+Boss Battle Changes
+-----------------------------------------------
+
+Norman 3 Vigoroth Uproar > Round
+//Vigoroth is now a bit quieter for gym 3. Alas, it must wait until gym 4 to Get Loud.
+//I can't help myself from noting here that a level 24 neutral-nature Frogadier learns Round by level up and is exactly speed tied with Vigoroth. This is perfect for gambling with its life!
+
+Maxie Torkoal Yawn > Rock Slide
+//Torkoal, you're doing that too much!
+
+Wally Talonflame Flame Charge > Blaze Kick
+//Blaze Kick debuted in generation 3 as one of Blaziken's signature attacks. It's fitting for the champion of Hoenn... I like that they gave this to Talonflame in ZA and am stealing it.
+
+
+-----------------------------------------------
+Pokemon Changes
+-----------------------------------------------
+
+Togetic learns Fairy Wind on Evolution (level 10)
+Pikachu learns Electro Ball on Evolution (level 10)
+Jigglypuff and Clefairy learn Disarming voice on Evolution (level 10)
+Marill learns Bubble Beam on Evolution (level 10)
+//Togepi doesn't learn Fairy Wind by level up, but Togetic does at 14. Because Togepi comes at level 15, it was missing a chance at learning this move.
+//Once upon a time, Pokémon came out of the notebook at level 5, and you leveled them up to 15 in your room before starting your run. This was tedious, so we switched to having Pokémon come at the opening level cap with the best possible learnset for that point.
+//All of which is to say, Togepi "should" have the option to learn Fairy Wind, since if it came at 5, you'd evolve it at 10 and learn the move at 14 on Togetic. We'll add them as evolution moves to remedy the problem. This is the case for all of the above additions.
+
+
+Tentacool learns Water Gun @ 1
+Gabite learns Bite @ 27
+//Yet another pairs of backports from future generations to our generation 7 learnsets
+
+
+Blitzle Egg Move: Double Kick > High Horsepower
+//I don't like how same-y all of the bottom-tier electric types feel. This doesn't make Blitzle good, but it at least gives it something to set it apart. I'm cheating with this (it's not actually an Egg move for Blitzle in generation 7), but other Pokémon do have High Horsepower as an egg move, so it doesn't feel too out of place.
+
+Fletchling Egg Move: Tailwind > Blaze Kick
+//Cheating again in the name of getting an iconic gen 3 move onto a Pokemon where it's particularly fitting (and useful).
+
+Riolu Egg Move: Meteor Mash > Sky Uppercut
+//Speaking of cheating, Riolu doesn't have Meteor Mash as an egg move in generation 7. The level 48 Meteor Mash it gets in later generations has already been backported, so I'm comfortable making him wait until gym 8 to learn that move.
+
+
+Bombardier Ability: Stork's Blessing > Big Pecks / Keen Eye
+//Recently, it was discovered that Stork's Blessing doesn't work and produces corrupt egg. This bug was introduced when the egg starting containing just 4 Pokemon instead of 19. The fact that this bug has been in the game for two months and we only just now caught it suggests to me that it's time to retire the ability. I like Stork's Blessing, but it's an obscure mechanic that became 10x more obscure when Bombirdier moved to being a rental Pokémon. Maybe some day we'll revisit custom abilities, but for the time being I'm comfortable sticking to the defaults.
+
+Mega Scrafty Ability > Moxie
+//Similar to Staraptor, this thing's mega ability isn't going to be Intimidate. The current interaction is janky, so I'm giving it a filler ability while we wait to learn its official one.
+
+
+-----------------------------------------------
+Nothing Fishy is Going on in Oldale Town
+-----------------------------------------------
+
+//This note is just to confirm that there's no unscrupulous activity taking place in Oldale Town. It continues to be an unassuming, irrelevant location the player blows past on their way to the first gym.
+
+
+-----------------------------------------------
+Pool Additions
+-----------------------------------------------
+
++Deerling
+//'Tis the season?
+
+
+
+

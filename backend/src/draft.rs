@@ -1067,7 +1067,7 @@ impl DraftActor {
             ));
         }
 
-        let is_ref = user.has_role_name("Referee") || user.has_role_name("Admin");
+        let is_ref = user.has_role_name("Website Dev") || user.has_role_name("Admin");
         let actual_user_id = if let Some(tid) = target_user_id {
             if is_ref { tid } else { user.get_user_id_string() }
         } else {
@@ -1182,7 +1182,7 @@ impl DraftActor {
             }
         };
 
-        let is_ref = user.has_role_name("Referee") || user.has_role_name("Admin");
+        let is_ref = user.has_role_name("Website Dev") || user.has_role_name("Admin");
         let actual_user_id = if let Some(tid) = target_user_id {
             if is_ref { tid } else { user.get_user_id_string() }
         } else {
