@@ -1285,7 +1285,7 @@ pokedex_id,pokemon_name,form,move_name,learn_method,species,display_order
 231,Phanpy,,Ice Shard,Egg,,6
 172,Pichu,,Charm,5,,1
 172,Pichu,,Nasty Plot,13,,2
-172,Pichu,,Electo Ball,Evo.,,3
+172,Pichu,,Electro Ball,Evo.,,3
 172,Pichu,,Spark,26,,4
 172,Pichu,,Nuzzle,29,,5
 172,Pichu,,Thunder Punch,Evo.,Raichu,6
