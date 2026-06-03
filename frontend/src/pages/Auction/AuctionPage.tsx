@@ -276,7 +276,7 @@ const AuctionPage: React.FC = () => {
             setIsGuest(user.is_guest);
             setHasRefereeRole(
               (user.roles ?? []).some((role) => role.role_name === 'Referee' || role.role_name === 'Admin') ||
-              user.user_name === 'franklynathan'
+              user.username === 'franklynathan'
             );
             setIsLoggedIn(true);
           })
@@ -301,7 +301,7 @@ const AuctionPage: React.FC = () => {
         setIsGuest(user.is_guest);
         setHasRefereeRole(
           (user.roles ?? []).some((role) => role.role_name === 'Referee' || role.role_name === 'Admin') ||
-          user.user_name === 'franklynathan'
+          user.username === 'franklynathan'
         );
         setIsLoggedIn(!!user.user_id);
         if(!user.is_guest) {

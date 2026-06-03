@@ -33,7 +33,7 @@ const AuctionSetupForm: React.FC = () => {
     fetchCurrentUser()
       .then((user) => {
         const roles = user.roles ?? [];
-        const isReferee = roles.some((role) => role.role_name === 'Referee') || user.user_name === 'franklynathan';
+        const isReferee = roles.some((role) => role.role_name === 'Referee') || user.username === 'franklynathan';
         setHasRefereeRole(isReferee);
       })
       .catch(() => setHasRefereeRole(false));
