@@ -1,6 +1,6 @@
 6/2/2026
 
-We've finally done it. We've counted to nine.
+We've finally done it! We've counted to nine.
 
 -----------------------------------------------
 Map Changes
@@ -29,7 +29,7 @@ Boss Battle Changes
 
 Norman 3 Vigoroth Uproar > Round
 //Vigoroth is now a bit quieter for gym 3. Alas, it must wait until gym 4 to Get Loud.
-//I can't help myself from noting here that a level 24 neutral-nature Frogadier learns Round by level up and is exactly speed tied with Vigoroth. This is perfect for gambling with its life!
+//I can't help myself from noting that a level 24 neutral-nature Frogadier learns Round by level up and is exactly speed tied with Vigoroth. This is perfect for gambling with its life!
 
 Maxie Torkoal Yawn > Rock Slide
 //Torkoal, you're doing that too much!
@@ -86,7 +86,4 @@ Pool Additions
 
 +Deerling
 //'Tis the season?
-
-
-
 
