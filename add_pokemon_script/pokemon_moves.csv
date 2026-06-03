@@ -91,9 +91,10 @@ pokedex_id,pokemon_name,form,move_name,learn_method,species,display_order
 688,Binacle,,Rock Tomb,TM,,7
 688,Binacle,,Waterfall,HM,,8
 688,Binacle,,Night Slash,44,,9
-688,Binacle,,Cross Chop,55,,10
-688,Binacle,,Stone Edge,MR!,,11
-688,Binacle,,Tickle,Egg,,12
+688,Binacle,,Razor Shell,48,,10
+688,Binacle,,Cross Chop,55,,11
+688,Binacle,,Stone Edge,MR!,,12
+688,Binacle,,Tickle,Egg,,13
 522,Blitzle,,Charge,8,,1
 522,Blitzle,,Shock Wave,11,,2
 522,Blitzle,,Flame Charge,18,,3
@@ -103,17 +104,18 @@ pokedex_id,pokemon_name,form,move_name,learn_method,species,display_order
 522,Blitzle,,Discharge,36,,7
 522,Blitzle,,Overheat,TM,,8
 522,Blitzle,,Wild Charge,47,,9
-522,Blitzle,,Double Kick,Egg,,10
+522,Blitzle,,High Horsepower,Egg,,10
 824,Blipbug,,Struggle Bug,1,,1
 824,Blipbug,,Confusion,Evo.,Dottler,2
 824,Blipbug,,Light Screen,Evo.,Dottler,3
 824,Blipbug,,Reflect,Evo.,Dottler,4
 824,Blipbug,,Bug Buzz,Evo.,Orbeetle,5
 824,Blipbug,,Giga Drain,TM,,6
-824,Blipbug,,Mirror Coat,32,,7
-824,Blipbug,,Psychic,36,,8
-824,Blipbug,,Calm Mind,44/TM,,9
-824,Blipbug,,Recover,Egg,,10
+824,Blipbug,,Shadow Ball,TM,,7
+824,Blipbug,,Mirror Coat,32,,8
+824,Blipbug,,Psychic,36,,9
+824,Blipbug,,Calm Mind,44/TM,,10
+824,Blipbug,,Recover,Egg,,11
 438,Bonsly,,Rock Throw,12,,1
 438,Bonsly,,Feint Attack,19,,2
 438,Bonsly,,Rock Tomb,26,,3
@@ -165,12 +167,13 @@ pokedex_id,pokemon_name,form,move_name,learn_method,species,display_order
 1,Bulbasaur,,Leech Seed,7,,1
 1,Bulbasaur,,Vine Whip,9,,2
 1,Bulbasaur,,Razor Leaf,Evo.,,3
-1,Bulbasaur,,Growth,28,,4
-1,Bulbasaur,,Sludge Bomb,TM,,5
-1,Bulbasaur,,Earthquake,TM,,6
-1,Bulbasaur,,Petal Dance,Evo.,,7
-1,Bulbasaur,,Synthesis,45,,8
-1,Bulbasaur,,Giga Drain,Egg/TM,,9
+1,Bulbasaur,,Bullet Seed,TM,,4
+1,Bulbasaur,,Growth,28,,5
+1,Bulbasaur,,Sludge Bomb,TM,,6
+1,Bulbasaur,,Earthquake,TM,,7
+1,Bulbasaur,,Petal Dance,Evo.,,8
+1,Bulbasaur,,Synthesis,45,,9
+1,Bulbasaur,,Giga Drain,Egg/TM,,10
 659,Bunnelby,,Quick Attack,7,,1
 659,Bunnelby,,Take Down,15,,2
 659,Bunnelby,,Mud Shot,18,,3
@@ -403,21 +406,23 @@ pokedex_id,pokemon_name,form,move_name,learn_method,species,display_order
 453,Croagunk,,Bulk Up,TM,,10
 453,Croagunk,,Drain Punch,Egg,,11
 104,Cubone,,Bone Club,7,,1
-104,Cubone,,Bonemerang,21,,2
-104,Cubone,,Shadow Bone,Evo.,Marowak-Alola,3
-104,Cubone,,Earthquake,TM,,4
-104,Cubone,,Flare Blitz,53,Marowak-Alola,5
-104,Cubone,,Iron Head,Egg,,6
+104,Cubone,,Thief,TM,,2
+104,Cubone,,Bonemerang,21,,3
+104,Cubone,,Shadow Bone,Evo.,Marowak-Alola,4
+104,Cubone,,Earthquake,TM,,5
+104,Cubone,,Flare Blitz,53,Marowak-Alola,6
+104,Cubone,,Iron Head,Egg,,7
 878,Cufant,,Rollout,5,,1
 878,Cufant,,Rock Smash,10,,2
 878,Cufant,,Bulldoze,15,,3
 878,Cufant,,Heavy Slam,Evo.,,4
 878,Cufant,,Brick Break,TM,,5
 878,Cufant,,Earthquake,TM,,6
-878,Cufant,,Iron Head,44,,7
-878,Cufant,,Play Rough,51,,8
-878,Cufant,,High Horsepower,58,,9
-878,Cufant,,Curse,Egg,,10
+878,Cufant,,Snarl,TM,Copperajah,7
+878,Cufant,,Iron Head,44,,8
+878,Cufant,,Play Rough,51,,9
+878,Cufant,,High Horsepower,58,,10
+878,Cufant,,Curse,Egg,,11
 742,Cutiefly,,Draining Kiss,16,,1
 742,Cutiefly,,Bug Buzz,28,,2
 742,Cutiefly,,Calm Mind,TM,,3
@@ -432,6 +437,14 @@ pokedex_id,pokemon_name,form,move_name,learn_method,species,display_order
 155,Cyndaquil,,Flamethrower,TM/48,,7
 155,Cyndaquil,,Eruption,MR!,,8
 155,Cyndaquil,,Extrasensory,Egg,,9
+585,Deerling,,Double Kick,10,,1
+585,Deerling,,Leech Seed,13,,2
+585,Deerling,,Bullet Seed,TM,,3
+585,Deerling,,Jump Kick,24,,4
+585,Deerling,,Horn Leech,Evo.,,5
+585,Deerling,,Megahorn,MR,,6
+585,Deerling,,Charm,36,,7
+585,Deerling,,Synthesis,Egg,,8
 751,Dewpider,,Bug Bite,13,,1
 751,Dewpider,,Bubble Beam,16,,2
 751,Dewpider,,Leech Life,33,,3
@@ -450,12 +463,13 @@ pokedex_id,pokemon_name,form,move_name,learn_method,species,display_order
 50,Diglett,,Earthquake,47/TM,,6
 50,Diglett,,Reversal,Egg,,7
 425,Drifloon,,Gust,8,,1
-425,Drifloon,,Ominous Wind,20,,2
-425,Drifloon,,Strength Sap,MR,,3
-425,Drifloon,,Thunderbolt,TM,,4
-425,Drifloon,,Shadow Ball,40/TM,,5
-425,Drifloon,,Fly,HM,,6
-425,Drifloon,,Weather Ball,Egg,,7
+425,Drifloon,,Aerial Ace,TM,,2
+425,Drifloon,,Ominous Wind,20,,3
+425,Drifloon,,Strength Sap,MR,,4
+425,Drifloon,,Thunderbolt,TM,,5
+425,Drifloon,,Shadow Ball,40/TM,,6
+425,Drifloon,,Fly,HM,,7
+425,Drifloon,,Weather Ball,Egg,,8
 529,Drilbur,,Rapid Spin,5,,1
 529,Drilbur,,Metal Claw,15,,2
 529,Drilbur,,Dig,19,,3
@@ -471,12 +485,11 @@ pokedex_id,pokemon_name,form,move_name,learn_method,species,display_order
 580,Ducklett,,Feather Dance,21,,5
 580,Ducklett,,Ice Beam,TM,,6
 580,Ducklett,,Surf,HM,,7
-580,Ducklett,,Rain Dance,34,,8
+580,Ducklett,,Rain Dance,34/TM,,8
 580,Ducklett,,Fly,HM,,9
-580,Ducklett,,Tailwind,40,,10
-580,Ducklett,,Brave Bird,47,,11
-580,Ducklett,,Hurricane,55,,12
-580,Ducklett,,Mirror Move,Egg,,13
+580,Ducklett,,Tailwind,40,,11
+580,Ducklett,,Brave Bird,47,,12
+580,Ducklett,,Hurricane,55,,13
 355,Duskull,,Night Shade,1,,1
 355,Duskull,,Disable,6,,2
 355,Duskull,,Shadow Sneak,17,,3
@@ -557,8 +570,9 @@ pokedex_id,pokemon_name,form,move_name,learn_method,species,display_order
 239,Elekid,,Brick Break,TM,,5
 239,Elekid,,Psychic,TM,,6
 239,Elekid,,Earthquake,TM,,7
-239,Elekid,,Screech,42,,8
-239,Elekid,,Ice Punch,Egg,,9
+239,Elekid,,Fire Punch,MR,Electivire,8
+239,Elekid,,Screech,42,,9
+239,Elekid,,Ice Punch,Egg,,10
 605,Elgyem,,Psybeam,15,,1
 605,Elgyem,,Hidden Power,22,,2
 605,Elgyem,,Psychic,39/TM,,3
@@ -637,11 +651,12 @@ pokedex_id,pokemon_name,form,move_name,learn_method,species,display_order
 926,Fidough,,Wish,Egg,,8
 669,Flabebe,,Fairy Wind,6,,1
 669,Flabebe,,Wish,20,,2
-669,Flabebe,,Giga Drain,TM,,3
-669,Flabebe,,Moonblast,MR,,4
-669,Flabebe,,Petal Dance,MR,,5
-669,Flabebe,,Calm Mind,TM,,6
-669,Flabebe,,Captivate,Egg,,7
+669,Flabebe,,Magical Leaf,25,,3
+669,Flabebe,,Giga Drain,TM,,4
+669,Flabebe,,Moonblast,MR,,5
+669,Flabebe,,Petal Dance,MR,,6
+669,Flabebe,,Calm Mind,TM,,7
+669,Flabebe,,Captivate,Egg,,8
 661,Fletchling,,Peck,10,,1
 661,Fletchling,,Flame Charge,Evo.,,2
 661,Fletchling,,Steel Wing,TM/MR!,,3
@@ -654,14 +669,16 @@ pokedex_id,pokemon_name,form,move_name,learn_method,species,display_order
 661,Fletchling,,Acrobatics,44,,10
 661,Fletchling,,Bulk Up,TM,,11
 661,Fletchling,,Brave Bird,MR!,,12
-661,Fletchling,,Tailwind,Egg,,13
+661,Fletchling,,Blaze Kick,Egg,,13
 996,Frigibax,,Dragon Tail,1,,1
 996,Frigibax,,Icy Wind,6,,2
 996,Frigibax,,Ice Fang,29,,3
-996,Frigibax,,Glaive Rush,Evo.,,4
-996,Frigibax,,Breaking Swipe,MR,,5
-996,Frigibax,,Dragon Claw,MR/TM,,6
-996,Frigibax,,Aqua Tail,Egg,,7
+996,Frigibax,,Dragon Claw,TM,,4
+996,Frigibax,,Earthquake,TM,,5
+996,Frigibax,,Glaive Rush,Evo.,,6
+996,Frigibax,,Breaking Swipe,MR,,7
+996,Frigibax,,Dragon Claw,MR,Baxcalibur,8
+996,Frigibax,,Aqua Tail,Egg,,9
 592,Frillish,,Water Sport,1,,1
 592,Frillish,,Bubble Beam,13,,2
 592,Frillish,,Recover,17,,3
@@ -684,9 +701,10 @@ pokedex_id,pokemon_name,form,move_name,learn_method,species,display_order
 656,Froakie,,Rock Slide,TM,,6
 656,Froakie,,Surf,HM,,7
 656,Froakie,,Aerial Ace,TM,,8
-656,Froakie,,Extrasensory,49,,9
-656,Froakie,,Night Slash,MR!,,10
-656,Froakie,,Toxic Spikes,Egg,,11
+656,Froakie,,Substitute,42,,9
+656,Froakie,,Extrasensory,49,,10
+656,Froakie,,Night Slash,MR!,,11
+656,Froakie,,Toxic Spikes,Egg,,12
 909,Fuecoco,,Incinerate,15,,1
 909,Fuecoco,,Snarl,24,,2
 909,Fuecoco,,Flamethrower,32,,3
@@ -847,7 +865,8 @@ pokedex_id,pokemon_name,form,move_name,learn_method,species,display_order
 859,Impidimp,,Bulk Up,MR,,8
 859,Impidimp,,Power-Up Punch,MR,,9
 859,Impidimp,,Play Rough,48,,10
-859,Impidimp,,Hammer Arm,MR!,,11
+859,Impidimp,,Foul Play,56,,11
+859,Impidimp,,Hammer Arm,MR!,,12
 174,Igglybuff,,Charm,1,,1
 174,Igglybuff,,Defense Curl,3,,2
 174,Igglybuff,,Rollout,20,,3
@@ -1082,9 +1101,10 @@ pokedex_id,pokemon_name,form,move_name,learn_method,species,display_order
 755,Morelull,,Mega Drain,15,,2
 755,Morelull,,Giga Drain,31,,3
 755,Morelull,,Strength Sap,35,,4
-755,Morelull,,Dazzling Gleam,TM,,5
-755,Morelull,,Spore,40,,6
-755,Morelull,,Leech Seed,Egg,,7
+755,Morelull,,Moonblast,39,,5
+755,Morelull,,Dazzling Gleam,TM,,6
+755,Morelull,,Spore,40,,7
+755,Morelull,,Leech Seed,Egg,,8
 749,Mudbray,,Bulldoze,10,,1
 749,Mudbray,,Double Kick,15,,2
 749,Mudbray,,High Horsepower,24,,3
@@ -1114,7 +1134,7 @@ pokedex_id,pokemon_name,form,move_name,learn_method,species,display_order
 258,Mudkip,,Waterfall,HM,,10
 258,Mudkip,,Earthquake,51/TM,,11
 258,Mudkip,,Hammer Arm,MR!,,12
-258,Mudkip,,Sludge,Egg,,13
+258,Mudkip,,Avalanche,Egg,,13
 446,Munchlax,,Body Slam,25,,1
 446,Munchlax,,Rest,TM,,2
 446,Munchlax,,Earthquake,TM,,3
@@ -1211,11 +1231,12 @@ pokedex_id,pokemon_name,form,move_name,learn_method,species,display_order
 501,Oshawott,,Fury Cutter,Evo.,Dewott,2
 501,Oshawott,,Ice Beam,TM,,3
 501,Oshawott,,Surf,HM,,4
-501,Oshawott,,Ceaseless Edge,Evo.,Samurott-Hisui,5
-501,Oshawott,,Waterfall,HM,,6
-501,Oshawott,,Encore,39,,7
-501,Oshawott,,Swords Dance,58,,8
-501,Oshawott,,Sacred Sword,Egg,,9
+501,Oshawott,,Aqua Jet,34,,5
+501,Oshawott,,Ceaseless Edge,Evo.,Samurott-Hisui,6
+501,Oshawott,,Waterfall,HM,,7
+501,Oshawott,,Encore,39,,8
+501,Oshawott,,Swords Dance,58,,9
+501,Oshawott,,Sacred Sword,Egg,,10
 674,Pancham,,Karate Chop,12,,1
 674,Pancham,,Bullet Punch,Evo.,,2
 674,Pancham,,Snarl,TM,,3
@@ -1252,9 +1273,10 @@ pokedex_id,pokemon_name,form,move_name,learn_method,species,display_order
 708,Phantump,,Feint Attack,19,,5
 708,Phantump,,Leech Seed,23,,6
 708,Phantump,,Shadow Claw,Evo.,,7
-708,Phantump,,Phantom Force,45,,8
-708,Phantump,,Horn Leech,54,,9
-708,Phantump,,Grudge,Egg,,10
+708,Phantump,,Will-O-Wisp,31,,8
+708,Phantump,,Phantom Force,45,,9
+708,Phantump,,Horn Leech,54,,10
+708,Phantump,,Grudge,Egg,,11
 231,Phanpy,,Bulldoze,15,,1
 231,Phanpy,,Knock Off,MR,,2
 231,Phanpy,,Rapid Spin,MR,,3
@@ -1263,12 +1285,14 @@ pokedex_id,pokemon_name,form,move_name,learn_method,species,display_order
 231,Phanpy,,Ice Shard,Egg,,6
 172,Pichu,,Charm,5,,1
 172,Pichu,,Nasty Plot,13,,2
-172,Pichu,,Spark,26,,3
-172,Pichu,,Nuzzle,29,,4
-172,Pichu,,Thunder Punch,Evo.,Raichu,5
-172,Pichu,,Thunderbolt,TM/MR*,Raichu-Alola,6
-172,Pichu,,Psychic,Evo.,Raichu-Alola,7
-172,Pichu,,Fake Out,Egg,,8
+172,Pichu,,Electo Ball,Evo.,,3
+172,Pichu,,Spark,26,,4
+172,Pichu,,Nuzzle,29,,5
+172,Pichu,,Thunder Punch,Evo.,Raichu,6
+172,Pichu,,Thunderbolt,TM/MR*,Raichu-Alola,7
+172,Pichu,,Psychic,Evo.,Raichu-Alola,8
+172,Pichu,,Volt Tackle,MR!,,9
+172,Pichu,,Fake Out,Egg,,10
 731,Pikipek,,Pluck,15,,1
 731,Pikipek,,Bullet Seed,TM,,2
 731,Pikipek,,Steel Wing,TM,,3
@@ -1333,8 +1357,9 @@ pokedex_id,pokemon_name,form,move_name,learn_method,species,display_order
 261,Poochyena,,Ice Fang,MR,,6
 261,Poochyena,,Thunder Fang,MR,,7
 261,Poochyena,,Crunch,40,,8
-261,Poochyena,,Play Rough,56,,9
-261,Poochyena,,Poison Fang,Egg,,10
+261,Poochyena,,Sucker Punch,52,,9
+261,Poochyena,,Play Rough,56,,10
+261,Poochyena,,Poison Fang,Egg,,11
 728,Popplio,,Disarming Voice,8,,1
 728,Popplio,,Baby-Doll Eyes,8,,2
 728,Popplio,,Aqua Jet,14,,3
@@ -1399,8 +1424,9 @@ pokedex_id,pokemon_name,form,move_name,learn_method,species,display_order
 447,Riolu,,Calm Mind,42/TM,,11
 447,Riolu,,Meteor Mash,48,,12
 447,Riolu,,Dragon Pulse,MR!,,13
-447,Riolu,,Meteor Mash,Egg,,14
-744,Rockruff,,Rock Tomb,TM,,1
+447,Riolu,,Meteor Mash,48,,14
+447,Riolu,,Sky Uppercut,Egg,,15
+744,Rockruff,,Rock Tomb,23/TM,,1
 744,Rockruff,,Accelerock,25,,2
 744,Rockruff,,Taunt,TM/MR*,lycanroc-midnight,3
 744,Rockruff,,Stealth Rock,29,,4
@@ -1442,11 +1468,11 @@ pokedex_id,pokemon_name,form,move_name,learn_method,species,display_order
 479,Rotom,,Thunder,TM,,5
 479,Rotom,,Discharge,MR!,,6
 479,Rotom,,Charge,MR!,,7
-479,Rotom,,Blizzard,FORM,Rotom-Frost,1
-479,Rotom,,Air Slash,FORM,Rotom-Fan,1
-479,Rotom,,Overheat,FORM,Rotom-Heat,1
-479,Rotom,,Leaf Storm,FORM,Rotom-Mow,1
-479,Rotom,,Hydro Pump,FORM,Rotom-Wash,1
+479,Rotom,,Blizzard,Catalog,Rotom-Frost,1
+479,Rotom,,Air Slash,Catalog,Rotom-Fan,1
+479,Rotom,,Overheat,Catalog,Rotom-Heat,1
+479,Rotom,,Leaf Storm,Catalog,Rotom-Mow,1
+479,Rotom,,Hydro Pump,Catalog,Rotom-Wash,1
 722,Rowlet,,Razor Leaf,14,,1
 722,Rowlet,,Ominous Wind,16,,2
 722,Rowlet,,Pluck,24,,3
@@ -1537,11 +1563,13 @@ pokedex_id,pokemon_name,form,move_name,learn_method,species,display_order
 559,Scraggy,,Headbutt,1,,1
 559,Scraggy,,Low Kick,16,,2
 559,Scraggy,,Brick Break,23,,3
-559,Scraggy,,Crunch,38,,4
-559,Scraggy,,Rock Slide,TM,,5
-559,Scraggy,,Rest,TM,,6
-559,Scraggy,,Bulk Up,TM,,7
-559,Scraggy,,Dragon Dance,Egg,,8
+559,Scraggy,,High Jump Kick,31,,4
+559,Scraggy,,Crunch,38,,5
+559,Scraggy,,Rock Slide,TM,,6
+559,Scraggy,,Rest,TM,,7
+559,Scraggy,,Snarl,TM,,8
+559,Scraggy,,Bulk Up,TM,,9
+559,Scraggy,,Dragon Dance,Egg,,10
 123,Scyther,,Steel Wing,TM,,1
 123,Scyther,,Rock Smash,HM,,2
 123,Scyther,,Wing Attack,21,,3
@@ -1672,22 +1700,22 @@ pokedex_id,pokemon_name,form,move_name,learn_method,species,display_order
 235,Smeargle,,Acid Spray,Sketch,,7
 235,Smeargle,,Beak Blast,Sketch,,8
 235,Smeargle,,Boomburst,Sketch,,9
-235,Smeargle,,Charm,Sketch,,10
-235,Smeargle,,Destiny Bond,Sketch,,11
-235,Smeargle,,Draco Meteor,Sketch,,12
-235,Smeargle,,Eerie Impulse,Sketch,,13
-235,Smeargle,,Electroweb,Sketch,,14
-235,Smeargle,,Endeavor,Sketch,,15
-235,Smeargle,,Explosion,Sketch,,16
-235,Smeargle,,Feather Dance,Sketch,,17
-235,Smeargle,,Fissure,Sketch,,18
-235,Smeargle,,Foul Play,Sketch,,19
-235,Smeargle,,Gigaton Hammer,Sketch,,20
-235,Smeargle,,Glare,Sketch,,21
-235,Smeargle,,King's Shield,Sketch,,22
-235,Smeargle,,Leech Seed,Sketch,,23
-235,Smeargle,,Light Screen,Sketch,,24
-235,Smeargle,,Mat Block,Sketch,,25
+235,Smeargle,,Ceaseless Edge,Sketch,,10
+235,Smeargle,,Charm,Sketch,,11
+235,Smeargle,,Destiny Bond,Sketch,,12
+235,Smeargle,,Draco Meteor,Sketch,,13
+235,Smeargle,,Eerie Impulse,Sketch,,14
+235,Smeargle,,Electroweb,Sketch,,15
+235,Smeargle,,Endeavor,Sketch,,16
+235,Smeargle,,Explosion,Sketch,,17
+235,Smeargle,,Feather Dance,Sketch,,18
+235,Smeargle,,Fissure,Sketch,,19
+235,Smeargle,,Foul Play,Sketch,,20
+235,Smeargle,,Gigaton Hammer,Sketch,,21
+235,Smeargle,,Glare,Sketch,,22
+235,Smeargle,,King's Shield,Sketch,,23
+235,Smeargle,,Leech Seed,Sketch,,24
+235,Smeargle,,Light Screen,Sketch,,25
 235,Smeargle,,Milk Drink,Sketch,,26
 235,Smeargle,,Night Daze,Sketch,,27
 235,Smeargle,,Obstruct,Sketch,,28
@@ -1835,11 +1863,12 @@ pokedex_id,pokemon_name,form,move_name,learn_method,species,display_order
 325,Spoink,,Psybeam,14,,1
 325,Spoink,,Trick Room,TM,,2
 325,Spoink,,Shock Wave,TM,,3
-325,Spoink,,Shadow Ball,TM,,4
-325,Spoink,,Psychic,52/TM,,5
-325,Spoink,,Calm Mind,TM,,6
-325,Spoink,,Belch,MR,,7
-325,Spoink,,Mirror Coat,Egg,,8
+325,Spoink,,Power Gem,29,,4
+325,Spoink,,Shadow Ball,TM,,5
+325,Spoink,,Psychic,52/TM,,6
+325,Spoink,,Calm Mind,TM,,7
+325,Spoink,,Belch,MR,,8
+325,Spoink,,Mirror Coat,Egg,,9
 682,Spritzee,,Fairy Wind,1,,1
 682,Spritzee,,Echoed Voice,13,,2
 682,Spritzee,,Calm Mind,17,,3
@@ -1984,12 +2013,13 @@ pokedex_id,pokemon_name,form,move_name,learn_method,species,display_order
 564,Tirtouga,,Waterfall,HM,,11
 564,Tirtouga,,Liquidation,Egg,,12
 175,Togepi,,Yawn,13,,1
-175,Togepi,,Encore,17,,2
-175,Togepi,,Wish,29,,3
-175,Togepi,,Ancient Power,33,Togetic,4
-175,Togepi,,Dazzling Gleam,TM,,5
-175,Togepi,,Aura Sphere,MR,,6
-175,Togepi,,Future Sight,Egg,,7
+175,Togepi,,Fairy Wind,Evo.,,2
+175,Togepi,,Encore,17,,3
+175,Togepi,,Wish,29,,4
+175,Togepi,,Ancient Power,33,Togetic,5
+175,Togepi,,Dazzling Gleam,TM,,6
+175,Togepi,,Aura Sphere,MR,,7
+175,Togepi,,Future Sight,Egg,,8
 255,Torchic,,Double Kick,16,,1
 255,Torchic,,Flame Charge,20,,2
 255,Torchic,,Bulk Up,31/TM,,3
@@ -2026,8 +2056,9 @@ pokedex_id,pokemon_name,form,move_name,learn_method,species,display_order
 328,Trapinch,,Earthquake,33/TM,,8
 328,Trapinch,,Dragon Claw,Evo.,,9
 328,Trapinch,,Flamethrower,TM,,10
-328,Trapinch,,Dragon Dance,MR,,11
-328,Trapinch,,Bug Bite,Egg,,12
+328,Trapinch,,Giga Drain,TM,,11
+328,Trapinch,,Dragon Dance,MR,,12
+328,Trapinch,,Bug Bite,Egg,,13
 252,Treecko,,Mega Drain,13,,1
 252,Treecko,,Leech Seed,15,,2
 252,Treecko,,Giga Drain,21*/TM,Treecko,3
@@ -2120,6 +2151,7 @@ pokedex_id,pokemon_name,form,move_name,learn_method,species,display_order
 543,Venipede,,Poison Tail,19,,3
 543,Venipede,,Bug Bite,22,,4
 543,Venipede,,Venoshock,28,,5
+543,Venipede,,Baton Pass,Evo.,,5
 543,Venipede,,Fury Cutter,MT,,6
 543,Venipede,,X-Scissor,TM,,7
 543,Venipede,,Earthquake,TM,,8
@@ -2543,13 +2575,14 @@ pokedex_id,pokemon_name,form,move_name,learn_method,species,display_order
 874,Stonjourner,,Block,1,,1
 874,Stonjourner,,Rock Polish,6,,2
 874,Stonjourner,,Rock Tomb,12,,3
-874,Stonjourner,,Stomp,24,,4
-874,Stonjourner,,Stealth Rock,30,,5
-874,Stonjourner,,Rock Slide,36,,6
-874,Stonjourner,,Body Slam,42,,7
-874,Stonjourner,,Heavy Slam,54,,8
-874,Stonjourner,,Stone Edge,60,,9
-874,Stonjourner,,Mega Kick,66,,10
+874,Stonjourner,,Gravity,18,,4
+874,Stonjourner,,Stomp,24,,5
+874,Stonjourner,,Stealth Rock,30,,6
+874,Stonjourner,,Rock Slide,36,,7
+874,Stonjourner,,Body Slam,42,,8
+874,Stonjourner,,Heavy Slam,54,,9
+874,Stonjourner,,Stone Edge,60,,10
+874,Stonjourner,,Mega Kick,66,,11
 777,Togedemaru,,Thunder Shock,1,,1
 777,Togedemaru,,Defense Curl,5,,2
 777,Togedemaru,,Rollout,9,,3

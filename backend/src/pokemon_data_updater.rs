@@ -124,7 +124,13 @@ pub async fn update_pokemon_data(
         .map_err(|e| {
             (
                 StatusCode::INTERNAL_SERVER_ERROR,
-                format!("failed to update pokemon in db, {}", e),
+                format!(
+                    "failed to update pokemon (ID: {}, Form: '{}', Name: '{}') in db: {}",
+                    pokemon.pokedex_id,
+                    pokemon.form.as_deref().unwrap_or(""),
+                    pokemon.name,
+                    e
+                ),
             )
         })?;
     }
@@ -203,7 +209,13 @@ pub async fn update_pokemon_key_moves_data(
         .map_err(|e| {
             (
                 StatusCode::INTERNAL_SERVER_ERROR,
-                format!("failed to update key moves in db, {}", e),
+                format!(
+                    "failed to update key move (ID: {}, Form: '{}', Move: '{}') in db: {}",
+                    key_move.pokedex_id,
+                    key_move.form.as_deref().unwrap_or(""),
+                    key_move.move_name,
+                    e
+                ),
             )
         })?;
     }
