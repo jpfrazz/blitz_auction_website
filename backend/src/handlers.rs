@@ -252,7 +252,7 @@ fn require_referee_user(user: Option<User>) -> Result<User, AppError> {
         ));
     };
 
-    if !user.has_role_name("Website Dev") {
+    if !user.has_role_name("Developer") {
         return Err((
             StatusCode::FORBIDDEN,
             "user must have Referee role".to_string(),
@@ -978,7 +978,7 @@ pub async fn submit_race_results(
         return Err((StatusCode::FORBIDDEN, "user is not logged in".to_string()));
     };
 
-    if !user.has_role_name("Website Dev") {
+    if !user.has_role_name("Developer") {
         return Err((
             StatusCode::FORBIDDEN,
             "user must have Referee role".to_string(),
@@ -2199,7 +2199,7 @@ pub async fn post_pokemon_data(
     let Some(user) = auth_session.user else {
         return Err((StatusCode::UNAUTHORIZED, format!("user must be logged in")));
     };
-    if !user.has_role_name("Website Dev") {
+    if !user.has_role_name("Developer") {
         return Err((StatusCode::UNAUTHORIZED, format!("user must be a dev")));
     }
 
@@ -2246,7 +2246,7 @@ pub async fn post_pokemon_key_moves_data(
     let Some(user) = auth_session.user else {
         return Err((StatusCode::UNAUTHORIZED, format!("user must be logged in")));
     };
-    if !user.has_role_name("Website Dev") {
+    if !user.has_role_name("Developer") {
         return Err((StatusCode::UNAUTHORIZED, format!("user must be a dev")));
     }
 
