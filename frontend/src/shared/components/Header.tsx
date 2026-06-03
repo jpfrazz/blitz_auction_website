@@ -5,7 +5,7 @@ import { fetchCurrentUser, changeGuestName } from '../api/draftData';
 import { UserRole } from '../../types';
 
 const navButtons = [
-  { label: "Leaderboard", link: "/Leaderboard" },
+  { label: "Leaderboard", link: "/Leaderboard", hideMobile: true },
   { label: "Stats", link: "/Stats" },
   { label: "FAQ", link: "/FAQ" },
 ];
@@ -305,7 +305,7 @@ function Header() {
             <Link
               key={btn.label}
               to={btn.link}
-              className="navButton"
+              className={`navButton ${('hideMobile' in btn && btn.hideMobile) ? 'hide-on-mobile' : ''}`}
               onClick={handleNavLinkClick}
               target={linkTarget}
               rel={linkRel}

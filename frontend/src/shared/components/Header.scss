@@ -297,6 +297,10 @@
     display: block;
   }
 
+  .hide-on-mobile {
+    display: none !important;
+  }
+
   .nav {
     position: fixed;
     top: 0;

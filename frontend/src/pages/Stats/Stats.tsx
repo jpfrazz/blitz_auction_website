@@ -501,7 +501,7 @@ const Stats: React.FC = () => {
         <section className="stats-hero-card">
           <div>
             <h1>Draft Stats</h1>
-            <p>Auction analytics across competitive drafts.</p>
+            <p>Auction analytics across competitive drafts</p>
           </div>
           <div className="stats-hero-meta">Live from completed draft data</div>
         </section>
