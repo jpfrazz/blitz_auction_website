@@ -23,6 +23,7 @@
 .faq-toc {
   width: 100%;
   max-width: 600px;
+  box-sizing: border-box;
   margin-bottom: 32px;
 }
 
@@ -37,6 +38,7 @@
   margin-bottom: 48px;
   margin-left: auto;
   margin-right: auto;
+  box-sizing: border-box;
 }
 
 .faq-toc-heading {
@@ -103,4 +105,48 @@
 
 .faq-answer h3 {
   font-size: 1.65rem;
+}
+
+@media (max-width: 640px) {
+  .faq-main {
+    padding: 5rem 0.75rem 0;
+  }
+
+  .faq-title {
+    font-size: 1.75rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .faq-toc {
+    max-width: 100%;
+  }
+
+  .faq-toc-card {
+    padding: 1.25rem;
+    margin-bottom: 2.5rem;
+    width: 100%;
+    max-width: 100%;
+  }
+
+  .faq-toc-heading {
+    font-size: 1.5rem;
+  }
+
+  .faq-toc-list {
+    font-size: 1.15rem;
+    padding-left: 1.25rem;
+
+    li {
+      word-wrap: break-word;
+      overflow-wrap: anywhere;
+    }
+  }
+
+  .faq-question {
+    font-size: 1.6rem;
+  }
+
+  .faq-answer {
+    font-size: 1.25rem;
+  }
 }

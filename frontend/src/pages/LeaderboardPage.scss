@@ -60,6 +60,7 @@
     position: relative;
     z-index: 1;
     background: $eb-surface;
+    overflow-x: auto; // Enables horizontal scrolling for the table on small screens
 }
 
 @keyframes slideDown {
@@ -197,4 +198,55 @@
 
 .leaderboard-avatar-placeholder {
     @extend .leaderboard-avatar;
+}
+
+@media (max-width: 640px) {
+    .leaderboard-page-wrapper {
+        padding-top: 5rem;
+    }
+
+    .leaderboard-tabs-container {
+        overflow-x: auto;
+        white-space: nowrap;
+        padding-bottom: 5px;
+        -webkit-overflow-scrolling: touch;
+        
+        &::-webkit-scrollbar {
+            display: none; // Hide scrollbar for cleaner look on mobile
+        }
+    }
+
+    .leaderboard-tab-btn {
+        padding: 8px 16px;
+        font-size: 0.85rem;
+    }
+
+    .leaderboard-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 1rem;
+
+        h1 {
+            font-size: 1.8rem;
+            margin-bottom: 0;
+        }
+    }
+
+    .filter-container {
+        font-size: 1.1rem;
+        width: 100%;
+        
+        input {
+            font-size: 1.1rem;
+            width: 4rem;
+        }
+    }
+
+    .leaderboard-table {
+        th, td {
+            padding: 8px;
+            font-size: 1rem;
+            white-space: nowrap;
+        }
+    }
 }

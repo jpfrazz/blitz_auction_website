@@ -37,6 +37,7 @@
   margin-bottom: 48px;
   margin-left: auto;
   margin-right: auto;
+  box-sizing: border-box;
 }
 
 .info-toc-heading {
@@ -256,4 +257,66 @@
 
 .slateport-market-card details ul {
   padding-left: 20px;
+}
+
+@media (max-width: 640px) {
+  .info-main {
+    padding: 5rem 0.75rem 0;
+  }
+
+  .info-title {
+    font-size: 1.75rem;
+  }
+
+  .info-toc-card {
+    padding: 1.25rem;
+    width: 100%;
+    max-width: 100%;
+  }
+
+  .info-toc-list {
+    font-size: 1.15rem;
+  }
+
+  // Force the image grids and market grids to be 2-columns wide
+  .location-scale-grid,
+  .slateport-market-grid,
+  .slateport-market-grid.tms {
+    grid-template-columns: 1fr 1fr !important;
+    gap: 10px;
+  }
+
+  .location-scale-card,
+  .slateport-market-card {
+    padding: 10px;
+    min-width: 0; // Prevent content from forcing width
+  }
+
+  .location-scale-card img {
+    max-width: 100%;
+  }
+
+  .location-scale-caption,
+  .slateport-market-title,
+  .tm-list li,
+  .slateport-market-dropdown {
+    font-size: 1.1rem;
+  }
+
+  .info-question {
+    font-size: 1.6rem;
+  }
+
+  .info-answer {
+    font-size: 1.2rem;
+  }
+
+  .evo-icons img {
+    width: 22px;
+    height: 22px;
+  }
+
+  .slateport-market-card {
+    padding: 12px 10px;
+  }
 }

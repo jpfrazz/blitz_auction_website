@@ -115,11 +115,13 @@
   border: 1px solid $eb-border;
   border-radius: 12px;
   padding: 0.9rem;
+  min-width: 0; // Allows the panel to shrink smaller than its content width in a grid
 }
 
 .stats-panel {
   .table-wrap {
     overflow-x: auto;
+    -webkit-overflow-scrolling: touch; // Smooth momentum scrolling for mobile devices
     overflow-y: auto;
     max-height: 750px;
     border: 1px solid #29353d;
@@ -138,6 +140,7 @@
     text-align: left;
     border-bottom: 1px solid #273138;
     font-size: 1.2rem;
+    white-space: nowrap; // Prevents data from wrapping and breaking table alignment
   }
 
   th {
@@ -241,24 +244,62 @@
 
 @media (max-width: 640px) {
   .match-history-main {
-    padding: 6.4rem 0.7rem 1.6rem;
+    padding: 4.8rem 0.7rem 1.6rem;
+  }
+
+  .stats-hero-card {
+    padding: 0.8rem 1rem;
+    h1 {
+      font-size: 1.65rem;
+    }
+    p {
+      font-size: 1rem;
+    }
   }
 
   .stats-kpi-grid {
-    grid-template-columns: 1fr;
+    grid-template-columns: 1fr 1fr;
   }
 
   .stats-content-grid.two-col {
     grid-template-columns: 1fr;
   }
 
+  .stats-panel-header {
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+    gap: 0.5rem;
+    flex-wrap: nowrap !important;
+  }
+
+  .stats-hero-meta {
+    display: none;
+  }
+
+  .stats-panel h2 {
+    white-space: nowrap;
+    margin-bottom: 0;
+  }
+
   .tab-chip {
-    flex: 1 1 calc(50% - 0.5rem);
+    flex: 1 1 calc(33.33% - 0.5rem);
     text-align: center;
+    padding: 0.45rem 0.3rem;
+    font-size: 0.9rem;
   }
 
   .kpi-value {
     font-size: 1.55rem;
+  }
+
+  // Forces the search bar to a smaller width and aligns it to the right on mobile
+  input {
+    width: 42%;
+    max-width: 140px;
+    box-sizing: border-box;
+    margin-top: 0;
+    margin-left: auto;
   }
 }
 

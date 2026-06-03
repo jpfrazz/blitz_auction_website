@@ -7,10 +7,10 @@ Map Changes
 -----------------------------------------------
 
 Renovated Elite Four Chambers
-//Each Elite Four member now sports their own uniquely-colored chamber (instead of the Frontier Brains sharing identical chambers with their counterparts)
+//Each Elite Four member now sports their own uniquely-colored chamber (instead of the Frontier Brains sharing identical chambers with their counterparts). Now that's what I call stylish!
 
 Renovated Rustboro Gym
-//Similarly, Viola now sports her own inverted, recolored version of Roxanne's gym.
+//Similarly, Viola now sports her own inverted, recolored version of Roxanne's gym. This makes it easier to see at a glance which leader is in charge of Rustboro.
 
 All warps in Lavaridge, Petalburg and Mossdeep Gyms go to Leader
 //Removes the ability for new players to accidentally take the wrong warp on their way to the boss.
