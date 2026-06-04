@@ -63,7 +63,7 @@
 }
 
 .eeveelution-modal-description {
-  background-color: transparentize($eb-primary, 0.9);
+  background-color: color-mix(in srgb, var(--eb-primary), transparent 90%);
   border-left: 3px solid $eb-primary;
   padding: 1rem;
   border-radius: 0.25rem;

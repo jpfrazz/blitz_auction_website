@@ -3,6 +3,7 @@ import './Header.scss';
 import { Link, useLocation } from 'react-router-dom';
 import { fetchCurrentUser, changeGuestName } from '../api/draftData';
 import { UserRole } from '../../types';
+import SettingsModal from './SettingsModal';
 
 const navButtons = [
   { label: "Leaderboard", link: "/Leaderboard", hideMobile: true },
@@ -23,6 +24,11 @@ function Header() {
   const scrollToTop = () => {
     window.scrollTo(0, 0);
   };
+
+  useEffect(() => {
+    const savedColor = localStorage.getItem('eb-primary-color') || '#7CB946';
+    document.documentElement.style.setProperty('--eb-primary', savedColor);
+  }, []);
 
   type UserState =
     | {
@@ -48,6 +54,7 @@ function Header() {
   const [nameError, setNameError] = useState<string | null>(null);
   const [changingName, setChangingName] = useState(false);
   const [showNotes, setShowNotes] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
   const [notes, setNotes] = useState('');
   const [fontSize, setFontSize] = useState(16);
   const editorRef = useRef<HTMLDivElement>(null);
@@ -341,6 +348,15 @@ function Header() {
                 <h1>{user.username}</h1>
               </button>
               <div className="userDropdownMenu navDropdownMenu">
+                <button className="navButton userDropdownItem" onClick={() => { setShowNotes(true); handleNavLinkClick(); }}>
+                  Notes
+                </button>
+                <Link to="/Stats" className="navButton userDropdownItem" onClick={handleNavLinkClick}>
+                  My Stats
+                </Link>
+                <button className="navButton userDropdownItem" onClick={() => { setShowSettings(true); handleNavLinkClick(); }}>
+                  Settings
+                </button>
                 <button className="navButton userDropdownItem" onClick={() => { window.location.href = '/api/logout'; handleNavLinkClick(); }}>
                   Logout
                 </button>
@@ -383,17 +399,6 @@ function Header() {
                 {isHeaderPinned ? '📌' : '📍'}
               </button>
             </div>
-          )}
-          {user && !user.is_guest && (
-            <button
-              type="button"
-              className="headerNotesToggle"
-              onClick={() => setShowNotes(true)}
-              title="Open Notes"
-              aria-label="Open Notes"
-            >
-              <img src="/generic/pencil.png" alt="Notes" />
-            </button>
           )}
         </nav>
       </div>
@@ -502,6 +507,7 @@ function Header() {
           </div>
         </div>
       )}
+      {showSettings && <SettingsModal onClose={() => setShowSettings(false)} />}
     </header>
   );
 }

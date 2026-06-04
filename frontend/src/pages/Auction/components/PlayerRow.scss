@@ -77,7 +77,7 @@
     border: none;
     box-shadow: inset 0 0 0 3px $eb-primary-hover, $eb-shadow;
     &.player-ready {
-        background: saturate(lighten($eb-primary, 10%), 25%);
+        background: color-mix(in srgb, var(--eb-primary), white 20%);
     }
     &.player-not-ready {
         background: white;

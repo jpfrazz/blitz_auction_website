@@ -101,7 +101,7 @@
   }
 
   &:active {
-    background: darken($eb-primary, 5%);
+  background: color-mix(in srgb, var(--eb-primary-hover), black 5%);
   }
 }
 

@@ -67,7 +67,7 @@ const PlayerRow: React.FC<PlayerRowProps> = ({ teams, numPlayers, highestBidderI
       values={items} 
       onReorder={setItems} 
       className="auction-players-row"
-      style={{ listStyle: 'none', padding: 0, margin: 0 }}
+      style={{ listStyle: 'none', padding: 0, margin: 0, overflow: 'visible' }}
     >
       <AnimatePresence mode="popLayout">
         {items.map((team) => {
@@ -103,7 +103,7 @@ const PlayerRow: React.FC<PlayerRowProps> = ({ teams, numPlayers, highestBidderI
               damping: 35,
               opacity: { duration: 0.2 } 
             }}
-            style={{ cursor: 'grab', position: 'relative' }}
+            style={{ cursor: 'grab', position: 'relative', overflow: 'visible' }}
           >
             <div className="auction-player-name">
               {playerName || 'Open Slot'}

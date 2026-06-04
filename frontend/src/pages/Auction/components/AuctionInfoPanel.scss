@@ -261,7 +261,7 @@
   cursor: pointer;
   transition: background 0.2s;
   &:hover {
-    background: darken($eb-primary-hover, 10%);
+  background: color-mix(in srgb, var(--eb-primary-hover), black 10%);
   }
 }
 
