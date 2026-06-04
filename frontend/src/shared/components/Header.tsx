@@ -351,9 +351,6 @@ function Header() {
                 <button className="navButton userDropdownItem" onClick={() => { setShowNotes(true); handleNavLinkClick(); }}>
                   Notes
                 </button>
-                <Link to="/Stats" className="navButton userDropdownItem" onClick={handleNavLinkClick}>
-                  My Stats
-                </Link>
                 <button className="navButton userDropdownItem" onClick={() => { setShowSettings(true); handleNavLinkClick(); }}>
                   Settings
                 </button>
