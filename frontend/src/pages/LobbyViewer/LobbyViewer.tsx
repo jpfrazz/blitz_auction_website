@@ -31,6 +31,18 @@ function formatDraftState(draftState: DraftState): string {
   return 'UNKNOWN';
 }
 
+function getTimeAgo(dateString?: string): string {
+  if (!dateString) return '-';
+  const now = new Date();
+  const created = new Date(dateString);
+  const diffInSeconds = Math.floor((now.getTime() - created.getTime()) / 1000);
+
+  if (diffInSeconds < 60) return 'Just now';
+  const diffInMinutes = Math.floor(diffInSeconds / 60);
+  if (diffInMinutes < 60) return `${diffInMinutes}m ago`;
+  const diffInHours = Math.floor(diffInMinutes / 60);
+  return `${diffInHours}h ${diffInMinutes % 60}m ago`;
+}
 
 const LobbyViewer: React.FC = () => {
   const [drafts, setDrafts] = useState<DraftLobby[]>([]);
@@ -63,6 +75,12 @@ const LobbyViewer: React.FC = () => {
       accessorKey: 'draft_name',
     },
     {
+      header: 'Created',
+      accessorKey: 'created_at',
+      cell: info => getTimeAgo(info.getValue<string>()),
+      enableColumnFilter: false,
+    },
+    {
       header: 'Password',
       accessorKey: 'has_password',
       cell: info => (info.getValue<boolean>() ? '🔒' : '🔓'),
@@ -76,14 +94,17 @@ const LobbyViewer: React.FC = () => {
     },
     {
       header: 'Teams',
+      id: 'teams',
       cell: info => `${info.row.original.teams_joined}/${info.row.original.total_teams}`,
     },
     {
       header: 'Status',
+      id: 'status',
       cell: info => formatDraftState(info.row.original.draft_state),
     },
     {
       header: 'Join',
+      id: 'join',
       cell: info => {
         const ranked = info.row.original.ranked;
         const disableJoin = ranked && isGuest;
@@ -132,7 +153,10 @@ const LobbyViewer: React.FC = () => {
                 {table.getHeaderGroups().map(headerGroup => (
                   <tr key={headerGroup.id}>
                     {headerGroup.headers.map(header => (
-                      <th key={header.id}>
+                      <th
+                        key={header.id}
+                        style={{ width: header.id !== 'draft_name' ? '12%' : undefined }}
+                      >
                         <div className="lobby-header-container">
                           <div
                             className="lobby-header-title"
@@ -172,6 +196,7 @@ const LobbyViewer: React.FC = () => {
                               }
                               placeholder="Search..."
                               className="lobby-filter-input"
+                              style={{ width: header.id === 'draft_name' ? '66.6%' : undefined }}
                             />
                           ) : null}
                         </div>
@@ -183,7 +208,7 @@ const LobbyViewer: React.FC = () => {
               <tbody>
                 {table.getRowModel().rows.length === 0 && (
                   <tr>
-                    <td colSpan={6} className="lobby-viewer-empty">
+                    <td colSpan={7} className="lobby-viewer-empty">
                       No active drafts found.
                     </td>
                   </tr>
@@ -191,7 +216,10 @@ const LobbyViewer: React.FC = () => {
                 {table.getRowModel().rows.map(row => (
                   <tr key={row.id}>
                     {row.getVisibleCells().map(cell => (
-                      <td key={cell.id}>
+                      <td
+                        key={cell.id}
+                        style={{ width: cell.column.id !== 'draft_name' ? '12%' : undefined }}
+                      >
                         {flexRender(cell.column.columnDef.cell, cell.getContext())}
                       </td>
                     ))}

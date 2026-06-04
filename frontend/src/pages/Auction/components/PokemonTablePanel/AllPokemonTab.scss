@@ -126,7 +126,8 @@
     position: relative;
     width: 95%;
     max-height: 95%;
-    overflow: auto;
+    overflow-y: auto;
+    overflow-x: hidden;
     background: $eb-surface;
     border: 1px solid $eb-border;
     border-radius: 12px;
