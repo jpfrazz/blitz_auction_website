@@ -44,7 +44,7 @@ const PlayerRow: React.FC<PlayerRowProps> = ({ teams, numPlayers, highestBidderI
       const prevIds = new Set(prevItems.map(i => i.dragId));
       const nextIds = new Set(sortedTeams.map(i => i.dragId));
 
-      const idsChanged = prevIds.size !== nextIds.size || [...nextIds].some(id => !prevIds.has(id));
+      const idsChanged = prevIds.size !== nextIds.size || sortedTeams.some(t => !prevIds.has(t.dragId));
 
       // If structure changed (ids added/removed) or first load, reset to default sorted order
       if (prevItems.length === 0 || idsChanged) {
