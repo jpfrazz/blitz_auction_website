@@ -111,7 +111,7 @@ const PlayerRow: React.FC<PlayerRowProps> = ({ teams, numPlayers, highestBidderI
             value={team}
             className={`auction-player-box ${playerStateClass} ${team.user_id === highestBidderId ? 'highest-bidder' : ''} ${disconnectedClass} ${team.user_id === animatingId ? 'player-bidding' : ''}`}
             initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
+            animate={{ opacity: isFilled && !team.ready ? 0.5 : 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.9 }}
             whileDrag={{ 
               scale: 1.05, 
