@@ -163,12 +163,11 @@
   }
 
   &:disabled {
-    opacity: 0.6;
-    cursor: not-allowed;
+    cursor: not-allowed !important;
   }
 
   &.claimed {
-    background-color: $eb-primary;
+    background-color: color-mix(in srgb, var(--eb-primary), black 40%);
     color: $eb-text-muted;
     cursor: default;
     box-shadow: $eb-shadow;

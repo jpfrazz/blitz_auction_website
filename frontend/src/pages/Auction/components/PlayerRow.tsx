@@ -40,7 +40,18 @@ const PlayerRow: React.FC<PlayerRowProps> = ({ teams, numPlayers, highestBidderI
 
   // Sync local items with props when the underlying data changes (e.g. someone joins/leaves)
   React.useEffect(() => {
-    setItems(sortedTeams);
+    setItems(prevItems => {
+      // If no items exist yet or the player count changed, reset to default sorted order
+      if (prevItems.length === 0 || prevItems.length !== sortedTeams.length) {
+        return sortedTeams;
+      }
+
+      // Maintain the manual order by mapping current items to their updated data
+      return prevItems.map(item => {
+        const freshData = sortedTeams.find(t => t.dragId === item.dragId);
+        return freshData ? { ...freshData } : item;
+      });
+    });
   }, [sortedTeams]);
 
   React.useEffect(() => {
@@ -67,7 +78,13 @@ const PlayerRow: React.FC<PlayerRowProps> = ({ teams, numPlayers, highestBidderI
       values={items} 
       onReorder={setItems} 
       className="auction-players-row"
-      style={{ listStyle: 'none', padding: 0, margin: 0, overflow: 'visible' }}
+      style={{ 
+        listStyle: 'none', 
+        padding: '1.5rem 0', // Vertical padding provides space for the wiggle animation
+        margin: '-1.5rem 0', // Compensation to avoid shifting other elements
+        overflowX: 'auto', 
+        overflowY: 'hidden' 
+      }}
     >
       <AnimatePresence mode="popLayout">
         {items.map((team) => {

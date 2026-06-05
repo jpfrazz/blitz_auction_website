@@ -91,8 +91,10 @@ button[disabled],
 .navButton:disabled,
 .navButton[disabled],
 .footerButton:disabled,
-.footerButton[disabled] {
-  background: #4d6632 !important;
+.footerButton[disabled],
+.eeveelution-button:disabled,
+.eeveelution-button[disabled] {
+  background: color-mix(in srgb, var(--eb-primary), black 40%) !important;
   color: #111 !important;
   border-radius: 8px !important;
   opacity: 1 !important;
