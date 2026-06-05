@@ -80,8 +80,6 @@ const PlayerRow: React.FC<PlayerRowProps> = ({ teams, numPlayers, highestBidderI
       className="auction-players-row"
       style={{ 
         listStyle: 'none', 
-        padding: '1.5rem 0', // Vertical padding provides space for the wiggle animation
-        margin: '-1.5rem 0', // Compensation to avoid shifting other elements
         overflowX: 'auto', 
         overflowY: 'hidden' 
       }}
