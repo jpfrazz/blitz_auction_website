@@ -41,8 +41,13 @@ const PlayerRow: React.FC<PlayerRowProps> = ({ teams, numPlayers, highestBidderI
   // Sync local items with props when the underlying data changes (e.g. someone joins/leaves)
   React.useEffect(() => {
     setItems(prevItems => {
-      // If no items exist yet or the player count changed, reset to default sorted order
-      if (prevItems.length === 0 || prevItems.length !== sortedTeams.length) {
+      const prevIds = new Set(prevItems.map(i => i.dragId));
+      const nextIds = new Set(sortedTeams.map(i => i.dragId));
+
+      const idsChanged = prevIds.size !== nextIds.size || [...nextIds].some(id => !prevIds.has(id));
+
+      // If structure changed (ids added/removed) or first load, reset to default sorted order
+      if (prevItems.length === 0 || idsChanged) {
         return sortedTeams;
       }
 
@@ -80,6 +85,8 @@ const PlayerRow: React.FC<PlayerRowProps> = ({ teams, numPlayers, highestBidderI
       className="auction-players-row"
       style={{ 
         listStyle: 'none', 
+        padding: '0.5rem 0',
+        margin: '-0.5rem 0',
         overflowX: 'auto', 
         overflowY: 'hidden' 
       }}

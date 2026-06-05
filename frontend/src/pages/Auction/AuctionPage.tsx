@@ -682,7 +682,13 @@ const AuctionPage: React.FC = () => {
                   <>
                     {draft.draft_state === "PENDING" && (
                       <div className="draft-completed-panel">
-                        <h3 className="draft-completed-title">Ready Up!</h3>
+                        <h3 className="draft-completed-title">
+                          {currentUserTeam 
+                            ? (currentUserReady 
+                                ? (allTeamsReady ? "Ready to Start!" : "Waiting for others...") 
+                                : "Ready Up!") 
+                            : "Draft Pending..."}
+                        </h3>
                         <div className="draft-completed-buttons">
                           {currentUserId === draft.host && (
                             <>
