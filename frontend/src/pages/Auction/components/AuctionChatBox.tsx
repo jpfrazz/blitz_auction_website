@@ -14,6 +14,7 @@ const AuctionChatBox: React.FC<AuctionChatBoxProps> = ({ draftId, isGuest, isLog
   const [newMessage, setNewMessage] = useState('');
   const [isSending, setIsSending] = useState(false);
   const [isCollapsed, setIsCollapsed] = useState(true);
+  const [chatError, setChatError] = useState<string | null>(null);
   const chatBodyRef = useRef<HTMLDivElement | null>(null);
   const isNearBottomRef = useRef(true);
 
@@ -67,6 +68,7 @@ const AuctionChatBox: React.FC<AuctionChatBoxProps> = ({ draftId, isGuest, isLog
 
   const handleSend = async (event: React.FormEvent) => {
     event.preventDefault();
+    setChatError(null);
     if (isGuest) {
       return;
     }
@@ -84,7 +86,8 @@ const AuctionChatBox: React.FC<AuctionChatBoxProps> = ({ draftId, isGuest, isLog
         setMessages((prev) => [...prev, response]);
       }
     } catch (error) {
-      console.error('Failed to send chat:', error);
+      const message = error instanceof Error ? error.message : 'Failed to send chat';
+      setChatError(message);
     } finally {
       setIsSending(false);
     }
@@ -132,6 +135,7 @@ const AuctionChatBox: React.FC<AuctionChatBoxProps> = ({ draftId, isGuest, isLog
               })
             )}
           </div>
+          {chatError && <div className="auction-chat-error" style={{ color: '#ff4d4d', fontSize: '0.8rem', padding: '4px 8px' }}>{chatError}</div>}
           <form className="auction-chat-input-row" onSubmit={handleSend}>
             <input
               className="auction-chat-input"

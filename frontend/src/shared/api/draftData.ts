@@ -177,8 +177,16 @@ export async function fetchDraftChats(draft_id: string): Promise<ChatMessage[]> 
 
 // Create a new chat message for a draft
 export async function createDraftChat(draft_id: string, message: string): Promise<ChatMessage> {
-  const response = await axios.post(`/api/drafts/${draft_id}/chats`, { message });
-  return response.data;
+  try {
+    const response = await axios.post(`/api/drafts/${draft_id}/chats`, { message });
+    return response.data;
+  } catch (error) {
+    if (axios.isAxiosError(error) && error.response) {
+      throw new Error(error.response.data);
+    } else {
+      throw error;
+    }
+  }
 }
 
 // Change guest name

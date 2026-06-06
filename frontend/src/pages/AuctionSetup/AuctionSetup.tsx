@@ -101,7 +101,9 @@ const AuctionSetupForm: React.FC = () => {
         navigate(`/Auction?${response}`);
       }
     } catch (err: any) {
-      setSubmitError(err?.message || 'Failed to create auction.');
+      // If the backend returned a specific error string (like a profanity warning), use it.
+      const errorMessage = err.response?.data || err.message || 'Failed to create auction.';
+      setSubmitError(typeof errorMessage === 'string' ? errorMessage : 'Failed to create auction.');
     }
   };
 

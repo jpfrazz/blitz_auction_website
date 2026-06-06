@@ -1,5 +1,6 @@
 use crate::{
     AppError, CSRF_STATE_KEY,
+    contains_profanity,
     auction::AuctionResponse,
     draft::{Draft, DraftLobbyResponse, DraftResponse, DraftSettings, DraftState},
     messages::{
@@ -339,6 +340,13 @@ pub async fn create_draft(
     auth_session: AuthSession<AuthBackend>,
     Json(draft_settings): Json<DraftSettings>,
 ) -> Result<String, AppError> {
+    if contains_profanity(&draft_settings.draft_name) {
+        return Err((
+            StatusCode::BAD_REQUEST,
+            "Draft name contains prohibited language".to_string(),
+        ));
+    }
+
     let host = auth_session.user.expect("user should exist");
     let draft = Draft::build(host, draft_settings, state.db_pool.clone()).await?;
     let draft_id = draft.draft_id;
@@ -1969,6 +1977,13 @@ pub async fn create_draft_chat(
         ));
     }
 
+    if contains_profanity(message) {
+        return Err((
+            StatusCode::BAD_REQUEST,
+            "Message contains prohibited language".to_string(),
+        ));
+    }
+
     let user_id = user.get_user_id_string();
     let row = sqlx::query(
         "WITH inserted AS (
@@ -2163,6 +2178,14 @@ pub async fn change_guest_name(
             "Name must be 1-32 characters".to_string(),
         ));
     }
+
+    if contains_profanity(new_name) {
+        return Err((
+            StatusCode::BAD_REQUEST,
+            "Guest name contains prohibited language".to_string(),
+        ));
+    }
+
     let res = sqlx::query("UPDATE guests SET user_name = $1 WHERE user_id = $2")
         .bind(new_name)
         .bind(&user_id)

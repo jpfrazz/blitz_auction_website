@@ -1,5 +1,6 @@
 use axum::http::StatusCode;
 use axum_login::tower_sessions::{MemoryStore, SessionManagerLayer};
+use censor::*;
 use chrono;
 use sqlx::PgPool;
 use tokio::time::Instant;
@@ -30,6 +31,14 @@ pub fn init_auth_layer(pool: PgPool) {
 pub fn get_expiry_time_from_instant(instant: Instant) -> chrono::DateTime<chrono::Utc> {
     let time_remaining = instant - Instant::now();
     chrono::Utc::now() + time_remaining
+}
+
+/// Returns true if the text contains profanity.
+pub fn contains_profanity(text: &str) -> bool {
+    // Combine Standard and Sex sets, add specific slurs, and remove "ass" and "shit".
+    // Removing "ass" automatically prevents "grass" from being flagged.
+    let filter = Standard + Sex + "nigga" - "ass" - "shit";
+    filter.check(text)
 }
 
 pub const DISCORD_GUILD_ID: u64 = 1436799517121843272;
