@@ -37,7 +37,7 @@ pub fn get_expiry_time_from_instant(instant: Instant) -> chrono::DateTime<chrono
 pub fn contains_profanity(text: &str) -> bool {
     // Combine Standard and Sex sets, add specific slurs, and remove "ass" and "shit".
     // Removing "ass" automatically prevents "grass" from being flagged.
-    let filter = Standard + Sex + "nigga" - "ass" - "shit";
+    let filter = Standard + Sex + "nigga" - "ass" - "shit" - "twat";
     filter.check(text)
 }
 

@@ -265,6 +265,11 @@ const PokemonStatsTab: React.FC<PokemonStatsTabProps> = ({
 
     // Calculate Historic Ranks
     const historicGrouped = new Map<string, number[]>();
+    
+    const isNincada = (key: string, name: string = '') => {
+      const search = 'nincada';
+      return key.toLowerCase().includes(search) || name.toLowerCase().includes(search);
+    };
 
     (stats?.legacy ?? []).forEach((legacyRow) => {
       const bid = parseLegacyCost(legacyRow.cost);
@@ -300,6 +305,17 @@ const PokemonStatsTab: React.FC<PokemonStatsTabProps> = ({
 
       const sum = filteredBids.reduce((a, b) => a + b, 0);
       const avg = Math.round(sum / filteredBids.length);
+
+      if (isNincada(key)) {
+        console.log(`[DEBUG] Historic calculation for ${key}:`, {
+          originalBidCount: bids.length,
+          afterMinBidFilter: bids.filter(b => b !== 100).length,
+          afterOutlierFilter: filteredBids.length,
+          calculatedAvg: avg,
+          rawBidsSorted: [...bids].sort((a, b) => a - b)
+        });
+      }
+
       return { key, avg };
     }).filter((s): s is { key: string; avg: number } => s !== null && s.avg > 100);
 
@@ -330,6 +346,16 @@ const PokemonStatsTab: React.FC<PokemonStatsTabProps> = ({
       const min = count > 0 ? Math.min(...bids) : 0;
       const max = count > 0 ? Math.max(...bids) : 0;
 
+      if (isNincada(entry.key, entry.name)) {
+        console.log(`[DEBUG] Current calculation for ${entry.name}:`, {
+          originalBidCount: entry.bids.length,
+          afterMinBidFilter: entry.bids.filter(b => b !== 100).length,
+          afterOutlierFilter: count,
+          calculatedAvg: avg,
+          rawBidsSorted: [...entry.bids].sort((a, b) => a - b)
+        });
+      }
+
       const priceVariance = max - min;
 
       return {
@@ -357,6 +383,14 @@ const PokemonStatsTab: React.FC<PokemonStatsTabProps> = ({
 
       const histData = historicStats.find(s => s.key === p.key);
       p.priceMovement = histData ? p.avgWinningBid - histData.avg : 0;
+
+      if (isNincada(p.key, p.name)) {
+        console.log(`[DEBUG] Price Movement Result for ${p.name}:`, {
+          currentAvg: p.avgWinningBid,
+          historicAvg: histData?.avg,
+          finalPriceMovement: p.priceMovement
+        });
+      }
     });
     return results;
   }, [sortedAuctions, stats?.legacy, recentDraftIds]);
