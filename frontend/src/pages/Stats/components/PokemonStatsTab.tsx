@@ -46,8 +46,6 @@ const excludedPokemonNames = new Set([
   'Turtonator',
 ]);
 
-const RECENT_DRAFT_COUNT_THRESHOLD = 10;
-
 function formatPokemonName(name: string): string {
   const lower = name.toLowerCase();
   if (lower.startsWith("farfetch'd")) {
@@ -98,6 +96,7 @@ const PokemonStatsTab: React.FC<PokemonStatsTabProps> = ({
   error = null,
 }) => {
   const [pokemonSearch, setPokemonSearch] = useState('');
+  const [recentThreshold, setRecentThreshold] = useState<string>('10');
   const [sortConfig, setSortConfig] = useState<{ key: SortKey; direction: 'asc' | 'desc' }>({
     key: 'avgWinningBid',
     direction: 'desc',
@@ -112,18 +111,18 @@ const PokemonStatsTab: React.FC<PokemonStatsTabProps> = ({
   };
 
   const draftStats = useMemo(() => {
-    const statsMap = new Map<string, { total: number; minBidCount: number; teamCount: number; maxBid: number }>();
+    const statsMap = new Map<string, { total: number; minBidCount: number; teamCount: number; maxBid: number; latestTimestamp: number }>();
 
     // Count teams (players) per draft
     (stats?.teams ?? []).forEach((t) => {
-      const curr = statsMap.get(t.draft_id) || { total: 0, minBidCount: 0, teamCount: 0, maxBid: 0 };
+      const curr = statsMap.get(t.draft_id) || { total: 0, minBidCount: 0, teamCount: 0, maxBid: 0, latestTimestamp: 0 };
       curr.teamCount += 1;
       statsMap.set(t.draft_id, curr);
     });
 
     (stats?.auctions ?? []).forEach((a) => {
       if (a.winning_bid !== null) {
-        const curr = statsMap.get(a.draft_id) || { total: 0, minBidCount: 0, teamCount: 0, maxBid: 0 };
+        const curr = statsMap.get(a.draft_id) || { total: 0, minBidCount: 0, teamCount: 0, maxBid: 0, latestTimestamp: 0 };
         curr.total += 1;
         if (a.winning_bid === 100) {
           curr.minBidCount += 1;
@@ -131,6 +130,8 @@ const PokemonStatsTab: React.FC<PokemonStatsTabProps> = ({
         if (a.winning_bid > curr.maxBid) {
           curr.maxBid = a.winning_bid;
         }
+        const ts = a.created_at ? new Date(a.created_at).getTime() : 0;
+        if (ts > curr.latestTimestamp) curr.latestTimestamp = ts;
         statsMap.set(a.draft_id, curr);
       }
     });
@@ -158,18 +159,39 @@ const PokemonStatsTab: React.FC<PokemonStatsTabProps> = ({
       .sort((a, b) => (b.created_at || '').localeCompare(a.created_at || ''));
   }, [stats?.auctions, validDraftIds]);
 
-  const recentDraftIds = useMemo(() => {
-    const seen = new Set<string>();
-    const recent = new Set<string>();
-    for (const auction of sortedAuctions) {
-      if (!seen.has(auction.draft_id)) {
-        seen.add(auction.draft_id);
-        recent.add(auction.draft_id);
-        if (recent.size >= RECENT_DRAFT_COUNT_THRESHOLD) break;
-      }
+  const unifiedTimeline = useMemo(() => {
+    const modern = Array.from(validDraftIds).map(id => ({
+      id,
+      timestamp: draftStats.get(id)?.latestTimestamp || 0,
+      type: 'modern' as const
+    }));
+
+    const uniqueLegacyDates = Array.from(new Set((stats?.legacy ?? [])
+      .map(l => l.date)
+      .filter((d): d is string => Boolean(d))));
+
+    const legacy = uniqueLegacyDates.map(d => ({
+      id: d,
+      timestamp: new Date(d).getTime(),
+      type: 'legacy' as const
+    }));
+
+    return [...modern, ...legacy].sort((a, b) => b.timestamp - a.timestamp);
+  }, [validDraftIds, draftStats, stats?.legacy]);
+
+  const recentDraftInfo = useMemo(() => {
+    let depth = parseInt(recentThreshold) || 0;
+
+    if (depth >= unifiedTimeline.length && unifiedTimeline.length > 1) {
+      depth = unifiedTimeline.length - 1;
     }
-    return recent;
-  }, [sortedAuctions]);
+
+    const sliced = unifiedTimeline.slice(0, depth);
+    return {
+      modern: new Set(sliced.filter(s => s.type === 'modern').map(s => s.id)),
+      legacy: new Set(sliced.filter(s => s.type === 'legacy').map(s => s.id))
+    };
+  }, [unifiedTimeline, recentThreshold]);
 
   const aggregatedPokemon = useMemo<PokemonAggregate[]>(() => {
     const sales: PokemonSaleRow[] = [];
@@ -265,22 +287,17 @@ const PokemonStatsTab: React.FC<PokemonStatsTabProps> = ({
 
     // Calculate Historic Ranks
     const historicGrouped = new Map<string, number[]>();
-    
-    const isNincada = (key: string, name: string = '') => {
-      const search = 'nincada';
-      return key.toLowerCase().includes(search) || name.toLowerCase().includes(search);
-    };
 
     (stats?.legacy ?? []).forEach((legacyRow) => {
       const bid = parseLegacyCost(legacyRow.cost);
-      if (bid === null || excludedPokemonNames.has(legacyRow.pokemon)) return;
+      if (bid === null || excludedPokemonNames.has(legacyRow.pokemon) || (legacyRow.date && recentDraftInfo.legacy.has(legacyRow.date))) return;
       const { key } = resolveIdentity(legacyRow.pokemon, '');
       if (!historicGrouped.has(key)) historicGrouped.set(key, []);
       historicGrouped.get(key)!.push(bid);
     });
 
     sortedAuctions.forEach((auction) => {
-      if (!recentDraftIds.has(auction.draft_id) && auction.winning_bid !== null) {
+      if (!recentDraftInfo.modern.has(auction.draft_id) && auction.winning_bid !== null) {
         const { key } = resolveIdentity(auction.name, auction.form || '');
         if (!historicGrouped.has(key)) historicGrouped.set(key, []);
         historicGrouped.get(key)!.push(auction.winning_bid);
@@ -305,16 +322,6 @@ const PokemonStatsTab: React.FC<PokemonStatsTabProps> = ({
 
       const sum = filteredBids.reduce((a, b) => a + b, 0);
       const avg = Math.round(sum / filteredBids.length);
-
-      if (isNincada(key)) {
-        console.log(`[DEBUG] Historic calculation for ${key}:`, {
-          originalBidCount: bids.length,
-          afterMinBidFilter: bids.filter(b => b !== 100).length,
-          afterOutlierFilter: filteredBids.length,
-          calculatedAvg: avg,
-          rawBidsSorted: [...bids].sort((a, b) => a - b)
-        });
-      }
 
       return { key, avg };
     }).filter((s): s is { key: string; avg: number } => s !== null && s.avg > 100);
@@ -346,16 +353,6 @@ const PokemonStatsTab: React.FC<PokemonStatsTabProps> = ({
       const min = count > 0 ? Math.min(...bids) : 0;
       const max = count > 0 ? Math.max(...bids) : 0;
 
-      if (isNincada(entry.key, entry.name)) {
-        console.log(`[DEBUG] Current calculation for ${entry.name}:`, {
-          originalBidCount: entry.bids.length,
-          afterMinBidFilter: entry.bids.filter(b => b !== 100).length,
-          afterOutlierFilter: count,
-          calculatedAvg: avg,
-          rawBidsSorted: [...entry.bids].sort((a, b) => a - b)
-        });
-      }
-
       const priceVariance = max - min;
 
       return {
@@ -383,17 +380,9 @@ const PokemonStatsTab: React.FC<PokemonStatsTabProps> = ({
 
       const histData = historicStats.find(s => s.key === p.key);
       p.priceMovement = histData ? p.avgWinningBid - histData.avg : 0;
-
-      if (isNincada(p.key, p.name)) {
-        console.log(`[DEBUG] Price Movement Result for ${p.name}:`, {
-          currentAvg: p.avgWinningBid,
-          historicAvg: histData?.avg,
-          finalPriceMovement: p.priceMovement
-        });
-      }
     });
     return results;
-  }, [sortedAuctions, stats?.legacy, recentDraftIds]);
+  }, [sortedAuctions, stats?.legacy, recentDraftInfo]);
 
   const pokemonSummary = useMemo<PokemonAggregate[]>(() => {
     return [...aggregatedPokemon].sort((a, b) => {
@@ -431,7 +420,40 @@ const PokemonStatsTab: React.FC<PokemonStatsTabProps> = ({
         <article className="stats-panel">
           <div className="stats-panel-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
             <h2 style={{ margin: 0 }}>Cost Breakdown</h2>
-            <div className="pokemon-search-bar">
+            <div className="pokemon-search-bar" style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+              {/* +/- Depth functionality is kept but UI is commented out */}
+              {/*
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <span style={{ fontSize: '0.85rem', color: '#888', whiteSpace: 'nowrap' }}>+/- Depth</span>
+                <span
+                  title="The number of recent drafts to consider when calculating Rank and Price change"
+                  style={{
+                    cursor: 'help',
+                    color: '#888',
+                    fontSize: '0.7rem',
+                    border: '1px solid #444',
+                    borderRadius: '50%',
+                    width: '14px',
+                    height: '14px',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    marginLeft: '-4px'
+                  }}
+                >
+                  i
+                </span>
+                <input
+                  className="stats-filter-input"
+                  type="text"
+                  inputMode="numeric"
+                  style={{ width: '42px' }}
+                  value={recentThreshold}
+                  onChange={(e) => {
+                    setRecentThreshold(e.target.value.replace(/\D/g, '').slice(0, 3));
+                  }}
+                />
+              </div> */}
               <input
                 className="pokemon-search-input"
                 type="text"

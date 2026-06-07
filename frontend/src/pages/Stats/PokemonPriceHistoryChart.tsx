@@ -159,8 +159,8 @@ const PokemonPriceHistoryChart: React.FC<PokemonPriceHistoryChartProps> = ({ pok
         const cost = parseInt(costStr, 10);
         return {
           cost: isNaN(cost) ? 0 : cost,
-          date: 0,
-          formattedDate: 'Legacy Draft',
+          date: l.date ? new Date(l.date).getTime() : 0,
+          formattedDate: l.date ? new Date(l.date).toLocaleDateString() : 'Legacy Draft',
           draftId: 'Legacy',
           winner: 'Guest'
         };
