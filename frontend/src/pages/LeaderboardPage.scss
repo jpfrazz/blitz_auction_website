@@ -271,6 +271,7 @@
     .leaderboard-pokemon-img {
         width: 32px;
         height: 32px;
+        flex-shrink: 0;
     }
 
     .leaderboard-avatar {
@@ -284,20 +285,11 @@
 
     .pokemon-list {
         gap: 4px;
+        flex-wrap: nowrap;
     }
 
-    // Fix ELO graph overlap by stacking content vertically
-    .leaderboard-history-dropdown-row > td > div {
-        display: flex;
-        flex-direction: column;
-        gap: 32px;
-        padding: 24px 2px;
-        overflow: visible;
-        height: auto;
-
-        // Target chart axis labels to reclaim space for the graph
-        .recharts-cartesian-axis-tick text {
-            font-size: 10px;
-        }
+    // Remove the ELO progression graph and expansion row on mobile
+    .leaderboard-history-dropdown-row {
+        display: none !important;
     }
 }
