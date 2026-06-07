@@ -78,6 +78,7 @@ function Header() {
     return localStorage.getItem(HEADER_PINNED_KEY) !== 'false';
   });
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isHovered, setIsHovered] = useState(false);
 
   useEffect(() => {
     if (user?.user_id) {
@@ -254,7 +255,18 @@ function Header() {
             className="logoImg"
           />
         </Link>
-        <button className={`mobileMenuToggle ${isMobileMenuOpen ? 'open' : ''}`} onClick={toggleMobileMenu} aria-label="Toggle navigation menu">
+        <button 
+          className={`mobileMenuToggle ${isMobileMenuOpen ? 'open' : ''}`} 
+          onClick={toggleMobileMenu} 
+          aria-label="Toggle navigation menu"
+          onMouseEnter={() => setIsHovered(true)}
+          onMouseLeave={() => setIsHovered(false)}
+          style={{
+            backgroundColor: 'transparent',
+            filter: isHovered ? 'brightness(1.2)' : 'none',
+            transition: 'filter 0.2s ease'
+          }}
+        >
           <span></span>
           <span></span>
           <span></span>
