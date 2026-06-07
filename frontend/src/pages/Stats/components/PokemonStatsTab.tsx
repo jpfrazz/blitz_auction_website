@@ -305,6 +305,7 @@ const PokemonStatsTab: React.FC<PokemonStatsTabProps> = ({
     const historicGrouped = new Map<string, number[]>();
 
     (stats?.legacy ?? []).forEach((legacyRow) => {
+      if (cutoffDate && legacyRow.date && new Date(legacyRow.date).getTime() < new Date(cutoffDate).getTime()) return;
       const bid = parseLegacyCost(legacyRow.cost);
       if (bid === null || excludedPokemonNames.has(legacyRow.pokemon) || (legacyRow.date && recentDraftInfo.legacy.has(legacyRow.date))) return;
       const { key } = resolveIdentity(legacyRow.pokemon, '');
