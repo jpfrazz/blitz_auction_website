@@ -190,21 +190,26 @@
 
 @media (max-width: 1024px) {
   .home-page {
-    height: 100vh; /* Ensure the page takes full viewport height */
+    height: 100dvh; /* Use dynamic viewport height to account for mobile browser bars */
     display: flex;
     flex-direction: column; /* Arrange children vertically */
   }
 
   .home-main {
-    padding: 1rem;
-    justify-content: center;
+    padding: 25dvh 1rem 0; /* Position logo roughly 1/4th down the screen */
+    justify-content: flex-start; /* Move content up */
     flex: 1; /* Allow main content to grow and fill available space */
     overflow-y: auto; /* Enable vertical scrolling if content overflows */
   }
 
   .home-logo {
-    width: 55vw;
-    margin-bottom: 2rem;
+    width: 50vw;
+    margin-top: 0; /* Remove top margin on mobile */
+    margin-bottom: 0.5rem;
+  }
+
+  .home-actions {
+    gap: 1rem; /* Reduce gap between pill, button, and instructions */
   }
 
   .home-download-btn {

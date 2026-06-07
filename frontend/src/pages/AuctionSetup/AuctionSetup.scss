@@ -130,8 +130,10 @@
 
 @media (max-width: 600px) {
 	.auction-setup-card {
-		max-width: 98vw;
-		padding: 16px 4vw;
+		width: calc(100% - 32px); // Consistent 16px margin on both sides
+		max-width: none;
+		margin: 24px 16px;
+		padding: 24px 20px;
 	}
 	.auction-setup-title {
 		font-size: 1.3rem;

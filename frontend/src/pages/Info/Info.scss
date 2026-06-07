@@ -80,6 +80,12 @@
   max-width: 1100px;
   margin: 0 auto 48px auto;
   color: $eb-text;
+
+  li {
+    font-size: 1.5rem;
+    line-height: 1.5;
+    margin-bottom: 8px;
+  }
 }
 
 .info-question {
@@ -184,12 +190,12 @@
   list-style: none;
   padding: 0;
   margin: 0;
-}
 
-.tm-list li {
-  font-size: 1.5rem;
-  margin-bottom: 6px;
-  font-weight: 500;
+  li {
+    font-size: 1.5rem;
+    margin-bottom: 6px;
+    font-weight: 500;
+  }
 }
 
 .tm-normal   { color: $color-normal; }
@@ -248,6 +254,7 @@
   border: 1px solid $eb-border;
   padding: 0.5rem 1rem;
   text-align: left;
+  font-size: 1.5rem;
 }
 .info-table th {
   background: $eb-bg;
@@ -275,7 +282,7 @@
   }
 
   .info-toc-list {
-    font-size: 1.15rem;
+    font-size: 1.25rem;
   }
 
   // Force the image grids and market grids to be 2-columns wide
@@ -286,29 +293,20 @@
     gap: 10px;
   }
 
-  .location-scale-card,
-  .slateport-market-card {
-    padding: 10px;
-    min-width: 0; // Prevent content from forcing width
-  }
-
-  .location-scale-card img {
-    max-width: 100%;
-  }
-
+  .info-toc-list,
   .location-scale-caption,
   .slateport-market-title,
-  .tm-list li,
-  .slateport-market-dropdown {
-    font-size: 1.1rem;
+  .slateport-list li,
+  .slateport-market-dropdown,
+  .info-answer,
+  .info-section li,
+  .info-table td,
+  .info-table th {
+    font-size: 1.3rem;
   }
 
   .info-question {
-    font-size: 1.6rem;
-  }
-
-  .info-answer {
-    font-size: 1.2rem;
+    font-size: 1.5rem;
   }
 
   .evo-icons img {

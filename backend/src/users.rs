@@ -272,12 +272,17 @@ impl AuthBackend {
 
         let random_pokemon_name = pokemon::get_pokemon_data(&Vec::new())
             .and_then(|pokemon_data| {
-                if pokemon_data.is_empty() {
+                let filtered_data: Vec<_> = pokemon_data
+                    .into_iter()
+                    .filter(|p| !p.name.starts_with("Mega "))
+                    .collect();
+
+                if filtered_data.is_empty() {
                     None
                 } else {
                     let random_pokemon_index =
-                        (uuid::Uuid::new_v4().as_u128() as usize) % pokemon_data.len();
-                    Some(pokemon_data[random_pokemon_index].name.clone())
+                        (uuid::Uuid::new_v4().as_u128() as usize) % filtered_data.len();
+                    Some(filtered_data[random_pokemon_index].name.clone())
                 }
             })
             .unwrap_or_else(|| "Pikachu".to_string());

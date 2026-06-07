@@ -348,10 +348,10 @@ function Header() {
                 <h1>{user.username}</h1>
               </button>
               <div className="userDropdownMenu navDropdownMenu">
-                <button className="navButton userDropdownItem" onClick={() => { setShowNotes(true); handleNavLinkClick(); }}>
+                <button className="navButton userDropdownItem hide-on-mobile" onClick={() => { setShowNotes(true); handleNavLinkClick(); }}>
                   Notes
                 </button>
-                <button className="navButton userDropdownItem" onClick={() => { setShowSettings(true); handleNavLinkClick(); }}>
+                <button className="navButton userDropdownItem hide-on-mobile" onClick={() => { setShowSettings(true); handleNavLinkClick(); }}>
                   Settings
                 </button>
                 <button className="navButton userDropdownItem" onClick={() => { window.location.href = '/api/logout'; handleNavLinkClick(); }}>

@@ -130,6 +130,10 @@
 
 .leaderboard-table tbody tr {
     background: $eb-surface;
+
+    &:not(.gold-row):not(.silver-row):not(.bronze-row):not(.leaderboard-history-dropdown-row):nth-child(even) {
+        background: rgba(255, 255, 255, 0.05);
+    }
 }
 
 .leaderboard-table > tbody > tr.gold-row {
@@ -256,7 +260,7 @@
 
         th, td {
             padding: 4px 8px;
-            font-size: 0.85rem;
+            font-size: 0.95rem;
             white-space: nowrap;
             line-height: 1.1;
             vertical-align: middle;
@@ -269,8 +273,8 @@
     }
 
     .leaderboard-pokemon-img {
-        width: 32px;
-        height: 32px;
+        width: 24px;
+        height: 24px;
         flex-shrink: 0;
     }
 
@@ -288,8 +292,18 @@
         flex-wrap: nowrap;
     }
 
-    // Remove the ELO progression graph and expansion row on mobile
-    .leaderboard-history-dropdown-row {
-        display: none !important;
+// Fix ELO graph overlap by stacking content vertically
+    .leaderboard-history-dropdown-row > td > div {
+        display: flex;
+        flex-direction: column;
+        gap: 32px;
+        padding: 24px 2px;
+        overflow: visible;
+        height: auto;
+
+        // Target chart axis labels to reclaim space for the graph
+        .recharts-cartesian-axis-tick text {
+            font-size: 10px;
+        }
     }
 }
