@@ -6,7 +6,7 @@ import { UserRole } from '../../types';
 import SettingsModal from './SettingsModal';
 
 const navButtons = [
-  { label: "Leaderboard", link: "/Leaderboard", hideMobile: true },
+  { label: "Leaderboard", link: "/Leaderboard" },
   { label: "Stats", link: "/Stats" },
   { label: "FAQ", link: "/FAQ" },
 ];
