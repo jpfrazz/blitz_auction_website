@@ -1,6 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import PokemonPriceHistoryChart from '../PokemonPriceHistoryChart';
 import { StatsPageResponse } from '../../../types';
+import { TbSettings, TbRefresh } from 'react-icons/tb';
 import '../Stats.scss';
 import './PokemonStatsTab.scss';
 
@@ -96,11 +97,13 @@ const PokemonStatsTab: React.FC<PokemonStatsTabProps> = ({
   error = null,
 }) => {
   const [pokemonSearch, setPokemonSearch] = useState('');
-  const [recentThreshold, setRecentThreshold] = useState<string>('10');
+  const [lookbackWindow, setLookbackWindow] = useState<string>('10');
+  const [cutoffDate, setCutoffDate] = useState<string>('');
   const [sortConfig, setSortConfig] = useState<{ key: SortKey; direction: 'asc' | 'desc' }>({
     key: 'avgWinningBid',
     direction: 'desc',
   });
+  const [showSettings, setShowSettings] = useState(false);
   const [expandedPokemon, setExpandedPokemon] = useState<string | null>(null);
 
   const handleSort = (key: SortKey) => {
@@ -154,17 +157,29 @@ const PokemonStatsTab: React.FC<PokemonStatsTabProps> = ({
   }, [draftStats]);
 
   const sortedAuctions = useMemo(() => {
+    const cutoff = cutoffDate ? new Date(cutoffDate).getTime() : 0;
+
     return [...(stats?.auctions ?? [])]
-      .filter((auction) => auction.winning_bid !== null && validDraftIds.has(auction.draft_id) && !excludedPokemonNames.has(auction.name))
+      .filter((auction) => {
+        const isCompetitive = auction.winning_bid !== null && validDraftIds.has(auction.draft_id) && !excludedPokemonNames.has(auction.name);
+        if (!isCompetitive) return false;
+        if (cutoff > 0) {
+          const ts = auction.created_at ? new Date(auction.created_at).getTime() : 0;
+          return ts >= cutoff;
+        }
+        return true;
+      })
       .sort((a, b) => (b.created_at || '').localeCompare(a.created_at || ''));
-  }, [stats?.auctions, validDraftIds]);
+  }, [stats?.auctions, validDraftIds, cutoffDate]);
 
   const unifiedTimeline = useMemo(() => {
+    const cutoff = cutoffDate ? new Date(cutoffDate).getTime() : 0;
+
     const modern = Array.from(validDraftIds).map(id => ({
       id,
       timestamp: draftStats.get(id)?.latestTimestamp || 0,
       type: 'modern' as const
-    }));
+    })).filter(d => d.timestamp >= cutoff);
 
     const uniqueLegacyDates = Array.from(new Set((stats?.legacy ?? [])
       .map(l => l.date)
@@ -174,13 +189,13 @@ const PokemonStatsTab: React.FC<PokemonStatsTabProps> = ({
       id: d,
       timestamp: new Date(d).getTime(),
       type: 'legacy' as const
-    }));
+    })).filter(d => d.timestamp >= cutoff);
 
     return [...modern, ...legacy].sort((a, b) => b.timestamp - a.timestamp);
-  }, [validDraftIds, draftStats, stats?.legacy]);
+  }, [validDraftIds, draftStats, stats?.legacy, cutoffDate]);
 
   const recentDraftInfo = useMemo(() => {
-    let depth = parseInt(recentThreshold) || 0;
+    let depth = parseInt(lookbackWindow) || 0;
 
     if (depth >= unifiedTimeline.length && unifiedTimeline.length > 1) {
       depth = unifiedTimeline.length - 1;
@@ -191,7 +206,7 @@ const PokemonStatsTab: React.FC<PokemonStatsTabProps> = ({
       modern: new Set(sliced.filter(s => s.type === 'modern').map(s => s.id)),
       legacy: new Set(sliced.filter(s => s.type === 'legacy').map(s => s.id))
     };
-  }, [unifiedTimeline, recentThreshold]);
+  }, [unifiedTimeline, lookbackWindow]);
 
   const aggregatedPokemon = useMemo<PokemonAggregate[]>(() => {
     const sales: PokemonSaleRow[] = [];
@@ -246,6 +261,7 @@ const PokemonStatsTab: React.FC<PokemonStatsTabProps> = ({
     });
 
     (stats?.legacy ?? []).forEach((legacyRow) => {
+      if (cutoffDate && legacyRow.date && new Date(legacyRow.date).getTime() < new Date(cutoffDate).getTime()) return;
       const bid = parseLegacyCost(legacyRow.cost);
       if (bid === null) {
         return;
@@ -373,10 +389,18 @@ const PokemonStatsTab: React.FC<PokemonStatsTabProps> = ({
 
     results = results.filter((p) => p.avgWinningBid > 100);
     results.sort((a, b) => b.avgWinningBid - a.avgWinningBid);
+    
+    let comparativeRankCounter = 1;
     results.forEach((p, i) => {
       p.rank = i + 1;
+
       const prevRank = historicRankMap.get(p.key);
-      p.recentMovement = prevRank ? prevRank - p.rank : 0;
+      if (prevRank) {
+        p.recentMovement = prevRank - comparativeRankCounter;
+        comparativeRankCounter++;
+      } else {
+        p.recentMovement = 0;
+      }
 
       const histData = historicStats.find(s => s.key === p.key);
       p.priceMovement = histData ? p.avgWinningBid - histData.avg : 0;
@@ -420,46 +444,119 @@ const PokemonStatsTab: React.FC<PokemonStatsTabProps> = ({
         <article className="stats-panel">
           <div className="stats-panel-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
             <h2 style={{ margin: 0 }}>Cost Breakdown</h2>
-            <div className="pokemon-search-bar" style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-              {/* +/- Depth functionality is kept but UI is commented out */}
-              {/*
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <span style={{ fontSize: '0.85rem', color: '#888', whiteSpace: 'nowrap' }}>+/- Depth</span>
-                <span
-                  title="The number of recent drafts to consider when calculating Rank and Price change"
+            <div className="pokemon-search-bar" style={{ display: 'flex', alignItems: 'center' }}>
+              <div className={`stats-analysis-settings ${showSettings ? 'visible' : ''}`}>
+                <button
+                  type="button"
+                  className="stats-reset-button"
+                  onClick={() => {
+                    setCutoffDate('');
+                    setLookbackWindow('10');
+                  }}
+                  title="Reset analysis settings to default"
                   style={{
-                    cursor: 'help',
+                    background: 'none',
+                    border: 'none',
                     color: '#888',
-                    fontSize: '0.7rem',
-                    border: '1px solid #444',
-                    borderRadius: '50%',
-                    width: '14px',
-                    height: '14px',
-                    display: 'inline-flex',
+                    cursor: 'pointer',
+                    display: 'flex',
                     alignItems: 'center',
-                    justifyContent: 'center',
-                    marginLeft: '-4px'
+                    fontSize: '1.1rem',
+                    padding: '4px',
+                    flexShrink: 0,
+                    transition: 'color 0.2s ease'
                   }}
                 >
-                  i
-                </span>
-                <input
-                  className="stats-filter-input"
-                  type="text"
-                  inputMode="numeric"
-                  style={{ width: '42px' }}
-                  value={recentThreshold}
-                  onChange={(e) => {
-                    setRecentThreshold(e.target.value.replace(/\D/g, '').slice(0, 3));
-                  }}
-                />
-              </div> */}
+                  <TbRefresh />
+                </button>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <span style={{ fontSize: '0.85rem', color: '#888', whiteSpace: 'nowrap' }}>Cutoff Date</span>
+                  <span 
+                    title="Exclude all sales that occurred before this date"
+                    style={{ 
+                      cursor: 'help', 
+                      color: '#888', 
+                      fontSize: '0.7rem',
+                      border: '1px solid #444',
+                      borderRadius: '50%',
+                      width: '14px',
+                      height: '14px',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      marginLeft: '-4px'
+                    }}
+                  >
+                    i
+                  </span>
+                  <input
+                    className="stats-filter-input"
+                    type="date"
+                    style={{ width: '130px' }}
+                    value={cutoffDate}
+                    onChange={(e) => setCutoffDate(e.target.value)}
+                  />
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <span style={{ fontSize: '0.85rem', color: '#888', whiteSpace: 'nowrap' }}>Lookback Window</span>
+                  <span 
+                    title="The number of recent drafts to use as the comparison baseline for calculating rank and price movement"
+                    style={{ 
+                      cursor: 'help', 
+                      color: '#888', 
+                      fontSize: '0.7rem',
+                      border: '1px solid #444',
+                      borderRadius: '50%',
+                      width: '14px',
+                      height: '14px',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      marginLeft: '-4px'
+                    }}
+                  >
+                    i
+                  </span>
+                  <input
+                    className="stats-filter-input"
+                    type="text"
+                    inputMode="numeric"
+                    style={{ width: '42px', textAlign: 'center' }}
+                    value={lookbackWindow}
+                    onChange={(e) => {
+                      setLookbackWindow(e.target.value.replace(/\D/g, '').slice(0, 3));
+                    }}
+                  />
+                </div>
+                <div style={{ width: '1px', height: '24px', backgroundColor: '#333', margin: '0 4px', flexShrink: 0 }} />
+              </div>
+              <button
+                type="button"
+                className={`stats-settings-toggle ${showSettings ? 'active' : ''}`}
+                onClick={() => setShowSettings(!showSettings)}
+                title="Analysis Settings"
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  color: showSettings ? '#4caf50' : '#888',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  fontSize: '1.2rem',
+                  padding: '4px',
+                  transition: 'color 0.2s ease, transform 0.3s ease',
+                  transform: showSettings ? 'rotate(90deg)' : 'rotate(0deg)'
+                }}
+              >
+                <TbSettings />
+              </button>
               <input
                 className="pokemon-search-input"
                 type="text"
                 placeholder="Search Pokemon name..."
                 value={pokemonSearch}
                 onChange={(e) => setPokemonSearch(e.target.value)}
+                style={{ marginLeft: '12px' }}
               />
             </div>
           </div>
@@ -556,6 +653,7 @@ const PokemonStatsTab: React.FC<PokemonStatsTabProps> = ({
                               pokemonKey={entry.key} 
                               pokemonName={`${entry.name}${entry.form && entry.form !== 'base' ? ` (${toLabel(entry.form)})` : ''}`}
                               stats={stats!} 
+                              cutoffDate={cutoffDate}
                             />
                           </div>
                         </td>

@@ -78,6 +78,9 @@ const CustomTooltip = ({ active, payload, label }: any) => {
         <p style={{ margin: '0 0 6px', color: '#888', fontWeight: 600 }}>Sale #{label}</p>
         <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
           <p style={{ margin: 0, color: '#fff' }}>
+            <span style={{ color: '#888' }}>Date:</span> {data.date}
+          </p>
+          <p style={{ margin: 0, color: '#fff' }}>
             <span style={{ color: '#888' }}>Price:</span> ${data.cost.toLocaleString()}
           </p>
           {data.winner !== 'Guest' && (
@@ -96,10 +99,13 @@ interface PokemonPriceHistoryChartProps {
   pokemonKey: string;
   pokemonName: string;
   stats: StatsPageResponse;
+  cutoffDate?: string;
 }
 
-const PokemonPriceHistoryChart: React.FC<PokemonPriceHistoryChartProps> = ({ pokemonKey, pokemonName, stats }) => {
+const PokemonPriceHistoryChart: React.FC<PokemonPriceHistoryChartProps> = ({ pokemonKey, pokemonName, stats, cutoffDate }) => {
   const chartData = useMemo(() => {
+    const cutoff = cutoffDate ? new Date(cutoffDate).getTime() : 0;
+
     // Determine valid (competitive) draft IDs
     const draftStatsMap = new Map<string, { total: number; minBidCount: number; teamCount: number; maxBid: number }>();
 
@@ -140,7 +146,15 @@ const PokemonPriceHistoryChart: React.FC<PokemonPriceHistoryChartProps> = ({ pok
 
     // 1. Gather all sales including auctions and legacy data
     const auctionSales = stats.auctions
-      .filter(a => a.winning_bid !== null && validDraftIds.has(a.draft_id) && !excludedPokemonNames.has(a.name) && resolveIdentity(a.name, a.form || '').key === pokemonKey)
+      .filter(a => {
+        const isMatch = a.winning_bid !== null && validDraftIds.has(a.draft_id) && !excludedPokemonNames.has(a.name) && resolveIdentity(a.name, a.form || '').key === pokemonKey;
+        if (!isMatch) return false;
+        if (cutoff > 0) {
+          const ts = a.created_at ? new Date(a.created_at).getTime() : 0;
+          return ts >= cutoff;
+        }
+        return true;
+      })
       .map(a => {
         const winnerName = a.winning_user_id ? playersMap.get(a.winning_user_id) : null;
         return {
@@ -153,7 +167,14 @@ const PokemonPriceHistoryChart: React.FC<PokemonPriceHistoryChartProps> = ({ pok
       });
 
     const legacySales = (stats.legacy || [])
-      .filter(l => !excludedPokemonNames.has(l.pokemon) && resolveIdentity(l.pokemon, '').key === pokemonKey)
+      .filter(l => {
+        const isMatch = !excludedPokemonNames.has(l.pokemon) && resolveIdentity(l.pokemon, '').key === pokemonKey;
+        if (!isMatch) return false;
+        if (cutoff > 0 && l.date) {
+          return new Date(l.date).getTime() >= cutoff;
+        }
+        return true;
+      })
       .map(l => {
         const costStr = String(l.cost).replace(/[^0-9]/g, '');
         const cost = parseInt(costStr, 10);
@@ -197,7 +218,8 @@ const PokemonPriceHistoryChart: React.FC<PokemonPriceHistoryChartProps> = ({ pok
     }));
 
     const xAxisTicks = [];
-    for (let i = 5; i <= data.length; i += 5) {
+    const tickInterval = data.length > 50 ? 10 : 5;
+    for (let i = tickInterval; i <= data.length; i += tickInterval) {
       xAxisTicks.push(i);
     }
     if (xAxisTicks.length === 0 && data.length > 0) xAxisTicks.push(1);
