@@ -296,12 +296,12 @@ const LeaderboardPage = () => {
                                         ) : userMatches.length === 0 ? (
                                             <div style={{ textAlign: 'center', color: '#888', padding: '20px' }}>No ranked match history found.</div>
                                         ) : (
-                                            <table className="leaderboard-history-table" style={{ width: 'max-content', minWidth: '100%', borderCollapse: 'collapse', fontSize: '0.85rem', tableLayout: 'auto' }}>
+                                            <table className="leaderboard-history-table" style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.85rem' }}>
                                                 <thead>
                                                     <tr style={{ textAlign: 'left', color: '#666', borderBottom: '1px solid rgba(255, 255, 255, 0.1)' }}>
-                                                        <th style={{ padding: '12px', whiteSpace: 'nowrap' }}>Date</th>
-                                                        <th style={{ padding: '12px', whiteSpace: 'nowrap' }}>Race Standings</th>
-                                                        <th style={{ padding: '12px' }}>Draft</th>
+                                                        <th style={{ padding: '12px', width: '80px' }}>Date</th>
+                                                        <th style={{ padding: '12px', minWidth: '300px' }}>Race Standings</th>
+                                                        <th style={{ padding: '12px', minWidth: '450px' }}>Draft</th>
                                                     </tr>
                                                 </thead>
                                                 <tbody>
@@ -311,7 +311,7 @@ const LeaderboardPage = () => {
                                                                 {match.date ? new Date(match.date).toLocaleDateString('en-US', { month: 'numeric', day: 'numeric', year: '2-digit' }) : '-'}
                                                             </td>
                                                             <td style={{ padding: '12px' }}>
-                                                                <div style={{ display: 'flex', flexWrap: 'nowrap', gap: '8px' }}>
+                                                                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
                                                                     {match.participants.map(p => (
                                                                         <span 
                                                                             key={p.userId} 
@@ -331,7 +331,7 @@ const LeaderboardPage = () => {
                                                                 </div>
                                                             </td>
                                                             <td style={{ padding: '12px' }}>
-                                                                <div style={{ display: 'flex', flexWrap: 'nowrap', gap: '6px' }}>
+                                                                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
                                                                     {(userTeamsByDraft.get(match.draftId)?.get(player.user_id) || [])
                                                                         .sort((a, b) => (b.winning_bid ?? 0) - (a.winning_bid ?? 0))
                                                                         .map(a => (
