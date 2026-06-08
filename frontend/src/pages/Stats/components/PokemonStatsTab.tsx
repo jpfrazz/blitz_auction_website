@@ -1,6 +1,7 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import PokemonPriceHistoryChart from '../PokemonPriceHistoryChart';
-import { StatsPageResponse } from '../../../types';
+import { fetchPokemonList } from '../../../shared/api/pokemon';
+import { Pokemon, StatsPageResponse } from '../../../types';
 import { TbSettings, TbRefresh } from 'react-icons/tb';
 import '../Stats.scss';
 import './PokemonStatsTab.scss';
@@ -20,6 +21,7 @@ interface PokemonAggregate {
   rank: number;
   recentMovement: number;
   priceMovement: number;
+  types: string[];
 }
 
 interface PokemonSaleRow {
@@ -27,6 +29,7 @@ interface PokemonSaleRow {
   name: string;
   form: string;
   bid: number;
+  types: string[];
 }
 
 interface PokemonStatsTabProps {
@@ -46,6 +49,44 @@ const excludedPokemonNames = new Set([
   'Klawf',
   'Turtonator',
 ]);
+
+const formOverrides: Record<string, { form: string; key: string }> = {
+  'Wooper': { form: 'Paldea', key: 'Wooper-Paldea' },
+  'Vulpix': { form: 'Alola', key: 'Vulpix-Alola' },
+  'Voltorb': { form: 'Hisui', key: 'Voltorb-Hisui' },
+  "Farfetch'd": { form: 'Galar', key: "Farfetch'd-Galar" },
+  'Sandshrew': { form: 'Alola', key: 'Sandshrew-Alola' },
+  'Meowth': { form: 'Galar', key: 'Meowth-Galar' },
+  'Slowpoke': { form: 'Galar', key: 'Slowpoke-Galar' },
+  'Zigzagoon': { form: 'Galar', key: 'Zigzagoon-Galar' },
+};
+
+const resolveIdentity = (name: string, form: string) => {
+  let currentName = name;
+  let currentForm = form;
+
+  // Handle names that include the form, e.g., "Farfetch'd-Galar"
+  const knownForms = ['Alola', 'Galar', 'Hisui', 'Paldea'];
+  for (const f of knownForms) {
+    if (currentName.endsWith(`-${f}`)) {
+      currentName = currentName.slice(0, -(f.length + 1));
+      currentForm = f;
+      break;
+    }
+  }
+
+  if ((!currentForm || currentForm === 'base') && formOverrides[currentName]) {
+    return { name: currentName, ...formOverrides[currentName] };
+  }
+  const effectiveForm = currentForm && currentForm !== 'base' ? currentForm : '';
+  const key = `${currentName}${effectiveForm ? '-' + effectiveForm : ''}`;
+  return { name: currentName, form: effectiveForm, key };
+};
+
+const POKEMON_TYPES = [
+  'Normal', 'Fire', 'Water', 'Grass', 'Electric', 'Ice', 'Fighting', 'Poison', 'Ground',
+  'Flying', 'Psychic', 'Bug', 'Rock', 'Ghost', 'Dragon', 'Dark', 'Steel', 'Fairy'
+];
 
 function formatPokemonName(name: string): string {
   const lower = name.toLowerCase();
@@ -96,15 +137,21 @@ const PokemonStatsTab: React.FC<PokemonStatsTabProps> = ({
   loading = false,
   error = null,
 }) => {
+  const [pokemonList, setPokemonList] = useState<Pokemon[]>([]);
   const [pokemonSearch, setPokemonSearch] = useState('');
   const [lookbackWindow, setLookbackWindow] = useState<string>('10');
   const [cutoffDate, setCutoffDate] = useState<string>('');
+  const [selectedType, setSelectedType] = useState<string>('');
   const [sortConfig, setSortConfig] = useState<{ key: SortKey; direction: 'asc' | 'desc' }>({
     key: 'avgWinningBid',
     direction: 'desc',
   });
   const [showSettings, setShowSettings] = useState(false);
   const [expandedPokemon, setExpandedPokemon] = useState<string | null>(null);
+
+  useEffect(() => {
+    fetchPokemonList().then(setPokemonList).catch(console.error);
+  }, []);
 
   const handleSort = (key: SortKey) => {
     setSortConfig((current) => ({
@@ -208,43 +255,56 @@ const PokemonStatsTab: React.FC<PokemonStatsTabProps> = ({
     };
   }, [unifiedTimeline, lookbackWindow]);
 
+  const typeLookup = useMemo(() => {
+    const map = new Map<string, string[]>();
+    if (pokemonList.length === 0) return map;
+
+    // Group children by their parent identity for fast tree traversal
+    const childrenMap = new Map<string, Pokemon[]>();
+    pokemonList.forEach(p => {
+      if (p.evolves_from_id) {
+        const parentKey = `${p.evolves_from_id}-${p.evolves_from_form ?? ''}`;
+        if (!childrenMap.has(parentKey)) childrenMap.set(parentKey, []);
+        childrenMap.get(parentKey)!.push(p);
+      }
+    });
+
+    const getEvolutionTypes = (pkmn: Pokemon, visited = new Set<string>()): string[] => {
+      const pkmnIdKey = `${pkmn.pokedex_id ?? pkmn.id}-${pkmn.form ?? ''}`;
+      if (visited.has(pkmnIdKey)) return [];
+      visited.add(pkmnIdKey);
+
+      const types = new Set<string>();
+      if (pkmn.type1) types.add(pkmn.type1);
+      if (pkmn.type2) types.add(pkmn.type2);
+
+      const children = childrenMap.get(pkmnIdKey) || [];
+      children.forEach(child => {
+        // Exclude mega forms from evolution type calculations
+        if ((child.form ?? '').toLowerCase() !== 'mega') {
+          getEvolutionTypes(child, visited).forEach(t => types.add(t));
+        }
+      });
+
+      return Array.from(types);
+    };
+
+    pokemonList.forEach(p => {
+      const resolved = resolveIdentity(p.name, p.form || '');
+      // Only process entries that are canonical for their key (handling formOverrides)
+      const isCanonical = resolved.form === (p.form || '') || 
+                          (resolved.form === '' && (p.form === 'base' || !p.form));
+      
+      if (isCanonical) {
+        map.set(resolved.key, getEvolutionTypes(p));
+      }
+    });
+
+    return map;
+  }, [pokemonList]);
+
   const aggregatedPokemon = useMemo<PokemonAggregate[]>(() => {
     const sales: PokemonSaleRow[] = [];
-
-    // Per user request, map certain base names to their regional forms.
-    // This applies to both legacy data (which is formless) and live data (if it defaults to base).
-    const formOverrides: Record<string, { form: string; key: string }> = {
-      'Wooper': { form: 'Paldea', key: 'Wooper-Paldea' },
-      'Vulpix': { form: 'Alola', key: 'Vulpix-Alola' },
-      'Voltorb': { form: 'Hisui', key: 'Voltorb-Hisui' },
-      "Farfetch'd": { form: 'Galar', key: "Farfetch'd-Galar" },
-      'Sandshrew': { form: 'Alola', key: 'Sandshrew-Alola' },
-      'Meowth': { form: 'Galar', key: 'Meowth-Galar' },
-      'Slowpoke': { form: 'Galar', key: 'Slowpoke-Galar' },
-      'Zigzagoon': { form: 'Galar', key: 'Zigzagoon-Galar' },
-    };
-
-    const resolveIdentity = (name: string, form: string) => {
-      let currentName = name;
-      let currentForm = form;
-
-      // Handle names that include the form, e.g., "Farfetch'd-Galar"
-      const knownForms = ['Alola', 'Galar', 'Hisui', 'Paldea'];
-      for (const f of knownForms) {
-        if (currentName.endsWith(`-${f}`)) {
-          currentName = currentName.slice(0, -(f.length + 1));
-          currentForm = f;
-          break;
-        }
-      }
-
-      if ((!currentForm || currentForm === 'base') && formOverrides[currentName]) {
-        return { name: currentName, ...formOverrides[currentName] };
-      }
-      const effectiveForm = currentForm && currentForm !== 'base' ? currentForm : '';
-      const key = `${currentName}${effectiveForm ? '-' + effectiveForm : ''}`;
-      return { name: currentName, form: effectiveForm, key };
-    };
 
     sortedAuctions.forEach((auction) => {
       const bid = auction.winning_bid;
@@ -252,11 +312,14 @@ const PokemonStatsTab: React.FC<PokemonStatsTabProps> = ({
         return;
       }
       const { key, name, form } = resolveIdentity(auction.name, auction.form || '');
+      const types = typeLookup.get(key) || [];
+
       sales.push({
         key,
         name,
         form,
         bid,
+        types,
       });
     });
 
@@ -271,12 +334,14 @@ const PokemonStatsTab: React.FC<PokemonStatsTabProps> = ({
       }
 
       const { name, form, key } = resolveIdentity(legacyRow.pokemon, '');
+      const types = typeLookup.get(key) || [];
 
       sales.push({
         key,
         name,
         form,
         bid,
+        types,
       });
     });
 
@@ -285,6 +350,7 @@ const PokemonStatsTab: React.FC<PokemonStatsTabProps> = ({
       name: string;
       form: string;
       bids: number[];
+      types: string[];
     }>();
 
     sales.forEach((sale) => {
@@ -295,6 +361,7 @@ const PokemonStatsTab: React.FC<PokemonStatsTabProps> = ({
           name: sale.name,
           form: sale.form,
           bids: [],
+          types: sale.types,
         };
         grouped.set(sale.key, existing);
       }
@@ -385,6 +452,7 @@ const PokemonStatsTab: React.FC<PokemonStatsTabProps> = ({
         rank: 0,
         recentMovement: 0,
         priceMovement: 0,
+        types: entry.types,
       };
     });
 
@@ -407,7 +475,7 @@ const PokemonStatsTab: React.FC<PokemonStatsTabProps> = ({
       p.priceMovement = histData ? p.avgWinningBid - histData.avg : 0;
     });
     return results;
-  }, [sortedAuctions, stats?.legacy, recentDraftInfo]);
+  }, [sortedAuctions, stats?.legacy, recentDraftInfo, typeLookup]);
 
   const pokemonSummary = useMemo<PokemonAggregate[]>(() => {
     return [...aggregatedPokemon].sort((a, b) => {
@@ -420,12 +488,13 @@ const PokemonStatsTab: React.FC<PokemonStatsTabProps> = ({
 
   const filteredPokemonSummary = useMemo(() => {
     const query = pokemonSearch.trim().toLowerCase();
-    if (!query) {
-      return pokemonSummary;
-    }
 
-    return pokemonSummary.filter((entry) => entry.name.toLowerCase().includes(query));
-  }, [pokemonSummary, pokemonSearch]);
+    return pokemonSummary.filter((entry) => {
+      const matchesSearch = !query || entry.name.toLowerCase().includes(query);
+      const matchesType = !selectedType || entry.types.some(t => t.toLowerCase() === selectedType.toLowerCase());
+      return matchesSearch && matchesType;
+    });
+  }, [pokemonSummary, pokemonSearch, selectedType]);
 
   if (loading) {
     return <section className="pokemon-stats-tab stats-content-grid">Loading stats...</section>;
@@ -453,6 +522,7 @@ const PokemonStatsTab: React.FC<PokemonStatsTabProps> = ({
                   onClick={() => {
                     setCutoffDate('');
                     setLookbackWindow('10');
+                    setSelectedType('');
                   }}
                   title="Reset analysis settings to default"
                   style={{
@@ -528,6 +598,40 @@ const PokemonStatsTab: React.FC<PokemonStatsTabProps> = ({
                       setLookbackWindow(e.target.value.replace(/\D/g, '').slice(0, 3));
                     }}
                   />
+                </div>
+                <div className="stats-setting-item" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <span style={{ fontSize: '0.85rem', color: '#888', whiteSpace: 'nowrap' }}>Type</span>
+                  <span 
+                    title="Show only Pokemon of the selected type."
+                    style={{ 
+                      cursor: 'help', 
+                      color: '#888', 
+                      fontSize: '0.7rem',
+                      border: '1px solid #444',
+                      borderRadius: '50%',
+                      width: '14px',
+                      height: '14px',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      marginLeft: '0px'
+                    }}
+                  >
+                    i
+                  </span>
+                  <select
+                    className="stats-filter-input"
+                    style={{ width: '86px' }}
+                    value={selectedType}
+                    onChange={(e) => setSelectedType(e.target.value)}
+                  >
+                    <option value="">All Types</option>
+                    {POKEMON_TYPES.map((type) => (
+                      <option key={type} value={type}>
+                        {type}
+                      </option>
+                    ))}
+                  </select>
                 </div>
                 <div className="settings-divider" style={{ width: '1px', height: '24px', backgroundColor: '#333', margin: '0 4px', flexShrink: 0 }} />
               </div>
