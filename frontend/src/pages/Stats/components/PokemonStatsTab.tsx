@@ -470,7 +470,7 @@ const PokemonStatsTab: React.FC<PokemonStatsTabProps> = ({
                 >
                   <TbRefresh />
                 </button>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <div className="stats-setting-item" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                   <span style={{ fontSize: '0.85rem', color: '#888', whiteSpace: 'nowrap' }}>Cutoff Date</span>
                   <span 
                     title="Exclude all sales that occurred before this date"
@@ -485,7 +485,7 @@ const PokemonStatsTab: React.FC<PokemonStatsTabProps> = ({
                       display: 'inline-flex',
                       alignItems: 'center',
                       justifyContent: 'center',
-                      marginLeft: '-4px'
+                      marginLeft: '0px'
                     }}
                   >
                     i
@@ -498,7 +498,7 @@ const PokemonStatsTab: React.FC<PokemonStatsTabProps> = ({
                     onChange={(e) => setCutoffDate(e.target.value)}
                   />
                 </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <div className="stats-setting-item" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                   <span style={{ fontSize: '0.85rem', color: '#888', whiteSpace: 'nowrap' }}>Lookback Window</span>
                   <span 
                     title="The number of recent drafts to use as the comparison baseline for calculating rank and price movement"
@@ -513,7 +513,7 @@ const PokemonStatsTab: React.FC<PokemonStatsTabProps> = ({
                       display: 'inline-flex',
                       alignItems: 'center',
                       justifyContent: 'center',
-                      marginLeft: '-4px'
+                      marginLeft: '0px'
                     }}
                   >
                     i
@@ -529,7 +529,7 @@ const PokemonStatsTab: React.FC<PokemonStatsTabProps> = ({
                     }}
                   />
                 </div>
-                <div style={{ width: '1px', height: '24px', backgroundColor: '#333', margin: '0 4px', flexShrink: 0 }} />
+                <div className="settings-divider" style={{ width: '1px', height: '24px', backgroundColor: '#333', margin: '0 4px', flexShrink: 0 }} />
               </div>
               <button
                 type="button"
