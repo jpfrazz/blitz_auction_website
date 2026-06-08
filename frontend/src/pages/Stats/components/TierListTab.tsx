@@ -76,25 +76,27 @@ const TIER_COLORS = [
     '#7fffbf', // Teal (C+)
     '#7fffff', // Cyan (C)
     '#7fbfff', // Light Blue (C-)
+    '#7f9fff', // Periwinkle (New)
     '#7f7fff', // Blue (D+)
     '#bf7fff', // Purple (D)
-    '#ff7fff', // Pink (D-)
+    '#df7fff', // Pinkish-Purple (D-)
 ];
 
 const DEFAULT_TIERS_CONFIG = [
-    { id: 'tier-4000', name: 'S\n$4000+', color: '#ff7f7f' },
-    { id: 'tier-3750', name: 'A+\n$3750+', color: '#ff9f7f' },
-    { id: 'tier-3500', name: 'A\n$3500+', color: '#ffbf7f' },
-    { id: 'tier-3250', name: 'A-\n$3250+', color: '#ffdf7f' },
-    { id: 'tier-3000', name: 'B+\n$3000+', color: '#ffff7f' },
-    { id: 'tier-2750', name: 'B\n$2750+', color: '#bfff7f' },
-    { id: 'tier-2500', name: 'B-\n$2500+', color: '#7fff7f' },
-    { id: 'tier-2250', name: 'C+\n$2250+', color: '#7fffbf' },
-    { id: 'tier-2000', name: 'C\n$2000+', color: '#7fffff' },
-    { id: 'tier-1750', name: 'C-\n$1750+', color: '#7fbfff' },
+    { id: 'tier-4250', name: 'S+\n$4250+', color: '#ff7f7f' },
+    { id: 'tier-4000', name: 'S\n$4000+', color: '#ff9f7f' },
+    { id: 'tier-3750', name: 'A+\n$3750+', color: '#ffbf7f' },
+    { id: 'tier-3500', name: 'A\n$3500+', color: '#ffdf7f' },
+    { id: 'tier-3250', name: 'A-\n$3250+', color: '#ffff7f' },
+    { id: 'tier-3000', name: 'B+\n$3000+', color: '#bfff7f' },
+    { id: 'tier-2750', name: 'B\n$2750+', color: '#7fff7f' },
+    { id: 'tier-2500', name: 'B-\n$2500+', color: '#7fffbf' },
+    { id: 'tier-2250', name: 'C+\n$2250+', color: '#7fffff' },
+    { id: 'tier-2000', name: 'C\n$2000+', color: '#7fbfff' },
+    { id: 'tier-1750', name: 'C-\n$1750+', color: '#7f9fff' },
     { id: 'tier-1500', name: 'D+\n$1500+', color: '#7f7fff' },
     { id: 'tier-1250', name: 'D\n$1250+', color: '#bf7fff' },
-    { id: 'tier-1000', name: 'D-\n$1000+', color: '#ff7fff' },
+    { id: 'tier-1000', name: 'D-\n$1000+', color: '#df7fff' },
 ];
 
 function formatPokemonName(name: string): string {
@@ -220,19 +222,20 @@ const TierListTab: React.FC<TierListTabProps> = ({ stats }) => {
         }));
 
         allPokemonWithCleanedAvg.forEach(p => {
-            if (p.avg >= 4000) defaultTiers[0].pokemon.push(p.name);
-            else if (p.avg >= 3750) defaultTiers[1].pokemon.push(p.name);
-            else if (p.avg >= 3500) defaultTiers[2].pokemon.push(p.name);
-            else if (p.avg >= 3250) defaultTiers[3].pokemon.push(p.name);
-            else if (p.avg >= 3000) defaultTiers[4].pokemon.push(p.name);
-            else if (p.avg >= 2750) defaultTiers[5].pokemon.push(p.name);
-            else if (p.avg >= 2500) defaultTiers[6].pokemon.push(p.name);
-            else if (p.avg >= 2250) defaultTiers[7].pokemon.push(p.name);
-            else if (p.avg >= 2000) defaultTiers[8].pokemon.push(p.name);
-            else if (p.avg >= 1750) defaultTiers[9].pokemon.push(p.name);
-            else if (p.avg >= 1500) defaultTiers[10].pokemon.push(p.name);
-            else if (p.avg >= 1250) defaultTiers[11].pokemon.push(p.name);
-            else if (p.avg >= 1000) defaultTiers[12].pokemon.push(p.name);
+            if (p.avg >= 4250) defaultTiers[0].pokemon.push(p.name);
+            else if (p.avg >= 4000) defaultTiers[1].pokemon.push(p.name);
+            else if (p.avg >= 3750) defaultTiers[2].pokemon.push(p.name);
+            else if (p.avg >= 3500) defaultTiers[3].pokemon.push(p.name);
+            else if (p.avg >= 3250) defaultTiers[4].pokemon.push(p.name);
+            else if (p.avg >= 3000) defaultTiers[5].pokemon.push(p.name);
+            else if (p.avg >= 2750) defaultTiers[6].pokemon.push(p.name);
+            else if (p.avg >= 2500) defaultTiers[7].pokemon.push(p.name);
+            else if (p.avg >= 2250) defaultTiers[8].pokemon.push(p.name);
+            else if (p.avg >= 2000) defaultTiers[9].pokemon.push(p.name);
+            else if (p.avg >= 1750) defaultTiers[10].pokemon.push(p.name);
+            else if (p.avg >= 1500) defaultTiers[11].pokemon.push(p.name);
+            else if (p.avg >= 1250) defaultTiers[12].pokemon.push(p.name);
+            else if (p.avg >= 1000) defaultTiers[13].pokemon.push(p.name);
             // Pokemon with avg < 1000 remain in the pool
         });
         return defaultTiers;
