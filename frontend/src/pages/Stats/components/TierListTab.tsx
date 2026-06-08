@@ -36,31 +36,35 @@ const excludedPokemonNames = new Set([
 ]);
 
 const TIER_COLORS = [
-    '#ff7f7f', // Red
-    '#ffbf7f', // Dark Orange
-    '#ffff7f', // Yellow
-    '#bfff7f', // Lime
-    '#7fff7f', // Green
-    '#7fffbf', // Teal
-    '#7fffff', // Cyan
-    '#7fbfff', // Light Blue
-    '#7f7fff', // Blue
-    '#bf7fff', // Purple
-    '#ff7fff', // Pink
+    '#ff7f7f', // Red (S)
+    '#ff9f7f', // Red-Orange (A+)
+    '#ffbf7f', // Dark Orange (A)
+    '#ffdf7f', // Yellow-Orange (A-)
+    '#ffff7f', // Yellow (B+)
+    '#bfff7f', // Lime (B)
+    '#7fff7f', // Green (B-)
+    '#7fffbf', // Teal (C+)
+    '#7fffff', // Cyan (C)
+    '#7fbfff', // Light Blue (C-)
+    '#7f7fff', // Blue (D+)
+    '#bf7fff', // Purple (D)
+    '#ff7fff', // Pink (D-)
 ];
 
 const DEFAULT_TIERS_CONFIG = [
-    { id: 'tier-s', name: 'S', color: '#ff7f7f' },
-    { id: 'tier-ap', name: 'A+', color: '#ffbf7f' },
-    { id: 'tier-a', name: 'A', color: '#ffff7f' },
-    { id: 'tier-am', name: 'A-', color: '#bfff7f' },
-    { id: 'tier-bp', name: 'B+', color: '#7fff7f' },
-    { id: 'tier-b', name: 'B', color: '#7fffbf' },
-    { id: 'tier-bm', name: 'B-', color: '#7fffff' },
-    { id: 'tier-cp', name: 'C+', color: '#7fbfff' },
-    { id: 'tier-c', name: 'C', color: '#7f7fff' },
-    { id: 'tier-d', name: 'D', color: '#bf7fff' },
-    { id: 'tier-f', name: 'F', color: '#ff7fff' },
+    { id: 'tier-4000', name: 'S\n$4000+', color: '#ff7f7f' },
+    { id: 'tier-3750', name: 'A+\n$3750+', color: '#ff9f7f' },
+    { id: 'tier-3500', name: 'A\n$3500+', color: '#ffbf7f' },
+    { id: 'tier-3250', name: 'A-\n$3250+', color: '#ffdf7f' },
+    { id: 'tier-3000', name: 'B+\n$3000+', color: '#ffff7f' },
+    { id: 'tier-2750', name: 'B\n$2750+', color: '#bfff7f' },
+    { id: 'tier-2500', name: 'B-\n$2500+', color: '#7fff7f' },
+    { id: 'tier-2250', name: 'C+\n$2250+', color: '#7fffbf' },
+    { id: 'tier-2000', name: 'C\n$2000+', color: '#7fffff' },
+    { id: 'tier-1750', name: 'C-\n$1750+', color: '#7fbfff' },
+    { id: 'tier-1500', name: 'D+\n$1500+', color: '#7f7fff' },
+    { id: 'tier-1250', name: 'D\n$1250+', color: '#bf7fff' },
+    { id: 'tier-1000', name: 'D-\n$1000+', color: '#ff7fff' },
 ];
 
 function formatPokemonName(name: string): string {
@@ -76,6 +80,7 @@ const TierListTab: React.FC<TierListTabProps> = ({ stats }) => {
     const [activeListId, setActiveListId] = useState<string | null>(null);
     const [openMenuId, setOpenMenuId] = useState<string | null>(null);
     const [draggedPokemon, setDraggedPokemon] = useState<{ name: string; sourceId: string; index: number } | null>(null);
+    const [poolSearch, setPoolSearch] = useState('');
     
     const tierListRef = useRef<HTMLDivElement>(null);
     const labelRefs = useRef<Record<string, HTMLSpanElement | null>>({});
@@ -113,28 +118,25 @@ const TierListTab: React.FC<TierListTabProps> = ({ stats }) => {
     }, [stats]);
 
     const generateDefaultTiers = useMemo(() => {
-        const ranges = [
-            "$4500+", "$4250-4500", "$4000-4250", "$3750-4000", "$3500-3750",
-            "$3250-3500", "$3000-3250", "$2750-3000", "$2500-2750", "$2000-2500", "<$2000"
-        ];
-        const defaultTiers = DEFAULT_TIERS_CONFIG.map((config, idx) => ({
+        const defaultTiers = DEFAULT_TIERS_CONFIG.map(config => ({
             ...config,
-            name: `${config.name}\n${ranges[idx]}`,
             pokemon: [] as string[]
         }));
 
         allPokemon.forEach(p => {
-            if (p.avg >= 4500) defaultTiers[0].pokemon.push(p.name);
-            else if (p.avg >= 4250) defaultTiers[1].pokemon.push(p.name);
-            else if (p.avg >= 4000) defaultTiers[2].pokemon.push(p.name);
-            else if (p.avg >= 3750) defaultTiers[3].pokemon.push(p.name);
-            else if (p.avg >= 3500) defaultTiers[4].pokemon.push(p.name);
-            else if (p.avg >= 3250) defaultTiers[5].pokemon.push(p.name);
-            else if (p.avg >= 3000) defaultTiers[6].pokemon.push(p.name);
-            else if (p.avg >= 2750) defaultTiers[7].pokemon.push(p.name);
-            else if (p.avg >= 2500) defaultTiers[8].pokemon.push(p.name);
-            else if (p.avg >= 2000) defaultTiers[9].pokemon.push(p.name);
-            else defaultTiers[10].pokemon.push(p.name);
+            if (p.avg >= 4000) defaultTiers[0].pokemon.push(p.name);
+            else if (p.avg >= 3750) defaultTiers[1].pokemon.push(p.name);
+            else if (p.avg >= 3500) defaultTiers[2].pokemon.push(p.name);
+            else if (p.avg >= 3250) defaultTiers[3].pokemon.push(p.name);
+            else if (p.avg >= 3000) defaultTiers[4].pokemon.push(p.name);
+            else if (p.avg >= 2750) defaultTiers[5].pokemon.push(p.name);
+            else if (p.avg >= 2500) defaultTiers[6].pokemon.push(p.name);
+            else if (p.avg >= 2250) defaultTiers[7].pokemon.push(p.name);
+            else if (p.avg >= 2000) defaultTiers[8].pokemon.push(p.name);
+            else if (p.avg >= 1750) defaultTiers[9].pokemon.push(p.name);
+            else if (p.avg >= 1500) defaultTiers[10].pokemon.push(p.name);
+            else if (p.avg >= 1250) defaultTiers[11].pokemon.push(p.name);
+            else if (p.avg >= 1000) defaultTiers[12].pokemon.push(p.name);
         });
         return defaultTiers;
     }, [allPokemon]);
@@ -182,6 +184,11 @@ const TierListTab: React.FC<TierListTabProps> = ({ stats }) => {
     const [pool, setPool] = useState<string[]>([]);
     useEffect(() => {
         setPool(allPokemon.filter(p => !tieredNames.has(p.name)).map(p => p.name));
+    }, [allPokemon, tieredNames]);
+
+    const filteredPool = useMemo(() => {
+        const lowerCaseSearch = poolSearch.toLowerCase();
+        return pool.filter(name => name.toLowerCase().includes(lowerCaseSearch));
     }, [allPokemon, tieredNames]);
 
     // Ranks for comparison logic
@@ -347,39 +354,65 @@ const TierListTab: React.FC<TierListTabProps> = ({ stats }) => {
     const onDragOver = (e: React.DragEvent, targetTierId: string, targetIndex: number) => {
         e.stopPropagation();
         e.preventDefault();
-        if (!draggedPokemon || !activeListId) return;
+        if (!draggedPokemon || !activeList) return;
         const { name, sourceId, index: sourceIndex } = draggedPokemon;
 
-        if (sourceId === targetTierId && sourceIndex === targetIndex) return;
+        // Prevent self-drop to the exact same spot if dragging within the same container
+        if (sourceId === targetTierId) {
+            if (sourceId === 'pool' && !poolSearch) { // Only check for exact spot if no search is active
+                if (pool[targetIndex] === name) return;
+            } else if (sourceId !== 'pool') {
+                const currentTier = activeList.tiers.find(t => t.id === sourceId);
+                if (currentTier && currentTier.pokemon[targetIndex] === name) return;
+            }
+        }
 
+        // Handle dropping into the pool
         if (targetTierId === 'pool') {
-            const newPool = [...pool].filter(p => p !== name);
-            newPool.splice(targetIndex, 0, name);
-            setPool(newPool);
+            let newPool = [...pool]; // Always work with the unfiltered pool
 
+            // If dragging from a tier to the pool
             if (sourceId !== 'pool') {
                 setLists(lists.map(l => l.id === activeListId ? {
                     ...l,
                     tiers: l.tiers.map(t => t.id === sourceId ? { ...t, pokemon: t.pokemon.filter(p => p !== name) } : t)
                 } : l));
+                newPool.push(name); // Add to the end of the unfiltered pool
+                setPool(newPool);
+                setDraggedPokemon({ name, sourceId: 'pool', index: newPool.length - 1 });
+            } else {
+                // If dragging within the pool
+                if (poolSearch) {
+                    // If search is active, do not allow reordering within the pool.
+                    // The item can only be dragged out of the pool.
+                    return;
+                } else {
+                    // No search active, reorder within the unfiltered pool
+                    const originalPoolIndex = newPool.indexOf(name);
+                    if (originalPoolIndex > -1) {
+                        newPool.splice(originalPoolIndex, 1); // Remove from original spot
+                        newPool.splice(targetIndex, 0, name); // Insert into new spot
+                        setPool(newPool);
+                        setDraggedPokemon({ name, sourceId: 'pool', index: targetIndex });
+                    }
+                }
             }
-            setDraggedPokemon({ name, sourceId: 'pool', index: targetIndex });
         } else {
+            // Handle dropping into a tier
             setLists(lists.map(list => {
                 if (list.id !== activeListId) return list;
                 const newTiers = list.tiers.map(tier => {
                     let newPkmn = [...tier.pokemon];
                     if (tier.id === sourceId) newPkmn = newPkmn.filter(p => p !== name);
                     if (tier.id === targetTierId) {
-                        newPkmn.splice(targetIndex, 0, name);
+                        newPkmn.splice(targetIndex, 0, name); // targetIndex is correct for tier
                     }
                     return { ...tier, pokemon: newPkmn };
                 });
                 return { ...list, tiers: newTiers };
             }));
-            
             if (sourceId === 'pool') {
-                setPool(pool.filter(p => p !== name));
+                setPool(pool.filter(p => p !== name)); // Remove from unfiltered pool
             }
             setDraggedPokemon({ name, sourceId: targetTierId, index: targetIndex });
         }
@@ -416,7 +449,7 @@ const TierListTab: React.FC<TierListTabProps> = ({ stats }) => {
                             {l.name}
                         </button>
                     ))}
-                    <div className="list-action-btns"> {/* New container for action buttons */}
+                    <div className="list-action-btns">
                         {lists.length < 6 && <button className="add-list-btn" onClick={handleAddList} title="Add New List">+</button>}
                         {activeList && lists.length < 6 && <button className="copy-list-btn" onClick={handleDuplicateList} title="Duplicate Current List"><FaCopy /></button>}
                         {!isDefaultList && (
@@ -450,7 +483,7 @@ const TierListTab: React.FC<TierListTabProps> = ({ stats }) => {
                 </div>
             </div>
 
-            <div className="tier-list-export-area" ref={tierListRef}> {/* New wrapper for export */}
+            <div className="tier-list-export-area" ref={tierListRef}>
                 <div className="tier-list-header">
                     <input 
                         className="list-name-input"
@@ -545,18 +578,27 @@ const TierListTab: React.FC<TierListTabProps> = ({ stats }) => {
                                 )}
                             </div>
                         </div>
-                ))}
-            </div>
+                    ))}
+                </div>
             </div>
 
             <div className="pokemon-pool-container">
-                <h3>Pokémon Pool</h3>
+                <div className="pokemon-pool-header">
+                    <h3>Pokémon Pool</h3>
+                    <input
+                        type="text"
+                        className="pool-search-input"
+                        placeholder="Search Pokémon..."
+                        value={poolSearch}
+                        onChange={(e) => setPoolSearch(e.target.value)}
+                    />
+                </div>
                 <div 
                     className="pool-items"
-                    onDragOver={(e) => onDragOver(e, 'pool', pool.length)}
+                    onDragOver={(e) => onDragOver(e, 'pool', filteredPool.length)}
                     onDrop={handleDrop}
                 >
-                    {pool.map((name, idx) => (
+                    {filteredPool.map((name, idx) => (
                         <div 
                             key={name} 
                             className="pokemon-square"

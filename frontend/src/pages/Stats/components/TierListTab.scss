@@ -233,7 +233,32 @@
         background: #111;
         padding: 20px;
         border-radius: 8px;
-        h3 { margin: 0 0 15px; color: #888; font-size: 0.9rem; }
+
+        .pokemon-pool-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+
+            h3 {
+                margin: 0;
+                color: #888;
+                font-size: 1.1rem; // Slightly larger
+            }
+
+            .pool-search-input {
+                background: #2a2a2a;
+                border: 1px solid #444;
+                border-radius: 4px;
+                color: white;
+                padding: 6px 10px;
+                font-size: 0.9rem;
+                outline: none;
+                width: 180px;
+                &:focus { border-color: #4caf50; }
+            }
+        }
+
         .pool-items { 
             display: flex; 
             flex-wrap: wrap; 
