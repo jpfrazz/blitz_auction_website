@@ -15,6 +15,7 @@ interface TierListData {
     id: string;
     name: string;
     tiers: TierRow[];
+    poolType?: 'default' | 'eevee' | 'rentals';
 }
 
 interface TierListTabProps {
@@ -98,6 +99,17 @@ const DEFAULT_TIERS_CONFIG = [
     { id: 'tier-1000', name: 'D-\n$1000+', color: '#df7fff' },
 ];
 
+const EEVEE_POOL = [
+    'Vaporeon', 'Jolteon', 'Flareon', 'Espeon', 'Umbreon', 'Leafeon', 'Glaceon', 'Sylveon'
+];
+
+const RENTAL_POOL = [
+    'Absol', 'Drampa', 'Falinks', 'Hawlucha', 'Heracross', 'Kangaskhan', 'Pinsir', 'Skarmory',
+    'Alomomola', 'Bombirdier', 'Bouffalant', 'Carnivine', 'Comfey', 'Cryogonal', 'Dhelmise',
+    'Durant', 'Heatmor', 'Lapras', 'Miltank', 'Mimikyu', 'Relicanth', 'Seviper',
+    'Stonjourner', 'Togedemaru', 'Torkoal', 'Tropius', 'Turtonator', 'Zangoose'
+];
+
 function formatPokemonName(name: string): string {
     const lower = name.toLowerCase();
     if (lower.startsWith("farfetch'd")) return "farfetch'd";
@@ -124,6 +136,8 @@ const TierListTab: React.FC<TierListTabProps> = ({ stats }) => {
     const [draggedPokemon, setDraggedPokemon] = useState<{ name: string; sourceId: string; index: number } | null>(null);
     const [pool, setPool] = useState<string[]>([]);
     const [poolSearch, setPoolSearch] = useState('');
+    const [isSidePool, setIsSidePool] = useState(false);
+    const [showPoolPicker, setShowPoolPicker] = useState(false);
     
     const tierListRef = useRef<HTMLDivElement>(null);
     const labelRefs = useRef<Record<string, HTMLSpanElement | null>>({});
@@ -257,7 +271,8 @@ const TierListTab: React.FC<TierListTabProps> = ({ stats }) => {
                 const newDefaultList: TierListData = {
                     id: 'default-stats-list',
                     name: 'Stats Based Tier List',
-                    tiers: generateDefaultTiers
+                    tiers: generateDefaultTiers,
+                    poolType: 'default'
                 };
                 initialLists.unshift(newDefaultList); // Add to the beginning
                 if (!initialActiveListId) initialActiveListId = newDefaultList.id;
@@ -275,7 +290,8 @@ const TierListTab: React.FC<TierListTabProps> = ({ stats }) => {
             const newDefaultList: TierListData = {
                 id: 'default-stats-list',
                 name: 'Stats Based Tier List',
-                tiers: generateDefaultTiers
+                tiers: generateDefaultTiers,
+                poolType: 'default'
             };
 
             setLists(prevLists => {
@@ -317,6 +333,9 @@ const TierListTab: React.FC<TierListTabProps> = ({ stats }) => {
     }, [lists]);
 
     const activeList = lists.find(l => l.id === activeListId);
+    
+    // Derive pool type directly from the list data
+    const activePoolType = activeList?.poolType || 'default';
 
     // Maintain a local pool state if needed, but here we derive it
     const tieredNames = useMemo(() => {
@@ -337,14 +356,20 @@ const TierListTab: React.FC<TierListTabProps> = ({ stats }) => {
                 .filter(p => !tieredNames.has(p.name) && !inPool.has(p.name))
                 .map(p => p.name);
             
-            return [...next, ...toAdd];
+            return [...next, ...toAdd].sort((a, b) => a.localeCompare(b));
         });
     }, [allPokemonWithCleanedAvg, tieredNames]);
 
     const filteredPool = useMemo(() => {
+        let sourcePool = pool;
+        if (activePoolType === 'eevee') sourcePool = EEVEE_POOL;
+        else if (activePoolType === 'rentals') sourcePool = RENTAL_POOL;
+
         const lowerCaseSearch = poolSearch.toLowerCase();
-        return pool.filter(name => name.toLowerCase().includes(lowerCaseSearch));
-    }, [pool, poolSearch]);
+        return sourcePool
+            .filter(name => !tieredNames.has(name)) // Hide if already in a tier
+            .filter(name => name.toLowerCase().includes(lowerCaseSearch));
+    }, [pool, poolSearch, activeList?.poolType, tieredNames]);
 
     // Ranks for comparison logic
     const defaultRanks = useMemo(() => {
@@ -361,7 +386,7 @@ const TierListTab: React.FC<TierListTabProps> = ({ stats }) => {
         return m;
     }, [activeList]);
 
-    const handleAddList = () => {
+    const handleAddList = (poolType: 'default' | 'eevee' | 'rentals') => {
         if (lists.length >= 6) return;
         const defaultRowNames = ['S', 'A', 'B', 'C', 'D'];
         const newList: TierListData = {
@@ -372,10 +397,12 @@ const TierListTab: React.FC<TierListTabProps> = ({ stats }) => {
                 name,
                 color: TIER_COLORS[idx % TIER_COLORS.length],
                 pokemon: []
-            }))
+            })),
+            poolType
         };
         setLists([...lists, newList]);
         setActiveListId(newList.id);
+        setShowPoolPicker(false);
     };
 
     const handleDuplicateList = () => {
@@ -388,7 +415,8 @@ const TierListTab: React.FC<TierListTabProps> = ({ stats }) => {
                 id: `tier-${Date.now()}-${idx}`, // New unique IDs for tiers
                 color: TIER_COLORS[idx % TIER_COLORS.length],
                 pokemon: [...tier.pokemon]
-            }))
+            })),
+            poolType: activeList.poolType || 'default'
         };
         setLists([...lists, newList]);
         setActiveListId(newList.id);
@@ -580,7 +608,7 @@ const TierListTab: React.FC<TierListTabProps> = ({ stats }) => {
     if (!activeList) return <div className="tier-list-container">Generating list...</div>;
 
     return (
-        <section className="tier-list-tab">
+        <section className={`tier-list-tab ${isSidePool ? 'side-pool-mode' : ''}`}>
             <div className="tier-list-controls">
                 <div className="list-selector">
                     {lists.map(l => (
@@ -593,7 +621,18 @@ const TierListTab: React.FC<TierListTabProps> = ({ stats }) => {
                         </button>
                     ))}
                     <div className="list-action-btns">
-                        {lists.length < 6 && <button className="add-list-btn" onClick={handleAddList} title="Add New List">+</button>}
+                        {lists.length < 6 && (
+                            showPoolPicker ? (
+                                <div className="pool-picker-overlay">
+                                    <button onClick={() => handleAddList('default')}>Draftable</button>
+                                    <button onClick={() => handleAddList('eevee')}>Eevee</button>
+                                    <button onClick={() => handleAddList('rentals')}>Rentals</button>
+                                    <button className="cancel" onClick={() => setShowPoolPicker(false)}>x</button>
+                                </div>
+                            ) : (
+                                <button className="add-list-btn" onClick={() => setShowPoolPicker(true)} title="Add New List">+</button>
+                            )
+                        )}
                         {activeList && lists.length < 6 && <button className="copy-list-btn" onClick={handleDuplicateList} title="Duplicate Current List"><FaCopy /></button>}
                         {!isDefaultList && (
                             <button className="delete-list-btn" onClick={() => handleDeleteList(activeListId!)} title="Delete List"><FaTrash /></button>
@@ -612,14 +651,22 @@ const TierListTab: React.FC<TierListTabProps> = ({ stats }) => {
                             onChange={(e) => setSquareSize(parseInt(e.target.value))}
                             className="size-slider"
                         />
+                        <button 
+                            className={`layout-toggle ${isSidePool ? 'active' : ''}`}
+                            onClick={() => setIsSidePool(!isSidePool)}
+                        >
+                            {isSidePool ? 'Side Pool: On' : 'Side Pool: Off'}
+                        </button>
                     </div>
                     <div className="btn-group">
-                        <button 
-                            className={`util-btn ${showComparison ? 'active' : ''}`} 
-                            onClick={() => setShowComparison(!showComparison)}
-                        >
-                            {showComparison ? 'Hide Comparison' : 'Show Comparison'}
-                        </button>
+                        {activePoolType === 'default' && (
+                            <button 
+                                className={`util-btn ${showComparison ? 'active' : ''}`} 
+                                onClick={() => setShowComparison(!showComparison)}
+                            >
+                                {showComparison ? 'Hide Comparison' : 'Show Comparison'}
+                            </button>
+                        )}
                         <button className="util-btn" onClick={exportAsImage}>Export PNG</button>
                         <button className="reset-btn" onClick={handleReset}>{isDefaultList ? 'Reset' : 'Reset to Pool'}</button>
                     </div>
