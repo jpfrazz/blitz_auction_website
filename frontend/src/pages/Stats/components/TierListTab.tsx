@@ -32,7 +32,6 @@ const excludedPokemonNames = new Set([
     'Stonjourner',
     'Klawf',
     'Turtonator',
-    "Farfetch'd-Galar",
 ]);
 
 const formOverrides: Record<string, { form: string; key: string }> = {
@@ -74,12 +73,12 @@ const TIER_COLORS = [
     '#bfff7f', // Lime (B)
     '#7fff7f', // Green (B-)
     '#7fffbf', // Teal (C+)
-    '#7fffff', // Cyan (C)
+    '#7fecff', // Cyan (C)
     '#7fbfff', // Light Blue (C-)
     '#7f9fff', // Periwinkle (New)
     '#7f7fff', // Blue (D+)
     '#bf7fff', // Purple (D)
-    '#df7fff', // Pinkish-Purple (D-)
+    '#d47fff', // Pinkish-Purple (D-)
 ];
 
 const DEFAULT_TIERS_CONFIG = [
