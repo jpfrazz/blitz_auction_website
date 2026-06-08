@@ -35,6 +35,36 @@ const excludedPokemonNames = new Set([
     "Farfetch'd-Galar",
 ]);
 
+const formOverrides: Record<string, { form: string; key: string }> = {
+  'Wooper': { form: 'Paldea', key: 'Wooper-Paldea' },
+  'Vulpix': { form: 'Alola', key: 'Vulpix-Alola' },
+  'Voltorb': { form: 'Hisui', key: 'Voltorb-Hisui' },
+  "Farfetch'd": { form: 'Galar', key: "Farfetch'd-Galar" },
+  'Sandshrew': { form: 'Alola', key: 'Sandshrew-Alola' },
+  'Meowth': { form: 'Galar', key: 'Meowth-Galar' },
+  'Slowpoke': { form: 'Galar', key: 'Slowpoke-Galar' },
+  'Zigzagoon': { form: 'Galar', key: 'Zigzagoon-Galar' },
+};
+
+const resolveIdentity = (name: string, form: string) => {
+  let currentName = name;
+  let currentForm = form;
+  const knownForms = ['Alola', 'Galar', 'Hisui', 'Paldea'];
+  for (const f of knownForms) {
+    if (currentName.endsWith(`-${f}`)) {
+      currentName = currentName.slice(0, -(f.length + 1));
+      currentForm = f;
+      break;
+    }
+  }
+  if ((!currentForm || currentForm === 'base') && formOverrides[currentName]) {
+    return { name: currentName, ...formOverrides[currentName] };
+  }
+  const effectiveForm = currentForm && currentForm !== 'base' ? currentForm : '';
+  const key = `${currentName}${effectiveForm ? '-' + effectiveForm : ''}`;
+  return { name: currentName, form: effectiveForm, key };
+};
+
 const TIER_COLORS = [
     '#ff7f7f', // Red (S)
     '#ff9f7f', // Red-Orange (A+)
@@ -99,6 +129,33 @@ const TierListTab: React.FC<TierListTabProps> = ({ stats }) => {
 
     const isDefaultList = activeListId === 'default-stats-list';
 
+    // Replicate competitive draft filtering logic from PokemonStatsTab
+    const validDraftIds = useMemo(() => {
+        const statsMap = new Map<string, { total: number; minBidCount: number; teamCount: number; maxBid: number }>();
+        (stats?.teams ?? []).forEach((t) => {
+            const curr = statsMap.get(t.draft_id) || { total: 0, minBidCount: 0, teamCount: 0, maxBid: 0 };
+            curr.teamCount += 1;
+            statsMap.set(t.draft_id, curr);
+        });
+        (stats?.auctions ?? []).forEach((a) => {
+            if (a.winning_bid !== null) {
+                const curr = statsMap.get(a.draft_id) || { total: 0, minBidCount: 0, teamCount: 0, maxBid: 0 };
+                curr.total += 1;
+                if (a.winning_bid === 100) curr.minBidCount += 1;
+                if (a.winning_bid > curr.maxBid) curr.maxBid = a.winning_bid;
+                statsMap.set(a.draft_id, curr);
+            }
+        });
+
+        const valid = new Set<string>();
+        statsMap.forEach((data, id) => {
+            if (data.total >= 40 && data.minBidCount <= 3 && data.total === 8 * data.teamCount && data.maxBid <= 12000) {
+                valid.add(id);
+            }
+        });
+        return valid;
+    }, [stats?.auctions, stats?.teams]);
+
     // Aggregates all bids for each Pokemon and calculates a cleaned average price
     const pokemonAggregates = useMemo(() => {
         if (!stats) return [];
@@ -106,10 +163,12 @@ const TierListTab: React.FC<TierListTabProps> = ({ stats }) => {
         
         // Process auctions
         stats.auctions.forEach(a => {
-            if (a.winning_bid === null || excludedPokemonNames.has(a.name)) return;
-            const entry = pokemonBidsMap.get(a.name) || { name: a.name, bids: [] };
+            if (a.winning_bid === null || !validDraftIds.has(a.draft_id) || excludedPokemonNames.has(a.name)) return;
+            
+            const { name, key } = resolveIdentity(a.name, a.form || '');
+            const entry = pokemonBidsMap.get(key) || { name, bids: [] };
             entry.bids.push(a.winning_bid);
-            pokemonBidsMap.set(a.name, entry);
+            pokemonBidsMap.set(key, entry);
         });
 
         // Process legacy data
@@ -117,9 +176,11 @@ const TierListTab: React.FC<TierListTabProps> = ({ stats }) => {
             if (excludedPokemonNames.has(l.pokemon)) return;
             const cost = parseInt(l.cost.toString().replace(/[^0-9]/g, ''), 10);
             if (isNaN(cost)) return;
-            const entry = pokemonBidsMap.get(l.pokemon) || { name: l.pokemon, bids: [] };
+
+            const { name, key } = resolveIdentity(l.pokemon, '');
+            const entry = pokemonBidsMap.get(key) || { name, bids: [] };
             entry.bids.push(cost);
-            pokemonBidsMap.set(l.pokemon, entry);
+            pokemonBidsMap.set(key, entry);
         });
 
         return Array.from(pokemonBidsMap.values())
@@ -145,9 +206,9 @@ const TierListTab: React.FC<TierListTabProps> = ({ stats }) => {
                     avg: avg,
                 };
             })
-            .filter(p => p.avg > 0) // Only include Pokemon that have a calculated average price > 0 after filtering
-            .sort((a, b) => a.name.localeCompare(b.name));
-    }, [stats]);
+            .filter(p => p.avg > 100) // Match Stats Tab minimum threshold
+            .sort((a, b) => b.avg - a.avg); // Sort by price DESC to match Stats Tab order
+    }, [stats, validDraftIds]);
 
     // This replaces the old `allPokemon` memo and provides cleaned average prices
     const allPokemonWithCleanedAvg = pokemonAggregates;
