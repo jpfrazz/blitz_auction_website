@@ -1,0 +1,244 @@
+.tier-list-tab {
+    padding: 20px 0;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+
+    .tier-list-controls {
+        display: flex;
+        flex-direction: column;
+        background: rgba(0, 0, 0, 0.2);
+        padding: 10px 15px;
+        border-radius: 8px;
+        gap: 15px;
+
+        .list-selector {
+            display: flex;
+            gap: 10px;
+            .list-btn {
+                background: #333;
+                border: 1px solid #444;
+                color: #888;
+                padding: 6px 12px;
+                border-radius: 4px;
+                cursor: pointer;
+                &.active { background: #4caf50; color: white; border-color: #4caf50; }
+            }
+            .list-action-btns {
+                display: flex;
+                gap: 5px;
+                .add-list-btn, .copy-list-btn {
+                    background: #444;
+                    color: white;
+                    border: none;
+                    width: 32px;
+                    height: 32px;
+                    border-radius: 4px;
+                    cursor: pointer;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    &:hover { background: #555; }
+                }
+                .copy-list-btn { font-size: 0.85rem; }
+            }
+            .delete-list-btn {
+                background: #444; color: #ff7f7f; border: none; width: 32px; height: 32px; border-radius: 4px; cursor: pointer;
+                display: flex; align-items: center; justify-content: center;
+                &:hover { background: #555; }
+            }
+        }
+    }
+
+    .action-btns-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+
+        .slider-container {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: #888;
+            font-size: 0.9rem;
+            .size-slider {
+                cursor: pointer;
+                width: 120px;
+            }
+        }
+
+        .btn-group {
+            display: flex;
+            gap: 10px;
+
+            .util-btn {
+                background: #444; color: white; border: 1px solid #555; padding: 6px 15px; border-radius: 4px; cursor: pointer;
+                &:hover { background: #555; }
+                &.active { background: #4caf50; border-color: #4caf50; }
+            }
+            .delete-btn {
+                background: #444; color: #ff7f7f; border: 1px solid #555; padding: 6px 15px; border-radius: 4px; cursor: pointer;
+                &:hover { background: #555; }
+            }
+            .reset-btn {
+                background: #8b0000; color: white; border: none; padding: 6px 15px; border-radius: 4px; cursor: pointer;
+                &:hover { background: #a00000; }
+            }
+        }
+    }
+
+    .tier-list-header {
+        padding: 10px 10px 20px;
+        .list-name-input {
+            background: transparent;
+            border: none;
+            border-bottom: 2px solid #333;
+            color: white;
+            font-size: 2rem;
+            font-weight: bold;
+            width: 100%;
+            padding: 5px 0;
+            outline: none;
+            &:focus { border-bottom-color: #4caf50; }
+        }
+    }
+
+    .tier-list-export-area {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .tier-rows-container {
+        display: flex;
+        flex-direction: column;
+        border: 2px solid #111;
+        max-width: 100%;
+        overflow: hidden;
+
+        .tier-row {
+            display: flex;
+            min-height: 80px;
+            border-bottom: 1px solid #111;
+            background: #1a1a1a;
+            width: 100%;
+
+            .tier-label {
+                width: 100px;
+                min-width: 100px;
+                flex-shrink: 0;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                color: #000;
+                cursor: text;
+                font-weight: bold;
+                text-align: center;
+                padding: 10px;
+                font-size: 1.4rem;
+                white-space: pre-line;
+                span { outline: none; }
+            }
+
+            .tier-items {
+                flex-grow: 1;
+                min-width: 0;
+                display: flex;
+                flex-wrap: wrap;
+                align-content: flex-start;
+                padding: 5px;
+                gap: 5px;
+            }
+
+            .tier-settings {
+                position: relative;
+                width: 50px;
+                flex-shrink: 0;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+                gap: 2px;
+
+                .settings-cog, .move-arrow {
+                    background: transparent;
+                    border: none;
+                    color: #444;
+                    cursor: pointer;
+                    font-size: 1rem;
+                    &:hover { color: #888; }
+                    &:disabled { color: #222; cursor: default; }
+                }
+
+                .settings-cog {
+                    font-size: 1.1rem;
+                }
+
+                .settings-menu {
+                    position: absolute;
+                    right: 100%;
+                    top: 0;
+                    background: #2a2a2a;
+                    border: 1px solid #444;
+                    border-radius: 4px;
+                    z-index: 100;
+                    display: flex;
+                    flex-direction: column;
+                    width: 150px;
+                    box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+
+                    button {
+                        background: transparent;
+                        border: none;
+                        color: white;
+                        padding: 8px 12px;
+                        text-align: left;
+                        cursor: pointer;
+                        font-size: 0.85rem;
+                        &:hover { background: #3a3a3a; }
+                        &.danger { color: #ff7f7f; }
+                    }
+                }
+            }
+        }
+    }
+
+    .pokemon-square {
+        position: relative;
+        background: transparent;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition: transform 0.1s ease;
+        border: 1px solid #333;
+        img { width: 90%; height: 90%; object-fit: contain; pointer-events: none; }
+        &:active { cursor: grabbing; }
+        &:hover { border-color: #4caf50; z-index: 2; }
+
+        .rank-badge {
+            position: absolute;
+            top: -2px;
+            right: -2px;
+            font-size: 10px;
+            color: white;
+            padding: 1px 3px;
+            border-radius: 2px;
+            font-weight: bold;
+            z-index: 5;
+            pointer-events: none;
+        }
+    }
+
+    .pokemon-pool-container {
+        background: #111;
+        padding: 20px;
+        border-radius: 8px;
+        h3 { margin: 0 0 15px; color: #888; font-size: 0.9rem; }
+        .pool-items { 
+            display: flex; 
+            flex-wrap: wrap; 
+            gap: 5px; 
+            min-height: 120px;
+        }
+    }
+}

@@ -5,9 +5,10 @@ import { StatsPagePlayer, StatsPageResponse, StatsPageTeamRow } from '../../type
 import PokemonStatsTab from './components/PokemonStatsTab';
 import PokemonPriceHistoryChart from './PokemonPriceHistoryChart';
 import PlayerSearchStatsTab from './components/PlayerSearchStatsTab';
+import TierListTab from './components/TierListTab';
 import './Stats.scss';
 
-type StatsTab = 'pokemon' | 'drafts' | 'player-search';
+type StatsTab = 'pokemon' | 'drafts' | 'player-search' | 'tier-list';
 
 interface PlayerAggregate {
   key: string;
@@ -30,6 +31,7 @@ const excludedPokemonNames = new Set([
   'Stonjourner',
   'Klawf',
   'Turtonator',
+  "Farfetch'd-Galar",
 ]);
 
 const formOverrides: Record<string, { form: string; key: string }> = {
@@ -547,6 +549,13 @@ const Stats: React.FC = () => {
           >
             Player Search
           </button>
+          <button
+            className={`tab-chip ${activeTab === 'tier-list' ? 'active' : ''}`}
+            type="button"
+            onClick={() => setActiveTab('tier-list')}
+          >
+            Tier List
+          </button>
         </section>
 
         {activeTab === 'pokemon' && (
@@ -812,6 +821,13 @@ const Stats: React.FC = () => {
             loading={loading}
             error={error}
             validDraftIds={validDraftIds}
+          />
+        )}
+
+        {activeTab === 'tier-list' && (
+          <TierListTab 
+            stats={stats} 
+            playersById={playersById}
           />
         )}
       </main>

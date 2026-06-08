@@ -283,10 +283,10 @@
   }
 
   .tab-chip {
-    flex: 1 1 calc(33.33% - 0.5rem);
+    flex: 0 1 auto;
     text-align: center;
-    padding: 0.45rem 0.3rem;
-    font-size: 0.9rem;
+    padding: 0.45rem 0.6rem;
+    font-size: 0.85rem;
   }
 
   .kpi-value {
