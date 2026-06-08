@@ -73,6 +73,17 @@ function formatPokemonName(name: string): string {
     return lower.replace(/'/g, '');
 }
 
+// Helper function (duplicated from PokemonStatsTab for consistency)
+function calculateQuantile(sortedData: number[], q: number) {
+  const pos = (sortedData.length - 1) * q;
+  const base = Math.floor(pos);
+  const rest = pos - base;
+  if (sortedData[base + 1] !== undefined) {
+    return sortedData[base] + rest * (sortedData[base + 1] - sortedData[base]);
+  }
+  return sortedData[base];
+}
+
 const TierListTab: React.FC<TierListTabProps> = ({ stats }) => {
     const [lists, setLists] = useState<TierListData[]>([]);
     const [squareSize, setSquareSize] = useState(60);
@@ -80,6 +91,7 @@ const TierListTab: React.FC<TierListTabProps> = ({ stats }) => {
     const [activeListId, setActiveListId] = useState<string | null>(null);
     const [openMenuId, setOpenMenuId] = useState<string | null>(null);
     const [draggedPokemon, setDraggedPokemon] = useState<{ name: string; sourceId: string; index: number } | null>(null);
+    const [pool, setPool] = useState<string[]>([]);
     const [poolSearch, setPoolSearch] = useState('');
     
     const tierListRef = useRef<HTMLDivElement>(null);
@@ -87,35 +99,58 @@ const TierListTab: React.FC<TierListTabProps> = ({ stats }) => {
 
     const isDefaultList = activeListId === 'default-stats-list';
 
-    const allPokemon = useMemo(() => {
+    // Aggregates all bids for each Pokemon and calculates a cleaned average price
+    const pokemonAggregates = useMemo(() => {
         if (!stats) return [];
-        const map = new Map<string, { total: number; count: number }>();
+        const pokemonBidsMap = new Map<string, { name: string; bids: number[] }>();
         
+        // Process auctions
         stats.auctions.forEach(a => {
             if (a.winning_bid === null || excludedPokemonNames.has(a.name)) return;
-            const curr = map.get(a.name) || { total: 0, count: 0 };
-            curr.total += a.winning_bid;
-            curr.count += 1;
-            map.set(a.name, curr);
+            const entry = pokemonBidsMap.get(a.name) || { name: a.name, bids: [] };
+            entry.bids.push(a.winning_bid);
+            pokemonBidsMap.set(a.name, entry);
         });
 
+        // Process legacy data
         stats.legacy?.forEach(l => {
             if (excludedPokemonNames.has(l.pokemon)) return;
             const cost = parseInt(l.cost.toString().replace(/[^0-9]/g, ''), 10);
             if (isNaN(cost)) return;
-            const curr = map.get(l.pokemon) || { total: 0, count: 0 };
-            curr.total += cost;
-            curr.count += 1;
-            map.set(l.pokemon, curr);
+            const entry = pokemonBidsMap.get(l.pokemon) || { name: l.pokemon, bids: [] };
+            entry.bids.push(cost);
+            pokemonBidsMap.set(l.pokemon, entry);
         });
 
-        return Array.from(map.entries())
-            .map(([name, data]) => ({
-                name,
-                avg: data.total / data.count
-            }))
+        return Array.from(pokemonBidsMap.values())
+            .map(entry => {
+                let bids = entry.bids.filter(b => b !== 100); // Exclude $100 bids
+
+                if (bids.length > 1) {
+                    const sortedBids = [...bids].sort((a, b) => a - b);
+                    const q1 = calculateQuantile(sortedBids, 0.25);
+                    const q3 = calculateQuantile(sortedBids, 0.75);
+                    const iqr = q3 - q1;
+                    const lower = q1 - 1.5 * iqr;
+                    const upper = q3 + 2.0 * iqr;
+                    bids = sortedBids.filter(b => b >= lower && b <= upper);
+                }
+
+                const count = bids.length;
+                const sum = bids.reduce((a, b) => a + b, 0);
+                const avg = count > 0 ? Math.round(sum / count) : 0;
+
+                return {
+                    name: entry.name,
+                    avg: avg,
+                };
+            })
+            .filter(p => p.avg > 0) // Only include Pokemon that have a calculated average price > 0 after filtering
             .sort((a, b) => a.name.localeCompare(b.name));
     }, [stats]);
+
+    // This replaces the old `allPokemon` memo and provides cleaned average prices
+    const allPokemonWithCleanedAvg = pokemonAggregates;
 
     const generateDefaultTiers = useMemo(() => {
         const defaultTiers = DEFAULT_TIERS_CONFIG.map(config => ({
@@ -123,7 +158,7 @@ const TierListTab: React.FC<TierListTabProps> = ({ stats }) => {
             pokemon: [] as string[]
         }));
 
-        allPokemon.forEach(p => {
+        allPokemonWithCleanedAvg.forEach(p => {
             if (p.avg >= 4000) defaultTiers[0].pokemon.push(p.name);
             else if (p.avg >= 3750) defaultTiers[1].pokemon.push(p.name);
             else if (p.avg >= 3500) defaultTiers[2].pokemon.push(p.name);
@@ -137,30 +172,73 @@ const TierListTab: React.FC<TierListTabProps> = ({ stats }) => {
             else if (p.avg >= 1500) defaultTiers[10].pokemon.push(p.name);
             else if (p.avg >= 1250) defaultTiers[11].pokemon.push(p.name);
             else if (p.avg >= 1000) defaultTiers[12].pokemon.push(p.name);
+            // Pokemon with avg < 1000 remain in the pool
         });
         return defaultTiers;
-    }, [allPokemon]);
+    }, [allPokemonWithCleanedAvg]);
 
-    // 2. Load from LocalStorage or Generate Default
+    // 1. Initial Load from LocalStorage or Generate Default
     useEffect(() => {
         const saved = localStorage.getItem('blitz_tier_lists');
-        if (saved) {
-            const parsed = JSON.parse(saved);
-            setLists(parsed);
-            if (parsed.length > 0) setActiveListId(parsed[0].id);
-        } else if (generateDefaultTiers.some(t => t.pokemon.length > 0)) {
-            const initialList: TierListData = {
+        let initialLists: TierListData[] = [];
+        let initialActiveListId: string | null = null;
+
+        if (saved) { // Load from local storage
+            initialLists = JSON.parse(saved);
+            if (initialLists.length > 0) initialActiveListId = initialLists[0].id;
+        }
+
+        // If no lists were loaded or the default list doesn't exist, create it
+        if (initialLists.length === 0 || !initialLists.some(l => l.id === 'default-stats-list')) {
+            if (generateDefaultTiers.some(t => t.pokemon.length > 0)) {
+                const newDefaultList: TierListData = {
+                    id: 'default-stats-list',
+                    name: 'Stats Based Tier List',
+                    tiers: generateDefaultTiers
+                };
+                initialLists.unshift(newDefaultList); // Add to the beginning
+                if (!initialActiveListId) initialActiveListId = newDefaultList.id;
+            }
+        }
+
+        setLists(initialLists);
+        setActiveListId(initialActiveListId);
+    }, []); // Empty dependency array: runs once on mount
+
+    // 2. Update the default list whenever stats or default tiers change
+    useEffect(() => {
+        // Only update if the default list exists or needs to be created
+        if (generateDefaultTiers.some(t => t.pokemon.length > 0)) {
+            const newDefaultList: TierListData = {
                 id: 'default-stats-list',
                 name: 'Stats Based Tier List',
                 tiers: generateDefaultTiers
             };
-            setLists([initialList]);
-            setActiveListId(initialList.id);
-        }
-    }, [allPokemon, generateDefaultTiers]);
 
+            setLists(prevLists => {
+                const defaultListIndex = prevLists.findIndex(l => l.id === 'default-stats-list');
+                if (defaultListIndex !== -1) {
+                    // Replace existing default list with the newly generated one
+                    return prevLists.map((l, idx) => idx === defaultListIndex ? newDefaultList : l);
+                } else {
+                    // Add new default list if it doesn't exist
+                    return [newDefaultList, ...prevLists];
+                }
+            });
+
+            // If no active list is set, or the active list is the default one, set it to the default
+            setActiveListId(prevActiveId => {
+                if (!prevActiveId || prevActiveId === 'default-stats-list') {
+                    return 'default-stats-list';
+                }
+                return prevActiveId;
+            });
+        }
+    }, [stats, generateDefaultTiers]); // Depends on stats and generateDefaultTiers
+
+    // 3. Save lists to LocalStorage whenever they change
     useEffect(() => {
-        if (lists.length > 0 && activeListId) {
+        if (lists.length > 0) {
             // Enforce color order based on current indices whenever lists change
             const coloredLists = lists.map(list => ({
                 ...list,
@@ -170,6 +248,8 @@ const TierListTab: React.FC<TierListTabProps> = ({ stats }) => {
                 }))
             }));
             localStorage.setItem('blitz_tier_lists', JSON.stringify(coloredLists));
+        } else {
+            localStorage.removeItem('blitz_tier_lists');
         }
     }, [lists]);
 
@@ -181,15 +261,27 @@ const TierListTab: React.FC<TierListTabProps> = ({ stats }) => {
         return new Set(activeList.tiers.flatMap(t => t.pokemon));
     }, [activeList]);
 
-    const [pool, setPool] = useState<string[]>([]);
     useEffect(() => {
-        setPool(allPokemon.filter(p => !tieredNames.has(p.name)).map(p => p.name));
-    }, [allPokemon, tieredNames]);
+        setPool(prev => {
+            const allAvailable = new Set(allPokemonWithCleanedAvg.map(p => p.name));
+            
+            // 1. Remove anything that is now tiered or no longer in the master stats list
+            let next = prev.filter(name => !tieredNames.has(name) && allAvailable.has(name));
+            
+            // 2. Add anything new from stats that isn't tiered and isn't already in our pool
+            const inPool = new Set(next);
+            const toAdd = allPokemonWithCleanedAvg
+                .filter(p => !tieredNames.has(p.name) && !inPool.has(p.name))
+                .map(p => p.name);
+            
+            return [...next, ...toAdd];
+        });
+    }, [allPokemonWithCleanedAvg, tieredNames]);
 
     const filteredPool = useMemo(() => {
         const lowerCaseSearch = poolSearch.toLowerCase();
         return pool.filter(name => name.toLowerCase().includes(lowerCaseSearch));
-    }, [allPokemon, tieredNames]);
+    }, [pool, poolSearch]);
 
     // Ranks for comparison logic
     const defaultRanks = useMemo(() => {
@@ -248,9 +340,6 @@ const TierListTab: React.FC<TierListTabProps> = ({ stats }) => {
                 : l.tiers.map(t => ({ ...t, pokemon: [] }))
         } : l);
         setLists(updated);
-        if (!isDefaultList) {
-            setPool(allPokemon.map(p => p.name));
-        }
     };
 
     const handleDeleteList = (id: string) => {
@@ -369,33 +458,27 @@ const TierListTab: React.FC<TierListTabProps> = ({ stats }) => {
 
         // Handle dropping into the pool
         if (targetTierId === 'pool') {
-            let newPool = [...pool]; // Always work with the unfiltered pool
-
             // If dragging from a tier to the pool
             if (sourceId !== 'pool') {
                 setLists(lists.map(l => l.id === activeListId ? {
                     ...l,
                     tiers: l.tiers.map(t => t.id === sourceId ? { ...t, pokemon: t.pokemon.filter(p => p !== name) } : t)
                 } : l));
-                newPool.push(name); // Add to the end of the unfiltered pool
-                setPool(newPool);
-                setDraggedPokemon({ name, sourceId: 'pool', index: newPool.length - 1 });
-            } else {
-                // If dragging within the pool
-                if (poolSearch) {
-                    // If search is active, do not allow reordering within the pool.
-                    // The item can only be dragged out of the pool.
-                    return;
-                } else {
-                    // No search active, reorder within the unfiltered pool
-                    const originalPoolIndex = newPool.indexOf(name);
-                    if (originalPoolIndex > -1) {
-                        newPool.splice(originalPoolIndex, 1); // Remove from original spot
-                        newPool.splice(targetIndex, 0, name); // Insert into new spot
-                        setPool(newPool);
-                        setDraggedPokemon({ name, sourceId: 'pool', index: targetIndex });
-                    }
-                }
+
+                setPool(prev => {
+                    const updated = prev.filter(p => p !== name);
+                    updated.splice(targetIndex, 0, name);
+                    return updated;
+                });
+                setDraggedPokemon({ name, sourceId: 'pool', index: targetIndex });
+            } else if (!poolSearch) {
+                // Internal pool reordering (disabled during search to prevent index mismatch)
+                setPool(prev => {
+                    const updated = prev.filter(p => p !== name);
+                    updated.splice(targetIndex, 0, name);
+                    return updated;
+                });
+                setDraggedPokemon({ name, sourceId: 'pool', index: targetIndex });
             }
         } else {
             // Handle dropping into a tier
@@ -411,9 +494,6 @@ const TierListTab: React.FC<TierListTabProps> = ({ stats }) => {
                 });
                 return { ...list, tiers: newTiers };
             }));
-            if (sourceId === 'pool') {
-                setPool(pool.filter(p => p !== name)); // Remove from unfiltered pool
-            }
             setDraggedPokemon({ name, sourceId: targetTierId, index: targetIndex });
         }
     };
