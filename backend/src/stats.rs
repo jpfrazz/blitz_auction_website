@@ -27,6 +27,7 @@ pub struct StatsTeam {
     pub user_id: Option<String>,
     pub guest_id: Option<String>,
     pub draft_id: uuid::Uuid,
+    pub draft_name: String,
     pub placement: Option<i32>,
 }
 
@@ -41,6 +42,7 @@ pub struct StatsAuction {
     pub winning_bid: Option<i32>,
     pub winning_user_id: Option<String>,
     pub winning_guest_id: Option<String>,
+    pub draft_name: String,
     pub created_at: Option<chrono::DateTime<chrono::Utc>>,
 }
 
@@ -106,16 +108,23 @@ pub async fn get_stats_page_data(
     .map_err(|e| (axum::http::StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
 
     let teams =
-        sqlx::query_as::<_, StatsTeam>("SELECT user_id, guest_id, draft_id, placement FROM teams")
+        sqlx::query_as::<_, StatsTeam>(
+            "SELECT t.user_id, t.guest_id, t.draft_id, t.placement, d.draft_name
+             FROM teams t
+             JOIN drafts d ON t.draft_id = d.draft_id"
+        )
             .fetch_all(&state.db_pool)
             .await
             .map_err(|e| (axum::http::StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
 
+    // Note: The `created_at` field is not directly available in StatsAuction, but it's used in the frontend's draftSummary.
+    // It's currently being pulled from the auction table, but for consistency with draft_name, it might be better to get it from the drafts table.
+
     let auctions = sqlx::query_as::<_, StatsAuction>(
         r#"
         SELECT 
-            auction_id, 
-            draft_id, 
+            a.auction_id, 
+            a.draft_id, 
             a.pokedex_id,
             a.draft_order,
             p.name,
@@ -123,9 +132,11 @@ pub async fn get_stats_page_data(
             winning_bid, 
             winning_user_id, 
             winning_guest_id, 
-            created_at 
+            a.created_at,
+            d.draft_name
         FROM auctions AS a
         JOIN pokemon AS p ON a.pokedex_id = p.pokedex_id AND COALESCE(a.form, '') = p.form
+        JOIN drafts AS d ON a.draft_id = d.draft_id
         WHERE winning_bid IS NOT NULL
         ORDER BY a.draft_id, a.draft_order ASC
         "#,

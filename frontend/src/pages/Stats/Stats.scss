@@ -309,22 +309,7 @@
   transition: background-color 0.15s ease, filter 0.15s ease;
 
   &:hover {
-    // This rule is intentionally left empty or removed to allow specific hover styles below to apply.
-    // The specific .competitive-draft and .non-competitive-draft rules will handle the hover effect.
-  }
-}
-
-.competitive-draft {
-  background-color: rgba(76, 175, 80, 0.1); /* Base green */
-
-  &:hover {
-    background-color: rgba(76, 175, 80, 0.2); /* Darker green on hover */
-  }
-}
-
-.non-competitive-draft {
-  &:hover {
-    filter: brightness(1.2); /* Lighten slightly on hover */
+    // This rule is intentionally left empty to allow specific hover styles below to apply.
   }
 }
 

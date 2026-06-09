@@ -359,8 +359,10 @@ const Stats: React.FC = () => {
       const pId = team.user_id || team.guest_id || '';
       const pInfo = playersById.get(pId);
       const isGuest = !team.user_id || pInfo?.is_guest;
-      const pDisplayName = isGuest ? 'Guest User' : (pInfo?.user_name || team.user_id || 'Guest User');
+      const pDisplayName = isGuest ? 'Guest User' : (pInfo?.user_name || team.user_id || 'Guest User'); // Still gather for CSV
+      console.log(`[DraftSummary] Processing team for draft ${team.draft_id}: draftName from team is ${existing.draftName}`);
       
+      // Only push if not already present to avoid duplicates in CSV
       existing.participants.push(pDisplayName);
 
       drafts.set(team.draft_id, existing);
@@ -395,6 +397,7 @@ const Stats: React.FC = () => {
       if (!existing.date && auction.created_at) {
         existing.date = auction.created_at;
       }
+      console.log(`[DraftSummary] Processing auction for draft ${auction.draft_id}: draftName from auction is ${existing.draftName}`);
 
       drafts.set(auction.draft_id, existing);
     });
@@ -620,7 +623,7 @@ const Stats: React.FC = () => {
                 <table>
                   <thead>
                     <tr>
-                        <th style={{ width: '450px' }}>Participants</th>
+                        <th>Draft Name</th>
                       <th>Date</th>
                       <th>Players</th>
                       <th>Pokemon Sold</th>
@@ -635,7 +638,7 @@ const Stats: React.FC = () => {
                         <tr
                           className={`draft-row-clickable stats-row-animate ${validDraftIds.has(draft.draftId) ? 'competitive-draft' : 'non-competitive-draft'}`}
                           title={!validDraftIds.has(draft.draftId) ? `Excluded from stats: ${draft.validationError}` : undefined}
-                          style={{ animationDelay: `${200 + index * 30}ms` }}
+                          style={{ animationDelay: `${200 + index * 30}ms`, backgroundColor: validDraftIds.has(draft.draftId) ? 'rgba(76, 175, 80, 0.1)' : undefined }}
                           onClick={() => {
                             const isOpening = expandedDraftId !== draft.draftId;
                             setExpandedDraftId(isOpening ? draft.draftId : null);
@@ -645,30 +648,7 @@ const Stats: React.FC = () => {
                             }
                           }}
                         >
-                          <td>
-                            <div style={{ 
-                                display: 'flex',
-                                flexWrap: 'wrap',
-                                gap: '6px',
-                                maxHeight: '60px',
-                                overflow: 'hidden',
-                            }} title={draft.participants.join(', ')}>
-                                {draft.participants.map((name, i) => (
-                                    <span key={i} style={{
-                                        backgroundColor: 'rgba(255, 255, 255, 0.08)',
-                                        color: 'white',
-                                        padding: '2px 10px',
-                                        borderRadius: '12px',
-                                        fontSize: '0.95rem',
-                                        fontWeight: 500,
-                                        whiteSpace: 'nowrap',
-                                        border: '1px solid rgba(255, 255, 255, 0.1)'
-                                    }}>
-                                        {name}
-                                    </span>
-                                ))}
-                            </div>
-                          </td>
+                          <td>{draft.draftName || draft.draftId}</td>
                           <td>{draft.formattedDate}</td>
                           <td>{draft.teamCount}</td>
                           <td>{draft.auctionCount}</td>
