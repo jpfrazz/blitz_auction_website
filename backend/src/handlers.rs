@@ -369,6 +369,37 @@ pub async fn list_open_drafts(
 }
 
 #[debug_handler]
+pub async fn delete_draft(
+    State(state): State<ServerState>,
+    Path(draft_id): Path<String>,
+    auth_session: AuthSession<AuthBackend>,
+) -> Result<(), AppError> {
+    let Some(user) = auth_session.user else {
+        return Err((StatusCode::UNAUTHORIZED, "User not logged in".to_string()));
+    };
+
+    let draft_uuid = Uuid::from_str(&draft_id).map_err(|_| {
+        (StatusCode::BAD_REQUEST, "Invalid draft ID".to_string())
+    })?;
+
+    let is_host = if let Some(draft) = state.drafts.get(&draft_uuid) {
+        draft.host.get_user_id_string() == user.get_user_id_string()
+    } else {
+        return Err((StatusCode::NOT_FOUND, "Draft not found".to_string()));
+    };
+
+    if !is_host {
+        return Err((StatusCode::FORBIDDEN, "Only the host can remove this lobby".to_string()));
+    }
+
+    if let Some((_, draft)) = state.drafts.remove(&draft_uuid) {
+        draft.shutdown().await;
+    }
+
+    Ok(())
+}
+
+#[debug_handler]
 pub async fn get_draft(
     State(state): State<ServerState>,
     Path(draft_id): Path<String>,

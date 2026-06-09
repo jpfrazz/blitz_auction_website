@@ -31,7 +31,7 @@ function getPlacementLabel(placement: number | null): string {
 const LeaderboardPage = () => {
     const [activeTab, setActiveTab] = useState<'table' | 'progression'>('table');
     const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
-    const [minRaces, setMinRaces] = useState(2); // Default to 2 races
+    const [minRaces, setMinRaces] = useState(3); // Default to 3 races
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 

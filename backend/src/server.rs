@@ -8,7 +8,7 @@ use axum::{
     http::{Method, StatusCode},
     middleware::{self, Next},
     response::Response,
-    routing::{any, get, post},
+    routing::{any, delete, get, post},
 };
 use axum_login::{AuthManagerLayer, AuthManagerLayerBuilder, AuthSession, AuthnBackend};
 use dashmap::DashMap;
@@ -150,6 +150,7 @@ impl Server {
                 "/drafts",
                 get(handlers::list_open_drafts).post(handlers::create_draft),
             )
+            .route("/drafts/{draft_id}", delete(handlers::delete_draft))
             .route("/drafts/{draft_id}/join", post(handlers::join_draft))
             .route("/drafts/{draft_id}/ready", post(handlers::ready_up))
             .route("/drafts/{draft_id}/bid", post(handlers::bid))

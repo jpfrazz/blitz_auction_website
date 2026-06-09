@@ -110,3 +110,19 @@
   padding: 2rem;
   color: $eb-text-muted;
 }
+
+.lobby-viewer-delete-button {
+  background: none;
+  border: none;
+  color: #ff4d4d;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  padding: 4px;
+  transition: transform 0.2s ease, color 0.2s ease;
+
+  &:hover {
+    transform: scale(1.2);
+    color: #ff1a1a;
+  }
+}

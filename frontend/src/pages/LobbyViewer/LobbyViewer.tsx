@@ -1,5 +1,6 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState, useCallback } from 'react';
 import { Link } from 'react-router-dom';
+import { FaTrash } from 'react-icons/fa';
 import {
   ColumnDef,
   flexRender,
@@ -11,7 +12,7 @@ import {
 } from '@tanstack/react-table';
 import Header from '../../shared/components/Header';
 import Footer from '../../shared/components/Footer';
-import { fetchOpenDrafts, fetchCurrentUser } from '../../shared/api/draftData';
+import { fetchOpenDrafts, fetchCurrentUser, deleteDraft } from '../../shared/api/draftData';
 import { DraftLobby, DraftState } from '../../types';
 import './LobbyViewer.scss';
 
@@ -50,6 +51,22 @@ const LobbyViewer: React.FC = () => {
   const [sorting, setSorting] = useState<SortingState>([{ id: 'draft_name', desc: false }]);
   const [columnFilters, setColumnFilters] = useState<any[]>([]);
   const [isGuest, setIsGuest] = useState<boolean | null>(null);
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+
+  const handleDeleteLobby = useCallback(async (draftId: string) => {
+    if (!window.confirm('Are you sure you want to delete this lobby?')) return;
+    
+    // Optimistically remove from local state so it leaves the screen immediately
+    setDrafts(prev => prev.filter(d => d.draft_id !== draftId));
+
+    try {
+      await deleteDraft(draftId);
+    } catch (error) {
+      console.error('Error deleting draft:', error);
+      // If the API call fails, re-sync with server to restore the item
+      fetchOpenDrafts().then(setDrafts);
+    }
+  }, []);
 
   useEffect(() => {
     fetchOpenDrafts()
@@ -57,8 +74,14 @@ const LobbyViewer: React.FC = () => {
       .catch(error => console.error('Error fetching open drafts:', error))
       .finally(() => setLoading(false));
     fetchCurrentUser()
-      .then(user => setIsGuest(user.is_guest))
-      .catch(() => setIsGuest(null));
+      .then(user => {
+        setIsGuest(user.is_guest);
+        setCurrentUserId(user.user_id);
+      })
+      .catch(() => {
+        setIsGuest(null);
+        setCurrentUserId(null);
+      });
   }, []);
 
   const filteredDrafts = useMemo(() => {
@@ -108,24 +131,37 @@ const LobbyViewer: React.FC = () => {
       cell: info => {
         const ranked = info.row.original.ranked;
         const disableJoin = ranked && isGuest;
+        const isCreator = info.row.original.host === currentUserId;
+
         return (
-          <Link
-            className={`button lobby-viewer-join-button${disableJoin ? ' disabled' : ''}`}
-            to={disableJoin ? '#' : `/Auction?${info.row.original.draft_id}`}
-            tabIndex={disableJoin ? -1 : 0}
-            aria-disabled={disableJoin ? 'true' : undefined}
-            onClick={e => {
-              if (disableJoin) e.preventDefault();
-            }}
-            style={disableJoin ? { pointerEvents: 'none', opacity: 0.5 } : {}}
-          >
-            Join
-          </Link>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <Link
+              className={`button lobby-viewer-join-button${disableJoin ? ' disabled' : ''}`}
+              to={disableJoin ? '#' : `/Auction?${info.row.original.draft_id}`}
+              tabIndex={disableJoin ? -1 : 0}
+              aria-disabled={disableJoin ? 'true' : undefined}
+              onClick={e => {
+                if (disableJoin) e.preventDefault();
+              }}
+              style={disableJoin ? { pointerEvents: 'none', opacity: 0.5 } : {}}
+            >
+              Join
+            </Link>
+            {isCreator && (
+              <button
+                className="lobby-viewer-delete-button"
+                onClick={() => handleDeleteLobby(info.row.original.draft_id)}
+                title="Delete Lobby"
+              >
+                <FaTrash />
+              </button>
+            )}
+          </div>
         );
       },
       enableSorting: false,
     },
-  ], [isGuest]);
+  ], [isGuest, currentUserId, handleDeleteLobby]);
 
   const table = useReactTable({
     data: filteredDrafts,

@@ -71,6 +71,11 @@ export async function fetchOpenDrafts(): Promise<DraftLobby[]> {
   return response.data;
 }
 
+// Hide a draft from the lobby viewer without deleting it from the database
+export async function deleteDraft(draft_id: string): Promise<void> {
+  await axios.delete(`/api/drafts/${draft_id}`);
+}
+
 // Start a draft
 export async function startDraft(draft_id: string): Promise<Draft> {
   await axios.post(`/api/drafts/${draft_id}/start`);

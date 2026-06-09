@@ -655,7 +655,7 @@ const TierListTab: React.FC<TierListTabProps> = ({ stats }) => {
                             className={`layout-toggle ${isSidePool ? 'active' : ''}`}
                             onClick={() => setIsSidePool(!isSidePool)}
                         >
-                            {isSidePool ? 'Side Pool: On' : 'Side Pool: Off'}
+                            {isSidePool ? 'Side View: On' : 'Side View: Off'}
                         </button>
                     </div>
                     <div className="btn-group">

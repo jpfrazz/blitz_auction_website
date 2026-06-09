@@ -54,6 +54,7 @@ pub struct DraftLobbyResponse {
     draft_id: Uuid,
     draft_name: String,
     has_password: bool,
+    host: String,
     ranked: bool,
     teams_joined: u32,
     total_teams: u32,
@@ -524,6 +525,10 @@ impl Draft {
         let cmd = DraftCommand::UpdateUserName { user_id, new_name };
         let _ = self.actor_sender.send(cmd).await;
     }
+
+    pub async fn shutdown(&self) {
+        let _ = self.actor_sender.send(DraftCommand::Shutdown).await;
+    }
 }
 
 struct DraftActor {
@@ -605,6 +610,7 @@ enum DraftCommand {
         user_id: String,
         new_name: String,
     },
+    Shutdown,
 }
 
 impl DraftActor {
@@ -789,6 +795,7 @@ impl DraftActor {
                             self.broadcast();
                         }
                     }
+                    DraftCommand::Shutdown => break,
                 }
             }
         }
@@ -1381,6 +1388,7 @@ impl From<&DraftActor> for DraftLobbyResponse {
             draft_id: value.draft.draft_id,
             draft_name: value.draft.draft_name.clone(),
             has_password: value.settings.password.is_some(),
+            host: value.host.clone(),
             ranked: value.settings.ranked,
             total_teams: value.settings.num_teams,
             total_auctions: value.settings.num_auctions,
