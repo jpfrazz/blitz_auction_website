@@ -333,6 +333,7 @@ const Stats: React.FC = () => {
     const drafts = new Map<string, {
       draftId: string;
       draftName: string | null;
+      hostId: string | null;
       teamCount: number;
       auctionCount: number;
       highestBid: number;
@@ -348,6 +349,7 @@ const Stats: React.FC = () => {
       const existing = drafts.get(team.draft_id) || {
         draftId: team.draft_id,
         draftName: (team as any).draft_name || null,
+        hostId: (team as any).host || null,
         teamCount: 0,
         auctionCount: 0,
         highestBid: 0,
@@ -377,6 +379,7 @@ const Stats: React.FC = () => {
       const existing = drafts.get(auction.draft_id) || {
         draftId: auction.draft_id,
         draftName: auction.draft_name || null,
+        hostId: (auction as any).host || null,
         teamCount: 0,
         auctionCount: 0,
         highestBid: 0,
@@ -388,6 +391,10 @@ const Stats: React.FC = () => {
 
       if (!existing.draftName && auction.draft_name) {
         existing.draftName = auction.draft_name;
+      }
+
+      if (!existing.hostId && auction.host) {
+        existing.hostId = auction.host;
       }
 
       existing.auctionCount += 1;
@@ -623,7 +630,8 @@ const Stats: React.FC = () => {
                 <table>
                   <thead>
                     <tr>
-                        <th>Draft Name</th>
+                      <th>Draft ID</th>
+                      <th>Host</th>
                       <th>Date</th>
                       <th>Players</th>
                       <th>Pokemon Sold</th>
@@ -648,7 +656,8 @@ const Stats: React.FC = () => {
                             }
                           }}
                         >
-                          <td>{draft.draftName || draft.draftId}</td>
+                          <td>{draft.draftId}</td>
+                          <td>{playersById.get(draft.hostId || '')?.user_name || '-'}</td>
                           <td>{draft.formattedDate}</td>
                           <td>{draft.teamCount}</td>
                           <td>{draft.auctionCount}</td>
@@ -668,7 +677,7 @@ const Stats: React.FC = () => {
                         </tr>
                         {expandedDraftId === draft.draftId && (
                           <tr className="draft-details-row">
-                            <td colSpan={5}>
+                            <td colSpan={6}>
                               <div className="draft-details-controls" style={{ display: 'flex', gap: '8px', marginBottom: '12px', padding: '10px 10px 0' }}>
                                 <button
                                   className={`tab-chip ${draftSortMode === 'order' ? 'active' : ''}`}
@@ -816,7 +825,7 @@ const Stats: React.FC = () => {
                     ))}
                     {draftSummary.length === 0 && (
                       <tr>
-                        <td colSpan={5} className="empty-cell">No draft stats available.</td>
+                        <td colSpan={6} className="empty-cell">No draft stats available.</td>
                       </tr>
                     )}
                   </tbody>

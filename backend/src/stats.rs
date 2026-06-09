@@ -28,6 +28,7 @@ pub struct StatsTeam {
     pub guest_id: Option<String>,
     pub draft_id: uuid::Uuid,
     pub draft_name: String,
+    pub host: Option<String>,
     pub placement: Option<i32>,
 }
 
@@ -43,6 +44,7 @@ pub struct StatsAuction {
     pub winning_user_id: Option<String>,
     pub winning_guest_id: Option<String>,
     pub draft_name: String,
+    pub host: Option<String>,
     pub created_at: Option<chrono::DateTime<chrono::Utc>>,
 }
 
@@ -109,7 +111,7 @@ pub async fn get_stats_page_data(
 
     let teams =
         sqlx::query_as::<_, StatsTeam>(
-            "SELECT t.user_id, t.guest_id, t.draft_id, t.placement, d.draft_name
+            "SELECT t.user_id, t.guest_id, t.draft_id, t.placement, d.draft_name, COALESCE(d.host_user_id, d.host_guest_id) AS host
              FROM teams t
              JOIN drafts d ON t.draft_id = d.draft_id"
         )
@@ -133,7 +135,8 @@ pub async fn get_stats_page_data(
             winning_user_id, 
             winning_guest_id, 
             a.created_at,
-            d.draft_name
+            d.draft_name,
+            COALESCE(d.host_user_id, d.host_guest_id) AS host
         FROM auctions AS a
         JOIN pokemon AS p ON a.pokedex_id = p.pokedex_id AND COALESCE(a.form, '') = p.form
         JOIN drafts AS d ON a.draft_id = d.draft_id
