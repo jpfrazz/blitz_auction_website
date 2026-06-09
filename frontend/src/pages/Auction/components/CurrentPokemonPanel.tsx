@@ -77,6 +77,7 @@ function buildEvolutionTree(
         return matches;
       }
     )
+      .sort((a, b) => (a.pokedex_id ?? a.id ?? 0) - (b.pokedex_id ?? b.id ?? 0))
     .map((child) => {
       const isMega = child.form === 'Mega';
       const childNode = buildEvolutionTree(child, allPokemon, visited);

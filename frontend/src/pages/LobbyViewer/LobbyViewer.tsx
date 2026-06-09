@@ -254,6 +254,7 @@ const LobbyViewer: React.FC = () => {
                     {row.getVisibleCells().map(cell => (
                       <td
                         key={cell.id}
+                        data-label={cell.column.columnDef.header as string}
                         style={{ width: cell.column.id !== 'draft_name' ? '12%' : undefined }}
                       >
                         {flexRender(cell.column.columnDef.cell, cell.getContext())}

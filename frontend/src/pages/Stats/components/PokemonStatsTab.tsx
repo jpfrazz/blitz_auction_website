@@ -602,7 +602,7 @@ const PokemonStatsTab: React.FC<PokemonStatsTabProps> = ({
                 <div className="stats-setting-item" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                   <span style={{ fontSize: '0.85rem', color: '#888', whiteSpace: 'nowrap' }}>Type</span>
                   <span 
-                    title="Show only Pokemon of the selected type."
+                    title="Show only Pokemon of the selected type"
                     style={{ 
                       cursor: 'help', 
                       color: '#888', 

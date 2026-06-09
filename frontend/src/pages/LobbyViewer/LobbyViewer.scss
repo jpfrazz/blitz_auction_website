@@ -126,3 +126,84 @@
     color: #ff1a1a;
   }
 }
+
+@media (max-width: 768px) {
+  .lobby-viewer-main {
+    padding-top: 6.5rem;
+  }
+
+  .lobby-viewer-table-wrapper {
+    max-height: none;
+    border: none;
+    overflow: visible;
+  }
+
+  .lobby-viewer-table {
+    display: block;
+
+    thead {
+      display: none; // Hiding headers for a card layout on mobile
+    }
+
+    tbody {
+      display: block;
+    }
+
+    tr {
+      display: flex;
+      flex-direction: column;
+      margin-bottom: 16px;
+      background: $eb-surface;
+      border: 1px solid $eb-border;
+      border-radius: 10px;
+      padding: 16px;
+      box-shadow: $eb-shadow;
+
+      &:nth-child(even) {
+        background: $eb-surface;
+      }
+
+      &:hover {
+        background: $eb-surface;
+        color: $eb-text;
+      }
+    }
+
+    td {
+      display: block;
+      border: none;
+      padding: 10px 0;
+      width: 100% !important;
+      box-sizing: border-box;
+
+      &::before {
+        content: attr(data-label) ": ";
+        font-weight: bold;
+        color: $eb-text;
+      }
+
+      &:last-child {
+        margin-top: 10px;
+        padding-top: 12px;
+        border-top: 1px solid $eb-border;
+        display: block;
+
+        &::before {
+          display: none;
+        }
+      }
+    }
+  }
+
+  .lobby-viewer-join-button {
+    display: block;
+    flex: 1;
+    text-align: center;
+    padding: 12px;
+    font-size: 1.1rem;
+  }
+
+  .lobby-viewer-delete-button {
+    flex-shrink: 0;
+  }
+}

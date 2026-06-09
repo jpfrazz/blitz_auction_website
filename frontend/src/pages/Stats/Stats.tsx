@@ -337,10 +337,12 @@ const Stats: React.FC = () => {
       auctionCount: number;
       highestBid: number;
       date: string | null;
+      participants: string[];
     }>();
 
     (stats?.teams ?? []).forEach((team) => {
       const dStat = draftStats.get(team.draft_id);
+      if (!dStat) return;
       if (!dStat || dStat.total < 1) return;
       if (!dStat || dStat.total < 16) return;
       const existing = drafts.get(team.draft_id) || {
@@ -350,8 +352,17 @@ const Stats: React.FC = () => {
         auctionCount: 0,
         highestBid: 0,
         date: null,
+        participants: [] as string[],
       };
       existing.teamCount += 1;
+
+      const pId = team.user_id || team.guest_id || '';
+      const pInfo = playersById.get(pId);
+      const isGuest = !team.user_id || pInfo?.is_guest;
+      const pDisplayName = isGuest ? 'Guest User' : (pInfo?.user_name || team.user_id || 'Guest User');
+      
+      existing.participants.push(pDisplayName);
+
       drafts.set(team.draft_id, existing);
     });
 
@@ -368,6 +379,7 @@ const Stats: React.FC = () => {
         auctionCount: 0,
         highestBid: 0,
         date: null,
+        participants: [] as string[],
       };
 
       const winningBid = auction.winning_bid ?? 0;
@@ -399,6 +411,7 @@ const Stats: React.FC = () => {
         }
         return {
           ...draft,
+          participants: draft.participants.sort((a, b) => a.localeCompare(b)),
           formattedDate: draft.date ? new Date(draft.date).toLocaleDateString() : '-',
           validationError: errors.join('. '),
         };
@@ -413,7 +426,7 @@ const Stats: React.FC = () => {
     });
 
     return result;
-  }, [stats?.auctions, stats?.teams, draftStats]);
+  }, [stats?.auctions, stats?.teams, draftStats, playersById]);
 
   const kpis = useMemo(() => {
     // Adding 152 to account for legacy drafts
@@ -607,11 +620,10 @@ const Stats: React.FC = () => {
                 <table>
                   <thead>
                     <tr>
-                      <th>Draft ID</th>
+                        <th style={{ width: '450px' }}>Participants</th>
                       <th>Date</th>
                       <th>Players</th>
                       <th>Pokemon Sold</th>
-                      <th>Highest Bid</th>
                       <th style={{ width: '60px' }}></th>
                     </tr>
                   </thead>
@@ -621,12 +633,9 @@ const Stats: React.FC = () => {
                       .map((draft, index) => (
                       <React.Fragment key={draft.draftId}>
                         <tr
-                          className="draft-row-clickable stats-row-animate"
+                          className={`draft-row-clickable stats-row-animate ${validDraftIds.has(draft.draftId) ? 'competitive-draft' : 'non-competitive-draft'}`}
                           title={!validDraftIds.has(draft.draftId) ? `Excluded from stats: ${draft.validationError}` : undefined}
-                          style={{
-                            animationDelay: `${200 + index * 30}ms`,
-                            backgroundColor: validDraftIds.has(draft.draftId) ? 'rgba(76, 175, 80, 0.1)' : undefined
-                          }}
+                          style={{ animationDelay: `${200 + index * 30}ms` }}
                           onClick={() => {
                             const isOpening = expandedDraftId !== draft.draftId;
                             setExpandedDraftId(isOpening ? draft.draftId : null);
@@ -636,11 +645,33 @@ const Stats: React.FC = () => {
                             }
                           }}
                         >
-                          <td>{draft.draftName || draft.draftId}</td>
+                          <td>
+                            <div style={{ 
+                                display: 'flex',
+                                flexWrap: 'wrap',
+                                gap: '6px',
+                                maxHeight: '60px',
+                                overflow: 'hidden',
+                            }} title={draft.participants.join(', ')}>
+                                {draft.participants.map((name, i) => (
+                                    <span key={i} style={{
+                                        backgroundColor: 'rgba(255, 255, 255, 0.08)',
+                                        color: 'white',
+                                        padding: '2px 10px',
+                                        borderRadius: '12px',
+                                        fontSize: '0.95rem',
+                                        fontWeight: 500,
+                                        whiteSpace: 'nowrap',
+                                        border: '1px solid rgba(255, 255, 255, 0.1)'
+                                    }}>
+                                        {name}
+                                    </span>
+                                ))}
+                            </div>
+                          </td>
                           <td>{draft.formattedDate}</td>
                           <td>{draft.teamCount}</td>
                           <td>{draft.auctionCount}</td>
-                          <td>${draft.highestBid.toLocaleString()}</td>
                           <td style={{ textAlign: 'center' }}>
                             <button
                               className="tab-chip"
@@ -657,7 +688,7 @@ const Stats: React.FC = () => {
                         </tr>
                         {expandedDraftId === draft.draftId && (
                           <tr className="draft-details-row">
-                            <td colSpan={6}>
+                            <td colSpan={5}>
                               <div className="draft-details-controls" style={{ display: 'flex', gap: '8px', marginBottom: '12px', padding: '10px 10px 0' }}>
                                 <button
                                   className={`tab-chip ${draftSortMode === 'order' ? 'active' : ''}`}
