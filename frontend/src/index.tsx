@@ -18,6 +18,8 @@ import Stats from './pages/Stats/Stats';
 import Admin from './pages/Admin/Admin';
 import SourceCodePage from './pages/SourceCodePage';
 import SaveChecker from './pages/Auction/SaveChecker';
+import EmulatorPage from './pages/Emulator/EmulatorPage';
+import SaveUploaderPage from './pages/SaveUploader/SaveUploaderPage';
 import ScrollToTop from './shared/components/ScrollToTop';
 
 const container = document.getElementById('root');
@@ -44,6 +46,9 @@ if (container) {
           <Route path="/PatchNotes" element={<PatchNotes />} />
           <Route path="/SourceCode" element={<SourceCodePage />} />
           <Route path="/Admin" element={<Admin />} />
+          <Route path="/Emulator" element={<EmulatorPage />} />
+          <Route path="/Emulator/:draftId" element={<EmulatorPage />} />
+          <Route path="/SaveReader" element={<SaveUploaderPage />} />
         </Routes>
       </Router>
     </React.StrictMode>

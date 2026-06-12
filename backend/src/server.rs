@@ -154,6 +154,7 @@ impl Server {
             .route("/drafts/{draft_id}/join", post(handlers::join_draft))
             .route("/drafts/{draft_id}/ready", post(handlers::ready_up))
             .route("/drafts/{draft_id}/bid", post(handlers::bid))
+            .route("/drafts/{draft_id}/save", post(handlers::post_player_save))
             .route("/drafts/{draft_id}/start", post(handlers::start_draft))
             .route("/drafts/{draft_id}/pause", post(handlers::pause_draft))
             .route("/drafts/{draft_id}/unpause", post(handlers::unpause_draft))

@@ -1,0 +1,389 @@
+@import '../../shared/style/theme.scss';
+
+.emulator-page {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  background: $eb-bg;
+}
+
+.emulator-main {
+  flex: 1;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 0;
+  // Prevent the layout from growing taller than the viewport
+  overflow: hidden;
+}
+
+// ── Picker ─────────────────────────────────────────────────────────────────
+
+.emulator-picker {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  max-width: 560px;
+  width: 100%;
+  gap: 1.6rem;
+  padding: 4rem 1.5rem 3rem;
+  margin: auto;
+}
+
+.emulator-title {
+  font-size: 2.8rem;
+  font-weight: 700;
+  color: $eb-text;
+  margin: 0;
+}
+
+.emulator-subtitle {
+  font-size: 1.4rem;
+  color: $eb-text-muted;
+  margin: 0;
+  line-height: 1.6;
+}
+
+.emulator-dropzone {
+  width: 100%;
+  border: 2px dashed $eb-border;
+  border-radius: 12px;
+  padding: 4rem 2rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+  cursor: pointer;
+  background: $eb-surface;
+  transition: border-color 0.2s, background 0.2s;
+  outline: none;
+
+  &:hover,
+  &:focus-visible {
+    border-color: $eb-primary;
+    background: color-mix(in srgb, $eb-surface, $eb-primary 6%);
+  }
+
+  &.dragging {
+    border-color: $eb-primary;
+    background: color-mix(in srgb, $eb-surface, $eb-primary 12%);
+  }
+}
+
+.dropzone-icon {
+  width: 5.6rem;
+  height: 5.6rem;
+  color: $eb-primary;
+  opacity: 0.85;
+}
+
+.dropzone-label {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: $eb-text;
+  margin: 0;
+}
+
+.dropzone-hint {
+  font-size: 1.2rem;
+  color: $eb-text-muted;
+  margin: 0;
+  letter-spacing: 0.04em;
+}
+
+.emulator-error {
+  font-size: 1.3rem;
+  color: $eb-danger;
+  margin: 0;
+}
+
+.emulator-disclaimer {
+  font-size: 1.15rem;
+  color: $eb-text-muted;
+  margin: 0;
+  opacity: 0.7;
+}
+
+// ── Active emulator layout ─────────────────────────────────────────────────
+
+// Full-width layout wrapper — 80/20 when sidebar is present
+.emulator-layout {
+  width: 100%;
+  display: flex;
+  align-items: flex-start;
+  // Exactly as tall as the remaining viewport below the header (~6rem)
+  height: calc(100vh - 6rem);
+  overflow: hidden;
+}
+
+.emulator-col {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 100%;
+  min-width: 0;
+  height: 100%;
+  overflow-y: auto;
+
+  .emulator-layout.has-sidebar & {
+    flex: 0 0 80%;
+    max-width: 80%;
+  }
+}
+
+.emulator-top-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: $eb-surface;
+  border-bottom: 1px solid $eb-border;
+  padding: 0.8rem 1.4rem;
+}
+
+.emulator-rom-label {
+  font-size: 1.3rem;
+  color: $eb-text-muted;
+  font-family: 'Courier New', monospace;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 70%;
+}
+
+.emulator-change-btn {
+  background: transparent;
+  border: 1px solid $eb-border;
+  border-radius: 6px;
+  color: $eb-text-muted;
+  font-size: 1.2rem;
+  padding: 0.5rem 1.2rem;
+  cursor: pointer;
+  transition: border-color 0.15s, color 0.15s;
+  white-space: nowrap;
+
+  &:hover {
+    border-color: $eb-primary;
+    color: $eb-primary;
+  }
+}
+
+#game {
+  width: 100%;
+  // Fill remaining column height after the top bar (~4rem)
+  height: calc(100vh - 21rem);
+  background: #000;
+  display: block;
+  overflow: hidden;
+}
+
+// ── Own save panel (below emulator) ────────────────────────────────────────
+
+.save-panel {
+  background: $eb-surface;
+  border-top: 1px solid $eb-border;
+  overflow: hidden;
+}
+
+.save-panel-header {
+  display: flex;
+  align-items: center;
+  gap: 1.4rem;
+  padding: 0.9rem 1.4rem;
+  border-bottom: 1px solid $eb-border;
+  flex-wrap: wrap;
+}
+
+.save-panel-trainer {
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: $eb-text;
+  flex: 1;
+}
+
+.save-panel-badges,
+.save-panel-money {
+  font-size: 1.3rem;
+  color: $eb-text-muted;
+  white-space: nowrap;
+}
+
+.save-panel-synced {
+  font-size: 1.1rem;
+  color: $eb-primary;
+  white-space: nowrap;
+  opacity: 0.85;
+  margin-left: auto;
+}
+
+.save-party-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(18rem, 1fr));
+  gap: 1rem;
+  padding: 1.2rem;
+}
+
+.save-mon-card {
+  background: $eb-bg;
+  border: 1px solid $eb-border;
+  border-radius: 8px;
+  padding: 1rem 1.2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+
+  &.fainted {
+    opacity: 0.45;
+    border-color: $eb-danger;
+  }
+}
+
+.mon-name-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+}
+
+.mon-name {
+  font-size: 1.3rem;
+  font-weight: 600;
+  color: $eb-text;
+}
+
+.mon-level {
+  font-size: 1.1rem;
+  color: $eb-text-muted;
+}
+
+.mon-nature {
+  font-size: 1.1rem;
+  color: $eb-text-muted;
+}
+
+.mon-hp-bar {
+  width: 100%;
+  height: 6px;
+  background: $eb-border;
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.mon-hp-fill {
+  height: 100%;
+  background: $eb-primary;
+  border-radius: 3px;
+  transition: width 0.4s ease;
+}
+
+.mon-hp-text {
+  font-size: 1.1rem;
+  color: $eb-text-muted;
+  text-align: right;
+}
+
+.mon-ivs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem 1rem;
+  font-size: 1.05rem;
+  color: $eb-text-muted;
+  opacity: 0.8;
+}
+
+// ── Sidebar (other players) ────────────────────────────────────────────────
+
+.emulator-sidebar {
+  flex: 0 0 20%;
+  max-width: 20%;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  border-left: 1px solid $eb-border;
+  background: $eb-surface;
+}
+
+.sidebar-player-card {
+  background: transparent;
+  border-bottom: 1px solid $eb-border;
+  overflow: hidden;
+}
+
+.sidebar-player-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.6rem 1rem;
+  border-bottom: 1px solid $eb-border;
+  gap: 0.8rem;
+}
+
+.sidebar-username {
+  font-size: 1.2rem;
+  font-weight: 600;
+  color: $eb-text;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sidebar-badges {
+  font-size: 1.1rem;
+  color: $eb-primary;
+  white-space: nowrap;
+}
+
+.sidebar-party {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  padding: 0.8rem;
+}
+
+.sidebar-mon {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+
+  &.fainted {
+    opacity: 0.4;
+  }
+}
+
+.sidebar-mon-name {
+  font-size: 1.1rem;
+  color: $eb-text;
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sidebar-mon-level {
+  font-size: 1rem;
+  color: $eb-text-muted;
+  white-space: nowrap;
+}
+
+.sidebar-hp-bar {
+  width: 5rem;
+  height: 5px;
+  background: $eb-border;
+  border-radius: 3px;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.sidebar-hp-fill {
+  height: 100%;
+  background: $eb-primary;
+  border-radius: 3px;
+}
+
+.sidebar-no-save {
+  font-size: 1.1rem;
+  color: $eb-text-muted;
+  padding: 0.8rem;
+  margin: 0;
+  text-align: center;
+}

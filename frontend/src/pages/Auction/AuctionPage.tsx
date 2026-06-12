@@ -676,6 +676,12 @@ const AuctionPage: React.FC = () => {
                           Submit Results
                         </button>
                       )}
+                      <button
+                        className="button"
+                        onClick={() => window.open(`/Emulator/${draft.draft_id}`, '_blank')}
+                      >
+                        Play Emulator
+                      </button>
                     </div>
                   </div>
                 ) : (

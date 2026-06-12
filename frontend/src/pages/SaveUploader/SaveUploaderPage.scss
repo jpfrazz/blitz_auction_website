@@ -1,0 +1,172 @@
+@import '../../shared/style/theme.scss';
+
+.save-uploader-page {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  background: $eb-bg;
+}
+
+.save-uploader-main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 4rem 1.5rem 3rem;
+}
+
+.save-uploader-title {
+  font-size: 2.8rem;
+  font-weight: 700;
+  color: $eb-text;
+  margin: 0 0 2rem;
+  text-align: center;
+}
+
+// ── Picker ─────────────────────────────────────────────────────────────────
+
+.save-uploader-picker {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  max-width: 560px;
+  width: 100%;
+  gap: 1.6rem;
+}
+
+.save-uploader-subtitle {
+  font-size: 1.4rem;
+  color: $eb-text-muted;
+  margin: 0;
+  line-height: 1.6;
+
+  a {
+    color: $eb-primary;
+    text-decoration: none;
+
+    &:hover {
+      text-decoration: underline;
+    }
+  }
+}
+
+.save-dropzone {
+  width: 100%;
+  border: 2px dashed $eb-border;
+  border-radius: 12px;
+  padding: 4rem 2rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+  cursor: pointer;
+  background: $eb-surface;
+  transition: border-color 0.2s, background 0.2s;
+  outline: none;
+
+  &:hover,
+  &:focus-visible {
+    border-color: $eb-primary;
+    background: color-mix(in srgb, $eb-surface, $eb-primary 6%);
+  }
+
+  &.dragging {
+    border-color: $eb-primary;
+    background: color-mix(in srgb, $eb-surface, $eb-primary 12%);
+  }
+}
+
+.save-dropzone-icon {
+  width: 5.6rem;
+  height: 5.6rem;
+  color: $eb-primary;
+  opacity: 0.85;
+}
+
+.save-dropzone-label {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: $eb-text;
+  margin: 0;
+}
+
+.save-dropzone-hint {
+  font-size: 1.2rem;
+  color: $eb-text-muted;
+  margin: 0;
+  letter-spacing: 0.04em;
+}
+
+.save-uploader-error {
+  font-size: 1.3rem;
+  color: $eb-danger;
+  margin: 0;
+}
+
+// ── Data view ──────────────────────────────────────────────────────────────
+
+.save-data-view {
+  width: 100%;
+  max-width: 900px;
+  display: flex;
+  flex-direction: column;
+  gap: 1.6rem;
+}
+
+.save-info-bar {
+  display: flex;
+  align-items: center;
+  gap: 1.2rem;
+  background: $eb-surface;
+  border: 1px solid $eb-border;
+  border-radius: 8px;
+  padding: 0.8rem 1.4rem;
+}
+
+.save-file-name {
+  font-size: 1.3rem;
+  color: $eb-text-muted;
+  font-family: 'Courier New', monospace;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex: 1;
+}
+
+.save-file-size {
+  font-size: 1.2rem;
+  color: $eb-text-muted;
+  white-space: nowrap;
+}
+
+.save-clear-btn {
+  background: transparent;
+  border: 1px solid $eb-border;
+  border-radius: 6px;
+  color: $eb-text-muted;
+  font-size: 1.2rem;
+  padding: 0.5rem 1.2rem;
+  cursor: pointer;
+  transition: border-color 0.15s, color 0.15s;
+  white-space: nowrap;
+
+  &:hover {
+    border-color: $eb-primary;
+    color: $eb-primary;
+  }
+}
+
+.save-parsed-placeholder {
+  background: $eb-surface;
+  border: 1px solid $eb-border;
+  border-radius: 8px;
+  padding: 3rem 2rem;
+  text-align: center;
+
+  p {
+    font-size: 1.4rem;
+    color: $eb-text-muted;
+    margin: 0;
+  }
+}
