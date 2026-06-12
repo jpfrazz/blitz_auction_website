@@ -14,6 +14,8 @@ const SECTION_DATA_SIZE = 3968; // 0xF80 bytes
 const ENCRYPTION_KEY_OFFSET = 0xAC; // In SaveBlock2 (Section 0)
 const MONEY_OFFSET = 0x4F0; // Money is at 0x4F0 in Section 1
 const VAR_BADGE_COUNT_OFFSET = 0x76A;
+const FLAGS_START_OFFSET = 0x63D; // Found via debug scanner
+const FLAG_BADGE08_GET = 0x867;
 const PARTY_COUNT_OFFSET = 0x234;
 const PARTY_START_OFFSET = 0x238;
 const POKEMON_STRUCT_SIZE = 116;
@@ -57,6 +59,7 @@ const SaveChecker: React.FC = () => {
   const [party, setParty] = useState<Pokemon[]>([]);
   const [money, setMoney] = useState<number | null>(null);
   const [badgeCount, setBadgeCount] = useState<number | null>(null);
+  const [isBadge8Get, setIsBadge8Get] = useState<boolean | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -227,6 +230,13 @@ const SaveChecker: React.FC = () => {
       const s2 = sectionOffsets[2];
       const badges = view.getUint16(s2 + VAR_BADGE_COUNT_OFFSET, true);
       setBadgeCount(badges);
+
+      // Extract Badge 8 Flag (FLAG_BADGE08_GET)
+      const flagsStart = s2 + FLAGS_START_OFFSET;
+      const byteIdx = FLAG_BADGE08_GET >> 3;
+      const bitMask = 1 << (FLAG_BADGE08_GET & 7);
+      const badge8Value = (data[flagsStart + byteIdx] & bitMask) !== 0;
+      setIsBadge8Get(badge8Value);
     } else {
       console.warn("Section 2 (Variables) not found in save slot.");
       setBadgeCount(0);
@@ -268,6 +278,12 @@ const SaveChecker: React.FC = () => {
                 <span className="stat-label">Badges</span>
                 <span className="stat-value">{badgeCount}</span>
               </div>
+              {isBadge8Get !== null && (
+                <div className="stat-item">
+                  <span className="stat-label">Badge 8 Defeated</span>
+                  <span className="stat-value">{isBadge8Get ? "Yes" : "No"}</span>
+                </div>
+              )}
             </div>
             </div>
           )}
