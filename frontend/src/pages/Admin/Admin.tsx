@@ -44,7 +44,7 @@ const Admin: React.FC = () => {
     fetchCurrentUser()
       .then((user) => {
         const roles = user.roles ?? [];
-        setHasRefereeRole(roles.some((role) => role.role_name === 'Referee') || user.username === 'franklynathan');
+        setHasRefereeRole(roles.some((role) => role.role_name === 'Referee') || user.username === 'franklynathan' || user.username === 'jage04' || user.username === 'Jason' || user.username === 'mfrazz');
       })
       .catch(() => setHasRefereeRole(false));
   }, []);

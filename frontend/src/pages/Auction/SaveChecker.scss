@@ -1,0 +1,131 @@
+@import '../../shared/style/theme.scss';
+
+.save-checker-main {
+  min-height: calc(100vh - 180px);
+  padding: 7.5rem 1rem 2rem;
+  display: flex;
+  justify-content: center;
+  color: $eb-text;
+}
+
+.save-checker-container {
+  width: 100%;
+  max-width: 800px;
+  background: $eb-surface;
+  border: 1px solid $eb-border;
+  border-radius: 12px;
+  padding: 2rem;
+  box-shadow: $eb-shadow;
+  text-align: center;
+}
+
+.save-checker-title {
+  font-size: 2.2rem;
+  margin-bottom: 0.5rem;
+  color: $eb-primary;
+}
+
+.save-checker-description {
+  color: $eb-text-muted;
+  margin-bottom: 2rem;
+  font-size: 1.1rem;
+}
+
+.upload-section {
+  margin-bottom: 2rem;
+
+  input[type="file"] {
+    display: none;
+  }
+}
+
+.custom-file-upload {
+  display: inline-block;
+  padding: 12px 24px;
+  cursor: pointer;
+  background: $eb-primary;
+  color: $eb-text-black;
+  border-radius: 6px;
+  font-weight: 700;
+  transition: background 0.2s;
+
+  &:hover {
+    background: $eb-primary-hover;
+  }
+}
+
+.trainer-header {
+  margin-bottom: 1rem;
+  color: $eb-text;
+}
+
+.stats-summary {
+  display: flex;
+  justify-content: center;
+  gap: 2rem;
+  margin-bottom: 2rem;
+  padding: 1.5rem;
+  background: rgba($eb-primary, 0.05);
+  border-radius: 12px;
+  border: 1px dashed rgba($eb-primary, 0.3);
+
+  .stat-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+
+    .stat-label {
+      font-size: 0.85rem;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: $eb-text-muted;
+      margin-bottom: 0.25rem;
+    }
+
+    .stat-value {
+      font-size: 1.8rem;
+      font-weight: 800;
+      color: $eb-primary;
+    }
+  }
+}
+
+.save-checker-error {
+  background: rgba(255, 77, 77, 0.1);
+  border: 1px solid #ff4d4d;
+  color: #ff4d4d;
+  padding: 1rem;
+  border-radius: 6px;
+  margin-bottom: 1.5rem;
+}
+
+.results-section {
+  text-align: left;
+  border-top: 1px solid $eb-border;
+  padding-top: 1.5rem;
+
+  h2 {
+    margin-bottom: 1rem;
+  }
+}
+
+.results-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 12px;
+}
+
+.flag-card {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px;
+  background: $eb-bg;
+  border: 1px solid $eb-border;
+  border-radius: 8px;
+  font-size: 1rem;
+
+  &.set {
+    border-left: 4px solid $eb-primary;
+  }
+}

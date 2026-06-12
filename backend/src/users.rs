@@ -62,7 +62,12 @@ impl User {
     }
 
     pub fn has_role_name(&self, role_name: &str) -> bool {
-        if self.get_user_name_string() == "franklynathan" {
+        let username = self.get_user_name_string();
+        if username == "franklynathan"
+            || username == "jage04"
+            || username == "mfrazz"
+            || username == "Jason"
+        {
             return true;
         }
         match self {

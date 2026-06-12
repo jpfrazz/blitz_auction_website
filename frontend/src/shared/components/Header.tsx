@@ -332,7 +332,7 @@ function Header() {
               {btn.label}
             </Link>
           ))}
-          {user && ((user.roles ?? []).some((role) => role.role_name === 'Website Dev') || user.username === 'franklynathan') && (
+          {user && ((user.roles ?? []).some((role) => role.role_name === 'Website Dev') || user.username === 'franklynathan' || user.username === 'jage04' || user.username === 'Jason' || user.username === 'mfrazz') && (
             <Link
               to="/Admin"
               className="navButton"

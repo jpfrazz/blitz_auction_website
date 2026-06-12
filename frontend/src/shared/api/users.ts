@@ -22,7 +22,7 @@ export interface LeaderboardEntry {
 const mockLeaderboardData: LeaderboardEntry[] = [
 	{
 		user_id: 'user-001',
-		username: 'FranklyNathan',
+		username: 'test',
 		win: 52,
 		loss: 18,
 		mmr: 1695,

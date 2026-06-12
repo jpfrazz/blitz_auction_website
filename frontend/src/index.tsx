@@ -17,6 +17,7 @@ import LeaderboardPage from './pages/LeaderboardPage';
 import Stats from './pages/Stats/Stats';
 import Admin from './pages/Admin/Admin';
 import SourceCodePage from './pages/SourceCodePage';
+import SaveChecker from './pages/Auction/SaveChecker';
 import ScrollToTop from './shared/components/ScrollToTop';
 
 const container = document.getElementById('root');
@@ -30,6 +31,7 @@ if (container) {
           <Route path="/" element={<Home />} />
           <Route path="/AuctionSetup" element={<AuctionSetup />} />
           <Route path="/Auction" element={<AuctionPage />} />
+          <Route path="/SaveChecker" element={<SaveChecker />} />
           <Route path="/LobbyViewer" element={<LobbyViewer />} />
           <Route path="/Leaderboard" element={<LeaderboardPage />} />
           <Route path="/Stats" element={<Stats />} />
