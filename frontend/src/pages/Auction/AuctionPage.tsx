@@ -40,6 +40,7 @@ const AuctionPage: React.FC = () => {
   const [pausingDraft, setPausingDraft] = useState(false);
   const [joiningDraft, setJoiningDraft] = useState(false);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  const [currentUsername, setCurrentUsername] = useState<string | null>(null);
   const [isGuest, setIsGuest] = useState(false);
   const [hasRefereeRole, setHasRefereeRole] = useState(false);
   const [showJoinModal, setShowJoinModal] = useState(false);
@@ -273,6 +274,7 @@ const AuctionPage: React.FC = () => {
         fetchCurrentUser()
           .then(user => {
             setCurrentUserId(user.user_id);
+            setCurrentUsername(user.username);
             setIsGuest(user.is_guest);
             setHasRefereeRole(
               (user.roles ?? []).some((role) => role.role_name === 'Referee' || role.role_name === 'Admin') ||
@@ -298,6 +300,7 @@ const AuctionPage: React.FC = () => {
     fetchCurrentUser()
       .then(user => {
         setCurrentUserId(user.user_id);
+        setCurrentUsername(user.username);
         setIsGuest(user.is_guest);
         setHasRefereeRole(
           (user.roles ?? []).some((role) => role.role_name === 'Referee' || role.role_name === 'Admin') ||
@@ -676,12 +679,14 @@ const AuctionPage: React.FC = () => {
                           Submit Results
                         </button>
                       )}
-                      <button
-                        className="button"
-                        onClick={() => window.open(`/Emulator/${draft.draft_id}`, '_blank')}
-                      >
-                        Play Emulator
-                      </button>
+                      {isLoggedIn && currentUsername === 'franklynathan' && (
+                        <button
+                          className="button"
+                          onClick={() => window.open(`/Emulator/${draft.draft_id}`, '_blank')}
+                        >
+                          Play Emulator
+                        </button>
+                      )}
                     </div>
                   </div>
                 ) : (

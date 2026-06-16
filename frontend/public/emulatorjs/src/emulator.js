@@ -207,7 +207,7 @@ class EmulatorJS {
         if (this.debug || (window.location && ["localhost", "127.0.0.1"].includes(location.hostname))) this.checkForUpdates();
         this.netplayEnabled = (window.EJS_DEBUG_XX === true) && (window.EJS_EXPERIMENTAL_NETPLAY === true);
         this.config = config;
-        this.config.buttonOpts = this.buildButtonOptions(this.config.buttonOpts);
+        this.config.buttonOpts = this.buildButtonOptions(this.config.buttonOpts || window.EJS_buttons);
         this.config.settingsLanguage = window.EJS_settingsLanguage || false;
         this.currentPopup = null;
         this.isFastForward = false;
@@ -1208,6 +1208,15 @@ class EmulatorJS {
             icon: "play",
             displayName: "Play/Pause"
         },
+        fastForward: {
+            visible: true,
+        },
+        slowMotion: {
+            visible: true,
+        },
+        rewind: {
+            visible: true,
+        },
         play: {
             visible: true,
             icon: '<svg viewBox="0 0 320 512"><path d="M361 215C375.3 223.8 384 239.3 384 256C384 272.7 375.3 288.2 361 296.1L73.03 472.1C58.21 482 39.66 482.4 24.52 473.9C9.377 465.4 0 449.4 0 432V80C0 62.64 9.377 46.63 24.52 38.13C39.66 29.64 58.21 29.99 73.03 39.04L361 215z"/></svg>',
@@ -1328,32 +1337,24 @@ class EmulatorJS {
         volume: "volumeSlider"
     };
     buildButtonOptions(buttonUserOpts) {
-        let mergedButtonOptions = this.defaultButtonOptions;
+        let mergedButtonOptions = JSON.parse(JSON.stringify(this.defaultButtonOptions));
 
         // merge buttonUserOpts with mergedButtonOptions
         if (buttonUserOpts) {
             for (const key in buttonUserOpts) {
-                let searchKey = key;
-                // If the key is an alias, find the actual key in the default buttons
-                if (this.defaultButtonAliases[key]) {
-                    // Use the alias to find the actual key
-                    // and update the searchKey to the actual key
-                    searchKey = this.defaultButtonAliases[key];
-                }
-
-                // prevent the contextMenu button from being overridden
-                if (searchKey === "contextMenu")
-                    continue;
+                let searchKey = this.defaultButtonAliases[key] || key;
 
                 // Check if the button exists in the default buttons, and update its properties
                 if (!mergedButtonOptions[searchKey]) {
-                    console.warn(`Button "${searchKey}" is not a valid button.`);
+                    if (typeof buttonUserOpts[key] !== "boolean") {
+                        // Potential custom button handling
+                    }
                     continue;
                 }
 
                 // if the value is a boolean, set the visible property to the value
-                if (typeof buttonUserOpts[searchKey] === "boolean") {
-                    mergedButtonOptions[searchKey].visible = buttonUserOpts[searchKey];
+                if (typeof buttonUserOpts[key] === "boolean") {
+                    mergedButtonOptions[searchKey].visible = buttonUserOpts[key];
                 } else if (typeof buttonUserOpts[searchKey] === "object") {
                     // If the value is an object, merge it with the default button properties
     
@@ -2275,7 +2276,7 @@ class EmulatorJS {
                 pauseButton.style.display = "none";
                 playButton.style.display = "none";
             }
-            if (this.config.buttonOpts.contextMenuButton === false && this.config.buttonOpts.rightClick !== false && this.isMobile === false) contextMenuButton.style.display = "none"
+            if (this.config.buttonOpts.contextMenu.visible === false) contextMenuButton.style.display = "none"
             if (this.config.buttonOpts.restart.visible === false) restartButton.style.display = "none"
             if (this.config.buttonOpts.settings.visible === false) settingButton[0].style.display = "none"
             if (this.config.buttonOpts.fullscreen.visible === false) {
@@ -2774,14 +2775,9 @@ class EmulatorJS {
                 }
             }
         }
-        buttons.push(
-            { id: 24, label: this.localization("QUICK SAVE STATE") },
-            { id: 25, label: this.localization("QUICK LOAD STATE") },
-            { id: 26, label: this.localization("CHANGE STATE SLOT") },
-            { id: 27, label: this.localization("FAST FORWARD") },
-            { id: 29, label: this.localization("SLOW MOTION") },
-            { id: 28, label: this.localization("REWIND") }
-        );
+        // Do not expose quick-save/load, state slot, or time-control
+        // options in the Control Settings UI — those controls are not
+        // relevant for custom control bindings.
         let nums = [];
         for (let i = 0; i < buttons.length; i++) {
             nums.push(buttons[i].id);
@@ -3724,6 +3720,15 @@ class EmulatorJS {
             info.push(...speedControlButtons);
         }
         for (let i = 0; i < info.length; i++) {
+            if (info[i].id === "speed_fast" && this.config.buttonOpts.fastForward.visible === false) {
+                info.splice(i, 1); i--; continue;
+            }
+            if (info[i].id === "speed_slow" && this.config.buttonOpts.slowMotion.visible === false) {
+                info.splice(i, 1); i--; continue;
+            }
+            if (info[i].id === "speed_rewind" && this.config.buttonOpts.rewind.visible === false) {
+                info.splice(i, 1); i--; continue;
+            }
             if (info[i].text) {
                 info[i].text = this.localization(info[i].text);
             }
