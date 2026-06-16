@@ -73,6 +73,7 @@ class KeyMoveRow(TypedDict):
     move_name: str
     learn_method: str
     species: str
+    display_order: int
 
 
 Rows = Iterable[DbRow]
@@ -133,7 +134,7 @@ def transform_row(
         evolves_from_form=to_optional_str(row["evolves_from_form"]),
         evolution_method=to_optional_str(row["evolution_method"]),
         mega=to_optional_str(row["mega"]),
-        obtain_method=row["obtain_method"].strip(),
+        obtain_method=to_optional_str(row["obtain_method"]),
         hp=to_int(row["hp"]),
         attack=to_int(row["attack"]),
         defense=to_int(row["defense"]),
@@ -150,6 +151,7 @@ def transform_key_move_row(row: Mapping[str, str]) -> KeyMoveRow:
         move_name=row.get("move_name", "").strip(),
         learn_method=row.get("learn_method", "").strip(),
         species=row.get("species", "").strip(),
+        display_order=to_int(row.get("display_order", "0")),
     )
 
 # ---------- SQL ----------
@@ -211,14 +213,16 @@ INSERT INTO key_moves (
     form,
     move_name,
     learn_method,
-    species
+    species,
+    display_order
 )
 VALUES (
     %(pokedex_id)s,
     %(form)s,
     %(move_name)s,
     %(learn_method)s,
-    %(species)s
+    %(species)s,
+    %(display_order)s
 )
 ON CONFLICT DO NOTHING;
 """

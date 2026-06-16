@@ -3,6 +3,36 @@ use serde::{Deserialize, Serialize};
 
 use crate::{auction, draft, users::User};
 
+/// Parsed save data sent by a player's emulator and stored in the teams table.
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct SaveIvs {
+    pub hp: u8,
+    pub atk: u8,
+    pub def: u8,
+    pub spa: u8,
+    pub spd: u8,
+    pub spe: u8,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct SavePokemon {
+    pub nickname: String,
+    pub level: u8,
+    pub hp: u16,
+    pub max_hp: u16,
+    pub species_id: u16,
+    pub nature: String,
+    pub ivs: SaveIvs,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct SaveData {
+    pub trainer_name: String,
+    pub money: u32,
+    pub badge_count: u16,
+    pub party: Vec<SavePokemon>,
+}
+
 #[derive(Clone, Debug, Serialize)]
 #[serde(tag = "type", content = "data")]
 pub enum ServerMessage {
@@ -20,6 +50,10 @@ pub enum ServerMessage {
     DraftEnded,
     DraftState(draft::DraftState),
     NewMessage(ChatMessage),
+    SaveUpdate {
+        user_id: String,
+        save_data: SaveData,
+    },
 }
 
 #[derive(Clone, Debug, Deserialize)]

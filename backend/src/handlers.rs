@@ -937,6 +937,54 @@ pub async fn bid(
     draft.bid(auction_id, bid_request.value, user).await
 }
 
+#[debug_handler]
+pub async fn post_player_save(
+    auth_session: AuthSession<AuthBackend>,
+    Path(draft_id): Path<String>,
+    State(state): State<ServerState>,
+    Json(save_data): Json<crate::messages::SaveData>,
+) -> Result<(), AppError> {
+    let Some(user) = auth_session.user else {
+        return Err((StatusCode::FORBIDDEN, "user is not logged in".to_string()));
+    };
+    let Ok(draft_uuid) = Uuid::from_str(&draft_id) else {
+        return Err((
+            StatusCode::BAD_REQUEST,
+            "invalid draft id".to_string(),
+        ));
+    };
+
+    let user_id = user.get_user_id_string();
+    let (user_db_id, guest_db_id) = user.get_user_and_guest_id();
+
+    // Persist to the teams table
+    let json_value = serde_json::to_value(&save_data).map_err(|e| {
+        (StatusCode::INTERNAL_SERVER_ERROR, format!("failed to serialize save data: {}", e))
+    })?;
+    sqlx::query(
+        "UPDATE teams SET save_data = $1, updated_at = now()
+         WHERE draft_id = $2
+           AND (user_id = $3 OR guest_id = $4)"
+    )
+    .bind(&json_value)
+    .bind(draft_uuid)
+    .bind(&user_db_id)
+    .bind(&guest_db_id)
+    .execute(&state.db_pool)
+    .await
+    .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, format!("db error: {}", e)))?;
+
+    // Broadcast to all WebSocket subscribers so other players update live
+    if let Some(draft) = state.drafts.get(&draft_uuid) {
+        let _ = draft.broadcast_tx.send(crate::messages::ServerMessage::SaveUpdate {
+            user_id: user_id.clone(),
+            save_data,
+        });
+    }
+
+    Ok(())
+}
+
 pub async fn start_draft(
     auth_session: AuthSession<AuthBackend>,
     Path(draft_id): Path<String>,
