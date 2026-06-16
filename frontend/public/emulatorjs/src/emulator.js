@@ -3078,15 +3078,15 @@ class EmulatorJS {
         this.defaultControllers = {
             0: {
                 0: {
-                    "value": "x",
+                    "value": "k",
                     "value2": "BUTTON_2"
                 },
                 1: {
-                    "value": "s",
+                    "value": "",
                     "value2": "BUTTON_4"
                 },
                 2: {
-                    "value": "v",
+                    "value": "l",
                     "value2": "SELECT"
                 },
                 3: {
@@ -3094,27 +3094,27 @@ class EmulatorJS {
                     "value2": "START"
                 },
                 4: {
-                    "value": "up arrow",
+                    "value": "w",
                     "value2": "DPAD_UP"
                 },
                 5: {
-                    "value": "down arrow",
+                    "value": "s",
                     "value2": "DPAD_DOWN"
                 },
                 6: {
-                    "value": "left arrow",
+                    "value": "a",
                     "value2": "DPAD_LEFT"
                 },
                 7: {
-                    "value": "right arrow",
+                    "value": "d",
                     "value2": "DPAD_RIGHT"
                 },
                 8: {
-                    "value": "z",
+                    "value": "j",
                     "value2": "BUTTON_1"
                 },
                 9: {
-                    "value": "a",
+                    "value": "",
                     "value2": "BUTTON_3"
                 },
                 10: {

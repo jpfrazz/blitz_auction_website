@@ -54,9 +54,15 @@ interface Pokemon {
   };
 }
 
+interface BoxPokemon {
+  nickname: string;
+  speciesId: number;
+}
+
 const SaveChecker: React.FC = () => {
   const [trainerName, setTrainerName] = useState<string | null>(null);
   const [party, setParty] = useState<Pokemon[]>([]);
+  const [box1, setBox1] = useState<BoxPokemon[]>([]);
   const [money, setMoney] = useState<number | null>(null);
   const [badgeCount, setBadgeCount] = useState<number | null>(null);
   const [isBadge8Get, setIsBadge8Get] = useState<boolean | null>(null);
@@ -242,6 +248,37 @@ const SaveChecker: React.FC = () => {
       setBadgeCount(0);
     }
 
+    // Extract Box 1 (Section 5)
+    const extractedBox1: BoxPokemon[] = [];
+    if (sectionOffsets[5] !== undefined) {
+      const s5 = sectionOffsets[5];
+      const BOX_START_OFFSET = 4; // currentBox variable is 4 bytes
+      const BOX_POKEMON_SIZE = 96; // 32 (header) + 4 * 16 (data blocks)
+
+      for (let i = 0; i < 30; i++) {
+        const pStart = s5 + BOX_START_OFFSET + (i * BOX_POKEMON_SIZE);
+        
+        const personality = view.getUint32(pStart, true);
+        const otId = view.getUint32(pStart + 4, true);
+        const key = (personality ^ otId) >>> 0;
+        const order = SUBSTRUCTURE_ORDERS[personality % 24];
+        
+        const growthIdx = order.indexOf('G');
+        const growthOffset = pStart + 32 + (growthIdx * SUBSTRUCTURE_SIZE);
+        const encryptedSpecies = view.getUint16(growthOffset, true);
+        const speciesId = (encryptedSpecies ^ (key & 0xFFFF)) & 0xFFFF;
+
+        if (speciesId > 0 && speciesId < 0xFFFF) {
+          const nickname = decodeString(data.slice(pStart + 8, pStart + 18));
+          extractedBox1.push({
+            nickname: nickname || (speciesId === 412 ? "Egg" : `Species ${speciesId}`),
+            speciesId
+          });
+        }
+      }
+    }
+    setBox1(extractedBox1);
+
     setError(null);
   };
 
@@ -310,6 +347,21 @@ const SaveChecker: React.FC = () => {
                       <span>SPA: {mon.ivs.spa}</span>
                       <span>SPD: {mon.ivs.spd}</span>
                       <span>SPE: {mon.ivs.spe}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {box1.length > 0 && (
+            <div className="party-section">
+              <h2>Box 1</h2>
+              <div className="party-grid">
+                {box1.map((mon, i) => (
+                  <div key={i} className="pokemon-card">
+                    <div className="mon-info">
+                      <span className="mon-name">{mon.nickname}</span>
                     </div>
                   </div>
                 ))}

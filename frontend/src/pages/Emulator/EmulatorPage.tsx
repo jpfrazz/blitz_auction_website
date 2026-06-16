@@ -278,7 +278,7 @@ const EmulatorPage: React.FC = () => {
 
     // Intercept keyboard shortcuts for saving/loading (keys 1, 2, 3) and pause (Space)
     const blockShortcuts = (e: KeyboardEvent) => {
-      if (['1', '2', '3', ' '].includes(e.key)) {
+      if (['1', '2', '3', ' ', 'Fn', 'Function'].includes(e.key)) {
         e.stopImmediatePropagation();
       }
     };
