@@ -13,7 +13,7 @@ const SIGNATURE = 0x08012025;
 const SECTION_DATA_SIZE = 3968; // 0xF80 bytes
 const ENCRYPTION_KEY_OFFSET = 0xAC; // In SaveBlock2 (Section 0)
 const MONEY_OFFSET = 0x4F0; // Money is at 0x4F0 in Section 1
-const VAR_BADGE_COUNT_OFFSET = 0x76A;
+const VAR_BADGE_COUNT_OFFSET = 0x8D8;
 const FLAGS_START_OFFSET = 0x63D; // Found via debug scanner
 const FLAG_BADGE08_GET = 0x867;
 const PARTY_COUNT_OFFSET = 0x234;
@@ -34,6 +34,34 @@ const NATURES = [
   "Timid", "Hasty", "Serious", "Jolly", "Naive", "Modest", "Mild", "Quiet", "Rash", "Calm",
   "Gentle", "Sassy", "Careful", "Quirky", "Bashful"
 ];
+
+const NATURE_EFFECTS: Record<string, string> = {
+  "Hardy": "",
+  "Lonely": " (+Atk -Def)",
+  "Brave": " (+Atk -Spe)",
+  "Adamant": " (+Atk -SpAtk)",
+  "Naughty": " (+Atk -SpDef)",
+  "Bold": " (+Def -Atk)",
+  "Docile": "",
+  "Relaxed": " (+Def -Spe)",
+  "Impish": " (+Def -SpAtk)",
+  "Lax": " (+Def -SpDef)",
+  "Timid": " (+Spe -Atk)",
+  "Hasty": " (+Spe -Def)",
+  "Serious": "",
+  "Jolly": " (+Spe -SpAtk)",
+  "Naive": " (+Spe -SpDef)",
+  "Modest": " (+SpAtk -Atk)",
+  "Mild": " (+SpAtk -Def)",
+  "Quiet": " (+SpAtk -Spe)",
+  "Rash": " (+SpAtk -SpDef)",
+  "Calm": " (+SpDef -Atk)",
+  "Gentle": " (+SpDef -Def)",
+  "Sassy": " (+SpDef -Spe)",
+  "Careful": " (+SpDef -SpAtk)",
+  "Quirky": "",
+  "Bashful": ""
+};
 
 const SPECIES_NAMES: { [key: number]: string } = {};
 
@@ -57,6 +85,15 @@ interface Pokemon {
 interface BoxPokemon {
   nickname: string;
   speciesId: number;
+  nature: string;
+  ivs: {
+    hp: number;
+    atk: number;
+    def: number;
+    spa: number;
+    spd: number;
+    spe: number;
+  };
 }
 
 const SaveChecker: React.FC = () => {
@@ -92,6 +129,9 @@ const SaveChecker: React.FC = () => {
       const b = bytes[i];
       if (b === 0xFF) break; // End of string
       if (b === 0x00) result += " ";
+      else if (b === 0x1B) result += "é";
+      else if (b === 0xAD) result += ".";
+      else if (b === 0xAE) result += "-";
       else if (b >= 0xBB && b <= 0xD4) result += String.fromCharCode(b - 0xBB + 65); // A-Z
       else if (b >= 0xD5 && b <= 0xEE) result += String.fromCharCode(b - 0xD5 + 97); // a-z
       else if (b >= 0xA1 && b <= 0xAA) result += String.fromCharCode(b - 0xA1 + 48); // 0-9
@@ -108,7 +148,10 @@ const SaveChecker: React.FC = () => {
       let validCount = 0;
       let maxSeq = 0;
 
-      for (let i = 0; i < 32; i++) { // Emerald Blitz may use more than 14 sections
+      // Limit the scan to NUM_SECTIONS to prevent one slot candidate 
+      // from "bleeding" into the other rotating save slot in the 128KB flash.
+      // Standard Emerald uses 14 sections per slot.
+      for (let i = 0; i < NUM_SECTIONS; i++) {
         const offset = slotOffset + i * SECTION_SIZE;
         if (offset + SECTION_SIZE > data.length) break;
 
@@ -234,6 +277,7 @@ const SaveChecker: React.FC = () => {
     // 4. Extract Badge Count Variable from Section 2
     if (sectionOffsets[2] !== undefined) {
       const s2 = sectionOffsets[2];
+
       const badges = view.getUint16(s2 + VAR_BADGE_COUNT_OFFSET, true);
       setBadgeCount(badges);
 
@@ -268,11 +312,26 @@ const SaveChecker: React.FC = () => {
         const encryptedSpecies = view.getUint16(growthOffset, true);
         const speciesId = (encryptedSpecies ^ (key & 0xFFFF)) & 0xFFFF;
 
+        // Get IVs from Miscellaneous Block
+        const miscIdx = order.indexOf('M');
+        const miscOffset = pStart + 32 + (miscIdx * SUBSTRUCTURE_SIZE);
+        const decryptedMisc = (view.getUint32(miscOffset + 4, true) ^ key) >>> 0;
+        const ivs = {
+          hp: decryptedMisc & 0x1F,
+          atk: (decryptedMisc >> 5) & 0x1F,
+          def: (decryptedMisc >> 10) & 0x1F,
+          spe: (decryptedMisc >> 15) & 0x1F,
+          spa: (decryptedMisc >> 20) & 0x1F,
+          spd: (decryptedMisc >> 25) & 0x1F,
+        };
+
         if (speciesId > 0 && speciesId < 0xFFFF) {
           const nickname = decodeString(data.slice(pStart + 8, pStart + 18));
           extractedBox1.push({
             nickname: nickname || (speciesId === 412 ? "Egg" : `Species ${speciesId}`),
-            speciesId
+            speciesId,
+            nature: NATURES[personality % 25],
+            ivs
           });
         }
       }
@@ -335,19 +394,21 @@ const SaveChecker: React.FC = () => {
                       <span className="mon-name">{mon.nickname} </span>
                       <span className="mon-level">Lv. {mon.level}</span>
                     </div>
-                    <div className="mon-nature">{mon.nature} Nature</div>
+                    <div className="mon-nature">{mon.nature} Nature{NATURE_EFFECTS[mon.nature]}</div>
                     <div className="hp-bar-container">
                       <div className="hp-bar-fill" style={{ width: `${(mon.hp / mon.maxHp) * 100}%` }}></div>
                     </div>
                     <div className="hp-text">{mon.hp} / {mon.maxHp} HP</div>
-                    <div className="iv-grid" style={{ display: 'flex', flexWrap: 'wrap', gap: '8px 16px', fontSize: '0.85rem', marginTop: '8px', opacity: 0.8 }}>
-                      <span>HP: {mon.ivs.hp}</span>
-                      <span>ATK: {mon.ivs.atk}</span>
-                      <span>DEF: {mon.ivs.def}</span>
-                      <span>SPA: {mon.ivs.spa}</span>
-                      <span>SPD: {mon.ivs.spd}</span>
-                      <span>SPE: {mon.ivs.spe}</span>
-                    </div>
+                    {mon.ivs && (
+                      <div className="iv-grid" style={{ display: 'flex', flexWrap: 'wrap', gap: '8px 16px', fontSize: '0.85rem', marginTop: '8px', opacity: 0.8 }}>
+                        <span style={{ color: mon.ivs.hp > 24 ? '#4ade80' : mon.ivs.hp < 8 ? '#f87171' : 'inherit', fontWeight: mon.ivs.hp > 24 ? '600' : 'normal' }}>HP: {mon.ivs.hp}</span>
+                        <span style={{ color: mon.ivs.atk > 24 ? '#4ade80' : mon.ivs.atk < 8 ? '#f87171' : 'inherit', fontWeight: mon.ivs.atk > 24 ? '600' : 'normal' }}>ATK: {mon.ivs.atk}</span>
+                        <span style={{ color: mon.ivs.def > 24 ? '#4ade80' : mon.ivs.def < 8 ? '#f87171' : 'inherit', fontWeight: mon.ivs.def > 24 ? '600' : 'normal' }}>DEF: {mon.ivs.def}</span>
+                        <span style={{ color: mon.ivs.spa > 24 ? '#4ade80' : mon.ivs.spa < 8 ? '#f87171' : 'inherit', fontWeight: mon.ivs.spa > 24 ? '600' : 'normal' }}>SPA: {mon.ivs.spa}</span>
+                        <span style={{ color: mon.ivs.spd > 24 ? '#4ade80' : mon.ivs.spd < 8 ? '#f87171' : 'inherit', fontWeight: mon.ivs.spd > 24 ? '600' : 'normal' }}>SPD: {mon.ivs.spd}</span>
+                        <span style={{ color: mon.ivs.spe > 24 ? '#4ade80' : mon.ivs.spe < 8 ? '#f87171' : 'inherit', fontWeight: mon.ivs.spe > 24 ? '600' : 'normal' }}>SPE: {mon.ivs.spe}</span>
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>
@@ -361,8 +422,19 @@ const SaveChecker: React.FC = () => {
                 {box1.map((mon, i) => (
                   <div key={i} className="pokemon-card">
                     <div className="mon-info">
-                      <span className="mon-name">{mon.nickname}</span>
+                      <span className="mon-name">{mon.nickname} </span>
                     </div>
+                    <div className="mon-nature">{mon.nature} Nature{NATURE_EFFECTS[mon.nature]}</div>
+                    {mon.ivs && (
+                      <div className="iv-grid" style={{ display: 'flex', flexWrap: 'wrap', gap: '8px 16px', fontSize: '0.85rem', marginTop: '8px', opacity: 0.8 }}>
+                        <span style={{ color: mon.ivs.hp > 24 ? '#4ade80' : mon.ivs.hp < 8 ? '#f87171' : 'inherit', fontWeight: mon.ivs.hp > 24 ? '600' : 'normal' }}>HP: {mon.ivs.hp}</span>
+                        <span style={{ color: mon.ivs.atk > 24 ? '#4ade80' : mon.ivs.atk < 8 ? '#f87171' : 'inherit', fontWeight: mon.ivs.atk > 24 ? '600' : 'normal' }}>ATK: {mon.ivs.atk}</span>
+                        <span style={{ color: mon.ivs.def > 24 ? '#4ade80' : mon.ivs.def < 8 ? '#f87171' : 'inherit', fontWeight: mon.ivs.def > 24 ? '600' : 'normal' }}>DEF: {mon.ivs.def}</span>
+                        <span style={{ color: mon.ivs.spa > 24 ? '#4ade80' : mon.ivs.spa < 8 ? '#f87171' : 'inherit', fontWeight: mon.ivs.spa > 24 ? '600' : 'normal' }}>SPA: {mon.ivs.spa}</span>
+                        <span style={{ color: mon.ivs.spd > 24 ? '#4ade80' : mon.ivs.spd < 8 ? '#f87171' : 'inherit', fontWeight: mon.ivs.spd > 24 ? '600' : 'normal' }}>SPD: {mon.ivs.spd}</span>
+                        <span style={{ color: mon.ivs.spe > 24 ? '#4ade80' : mon.ivs.spe < 8 ? '#f87171' : 'inherit', fontWeight: mon.ivs.spe > 24 ? '600' : 'normal' }}>SPE: {mon.ivs.spe}</span>
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>

@@ -82,6 +82,8 @@
     config.gameUrl = window.EJS_gameUrl;
     config.dataPath = scriptPath;
     config.system = window.EJS_core;
+    config.stopOnUnfocused = window.EJS_stopOnUnfocused;
+    config.pauseOnBlur = window.EJS_pauseOnBlur;
     config.biosUrl = window.EJS_biosUrl;
     config.gameName = window.EJS_gameName;
     config.color = window.EJS_color;

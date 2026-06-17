@@ -1,10 +1,45 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import Header from '../../shared/components/Header';
-import Footer from '../../shared/components/Footer';
 import { parseSaveFile, SaveData } from '../../utils/parseSaveFile';
-import { fetchCurrentUser } from '../../shared/api/draftData';
+import { fetchCurrentUser, fetchDraftById } from '../../shared/api/draftData';
+import { fetchPokemonList } from '../../shared/api/pokemon';
 import './EmulatorPage.scss';
+
+const getIconName = (name: string) => {
+  if (!name || name === '???') return 'egg';
+  const n = name.toLowerCase();
+  if (n.startsWith('egg')) return 'egg';
+  return n.replace(/é/g, 'e').replace(/[^a-z0-9]/g, '');
+};
+
+const NATURE_EFFECTS: Record<string, string> = {
+  "Hardy": "",
+  "Lonely": " (+Atk -Def)",
+  "Brave": " (+Atk -Spe)",
+  "Adamant": " (+Atk -SpAtk)",
+  "Naughty": " (+Atk -SpDef)",
+  "Bold": " (+Def -Atk)",
+  "Docile": "",
+  "Relaxed": " (+Def -Spe)",
+  "Impish": " (+Def -SpAtk)",
+  "Lax": " (+Def -SpDef)",
+  "Timid": " (+Spe -Atk)",
+  "Hasty": " (+Spe -Def)",
+  "Serious": "",
+  "Jolly": " (+Spe -SpAtk)",
+  "Naive": " (+Spe -SpDef)",
+  "Modest": " (+SpAtk -Atk)",
+  "Mild": " (+SpAtk -Def)",
+  "Quiet": " (+SpAtk -Spe)",
+  "Rash": " (+SpAtk -SpDef)",
+  "Calm": " (+SpDef -Atk)",
+  "Gentle": " (+SpDef -Def)",
+  "Sassy": " (+SpDef -Spe)",
+  "Careful": " (+SpDef -SpAtk)",
+  "Quirky": "",
+  "Bashful": ""
+};
 
 declare global {
   interface Window {
@@ -13,6 +48,8 @@ declare global {
     EJS_gameUrl: string;
     EJS_pathtodata: string;
     EJS_startOnLoaded: boolean;
+    EJS_stopOnUnfocused: boolean;
+    EJS_pauseOnBlur: boolean;
     EJS_language: string;
     EJS_ready: (() => void) | undefined;
     EJS_onGameStart: (() => void) | undefined;
@@ -111,6 +148,10 @@ const EmulatorPage: React.FC = () => {
 
   // Other players in the draft (populated via WebSocket)
   const [otherSaves, setOtherSaves] = useState<OtherPlayerSaves>({});
+  const [pokemonNameById, setPokemonNameById] = useState<Record<number, string>>({});
+
+  // Persist fainted state via Personality ID (User ID -> Set of PIDs)
+  const [faintedPids, setFaintedPids] = useState<Record<string, Set<number>>>({});
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const objectUrlRef = useRef<string | null>(null);
@@ -127,6 +168,44 @@ const EmulatorPage: React.FC = () => {
       if (u.user_id) setCurrentUserId(u.user_id);
     }).catch(() => {});
   }, []);
+
+  useEffect(() => {
+    if (!draftId) return;
+    let cancelled = false;
+    fetchDraftById(draftId)
+      .then((draft) => {
+        if (cancelled) return;
+        setOtherSaves((prev) => {
+          const next = { ...prev };
+          for (const team of draft.teams) {
+            next[team.user_id] = {
+              displayName: team.global_name?.trim() || team.username,
+              save: prev[team.user_id]?.save ?? null,
+            };
+          }
+          return next;
+        });
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, [draftId]);
+
+  // Load pokemon list to map species_id -> name for MiniIcons
+  useEffect(() => {
+    let cancelled = false;
+    fetchPokemonList().then((list) => {
+      if (cancelled) return;
+      const map: Record<number, string> = {};
+      for (const p of list) {
+        const id = (p.pokedex_id ?? p.id) as number;
+        if (id) map[id] = (p.name || '').toString().toLowerCase();
+      }
+      setPokemonNameById(map);
+    }).catch(() => {});
+    return () => { cancelled = true; };
+  }, []);
   useEffect(() => {
     if (!draftId) return;
 
@@ -137,8 +216,8 @@ const EmulatorPage: React.FC = () => {
     ws.onmessage = (event) => {
       try {
         const msg = JSON.parse(event.data as string);
-        if (msg.type === 'SaveUpdate') {
-          const { user_id, save_data } = msg.data as { user_id: string; save_data: SaveData };
+          if (msg.type === 'SaveUpdate') {
+            const { user_id, save_data } = msg.data as { user_id: string; save_data: SaveData };
           setOtherSaves((prev) => ({
             ...prev,
             [user_id]: { displayName: prev[user_id]?.displayName ?? user_id, save: save_data },
@@ -173,6 +252,35 @@ const EmulatorPage: React.FC = () => {
       wsRef.current = null;
     };
   }, [draftId]);
+
+  // Track which Personalities have hit 0 HP to keep them fainted in the box
+  useEffect(() => {
+    const newFainted: Record<string, Set<number>> = { ...faintedPids };
+    let changed = false;
+
+    const processSave = (uid: string, data: SaveData | null) => {
+      if (!data?.party) return;
+      if (!newFainted[uid]) newFainted[uid] = new Set();
+      data.party.forEach(mon => {
+        if (mon.hp === 0 && !newFainted[uid].has(mon.personality)) {
+          newFainted[uid].add(mon.personality);
+          changed = true;
+        }
+      });
+    };
+
+    if (currentUserId) processSave(currentUserId, mySaveData);
+    Object.entries(otherSaves).forEach(([uid, entry]) => processSave(uid, entry.save));
+
+    if (changed) setFaintedPids(newFainted);
+  }, [mySaveData, otherSaves, currentUserId]);
+
+  const isMonFainted = (uid: string, mon: any) => {
+    if (mon.hp === 0) return true;
+    const deadSet = faintedPids[uid];
+    if (deadSet && deadSet.has(mon.personality)) return true;
+    return false;
+  };
 
   // ── Save bytes handler: parse + POST to backend ──────────────────────────
   onRawSaveBytesRef.current = (bytes: Uint8Array) => {
@@ -234,35 +342,29 @@ const EmulatorPage: React.FC = () => {
     } catch (err) {
       console.error('Patching error:', err);
       setError('Failed to apply Blitz patch. Please ensure you are using a clean Emerald ROM.');
-    } finally {
-      setIsPatching(false);
     }
   }, []);
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) loadRom(file);
-    // Reset so the same file can be re-selected after a page reload
-    e.target.value = '';
-  };
-
-  const handleDrop = useCallback((e: React.DragEvent<HTMLDivElement>) => {
-    e.preventDefault();
-    setIsDragging(false);
-    const file = e.dataTransfer.files[0];
-    if (file) loadRom(file);
-  }, [loadRom]);
-
-  const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
+  // Drag & drop / file input handlers
+  const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault();
     setIsDragging(true);
   };
-
-  const handleDragLeave = (e: React.DragEvent<HTMLDivElement>) => {
-    // Only clear if leaving the dropzone entirely, not a child element
-    if (!e.currentTarget.contains(e.relatedTarget as Node)) {
-      setIsDragging(false);
-    }
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(false);
+  };
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(false);
+    const f = e.dataTransfer?.files?.[0];
+    if (f) loadRom(f);
+  };
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const f = e.target.files?.[0];
+    if (f) loadRom(f);
+    // reset input so same file can be selected again
+    if (e.currentTarget) e.currentTarget.value = '';
   };
 
   // ── EmulatorJS bootstrap ────────────────────────────────────────────────────
@@ -302,6 +404,8 @@ const EmulatorPage: React.FC = () => {
     window.EJS_gameUrl = romUrl;
     window.EJS_pathtodata = '/emulatorjs/';
     window.EJS_startOnLoaded = true;
+    window.EJS_stopOnUnfocused = false;
+    window.EJS_pauseOnBlur = false;
     window.EJS_language = 'en-US';
     // Emulator loader expects `window.EJS_Buttons` (capital B).
     // Keep `EJS_buttons` for backward compatibility.
@@ -348,10 +452,14 @@ const EmulatorPage: React.FC = () => {
 
     // Start the 30-second auto-sync once the game is actually running.
     // Calling saveSaveFiles() before the game starts can throw, so we wait
-    // for the "start" event before scheduling the interval.
+    // for the "start" event before scheduling the interval. 
+    // We use a "double-tap" save to fix mgba core buffer lag.
     window.EJS_onGameStart = () => {
       syncIntervalRef.current = setInterval(() => {
         window.EJS_emulator?.gameManager?.saveSaveFiles();
+        setTimeout(() => {
+          window.EJS_emulator?.gameManager?.saveSaveFiles();
+        }, 200);
       }, 10_000);
     };
 
@@ -405,6 +513,17 @@ const EmulatorPage: React.FC = () => {
     .filter(([uid]) => uid !== currentUserId)
     .slice(0, 9);
   const hasSidebar = draftId !== undefined;
+
+  // Sorting helper: Active -> Boxed -> Fainted (at end)
+  const sortPokemon = (uid: string, mons: any[]) => {
+    return [...mons].sort((a, b) => {
+      const aFainted = isMonFainted(uid, a);
+      const bFainted = isMonFainted(uid, b);
+      if (aFainted !== bFainted) return aFainted ? 1 : -1;
+      if (a._isParty !== b._isParty) return a._isParty ? -1 : 1;
+      return 0;
+    });
+  };
 
   return (
     <div className="emulator-page">
@@ -489,32 +608,44 @@ const EmulatorPage: React.FC = () => {
                     )}
                   </div>
                   <div className="save-party-grid">
-                    {mySaveData.party.map((mon, i) => (
-                      <div key={i} className={`save-mon-card${mon.hp === 0 ? ' fainted' : ''}`}>
-                        <div className="mon-name-row">
-                          <span className="mon-name">{mon.nickname}</span>
-                          <span className="mon-level">Lv. {mon.level}</span>
+                    {sortPokemon(currentUserId || 'me', [
+                      ...(mySaveData.party ?? []).map((m: any) => ({ ...m, _isParty: true })),
+                      ...(mySaveData.box ?? []).map((m: any) => ({ ...m, _isParty: false })),
+                    ]).map((mon: any, i: number) => {
+                      const speciesId = mon.species_id ?? mon.speciesId;
+                      const name = pokemonNameById[speciesId] || mon.nickname || '???';
+                      const iconName = getIconName(name);
+                      const fainted = isMonFainted(currentUserId || 'me', mon);
+
+                      return (
+                        <div key={`combined-${i}`} className={`save-mon-card${fainted ? ' fainted' : ''}`}>
+                          <div className="mon-name-row">
+                            <span className="mon-name" style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                              {mon.nickname}
+                              <img
+                                src={`/MiniIcons/${iconName}.png`}
+                                alt=""
+                                style={{ width: '24px', height: '24px', imageRendering: 'pixelated' }}
+                                onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+                              />
+                            </span>
+                            {mon._isParty && <span className="mon-level">Lv. {mon.level}</span>}
+                          </div>
+                          {mon.nature && <div className="mon-nature">{mon.nature}{NATURE_EFFECTS[mon.nature]}</div>}
+                          {mon.ivs && (
+                            <div className="mon-ivs" style={{ display: 'flex', flexWrap: 'wrap', gap: '4px 12px', fontSize: '0.8rem', marginTop: '4px', opacity: 0.8 }}>
+                              <span style={{ color: mon.ivs.hp > 24 ? '#4ade80' : mon.ivs.hp < 8 ? '#f87171' : 'inherit', fontWeight: mon.ivs.hp > 24 ? '600' : 'normal' }}>HP: {mon.ivs.hp}</span>
+                              <span style={{ color: mon.ivs.atk > 24 ? '#4ade80' : mon.ivs.atk < 8 ? '#f87171' : 'inherit', fontWeight: mon.ivs.atk > 24 ? '600' : 'normal' }}>ATK: {mon.ivs.atk}</span>
+                              <span style={{ color: mon.ivs.def > 24 ? '#4ade80' : mon.ivs.def < 8 ? '#f87171' : 'inherit', fontWeight: mon.ivs.def > 24 ? '600' : 'normal' }}>DEF: {mon.ivs.def}</span>
+                              <span style={{ color: mon.ivs.spa > 24 ? '#4ade80' : mon.ivs.spa < 8 ? '#f87171' : 'inherit', fontWeight: mon.ivs.spa > 24 ? '600' : 'normal' }}>SPA: {mon.ivs.spa}</span>
+                              <span style={{ color: mon.ivs.spd > 24 ? '#4ade80' : mon.ivs.spd < 8 ? '#f87171' : 'inherit', fontWeight: mon.ivs.spd > 24 ? '600' : 'normal' }}>SPD: {mon.ivs.spd}</span>
+                              <span style={{ color: mon.ivs.spe > 24 ? '#4ade80' : mon.ivs.spe < 8 ? '#f87171' : 'inherit', fontWeight: mon.ivs.spe > 24 ? '600' : 'normal' }}>SPE: {mon.ivs.spe}</span>
+                            </div>
+                          )}
                         </div>
-                        <div className="mon-nature">{mon.nature}</div>
-                        <div className="mon-hp-bar">
-                          <div
-                            className="mon-hp-fill"
-                            style={{ width: `${(mon.hp / mon.max_hp) * 100}%` }}
-                          />
-                        </div>
-                        <div className="mon-hp-text">{mon.hp} / {mon.max_hp} HP</div>
-                        <div className="mon-ivs">
-                          <span>HP {mon.ivs.hp}</span>
-                          <span>ATK {mon.ivs.atk}</span>
-                          <span>DEF {mon.ivs.def}</span>
-                          <span>SPA {mon.ivs.spa}</span>
-                          <span>SPD {mon.ivs.spd}</span>
-                          <span>SPE {mon.ivs.spe}</span>
-                        </div>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
-                  {/* ── Parser output panels go here ── */}
                 </div>
               )}
             </div>
@@ -526,25 +657,32 @@ const EmulatorPage: React.FC = () => {
                   <div key={uid} className="sidebar-player-card">
                     <div className="sidebar-player-header">
                       <span className="sidebar-username">{displayName}</span>
-                      <span className="sidebar-badges">{save?.badge_count ?? '—'} badges</span>
+                      <span className="sidebar-badges">
+                        {save ? `${save.badge_count} ${save.badge_count === 1 ? 'badge' : 'badges'}` : '— badges'}
+                      </span>
                     </div>
                     {save ? (
-                      <div className="sidebar-party">
-                        {save.party.map((mon, i) => (
-                          <div
-                            key={i}
-                            className={`sidebar-mon${mon.hp === 0 ? ' fainted' : ''}`}
-                          >
-                            <span className="sidebar-mon-name">{mon.nickname}</span>
-                            <span className="sidebar-mon-level">Lv.{mon.level}</span>
-                            <div className="sidebar-hp-bar">
-                              <div
-                                className="sidebar-hp-fill"
-                                style={{ width: `${(mon.hp / mon.max_hp) * 100}%` }}
-                              />
-                            </div>
-                          </div>
-                        ))}
+                      <div className="sidebar-mon-icons">
+                        {sortPokemon(uid, [
+                          ...(save.party ?? []).map((m: any) => ({ ...m, _isParty: true })),
+                          ...(save.box ?? []).map((m: any) => ({ ...m, _isParty: false })),
+                        ]).map((mon: any, i: number) => {
+                          const speciesId = mon.species_id ?? mon.speciesId;
+                          const name = pokemonNameById[speciesId] || mon.nickname || '???';
+                          const iconName = getIconName(name);
+                          const fainted = isMonFainted(uid, mon);
+                          return (
+                            <img
+                              key={`icon-${i}`}
+                              src={`/MiniIcons/${iconName}.png`}
+                              alt={mon.nickname || iconName}
+                              className={`sidebar-mini-icon ${fainted ? 'fainted' : ''}`}
+                              style={fainted ? { filter: 'grayscale(100%)', opacity: 0.6 } : {}}
+                              title={`${mon.nickname} (${mon.nature || 'Unknown'} Nature${mon.nature ? NATURE_EFFECTS[mon.nature] : ''})${mon.ivs ? `\nIVs: ${mon.ivs.hp}/${mon.ivs.atk}/${mon.ivs.def}/${mon.ivs.spa}/${mon.ivs.spd}/${mon.ivs.spe}` : ''}`}
+                              onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+                            />
+                          );
+                        })}
                       </div>
                     ) : (
                       <p className="sidebar-no-save">Waiting for save…</p>

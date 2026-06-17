@@ -71,6 +71,7 @@ export interface Auction {
 export interface Team {
   user_id: string;
   username: string;
+  global_name?: string | null;
   ready?: boolean;
   budget_remaining: number;
   pokemon?: Pokemon[];

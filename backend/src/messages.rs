@@ -16,10 +16,20 @@ pub struct SaveIvs {
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct SavePokemon {
+    pub personality: u32,
     pub nickname: String,
     pub level: u8,
     pub hp: u16,
     pub max_hp: u16,
+    pub species_id: u16,
+    pub nature: String,
+    pub ivs: SaveIvs,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct SaveBoxPokemon {
+    pub personality: u32,
+    pub nickname: String,
     pub species_id: u16,
     pub nature: String,
     pub ivs: SaveIvs,
@@ -31,6 +41,8 @@ pub struct SaveData {
     pub money: u32,
     pub badge_count: u16,
     pub party: Vec<SavePokemon>,
+    #[serde(default)]
+    pub r#box: Vec<SaveBoxPokemon>,
 }
 
 #[derive(Clone, Debug, Serialize)]

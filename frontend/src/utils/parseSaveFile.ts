@@ -9,7 +9,7 @@ const SIGNATURE = 0x08012025;
 
 const ENCRYPTION_KEY_OFFSET = 0xac;
 const MONEY_OFFSET = 0x4f0;
-const VAR_BADGE_COUNT_OFFSET = 0x76a;
+const VAR_BADGE_COUNT_OFFSET = 0x8d8;
 const PARTY_COUNT_OFFSET = 0x234;
 const PARTY_START_OFFSET = 0x238;
 const POKEMON_STRUCT_SIZE = 116;
@@ -38,10 +38,19 @@ export interface SaveIvs {
 }
 
 export interface SavePokemon {
+  personality: number;
   nickname: string;
   level: number;
   hp: number;
   max_hp: number;
+  species_id: number;
+  nature: string;
+  ivs: SaveIvs;
+}
+
+export interface SaveBoxPokemon {
+  personality: number;
+  nickname: string;
   species_id: number;
   nature: string;
   ivs: SaveIvs;
@@ -52,6 +61,7 @@ export interface SaveData {
   money: number;
   badge_count: number;
   party: SavePokemon[];
+  box: SaveBoxPokemon[];
 }
 
 function decodeString(bytes: Uint8Array): string {
@@ -60,6 +70,9 @@ function decodeString(bytes: Uint8Array): string {
     const b = bytes[i];
     if (b === 0xff) break;
     if (b === 0x00) result += ' ';
+    else if (b === 0x1b) result += 'é';
+    else if (b === 0xad) result += '.';
+    else if (b === 0xae) result += '-';
     else if (b >= 0xbb && b <= 0xd4) result += String.fromCharCode(b - 0xbb + 65);
     else if (b >= 0xd5 && b <= 0xee) result += String.fromCharCode(b - 0xd5 + 97);
     else if (b >= 0xa1 && b <= 0xaa) result += String.fromCharCode(b - 0xa1 + 48);
@@ -75,7 +88,10 @@ export function parseSaveFile(data: Uint8Array): SaveData {
     const sectionOffsets: Record<number, number> = {};
     let validCount = 0;
     let maxSeq = 0;
-    for (let i = 0; i < 32; i++) {
+    // Limit the scan to NUM_SECTIONS to prevent one slot candidate 
+    // from "bleeding" into the other rotating save slot in the 128KB flash.
+    // Standard Emerald uses 14 sections per slot.
+    for (let i = 0; i < NUM_SECTIONS; i++) {
       const offset = slotOffset + i * SECTION_SIZE;
       if (offset + SECTION_SIZE > data.length) break;
       const sectionID = data[offset + FOOTER_OFFSET] | (data[offset + FOOTER_OFFSET + 1] << 8);
@@ -153,7 +169,8 @@ export function parseSaveFile(data: Uint8Array): SaveData {
 
     if (species_id > 0) {
       party.push({
-        nickname: nickname || `Species ${species_id}`,
+        personality,
+        nickname: nickname || (species_id === 412 ? 'Egg' : `Species ${species_id}`),
         level,
         hp,
         max_hp,
@@ -164,10 +181,55 @@ export function parseSaveFile(data: Uint8Array): SaveData {
     }
   }
 
+  const box: SaveBoxPokemon[] = [];
+  if (sectionOffsets[5] !== undefined) {
+    const s5 = sectionOffsets[5];
+    const BOX_START_OFFSET = 4;
+    const BOX_POKEMON_SIZE = 96;
+
+    for (let i = 0; i < 30; i++) {
+      const pStart = s5 + BOX_START_OFFSET + i * BOX_POKEMON_SIZE;
+      if (pStart + BOX_POKEMON_SIZE > data.length) break;
+
+      const personality = view.getUint32(pStart, true);
+      const otId = view.getUint32(pStart + 4, true);
+      const key = (personality ^ otId) >>> 0;
+      const order = SUBSTRUCTURE_ORDERS[personality % 24];
+
+      const growthIdx = order.indexOf('G');
+      const growthOffset = pStart + 32 + growthIdx * SUBSTRUCTURE_SIZE;
+      const encryptedSpecies = view.getUint16(growthOffset, true);
+      const species_id = (encryptedSpecies ^ (key & 0xffff)) & 0xffff;
+
+      const miscIdx = order.indexOf('M');
+      const miscOffset = pStart + 32 + miscIdx * SUBSTRUCTURE_SIZE;
+      const decryptedMisc = (view.getUint32(miscOffset + 4, true) ^ key) >>> 0;
+      const ivs: SaveIvs = {
+        hp:  decryptedMisc & 0x1f,
+        atk: (decryptedMisc >> 5) & 0x1f,
+        def: (decryptedMisc >> 10) & 0x1f,
+        spe: (decryptedMisc >> 15) & 0x1f,
+        spa: (decryptedMisc >> 20) & 0x1f,
+        spd: (decryptedMisc >> 25) & 0x1f,
+      };
+
+      if (species_id > 0 && species_id < 0xffff) {
+        const nickname = decodeString(data.slice(pStart + 8, pStart + 18));
+        box.push({
+          personality,
+          nickname: nickname || (species_id === 412 ? 'Egg' : `Species ${species_id}`),
+          species_id,
+          nature: NATURES[personality % 25],
+          ivs,
+        });
+      }
+    }
+  }
+
   let badge_count = 0;
   if (sectionOffsets[2] !== undefined) {
     badge_count = view.getUint16(sectionOffsets[2] + VAR_BADGE_COUNT_OFFSET, true);
   }
 
-  return { trainer_name, money, badge_count, party };
+  return { trainer_name, money, badge_count, party, box };
 }

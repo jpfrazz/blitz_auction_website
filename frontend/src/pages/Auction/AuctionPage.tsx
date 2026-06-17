@@ -679,7 +679,7 @@ const AuctionPage: React.FC = () => {
                           Submit Results
                         </button>
                       )}
-                      {hasRefereeRole && (
+                      {(
                         <button
                           className="button"
                           onClick={() => window.open(`/Emulator/${draft.draft_id}`, '_blank')}
