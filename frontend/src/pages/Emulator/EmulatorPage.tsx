@@ -511,6 +511,11 @@ const EmulatorPage: React.FC = () => {
   // Filter out the current user and cap at 9
   const otherEntries = Object.entries(otherSaves)
     .filter(([uid]) => uid !== currentUserId)
+    .sort(([, a], [, b]) => {
+      const badgesA = a.save?.badge_count ?? 0;
+      const badgesB = b.save?.badge_count ?? 0;
+      return badgesB - badgesA;
+    })
     .slice(0, 9);
   const hasSidebar = draftId !== undefined;
 
