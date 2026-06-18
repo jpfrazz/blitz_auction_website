@@ -10,7 +10,7 @@ const getIconName = (name: string) => {
   if (!name || name === '???') return 'egg';
   const n = name.toLowerCase();
   if (n.startsWith('egg')) return 'egg';
-  return n.replace(/é/g, 'e').replace(/[^a-z0-9]/g, '');
+  return n.replace(/é/g, 'e').replace(/[^a-z0-9-]/g, '');
 };
 
 const NATURE_EFFECTS: Record<string, string> = {
@@ -150,7 +150,7 @@ const EmulatorPage: React.FC = () => {
   // Other players in the draft (populated via WebSocket)
   const [otherSaves, setOtherSaves] = useState<OtherPlayerSaves>({});
   const [pokemonMetadata, setPokemonMetadata] = useState<Record<string, any>>({});
-  const [pokemonById, setPokemonById] = useState<Map<number, any>>(new Map());
+  const [pokemonById, setPokemonById] = useState<Map<number, any[]>>(new Map());
 
   // Persist fainted state via Personality ID (User ID -> Set of PIDs)
   const [faintedPids, setFaintedPids] = useState<Record<string, Set<number>>>({});
@@ -200,7 +200,7 @@ const EmulatorPage: React.FC = () => {
     fetchPokemonList().then((list) => {
       if (cancelled) return;
       const map: Record<string, any> = {};
-      const idMap = new Map<number, any>();
+      const idMap = new Map<number, any[]>();
       for (const p of (list as any[])) {
         const entry = {
           ...p,
@@ -208,9 +208,14 @@ const EmulatorPage: React.FC = () => {
         };
         const name = p.name?.toLowerCase();
         if (name) map[name] = entry;
-
+        
         const id = p.id || p.pokedex_id;
-        if (id) idMap.set(id, entry);
+        if (id) {
+          const numId = Number(id);
+          const existing = idMap.get(numId) || [];
+          existing.push(entry);
+          idMap.set(numId, existing);
+        }
       }
       setPokemonMetadata(map);
       setPokemonById(idMap);
@@ -218,24 +223,78 @@ const EmulatorPage: React.FC = () => {
     return () => { cancelled = true; };
   }, []);
 
-  const resolveMetadata = (speciesId: number, nickname: string) => {
-    // 1. Try ID lookup first (most reliable)
-    if (pokemonById.has(speciesId)) return pokemonById.get(speciesId);
+  const resolveMetadata = (speciesId: number, nickname: string | undefined) => {
+    console.log(`[Debug] Resolving: speciesId=${speciesId}, nickname=${nickname}`);
 
-    // 2. Fallback to nickname
-    if (!nickname) return null;
-    const searchName = nickname.toLowerCase();
-    // Direct match
-    if (pokemonMetadata[searchName]) return pokemonMetadata[searchName];
-    
-    // Handle GBA 10-character truncation (e.g. "BRAMBLEGHA" -> "Brambleghast")
-    if (nickname.length >= 10) {
-      const match = Object.values(pokemonMetadata).find(p => 
-        p.name.toLowerCase().startsWith(searchName)
-      );
-      if (match) return match;
+    // 1. Try direct ID lookup. This is the most reliable method.
+    const candidates = pokemonById.get(speciesId);
+    let data: any = null;
+
+    if (candidates) {
+      const singleCandidate = candidates.length === 1 ? candidates[0] : null;
+      const isNameMismatch = singleCandidate && nickname && !singleCandidate.name.toLowerCase().startsWith(nickname.toLowerCase());
+
+      // If the ID lookup fails or is ambiguous, immediately try to find a form-based match
+      // using the nickname. This is crucial for Pokémon like Deerling.
+      if ((!singleCandidate || isNameMismatch) && nickname) {
+        const formMatch = Object.values(pokemonMetadata).find(p => 
+          p.name.toLowerCase().startsWith(nickname.toLowerCase()) && Number(p.pokedex_id) === speciesId
+        );
+        if (formMatch) return formMatch;
+      }
+      else if (candidates.length > 1 || isNameMismatch) {
+        // If multiple candidates or a name mismatch, use the nickname to find the correct form.
+        if (nickname) {
+          data = candidates.find(p => p.name.toLowerCase().startsWith(nickname.toLowerCase()));
+        }
+        // If still no match, we can't be sure, so we don't assign data yet.
+      } else if (singleCandidate) {
+        data = singleCandidate;
+      }
     }
-    return null;
+    if (data) console.log(`[Debug] Found by ID: ${data.name}`);
+    else console.log(`[Debug] Not found by ID, or ID match was ambiguous.`);
+    
+    if (!data && nickname) {
+      let searchName = nickname.toLowerCase();
+      // Special handling for Deerling/Sawsbuck, which have no base form in the DB.
+      if (searchName === 'deerling') {
+        searchName = 'deerling-spring';
+      } else if (searchName === 'sawsbuck') {
+        searchName = 'sawsbuck-spring';
+      }
+      data = pokemonMetadata[searchName];
+      
+      // Try normalized lookup for accented names
+      if (!data) {
+        console.log(`[Debug] Nickname fallback: trying normalized '${searchName}'`);
+        const normalized = searchName.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+        data = pokemonMetadata[normalized];
+      }
+
+      // Handle forms (e.g. "Deerling" matching "Deerling-Spring") or truncated names
+      if (!data) {
+        console.log(`[Debug] Nickname fallback: trying startsWith '${searchName}'`);
+        data = Object.values(pokemonMetadata).find(p => 
+          p.name.toLowerCase().startsWith(searchName)
+        );
+      }
+
+      if (data) console.log(`[Debug] Found by nickname fallback: ${data.name}`);
+      else console.log(`[Debug] Not found by nickname fallback.`);
+
+    }
+
+    // 4. Handle Mega Evolution redirection to treat them as base forms
+    if (data && data.name.toLowerCase().includes('mega')) {
+      const baseName = data.name.toLowerCase()
+        .replace(/\s*\(mega .*\)/, '') // Handles "(Mega ...)"
+        .replace(/^mega\s*/, '') // Handles "Mega ..."
+        .trim();
+      if (pokemonMetadata[baseName]) return pokemonMetadata[baseName];
+    }
+
+    return data;
   };
 
   useEffect(() => {
@@ -318,7 +377,7 @@ const EmulatorPage: React.FC = () => {
   onRawSaveBytesRef.current = (bytes: Uint8Array) => {
     let parsed: SaveData;
     try {
-      parsed = parseSaveFile(bytes);
+      parsed = parseSaveFile(bytes, pokemonMetadata, pokemonById);
     } catch {
       return;
     }
@@ -660,7 +719,7 @@ const EmulatorPage: React.FC = () => {
                     ]).map((mon: any, i: number) => {
                       const speciesId = mon.species_id ?? mon.speciesId;
                       const speciesData = resolveMetadata(speciesId, mon.nickname);
-                      const realName = speciesId === 412 ? "Egg" : (speciesData?.name || `ID ${speciesId}`);
+                      const realName = (speciesId === 412 && mon.nickname?.toLowerCase() === 'egg') ? "Egg" : (speciesData?.name || `ID ${speciesId}`);
                       const iconName = getIconName(realName);
                       const abilityName = speciesData?.abilities?.[mon.ability_num] || 'Unknown';
                       const fainted = isMonFainted(currentUserId || 'me', mon);
@@ -688,12 +747,12 @@ const EmulatorPage: React.FC = () => {
                           {mon.nature && <div className="mon-nature">{mon.nature}{NATURE_EFFECTS[mon.nature]}</div>}
                           {mon.ivs && (
                             <div className="mon-ivs" style={{ display: 'flex', flexWrap: 'wrap', gap: '4px 12px', fontSize: '0.8rem', marginTop: '4px', opacity: 0.8 }}>
-                              <span style={{ color: mon.ivs.hp > 24 ? '#4ade80' : mon.ivs.hp < 8 ? '#f87171' : 'inherit', fontWeight: mon.ivs.hp > 24 ? '600' : 'normal' }}>HP: {mon.ivs.hp}</span>
-                              <span style={{ color: mon.ivs.atk > 24 ? '#4ade80' : mon.ivs.atk < 8 ? '#f87171' : 'inherit', fontWeight: mon.ivs.atk > 24 ? '600' : 'normal' }}>ATK: {mon.ivs.atk}</span>
-                              <span style={{ color: mon.ivs.def > 24 ? '#4ade80' : mon.ivs.def < 8 ? '#f87171' : 'inherit', fontWeight: mon.ivs.def > 24 ? '600' : 'normal' }}>DEF: {mon.ivs.def}</span>
-                              <span style={{ color: mon.ivs.spa > 24 ? '#4ade80' : mon.ivs.spa < 8 ? '#f87171' : 'inherit', fontWeight: mon.ivs.spa > 24 ? '600' : 'normal' }}>SPA: {mon.ivs.spa}</span>
-                              <span style={{ color: mon.ivs.spd > 24 ? '#4ade80' : mon.ivs.spd < 8 ? '#f87171' : 'inherit', fontWeight: mon.ivs.spd > 24 ? '600' : 'normal' }}>SPD: {mon.ivs.spd}</span>
-                              <span style={{ color: mon.ivs.spe > 24 ? '#4ade80' : mon.ivs.spe < 8 ? '#f87171' : 'inherit', fontWeight: mon.ivs.spe > 24 ? '600' : 'normal' }}>SPE: {mon.ivs.spe}</span>
+                              <span style={{ color: mon.ivs.hp > 24 ? '#4ade80' : mon.ivs.hp < 7 ? '#f87171' : 'inherit', fontWeight: mon.ivs.hp > 24 ? '600' : 'normal' }}>HP: {mon.ivs.hp}</span>
+                              <span style={{ color: mon.ivs.atk > 24 ? '#4ade80' : mon.ivs.atk < 7 ? '#f87171' : 'inherit', fontWeight: mon.ivs.atk > 24 ? '600' : 'normal' }}>ATK: {mon.ivs.atk}</span>
+                              <span style={{ color: mon.ivs.def > 24 ? '#4ade80' : mon.ivs.def < 7 ? '#f87171' : 'inherit', fontWeight: mon.ivs.def > 24 ? '600' : 'normal' }}>DEF: {mon.ivs.def}</span>
+                              <span style={{ color: mon.ivs.spa > 24 ? '#4ade80' : mon.ivs.spa < 7 ? '#f87171' : 'inherit', fontWeight: mon.ivs.spa > 24 ? '600' : 'normal' }}>SPA: {mon.ivs.spa}</span>
+                              <span style={{ color: mon.ivs.spd > 24 ? '#4ade80' : mon.ivs.spd < 7 ? '#f87171' : 'inherit', fontWeight: mon.ivs.spd > 24 ? '600' : 'normal' }}>SPD: {mon.ivs.spd}</span>
+                              <span style={{ color: mon.ivs.spe > 24 ? '#4ade80' : mon.ivs.spe < 7 ? '#f87171' : 'inherit', fontWeight: mon.ivs.spe > 24 ? '600' : 'normal' }}>SPE: {mon.ivs.spe}</span>
                             </div>
                           )}
                         </div>
@@ -726,7 +785,7 @@ const EmulatorPage: React.FC = () => {
                         ]).map((mon: any, i: number) => {
                           const speciesId = mon.species_id ?? mon.speciesId;
                           const speciesData = resolveMetadata(speciesId, mon.nickname);
-                          const realName = speciesId === 412 ? "Egg" : (speciesData?.name || `ID ${speciesId}`);
+                          const realName = (speciesId === 412 && mon.nickname?.toLowerCase() === 'egg') ? "Egg" : (speciesData?.name || `ID ${speciesId}`);
                           const iconName = getIconName(realName);
                           const abilityName = speciesData?.abilities?.[mon.ability_num] || 'Unknown';
                           const fainted = isMonFainted(uid, mon);

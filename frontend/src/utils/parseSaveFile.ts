@@ -1,5 +1,6 @@
 // Parses a raw GBA Emerald save file (Uint8Array) and returns structured data.
 // Logic extracted from SaveChecker.tsx by FranklyNathan.
+import { MAP_NAMES } from '../pages/Auction/mapNames';
 
 const SECTION_SIZE = 4096;
 const NUM_SECTIONS = 14;
@@ -10,6 +11,8 @@ const SIGNATURE = 0x08012025;
 const ENCRYPTION_KEY_OFFSET = 0xac;
 const MONEY_OFFSET = 0x4f0;
 const VAR_BADGE_COUNT_OFFSET = 0x8d8;
+const MAP_GROUP_OFFSET = 0x04;
+const MAP_NUM_OFFSET = 0x05;
 const PARTY_COUNT_OFFSET = 0x234;
 const PARTY_START_OFFSET = 0x238;
 const POKEMON_STRUCT_SIZE = 116;
@@ -62,6 +65,7 @@ export interface SaveData {
   trainer_name: string;
   money: number;
   badge_count: number;
+  map_name: string;
   party: SavePokemon[];
   box: SaveBoxPokemon[];
 }
@@ -83,7 +87,11 @@ function decodeString(bytes: Uint8Array): string {
   return result.trim();
 }
 
-export function parseSaveFile(data: Uint8Array): SaveData {
+export function parseSaveFile(
+  data: Uint8Array,
+  pokemonMetadata: Record<string, any>,
+  pokemonById: Map<number, any>
+): SaveData {
   const view = new DataView(data.buffer, data.byteOffset, data.byteLength);
 
   const getSlotSections = (slotOffset: number) => {
@@ -135,6 +143,11 @@ export function parseSaveFile(data: Uint8Array): SaveData {
   const trainer_name = decodeString(data.slice(s0, s0 + 12));
   const rawMoney = view.getUint32(s1 + MONEY_OFFSET, true);
   const money = (rawMoney ^ encryptionKey) >>> 0;
+
+  const mapGroup = data[s1 + MAP_GROUP_OFFSET];
+  const mapNum = data[s1 + MAP_NUM_OFFSET];
+  const map_name =
+    MAP_NAMES[mapGroup]?.[mapNum] || `Unknown Map (${mapGroup}, ${mapNum})`;
 
   const partyCount = Math.min(data[s1 + PARTY_COUNT_OFFSET], 6);
   const party: SavePokemon[] = [];
@@ -241,5 +254,5 @@ export function parseSaveFile(data: Uint8Array): SaveData {
     badge_count = view.getUint16(sectionOffsets[2] + VAR_BADGE_COUNT_OFFSET, true);
   }
 
-  return { trainer_name, money, badge_count, party, box };
+  return { trainer_name, money, badge_count, map_name, party, box };
 }
