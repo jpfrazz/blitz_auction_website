@@ -1,0 +1,764 @@
+// map_names.c (Generated from map_groups.json)
+
+#include "map_names.h"
+#include "global.h" // For s8 type
+
+// Arrays of map names for each group
+// Group 0: gMapGroup_TownsAndRoutes
+static const char* const sMapNames_TownsAndRoutes[] = {
+    "PetalburgCity",
+    "SlateportCity",
+    "MauvilleCity",
+    "RustboroCity",
+    "FortreeCity",
+    "LilycoveCity",
+    "MossdeepCity",
+    "SootopolisCity",
+    "EverGrandeCity",
+    "LittlerootTown",
+    "OldaleTown",
+    "DewfordTown",
+    "LavaridgeTown",
+    "FallarborTown",
+    "VerdanturfTown",
+    "PacifidlogTown",
+    "Route101",
+    "Route102",
+    "Route103",
+    "Route104",
+    "Route105",
+    "Route106",
+    "Route107",
+    "Route108",
+    "Route109",
+    "Route110",
+    "Route111",
+    "Route112",
+    "Route113",
+    "Route114",
+    "Route115",
+    "Route116",
+    "Route117",
+    "Route118",
+    "Route119",
+    "Route120",
+    "Route121",
+    "Route122",
+    "Route123",
+    "Route124",
+    "Route125",
+    "Route126",
+    "Route127",
+    "Route128",
+    "Route129",
+    "Route130",
+    "Route131",
+    "Route132",
+    "Route133",
+    "Route134",
+    "Underwater_Route124",
+    "Underwater_Route126",
+    "Underwater_Route127",
+    "Underwater_Route128",
+    "Underwater_Route129",
+    "Underwater_Route105",
+    "Underwater_Route125",
+    NULL // Sentinel
+};
+
+// Group 1: gMapGroup_IndoorLittleroot
+static const char* const sMapNames_IndoorLittleroot[] = {
+    "LittlerootTown_BrendansHouse_1F",
+    "LittlerootTown_BrendansHouse_2F",
+    "LittlerootTown_MaysHouse_1F",
+    "LittlerootTown_MaysHouse_2F",
+    "LittlerootTown_ProfessorBirchsLab",
+    NULL
+};
+
+// Group 2: gMapGroup_IndoorOldale
+static const char* const sMapNames_IndoorOldale[] = {
+    "OldaleTown_House1",
+    "OldaleTown_House2",
+    "OldaleTown_PokemonCenter_1F",
+    "OldaleTown_PokemonCenter_2F",
+    "OldaleTown_Mart",
+    "OldaleTown_House2_Basement",
+    NULL
+};
+
+// Group 3: gMapGroup_IndoorDewford
+static const char* const sMapNames_IndoorDewford[] = {
+    "DewfordTown_House1",
+    "DewfordTown_PokemonCenter_1F",
+    "DewfordTown_PokemonCenter_2F",
+    "DewfordTown_Gym",
+    "DewfordTown_Hall",
+    "DewfordTown_House2",
+    NULL
+};
+
+// Group 4: gMapGroup_IndoorLavaridge
+static const char* const sMapNames_IndoorLavaridge[] = {
+    "LavaridgeTown_HerbShop",
+    "LavaridgeTown_Gym_1F",
+    "LavaridgeTown_Gym_B1F",
+    "LavaridgeTown_House",
+    "LavaridgeTown_Mart",
+    "LavaridgeTown_PokemonCenter_1F",
+    "LavaridgeTown_PokemonCenter_2F",
+    NULL
+};
+
+// Group 5: gMapGroup_IndoorFallarbor
+static const char* const sMapNames_IndoorFallarbor[] = {
+    "FallarborTown_Mart",
+    "FallarborTown_BattleTentLobby",
+    "FallarborTown_BattleTentCorridor",
+    "FallarborTown_BattleTentBattleRoom",
+    "FallarborTown_PokemonCenter_1F",
+    "FallarborTown_PokemonCenter_2F",
+    "FallarborTown_CozmosHouse",
+    "FallarborTown_MoveRelearnersHouse",
+    NULL
+};
+
+// Group 6: gMapGroup_IndoorVerdanturf
+static const char* const sMapNames_IndoorVerdanturf[] = {
+    "VerdanturfTown_BattleTentLobby",
+    "VerdanturfTown_BattleTentCorridor",
+    "VerdanturfTown_BattleTentBattleRoom",
+    "VerdanturfTown_Mart",
+    "VerdanturfTown_PokemonCenter_1F",
+    "VerdanturfTown_PokemonCenter_2F",
+    "VerdanturfTown_WandasHouse",
+    "VerdanturfTown_FriendshipRatersHouse",
+    "VerdanturfTown_House",
+    NULL
+};
+
+// Group 7: gMapGroup_IndoorPacifidlog
+static const char* const sMapNames_IndoorPacifidlog[] = {
+    "PacifidlogTown_PokemonCenter_1F",
+    "PacifidlogTown_PokemonCenter_2F",
+    "PacifidlogTown_House1",
+    "PacifidlogTown_House2",
+    "PacifidlogTown_House3",
+    "PacifidlogTown_House4",
+    "PacifidlogTown_House5",
+    NULL
+};
+
+// Group 8: gMapGroup_IndoorPetalburg
+static const char* const sMapNames_IndoorPetalburg[] = {
+    "PetalburgCity_WallysHouse",
+    "PetalburgCity_Gym",
+    "PetalburgCity_House1",
+    "PetalburgCity_House2",
+    "PetalburgCity_PokemonCenter_1F",
+    "PetalburgCity_PokemonCenter_2F",
+    "PetalburgCity_Mart",
+    NULL
+};
+
+// Group 9: gMapGroup_IndoorSlateport
+static const char* const sMapNames_IndoorSlateport[] = {
+    "SlateportCity_SternsShipyard_1F",
+    "SlateportCity_SternsShipyard_2F",
+    "SlateportCity_BattleTentLobby",
+    "SlateportCity_BattleTentCorridor",
+    "SlateportCity_BattleTentBattleRoom",
+    "SlateportCity_NameRatersHouse",
+    "SlateportCity_PokemonFanClub",
+    "SlateportCity_OceanicMuseum_1F",
+    "SlateportCity_OceanicMuseum_2F",
+    "SlateportCity_Harbor",
+    "SlateportCity_House",
+    "SlateportCity_PokemonCenter_1F",
+    "SlateportCity_PokemonCenter_2F",
+    "SlateportCity_Mart",
+    NULL
+};
+
+// Group 10: gMapGroup_IndoorMauville
+static const char* const sMapNames_IndoorMauville[] = {
+    "MauvilleCity_Gym",
+    "MauvilleCity_BikeShop",
+    "MauvilleCity_House1",
+    "MauvilleCity_GameCorner",
+    "MauvilleCity_House2",
+    "MauvilleCity_PokemonCenter_1F",
+    "MauvilleCity_PokemonCenter_2F",
+    "MauvilleCity_Mart",
+    NULL
+};
+
+// Group 11: gMapGroup_IndoorRustboro
+static const char* const sMapNames_IndoorRustboro[] = {
+    "RustboroCity_DevonCorp_1F",
+    "RustboroCity_DevonCorp_2F",
+    "RustboroCity_DevonCorp_3F",
+    "RustboroCity_Gym",
+    "RustboroCity_PokemonSchool",
+    "RustboroCity_PokemonCenter_1F",
+    "RustboroCity_PokemonCenter_2F",
+    "RustboroCity_Mart",
+    "RustboroCity_Flat1_1F",
+    "RustboroCity_Flat1_2F",
+    "RustboroCity_House1",
+    "RustboroCity_CuttersHouse",
+    "RustboroCity_House2",
+    "RustboroCity_Flat2_1F",
+    "RustboroCity_Flat2_2F",
+    "RustboroCity_Flat2_3F",
+    "RustboroCity_House3",
+    "RustboroCity_Gym_Viola_Edition",
+    NULL
+};
+
+// Group 12: gMapGroup_IndoorFortree
+static const char* const sMapNames_IndoorFortree[] = {
+    "FortreeCity_House1",
+    "FortreeCity_Gym",
+    "FortreeCity_PokemonCenter_1F",
+    "FortreeCity_PokemonCenter_2F",
+    "FortreeCity_Mart",
+    "FortreeCity_House2",
+    "FortreeCity_House3",
+    "FortreeCity_House4",
+    "FortreeCity_House5",
+    "FortreeCity_DecorationShop",
+    NULL
+};
+
+// Group 13: gMapGroup_IndoorLilycove
+static const char* const sMapNames_IndoorLilycove[] = {
+    "LilycoveCity_CoveLilyMotel_1F",
+    "LilycoveCity_CoveLilyMotel_2F",
+    "LilycoveCity_LilycoveMuseum_1F",
+    "LilycoveCity_LilycoveMuseum_2F",
+    "LilycoveCity_ContestLobby",
+    "LilycoveCity_ContestHall",
+    "LilycoveCity_PokemonCenter_1F",
+    "LilycoveCity_PokemonCenter_2F",
+    "LilycoveCity_UnusedMart",
+    "LilycoveCity_PokemonTrainerFanClub",
+    "LilycoveCity_Harbor",
+    "LilycoveCity_MoveDeletersHouse",
+    "LilycoveCity_House1",
+    "LilycoveCity_House2",
+    "LilycoveCity_House3",
+    "LilycoveCity_House4",
+    "LilycoveCity_DepartmentStore_1F",
+    "LilycoveCity_DepartmentStore_2F",
+    "LilycoveCity_DepartmentStore_3F",
+    "LilycoveCity_DepartmentStore_4F",
+    "LilycoveCity_DepartmentStore_5F",
+    "LilycoveCity_DepartmentStoreRooftop",
+    "LilycoveCity_DepartmentStoreElevator",
+    NULL
+};
+
+// Group 14: gMapGroup_IndoorMossdeep
+static const char* const sMapNames_IndoorMossdeep[] = {
+    "MossdeepCity_Gym",
+    "MossdeepCity_House1",
+    "MossdeepCity_House2",
+    "MossdeepCity_PokemonCenter_1F",
+    "MossdeepCity_PokemonCenter_2F",
+    "MossdeepCity_Mart",
+    "MossdeepCity_House3",
+    "MossdeepCity_StevensHouse",
+    "MossdeepCity_House4",
+    "MossdeepCity_SpaceCenter_1F",
+    "MossdeepCity_SpaceCenter_2F",
+    "MossdeepCity_GameCorner_1F",
+    "MossdeepCity_GameCorner_B1F",
+    NULL
+};
+
+// Group 15: gMapGroup_IndoorSootopolis
+static const char* const sMapNames_IndoorSootopolis[] = {
+    "SootopolisCity_Gym_1F",
+    "SootopolisCity_Gym_B1F",
+    "SootopolisCity_PokemonCenter_1F",
+    "SootopolisCity_PokemonCenter_2F",
+    "SootopolisCity_Mart",
+    "SootopolisCity_House1",
+    "SootopolisCity_House2",
+    "SootopolisCity_House3",
+    "SootopolisCity_House4",
+    "SootopolisCity_House5",
+    "SootopolisCity_House6",
+    "SootopolisCity_House7",
+    "SootopolisCity_LotadAndSeedotHouse",
+    "SootopolisCity_MysteryEventsHouse_1F",
+    "SootopolisCity_MysteryEventsHouse_B1F",
+    NULL
+};
+
+// Group 16: gMapGroup_IndoorEverGrande
+static const char* const sMapNames_IndoorEverGrande[] = {
+    "EverGrandeCity_SidneysRoom",
+    "EverGrandeCity_PhoebesRoom",
+    "EverGrandeCity_GlaciasRoom",
+    "EverGrandeCity_DrakesRoom",
+    "EverGrandeCity_ChampionsRoom",
+    "EverGrandeCity_Hall1",
+    "EverGrandeCity_Hall2",
+    "EverGrandeCity_Hall3",
+    "EverGrandeCity_Hall4",
+    "EverGrandeCity_Hall5",
+    "EverGrandeCity_PokemonLeague_1F",
+    "EverGrandeCity_HallOfFame",
+    "EverGrandeCity_PokemonCenter_1F",
+    "EverGrandeCity_PokemonCenter_2F",
+    "EverGrandeCity_PokemonLeague_2F",
+    "EverGrandeCity_SpensersRoom",
+    "EverGrandeCity_LucysRoom",
+    "EverGrandeCity_BrandonsRoom",
+    "EverGrandeCity_TuckersRoom",
+    NULL
+};
+
+// Group 17: gMapGroup_IndoorRoute104
+static const char* const sMapNames_IndoorRoute104[] = {
+    "Route104_MrBrineysHouse",
+    "Route104_PrettyPetalFlowerShop",
+    NULL
+};
+
+// Group 18: gMapGroup_IndoorRoute111
+static const char* const sMapNames_IndoorRoute111[] = {
+    "Route111_WinstrateFamilysHouse",
+    "Route111_OldLadysRestStop",
+    NULL
+};
+
+// Group 19: gMapGroup_IndoorRoute112
+static const char* const sMapNames_IndoorRoute112[] = {
+    "Route112_CableCarStation",
+    "MtChimney_CableCarStation",
+    NULL
+};
+
+// Group 20: gMapGroup_IndoorRoute114
+static const char* const sMapNames_IndoorRoute114[] = {
+    "Route114_FossilManiacsHouse",
+    "Route114_FossilManiacsTunnel",
+    "Route114_LanettesHouse",
+    NULL
+};
+
+// Group 21: gMapGroup_IndoorRoute116
+static const char* const sMapNames_IndoorRoute116[] = {
+    "Route116_TunnelersRestHouse",
+    NULL
+};
+
+// Group 22: gMapGroup_IndoorRoute117
+static const char* const sMapNames_IndoorRoute117[] = {
+    "Route117_PokemonDayCare",
+    NULL
+};
+
+// Group 23: gMapGroup_IndoorRoute121
+static const char* const sMapNames_IndoorRoute121[] = {
+    "Route121_SafariZoneEntrance",
+    NULL
+};
+
+// Group 24: gMapGroup_Dungeons
+static const char* const sMapNames_Dungeons[] = {
+    "MeteorFalls_1F_1R",
+    "MeteorFalls_1F_2R",
+    "MeteorFalls_B1F_1R",
+    "MeteorFalls_B1F_2R",
+    "RusturfTunnel",
+    "Underwater_SootopolisCity",
+    "DesertRuins",
+    "GraniteCave_1F",
+    "GraniteCave_B1F",
+    "GraniteCave_B2F",
+    "GraniteCave_StevensRoom",
+    "PetalburgWoods",
+    "MtChimney",
+    "JaggedPass",
+    "FieryPath",
+    "MtPyre_1F",
+    "MtPyre_2F",
+    "MtPyre_3F",
+    "MtPyre_4F",
+    "MtPyre_5F",
+    "MtPyre_6F",
+    "MtPyre_Exterior",
+    "MtPyre_Summit",
+    "AquaHideout_1F",
+    "AquaHideout_B1F",
+    "AquaHideout_B2F",
+    "Underwater_SeafloorCavern",
+    "SeafloorCavern_Entrance",
+    "SeafloorCavern_Room1",
+    "SeafloorCavern_Room2",
+    "SeafloorCavern_Room3",
+    "SeafloorCavern_Room4",
+    "SeafloorCavern_Room5",
+    "SeafloorCavern_Room6",
+    "SeafloorCavern_Room7",
+    "SeafloorCavern_Room8",
+    "SeafloorCavern_Room9",
+    "CaveOfOrigin_Entrance",
+    "CaveOfOrigin_1F",
+    "CaveOfOrigin_UnusedRubySapphireMap1",
+    "CaveOfOrigin_UnusedRubySapphireMap2",
+    "CaveOfOrigin_UnusedRubySapphireMap3",
+    "CaveOfOrigin_B1F",
+    "VictoryRoad_1F",
+    "VictoryRoad_B1F",
+    "VictoryRoad_B2F",
+    "ShoalCave_LowTideEntranceRoom",
+    "ShoalCave_LowTideInnerRoom",
+    "ShoalCave_LowTideStairsRoom",
+    "ShoalCave_LowTideLowerRoom",
+    "ShoalCave_HighTideEntranceRoom",
+    "ShoalCave_HighTideInnerRoom",
+    "NewMauville_Entrance",
+    "NewMauville_Inside",
+    "AbandonedShip_Deck",
+    "AbandonedShip_Corridors_1F",
+    "AbandonedShip_Rooms_1F",
+    "AbandonedShip_Corridors_B1F",
+    "AbandonedShip_Rooms_B1F",
+    "AbandonedShip_Rooms2_B1F",
+    "AbandonedShip_Underwater1",
+    "AbandonedShip_Room_B1F",
+    "AbandonedShip_Rooms2_1F",
+    "AbandonedShip_CaptainsOffice",
+    "AbandonedShip_Underwater2",
+    "AbandonedShip_HiddenFloorCorridors",
+    "AbandonedShip_HiddenFloorRooms",
+    "IslandCave",
+    "AncientTomb",
+    "Underwater_Route134",
+    "Underwater_SealedChamber",
+    "SealedChamber_OuterRoom",
+    "SealedChamber_InnerRoom",
+    "ScorchedSlab",
+    "AquaHideout_UnusedRubyMap1",
+    "AquaHideout_UnusedRubyMap2",
+    "AquaHideout_UnusedRubyMap3",
+    "SkyPillar_Entrance",
+    "SkyPillar_Outside",
+    "SkyPillar_1F",
+    "SkyPillar_2F",
+    "SkyPillar_3F",
+    "SkyPillar_4F",
+    "ShoalCave_LowTideIceRoom",
+    "SkyPillar_5F",
+    "SkyPillar_Top",
+    "MagmaHideout_1F",
+    "MagmaHideout_2F_1R",
+    "MagmaHideout_2F_2R",
+    "MagmaHideout_3F_1R",
+    "MagmaHideout_3F_2R",
+    "MagmaHideout_4F",
+    "MagmaHideout_3F_3R",
+    "MagmaHideout_2F_3R",
+    "MirageTower_1F",
+    "MirageTower_2F",
+    "MirageTower_3F",
+    "MirageTower_4F",
+    "DesertUnderpass",
+    "ArtisanCave_B1F",
+    "ArtisanCave_1F",
+    "Underwater_MarineCave",
+    "MarineCave_Entrance",
+    "MarineCave_End",
+    "TerraCave_Entrance",
+    "TerraCave_End",
+    "AlteringCave",
+    "MeteorFalls_StevensCave",
+    NULL
+};
+
+// Group 25: gMapGroup_IndoorDynamic
+static const char* const sMapNames_IndoorDynamic[] = {
+    "SecretBase_RedCave1",
+    "SecretBase_BrownCave1",
+    "SecretBase_BlueCave1",
+    "SecretBase_YellowCave1",
+    "SecretBase_Tree1",
+    "SecretBase_Shrub1",
+    "SecretBase_RedCave2",
+    "SecretBase_BrownCave2",
+    "SecretBase_BlueCave2",
+    "SecretBase_YellowCave2",
+    "SecretBase_Tree2",
+    "SecretBase_Shrub2",
+    "SecretBase_RedCave3",
+    "SecretBase_BrownCave3",
+    "SecretBase_BlueCave3",
+    "SecretBase_YellowCave3",
+    "SecretBase_Tree3",
+    "SecretBase_Shrub3",
+    "SecretBase_RedCave4",
+    "SecretBase_BrownCave4",
+    "SecretBase_BlueCave4",
+    "SecretBase_YellowCave4",
+    "SecretBase_Tree4",
+    "SecretBase_Shrub4",
+    "BattleColosseum_2P",
+    "TradeCenter",
+    "RecordCorner",
+    "BattleColosseum_4P",
+    "ContestHall",
+    "UnusedContestHall1",
+    "UnusedContestHall2",
+    "UnusedContestHall3",
+    "UnusedContestHall4",
+    "UnusedContestHall5",
+    "UnusedContestHall6",
+    "ContestHallBeauty",
+    "ContestHallTough",
+    "ContestHallCool",
+    "ContestHallSmart",
+    "ContestHallCute",
+    "InsideOfTruck",
+    "SSTidalCorridor",
+    "SSTidalLowerDeck",
+    "SSTidalRooms",
+    "BattlePyramidSquare01",
+    "BattlePyramidSquare02",
+    "BattlePyramidSquare03",
+    "BattlePyramidSquare04",
+    "BattlePyramidSquare05",
+    "BattlePyramidSquare06",
+    "BattlePyramidSquare07",
+    "BattlePyramidSquare08",
+    "BattlePyramidSquare09",
+    "BattlePyramidSquare10",
+    "BattlePyramidSquare11",
+    "BattlePyramidSquare12",
+    "BattlePyramidSquare13",
+    "BattlePyramidSquare14",
+    "BattlePyramidSquare15",
+    "BattlePyramidSquare16",
+    "UnionRoom",
+    NULL
+};
+
+// Group 26: gMapGroup_SpecialArea
+static const char* const sMapNames_SpecialArea[] = {
+    "SafariZone_Northwest",
+    "SafariZone_North",
+    "SafariZone_Southwest",
+    "SafariZone_South",
+    "BattleFrontier_OutsideWest",
+    "BattleFrontier_BattleTowerLobby",
+    "BattleFrontier_BattleTowerElevator",
+    "BattleFrontier_BattleTowerCorridor",
+    "BattleFrontier_BattleTowerBattleRoom",
+    "SouthernIsland_Exterior",
+    "SouthernIsland_Interior",
+    "SafariZone_RestHouse",
+    "SafariZone_Northeast",
+    "SafariZone_Southeast",
+    "BattleFrontier_OutsideEast",
+    "BattleFrontier_BattleTowerMultiPartnerRoom",
+    "BattleFrontier_BattleTowerMultiCorridor",
+    "BattleFrontier_BattleTowerMultiBattleRoom",
+    "BattleFrontier_BattleDomeLobby",
+    "BattleFrontier_BattleDomeCorridor",
+    "BattleFrontier_BattleDomePreBattleRoom",
+    "BattleFrontier_BattleDomeBattleRoom",
+    "BattleFrontier_BattlePalaceLobby",
+    "BattleFrontier_BattlePalaceCorridor",
+    "BattleFrontier_BattlePalaceBattleRoom",
+    "BattleFrontier_BattlePyramidLobby",
+    "BattleFrontier_BattlePyramidFloor",
+    "BattleFrontier_BattlePyramidTop",
+    "BattleFrontier_BattleArenaLobby",
+    "BattleFrontier_BattleArenaCorridor",
+    "BattleFrontier_BattleArenaBattleRoom",
+    "BattleFrontier_BattleFactoryLobby",
+    "BattleFrontier_BattleFactoryPreBattleRoom",
+    "BattleFrontier_BattleFactoryBattleRoom",
+    "BattleFrontier_BattlePikeLobby",
+    "BattleFrontier_BattlePikeCorridor",
+    "BattleFrontier_BattlePikeThreePathRoom",
+    "BattleFrontier_BattlePikeRoomNormal",
+    "BattleFrontier_BattlePikeRoomFinal",
+    "BattleFrontier_BattlePikeRoomWildMons",
+    "BattleFrontier_RankingHall",
+    "BattleFrontier_Lounge1",
+    "BattleFrontier_ExchangeServiceCorner",
+    "BattleFrontier_Lounge2",
+    "BattleFrontier_Lounge3",
+    "BattleFrontier_Lounge4",
+    "BattleFrontier_ScottsHouse",
+    "BattleFrontier_Lounge5",
+    "BattleFrontier_Lounge6",
+    "BattleFrontier_Lounge7",
+    "BattleFrontier_ReceptionGate",
+    "BattleFrontier_Lounge8",
+    "BattleFrontier_Lounge9",
+    "BattleFrontier_PokemonCenter_1F",
+    "BattleFrontier_PokemonCenter_2F",
+    "BattleFrontier_Mart",
+    "FarawayIsland_Entrance",
+    "FarawayIsland_Interior",
+    "BirthIsland_Exterior",
+    "BirthIsland_Harbor",
+    "TrainerHill_Entrance",
+    "TrainerHill_1F",
+    "TrainerHill_2F",
+    "TrainerHill_3F",
+    "TrainerHill_4F",
+    "TrainerHill_Roof",
+    "NavelRock_Exterior",
+    "NavelRock_Harbor",
+    "NavelRock_Entrance",
+    "NavelRock_B1F",
+    "NavelRock_Fork",
+    "NavelRock_Up1",
+    "NavelRock_Up2",
+    "NavelRock_Up3",
+    "NavelRock_Up4",
+    "NavelRock_Top",
+    "NavelRock_Down01",
+    "NavelRock_Down02",
+    "NavelRock_Down03",
+    "NavelRock_Down04",
+    "NavelRock_Down05",
+    "NavelRock_Down06",
+    "NavelRock_Down07",
+    "NavelRock_Down08",
+    "NavelRock_Down09",
+    "NavelRock_Down10",
+    "NavelRock_Down11",
+    "NavelRock_Bottom",
+    "TrainerHill_Elevator",
+    NULL
+};
+
+// Group 27: gMapGroup_IndoorRoute104Prototype
+static const char* const sMapNames_IndoorRoute104Prototype[] = {
+    "Route104_Prototype",
+    "Route104_PrototypePrettyPetalFlowerShop",
+    NULL
+};
+
+// Group 28: gMapGroup_IndoorRoute109
+static const char* const sMapNames_IndoorRoute109[] = {
+    "Route109_SeashoreHouse",
+    NULL
+};
+
+// Group 29: gMapGroup_IndoorRoute110
+static const char* const sMapNames_IndoorRoute110[] = {
+    "Route110_TrickHouseEntrance",
+    "Route110_TrickHouseEnd",
+    "Route110_TrickHouseCorridor",
+    "Route110_TrickHousePuzzle1",
+    "Route110_TrickHousePuzzle2",
+    "Route110_TrickHousePuzzle3",
+    "Route110_TrickHousePuzzle4",
+    "Route110_TrickHousePuzzle5",
+    "Route110_TrickHousePuzzle6",
+    "Route110_TrickHousePuzzle7",
+    "Route110_TrickHousePuzzle8",
+    "Route110_SeasideCyclingRoadSouthEntrance",
+    "Route110_SeasideCyclingRoadNorthEntrance",
+    NULL
+};
+
+// Group 30: gMapGroup_IndoorRoute113
+static const char* const sMapNames_IndoorRoute113[] = {
+    "Route113_GlassWorkshop",
+    NULL
+};
+
+// Group 31: gMapGroup_IndoorRoute123
+static const char* const sMapNames_IndoorRoute123[] = {
+    "Route123_BerryMastersHouse",
+    NULL
+};
+
+// Group 32: gMapGroup_IndoorRoute119
+static const char* const sMapNames_IndoorRoute119[] = {
+    "Route119_WeatherInstitute_1F",
+    "Route119_WeatherInstitute_2F",
+    "Route119_House",
+    NULL
+};
+
+// Group 33: gMapGroup_IndoorRoute124
+static const char* const sMapNames_IndoorRoute124[] = {
+    "Route124_DivingTreasureHuntersHouse",
+    NULL
+};
+
+
+// An array of pointers to the map name arrays, indexed by mapGroup
+static const char* const* const sMapGroupNames[] = {
+    sMapNames_TownsAndRoutes,           // 0: gMapGroup_TownsAndRoutes
+    sMapNames_IndoorLittleroot,         // 1: gMapGroup_IndoorLittleroot
+    sMapNames_IndoorOldale,             // 2: gMapGroup_IndoorOldale
+    sMapNames_IndoorDewford,            // 3: gMapGroup_IndoorDewford
+    sMapNames_IndoorLavaridge,          // 4: gMapGroup_IndoorLavaridge
+    sMapNames_IndoorFallarbor,          // 5: gMapGroup_IndoorFallarbor
+    sMapNames_IndoorVerdanturf,         // 6: gMapGroup_IndoorVerdanturf
+    sMapNames_IndoorPacifidlog,         // 7: gMapGroup_IndoorPacifidlog
+    sMapNames_IndoorPetalburg,          // 8: gMapGroup_IndoorPetalburg
+    sMapNames_IndoorSlateport,          // 9: gMapGroup_IndoorSlateport
+    sMapNames_IndoorMauville,           // 10: gMapGroup_IndoorMauville
+    sMapNames_IndoorRustboro,           // 11: gMapGroup_IndoorRustboro
+    sMapNames_IndoorFortree,            // 12: gMapGroup_IndoorFortree
+    sMapNames_IndoorLilycove,           // 13: gMapGroup_IndoorLilycove
+    sMapNames_IndoorMossdeep,           // 14: gMapGroup_IndoorMossdeep
+    sMapNames_IndoorSootopolis,         // 15: gMapGroup_IndoorSootopolis
+    sMapNames_IndoorEverGrande,         // 16: gMapGroup_IndoorEverGrande
+    sMapNames_IndoorRoute104,           // 17: gMapGroup_IndoorRoute104
+    sMapNames_IndoorRoute111,           // 18: gMapGroup_IndoorRoute111
+    sMapNames_IndoorRoute112,           // 19: gMapGroup_IndoorRoute112
+    sMapNames_IndoorRoute114,           // 20: gMapGroup_IndoorRoute114
+    sMapNames_IndoorRoute116,           // 21: gMapGroup_IndoorRoute116
+    sMapNames_IndoorRoute117,           // 22: gMapGroup_IndoorRoute117
+    sMapNames_IndoorRoute121,           // 23: gMapGroup_IndoorRoute121
+    sMapNames_Dungeons,                 // 24: gMapGroup_Dungeons
+    sMapNames_IndoorDynamic,            // 25: gMapGroup_IndoorDynamic
+    sMapNames_SpecialArea,              // 26: gMapGroup_SpecialArea
+    sMapNames_IndoorRoute104Prototype,  // 27: gMapGroup_IndoorRoute104Prototype
+    sMapNames_IndoorRoute109,           // 28: gMapGroup_IndoorRoute109
+    sMapNames_IndoorRoute110,           // 29: gMapGroup_IndoorRoute110
+    sMapNames_IndoorRoute113,           // 30: gMapGroup_IndoorRoute113
+    sMapNames_IndoorRoute123,           // 31: gMapGroup_IndoorRoute123
+    sMapNames_IndoorRoute119,           // 32: gMapGroup_IndoorRoute119
+    sMapNames_IndoorRoute124,           // 33: gMapGroup_IndoorRoute124
+};
+
+// Number of map groups (for bounds checking)
+#define NUM_MAP_GROUPS (sizeof(sMapGroupNames) / sizeof(sMapGroupNames[0]))
+
+const char* GetMapName(s8 mapGroup, s8 mapNum)
+{
+    if (mapGroup < 0 || mapGroup >= NUM_MAP_GROUPS)
+    {
+        return "Unknown Map Group";
+    }
+
+    const char* const* mapNamesInGroup = sMapGroupNames[mapGroup];
+
+    // Iterate through the map names in the group until mapNum is reached or NULL is found
+    int i = 0;
+    while (mapNamesInGroup[i] != NULL)
+    {
+        if (i == mapNum)
+        {
+            return mapNamesInGroup[i];
+        }
+        i++;
+    }
+
+    return "Unknown Map Number"; // mapNum out of bounds for this group
+}

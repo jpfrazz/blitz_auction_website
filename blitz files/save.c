@@ -11,6 +11,7 @@
 #include "pokemon_storage_system.h"
 #include "trainer_hill.h"
 #include "link.h"
+#include "map_names.h" // Include the new header for map name lookup
 #include "constants/game_stat.h"
 
 static u16 CalculateChecksum(void *, u16);
@@ -895,6 +896,19 @@ u8 LoadGameSave(u8 saveType)
     default:
         status = TryLoadSaveSlot(FULL_SAVE_SLOT, gRamSaveSectorLocations);
         CopyPartyAndObjectsFromSave();
+
+        // If the save is valid, identify the current map for the save checker.
+        if (status == SAVE_STATUS_OK)
+        {
+            s8 mapGroup = gSaveBlock1Ptr->location.mapGroup;
+            s8 mapNum = gSaveBlock1Ptr->location.mapNum;
+            const char* mapName = GetMapName(mapGroup, mapNum);
+
+            // Placeholder for displaying the map name.
+            // In an emulator with debug features, this might be AGBPrintf, printf, or a custom logging function.
+            // Example: DebugPrintf("Save Loaded - Location: %s (Group: %d, Num: %d)", mapName, mapGroup, mapNum);
+        }
+
         gSaveFileStatus = status;
         gGameContinueCallback = NULL;
         break;

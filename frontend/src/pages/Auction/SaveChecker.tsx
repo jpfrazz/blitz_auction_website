@@ -3,6 +3,7 @@ import Header from '../../shared/components/Header';
 import Footer from '../../shared/components/Footer';
 import { fetchPokemonList } from '../../shared/api/pokemon';
 import './SaveChecker.scss';
+import { MAP_NAMES } from './mapNames';
 
 const SECTION_SIZE = 4096;
 const NUM_SECTIONS = 14;
@@ -15,6 +16,8 @@ const SECTION_DATA_SIZE = 3968; // 0xF80 bytes
 const ENCRYPTION_KEY_OFFSET = 0xAC; // In SaveBlock2 (Section 0)
 const MONEY_OFFSET = 0x4F0; // Money is at 0x4F0 in Section 1
 const VAR_BADGE_COUNT_OFFSET = 0x8D8;
+const MAP_GROUP_OFFSET = 0x04; // In SaveBlock1 (Section 1)
+const MAP_NUM_OFFSET = 0x05;   // In SaveBlock1 (Section 1)
 const FLAGS_START_OFFSET = 0x63D; // Found via debug scanner
 const FLAG_BADGE08_GET = 0x867;
 const PARTY_COUNT_OFFSET = 0x234;
@@ -103,6 +106,7 @@ const SaveChecker: React.FC = () => {
   const [box1, setBox1] = useState<BoxPokemon[]>([]);
   const [money, setMoney] = useState<number | null>(null);
   const [badgeCount, setBadgeCount] = useState<number | null>(null);
+  const [mapName, setMapName] = useState<string | null>(null);
   const [isBadge8Get, setIsBadge8Get] = useState<boolean | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [pokemonMetadata, setPokemonMetadata] = useState<Record<string, any>>({});
@@ -118,10 +122,18 @@ const SaveChecker: React.FC = () => {
           abilities: [p.ability1, p.ability2 || p.ability1, p.hidden_ability || p.ability1]
         };
         const name = p.name?.toLowerCase();
-        if (name) map[name] = entry;
+        if (name) {
+          map[name] = entry;
+          // Index by normalized name as well to handle accents (e.g., flabébé -> flabebe)
+          const normalized = name.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+          if (normalized !== name) map[normalized] = entry;
+        }
         
         const id = p.id || p.pokedex_id;
-        if (id) idMap.set(id, entry);
+        if (id) {
+          const isMega = p.name?.toLowerCase().includes('mega');
+          if (!isMega) idMap.set(Number(id), entry);
+        }
       }
       setPokemonMetadata(map);
       setPokemonById(idMap);
@@ -129,21 +141,38 @@ const SaveChecker: React.FC = () => {
   }, []);
 
   const resolveMetadata = (speciesId: number, nickname: string) => {
-    // 1. Try ID lookup first
-    if (pokemonById.has(speciesId)) return pokemonById.get(speciesId);
+    // 1. Try ID lookup
+    let data = pokemonById.get(speciesId);
 
-    // 2. Fallback to nickname (handling truncated GBA names)
-    if (!nickname) return null;
-    const searchName = nickname.toLowerCase();
-    if (pokemonMetadata[searchName]) return pokemonMetadata[searchName];
-    
-    if (nickname.length >= 10) {
-      const match = Object.values(pokemonMetadata).find(p => 
-        p.name.toLowerCase().startsWith(searchName)
-      );
-      if (match) return match;
+    // 2. Fallback to nickname lookup (handling truncated GBA names)
+    if (!data && nickname) {
+      let searchName = nickname.toLowerCase();
+      data = pokemonMetadata[searchName];
+      
+      // Try normalized lookup for accented names
+      if (!data) {
+        const normalized = searchName.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+        data = pokemonMetadata[normalized];
+      }
+
+      // Handle forms (e.g. "Deerling" matching "Deerling-Spring") or truncated names
+      if (!data) {
+        data = Object.values(pokemonMetadata).find(p => 
+          p.name.toLowerCase().startsWith(searchName)
+        );
+      }
     }
-    return null;
+
+    // Handle Mega Evolution redirection to treat them as base forms
+    if (data && data.name.toLowerCase().includes('mega')) {
+      const baseName = data.name.toLowerCase()
+        .replace(/\s*\(mega .*\)/, '') // Handles "(Mega ...)"
+        .replace(/^mega\s*/, '') // Handles "Mega ..."
+        .trim();
+      if (pokemonMetadata[baseName]) return pokemonMetadata[baseName];
+    }
+
+    return data;
   };
 
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -241,6 +270,7 @@ const SaveChecker: React.FC = () => {
     const { sectionOffsets, slotOffset: activeSlotOffset } = activeSlot;
     const s0 = sectionOffsets[0];
     const s1 = sectionOffsets[1];
+    const s2 = sectionOffsets[2];
 
     console.log(`Sections found: ${Object.keys(sectionOffsets).join(", ")}`);
     if (s0 === undefined || s1 === undefined) {
@@ -257,8 +287,22 @@ const SaveChecker: React.FC = () => {
     const rawMoney = view.getUint32(s1 + MONEY_OFFSET, true);
     const decryptedMoney = (rawMoney ^ encryptionKey) >>> 0;
 
+    // Extract Map Name
+    const mapGroup = data[s1 + MAP_GROUP_OFFSET];
+    const mapNum = data[s1 + MAP_NUM_OFFSET];
+    const currentMapName = MAP_NAMES[mapGroup]?.[mapNum] || `Unknown Map (${mapGroup}, ${mapNum})`;
+    
+    console.log(`DEBUG: Map Extraction`);
+    console.log(`  s1 (Section 1 offset): 0x${s1.toString(16)}`);
+    console.log(`  MAP_GROUP_OFFSET: 0x${MAP_GROUP_OFFSET.toString(16)}`);
+    console.log(`  mapGroup (raw): ${mapGroup}`);
+    console.log(`  mapNum (raw): ${mapNum}`);
+    console.log(`  Resolved Name: ${currentMapName}`);
+
+    setMapName(currentMapName);
+
     // Extract Party
-    const partyCount = Math.min(data[s1 + PARTY_COUNT_OFFSET], 6);
+    const partyCount = Math.min(data[s1 + PARTY_COUNT_OFFSET] || 0, 6);
     const extractedParty: Pokemon[] = [];
 
     for (let i = 0; i < partyCount; i++) {
@@ -346,8 +390,7 @@ const SaveChecker: React.FC = () => {
     setMoney(decryptedMoney);
 
     // 4. Extract Badge Count Variable from Section 2
-    if (sectionOffsets[2] !== undefined) {
-      const s2 = sectionOffsets[2];
+    if (s2 !== undefined) {
 
       const badges = view.getUint16(s2 + VAR_BADGE_COUNT_OFFSET, true);
       setBadgeCount(badges);
@@ -457,12 +500,10 @@ const SaveChecker: React.FC = () => {
                 <span className="stat-label">Badges</span>
                 <span className="stat-value">{badgeCount}</span>
               </div>
-              {isBadge8Get !== null && (
-                <div className="stat-item">
-                  <span className="stat-label">Badge 8 Defeated</span>
-                  <span className="stat-value">{isBadge8Get ? "Yes" : "No"}</span>
-                </div>
-              )}
+              <div className="stat-item">
+                <span className="stat-label">Location</span>
+                <span className="stat-value">{mapName}</span>
+              </div>
             </div>
             </div>
           )}
