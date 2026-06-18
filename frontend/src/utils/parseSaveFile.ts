@@ -45,6 +45,7 @@ export interface SavePokemon {
   max_hp: number;
   species_id: number;
   nature: string;
+  ability_num: number;
   ivs: SaveIvs;
 }
 
@@ -52,6 +53,7 @@ export interface SaveBoxPokemon {
   personality: number;
   nickname: string;
   species_id: number;
+  ability_num: number;
   nature: string;
   ivs: SaveIvs;
 }
@@ -76,7 +78,7 @@ function decodeString(bytes: Uint8Array): string {
     else if (b >= 0xbb && b <= 0xd4) result += String.fromCharCode(b - 0xbb + 65);
     else if (b >= 0xd5 && b <= 0xee) result += String.fromCharCode(b - 0xd5 + 97);
     else if (b >= 0xa1 && b <= 0xaa) result += String.fromCharCode(b - 0xa1 + 48);
-    else result += '?';
+    // Any other byte is an unknown character. We ignore it to prevent '??' and allow parsing to continue.
   }
   return result.trim();
 }
@@ -130,7 +132,7 @@ export function parseSaveFile(data: Uint8Array): SaveData {
   }
 
   const encryptionKey = view.getUint32(s0 + ENCRYPTION_KEY_OFFSET, true);
-  const trainer_name = decodeString(data.slice(s0, s0 + 8));
+  const trainer_name = decodeString(data.slice(s0, s0 + 12));
   const rawMoney = view.getUint32(s1 + MONEY_OFFSET, true);
   const money = (rawMoney ^ encryptionKey) >>> 0;
 
@@ -147,12 +149,15 @@ export function parseSaveFile(data: Uint8Array): SaveData {
 
     const growthIdx = order.indexOf('G');
     const growthOffset = pStart + 32 + growthIdx * SUBSTRUCTURE_SIZE;
-    const encryptedSpecies = view.getUint16(growthOffset, true);
-    const species_id = (encryptedSpecies ^ (key & 0xffff)) & 0xffff;
+    const decryptedGrowth0 = (view.getUint32(growthOffset, true) ^ key) >>> 0;
+    const species_id = decryptedGrowth0 & 0x7FF;
 
     const miscIdx = order.indexOf('M');
     const miscOffset = pStart + 32 + miscIdx * SUBSTRUCTURE_SIZE;
+    const miscWord2 = (view.getUint32(miscOffset + 8, true) ^ key) >>> 0;
     const decryptedMisc = (view.getUint32(miscOffset + 4, true) ^ key) >>> 0;
+    
+    const ability_num = (miscWord2 >> 29) & 3;
     const ivs: SaveIvs = {
       hp:  decryptedMisc & 0x1f,
       atk: (decryptedMisc >> 5) & 0x1f,
@@ -165,16 +170,17 @@ export function parseSaveFile(data: Uint8Array): SaveData {
     const level = data[pStart + 100];
     const hp = view.getUint16(pStart + 102, true);
     const max_hp = view.getUint16(pStart + 104, true);
-    const nickname = decodeString(data.slice(pStart + 8, pStart + 18));
+    const nickname = decodeString(data.slice(pStart + 8, pStart + 20));
 
     if (species_id > 0) {
       party.push({
         personality,
-        nickname: nickname || (species_id === 412 ? 'Egg' : `Species ${species_id}`),
+        nickname,
         level,
         hp,
         max_hp,
         species_id,
+        ability_num,
         nature: NATURES[personality % 25],
         ivs,
       });
@@ -198,12 +204,15 @@ export function parseSaveFile(data: Uint8Array): SaveData {
 
       const growthIdx = order.indexOf('G');
       const growthOffset = pStart + 32 + growthIdx * SUBSTRUCTURE_SIZE;
-      const encryptedSpecies = view.getUint16(growthOffset, true);
-      const species_id = (encryptedSpecies ^ (key & 0xffff)) & 0xffff;
+      const decryptedGrowth0 = (view.getUint32(growthOffset, true) ^ key) >>> 0;
+      const species_id = decryptedGrowth0 & 0x7FF;
 
       const miscIdx = order.indexOf('M');
       const miscOffset = pStart + 32 + miscIdx * SUBSTRUCTURE_SIZE;
+      const miscWord2 = (view.getUint32(miscOffset + 8, true) ^ key) >>> 0;
       const decryptedMisc = (view.getUint32(miscOffset + 4, true) ^ key) >>> 0;
+
+      const ability_num = (miscWord2 >> 29) & 3;
       const ivs: SaveIvs = {
         hp:  decryptedMisc & 0x1f,
         atk: (decryptedMisc >> 5) & 0x1f,
@@ -214,11 +223,12 @@ export function parseSaveFile(data: Uint8Array): SaveData {
       };
 
       if (species_id > 0 && species_id < 0xffff) {
-        const nickname = decodeString(data.slice(pStart + 8, pStart + 18));
+        const nickname = decodeString(data.slice(pStart + 8, pStart + 20));
         box.push({
           personality,
-          nickname: nickname || (species_id === 412 ? 'Egg' : `Species ${species_id}`),
+          nickname,
           species_id,
+          ability_num,
           nature: NATURES[personality % 25],
           ivs,
         });

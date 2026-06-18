@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import Header from '../../shared/components/Header';
 import Footer from '../../shared/components/Footer';
+import { fetchPokemonList } from '../../shared/api/pokemon';
 import './SaveChecker.scss';
 
 const SECTION_SIZE = 4096;
@@ -63,8 +64,6 @@ const NATURE_EFFECTS: Record<string, string> = {
   "Bashful": ""
 };
 
-const SPECIES_NAMES: { [key: number]: string } = {};
-
 interface Pokemon {
   nickname: string;
   level: number;
@@ -72,6 +71,7 @@ interface Pokemon {
   maxHp: number;
   speciesId: number;
   nature: string;
+  ability_num: number;
   ivs: {
     hp: number;
     atk: number;
@@ -85,6 +85,7 @@ interface Pokemon {
 interface BoxPokemon {
   nickname: string;
   speciesId: number;
+  ability_num: number;
   nature: string;
   ivs: {
     hp: number;
@@ -104,6 +105,46 @@ const SaveChecker: React.FC = () => {
   const [badgeCount, setBadgeCount] = useState<number | null>(null);
   const [isBadge8Get, setIsBadge8Get] = useState<boolean | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [pokemonMetadata, setPokemonMetadata] = useState<Record<string, any>>({});
+  const [pokemonById, setPokemonById] = useState<Map<number, any>>(new Map());
+
+  useEffect(() => {
+    fetchPokemonList().then((list) => {
+      const map: Record<string, any> = {};
+      const idMap = new Map<number, any>();
+      for (const p of (list as any[])) {
+        const entry = {
+          ...p,
+          abilities: [p.ability1, p.ability2 || p.ability1, p.hidden_ability || p.ability1]
+        };
+        const name = p.name?.toLowerCase();
+        if (name) map[name] = entry;
+        
+        const id = p.id || p.pokedex_id;
+        if (id) idMap.set(id, entry);
+      }
+      setPokemonMetadata(map);
+      setPokemonById(idMap);
+    }).catch(() => {});
+  }, []);
+
+  const resolveMetadata = (speciesId: number, nickname: string) => {
+    // 1. Try ID lookup first
+    if (pokemonById.has(speciesId)) return pokemonById.get(speciesId);
+
+    // 2. Fallback to nickname (handling truncated GBA names)
+    if (!nickname) return null;
+    const searchName = nickname.toLowerCase();
+    if (pokemonMetadata[searchName]) return pokemonMetadata[searchName];
+    
+    if (nickname.length >= 10) {
+      const match = Object.values(pokemonMetadata).find(p => 
+        p.name.toLowerCase().startsWith(searchName)
+      );
+      if (match) return match;
+    }
+    return null;
+  };
 
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -135,7 +176,7 @@ const SaveChecker: React.FC = () => {
       else if (b >= 0xBB && b <= 0xD4) result += String.fromCharCode(b - 0xBB + 65); // A-Z
       else if (b >= 0xD5 && b <= 0xEE) result += String.fromCharCode(b - 0xD5 + 97); // a-z
       else if (b >= 0xA1 && b <= 0xAA) result += String.fromCharCode(b - 0xA1 + 48); // 0-9
-      else result += "?";
+      // Any other byte is an unknown character. We ignore it to prevent '??' and allow parsing to continue.
     }
     return result.trim();
   };
@@ -202,7 +243,6 @@ const SaveChecker: React.FC = () => {
     const s1 = sectionOffsets[1];
 
     console.log(`Sections found: ${Object.keys(sectionOffsets).join(", ")}`);
-
     if (s0 === undefined || s1 === undefined) {
       throw new Error('Required save sections (0 and 1) not found.');
     }
@@ -211,7 +251,7 @@ const SaveChecker: React.FC = () => {
     const encryptionKey = view.getUint32(s0 + ENCRYPTION_KEY_OFFSET, true);
 
     // Trainer Name is at start of Section 0
-    setTrainerName(decodeString(data.slice(s0, s0 + 8)));
+    setTrainerName(decodeString(data.slice(s0, s0 + 12)));
 
     // Money is XOR encrypted with the key
     const rawMoney = view.getUint32(s1 + MONEY_OFFSET, true);
@@ -235,13 +275,44 @@ const SaveChecker: React.FC = () => {
       // 1. Get Species from Growth Block
       const growthIdx = order.indexOf('G');
       const growthOffset = pStart + 32 + (growthIdx * SUBSTRUCTURE_SIZE);
-      const encryptedSpecies = view.getUint16(growthOffset, true);
-      const speciesId = (encryptedSpecies ^ (key & 0xFFFF)) & 0xFFFF;
+      const rawWord0 = view.getUint32(growthOffset, true);
+      const growthFull = new Uint32Array([
+        (rawWord0 ^ key) >>> 0,
+        (view.getUint32(growthOffset + 4, true) ^ key) >>> 0,
+        (view.getUint32(growthOffset + 8, true) ^ key) >>> 0,
+        (view.getUint32(growthOffset + 12, true) ^ key) >>> 0
+      ]);
+
+      // Expansion packs species into 11 bits (0-10) and Tera Type into 5 bits (11-15)
+      // Masking with 0x7FF extracts the clean Species ID
+      const speciesId = growthFull[0] & 0x7FF;
+      const nickname = decodeString(data.slice(pStart + 8, pStart + 20));
+
+      // DEBUG: Identify Species ID Mismatch
+      if (i < 6) {
+        console.log(`DEBUG: Party[${i}] "${nickname}"`);
+        console.log(`  Extracted speciesId: ${speciesId} (0x${speciesId.toString(16)})`);
+        console.log(`  Raw Word 0: 0x${rawWord0.toString(16).padStart(8, '0')}`);
+        console.log(`  Decrypted Word 0: 0x${growthFull[0].toString(16).padStart(8, '0')}`);
+        if (i === 0) {
+          console.log(`  Database Map Sample (Internal IDs in DB):`, Array.from(pokemonById.keys()).slice(0, 20));
+        }
+      }
 
       // 2. Get IVs from Miscellaneous Block
       const miscIdx = order.indexOf('M');
       const miscOffset = pStart + 32 + (miscIdx * SUBSTRUCTURE_SIZE);
-      const decryptedMisc = (view.getUint32(miscOffset + 4, true) ^ key) >>> 0;
+      const miscFull = new Uint32Array([
+        (view.getUint32(miscOffset, true) ^ key) >>> 0,
+        (view.getUint32(miscOffset + 4, true) ^ key) >>> 0,
+        (view.getUint32(miscOffset + 8, true) ^ key) >>> 0,
+        (view.getUint32(miscOffset + 12, true) ^ key) >>> 0
+      ]);
+
+      // Blitz/Expansion stores the ability index in Miscellaneous Word 2 (bits 29-30)
+      const ability_num = (miscFull[2] >> 29) & 3;
+
+      const decryptedMisc = miscFull[1];
       const ivs = {
         hp: decryptedMisc & 0x1F,
         atk: (decryptedMisc >> 5) & 0x1F,
@@ -256,15 +327,15 @@ const SaveChecker: React.FC = () => {
       const level = data[pStart + 100];
       const hp = view.getUint16(pStart + 102, true);
       const maxHp = view.getUint16(pStart + 104, true);
-      const nickname = decodeString(data.slice(pStart + 8, pStart + 18));
 
       if (speciesId > 0) {
         extractedParty.push({
-          nickname: nickname || (speciesId === 412 ? "Egg" : `Species ${speciesId}`),
+          nickname,
           level,
           hp,
           maxHp,
           speciesId,
+          ability_num,
           nature: NATURES[personality % 25],
           ivs
         });
@@ -309,13 +380,23 @@ const SaveChecker: React.FC = () => {
         
         const growthIdx = order.indexOf('G');
         const growthOffset = pStart + 32 + (growthIdx * SUBSTRUCTURE_SIZE);
-        const encryptedSpecies = view.getUint16(growthOffset, true);
-        const speciesId = (encryptedSpecies ^ (key & 0xFFFF)) & 0xFFFF;
+        const decryptedGrowth0 = (view.getUint32(growthOffset, true) ^ key) >>> 0;
+        
+        const speciesId = decryptedGrowth0 & 0x7FF;
 
         // Get IVs from Miscellaneous Block
         const miscIdx = order.indexOf('M');
         const miscOffset = pStart + 32 + (miscIdx * SUBSTRUCTURE_SIZE);
-        const decryptedMisc = (view.getUint32(miscOffset + 4, true) ^ key) >>> 0;
+        const miscFull = new Uint32Array([
+          (view.getUint32(miscOffset, true) ^ key) >>> 0,
+          (view.getUint32(miscOffset + 4, true) ^ key) >>> 0,
+          (view.getUint32(miscOffset + 8, true) ^ key) >>> 0,
+          (view.getUint32(miscOffset + 12, true) ^ key) >>> 0
+        ]);
+
+        const ability_num = (miscFull[2] >> 29) & 3;
+
+        const decryptedMisc = miscFull[1];
         const ivs = {
           hp: decryptedMisc & 0x1F,
           atk: (decryptedMisc >> 5) & 0x1F,
@@ -326,10 +407,12 @@ const SaveChecker: React.FC = () => {
         };
 
         if (speciesId > 0 && speciesId < 0xFFFF) {
-          const nickname = decodeString(data.slice(pStart + 8, pStart + 18));
+          const nickname = decodeString(data.slice(pStart + 8, pStart + 20));
+
           extractedBox1.push({
-            nickname: nickname || (speciesId === 412 ? "Egg" : `Species ${speciesId}`),
+            nickname,
             speciesId,
+            ability_num,
             nature: NATURES[personality % 25],
             ivs
           });
@@ -388,10 +471,26 @@ const SaveChecker: React.FC = () => {
             <div className="party-section">
               <h2>Current Party</h2>
               <div className="party-grid">
-                {party.map((mon, i) => (
-                  <div key={i} className={`pokemon-card ${mon.hp === 0 ? 'fainted' : ''}`}>
+                {party.map((mon, i) => {
+                  const speciesData = resolveMetadata(mon.speciesId, mon.nickname);
+                  const realName = mon.speciesId === 412 ? "Egg" : (speciesData?.name || `ID ${mon.speciesId}`);
+                  const abilityName = speciesData?.abilities ? speciesData.abilities[mon.ability_num] : 'Unknown';
+                  
+                  // Only show the nickname if it's actually a nickname, not just a truncated species name
+                  const isTruncatedMatch = realName.toLowerCase().startsWith(mon.nickname.toLowerCase()) && mon.nickname.length >= 10;
+                  const hasNickname = mon.nickname && mon.nickname.toLowerCase() !== realName.toLowerCase() && !isTruncatedMatch;
+
+                  return (
+                    <div key={i} className={`pokemon-card ${mon.hp === 0 ? 'fainted' : ''}`}>
                     <div className="mon-info">
-                      <span className="mon-name">{mon.nickname} </span>
+                      <span className="mon-name">
+                        {hasNickname ? (
+                          <>{mon.nickname} <span style={{ opacity: 0.6, fontSize: '0.9em' }}>({realName})</span></>
+                        ) : realName}{' '}
+                        <span className="mon-ability" style={{ fontSize: '0.8rem', opacity: 0.7, fontWeight: 'normal' }}>
+                          ({abilityName})
+                        </span>
+                      </span>
                       <span className="mon-level">Lv. {mon.level}</span>
                     </div>
                     <div className="mon-nature">{mon.nature} Nature{NATURE_EFFECTS[mon.nature]}</div>
@@ -410,7 +509,8 @@ const SaveChecker: React.FC = () => {
                       </div>
                     )}
                   </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
           )}
@@ -419,10 +519,25 @@ const SaveChecker: React.FC = () => {
             <div className="party-section">
               <h2>Box 1</h2>
               <div className="party-grid">
-                {box1.map((mon, i) => (
-                  <div key={i} className="pokemon-card">
+                {box1.map((mon, i) => {
+                  const speciesData = resolveMetadata(mon.speciesId, mon.nickname);
+                  const realName = mon.speciesId === 412 ? "Egg" : (speciesData?.name || `ID ${mon.speciesId}`);
+                  const abilityName = speciesData?.abilities ? speciesData.abilities[mon.ability_num] : 'Unknown';
+                  
+                  const isTruncatedMatch = realName.toLowerCase().startsWith(mon.nickname.toLowerCase()) && mon.nickname.length >= 10;
+                  const hasNickname = mon.nickname && mon.nickname.toLowerCase() !== realName.toLowerCase() && !isTruncatedMatch;
+
+                  return (
+                    <div key={i} className="pokemon-card">
                     <div className="mon-info">
-                      <span className="mon-name">{mon.nickname} </span>
+                      <span className="mon-name">
+                        {hasNickname ? (
+                          <>{mon.nickname} <span style={{ opacity: 0.6, fontSize: '0.9em' }}>({realName})</span></>
+                        ) : realName}{' '}
+                        <span className="mon-ability" style={{ fontSize: '0.8rem', opacity: 0.7, fontWeight: 'normal' }}>
+                          ({abilityName})
+                        </span>
+                      </span>
                     </div>
                     <div className="mon-nature">{mon.nature} Nature{NATURE_EFFECTS[mon.nature]}</div>
                     {mon.ivs && (
@@ -436,7 +551,8 @@ const SaveChecker: React.FC = () => {
                       </div>
                     )}
                   </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
           )}

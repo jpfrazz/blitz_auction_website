@@ -142,13 +142,15 @@ const EmulatorPage: React.FC = () => {
   // Own parsed save data shown below the emulator
   const [mySaveData, setMySaveData] = useState<SaveData | null>(null);
   const [saveLastSynced, setSaveLastSynced] = useState<Date | null>(null);
+  const [isPanelMinimized, setIsPanelMinimized] = useState(false);
 
   // Current logged-in user (to exclude self from sidebar)
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
 
   // Other players in the draft (populated via WebSocket)
   const [otherSaves, setOtherSaves] = useState<OtherPlayerSaves>({});
-  const [pokemonNameById, setPokemonNameById] = useState<Record<number, string>>({});
+  const [pokemonMetadata, setPokemonMetadata] = useState<Record<string, any>>({});
+  const [pokemonById, setPokemonById] = useState<Map<number, any>>(new Map());
 
   // Persist fainted state via Personality ID (User ID -> Set of PIDs)
   const [faintedPids, setFaintedPids] = useState<Record<string, Set<number>>>({});
@@ -197,15 +199,45 @@ const EmulatorPage: React.FC = () => {
     let cancelled = false;
     fetchPokemonList().then((list) => {
       if (cancelled) return;
-      const map: Record<number, string> = {};
-      for (const p of list) {
-        const id = (p.pokedex_id ?? p.id) as number;
-        if (id) map[id] = (p.name || '').toString().toLowerCase();
+      const map: Record<string, any> = {};
+      const idMap = new Map<number, any>();
+      for (const p of (list as any[])) {
+        const entry = {
+          ...p,
+          abilities: [p.ability1, p.ability2 || p.ability1, p.hidden_ability || p.ability1]
+        };
+        const name = p.name?.toLowerCase();
+        if (name) map[name] = entry;
+
+        const id = p.id || p.pokedex_id;
+        if (id) idMap.set(id, entry);
       }
-      setPokemonNameById(map);
+      setPokemonMetadata(map);
+      setPokemonById(idMap);
     }).catch(() => {});
     return () => { cancelled = true; };
   }, []);
+
+  const resolveMetadata = (speciesId: number, nickname: string) => {
+    // 1. Try ID lookup first (most reliable)
+    if (pokemonById.has(speciesId)) return pokemonById.get(speciesId);
+
+    // 2. Fallback to nickname
+    if (!nickname) return null;
+    const searchName = nickname.toLowerCase();
+    // Direct match
+    if (pokemonMetadata[searchName]) return pokemonMetadata[searchName];
+    
+    // Handle GBA 10-character truncation (e.g. "BRAMBLEGHA" -> "Brambleghast")
+    if (nickname.length >= 10) {
+      const match = Object.values(pokemonMetadata).find(p => 
+        p.name.toLowerCase().startsWith(searchName)
+      );
+      if (match) return match;
+    }
+    return null;
+  };
+
   useEffect(() => {
     if (!draftId) return;
 
@@ -380,7 +412,7 @@ const EmulatorPage: React.FC = () => {
 
     // Intercept keyboard shortcuts for saving/loading (keys 1, 2, 3) and pause (Space)
     const blockShortcuts = (e: KeyboardEvent) => {
-      if (['1', '2', '3', ' ', 'Fn', 'Function'].includes(e.key)) {
+      if (['1', '2', '3', 'Fn', 'Function'].includes(e.key)) {
         e.stopImmediatePropagation();
       }
     };
@@ -598,6 +630,7 @@ const EmulatorPage: React.FC = () => {
               </div>
               <div id="game" />
 
+            <div className={`save-panel-container ${isPanelMinimized ? 'minimized' : ''}`}>
               {mySaveData && (
                 <div className="save-panel own-save-panel">
                   <div className="save-panel-header">
@@ -611,30 +644,46 @@ const EmulatorPage: React.FC = () => {
                         synced {saveLastSynced.toLocaleTimeString()}
                       </span>
                     )}
+                    <button 
+                      className="panel-minimize-btn"
+                      onClick={() => setIsPanelMinimized(!isPanelMinimized)}
+                      title={isPanelMinimized ? "Expand" : "Minimize"}
+                    >
+                      {isPanelMinimized ? '＋' : '－'}
+                    </button>
                   </div>
-                  <div className="save-party-grid">
+                  {!isPanelMinimized && (
+                    <div className="save-party-grid">
                     {sortPokemon(currentUserId || 'me', [
                       ...(mySaveData.party ?? []).map((m: any) => ({ ...m, _isParty: true })),
                       ...(mySaveData.box ?? []).map((m: any) => ({ ...m, _isParty: false })),
                     ]).map((mon: any, i: number) => {
                       const speciesId = mon.species_id ?? mon.speciesId;
-                      const name = pokemonNameById[speciesId] || mon.nickname || '???';
-                      const iconName = getIconName(name);
+                      const speciesData = resolveMetadata(speciesId, mon.nickname);
+                      const realName = speciesId === 412 ? "Egg" : (speciesData?.name || `ID ${speciesId}`);
+                      const iconName = getIconName(realName);
+                      const abilityName = speciesData?.abilities?.[mon.ability_num] || 'Unknown';
                       const fainted = isMonFainted(currentUserId || 'me', mon);
+                      const isTruncatedMatch = realName.toLowerCase().startsWith(mon.nickname.toLowerCase()) && mon.nickname.length >= 10;
+                      const hasNickname = mon.nickname && mon.nickname.toLowerCase() !== realName.toLowerCase() && !isTruncatedMatch;
 
                       return (
                         <div key={`combined-${i}`} className={`save-mon-card${fainted ? ' fainted' : ''}`}>
                           <div className="mon-name-row">
                             <span className="mon-name" style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                              {mon.nickname}
+                              {hasNickname ? (
+                                <>{mon.nickname} <span style={{ opacity: 0.6, fontSize: '0.9em' }}>({realName})</span></>
+                              ) : realName}
                               <img
                                 src={`/MiniIcons/${iconName}.png`}
                                 alt=""
                                 style={{ width: '24px', height: '24px', imageRendering: 'pixelated' }}
                                 onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
                               />
+                              <span className="mon-ability" style={{ fontSize: '0.9rem', opacity: 0.7, fontWeight: 'normal', marginLeft: '4px' }}>
+                                {abilityName}
+                              </span>
                             </span>
-                            {mon._isParty && <span className="mon-level">Lv. {mon.level}</span>}
                           </div>
                           {mon.nature && <div className="mon-nature">{mon.nature}{NATURE_EFFECTS[mon.nature]}</div>}
                           {mon.ivs && (
@@ -651,9 +700,12 @@ const EmulatorPage: React.FC = () => {
                       );
                     })}
                   </div>
+                  )}
                 </div>
               )}
             </div>
+            </div>
+
 
             {/* ── Right sidebar: other players ── */}
             {hasSidebar && (
@@ -673,18 +725,23 @@ const EmulatorPage: React.FC = () => {
                           ...(save.box ?? []).map((m: any) => ({ ...m, _isParty: false })),
                         ]).map((mon: any, i: number) => {
                           const speciesId = mon.species_id ?? mon.speciesId;
-                          const name = pokemonNameById[speciesId] || mon.nickname || '???';
-                          const iconName = getIconName(name);
+                          const speciesData = resolveMetadata(speciesId, mon.nickname);
+                          const realName = speciesId === 412 ? "Egg" : (speciesData?.name || `ID ${speciesId}`);
+                          const iconName = getIconName(realName);
+                          const abilityName = speciesData?.abilities?.[mon.ability_num] || 'Unknown';
                           const fainted = isMonFainted(uid, mon);
+                          const isTruncatedMatch = realName.toLowerCase().startsWith(mon.nickname.toLowerCase()) && mon.nickname.length >= 10;
+                          const hasNickname = mon.nickname && mon.nickname.toLowerCase() !== realName.toLowerCase() && !isTruncatedMatch;
+
                           return (
                             <img
                               key={`icon-${i}`}
                               src={`/MiniIcons/${iconName}.png`}
-                              alt={mon.nickname || iconName}
+                              alt={mon.nickname || realName}
                               className={`sidebar-mini-icon ${fainted ? 'fainted' : ''}`}
                               style={fainted ? { filter: 'grayscale(100%)', opacity: 0.6 } : {}}
-                              title={`${mon.nickname} (${mon.nature || 'Unknown'} Nature${mon.nature ? NATURE_EFFECTS[mon.nature] : ''})${mon.ivs ? `\nIVs: ${mon.ivs.hp}/${mon.ivs.atk}/${mon.ivs.def}/${mon.ivs.spa}/${mon.ivs.spd}/${mon.ivs.spe}` : ''}`}
-                              onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+                              title={`${hasNickname ? `${mon.nickname} (${realName})` : realName} (${abilityName}) - (${mon.nature || 'Unknown'} Nature${mon.nature ? NATURE_EFFECTS[mon.nature] : ''})${mon.ivs ? `\nIVs: ${mon.ivs.hp}/${mon.ivs.atk}/${mon.ivs.def}/${mon.ivs.spa}/${mon.ivs.spd}/${mon.ivs.spe}` : ''}`}
+                              onError={(e) => { (e.target as HTMLImageElement).src = '/MiniIcons/question.png'; }}
                             />
                           );
                         })}

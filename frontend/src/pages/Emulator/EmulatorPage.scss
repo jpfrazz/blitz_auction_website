@@ -112,8 +112,8 @@
   width: 100%;
   display: flex;
   align-items: flex-start;
-  // Exactly as tall as the remaining viewport below the header (~6rem)
-  height: calc(100vh - 6rem);
+  // Adjusted to fill the remaining viewport height accurately
+  height: calc(100vh - 4.2rem); 
   overflow: hidden;
 }
 
@@ -126,8 +126,8 @@
   overflow-y: auto;
 
   .emulator-layout.has-sidebar & {
-    flex: 0 0 80%;
-    max-width: 80%;
+    flex: 0 0 75%;
+    max-width: 75%;
   }
 }
 
@@ -169,11 +169,28 @@
 
 #game {
   width: 100%;
-  // Fill remaining column height after the top bar (~4rem)
-  height: calc(100vh - 21rem);
+  // Base height when panel is open
+  height: calc(100vh - 20rem);
   background: #000;
   display: block;
   overflow: hidden;
+  transition: height 0.2s ease-out;
+
+  .save-panel-container.minimized + & {
+     // Not used in this order, logic below
+  }
+}
+
+// Expand game when minimized
+.save-panel-container.minimized {
+  & ~ #game {
+    // Emulator takes more space
+  }
+}
+
+// Applying the expansion logic via the container parent
+.emulator-col:has(.save-panel-container.minimized) #game {
+  height: calc(100vh - 12rem);
 }
 
 // ── Own save panel (below emulator) ────────────────────────────────────────
@@ -213,6 +230,28 @@
   white-space: nowrap;
   opacity: 0.85;
   margin-left: auto;
+}
+
+.panel-minimize-btn {
+  background: transparent;
+  border: 1px solid $eb-border;
+  color: $eb-text-muted;
+  border-radius: 4px;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 1.2rem;
+  margin-left: 0.5rem;
+  transition: all 0.2s;
+
+  &:hover {
+    border-color: $eb-primary;
+    color: $eb-primary;
+    background: color-mix(in srgb, $eb-surface, $eb-primary 10%);
+  }
 }
 
 .save-party-grid {
@@ -292,8 +331,8 @@
 // ── Sidebar (other players) ────────────────────────────────────────────────
 
 .emulator-sidebar {
-  flex: 0 0 20%;
-  max-width: 20%;
+  flex: 0 0 25%;
+  max-width: 25%;
   display: flex;
   flex-direction: column;
   height: 100%;
@@ -350,8 +389,8 @@
 }
 
 .sidebar-mini-icon {
-  width: 22px;
-  height: 22px;
+  width: 26px;
+  height: 26px;
   image-rendering: pixelated;
 }
 

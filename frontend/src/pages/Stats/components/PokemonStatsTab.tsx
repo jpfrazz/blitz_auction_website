@@ -490,7 +490,11 @@ const PokemonStatsTab: React.FC<PokemonStatsTabProps> = ({
     const query = pokemonSearch.trim().toLowerCase();
 
     return pokemonSummary.filter((entry) => {
-      const matchesSearch = !query || entry.name.toLowerCase().includes(query);
+      const searchTerms = query.split(/[,|]/).map(term => term.trim()).filter(term => term.length > 0);
+      const matchesSearch = !query || searchTerms.some(term => 
+        entry.name.toLowerCase().includes(term) || 
+        entry.key.toLowerCase().includes(term)
+      );
       const matchesType = !selectedType || entry.types.some(t => t.toLowerCase() === selectedType.toLowerCase());
       return matchesSearch && matchesType;
     });
