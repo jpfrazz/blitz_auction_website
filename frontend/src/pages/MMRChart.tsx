@@ -164,7 +164,8 @@ const MMRChart: React.FC<MMRChartProps> = ({ leaderboard, stats, minRaces }) => 
       // Snapshot MMRs at this race index for all users
       const entry: any = { 
         race: index + 1,
-        date: new Date(draft.date).toLocaleDateString('en-US')
+        date: new Date(draft.date).toLocaleDateString('en-US'),
+        totalRacers: participants.length,
       };
 
       participants.forEach(p => {
@@ -267,14 +268,25 @@ const MMRChart: React.FC<MMRChartProps> = ({ leaderboard, stats, minRaces }) => 
               strokeWidth={highlightedUser === player.user_id ? 5 : 2}
               strokeOpacity={highlightedUser === null || highlightedUser === player.user_id ? 1 : 0.15}
               dot={(props: any) => {
-                const { cx, cy, payload, dataKey } = props;
+                const { cx, cy, payload, dataKey, value } = props;
                 const deltaKey = `${dataKey}_delta`;
                 const lineColor = COLORS[index % COLORS.length];
                 const opacity = highlightedUser === null || highlightedUser === player.user_id ? 1 : 0.15;
+                const isHighlighted = highlightedUser === dataKey;
+                const placement = payload[`${dataKey}_placement`];
+                const totalRacers = payload.totalRacers;
+
                 // Only render a dot if the user participated in this race (i.e., has a delta)
                 if (payload[deltaKey] !== undefined) {
                   return (
-                    <circle cx={cx} cy={cy} r={highlightedUser === dataKey ? 6 : 3} fill={lineColor} stroke={lineColor} fillOpacity={opacity} strokeOpacity={opacity} strokeWidth={1} />
+                    <g>
+                      <circle cx={cx} cy={cy} r={isHighlighted ? 6 : 3} fill={lineColor} stroke={lineColor} fillOpacity={opacity} strokeOpacity={opacity} strokeWidth={1} />
+                      {isHighlighted && placement !== undefined && totalRacers !== undefined && (
+                        <text x={cx} y={cy - 12} dy={0} textAnchor="middle" fill={lineColor} fontSize="0.9rem" fontWeight="bold" style={{ pointerEvents: 'none' }}>
+                          {`${placement}/${totalRacers}`}
+                        </text>
+                      )}
+                    </g>
                   );
                 }
                 return null;
