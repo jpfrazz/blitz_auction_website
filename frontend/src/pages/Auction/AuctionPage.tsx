@@ -48,6 +48,7 @@ const AuctionPage: React.FC = () => {
   const [joinPassword, setJoinPassword] = useState('');
   const [joinError, setJoinError] = useState<string | null>(null);
   const [showEeveelutionModal, setShowEeveelutionModal] = useState(false);
+  const [showGuestConfirmModal, setShowGuestConfirmModal] = useState(false);
   const [showResultsSubmissionModal, setShowResultsSubmissionModal] = useState(false);
   const [avatar, setAvatar] = useState<string | undefined>(undefined);
   const [wsConnected, setWsConnected] = useState(true);
@@ -285,11 +286,21 @@ const AuctionPage: React.FC = () => {
       }
       setDraft(updatedDraft);
       setShowJoinModal(false);
+      setShowGuestConfirmModal(false);
       setJoinPassword('');
     } catch (error: any) {
       setJoinError(error?.response?.data?.error || error?.message || 'Failed to join draft.');
     } finally {
       setJoiningDraft(false);
+    }
+  };
+
+  const handleRacerClick = async () => {
+    if (!isLoggedIn || isGuest) {
+      setShowGuestConfirmModal(true);
+      setShowJoinModal(false);
+    } else {
+      await attemptJoinDraft(joinPassword);
     }
   };
 
@@ -545,10 +556,51 @@ const AuctionPage: React.FC = () => {
                       </button>
                     <button
                       className="button"
-                      onClick={() => attemptJoinDraft(joinPassword)}
+                      onClick={() => void handleRacerClick()}
                       disabled={joiningDraft}
                     >
                       {joiningDraft ? 'Joining...' : 'Racer'}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+            {showGuestConfirmModal && (
+              <div className="auction-password-modal-overlay">
+                <div className="auction-password-modal" onClick={e => e.stopPropagation()}>
+                  <h3 className="auction-password-modal-title">Wait!</h3>
+                  <p className="auction-password-modal-text">
+                    It looks like you aren't logged in! Are you sure you want to draft as a guest? If you log in with discord, this website will track your favorite picks and other stats!
+                  </p>
+                  {joinError && <div className="auction-password-modal-error">{joinError}</div>}
+                  <div className="auction-password-modal-actions">
+                    <button
+                      className="button"
+                      onClick={() => {
+                        setShowGuestConfirmModal(false);
+                        setShowJoinModal(true);
+                        setJoinError(null);
+                      }}
+                      disabled={joiningDraft}
+                      style={{ fontSize: '1.1rem' }}
+                    >
+                      Back
+                    </button>
+                    <button
+                      className="button"
+                      onClick={() => { window.location.href = '/api/auth/discord'; }}
+                      disabled={joiningDraft}
+                      style={{ fontSize: '1.1rem' }}
+                    >
+                      Log in via Discord
+                    </button>
+                    <button
+                      className="button"
+                      onClick={() => attemptJoinDraft(joinPassword)}
+                      disabled={joiningDraft}
+                      style={{ fontSize: '1.1rem' }}
+                    >
+                      {joiningDraft ? 'Joining...' : 'Continue as Guest'}
                     </button>
                   </div>
                 </div>

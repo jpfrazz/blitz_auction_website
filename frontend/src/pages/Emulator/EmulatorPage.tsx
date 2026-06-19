@@ -10,7 +10,7 @@ const getIconName = (name: string) => {
   if (!name || name === '???') return 'egg';
   const n = name.toLowerCase();
   if (n.startsWith('egg')) return 'egg';
-  return n.replace(/é/g, 'e').replace(/[^a-z0-9-]/g, '');
+  return n.replace(/é/g, 'e').replace(/[^a-z0-9- .]/g, '');
 };
 
 const NATURE_EFFECTS: Record<string, string> = {
@@ -55,10 +55,19 @@ declare global {
     EJS_onGameStart: (() => void) | undefined;
     EJS_emulator: {
       on(event: string, callback: (data?: unknown) => void): void;
-      gameManager?: { saveSaveFiles(): void };
+      gameManager?: {
+        saveSaveFiles(): void;
+        getState(): Uint8Array;
+        loadState(state: Uint8Array): void;
+        FS?: {
+          syncfs(populate: boolean, callback: (err: any) => void): void;
+        };
+      };
+      displayMessage(message: string, time?: number): void;
     } | undefined;
     EJS_buttons: { [key: string]: boolean };
     EJS_Buttons?: { [key: string]: any };
+    EJS_gameName: string;
     EJS_hideSettings: string[];
   }
 }
@@ -127,6 +136,55 @@ function getExtension(filename: string): string {
   return filename.split('.').pop()?.toLowerCase() ?? '';
 }
 
+const DB_NAME = 'BlitzEmulatorSaves';
+const DB_VERSION = 1;
+const STORE_NAME = 'saves';
+
+function openSavesDb(): Promise<IDBDatabase> {
+  return new Promise((resolve, reject) => {
+    const request = indexedDB.open(DB_NAME, DB_VERSION);
+    request.onupgradeneeded = () => {
+      const db = request.result;
+      if (!db.objectStoreNames.contains(STORE_NAME)) {
+        db.createObjectStore(STORE_NAME);
+      }
+    };
+    request.onsuccess = () => resolve(request.result);
+    request.onerror = () => reject(request.error);
+  });
+}
+
+async function getStoredSave(key: string): Promise<Uint8Array | null> {
+  try {
+    const db = await openSavesDb();
+    return new Promise((resolve, reject) => {
+      const transaction = db.transaction(STORE_NAME, 'readonly');
+      const store = transaction.objectStore(STORE_NAME);
+      const request = store.get(key);
+      request.onsuccess = () => resolve(request.result || null);
+      request.onerror = () => reject(request.error);
+    });
+  } catch (err) {
+    console.error('Failed to get stored save:', err);
+    return null;
+  }
+}
+
+async function setStoredSave(key: string, data: Uint8Array): Promise<void> {
+  try {
+    const db = await openSavesDb();
+    return new Promise((resolve, reject) => {
+      const transaction = db.transaction(STORE_NAME, 'readwrite');
+      const store = transaction.objectStore(STORE_NAME);
+      const request = store.put(data, key);
+      request.onsuccess = () => resolve();
+      request.onerror = () => reject(request.error);
+    });
+  } catch (err) {
+    console.error('Failed to store save:', err);
+  }
+}
+
 // Map of user_id → latest parsed save for other draft players
 type OtherPlayerSaves = Record<string, { displayName: string; save: SaveData | null }>;
 
@@ -144,6 +202,9 @@ const EmulatorPage: React.FC = () => {
   const [saveLastSynced, setSaveLastSynced] = useState<Date | null>(null);
   const [isPanelMinimized, setIsPanelMinimized] = useState(false);
 
+  const [hasAutosave, setHasAutosave] = useState(false);
+  const [autosaveTime, setAutosaveTime] = useState<string | null>(null);
+
   // Current logged-in user (to exclude self from sidebar)
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
 
@@ -159,6 +220,7 @@ const EmulatorPage: React.FC = () => {
   const objectUrlRef = useRef<string | null>(null);
   const scriptRef = useRef<HTMLScriptElement | null>(null);
   const syncIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const stateIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const wsRef = useRef<WebSocket | null>(null);
 
   // Stable ref so window callbacks always see the latest handler
@@ -498,6 +560,7 @@ const EmulatorPage: React.FC = () => {
     window.EJS_stopOnUnfocused = false;
     window.EJS_pauseOnBlur = false;
     window.EJS_language = 'en-US';
+    window.EJS_gameName = draftId || 'game';
     // Emulator loader expects `window.EJS_Buttons` (capital B).
     // Keep `EJS_buttons` for backward compatibility.
     window.EJS_Buttons = window.EJS_buttons = {
@@ -538,6 +601,16 @@ const EmulatorPage: React.FC = () => {
         const bytes = rawData as Uint8Array | null | undefined;
         if (!bytes || !(bytes instanceof Uint8Array) || bytes.length === 0) return;
         onRawSaveBytesRef.current?.(bytes);
+
+        // Sync Emscripten FS to IndexedDB
+        try {
+          window.EJS_emulator?.gameManager?.FS?.syncfs(false, (err: any) => {
+            if (err) console.error('Error syncing IDBFS:', err);
+            else console.log('Successfully synced IDBFS to browser IndexedDB.');
+          });
+        } catch (e) {
+          console.error('Failed to run syncfs:', e);
+        }
       });
     };
 
@@ -552,6 +625,25 @@ const EmulatorPage: React.FC = () => {
           window.EJS_emulator?.gameManager?.saveSaveFiles();
         }, 200);
       }, 10_000);
+
+      // Autosave state every 60 seconds
+      stateIntervalRef.current = setInterval(() => {
+        try {
+          const stateData = window.EJS_emulator?.gameManager?.getState();
+          if (stateData && stateData.length > 0) {
+            const key = `state_${draftId || 'standalone'}`;
+            const timeKey = `state_time_${draftId || 'standalone'}`;
+            void setStoredSave(key, stateData);
+            const now = new Date();
+            localStorage.setItem(timeKey, now.toISOString());
+            setHasAutosave(true);
+            setAutosaveTime(now.toLocaleTimeString());
+            console.log('Autosaved emulator state successfully.');
+          }
+        } catch (e) {
+          console.warn('Failed to capture autosave state:', e);
+        }
+      }, 60_000);
     };
 
     // Wipe the core cache before each load so stale decompressed entries
@@ -582,6 +674,10 @@ const EmulatorPage: React.FC = () => {
         clearInterval(syncIntervalRef.current);
         syncIntervalRef.current = null;
       }
+      if (stateIntervalRef.current !== null) {
+        clearInterval(stateIntervalRef.current);
+        stateIntervalRef.current = null;
+      }
     };
   }, [romUrl, romName]);
 
@@ -594,9 +690,46 @@ const EmulatorPage: React.FC = () => {
     };
   }, []);
 
-  // EmulatorJS owns the WASM runtime globally — the cleanest way to
-  // load a different ROM is a full page reload to reset all state.
-  const handleChangeRom = () => window.location.reload();
+  const handleLoadAutosave = () => {
+    const key = `state_${draftId || 'standalone'}`;
+    getStoredSave(key).then((bytes) => {
+      if (bytes && bytes.length > 0) {
+        try {
+          window.EJS_emulator?.gameManager?.loadState(bytes);
+          window.EJS_emulator?.displayMessage('Loaded autosave state!');
+        } catch (e) {
+          console.error('Failed to load autosave state:', e);
+          window.EJS_emulator?.displayMessage('Failed to load autosave');
+        }
+      }
+    }).catch(() => {
+      window.EJS_emulator?.displayMessage('Failed to read autosave');
+    });
+  };
+
+  useEffect(() => {
+    if (!romUrl) {
+      setHasAutosave(false);
+      setAutosaveTime(null);
+      return;
+    }
+    const timeKey = `state_time_${draftId || 'standalone'}`;
+    const storedTime = localStorage.getItem(timeKey);
+    if (storedTime) {
+      const key = `state_${draftId || 'standalone'}`;
+      getStoredSave(key).then((bytes) => {
+        if (bytes && bytes.length > 0) {
+          setHasAutosave(true);
+          try {
+            const date = new Date(storedTime);
+            setAutosaveTime(date.toLocaleTimeString());
+          } catch {
+            setAutosaveTime(storedTime);
+          }
+        }
+      }).catch(() => {});
+    }
+  }, [romUrl, draftId]);
 
   // ── Other-player sidebar ─────────────────────────────────────────────────
   // Filter out the current user and cap at 9
@@ -680,39 +813,46 @@ const EmulatorPage: React.FC = () => {
         ) : (
           <div className={`emulator-layout${hasSidebar ? ' has-sidebar' : ''}`}>
             {/* ── Left column: emulator + own save panel ── */}
-            <div className="emulator-col">
-              <div className="emulator-top-bar">
-                <span className="emulator-rom-label">{romName}</span>
-                <button className="emulator-change-btn" onClick={handleChangeRom}>
-                  Load Different ROM
-                </button>
-              </div>
+            <div className="emulator-col" style={{ flexGrow: 1 }}>
               <div id="game" />
 
             <div className={`save-panel-container ${isPanelMinimized ? 'minimized' : ''}`}>
-              {mySaveData && (
-                <div className="save-panel own-save-panel">
-                  <div className="save-panel-header">
-                    <span className="save-panel-trainer">{mySaveData.trainer_name}</span>
-                    <span className="save-panel-badges">
-                      {mySaveData.badge_count} {mySaveData.badge_count === 1 ? 'badge' : 'badges'}
-                    </span>
-                    <span className="save-panel-money">₽{mySaveData.money.toLocaleString()}</span>
-                    {saveLastSynced && (
-                      <span className="save-panel-synced">
-                        synced {saveLastSynced.toLocaleTimeString()}
+              <div className="save-panel own-save-panel">
+                <div className="save-panel-header">
+                  {mySaveData ? (
+                    <>
+                      <span className="save-panel-trainer">{mySaveData.trainer_name}</span>
+                      <span className="save-panel-badges">
+                        {mySaveData.badge_count} {mySaveData.badge_count === 1 ? 'badge' : 'badges'}
                       </span>
-                    )}
-                    <button 
-                      className="panel-minimize-btn"
-                      onClick={() => setIsPanelMinimized(!isPanelMinimized)}
-                      title={isPanelMinimized ? "Expand" : "Minimize"}
+                      <span className="save-panel-money">₽{mySaveData.money.toLocaleString()}</span>
+                    </>
+                  ) : (
+                    <span className="save-panel-trainer" style={{ opacity: 0.5 }}>Save the game to display game data</span>
+                  )}
+                  {hasAutosave && (
+                    <button
+                      className="autosave-btn"
+                      onClick={handleLoadAutosave}
                     >
-                      {isPanelMinimized ? '＋' : '－'}
+                      Load Autosave {autosaveTime ? `(${autosaveTime})` : ''}
                     </button>
-                  </div>
-                  {!isPanelMinimized && (
-                    <div className="save-party-grid">
+                  )}
+                  {saveLastSynced && (
+                    <span className="save-panel-synced">
+                      synced {saveLastSynced.toLocaleTimeString()}
+                    </span>
+                  )}
+                  <button 
+                    className="panel-minimize-btn"
+                    onClick={() => setIsPanelMinimized(!isPanelMinimized)}
+                    title={isPanelMinimized ? "Expand" : "Minimize"}
+                  >
+                    {isPanelMinimized ? '＋' : '－'}
+                  </button>
+                </div>
+                {!isPanelMinimized && mySaveData && (
+                  <div className="save-party-grid">
                     {sortPokemon(currentUserId || 'me', [
                       ...(mySaveData.party ?? []).map((m: any) => ({ ...m, _isParty: true })),
                       ...(mySaveData.box ?? []).map((m: any) => ({ ...m, _isParty: false })),
@@ -746,22 +886,21 @@ const EmulatorPage: React.FC = () => {
                           </div>
                           {mon.nature && <div className="mon-nature">{mon.nature}{NATURE_EFFECTS[mon.nature]}</div>}
                           {mon.ivs && (
-                            <div className="mon-ivs" style={{ display: 'flex', flexWrap: 'wrap', gap: '4px 12px', fontSize: '0.8rem', marginTop: '4px', opacity: 0.8 }}>
-                              <span style={{ color: mon.ivs.hp > 24 ? '#4ade80' : mon.ivs.hp < 7 ? '#f87171' : 'inherit', fontWeight: mon.ivs.hp > 24 ? '600' : 'normal' }}>HP: {mon.ivs.hp}</span>
-                              <span style={{ color: mon.ivs.atk > 24 ? '#4ade80' : mon.ivs.atk < 7 ? '#f87171' : 'inherit', fontWeight: mon.ivs.atk > 24 ? '600' : 'normal' }}>ATK: {mon.ivs.atk}</span>
-                              <span style={{ color: mon.ivs.def > 24 ? '#4ade80' : mon.ivs.def < 7 ? '#f87171' : 'inherit', fontWeight: mon.ivs.def > 24 ? '600' : 'normal' }}>DEF: {mon.ivs.def}</span>
-                              <span style={{ color: mon.ivs.spa > 24 ? '#4ade80' : mon.ivs.spa < 7 ? '#f87171' : 'inherit', fontWeight: mon.ivs.spa > 24 ? '600' : 'normal' }}>SPA: {mon.ivs.spa}</span>
-                              <span style={{ color: mon.ivs.spd > 24 ? '#4ade80' : mon.ivs.spd < 7 ? '#f87171' : 'inherit', fontWeight: mon.ivs.spd > 24 ? '600' : 'normal' }}>SPD: {mon.ivs.spd}</span>
-                              <span style={{ color: mon.ivs.spe > 24 ? '#4ade80' : mon.ivs.spe < 7 ? '#f87171' : 'inherit', fontWeight: mon.ivs.spe > 24 ? '600' : 'normal' }}>SPE: {mon.ivs.spe}</span>
+                            <div className="mon-ivs">
+                              <span className="iv-item"><span className="iv-label">HP </span><span className="iv-value" data-good={mon.ivs.hp > 24} data-bad={mon.ivs.hp < 7}>{mon.ivs.hp}</span></span>
+                              <span className="iv-item"><span className="iv-label">ATK </span><span className="iv-value" data-good={mon.ivs.atk > 24} data-bad={mon.ivs.atk < 7}>{mon.ivs.atk}</span></span>
+                              <span className="iv-item"><span className="iv-label">DEF </span><span className="iv-value" data-good={mon.ivs.def > 24} data-bad={mon.ivs.def < 7}>{mon.ivs.def}</span></span>
+                              <span className="iv-item"><span className="iv-label">SPA </span><span className="iv-value" data-good={mon.ivs.spa > 24} data-bad={mon.ivs.spa < 7}>{mon.ivs.spa}</span></span>
+                              <span className="iv-item"><span className="iv-label">SPD </span><span className="iv-value" data-good={mon.ivs.spd > 24} data-bad={mon.ivs.spd < 7}>{mon.ivs.spd}</span></span>
+                              <span className="iv-item"><span className="iv-label">SPE </span><span className="iv-value" data-good={mon.ivs.spe > 24} data-bad={mon.ivs.spe < 7}>{mon.ivs.spe}</span></span>
                             </div>
                           )}
                         </div>
                       );
                     })}
                   </div>
-                  )}
-                </div>
-              )}
+                )}
+              </div>
             </div>
             </div>
 

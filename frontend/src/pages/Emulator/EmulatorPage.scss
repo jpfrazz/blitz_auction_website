@@ -5,6 +5,7 @@
   flex-direction: column;
   min-height: 100vh;
   background: $eb-bg;
+  padding-top: 5.6rem;
 }
 
 .emulator-main {
@@ -113,7 +114,7 @@
   display: flex;
   align-items: flex-start;
   // Adjusted to fill the remaining viewport height accurately
-  height: calc(100vh - 4.2rem); 
+  height: calc(100vh - 5.6rem); 
   overflow: hidden;
 }
 
@@ -131,66 +132,19 @@
   }
 }
 
-.emulator-top-bar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  background: $eb-surface;
-  border-bottom: 1px solid $eb-border;
-  padding: 0.8rem 1.4rem;
-}
-
-.emulator-rom-label {
-  font-size: 1.3rem;
-  color: $eb-text-muted;
-  font-family: 'Courier New', monospace;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  max-width: 70%;
-}
-
-.emulator-change-btn {
-  background: transparent;
-  border: 1px solid $eb-border;
-  border-radius: 6px;
-  color: $eb-text-muted;
-  font-size: 1.2rem;
-  padding: 0.5rem 1.2rem;
-  cursor: pointer;
-  transition: border-color 0.15s, color 0.15s;
-  white-space: nowrap;
-
-  &:hover {
-    border-color: $eb-primary;
-    color: $eb-primary;
-  }
-}
-
 #game {
   width: 100%;
   // Base height when panel is open
-  height: calc(100vh - 20rem);
+  height: calc(100vh - 18rem);
   background: #000;
   display: block;
   overflow: hidden;
   transition: height 0.2s ease-out;
-
-  .save-panel-container.minimized + & {
-     // Not used in this order, logic below
-  }
-}
-
-// Expand game when minimized
-.save-panel-container.minimized {
-  & ~ #game {
-    // Emulator takes more space
-  }
 }
 
 // Applying the expansion logic via the container parent
 .emulator-col:has(.save-panel-container.minimized) #game {
-  height: calc(100vh - 12rem);
+  height: calc(100vh - 5.6rem);
 }
 
 // ── Own save panel (below emulator) ────────────────────────────────────────
@@ -319,13 +273,54 @@
   text-align: right;
 }
 
+// ── IV row: always single line, label then value ──────────────────────────
 .mon-ivs {
   display: flex;
-  flex-wrap: wrap;
-  gap: 0.3rem 1rem;
+  flex-wrap: nowrap;
+  gap: 0.4rem 0.8rem;
   font-size: 1.05rem;
   color: $eb-text-muted;
   opacity: 0.8;
+  overflow-x: auto;
+  white-space: nowrap;
+  // Prevent any wrapping
+  > * { flex-shrink: 0; }
+}
+
+.iv-item {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 1px;
+}
+
+.iv-label {
+  font-size: 0.75rem;
+  opacity: 0.8;
+}
+
+.iv-value {
+  font-size: 0.9rem;
+  &[data-good="true"] { color: #4ade80; font-weight: 600; }
+  &[data-bad="true"]  { color: #f87171; }
+}
+
+// ── Autosave button in save panel header ──────────────────────────────────
+.autosave-btn {
+  background: transparent;
+  border: 1px solid #10b981;
+  border-radius: 6px;
+  color: #10b981;
+  font-size: 1.1rem;
+  padding: 0.3rem 0.8rem;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: border-color 0.15s, color 0.15s, background 0.15s;
+
+  &:hover {
+    background: rgba(16, 185, 129, 0.1);
+    color: #34d399;
+    border-color: #34d399;
+  }
 }
 
 // ── Sidebar (other players) ────────────────────────────────────────────────
@@ -340,7 +335,6 @@
   scrollbar-width: thin;
   border-left: 1px solid $eb-border;
   background: $eb-surface;
-  margin-top: 5rem;
 }
 
 .sidebar-player-card {
