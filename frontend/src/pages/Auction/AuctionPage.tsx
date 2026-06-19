@@ -588,7 +588,7 @@ const AuctionPage: React.FC = () => {
                     </button>
                     <button
                       className="button"
-                      onClick={() => { window.location.href = '/api/auth/discord'; }}
+                      onClick={() => { window.location.href = '/api/login'; }}
                       disabled={joiningDraft}
                       style={{ fontSize: '1.1rem' }}
                     >
