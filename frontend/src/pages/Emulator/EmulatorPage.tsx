@@ -59,6 +59,7 @@ declare global {
         saveSaveFiles(): void;
         getState(): Uint8Array;
         loadState(state: Uint8Array): void;
+        quickLoad(slot?: number): void;
         FS?: {
           syncfs(populate: boolean, callback: (err: any) => void): void;
         };
@@ -188,6 +189,11 @@ async function setStoredSave(key: string, data: Uint8Array): Promise<void> {
 // Map of user_id → latest parsed save for other draft players
 type OtherPlayerSaves = Record<string, { displayName: string; save: SaveData | null }>;
 
+interface ToastNotification {
+  id: number;
+  text: string;
+}
+
 const EmulatorPage: React.FC = () => {
   const { draftId } = useParams<{ draftId?: string }>();
 
@@ -216,6 +222,18 @@ const EmulatorPage: React.FC = () => {
   // Persist fainted state via Personality ID (User ID -> Set of PIDs)
   const [faintedPids, setFaintedPids] = useState<Record<string, Set<number>>>({});
 
+  // Toast notifications for state load events from other players
+  const [notifications, setNotifications] = useState<ToastNotification[]>([]);
+  const toastIdRef = useRef(0);
+
+  const addNotification = useCallback((text: string) => {
+    const id = ++toastIdRef.current;
+    setNotifications(prev => [...prev, { id, text }]);
+    setTimeout(() => {
+      setNotifications(prev => prev.filter(n => n.id !== id));
+    }, 4000);
+  }, []);
+
   const fileInputRef = useRef<HTMLInputElement>(null);
   const objectUrlRef = useRef<string | null>(null);
   const scriptRef = useRef<HTMLScriptElement | null>(null);
@@ -225,6 +243,17 @@ const EmulatorPage: React.FC = () => {
 
   // Stable ref so window callbacks always see the latest handler
   const onRawSaveBytesRef = useRef<((bytes: Uint8Array) => void) | null>(null);
+
+  // Stable ref for the notification fetch so EJS_ready closure always gets the current draftId
+  const postStateLoadRef = useRef<(() => void) | null>(null);
+  postStateLoadRef.current = () => {
+    if (draftId) {
+      fetch(`/api/drafts/${draftId}/state-load-notification`, {
+        method: 'POST',
+        credentials: 'include',
+      }).catch(() => {});
+    }
+  };
 
   // ── Fetch current user to filter self from sidebar ───────────────────────
   useEffect(() => {
@@ -256,14 +285,19 @@ const EmulatorPage: React.FC = () => {
     };
   }, [draftId]);
 
-  // Load pokemon list to map species_id -> name for MiniIcons
+  // Load pokemon list to map species_id -> name for MiniIcons.
+  // Fetch both regular and rental pokemon since the emulator shows ALL Pokemon.
   useEffect(() => {
     let cancelled = false;
-    fetchPokemonList().then((list) => {
+    Promise.all([
+      fetchPokemonList(),
+      fetch('/api/pokemon/rental').then(r => r.ok ? r.json() : []).catch(() => []),
+    ]).then(([regular, rental]) => {
       if (cancelled) return;
+      const all = [...regular, ...rental];
       const map: Record<string, any> = {};
       const idMap = new Map<number, any[]>();
-      for (const p of (list as any[])) {
+      for (const p of all) {
         const entry = {
           ...p,
           abilities: [p.ability1, p.ability2 || p.ability1, p.hidden_ability || p.ability1]
@@ -281,7 +315,10 @@ const EmulatorPage: React.FC = () => {
       }
       setPokemonMetadata(map);
       setPokemonById(idMap);
-    }).catch(() => {});
+      console.log(`[Icon Metadata] Loaded ${all.length} pokemon (${regular.length} regular, ${rental.length} rental)`);
+    }).catch((err) => {
+      console.error('[Icon Metadata] Failed to load pokemon list:', err);
+    });
     return () => { cancelled = true; };
   }, []);
 
@@ -395,6 +432,11 @@ const EmulatorPage: React.FC = () => {
             return next;
           });
         }
+        // State load notification from another player
+        if (msg.type === 'StateLoadNotification') {
+          const { display_name } = msg.data as { display_name: string };
+          addNotification(`${display_name} loaded a previous state!`);
+        }
       } catch {
         // ignore parse errors
       }
@@ -404,7 +446,7 @@ const EmulatorPage: React.FC = () => {
       ws.close();
       wsRef.current = null;
     };
-  }, [draftId]);
+  }, [draftId, addNotification]);
 
   // Track which Personalities have hit 0 HP to keep them fainted in the box
   useEffect(() => {
@@ -531,10 +573,17 @@ const EmulatorPage: React.FC = () => {
       scriptRef.current = null;
     }
 
-    // Intercept keyboard shortcuts for saving/loading (keys 1, 2, 3) and pause (Space)
+    // Intercept keyboard shortcuts (1,2,3) and prevent arrow keys from scrolling the page.
+    // When users map game controls to arrow keys, the browser scrolls the page by default.
     const blockShortcuts = (e: KeyboardEvent) => {
       if (['1', '2', '3', 'Fn', 'Function'].includes(e.key)) {
         e.stopImmediatePropagation();
+      }
+      // Prevent arrow key scrolling when the emulator has focus.
+      // The emulator's own keydown handler still receives the event
+      // via normal propagation — we just stop the browser's default scroll.
+      if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key)) {
+        e.preventDefault();
       }
     };
     document.addEventListener('keydown', blockShortcuts, true);
@@ -612,6 +661,17 @@ const EmulatorPage: React.FC = () => {
           console.error('Failed to run syncfs:', e);
         }
       });
+
+      // Whenever a state is loaded via quickLoad (keyboard shortcut '2'),
+      // notify other players in the race.
+      const gameMgr = window.EJS_emulator?.gameManager;
+      if (gameMgr && typeof gameMgr.quickLoad === 'function') {
+        const origQuickLoad = gameMgr.quickLoad.bind(gameMgr);
+        gameMgr.quickLoad = (slot?: number) => {
+          origQuickLoad(slot);
+          postStateLoadRef.current?.();
+        };
+      }
     };
 
     // Start the 30-second auto-sync once the game is actually running.
@@ -697,6 +757,8 @@ const EmulatorPage: React.FC = () => {
         try {
           window.EJS_emulator?.gameManager?.loadState(bytes);
           window.EJS_emulator?.displayMessage('Loaded autosave state!');
+          // Notify other players in the race that we loaded a previous state
+          postStateLoadRef.current?.();
         } catch (e) {
           console.error('Failed to load autosave state:', e);
           window.EJS_emulator?.displayMessage('Failed to load autosave');
@@ -757,6 +819,16 @@ const EmulatorPage: React.FC = () => {
   return (
     <div className="emulator-page">
       <Header />
+      {/* ── Toast notifications overlay ── */}
+      {notifications.length > 0 && (
+        <div className="emulator-notifications">
+          {notifications.map((n) => (
+            <div key={n.id} className="emulator-notification">
+              {n.text}
+            </div>
+          ))}
+        </div>
+      )}
       <main className="emulator-main">
         {!romUrl ? (
           <div className="emulator-picker">

@@ -985,6 +985,33 @@ pub async fn post_player_save(
     Ok(())
 }
 
+#[debug_handler]
+pub async fn post_state_load_notification(
+    auth_session: AuthSession<AuthBackend>,
+    Path(draft_id): Path<String>,
+    State(state): State<ServerState>,
+) -> Result<(), AppError> {
+    let Some(user) = auth_session.user else {
+        return Err((StatusCode::FORBIDDEN, "user is not logged in".to_string()));
+    };
+    let Ok(draft_uuid) = Uuid::from_str(&draft_id) else {
+        return Err((StatusCode::BAD_REQUEST, "invalid draft id".to_string()));
+    };
+
+    let display_name = user.get_global_name()
+        .filter(|n| !n.trim().is_empty())
+        .unwrap_or_else(|| user.get_user_name_string());
+
+    if let Some(draft) = state.drafts.get(&draft_uuid) {
+        let _ = draft.broadcast_tx.send(crate::messages::ServerMessage::StateLoadNotification {
+            user_id: user.get_user_id_string(),
+            display_name,
+        });
+    }
+
+    Ok(())
+}
+
 pub async fn start_draft(
     auth_session: AuthSession<AuthBackend>,
     Path(draft_id): Path<String>,

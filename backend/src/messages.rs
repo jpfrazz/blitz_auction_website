@@ -66,6 +66,10 @@ pub enum ServerMessage {
         user_id: String,
         save_data: SaveData,
     },
+    StateLoadNotification {
+        user_id: String,
+        display_name: String,
+    },
 }
 
 #[derive(Clone, Debug, Deserialize)]
