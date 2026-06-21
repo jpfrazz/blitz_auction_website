@@ -482,6 +482,7 @@ const Info = () => (
                 <li>Nosepass &gt; Probopass</li>
                 <li>Charjabug &gt; Vikavolt</li>
                 <li>Pikachu &gt; Raichu</li>
+                <li>Tadbulb &gt; Bellibolt</li>
                 <li>Eevee &gt; Jolteon</li>
               </ul>
             </details>

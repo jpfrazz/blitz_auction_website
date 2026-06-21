@@ -263,7 +263,7 @@ Level: 31
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
 Ability: Rock Head
-- Dive
+- Waterfall
 - Rock Tomb
 - Flail
 - Ancient Power
@@ -606,7 +606,7 @@ Ability: Swarm
 - Giga Drain
 - Air Cutter
 - Bug Bite
-- Psychic
+- Whirlwind
 
 === TRAINER_VIOLA_5 ===
 Name: VIOLA
@@ -1613,7 +1613,7 @@ Level: 42
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
 Ability: Static
-- Fire Fang
+- Flamethrower
 - Wild Charge
 - Shock Wave
 - Crunch
@@ -1673,7 +1673,7 @@ Level: 48
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
 Ability: Static
-- Fire Fang
+- Flamethrower
 - Wild Charge
 - Shock Wave
 - Crunch
@@ -1938,7 +1938,7 @@ Ability: Cursed Body
 - Thrash
 - Sunny Day
 
-Slugma (F)
+Magcargo (F)
 Level: 31
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
@@ -3125,7 +3125,7 @@ Nature: Serious
 Ability: Levitate
 - Psybeam
 - Bulldoze
-- Calm Mind
+- Explosion
 - Rapid Spin
 
 Lunatone @ Sitrus Berry
@@ -3175,7 +3175,7 @@ Nature: Serious
 Ability: Levitate
 - Psybeam
 - Earthquake
-- Calm Mind
+- Explosion
 - Rapid Spin
 
 Oranguru (M)
@@ -4117,7 +4117,7 @@ Froslass (F)
 Level: 53
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
-Ability: Snow Cloak
+Ability: Cursed Body
 - Draining Kiss
 - Shadow Ball
 - Hail
@@ -4199,7 +4199,7 @@ Level: 55
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
 Ability: Synchronize
-- Shadow Sneak
+- Shadow Ball
 - Psychic
 - Draining Kiss
 - Calm Mind
@@ -4251,7 +4251,7 @@ IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
 Ability: Levitate
 - Flamethrower
-- Crunch
+- Boomburst
 - Dragon Breath
 - Earthquake
 
@@ -4263,7 +4263,7 @@ Ability: Intimidate
 - Flamethrower
 - Dragon Claw
 - Rock Slide
-- Crunch
+- Brick Break
 
 === TRAINER_BRANDON ===
 Name: BRANDON
