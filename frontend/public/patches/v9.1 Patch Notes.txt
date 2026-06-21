@@ -1,6 +1,14 @@
 6/21/2026
 
 -----------------------------------------------
+Move Changes
+-----------------------------------------------
+
+Freeze Dry no longer has a 10% chance to freeze
+//It's true! In Champions, Freeze Dry has removed its Freeze chance! Glacia, get a load of this!!
+
+
+-----------------------------------------------
 Enemy Trainer AI Changes
 -----------------------------------------------
 
@@ -30,7 +38,7 @@ Viola 4 Beautifly Psychic > Whirlwind
 //Poison is a weak enough type as is without Viola's ace having such a high BP coverage option so early.
 
 Roxanne 6 Relicanth Dive > Waterfall
-//Roxanne is already weak to Surf. And after gym 5, when the Relicanth uses dive, the player can kill it with a double damage surf. Let's give it Waterfall like it has in Roxanne 7 so that it isn't vulnerable to getting hit while underwater.
+//Roxanne is already weak to Surf. And after gym 5, when the Relicanth uses dive, the player can kill it with a double damage Surf. Let's give it Waterfall like it has in Roxanne 7 so that it isn't vulnerable to getting hit while underwater.
 
 Tate & Liza 5-6 Baltoy Calm Mind > Explosion
 //The premier strategy for Tate & Liza is leaving one weakling alive so that the Solrock and Lunatone can never hit the field at the same time. This makes leaving the Baltoy alive in these post-Natu Tate&Lizas a bit more difficult, as it'll eventually take matters into its own hands to get itself off of the field.
