@@ -754,6 +754,13 @@ const Info = () => (
           <li>Their Pokémon has Truant and you've shown a Protect-like move</li>
           <li>Your Pokémon has Wonder Guard, their Pokémon can't hit it, and they have a different Pokémon which can hit it</li>
         </ul>
+        <p className="info-answer">
+          <strong>The enemy AI is 50% likely to use Self Destruct or Explosion if...</strong>
+        </p>
+        <ul>
+          <li>The exploding Pokemon has been on the field for at least five turns</li>
+          <li>Your Pokemon can be affected by Explosion (it isn't a ghost-type)</li>
+        </ul>
       </section>
 
       <section id="key-binds" className="info-section">
