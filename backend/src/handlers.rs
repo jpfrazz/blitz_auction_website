@@ -2227,6 +2227,7 @@ pub async fn websocket_handler(
 
 async fn handle_websocket(mut socket: WebSocket, tx: broadcast::Sender<ServerMessage>) {
     let mut rx = tx.subscribe();
+
     loop {
         tokio::select! {
             Ok(msg) = rx.recv() => {
