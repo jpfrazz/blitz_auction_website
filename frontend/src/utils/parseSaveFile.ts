@@ -7,6 +7,7 @@ const NUM_SECTIONS = 14;
 const SLOT_SIZE = SECTION_SIZE * NUM_SECTIONS;
 const FOOTER_OFFSET = 0xff4;
 const SIGNATURE = 0x08012025;
+const SECTOR_DATA_SIZE = 3968;
 
 const ENCRYPTION_KEY_OFFSET = 0xac;
 const MONEY_OFFSET = 0x4f0;
@@ -201,29 +202,48 @@ export function parseSaveFile(
   }
 
   const box: SaveBoxPokemon[] = [];
-  if (sectionOffsets[5] !== undefined) {
-    const s5 = sectionOffsets[5];
-    const BOX_START_OFFSET = 4;
-    const BOX_POKEMON_SIZE = 96;
+  const BOX_START_OFFSET = 4;
+  const BOX_POKEMON_SIZE = 96;
+  const TOTAL_BOXES = 8;
+  const POKEMON_PER_BOX = 30;
+  const PC_BOX_SECTIONS = [5, 6, 7, 8, 9, 10, 11, 12, 13];
 
-    for (let i = 0; i < 30; i++) {
-      const pStart = s5 + BOX_START_OFFSET + i * BOX_POKEMON_SIZE;
-      if (pStart + BOX_POKEMON_SIZE > data.length) break;
+  // Reassemble PokemonStorage from all sectors
+  const storageData = new Uint8Array(TOTAL_BOXES * POKEMON_PER_BOX * BOX_POKEMON_SIZE);
+  let storageOffset = 0;
 
-      const personality = view.getUint32(pStart, true);
-      const otId = view.getUint32(pStart + 4, true);
+  for (const sectionId of PC_BOX_SECTIONS) {
+    if (sectionOffsets[sectionId] !== undefined) {
+      const sectionOffset = sectionOffsets[sectionId];
+      const chunkSize = Math.min(SECTOR_DATA_SIZE, storageData.length - storageOffset);
+      for (let i = 0; i < chunkSize; i++) {
+        storageData[storageOffset + i] = data[sectionOffset + BOX_START_OFFSET + i];
+      }
+      storageOffset += chunkSize;
+    }
+  }
+
+  // Parse all boxes from the reassembled storage
+  const storageView = new DataView(storageData.buffer, storageData.byteOffset, storageData.byteLength);
+  for (let boxNum = 0; boxNum < TOTAL_BOXES; boxNum++) {
+    for (let i = 0; i < POKEMON_PER_BOX; i++) {
+      const pStart = boxNum * POKEMON_PER_BOX * BOX_POKEMON_SIZE + i * BOX_POKEMON_SIZE;
+      if (pStart + BOX_POKEMON_SIZE > storageData.length) break;
+
+      const personality = storageView.getUint32(pStart, true);
+      const otId = storageView.getUint32(pStart + 4, true);
       const key = (personality ^ otId) >>> 0;
       const order = SUBSTRUCTURE_ORDERS[personality % 24];
 
       const growthIdx = order.indexOf('G');
       const growthOffset = pStart + 32 + growthIdx * SUBSTRUCTURE_SIZE;
-      const decryptedGrowth0 = (view.getUint32(growthOffset, true) ^ key) >>> 0;
+      const decryptedGrowth0 = (storageView.getUint32(growthOffset, true) ^ key) >>> 0;
       const species_id = decryptedGrowth0 & 0x7FF;
 
       const miscIdx = order.indexOf('M');
       const miscOffset = pStart + 32 + miscIdx * SUBSTRUCTURE_SIZE;
-      const miscWord2 = (view.getUint32(miscOffset + 8, true) ^ key) >>> 0;
-      const decryptedMisc = (view.getUint32(miscOffset + 4, true) ^ key) >>> 0;
+      const miscWord2 = (storageView.getUint32(miscOffset + 8, true) ^ key) >>> 0;
+      const decryptedMisc = (storageView.getUint32(miscOffset + 4, true) ^ key) >>> 0;
 
       const ability_num = (miscWord2 >> 29) & 3;
       const ivs: SaveIvs = {
@@ -236,7 +256,7 @@ export function parseSaveFile(
       };
 
       if (species_id > 0 && species_id < 0xffff) {
-        const nickname = decodeString(data.slice(pStart + 8, pStart + 20));
+        const nickname = decodeString(storageData.slice(pStart + 8, pStart + 20));
         box.push({
           personality,
           nickname,
