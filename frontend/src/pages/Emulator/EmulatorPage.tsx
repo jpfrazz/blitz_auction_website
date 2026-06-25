@@ -240,6 +240,8 @@ const EmulatorPage: React.FC = () => {
   const syncIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const stateIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const wsRef = useRef<WebSocket | null>(null);
+    const reconnectCountRef = useRef(0);
+    const reconnectTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Stable ref so window callbacks always see the latest handler
   const onRawSaveBytesRef = useRef<((bytes: Uint8Array) => void) | null>(null);
@@ -400,51 +402,83 @@ const EmulatorPage: React.FC = () => {
     if (!draftId) return;
 
     const protocol = window.location.protocol === 'https:' ? 'wss' : 'ws';
-    const ws = new WebSocket(`${protocol}://${window.location.host}/api/ws/${draftId}`);
-    wsRef.current = ws;
+    const wsUrl = `${protocol}://${window.location.host}/api/ws/${draftId}`;
+    const maxReconnectAttempts = 5;
+    const baseReconnectInterval = 1000;
 
-    ws.onmessage = (event) => {
-      try {
-        const msg = JSON.parse(event.data as string);
-          if (msg.type === 'SaveUpdate') {
-            const { user_id, save_data } = msg.data as { user_id: string; save_data: SaveData };
-          setOtherSaves((prev) => ({
-            ...prev,
-            [user_id]: { displayName: prev[user_id]?.displayName ?? user_id, save: save_data },
-          }));
+    const wsConnect = () => {
+        const ws = new WebSocket(wsUrl);
+        wsRef.current = ws;
+
+        ws.onopen = () => {
+            reconnectCountRef.current = 0;
         }
-        // DraftUpdate gives us the username list for the sidebar
-        if (msg.type === 'DraftUpdate') {
-          const teams = (msg.data?.teams ?? []) as Array<{
-            user_id: string;
-            username: string;
-            global_name?: string | null;
-            save_data?: SaveData | null;
-          }>;
-          setOtherSaves((prev) => {
-            const next = { ...prev };
-            for (const t of teams) {
-              next[t.user_id] = {
-                displayName: t.global_name?.trim() || t.username,
-                save: t.save_data ?? next[t.user_id]?.save ?? null,
-              };
+
+        ws.onmessage = (event) => {
+          try {
+            const msg = JSON.parse(event.data as string);
+              if (msg.type === 'SaveUpdate') {
+                const { user_id, save_data } = msg.data as { user_id: string; save_data: SaveData };
+              setOtherSaves((prev) => ({
+                ...prev,
+                [user_id]: { displayName: prev[user_id]?.displayName ?? user_id, save: save_data },
+              }));
             }
-            return next;
-          });
+            // DraftUpdate gives us the username list for the sidebar
+            if (msg.type === 'DraftUpdate') {
+              const teams = (msg.data?.teams ?? []) as Array<{
+                user_id: string;
+                username: string;
+                global_name?: string | null;
+                save_data?: SaveData | null;
+              }>;
+              setOtherSaves((prev) => {
+                const next = { ...prev };
+                for (const t of teams) {
+                  next[t.user_id] = {
+                    displayName: t.global_name?.trim() || t.username,
+                    save: t.save_data ?? next[t.user_id]?.save ?? null,
+                  };
+                }
+                return next;
+              });
+            }
+            // State load notification from another player
+            if (msg.type === 'StateLoadNotification') {
+              const { display_name } = msg.data as { display_name: string };
+              addNotification(`${display_name} loaded a previous state!`);
+            }
+          } catch {
+            // ignore parse errors
+          }
+        };
+
+        // reconnect if ws is disconnected unintentionally
+        ws.onclose = (event) => {
+            if (event.wasClean) return;
+
+            if (reconnectCountRef.current < maxReconnectAttempts) {
+                const delay = baseReconnectInterval * Math.pow(2, reconnectCountRef.current);
+                reconnectTimeoutRef.current = setTimeout(() => {
+                    reconnectCountRef.current += 1;
+                    wsConnect();
+                }, delay);
+            }
+            else {
+                console.warn('failed to reconnect ws in 5 tries, aborting...');
+            }
         }
-        // State load notification from another player
-        if (msg.type === 'StateLoadNotification') {
-          const { display_name } = msg.data as { display_name: string };
-          addNotification(`${display_name} loaded a previous state!`);
-        }
-      } catch {
-        // ignore parse errors
-      }
     };
 
+    wsConnect();
+
+
     return () => {
-      ws.close();
-      wsRef.current = null;
+        if (reconnectTimeoutRef.current) clearTimeout(reconnectTimeoutRef.current);
+        if (wsRef.current) {
+            wsRef.current.close(1000, 'closing socket');
+            wsRef.current = null;
+        }
     };
   }, [draftId, addNotification]);
 
