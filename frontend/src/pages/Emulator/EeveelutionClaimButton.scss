@@ -1,0 +1,137 @@
+@import '../../shared/style/theme.scss';
+
+.eeveelution-claim-button-container {
+  position: relative;
+  display: inline-block;
+}
+
+.eeveelution-notification {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  background-color: $eb-surface;
+  border: 0.125rem solid $eb-primary;
+  border-radius: 0.25rem;
+  padding: 1rem 1.5rem;
+  color: $eb-text;
+  font-weight: 600;
+  z-index: 2000;
+  box-shadow: $eb-shadow;
+  animation: slideIn 0.3s ease;
+}
+
+@keyframes slideIn {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+.eeveelution-main-button {
+  background: transparent;
+  border: 1px solid #10b981;
+  border-radius: 6px;
+  color: #10b981;
+  padding: 0.3rem 0.8rem;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 1.1rem;
+  white-space: nowrap;
+  transition: border-color 0.15s, color 0.15s, background 0.15s;
+
+  &:hover {
+    background: rgba(16, 185, 129, 0.1);
+    color: #34d399;
+    border-color: #34d399;
+  }
+}
+
+.eeveelution-expanded-buttons {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.eeveelution-individual-button {
+  background: transparent;
+  border: 1px solid #10b981;
+  border-radius: 6px;
+  color: #10b981;
+  padding: 0.1rem;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 0.9rem;
+  transition: border-color 0.15s, color 0.15s, background 0.15s, transform 0.15s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  min-width: 24px;
+  min-height: 24px;
+  flex-shrink: 0;
+
+  &:hover:not(:disabled) {
+    background: rgba(16, 185, 129, 0.1);
+    color: #34d399;
+    border-color: #34d399;
+    transform: scale(1.05);
+  }
+
+  &:disabled {
+    cursor: not-allowed;
+    opacity: 0.7;
+  }
+
+  &.claimed {
+    border-color: #dc2626;
+    color: #dc2626;
+    background: transparent;
+
+    &:hover:not(:disabled) {
+      background: rgba(220, 38, 38, 0.1);
+      color: #ef4444;
+      border-color: #ef4444;
+      transform: scale(1.05);
+    }
+
+    &.current-user {
+      border-color: #eab308;
+      color: #eab308;
+      background: transparent;
+
+      &:hover:not(:disabled) {
+        background: rgba(234, 179, 8, 0.1);
+        color: #facc15;
+        border-color: #facc15;
+        transform: scale(1.05);
+      }
+    }
+  }
+
+  &.eeveelution-back-button {
+    .back-icon {
+      font-size: 0.75rem;
+      width: 12px;
+      height: 12px;
+      display: inline-block;
+    }
+  }
+}
+
+.eeveelution-icon {
+  width: 18px;
+  height: 18px;
+  image-rendering: pixelated;
+
+  &.greyed-out {
+    filter: grayscale(100%);
+    opacity: 0.5;
+  }
+}

@@ -2,14 +2,31 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import Header from '../../shared/components/Header';
 import { parseSaveFile, SaveData } from '../../utils/parseSaveFile';
-import { fetchCurrentUser, fetchDraftById } from '../../shared/api/draftData';
+import { fetchCurrentUser, fetchDraftById, claimEeveelution, unclaimEeveelution } from '../../shared/api/draftData';
 import { fetchPokemonList } from '../../shared/api/pokemon';
+import EeveelutionClaimButton from './EeveelutionClaimButton';
 import './EmulatorPage.scss';
 
-const getIconName = (name: string) => {
+const getIconName = (name: string, speciesId?: number) => {
   if (!name || name === '???') return 'egg';
   const n = name.toLowerCase();
   if (n.startsWith('egg')) return 'egg';
+  
+  // Special handling for specific Pokemon with non-standard names
+  if (n.includes('plusle')) return 'plusle';
+  if (n.includes('minun')) return 'minun';
+  if (n.includes('deerling')) return 'deerling';
+  if (n.includes('mime jr')) return 'mime jr';
+  if (n.includes('mime.')) return 'mime jr';
+  
+  // Fallback: handle by species ID if name lookup failed
+  if (n.startsWith('id') && speciesId) {
+    if (speciesId === 312) return 'minun';
+    if (speciesId === 311) return 'plusle';
+    if (speciesId === 1094 || speciesId === 1095 || speciesId === 1096 || speciesId === 1097) return 'deerling';
+    if (speciesId === 439) return 'mime jr';
+  }
+  
   return n.replace(/é/g, 'e').replace(/[^a-z0-9- .]/g, '');
 };
 
@@ -213,11 +230,16 @@ const EmulatorPage: React.FC = () => {
 
   // Current logged-in user (to exclude self from sidebar)
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  const [currentUsername, setCurrentUsername] = useState<string | null>(null);
+  const [hasRefereeRole, setHasRefereeRole] = useState(false);
 
   // Other players in the draft (populated via WebSocket)
   const [otherSaves, setOtherSaves] = useState<OtherPlayerSaves>({});
   const [pokemonMetadata, setPokemonMetadata] = useState<Record<string, any>>({});
   const [pokemonById, setPokemonById] = useState<Map<number, any[]>>(new Map());
+
+  // Draft data for eeveelution claiming
+  const [draftData, setDraftData] = useState<any>(null);
 
   // Persist fainted state via Personality ID (User ID -> Set of PIDs)
   const [faintedPids, setFaintedPids] = useState<Record<string, Set<number>>>({});
@@ -261,6 +283,11 @@ const EmulatorPage: React.FC = () => {
   useEffect(() => {
     fetchCurrentUser().then((u) => {
       if (u.user_id) setCurrentUserId(u.user_id);
+      setCurrentUsername(u.username);
+      setHasRefereeRole(
+        (u.roles ?? []).some((role) => role.role_name === 'Referee' || role.role_name === 'Admin') ||
+        u.username === 'franklynathan' || u.username === 'jage04' || u.username === 'Jason' || u.username === 'mfrazz'
+      );
     }).catch(() => {});
   }, []);
 
@@ -270,6 +297,7 @@ const EmulatorPage: React.FC = () => {
     fetchDraftById(draftId)
       .then((draft) => {
         if (cancelled) return;
+        setDraftData(draft);
         setOtherSaves((prev) => {
           const next = { ...prev };
           for (const team of draft.teams) {
@@ -324,11 +352,46 @@ const EmulatorPage: React.FC = () => {
     return () => { cancelled = true; };
   }, []);
 
+  // Map Blitz mod species IDs to database species IDs
+  const mapSpeciesId = (id: number): number => {
+    // Deerling forms: Blitz uses 1094-1097, database uses 585
+    if (id >= 1094 && id <= 1097) return 585;
+    // Plusle and Minun: Blitz uses 311/312, database uses 311 for combined
+    if (id === 312) return 311;
+    return id;
+  };
+
   const resolveMetadata = (speciesId: number, nickname: string | undefined) => {
-    console.log(`[Debug] Resolving: speciesId=${speciesId}, nickname=${nickname}`);
+    // Map Blitz species ID to database species ID
+    const dbSpeciesId = mapSpeciesId(speciesId);
+
+    // Special handling for Plusle/Minun since they're combined in database
+    if (speciesId === 311 || speciesId === 312) {
+      const combinedEntry = pokemonById.get(311)?.[0];
+      if (combinedEntry) {
+        const isMinun = speciesId === 312;
+        return {
+          ...combinedEntry,
+          name: isMinun ? 'Minun' : 'Plusle',
+          pokedex_id: speciesId,
+          // Override abilities: Plusle always has Plus, Minun always has Minus
+          ability1: isMinun ? 'Minus' : 'Plus',
+          ability2: isMinun ? 'Plus' : 'Minus',
+        };
+      }
+    }
+
+    // Special handling for Farfetch'd - map to Galar variant (ID 83)
+    if (speciesId === 83) {
+      const farfetchdCandidates = pokemonById.get(83);
+      if (farfetchdCandidates) {
+        const galarVariant = farfetchdCandidates.find(p => p.form === 'Galar');
+        if (galarVariant) return galarVariant;
+      }
+    }
 
     // 1. Try direct ID lookup. This is the most reliable method.
-    const candidates = pokemonById.get(speciesId);
+    const candidates = pokemonById.get(dbSpeciesId);
     let data: any = null;
 
     if (candidates) {
@@ -339,7 +402,7 @@ const EmulatorPage: React.FC = () => {
       // using the nickname. This is crucial for Pokémon like Deerling.
       if ((!singleCandidate || isNameMismatch) && nickname) {
         const formMatch = Object.values(pokemonMetadata).find(p => 
-          p.name.toLowerCase().startsWith(nickname.toLowerCase()) && Number(p.pokedex_id) === speciesId
+          p.name.toLowerCase().startsWith(nickname.toLowerCase()) && Number(p.pokedex_id) === dbSpeciesId
         );
         if (formMatch) return formMatch;
       }
@@ -353,37 +416,41 @@ const EmulatorPage: React.FC = () => {
         data = singleCandidate;
       }
     }
-    if (data) console.log(`[Debug] Found by ID: ${data.name}`);
-    else console.log(`[Debug] Not found by ID, or ID match was ambiguous.`);
     
     if (!data && nickname) {
       let searchName = nickname.toLowerCase();
-      // Special handling for Deerling/Sawsbuck, which have no base form in the DB.
-      if (searchName === 'deerling') {
-        searchName = 'deerling-spring';
-      } else if (searchName === 'sawsbuck') {
-        searchName = 'sawsbuck-spring';
+      // Special handling for Deerling/Sawsbuck - strip form suffixes to match base form in DB
+      if (searchName.startsWith('deerling')) {
+        searchName = 'deerling';
+      } else if (searchName.startsWith('sawsbuck')) {
+        searchName = 'sawsbuck';
+      }
+      // Handle Mime Jr. period issue - database has "Mime Jr" without period
+      else if (searchName === 'mime jr.' || searchName === 'mime jr') {
+        searchName = 'mime jr';
+      }
+      // Handle Farfetch'd - database has apostrophe, save file might not
+      else if (searchName === 'farfetchd' || searchName === 'farfetch\'d') {
+        searchName = 'farfetch\'d';
+      }
+      // Handle Farfetch'd Galar - database has "Farfetch'd,Galar"
+      else if (searchName === 'farfetch\'d galar' || searchName === 'farfetchd galar') {
+        searchName = 'farfetch\'d,galar';
       }
       data = pokemonMetadata[searchName];
       
       // Try normalized lookup for accented names
       if (!data) {
-        console.log(`[Debug] Nickname fallback: trying normalized '${searchName}'`);
         const normalized = searchName.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
         data = pokemonMetadata[normalized];
       }
 
       // Handle forms (e.g. "Deerling" matching "Deerling-Spring") or truncated names
       if (!data) {
-        console.log(`[Debug] Nickname fallback: trying startsWith '${searchName}'`);
         data = Object.values(pokemonMetadata).find(p => 
           p.name.toLowerCase().startsWith(searchName)
         );
       }
-
-      if (data) console.log(`[Debug] Found by nickname fallback: ${data.name}`);
-      else console.log(`[Debug] Not found by nickname fallback.`);
-
     }
 
     // 4. Handle Mega Evolution redirection to treat them as base forms
@@ -447,6 +514,11 @@ const EmulatorPage: React.FC = () => {
             if (msg.type === 'StateLoadNotification') {
               const { display_name } = msg.data as { display_name: string };
               addNotification(`${display_name} loaded a previous state!`);
+            }
+            // Eeveelution claim notification
+            if (msg.type === 'EeveelutionClaimed') {
+              const { user_name, eeveelution_name } = msg.data as { user_name: string; eeveelution_name: string };
+              addNotification(`${user_name} claimed ${eeveelution_name}!`);
             }
           } catch {
             // ignore parse errors
@@ -520,7 +592,9 @@ const EmulatorPage: React.FC = () => {
       return;
     }
     setMySaveData(parsed);
-    setSaveLastSynced(new Date());
+    const now = new Date();
+    setSaveLastSynced(now);
+    console.log(`Synced save at ${now.toLocaleTimeString()}`);
 
     if (draftId) {
       fetch(`/api/drafts/${draftId}/save`, {
@@ -803,6 +877,31 @@ const EmulatorPage: React.FC = () => {
     });
   };
 
+  const handleClaimEeveelution = async (pokedexId: number, form: string | null, targetUserId?: string | null) => {
+    if (!draftId) return;
+    try {
+      await claimEeveelution(draftId, pokedexId, form, targetUserId);
+      // Refresh draft data
+      const updated = await fetchDraftById(draftId);
+      setDraftData(updated);
+    } catch (error) {
+      console.error('Error claiming eeveelution:', error);
+      throw error;
+    }
+  };
+
+  const handleUnclaimEeveelution = async (pokedexId: number, form: string | null, targetUserId?: string | null) => {
+    if (!draftId) return;
+    try {
+      await unclaimEeveelution(draftId, pokedexId, form, targetUserId);
+      const updated = await fetchDraftById(draftId);
+      setDraftData(updated);
+    } catch (error) {
+      console.error('Error unclaiming eeveelution:', error);
+      throw error;
+    }
+  };
+
   useEffect(() => {
     if (!romUrl) {
       setHasAutosave(false);
@@ -941,14 +1040,29 @@ const EmulatorPage: React.FC = () => {
                       className="autosave-btn"
                       onClick={handleLoadAutosave}
                     >
-                      Load Autosave {autosaveTime ? `(${autosaveTime})` : ''}
+                      Load Autosave {autosaveTime ? `(${autosaveTime.replace(/\s*[aApP][mM]\s*$/, '')})` : ''}
                     </button>
                   )}
-                  {saveLastSynced && (
-                    <span className="save-panel-synced">
-                      synced {saveLastSynced.toLocaleTimeString()}
-                    </span>
+                  {draftId && draftData && (
+                    <EeveelutionClaimButton
+                      eeveelutions={[
+                        { pokedex_id: 134, name: 'Vaporeon', form: null },
+                        { pokedex_id: 135, name: 'Jolteon', form: null },
+                        { pokedex_id: 136, name: 'Flareon', form: null },
+                        { pokedex_id: 196, name: 'Espeon', form: null },
+                        { pokedex_id: 197, name: 'Umbreon', form: null },
+                        { pokedex_id: 470, name: 'Leafeon', form: null },
+                        { pokedex_id: 471, name: 'Glaceon', form: null },
+                        { pokedex_id: 700, name: 'Sylveon', form: null },
+                      ]}
+                      teams={draftData.teams}
+                      currentUserId={currentUserId}
+                      currentUsername={currentUsername}
+                      onClaim={handleClaimEeveelution}
+                      onUnclaim={handleUnclaimEeveelution}
+                    />
                   )}
+
                   <button 
                     className="panel-minimize-btn"
                     onClick={() => setIsPanelMinimized(!isPanelMinimized)}
@@ -966,7 +1080,7 @@ const EmulatorPage: React.FC = () => {
                       const speciesId = mon.species_id ?? mon.speciesId;
                       const speciesData = resolveMetadata(speciesId, mon.nickname);
                       const realName = (speciesId === 412 && mon.nickname?.toLowerCase() === 'egg') ? "Egg" : (speciesData?.name || `ID ${speciesId}`);
-                      const iconName = getIconName(realName);
+                      const iconName = getIconName(realName, speciesId);
                       const abilityName = speciesData?.abilities?.[mon.ability_num] || 'Unknown';
                       const fainted = isMonFainted(currentUserId || 'me', mon);
                       const isTruncatedMatch = realName.toLowerCase().startsWith(mon.nickname.toLowerCase()) && mon.nickname.length >= 10;
@@ -1031,7 +1145,7 @@ const EmulatorPage: React.FC = () => {
                           const speciesId = mon.species_id ?? mon.speciesId;
                           const speciesData = resolveMetadata(speciesId, mon.nickname);
                           const realName = (speciesId === 412 && mon.nickname?.toLowerCase() === 'egg') ? "Egg" : (speciesData?.name || `ID ${speciesId}`);
-                          const iconName = getIconName(realName);
+                          const iconName = getIconName(realName, speciesId);
                           const abilityName = speciesData?.abilities?.[mon.ability_num] || 'Unknown';
                           const fainted = isMonFainted(uid, mon);
                           const isTruncatedMatch = realName.toLowerCase().startsWith(mon.nickname.toLowerCase()) && mon.nickname.length >= 10;

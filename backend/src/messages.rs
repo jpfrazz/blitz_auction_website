@@ -70,6 +70,10 @@ pub enum ServerMessage {
         user_id: String,
         display_name: String,
     },
+    EeveelutionClaimed {
+        user_name: String,
+        eeveelution_name: String,
+    },
 }
 
 #[derive(Clone, Debug, Deserialize)]

@@ -112,7 +112,7 @@ const EeveelutionClaimModal: React.FC<EeveelutionClaimModalProps> = ({
         )}
 
         <div className="eeveelution-modal-instruction">
-          <p>Select which Eeveelution you want to use:</p>
+          <p>Select which Eeveelution you've obtained in game:</p>
         </div>
 
         {error && <div className="eeveelution-modal-error">{error}</div>}

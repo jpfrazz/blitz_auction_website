@@ -1136,6 +1136,13 @@ impl DraftActor {
 
         if let Some(team) = self.teams.get_mut(&actual_user_id) {
             team.auctions_won.push(target_pokemon.clone());
+            
+            // Send WebSocket notification about the claim
+            let _ = self.broadcast_tx.send(crate::messages::ServerMessage::EeveelutionClaimed {
+                user_name: team.username.clone(),
+                eeveelution_name: target_pokemon.name.clone(),
+            });
+            
             self.broadcast();
             Ok(serde_json::json!({
                 "success": true,

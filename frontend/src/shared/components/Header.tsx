@@ -14,8 +14,9 @@ const navButtons = [
 function Header() {
   const location = useLocation();
   const isAuctionPage = location.pathname === '/Auction';
-  const linkTarget = isAuctionPage ? '_blank' : undefined;
-  const linkRel = isAuctionPage ? 'noopener noreferrer' : undefined;
+  const isEmulatorPage = location.pathname.startsWith('/Emulator');
+  const linkTarget = (isAuctionPage || isEmulatorPage) ? '_blank' : undefined;
+  const linkRel = (isAuctionPage || isEmulatorPage) ? 'noopener noreferrer' : undefined;
 
   const AUCTION_ALERT_SOUND_MUTED_KEY = 'auction_alert_sound_muted';
   const AUCTION_ALERT_SOUND_MUTED_EVENT = 'auction-alert-muted-changed';
