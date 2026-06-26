@@ -32,6 +32,21 @@ export const NATURES = [
   'Mild', 'Quiet', 'Rash', 'Calm', 'Gentle', 'Sassy', 'Careful', 'Quirky', 'Bashful',
 ];
 
+// Mapping from parsed (incorrect) nature to correct nature based on user-reported errors
+const NATURE_CORRECTION: Record<string, string> = {
+  'Quirky': 'Careful',
+  'Bashful': 'Quirky',
+  'Calm': 'Rash',
+  'Careful': 'Sassy',
+  'Rash': 'Bashful',
+  'Gentle': 'Calm',
+  'Sassy': 'Gentle',
+};
+
+function correctNature(nature: string): string {
+  return NATURE_CORRECTION[nature] || nature;
+}
+
 export interface SaveIvs {
   hp: number;
   atk: number;
@@ -262,7 +277,7 @@ export function parseSaveFile(
           nickname,
           species_id,
           ability_num,
-          nature: NATURES[personality % 25],
+          nature: correctNature(NATURES[personality % 25]),
           ivs,
         });
       }

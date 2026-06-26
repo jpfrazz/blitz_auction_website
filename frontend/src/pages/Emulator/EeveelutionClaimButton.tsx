@@ -29,6 +29,7 @@ const EeveelutionClaimButton: React.FC<EeveelutionClaimButtonProps> = ({
   const [isExpanded, setIsExpanded] = useState(false);
   const [claiming, setClaiming] = useState<string | null>(null);
   const [notification, setNotification] = useState<string | null>(null);
+  const [isClosing, setIsClosing] = useState(false);
 
   // Determine which eeveelutions are already claimed by checking all teams
   const getClaimedInfo = (pokedexId: number, form: string | null): { username: string; userId: string } | null => {
@@ -59,7 +60,11 @@ const EeveelutionClaimButton: React.FC<EeveelutionClaimButtonProps> = ({
         setClaiming(`${eeveelution.pokedex_id}-${eeveelution.form}`);
         try {
           await onUnclaim(eeveelution.pokedex_id, eeveelution.form);
-          setIsExpanded(false);
+          setIsClosing(true);
+          setTimeout(() => {
+            setIsExpanded(false);
+            setIsClosing(false);
+          }, 300);
         } catch (err: any) {
           showNotification(err?.message || 'Failed to unclaim Eeveelution');
         } finally {
@@ -74,7 +79,11 @@ const EeveelutionClaimButton: React.FC<EeveelutionClaimButtonProps> = ({
       setClaiming(`${eeveelution.pokedex_id}-${eeveelution.form}`);
       try {
         await onClaim(eeveelution.pokedex_id, eeveelution.form);
-        setIsExpanded(false);
+        setIsClosing(true);
+        setTimeout(() => {
+          setIsExpanded(false);
+          setIsClosing(false);
+        }, 300);
       } catch (err: any) {
         const errorMsg = err?.message || '';
         if (errorMsg.includes('Already claimed by')) {
@@ -89,6 +98,14 @@ const EeveelutionClaimButton: React.FC<EeveelutionClaimButtonProps> = ({
         setClaiming(null);
       }
     }
+  };
+
+  const handleBack = () => {
+    setIsClosing(true);
+    setTimeout(() => {
+      setIsExpanded(false);
+      setIsClosing(false);
+    }, 300);
   };
 
   return (
@@ -108,7 +125,7 @@ const EeveelutionClaimButton: React.FC<EeveelutionClaimButtonProps> = ({
           Claim Eeveelution
         </button>
       ) : (
-        <div className="eeveelution-expanded-buttons">
+        <div className={`eeveelution-expanded-buttons ${isClosing ? 'closing' : ''}`}>
           {eeveelutions.map(eeveelution => {
             const claimedInfo = getClaimedInfo(eeveelution.pokedex_id, eeveelution.form);
             const isClaimed = !!claimedInfo;
@@ -137,7 +154,7 @@ const EeveelutionClaimButton: React.FC<EeveelutionClaimButtonProps> = ({
           })}
           <button
             className="eeveelution-individual-button eeveelution-back-button"
-            onClick={() => setIsExpanded(false)}
+            onClick={handleBack}
             title="Go back"
           >
             <FaArrowRight className="back-icon" />

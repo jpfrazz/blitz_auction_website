@@ -248,6 +248,9 @@ const EmulatorPage: React.FC = () => {
   const [notifications, setNotifications] = useState<ToastNotification[]>([]);
   const toastIdRef = useRef(0);
 
+  // Tab key overlay for race standings
+  const [showOverlay, setShowOverlay] = useState(false);
+
   const addNotification = useCallback((text: string) => {
     const id = ++toastIdRef.current;
     setNotifications(prev => [...prev, { id, text }]);
@@ -693,8 +696,20 @@ const EmulatorPage: React.FC = () => {
       if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key)) {
         e.preventDefault();
       }
+      // Toggle overlay on Tab key
+      if (e.key === 'Tab') {
+        e.preventDefault();
+        setShowOverlay(prev => !prev);
+      }
     };
     document.addEventListener('keydown', blockShortcuts, true);
+
+    // Add beforeunload confirmation to prevent accidental tab closure
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      e.preventDefault();
+      e.returnValue = ''; // Chrome requires returnValue to be set
+    };
+    window.addEventListener('beforeunload', handleBeforeUnload);
 
     // Disable the right-click context menu entirely for the emulator
     const blockContextMenu = (e: MouseEvent) => {
@@ -834,6 +849,7 @@ const EmulatorPage: React.FC = () => {
     return () => {
       document.removeEventListener('keydown', blockShortcuts, true);
       document.removeEventListener('contextmenu', blockContextMenu, true);
+      window.removeEventListener('beforeunload', handleBeforeUnload);
       scriptRef.current?.remove();
       scriptRef.current = null;
       window.EJS_ready = undefined;
@@ -1020,6 +1036,54 @@ const EmulatorPage: React.FC = () => {
             {/* ── Left column: emulator + own save panel ── */}
             <div className="emulator-col" style={{ flexGrow: 1 }}>
               <div id="game" />
+              {/* Tab key overlay for race standings */}
+              {showOverlay && hasSidebar && (
+                <div className="race-standings-overlay">
+                  <div className="overlay-header">
+                    <span className="overlay-title">Race Standings (Tab)</span>
+                  </div>
+                  <div className="overlay-content">
+                    {otherEntries.map(([uid, { displayName, save }]) => (
+                      <div key={uid} className="overlay-player-card">
+                        <div className="overlay-player-header">
+                          <span className="overlay-username">{displayName}</span>
+                          <span className="overlay-badges">
+                            {save ? `${save.badge_count} ${save.badge_count === 1 ? 'badge' : 'badges'}` : '— badges'}
+                          </span>
+                        </div>
+                        {save ? (
+                          <div className="overlay-mon-icons">
+                            {sortPokemon(uid, [
+                              ...(save.party ?? []).map((m: any) => ({ ...m, _isParty: true })),
+                              ...(save.box ?? []).map((m: any) => ({ ...m, _isParty: false })),
+                            ]).map((mon: any, i: number) => {
+                              const speciesId = mon.species_id ?? mon.speciesId;
+                              const speciesData = resolveMetadata(speciesId, mon.nickname);
+                              const realName = (speciesId === 412 && mon.nickname?.toLowerCase() === 'egg') ? "Egg" : (speciesData?.name || `ID ${speciesId}`);
+                              const iconName = getIconName(realName, speciesId);
+                              const fainted = isMonFainted(uid, mon);
+
+                              return (
+                                <img
+                                  key={`overlay-icon-${i}`}
+                                  src={`/MiniIcons/${iconName}.png`}
+                                  alt={mon.nickname || realName}
+                                  className={`overlay-mini-icon ${fainted ? 'fainted' : ''}`}
+                                  style={fainted ? { filter: 'grayscale(100%)', opacity: 0.6 } : {}}
+                                  title={`${realName}`}
+                                  onError={(e) => { (e.target as HTMLImageElement).src = '/MiniIcons/question.png'; }}
+                                />
+                              );
+                            })}
+                          </div>
+                        ) : (
+                          <p className="overlay-no-save">Waiting for save…</p>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
 
             <div className={`save-panel-container ${isPanelMinimized ? 'minimized' : ''}`}>
               <div className="save-panel own-save-panel">
