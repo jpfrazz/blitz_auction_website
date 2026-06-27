@@ -15,6 +15,13 @@
     justify-content: flex-start;
     scrollbar-color: #444 #222;
     scrollbar-width: thin;
+
+    &.two-row-mode {
+        flex-wrap: wrap;
+        overflow-x: hidden;
+        overflow-y: auto;
+        max-height: 120px;
+    }
 }
 
 .auction-players-row::-webkit-scrollbar {

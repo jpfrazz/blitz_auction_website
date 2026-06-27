@@ -19,10 +19,45 @@ const PlayerRow: React.FC<PlayerRowProps> = ({ teams, numPlayers, highestBidderI
   // Local state to manage the visual order for dragging
   const [items, setItems] = React.useState<any[]>([]);
 
+  // Settings
+  const [twoRowMode, setTwoRowMode] = React.useState(() => {
+    if (typeof window === 'undefined') return false;
+    return localStorage.getItem('eb-two-row-player-height') === 'true';
+  });
+
+  const [autoSortByFunds, setAutoSortByFunds] = React.useState(() => {
+    if (typeof window === 'undefined') return false;
+    return localStorage.getItem('eb-auto-sort-by-funds') === 'true';
+  });
+
+  // Listen for settings changes
+  React.useEffect(() => {
+    const handleStorageChange = () => {
+      setTwoRowMode(localStorage.getItem('eb-two-row-player-height') === 'true');
+      setAutoSortByFunds(localStorage.getItem('eb-auto-sort-by-funds') === 'true');
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+    window.addEventListener('eb-settings-changed', handleStorageChange);
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+      window.removeEventListener('eb-settings-changed', handleStorageChange);
+    };
+  }, []);
+
   // Prepare the list of teams and placeholders
   const sortedTeams = React.useMemo(() => {
     const baseTeams = [...teams];
-    if (currentUserId) {
+    
+    // Auto-sort by funds if enabled
+    if (autoSortByFunds) {
+      baseTeams.sort((a, b) => {
+        const aFunds = a.budget_remaining ?? 0;
+        const bFunds = b.budget_remaining ?? 0;
+        return bFunds - aFunds; // Sort descending (highest funds first)
+      });
+    } else if (currentUserId) {
+      // Default behavior: put current user first
       const myTeamIdx = baseTeams.findIndex(t => t?.user_id === currentUserId);
       if (myTeamIdx > 0) {
         const [myTeam] = baseTeams.splice(myTeamIdx, 1);
@@ -36,7 +71,7 @@ const PlayerRow: React.FC<PlayerRowProps> = ({ teams, numPlayers, highestBidderI
       padded.push({ isPlaceholder: true, dragId: `placeholder-${padded.length}` } as any);
     }
     return padded;
-  }, [teams, currentUserId, numPlayers]);
+  }, [teams, currentUserId, numPlayers, autoSortByFunds]);
 
   // Sync local items with props when the underlying data changes (e.g. someone joins/leaves)
   React.useEffect(() => {
@@ -45,6 +80,11 @@ const PlayerRow: React.FC<PlayerRowProps> = ({ teams, numPlayers, highestBidderI
       const nextIds = new Set(sortedTeams.map(i => i.dragId));
 
       const idsChanged = prevIds.size !== nextIds.size || sortedTeams.some(t => !prevIds.has(t.dragId));
+
+      // If auto-sort is enabled, always reset to sorted order when data changes
+      if (autoSortByFunds) {
+        return sortedTeams;
+      }
 
       // If structure changed (ids added/removed) or first load, reset to default sorted order
       if (prevItems.length === 0 || idsChanged) {
@@ -57,7 +97,7 @@ const PlayerRow: React.FC<PlayerRowProps> = ({ teams, numPlayers, highestBidderI
         return freshData ? { ...freshData } : item;
       });
     });
-  }, [sortedTeams]);
+  }, [sortedTeams, autoSortByFunds]);
 
   React.useEffect(() => {
     if (isInitial.current) {
@@ -81,8 +121,8 @@ const PlayerRow: React.FC<PlayerRowProps> = ({ teams, numPlayers, highestBidderI
     <Reorder.Group 
       axis="x" 
       values={items} 
-      onReorder={setItems} 
-      className="auction-players-row"
+      onReorder={twoRowMode ? () => {} : setItems} 
+      className={`auction-players-row ${twoRowMode ? 'two-row-mode' : ''}`}
       style={{ 
         listStyle: 'none', 
         padding: '0.5rem 0',
