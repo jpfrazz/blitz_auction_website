@@ -73,6 +73,16 @@ pub enum ServerMessage {
     EeveelutionClaimed {
         user_name: String,
         eeveelution_name: String,
+        user_id: String,
+        pokedex_id: u32,
+        form: Option<String>,
+    },
+    EeveelutionUnclaimed {
+        user_name: String,
+        eeveelution_name: String,
+        user_id: String,
+        pokedex_id: u32,
+        form: Option<String>,
     },
 }
 

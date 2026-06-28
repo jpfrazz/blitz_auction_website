@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import Header from '../../shared/components/Header';
 import { parseSaveFile, SaveData } from '../../utils/parseSaveFile';
-import { fetchCurrentUser, fetchDraftById, claimEeveelution, unclaimEeveelution } from '../../shared/api/draftData';
+import { fetchCurrentUser, fetchDraftById, claimEeveelution, unclaimEeveelution, fetchControlBindings, saveControlBindings } from '../../shared/api/draftData';
 import { fetchPokemonList } from '../../shared/api/pokemon';
 import EeveelutionClaimButton from './EeveelutionClaimButton';
 import './EmulatorPage.scss';
@@ -520,8 +520,49 @@ const EmulatorPage: React.FC = () => {
             }
             // Eeveelution claim notification
             if (msg.type === 'EeveelutionClaimed') {
-              const { user_name, eeveelution_name } = msg.data as { user_name: string; eeveelution_name: string };
+              const { user_name, eeveelution_name, user_id, pokedex_id, form } = msg.data as { user_name: string; eeveelution_name: string; user_id: string; pokedex_id: number; form: string | null };
               addNotification(`${user_name} claimed ${eeveelution_name}!`);
+
+              // Update draft data locally to reflect the claim instantly
+              setDraftData((prev: any) => {
+                if (!prev) return prev;
+                const updatedTeams = prev.teams.map((team: any) => {
+                  if (team.user_id === user_id) {
+                    const existingAuctions = team.auctions_won || [];
+                    // Check if already claimed to avoid duplicates
+                    const alreadyClaimed = existingAuctions.some((p: any) => p.pokedex_id === pokedex_id && p.form === form);
+                    if (alreadyClaimed) return team;
+
+                    return {
+                      ...team,
+                      auctions_won: [...existingAuctions, { pokedex_id, form, name: eeveelution_name }]
+                    };
+                  }
+                  return team;
+                });
+                return { ...prev, teams: updatedTeams };
+              });
+            }
+            // Eeveelution unclaim notification
+            if (msg.type === 'EeveelutionUnclaimed') {
+              const { user_name, eeveelution_name, user_id, pokedex_id, form } = msg.data as { user_name: string; eeveelution_name: string; user_id: string; pokedex_id: number; form: string | null };
+              addNotification(`${user_name} unclaimed ${eeveelution_name}!`);
+
+              // Update draft data locally to reflect the unclaim instantly
+              setDraftData((prev: any) => {
+                if (!prev) return prev;
+                const updatedTeams = prev.teams.map((team: any) => {
+                  if (team.user_id === user_id) {
+                    const existingAuctions = team.auctions_won || [];
+                    return {
+                      ...team,
+                      auctions_won: existingAuctions.filter((p: any) => !(p.pokedex_id === pokedex_id && p.form === form))
+                    };
+                  }
+                  return team;
+                });
+                return { ...prev, teams: updatedTeams };
+              });
             }
           } catch {
             // ignore parse errors
@@ -677,6 +718,39 @@ const EmulatorPage: React.FC = () => {
   // Bootstrap EmulatorJS once we have a ROM URL
   useEffect(() => {
     if (!romUrl) return;
+
+    // Load control bindings from backend before initializing emulator
+    const loadControlBindings = async () => {
+      try {
+        const bindings = await fetchControlBindings();
+        if (bindings && typeof bindings === 'object') {
+          console.log('Loaded control bindings from backend:', bindings);
+          // Store in localStorage for EmulatorJS to pick up
+          localStorage.setItem('ejs_controlSettings', JSON.stringify(bindings));
+        }
+      } catch (err) {
+        console.error('Failed to load control bindings:', err);
+      }
+    };
+
+    loadControlBindings();
+
+    // Listen for control binding changes and save to backend
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === 'ejs_controlSettings' && e.newValue) {
+        try {
+          const bindings = JSON.parse(e.newValue);
+          console.log('Saving control bindings to backend:', bindings);
+          saveControlBindings(bindings).catch(err => {
+            console.error('Failed to save control bindings:', err);
+          });
+        } catch (err) {
+          console.error('Failed to parse control bindings:', err);
+        }
+      }
+    };
+
+    window.addEventListener('storage', handleStorageChange);
 
     // Remove any leftover script from a previous load
     if (scriptRef.current) {
@@ -850,6 +924,7 @@ const EmulatorPage: React.FC = () => {
       document.removeEventListener('keydown', blockShortcuts, true);
       document.removeEventListener('contextmenu', blockContextMenu, true);
       window.removeEventListener('beforeunload', handleBeforeUnload);
+      window.removeEventListener('storage', handleStorageChange);
       scriptRef.current?.remove();
       scriptRef.current = null;
       window.EJS_ready = undefined;
@@ -943,9 +1018,8 @@ const EmulatorPage: React.FC = () => {
   }, [romUrl, draftId]);
 
   // ── Other-player sidebar ─────────────────────────────────────────────────
-  // Filter out the current user and cap at 9
-  const otherEntries = Object.entries(otherSaves)
-    .filter(([uid]) => uid !== currentUserId)
+  // Include current user and cap at 9
+  const sidebarEntries = Object.entries(otherSaves)
     .sort(([, a], [, b]) => {
       const badgesA = a.save?.badge_count ?? 0;
       const badgesB = b.save?.badge_count ?? 0;
@@ -1043,44 +1117,50 @@ const EmulatorPage: React.FC = () => {
                     <span className="overlay-title">Race Standings (Tab)</span>
                   </div>
                   <div className="overlay-content">
-                    {otherEntries.map(([uid, { displayName, save }]) => (
-                      <div key={uid} className="overlay-player-card">
-                        <div className="overlay-player-header">
-                          <span className="overlay-username">{displayName}</span>
-                          <span className="overlay-badges">
-                            {save ? `${save.badge_count} ${save.badge_count === 1 ? 'badge' : 'badges'}` : '— badges'}
-                          </span>
-                        </div>
-                        {save ? (
-                          <div className="overlay-mon-icons">
-                            {sortPokemon(uid, [
-                              ...(save.party ?? []).map((m: any) => ({ ...m, _isParty: true })),
-                              ...(save.box ?? []).map((m: any) => ({ ...m, _isParty: false })),
-                            ]).map((mon: any, i: number) => {
-                              const speciesId = mon.species_id ?? mon.speciesId;
-                              const speciesData = resolveMetadata(speciesId, mon.nickname);
-                              const realName = (speciesId === 412 && mon.nickname?.toLowerCase() === 'egg') ? "Egg" : (speciesData?.name || `ID ${speciesId}`);
-                              const iconName = getIconName(realName, speciesId);
-                              const fainted = isMonFainted(uid, mon);
+                    {sidebarEntries.map(([uid, { displayName, save }]) => {
+                      const isCurrentUser = uid === currentUserId;
+                      const saveData = isCurrentUser ? mySaveData : save;
+                      const displayDisplayName = isCurrentUser ? (currentUsername || 'You') : displayName;
 
-                              return (
-                                <img
-                                  key={`overlay-icon-${i}`}
-                                  src={`/MiniIcons/${iconName}.png`}
-                                  alt={mon.nickname || realName}
-                                  className={`overlay-mini-icon ${fainted ? 'fainted' : ''}`}
-                                  style={fainted ? { filter: 'grayscale(100%)', opacity: 0.6 } : {}}
-                                  title={`${realName}`}
-                                  onError={(e) => { (e.target as HTMLImageElement).src = '/MiniIcons/question.png'; }}
-                                />
-                              );
-                            })}
+                      return (
+                        <div key={uid} className="overlay-player-card">
+                          <div className="overlay-player-header">
+                            <span className="overlay-username">{displayDisplayName}</span>
+                            <span className="overlay-badges">
+                              {saveData ? `${saveData.badge_count} ${saveData.badge_count === 1 ? 'badge' : 'badges'}` : '— badges'}
+                            </span>
                           </div>
-                        ) : (
-                          <p className="overlay-no-save">Waiting for save…</p>
-                        )}
-                      </div>
-                    ))}
+                          {saveData ? (
+                            <div className="overlay-mon-icons">
+                              {sortPokemon(uid, [
+                                ...(saveData.party ?? []).map((m: any) => ({ ...m, _isParty: true })),
+                                ...(saveData.box ?? []).map((m: any) => ({ ...m, _isParty: false })),
+                              ]).map((mon: any, i: number) => {
+                                const speciesId = mon.species_id ?? mon.speciesId;
+                                const speciesData = resolveMetadata(speciesId, mon.nickname);
+                                const realName = (speciesId === 412 && mon.nickname?.toLowerCase() === 'egg') ? "Egg" : (speciesData?.name || `ID ${speciesId}`);
+                                const iconName = getIconName(realName, speciesId);
+                                const fainted = isMonFainted(uid, mon);
+
+                                return (
+                                  <img
+                                    key={`overlay-icon-${i}`}
+                                    src={`/MiniIcons/${iconName}.png`}
+                                    alt={mon.nickname || realName}
+                                    className={`overlay-mini-icon ${fainted ? 'fainted' : ''}`}
+                                    style={fainted ? { filter: 'grayscale(100%)', opacity: 0.6 } : {}}
+                                    title={`${realName}`}
+                                    onError={(e) => { (e.target as HTMLImageElement).src = '/MiniIcons/question.png'; }}
+                                  />
+                                );
+                              })}
+                            </div>
+                          ) : (
+                            <p className="overlay-no-save">Waiting for save…</p>
+                          )}
+                        </div>
+                      );
+                    })}
                   </div>
                 </div>
               )}
@@ -1192,47 +1272,53 @@ const EmulatorPage: React.FC = () => {
             {/* ── Right sidebar: other players ── */}
             {hasSidebar && (
               <aside className="emulator-sidebar">
-                {otherEntries.map(([uid, { displayName, save }]) => (
-                  <div key={uid} className="sidebar-player-card">
-                    <div className="sidebar-player-header">
-                      <span className="sidebar-username">{displayName}</span>
-                      <span className="sidebar-badges">
-                        {save ? `${save.badge_count} ${save.badge_count === 1 ? 'badge' : 'badges'}` : '— badges'}
-                      </span>
-                    </div>
-                    {save ? (
-                      <div className="sidebar-mon-icons">
-                        {sortPokemon(uid, [
-                          ...(save.party ?? []).map((m: any) => ({ ...m, _isParty: true })),
-                          ...(save.box ?? []).map((m: any) => ({ ...m, _isParty: false })),
-                        ]).map((mon: any, i: number) => {
-                          const speciesId = mon.species_id ?? mon.speciesId;
-                          const speciesData = resolveMetadata(speciesId, mon.nickname);
-                          const realName = (speciesId === 412 && mon.nickname?.toLowerCase() === 'egg') ? "Egg" : (speciesData?.name || `ID ${speciesId}`);
-                          const iconName = getIconName(realName, speciesId);
-                          const abilityName = speciesData?.abilities?.[mon.ability_num] || 'Unknown';
-                          const fainted = isMonFainted(uid, mon);
-                          const isTruncatedMatch = realName.toLowerCase().startsWith(mon.nickname.toLowerCase()) && mon.nickname.length >= 10;
-                          const hasNickname = mon.nickname && mon.nickname.toLowerCase() !== realName.toLowerCase() && !isTruncatedMatch;
+                {sidebarEntries.map(([uid, { displayName, save }]) => {
+                  const isCurrentUser = uid === currentUserId;
+                  const saveData = isCurrentUser ? mySaveData : save;
+                  const displayDisplayName = isCurrentUser ? (currentUsername || 'You') : displayName;
 
-                          return (
-                            <img
-                              key={`icon-${i}`}
-                              src={`/MiniIcons/${iconName}.png`}
-                              alt={mon.nickname || realName}
-                              className={`sidebar-mini-icon ${fainted ? 'fainted' : ''}`}
-                              style={fainted ? { filter: 'grayscale(100%)', opacity: 0.6 } : {}}
-                              title={`${hasNickname ? `${mon.nickname} (${realName})` : realName} (${abilityName}) - (${mon.nature || 'Unknown'} Nature${mon.nature ? NATURE_EFFECTS[mon.nature] : ''})${mon.ivs ? `\nIVs: ${mon.ivs.hp}/${mon.ivs.atk}/${mon.ivs.def}/${mon.ivs.spa}/${mon.ivs.spd}/${mon.ivs.spe}` : ''}`}
-                              onError={(e) => { (e.target as HTMLImageElement).src = '/MiniIcons/question.png'; }}
-                            />
-                          );
-                        })}
+                  return (
+                    <div key={uid} className="sidebar-player-card">
+                      <div className="sidebar-player-header">
+                        <span className="sidebar-username">{displayDisplayName}</span>
+                        <span className="sidebar-badges">
+                          {saveData ? `${saveData.badge_count} ${saveData.badge_count === 1 ? 'badge' : 'badges'}` : '— badges'}
+                        </span>
                       </div>
-                    ) : (
-                      <p className="sidebar-no-save">Waiting for save…</p>
-                    )}
-                  </div>
-                ))}
+                      {saveData ? (
+                        <div className="sidebar-mon-icons">
+                          {sortPokemon(uid, [
+                            ...(saveData.party ?? []).map((m: any) => ({ ...m, _isParty: true })),
+                            ...(saveData.box ?? []).map((m: any) => ({ ...m, _isParty: false })),
+                          ]).map((mon: any, i: number) => {
+                            const speciesId = mon.species_id ?? mon.speciesId;
+                            const speciesData = resolveMetadata(speciesId, mon.nickname);
+                            const realName = (speciesId === 412 && mon.nickname?.toLowerCase() === 'egg') ? "Egg" : (speciesData?.name || `ID ${speciesId}`);
+                            const iconName = getIconName(realName, speciesId);
+                            const abilityName = speciesData?.abilities?.[mon.ability_num] || 'Unknown';
+                            const fainted = isMonFainted(uid, mon);
+                            const isTruncatedMatch = realName.toLowerCase().startsWith(mon.nickname.toLowerCase()) && mon.nickname.length >= 10;
+                            const hasNickname = mon.nickname && mon.nickname.toLowerCase() !== realName.toLowerCase() && !isTruncatedMatch;
+
+                            return (
+                              <img
+                                key={`icon-${i}`}
+                                src={`/MiniIcons/${iconName}.png`}
+                                alt={mon.nickname || realName}
+                                className={`sidebar-mini-icon ${fainted ? 'fainted' : ''}`}
+                                style={fainted ? { filter: 'grayscale(100%)', opacity: 0.6 } : {}}
+                                title={`${hasNickname ? `${mon.nickname} (${realName})` : realName} (${abilityName}) - (${mon.nature || 'Unknown'} Nature${mon.nature ? NATURE_EFFECTS[mon.nature] : ''})${mon.ivs ? `\nIVs: ${mon.ivs.hp}/${mon.ivs.atk}/${mon.ivs.def}/${mon.ivs.spa}/${mon.ivs.spd}/${mon.ivs.spe}` : ''}`}
+                                onError={(e) => { (e.target as HTMLImageElement).src = '/MiniIcons/question.png'; }}
+                              />
+                            );
+                          })}
+                        </div>
+                      ) : (
+                        <p className="sidebar-no-save">Waiting for save…</p>
+                      )}
+                    </div>
+                  );
+                })}
               </aside>
             )}
           </div>

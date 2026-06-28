@@ -19,7 +19,7 @@
     &.two-row-mode {
         flex-wrap: wrap;
         overflow-x: hidden;
-        overflow-y: auto;
+        overflow-y: hidden;
         max-height: 120px;
     }
 }
@@ -146,4 +146,8 @@
 .player-bidding {
     animation: player-bidding-animation 0.5s ease-in-out;
     z-index: 10; // Ensure it stays on top while enlarged
+}
+
+.dragging {
+    opacity: 0.3 !important;
 }

@@ -202,3 +202,15 @@ export async function changeGuestName(newName: string): Promise<string> {
   const response = await axios.post('/api/guests/change-name', { new_name: `guest:${trimmed}` });
   return response.data;
 }
+
+// Fetch control bindings for the current user
+export async function fetchControlBindings(): Promise<any> {
+  const response = await axios.get('/api/control-bindings');
+  return response.data;
+}
+
+// Save control bindings for the current user
+export async function saveControlBindings(controlBindings: any): Promise<any> {
+  const response = await axios.post('/api/control-bindings', { control_bindings: controlBindings });
+  return response.data;
+}

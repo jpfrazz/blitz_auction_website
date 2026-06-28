@@ -1136,13 +1136,16 @@ impl DraftActor {
 
         if let Some(team) = self.teams.get_mut(&actual_user_id) {
             team.auctions_won.push(target_pokemon.clone());
-            
+
             // Send WebSocket notification about the claim
             let _ = self.broadcast_tx.send(crate::messages::ServerMessage::EeveelutionClaimed {
                 user_name: team.username.clone(),
                 eeveelution_name: target_pokemon.name.clone(),
+                user_id: actual_user_id.clone(),
+                pokedex_id: target_pokemon.pokedex_id,
+                form: target_pokemon.form.clone(),
             });
-            
+
             self.broadcast();
             Ok(serde_json::json!({
                 "success": true,
@@ -1219,6 +1222,16 @@ impl DraftActor {
                     p.pokedex_id == target_pokemon.pokedex_id && p.form == target_pokemon.form
                 }).unwrap();
                 team.auctions_won.remove(index);
+
+                // Send WebSocket notification about the unclaim
+                let _ = self.broadcast_tx.send(crate::messages::ServerMessage::EeveelutionUnclaimed {
+                    user_name: team.username.clone(),
+                    eeveelution_name: target_pokemon.name.clone(),
+                    user_id: actual_user_id.clone(),
+                    pokedex_id: target_pokemon.pokedex_id,
+                    form: target_pokemon.form.clone(),
+                });
+
                 self.broadcast();
                 Ok(serde_json::json!({
                     "success": true,

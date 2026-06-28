@@ -1,5 +1,23 @@
 import React from 'react';
-import { Reorder, AnimatePresence } from 'framer-motion';
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent,
+} from '@dnd-kit/core';
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  useSortable,
+  verticalListSortingStrategy,
+  horizontalListSortingStrategy,
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
+import { restrictToHorizontalAxis } from '@dnd-kit/modifiers';
 import { Team, Pokemon } from '../../../types';
 import './PlayerRow.scss';
 
@@ -12,12 +30,101 @@ interface PlayerRowProps {
   highestBid?: number;
 }
 
+interface SortableItemProps {
+  team: any;
+  highestBidderId?: string | null;
+  wsConnected?: boolean;
+  animatingId: string | null;
+  autoSortByFunds: boolean;
+  getIconName: (name: string) => string;
+}
+
+const SortableItem: React.FC<SortableItemProps> = ({ team, highestBidderId, wsConnected, animatingId, autoSortByFunds, getIconName }) => {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: team.dragId });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+    cursor: autoSortByFunds ? 'default' : 'grab',
+  };
+
+  const playerName = team.isPlaceholder ? null : (team.global_name || team.username || team.user_id);
+  const isFilled = !team.isPlaceholder;
+  const readinessClass = isFilled && team.ready ? 'player-ready' : 'player-not-ready';
+  const teamMoney = team.budget_remaining ?? 0;
+  const zeroMoneyClass = isFilled && teamMoney === 0 ? 'player-zero-money' : '';
+  const playerStateClass = isFilled
+    ? (zeroMoneyClass || readinessClass)
+    : 'player-open';
+  const wonPokemon = team.auctions_won ?? team.pokemon ?? [];
+  const disconnectedClass = !wsConnected ? 'player-disconnected' : '';
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      {...attributes}
+      {...(!autoSortByFunds ? listeners : {})}
+      className={`auction-player-box ${playerStateClass} ${team.user_id === highestBidderId ? 'highest-bidder' : ''} ${disconnectedClass} ${team.user_id === animatingId ? 'player-bidding' : ''}`}
+    >
+      <div className="auction-player-name">
+        {playerName || 'Open Slot'}
+      </div>
+      <div className="auction-player-money">${teamMoney.toLocaleString()}</div>
+      <div className="auction-player-icons">
+        {wonPokemon.map((pokemon: Pokemon) => (
+          <img
+            key={`${pokemon.name}-${pokemon.form ?? 'base'}`}
+            src={`/MiniIcons/${getIconName(pokemon.name)}.png`}
+            alt={pokemon.name}
+            className="auction-player-icon"
+            loading="lazy"
+          />
+        ))}
+      </div>
+    </div>
+  );
+};
+
 const PlayerRow: React.FC<PlayerRowProps> = ({ teams, numPlayers, highestBidderId, wsConnected = true, currentUserId, highestBid }) => {
   const [animatingId, setAnimatingId] = React.useState<string | null>(null);
   const isInitial = React.useRef(true);
 
   // Local state to manage the visual order for dragging
   const [items, setItems] = React.useState<any[]>([]);
+
+  // dnd-kit sensors
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 5,
+      },
+    }),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
+
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+
+    if (over && active.id !== over.id) {
+      setItems((items) => {
+        const oldIndex = items.findIndex((item) => item.dragId === active.id);
+        const newIndex = items.findIndex((item) => item.dragId === over.id);
+
+        return arrayMove(items, oldIndex, newIndex);
+      });
+    }
+  };
 
   // Settings
   const [twoRowMode, setTwoRowMode] = React.useState(() => {
@@ -117,76 +224,34 @@ const PlayerRow: React.FC<PlayerRowProps> = ({ teams, numPlayers, highestBidderI
     return name.toLowerCase();
   };
 
-  return (
-    <Reorder.Group 
-      axis="x" 
-      values={items} 
-      onReorder={twoRowMode ? () => {} : setItems} 
-      className={`auction-players-row ${twoRowMode ? 'two-row-mode' : ''}`}
-      style={{ 
-        listStyle: 'none', 
-        padding: '0.5rem 0',
-        margin: '-0.5rem 0',
-        overflowX: 'auto', 
-        overflowY: 'hidden' 
-      }}
-    >
-      <AnimatePresence mode="popLayout">
-        {items.map((team) => {
-          const playerName = team.isPlaceholder ? null : (team.global_name || team.username || team.user_id);
-          const isFilled = !team.isPlaceholder;
-          const readinessClass = isFilled && team.ready ? 'player-ready' : 'player-not-ready';
-          const teamMoney = team.budget_remaining ?? 0;
-          const zeroMoneyClass = isFilled && teamMoney === 0 ? 'player-zero-money' : '';
-          const playerStateClass = isFilled
-            ? (zeroMoneyClass || readinessClass)
-            : 'player-open';
-          const wonPokemon = team.auctions_won ?? team.pokemon ?? [];
-          const disconnectedClass = !wsConnected ? 'player-disconnected' : '';
+  const containerClassName = `auction-players-row ${twoRowMode ? 'two-row-mode' : ''}`;
 
-        return (
-          <Reorder.Item
-            as="div"
-            key={team.dragId}
-            value={team}
-            className={`auction-player-box ${playerStateClass} ${team.user_id === highestBidderId ? 'highest-bidder' : ''} ${disconnectedClass} ${team.user_id === animatingId ? 'player-bidding' : ''}`}
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: isFilled && !team.ready ? 0.5 : 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.9 }}
-            whileDrag={{ 
-              scale: 1.05, 
-              zIndex: 10,
-              boxShadow: "0px 12px 24px rgba(0,0,0,0.4)",
-              cursor: 'grabbing'
-            }}
-            transition={{ 
-              type: "spring", 
-              stiffness: 400, 
-              damping: 35,
-              opacity: { duration: 0.2 } 
-            }}
-            style={{ cursor: 'grab', position: 'relative', overflow: 'visible' }}
-          >
-            <div className="auction-player-name">
-              {playerName || 'Open Slot'}
-            </div>
-            <div className="auction-player-money">${teamMoney.toLocaleString()}</div>
-            <div className="auction-player-icons">
-              {wonPokemon.map((pokemon: Pokemon) => (
-                <img
-                  key={`${pokemon.name}-${pokemon.form ?? 'base'}`}
-                  src={`/MiniIcons/${getIconName(pokemon.name)}.png`}
-                  alt={pokemon.name}
-                  className="auction-player-icon"
-                  loading="lazy"
-                />
-              ))}
-            </div>
-          </Reorder.Item>
-        );
-      })}
-      </AnimatePresence>
-    </Reorder.Group>
+  return (
+    <DndContext
+      sensors={sensors}
+      collisionDetection={closestCenter}
+      onDragEnd={handleDragEnd}
+      modifiers={!twoRowMode ? [restrictToHorizontalAxis] : undefined}
+    >
+      <SortableContext
+        items={items.map(item => item.dragId)}
+        strategy={horizontalListSortingStrategy}
+      >
+        <div className={containerClassName}>
+          {items.map((team) => (
+            <SortableItem
+              key={team.dragId}
+              team={team}
+              highestBidderId={highestBidderId}
+              wsConnected={wsConnected}
+              animatingId={animatingId}
+              autoSortByFunds={autoSortByFunds}
+              getIconName={getIconName}
+            />
+          ))}
+        </div>
+      </SortableContext>
+    </DndContext>
   );
 };
 

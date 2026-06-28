@@ -2203,6 +2203,74 @@ pub async fn me(auth_session: AuthSession<AuthBackend>) -> Result<Json<User>, St
     }
 }
 
+#[derive(Debug, Deserialize)]
+pub struct ControlBindingsRequest {
+    pub control_bindings: serde_json::Value,
+}
+
+#[debug_handler]
+pub async fn save_control_bindings(
+    State(state): State<ServerState>,
+    auth_session: AuthSession<AuthBackend>,
+    Json(req): Json<ControlBindingsRequest>,
+) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
+    let user = auth_session.user.ok_or((
+        StatusCode::UNAUTHORIZED,
+        "user is not logged in".to_string(),
+    ))?;
+
+    let user_id = user.get_user_id_string();
+
+    let (table_name, query) = match user {
+        User::DiscordUser(_) => (
+            "users",
+            sqlx::query("UPDATE users SET control_bindings = $1 WHERE user_id = $2")
+        ),
+        User::GuestUser(_) => (
+            "guests",
+            sqlx::query("UPDATE guests SET control_bindings = $1 WHERE user_id = $2")
+        ),
+    };
+
+    query
+        .bind(req.control_bindings)
+        .bind(&user_id)
+        .execute(&state.db_pool)
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, format!("Failed to save control bindings: {}", e)))?;
+
+    Ok(Json(serde_json::json!({ "success": true })))
+}
+
+#[debug_handler]
+pub async fn get_control_bindings(
+    State(state): State<ServerState>,
+    auth_session: AuthSession<AuthBackend>,
+) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
+    let user = auth_session.user.ok_or((
+        StatusCode::UNAUTHORIZED,
+        "user is not logged in".to_string(),
+    ))?;
+
+    let user_id = user.get_user_id_string();
+
+    let query = match user {
+        User::DiscordUser(_) => sqlx::query("SELECT control_bindings FROM users WHERE user_id = $1"),
+        User::GuestUser(_) => sqlx::query("SELECT control_bindings FROM guests WHERE user_id = $1"),
+    };
+
+    let row = query
+        .bind(&user_id)
+        .fetch_optional(&state.db_pool)
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, format!("Failed to fetch control bindings: {}", e)))?;
+
+    let control_bindings = row
+        .and_then(|r| r.try_get::<serde_json::Value, _>(0).ok());
+
+    Ok(Json(control_bindings.unwrap_or(serde_json::json!(null))))
+}
+
 #[debug_handler]
 pub async fn websocket_handler(
     State(state): State<ServerState>,

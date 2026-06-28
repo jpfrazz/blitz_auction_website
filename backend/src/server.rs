@@ -200,6 +200,7 @@ impl Server {
                 "/drafts/{draft_id}/chats",
                 get(handlers::get_draft_chats).post(handlers::create_draft_chat),
             )
+            .route("/control-bindings", get(handlers::get_control_bindings).post(handlers::save_control_bindings))
             .route("/pokemon", post(handlers::post_pokemon_data))
             .route(
                 "/pokemon_key_moves",
