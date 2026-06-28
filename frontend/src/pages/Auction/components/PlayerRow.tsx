@@ -1,4 +1,5 @@
 import React from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import {
   DndContext,
   closestCenter,
@@ -47,11 +48,12 @@ const SortableItem: React.FC<SortableItemProps> = ({ team, highestBidderId, wsCo
     transform,
     transition,
     isDragging,
-  } = useSortable({ id: team.dragId });
+  } = useSortable({
+    id: team.dragId,
+  });
 
   const style = {
-    transform: CSS.Transform.toString(transform),
-    transition,
+    transform: isDragging ? CSS.Transform.toString(transform) : undefined,
     opacity: isDragging ? 0.5 : 1,
     cursor: autoSortByFunds ? 'default' : 'grab',
   };
@@ -67,14 +69,8 @@ const SortableItem: React.FC<SortableItemProps> = ({ team, highestBidderId, wsCo
   const wonPokemon = team.auctions_won ?? team.pokemon ?? [];
   const disconnectedClass = !wsConnected ? 'player-disconnected' : '';
 
-  return (
-    <div
-      ref={setNodeRef}
-      style={style}
-      {...attributes}
-      {...(!autoSortByFunds ? listeners : {})}
-      className={`auction-player-box ${playerStateClass} ${team.user_id === highestBidderId ? 'highest-bidder' : ''} ${disconnectedClass} ${team.user_id === animatingId ? 'player-bidding' : ''}`}
-    >
+  const cardContent = (
+    <>
       <div className="auction-player-name">
         {playerName || 'Open Slot'}
       </div>
@@ -90,6 +86,33 @@ const SortableItem: React.FC<SortableItemProps> = ({ team, highestBidderId, wsCo
           />
         ))}
       </div>
+    </>
+  );
+
+  if (autoSortByFunds) {
+    return (
+      <motion.div
+        ref={setNodeRef}
+        {...attributes}
+        className={`auction-player-box ${playerStateClass} ${team.user_id === highestBidderId ? 'highest-bidder' : ''} ${disconnectedClass} ${team.user_id === animatingId ? 'player-bidding' : ''}`}
+        layout
+        layoutId={team.dragId}
+        transition={{ duration: 0.4, ease: [0.25, 0.1, 0.25, 1] }}
+      >
+        {cardContent}
+      </motion.div>
+    );
+  }
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      {...attributes}
+      {...listeners}
+      className={`auction-player-box ${playerStateClass} ${team.user_id === highestBidderId ? 'highest-bidder' : ''} ${disconnectedClass} ${team.user_id === animatingId ? 'player-bidding' : ''}`}
+    >
+      {cardContent}
     </div>
   );
 };
@@ -189,14 +212,27 @@ const PlayerRow: React.FC<PlayerRowProps> = ({ teams, numPlayers, highestBidderI
 
       const idsChanged = prevIds.size !== nextIds.size || sortedTeams.some(t => !prevIds.has(t.dragId));
 
-      // If auto-sort is enabled, always reset to sorted order when data changes
-      if (autoSortByFunds) {
-        return sortedTeams;
-      }
-
       // If structure changed (ids added/removed) or first load, reset to default sorted order
       if (prevItems.length === 0 || idsChanged) {
         return sortedTeams;
+      }
+
+      // If auto-sort is enabled, reorder items to match sorted order using arrayMove for animation
+      if (autoSortByFunds) {
+        let newOrder = [...prevItems];
+        // Apply moves to transform current order to sorted order
+        for (let targetIndex = 0; targetIndex < sortedTeams.length; targetIndex++) {
+          const targetItem = sortedTeams[targetIndex];
+          const currentIndex = newOrder.findIndex(item => item.dragId === targetItem.dragId);
+          if (currentIndex !== -1 && currentIndex !== targetIndex) {
+            newOrder = arrayMove(newOrder, currentIndex, targetIndex);
+          }
+        }
+        // Update the data in the reordered items
+        return newOrder.map(item => {
+          const freshData = sortedTeams.find(t => t.dragId === item.dragId);
+          return freshData ? { ...item, ...freshData } : item;
+        });
       }
 
       // Maintain the manual order by mapping current items to their updated data
