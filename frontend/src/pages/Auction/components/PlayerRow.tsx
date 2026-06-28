@@ -53,7 +53,8 @@ const SortableItem: React.FC<SortableItemProps> = ({ team, highestBidderId, wsCo
   });
 
   const style = {
-    transform: isDragging ? CSS.Transform.toString(transform) : undefined,
+    transform: CSS.Transform.toString(transform),
+    transition,
     opacity: isDragging ? 0.5 : 1,
     cursor: autoSortByFunds ? 'default' : 'grab',
   };
