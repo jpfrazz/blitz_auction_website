@@ -575,13 +575,14 @@ const EmulatorPage: React.FC = () => {
 
             if (reconnectCountRef.current < maxReconnectAttempts) {
                 const delay = baseReconnectInterval * Math.pow(2, reconnectCountRef.current);
+                console.log('reconnecting ws');
                 reconnectTimeoutRef.current = setTimeout(() => {
                     reconnectCountRef.current += 1;
                     wsConnect();
                 }, delay);
             }
             else {
-                console.warn('failed to reconnect ws in 5 tries, aborting...');
+                console.log('failed to reconnect ws in 5 tries, aborting...');
             }
         }
     };
