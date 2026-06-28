@@ -25,7 +25,8 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ onClose }) => {
   });
 
   const [autoSortByFunds, setAutoSortByFunds] = useState(() => {
-    return localStorage.getItem('eb-auto-sort-by-funds') === 'true';
+    const stored = localStorage.getItem('eb-auto-sort-by-funds');
+    return stored === null ? true : stored === 'true';
   });
 
   useEffect(() => {

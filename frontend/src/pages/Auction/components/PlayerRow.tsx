@@ -133,8 +133,9 @@ const PlayerRow: React.FC<PlayerRowProps> = ({ teams, numPlayers, highestBidderI
   });
 
   const [autoSortByFunds, setAutoSortByFunds] = React.useState(() => {
-    if (typeof window === 'undefined') return false;
-    return localStorage.getItem('eb-auto-sort-by-funds') === 'true';
+    if (typeof window === 'undefined') return true;
+    const stored = localStorage.getItem('eb-auto-sort-by-funds');
+    return stored === null ? true : stored === 'true';
   });
 
   // Listen for settings changes
