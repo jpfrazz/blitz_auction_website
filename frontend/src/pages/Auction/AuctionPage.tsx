@@ -66,12 +66,15 @@ const AuctionPage: React.FC = () => {
   const [savingDraftSettings, setSavingDraftSettings] = useState(false);
   const [draftSettingsError, setDraftSettingsError] = useState<string | null>(null);
 
-  const wsRef = useRef<WebSocket | null>(null);
   const auctionAlertAudioRef = useRef<HTMLAudioElement | null>(null);
   const auctionAlertStopTimerRef = useRef<number | null>(null);
   const previousAuctionIdRef = useRef<string | null>(null);
   const prevCompletedAuctionsLengthRef = useRef<number | null>(null);
   const hasInitializedAuctionTrackingRef = useRef(false);
+
+  const wsRef = useRef<WebSocket | null>(null);
+  const reconnectCountRef = useRef(0);
+  const reconnectTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const [eggRevealId, setEggRevealId] = useState<number | null>(null);
 
@@ -256,12 +259,66 @@ const AuctionPage: React.FC = () => {
     }
   }, [draft?.completed_auctions, currentUserId]);
 
-  const connectWebSocket = (draftId: string) => {
-    if (wsRef.current) {
-      wsRef.current.close();
-    }
-    wsRef.current = connectDraftWebSocket(draftId, setDraft, setCurrentAuction, setWsConnected);
-  };
+  useEffect(() => {
+    if (!draft || draft.draft_state == "COMPLETED") return;
+
+    const protocol = window.location.protocol === 'https:' ? 'wss' : 'ws';
+    const wsUrl = `${protocol}://${window.location.host}/api/ws/${draft.draft_id}`;
+    const maxReconnectAttempts = 5;
+    const baseReconnectInterval = 1000;
+
+    const wsConnect = () => {
+      const ws = new WebSocket(wsUrl);
+      wsRef.current = ws;
+
+      ws.onopen = () => {
+        reconnectCountRef.current = 0;
+      }
+
+      ws.onmessage = (event) => {
+        try {
+          const msg = JSON.parse(event.data);
+          console.log('WebSocket message received:', msg);
+          switch (msg.type) {
+            case 'DraftUpdate':
+              setDraft(msg.data);
+              break;
+            case 'AuctionUpdate':
+              setCurrentAuction(msg.data);
+              break;
+          }
+        } catch (e) {
+          console.error('Error parsing websocket message', e);
+        }
+      };
+      // reconnect if ws is disconnected unintentionally
+      ws.onclose = (event) => {
+        if (event.wasClean) return;
+
+        if (reconnectCountRef.current < maxReconnectAttempts) {
+          const delay = baseReconnectInterval * Math.pow(2, reconnectCountRef.current);
+          console.log('reconnecting ws');
+          reconnectTimeoutRef.current = setTimeout(() => {
+            reconnectCountRef.current += 1;
+            wsConnect();
+          }, delay);
+        }
+        else {
+            console.log('failed to reconnect ws in 5 tries, aborting...');
+        }
+      }
+    };
+
+    wsConnect();
+
+    return () => {
+        if (reconnectTimeoutRef.current) clearTimeout(reconnectTimeoutRef.current);
+        if (wsRef.current) {
+            wsRef.current.close(1000, 'closing socket');
+            wsRef.current = null;
+        }
+    };
+  }, [draft?.draft_id]);
 
   const attemptJoinDraft = async (password?: string) => {
     if (!auctionId) return;
@@ -334,7 +391,6 @@ const AuctionPage: React.FC = () => {
         setPokemon(pokemonData);
         setAllPokemon(allPkmn);
         console.log('Fetched draft data:', draftData);
-        connectWebSocket(auctionId);
         const alreadyOnTeam = draftData.teams.some(team => team.user_id === user.user_id);
         if (draftData.draft_state === 'PENDING' && !alreadyOnTeam) {
           setShowJoinModal(true)
@@ -342,12 +398,6 @@ const AuctionPage: React.FC = () => {
       })
       .catch(error => console.error('Error fetching draft on initial load:', error))
       .finally(() => setLoading(false));
-
-    return () => {
-      if (wsRef.current) {
-        wsRef.current.close();
-      }
-    };
   }, [auctionId]);
 
   const handleReadyUp = async () => {

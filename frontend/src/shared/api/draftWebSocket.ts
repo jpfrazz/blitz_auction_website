@@ -32,23 +32,9 @@ export function connectDraftWebSocket(
       console.error('Error parsing websocket message', e);
     }
   };
-        // reconnect if ws is disconnected unintentionally
-  ws.onclose = (event) => {
+  ws.onclose = () => {
     console.log('WebSocket closed');
     if (onStatusChange) onStatusChange(false);
-      if (event.wasClean) return;
-
-      if (reconnectCountRef.current < maxReconnectAttempts) {
-          const delay = baseReconnectInterval * Math.pow(2, reconnectCountRef.current);
-          console.log('reconnecting ws');
-          reconnectTimeoutRef.current = setTimeout(() => {
-              reconnectCountRef.current += 1;
-              wsConnect();
-          }, delay);
-      }
-      else {
-          console.log('failed to reconnect ws in 5 tries, aborting...');
-      }
   };
   ws.onerror = (e) => {
     console.error('WebSocket error', e);

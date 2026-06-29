@@ -265,8 +265,8 @@ const EmulatorPage: React.FC = () => {
   const syncIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const stateIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const wsRef = useRef<WebSocket | null>(null);
-    const reconnectCountRef = useRef(0);
-    const reconnectTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const reconnectCountRef = useRef(0);
+  const reconnectTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Stable ref so window callbacks always see the latest handler
   const onRawSaveBytesRef = useRef<((bytes: Uint8Array) => void) | null>(null);
