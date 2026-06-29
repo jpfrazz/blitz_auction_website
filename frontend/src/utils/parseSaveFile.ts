@@ -38,14 +38,17 @@ export const NATURES = [
 // Mapping of trainer IDs to trainer names (for boss trainers)
 const TRAINER_ID_TO_NAME: Record<number, string> = {
   // Gym Leaders (from opponents.h)
-  265: "Roxanne 1", // TRAINER_ROXANNE_1
-  266: "Brawly 1", // TRAINER_BRAWLY_1
-  267: "Wattson 1", // TRAINER_WATTSON_1
-  268: "Flannery 1", // TRAINER_FLANNERY_1
-  269: "Norman 1", // TRAINER_NORMAN_1
-  270: "Winona 1", // TRAINER_WINONA_1
-  271: "Tate & Liza 1", // TRAINER_TATE_AND_LIZA_1
-  272: "Juan & Wallace 1", // TRAINER_JUAN_1
+  265: "Roxanne", // TRAINER_ROXANNE_1
+  855: "Viola", // TRAINER_VIOLA_1
+  266: "Brawly", // TRAINER_BRAWLY_1
+  267: "Wattson", // TRAINER_WATTSON_1
+  268: "Flannery", // TRAINER_FLANNERY_1
+  269: "Norman", // TRAINER_NORMAN_1
+  270: "Winona", // TRAINER_WINONA_1
+  271: "Tate & Liza", // TRAINER_TATE_AND_LIZA_1
+  272: "Juan & Wallace", // TRAINER_JUAN_1
+  601: "Maxie",
+  34: "Archie",
 
   // Elite Four
   261: "Sidney", // TRAINER_SIDNEY
@@ -57,6 +60,7 @@ const TRAINER_ID_TO_NAME: Record<number, string> = {
   810: "Lucy", // TRAINER_LUCY
   811: "Brandon", // TRAINER_BRANDON
   804: "Steven", // TRAINER_STEVEN
+  656: "Wally", // TRAINER_WALLY
 
   // Gym Leader Rematches (Versions 2 - 5)
   770: "Roxanne 2", // TRAINER_ROXANNE_2
@@ -117,8 +121,6 @@ const TRAINER_ID_TO_NAME: Record<number, string> = {
   833: "Juan & Wallace 6", // TRAINER_JUAN_6
   834: "Juan & Wallace 7", // TRAINER_JUAN_7
   835: "Juan & Wallace 8", // TRAINER_JUAN_8
-
-  855: "Viola 1",
   856: "Viola 2",
   857: "Viola 3",
   858: "Viola 4",
@@ -126,30 +128,23 @@ const TRAINER_ID_TO_NAME: Record<number, string> = {
   860: "Viola 6",
   861: "Viola 7",
   862: "Viola 8",
-
-  601: "Maxie",
-  34: "Archie",
 };
 
-function getTrainerNameById(trainerId: number): string {
-  return TRAINER_ID_TO_NAME[trainerId] || `Trainer ${trainerId}`;
-}
+export function getTrainerNameById(trainerId: number, version?: number): string {
+  const baseName = TRAINER_ID_TO_NAME[trainerId] || `Trainer ${trainerId}`;
 
-// Scan the save file for a specific time pattern to locate trainer card wins
-function scanForTimePattern(data: Uint8Array, targetHours: number, targetMinutes: number, targetSeconds: number): number[] {
-  const matches: number[] = [];
-
-  for (let i = 0; i < data.length - 3; i++) {
-    const hours = data[i] | (data[i + 1] << 8);
-    const minutes = data[i + 2];
-    const seconds = data[i + 3];
-
-    if (hours === targetHours && minutes === targetMinutes && seconds === targetSeconds) {
-      matches.push(i);
+  // If version is provided and it's a gym leader, append version number
+  if (version !== undefined) {
+    // Gym leaders that have version numbers
+    const gymLeaderIds = [265, 266, 267, 268, 269, 270, 271, 272]; // Roxanne, Brawly, Wattson, Flannery, Norman, Winona, Tate & Liza, Juan & Wallace
+    if (gymLeaderIds.includes(trainerId)) {
+      // Extract base name (remove " 1" if present)
+      const baseWithoutVersion = baseName.replace(/ \d+$/, '');
+      return `${baseWithoutVersion} ${version}`;
     }
   }
 
-  return matches;
+  return baseName;
 }
 
 export interface SaveIvs {
@@ -188,6 +183,7 @@ export interface TrainerCardWin {
   minutes: number;
   seconds: number;
   is_loss: boolean;
+  version?: number; // For gym leaders, indicates which version (1-8)
 }
 
 export interface SaveData {
@@ -404,61 +400,61 @@ export function parseSaveFile(
     badge_count = view.getUint16(sectionOffsets[2] + VAR_BADGE_COUNT_OFFSET, true);
   }
 
-  // Scan for the specific time pattern (0h 4m 8s) to locate trainer card wins
-  const timeMatches = scanForTimePattern(data, 0, 4, 8);
-  console.log(`[SaveParser] Found ${timeMatches.length} matches for time 0h 4m 8s at offsets:`, timeMatches);
-  console.log(`[SaveParser] Section offsets:`, sectionOffsets);
-
-  // Calculate the relative offset within section 2
-  if (sectionOffsets[2] !== undefined && timeMatches.length > 0) {
-    const relativeOffset = timeMatches[0] - sectionOffsets[2];
-    console.log(`[SaveParser] Relative offset within section 2: ${relativeOffset} (0x${relativeOffset.toString(16)})`);
-  }
-
-  // Calculate the relative offset within section 1
-  if (sectionOffsets[1] !== undefined && timeMatches.length > 0) {
-    const relativeOffset1 = timeMatches[0] - sectionOffsets[1];
-    console.log(`[SaveParser] Relative offset within section 1: ${relativeOffset1} (0x${relativeOffset1.toString(16)})`);
-  }
-
-  // Calculate the relative offset within section 0
-  if (sectionOffsets[0] !== undefined && timeMatches.length > 0) {
-    const relativeOffset0 = timeMatches[0] - sectionOffsets[0];
-    console.log(`[SaveParser] Relative offset within section 0: ${relativeOffset0} (0x${relativeOffset0.toString(16)})`);
-  }
-
-  // Parse trainer card wins - use the actual location where the time pattern was found
+  // Parse trainer card wins from section 0 at the correct offset
+  // Each 32-byte entry contains FOUR trainer records:
+  // Each record: trainerId (2), hours (2), minutes (1), seconds (1), padding (2) = 8 bytes
+  const TRAINER_CARD_WINS_SECTION0_OFFSET = 0xA68;
   const trainer_card_wins: TrainerCardWin[] = [];
   let most_recent_loss: TrainerCardWin | null = null;
 
-  if (timeMatches.length > 0) {
-    const timeOffset = timeMatches[0];
-    // The trainer ID is 2 bytes before the time (TrainerCardWin struct: trainerId (2), hours (2), minutes (1), seconds (1))
-    const trainerIdOffset = timeOffset - 2;
-    const trainerId = view.getUint16(trainerIdOffset, true);
-    const hours = view.getUint16(timeOffset, true);
-    const minutes = data[timeOffset + 2];
-    const seconds = data[timeOffset + 3];
+  // Track overall boss fight index for gym leaders to assign version numbers
+  let bossFightIndex = 0;
+  const gymLeaderIds = [265, 266, 267, 268, 269, 270, 271, 272]; // Roxanne, Brawly, Wattson, Flannery, Norman, Winona, Tate & Liza, Juan & Wallace
 
-    const isLoss = (trainerId & 0x8000) !== 0;
-    const actualTrainerId = trainerId & 0x7FFF;
+  if (sectionOffsets[0] !== undefined) {
+    const baseOffset = sectionOffsets[0] + TRAINER_CARD_WINS_SECTION0_OFFSET;
 
-    console.log(`[SaveParser] Found trainer card entry at offset ${trainerIdOffset}: trainerId=${trainerId} (actual=${actualTrainerId}), isLoss=${isLoss}, time=${hours}h${minutes}m${seconds}s`);
+    for (let i = 0; i < TRAINER_CARD_WINS_MAX; i++) {
+      const entryOffset = baseOffset + i * 32; // 32 bytes per entry (4 records)
 
-    const win: TrainerCardWin = {
-      trainer_id: actualTrainerId,
-      hours,
-      minutes,
-      seconds,
-      is_loss: isLoss,
-    };
+      // Parse all 4 records in the entry
+      for (let j = 0; j < 4; j++) {
+        const recordOffset = entryOffset + j * 8;
+        const trainerId = view.getUint16(recordOffset, true);
+        const hours = view.getUint16(recordOffset + 2, true);
+        const minutes = data[recordOffset + 4];
+        const seconds = data[recordOffset + 5];
 
-    trainer_card_wins.push(win);
+        const isLoss = (trainerId & 0x8000) !== 0;
+        const actualTrainerId = trainerId & 0x7FFF;
 
-    if (isLoss) {
-      most_recent_loss = win;
+        console.log(`[SaveParser] Entry ${i} Record ${j}: offset=${recordOffset}, trainerId=${trainerId} (actual=${actualTrainerId}), isLoss=${isLoss}, time=${hours}h${minutes}m${seconds}s`);
+
+        // Skip entries with zero time (invalid/empty entries)
+        if (hours === 0 && minutes === 0 && seconds === 0) {
+          continue;
+        }
+
+        // Assign version number based on overall boss fight index for gym leaders
+        let version: number | undefined;
+        if (gymLeaderIds.includes(actualTrainerId)) {
+          bossFightIndex++;
+          version = bossFightIndex;
+        }
+
+        trainer_card_wins.push({
+          trainer_id: actualTrainerId,
+          hours,
+          minutes,
+          seconds,
+          is_loss: isLoss,
+          version,
+        });
+        if (isLoss) most_recent_loss = trainer_card_wins[trainer_card_wins.length - 1];
+      }
     }
 
+    console.log(`[SaveParser] Parsed ${trainer_card_wins.length} trainer card entries`);
     console.log(`[SaveParser] Most recent loss:`, most_recent_loss);
   }
 

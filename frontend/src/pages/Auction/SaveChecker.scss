@@ -90,6 +90,72 @@
   }
 }
 
+.boss-battle-history {
+  margin-bottom: 2rem;
+  padding: 1.5rem;
+  background: rgba($eb-primary, 0.05);
+  border-radius: 12px;
+  border: 1px dashed rgba($eb-primary, 0.3);
+
+  h3 {
+    font-size: 1.2rem;
+    margin-bottom: 1rem;
+    color: $eb-text;
+  }
+
+  .battle-history-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .battle-history-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.75rem 1rem;
+    background: $eb-bg;
+    border-radius: 6px;
+    border: 1px solid $eb-border;
+
+    &.loss {
+      border-left: 4px solid #f87171;
+    }
+
+    &.win {
+      border-left: 4px solid #4ade80;
+    }
+
+    .battle-trainer {
+      font-weight: 600;
+      color: $eb-text;
+    }
+
+    .battle-time {
+      color: $eb-text-muted;
+      font-size: 0.9rem;
+    }
+
+    .battle-result {
+      font-weight: 700;
+      font-size: 0.85rem;
+      padding: 0.25rem 0.75rem;
+      border-radius: 4px;
+      text-transform: uppercase;
+    }
+
+    &.loss .battle-result {
+      background: rgba(248, 113, 113, 0.2);
+      color: #f87171;
+    }
+
+    &.win .battle-result {
+      background: rgba(74, 222, 128, 0.2);
+      color: #4ade80;
+    }
+  }
+}
+
 .save-checker-error {
   background: rgba(255, 77, 77, 0.1);
   border: 1px solid #ff4d4d;

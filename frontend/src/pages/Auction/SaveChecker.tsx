@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import Header from '../../shared/components/Header';
 import Footer from '../../shared/components/Footer';
-import { parseSaveFile, SavePokemon, SaveBoxPokemon } from '../../utils/parseSaveFile';
+import { parseSaveFile, SavePokemon, SaveBoxPokemon, getTrainerNameById } from '../../utils/parseSaveFile';
 import { fetchPokemonList } from '../../shared/api/pokemon';
 import './SaveChecker.scss';
 
@@ -57,6 +57,7 @@ const SaveChecker: React.FC = () => {
   const [lastSaveData, setLastSaveData] = useState<Uint8Array | null>(null);
   const [mostRecentLoss, setMostRecentLoss] = useState<{ trainer_id: number; hours: number; minutes: number; seconds: number } | null>(null);
   const [mostRecentLossName, setMostRecentLossName] = useState<string | null>(null);
+  const [trainerCardWins, setTrainerCardWins] = useState<{ trainer_id: number; hours: number; minutes: number; seconds: number; is_loss: boolean; version?: number }[]>([]);
 
   useEffect(() => {
     fetchPokemonList().then((list) => {
@@ -182,6 +183,7 @@ const SaveChecker: React.FC = () => {
         setLastSaveData(saveDataBytes); // Store for flag checking
         setMostRecentLoss(parsedData.most_recent_loss);
         setMostRecentLossName(parsedData.most_recent_loss_name);
+        setTrainerCardWins(parsedData.trainer_card_wins);
         setError(null);
 
       } catch (err) {
@@ -252,6 +254,20 @@ const SaveChecker: React.FC = () => {
                 <div className="stat-item">
                   <span className="stat-label">Battle Time</span>
                   <span className="stat-value">{mostRecentLoss.hours}h {mostRecentLoss.minutes}m {mostRecentLoss.seconds}s</span>
+                </div>
+              </div>
+            )}
+            {trainerCardWins.length > 0 && (
+              <div className="boss-battle-history">
+                <h3>Boss Battle History</h3>
+                <div className="battle-history-list">
+                  {trainerCardWins.map((win, i) => (
+                    <div key={i} className={`battle-history-item ${win.is_loss ? 'loss' : 'win'}`}>
+                      <span className="battle-trainer">{getTrainerNameById(win.trainer_id, win.version)}</span>
+                      <span className="battle-time">{win.hours}h {win.minutes}m {win.seconds}s</span>
+                      <span className="battle-result">{win.is_loss ? 'Loss' : 'Win'}</span>
+                    </div>
+                  ))}
                 </div>
               </div>
             )}
