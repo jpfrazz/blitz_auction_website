@@ -55,6 +55,8 @@ const SaveChecker: React.FC = () => {
   const [pokemonMetadata, setPokemonMetadata] = useState<Record<string, any>>({});
   const [pokemonById, setPokemonById] = useState<Map<number, any[]>>(new Map());
   const [lastSaveData, setLastSaveData] = useState<Uint8Array | null>(null);
+  const [mostRecentLoss, setMostRecentLoss] = useState<{ trainer_id: number; hours: number; minutes: number; seconds: number } | null>(null);
+  const [mostRecentLossName, setMostRecentLossName] = useState<string | null>(null);
 
   useEffect(() => {
     fetchPokemonList().then((list) => {
@@ -178,6 +180,8 @@ const SaveChecker: React.FC = () => {
         setParty(parsedData.party);
         setBox1(parsedData.box);
         setLastSaveData(saveDataBytes); // Store for flag checking
+        setMostRecentLoss(parsedData.most_recent_loss);
+        setMostRecentLossName(parsedData.most_recent_loss_name);
         setError(null);
 
       } catch (err) {
@@ -239,6 +243,18 @@ const SaveChecker: React.FC = () => {
                 <span className="stat-value">{mapName}</span>
               </div>
             </div>
+            {mostRecentLoss && (
+              <div className="stats-summary">
+                <div className="stat-item">
+                  <span className="stat-label">Last Wipe To</span>
+                  <span className="stat-value">{mostRecentLossName || `Trainer ID: ${mostRecentLoss.trainer_id}`}</span>
+                </div>
+                <div className="stat-item">
+                  <span className="stat-label">Battle Time</span>
+                  <span className="stat-value">{mostRecentLoss.hours}h {mostRecentLoss.minutes}m {mostRecentLoss.seconds}s</span>
+                </div>
+              </div>
+            )}
             </div>
           )}
 

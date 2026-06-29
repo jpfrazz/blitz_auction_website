@@ -18,6 +18,9 @@ const PARTY_COUNT_OFFSET = 0x234;
 const PARTY_START_OFFSET = 0x238;
 const POKEMON_STRUCT_SIZE = 116;
 const SUBSTRUCTURE_SIZE = 16;
+const TRAINER_CARD_WINS_OFFSET = 0xEDD;
+const TRAINER_CARD_WINS_COUNT_OFFSET = 0xF2B;
+const TRAINER_CARD_WINS_MAX = 13;
 
 const SUBSTRUCTURE_ORDERS = [
   'GAEM', 'GAME', 'GEAM', 'GEMA', 'GMAE', 'GMEA',
@@ -45,6 +48,47 @@ const NATURE_CORRECTION: Record<string, string> = {
 
 function correctNature(nature: string): string {
   return NATURE_CORRECTION[nature] || nature;
+}
+
+// Mapping of trainer IDs to trainer names (for boss trainers)
+const TRAINER_ID_TO_NAME: Record<number, string> = {
+  // Gym Leaders (from opponents.h)
+  265: "Roxanne", // TRAINER_ROXANNE_1
+  266: "Brawly", // TRAINER_BRAWLY_1
+  267: "Wattson", // TRAINER_WATTSON_1
+  268: "Flannery", // TRAINER_FLANNERY_1
+  269: "Norman", // TRAINER_NORMAN_1
+  270: "Winona", // TRAINER_WINONA_1
+  271: "Tate & Liza", // TRAINER_TATE_AND_LIZA_1
+  272: "Juan", // TRAINER_JUAN_1
+  // Elite Four
+  261: "Sidney", // TRAINER_SIDNEY
+  262: "Phoebe", // TRAINER_PHOEBE
+  263: "Glacia", // TRAINER_GLACIA
+  264: "Drake", // TRAINER_DRAKE
+  335: "Wallace", // TRAINER_WALLACE
+  // Add more as needed
+};
+
+function getTrainerNameById(trainerId: number): string {
+  return TRAINER_ID_TO_NAME[trainerId] || `Trainer ${trainerId}`;
+}
+
+// Scan the save file for a specific time pattern to locate trainer card wins
+function scanForTimePattern(data: Uint8Array, targetHours: number, targetMinutes: number, targetSeconds: number): number[] {
+  const matches: number[] = [];
+
+  for (let i = 0; i < data.length - 3; i++) {
+    const hours = data[i] | (data[i + 1] << 8);
+    const minutes = data[i + 2];
+    const seconds = data[i + 3];
+
+    if (hours === targetHours && minutes === targetMinutes && seconds === targetSeconds) {
+      matches.push(i);
+    }
+  }
+
+  return matches;
 }
 
 export interface SaveIvs {
@@ -77,6 +121,14 @@ export interface SaveBoxPokemon {
   ivs: SaveIvs;
 }
 
+export interface TrainerCardWin {
+  trainer_id: number;
+  hours: number;
+  minutes: number;
+  seconds: number;
+  is_loss: boolean;
+}
+
 export interface SaveData {
   trainer_name: string;
   money: number;
@@ -84,6 +136,9 @@ export interface SaveData {
   map_name: string;
   party: SavePokemon[];
   box: SaveBoxPokemon[];
+  trainer_card_wins: TrainerCardWin[];
+  most_recent_loss: TrainerCardWin | null;
+  most_recent_loss_name: string | null;
 }
 
 function decodeString(bytes: Uint8Array): string {
@@ -289,5 +344,65 @@ export function parseSaveFile(
     badge_count = view.getUint16(sectionOffsets[2] + VAR_BADGE_COUNT_OFFSET, true);
   }
 
-  return { trainer_name, money, badge_count, map_name, party, box };
+  // Scan for the specific time pattern (0h 4m 8s) to locate trainer card wins
+  const timeMatches = scanForTimePattern(data, 0, 4, 8);
+  console.log(`[SaveParser] Found ${timeMatches.length} matches for time 0h 4m 8s at offsets:`, timeMatches);
+  console.log(`[SaveParser] Section offsets:`, sectionOffsets);
+
+  // Calculate the relative offset within section 2
+  if (sectionOffsets[2] !== undefined && timeMatches.length > 0) {
+    const relativeOffset = timeMatches[0] - sectionOffsets[2];
+    console.log(`[SaveParser] Relative offset within section 2: ${relativeOffset} (0x${relativeOffset.toString(16)})`);
+  }
+
+  // Calculate the relative offset within section 1
+  if (sectionOffsets[1] !== undefined && timeMatches.length > 0) {
+    const relativeOffset1 = timeMatches[0] - sectionOffsets[1];
+    console.log(`[SaveParser] Relative offset within section 1: ${relativeOffset1} (0x${relativeOffset1.toString(16)})`);
+  }
+
+  // Calculate the relative offset within section 0
+  if (sectionOffsets[0] !== undefined && timeMatches.length > 0) {
+    const relativeOffset0 = timeMatches[0] - sectionOffsets[0];
+    console.log(`[SaveParser] Relative offset within section 0: ${relativeOffset0} (0x${relativeOffset0.toString(16)})`);
+  }
+
+  // Parse trainer card wins - use the actual location where the time pattern was found
+  const trainer_card_wins: TrainerCardWin[] = [];
+  let most_recent_loss: TrainerCardWin | null = null;
+
+  if (timeMatches.length > 0) {
+    const timeOffset = timeMatches[0];
+    // The trainer ID is 2 bytes before the time (TrainerCardWin struct: trainerId (2), hours (2), minutes (1), seconds (1))
+    const trainerIdOffset = timeOffset - 2;
+    const trainerId = view.getUint16(trainerIdOffset, true);
+    const hours = view.getUint16(timeOffset, true);
+    const minutes = data[timeOffset + 2];
+    const seconds = data[timeOffset + 3];
+
+    const isLoss = (trainerId & 0x8000) !== 0;
+    const actualTrainerId = trainerId & 0x7FFF;
+
+    console.log(`[SaveParser] Found trainer card entry at offset ${trainerIdOffset}: trainerId=${trainerId} (actual=${actualTrainerId}), isLoss=${isLoss}, time=${hours}h${minutes}m${seconds}s`);
+
+    const win: TrainerCardWin = {
+      trainer_id: actualTrainerId,
+      hours,
+      minutes,
+      seconds,
+      is_loss: isLoss,
+    };
+
+    trainer_card_wins.push(win);
+
+    if (isLoss) {
+      most_recent_loss = win;
+    }
+
+    console.log(`[SaveParser] Most recent loss:`, most_recent_loss);
+  }
+
+  const most_recent_loss_name = most_recent_loss ? getTrainerNameById(most_recent_loss.trainer_id) : null;
+
+  return { trainer_name, money, badge_count, map_name, party, box, trainer_card_wins, most_recent_loss, most_recent_loss_name };
 }
