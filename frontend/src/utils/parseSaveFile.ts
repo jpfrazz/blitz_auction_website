@@ -53,21 +53,97 @@ function correctNature(nature: string): string {
 // Mapping of trainer IDs to trainer names (for boss trainers)
 const TRAINER_ID_TO_NAME: Record<number, string> = {
   // Gym Leaders (from opponents.h)
-  265: "Roxanne", // TRAINER_ROXANNE_1
-  266: "Brawly", // TRAINER_BRAWLY_1
-  267: "Wattson", // TRAINER_WATTSON_1
-  268: "Flannery", // TRAINER_FLANNERY_1
-  269: "Norman", // TRAINER_NORMAN_1
-  270: "Winona", // TRAINER_WINONA_1
-  271: "Tate & Liza", // TRAINER_TATE_AND_LIZA_1
-  272: "Juan", // TRAINER_JUAN_1
+  265: "Roxanne 1", // TRAINER_ROXANNE_1
+  266: "Brawly 1", // TRAINER_BRAWLY_1
+  267: "Wattson 1", // TRAINER_WATTSON_1
+  268: "Flannery 1", // TRAINER_FLANNERY_1
+  269: "Norman 1", // TRAINER_NORMAN_1
+  270: "Winona 1", // TRAINER_WINONA_1
+  271: "Tate & Liza 1", // TRAINER_TATE_AND_LIZA_1
+  272: "Juan & Wallace 1", // TRAINER_JUAN_1
+
   // Elite Four
   261: "Sidney", // TRAINER_SIDNEY
   262: "Phoebe", // TRAINER_PHOEBE
   263: "Glacia", // TRAINER_GLACIA
   264: "Drake", // TRAINER_DRAKE
-  335: "Wallace", // TRAINER_WALLACE
-  // Add more as needed
+  806: "Tucker", // TRAINER_TUCKER
+  807: "Spenser", // TRAINER_SPENSER
+  810: "Lucy", // TRAINER_LUCY
+  811: "Brandon", // TRAINER_BRANDON
+  804: "Steven", // TRAINER_STEVEN
+
+  // Gym Leader Rematches (Versions 2 - 5)
+  770: "Roxanne 2", // TRAINER_ROXANNE_2
+  771: "Roxanne 3", // TRAINER_ROXANNE_3
+  772: "Roxanne 4", // TRAINER_ROXANNE_4
+  773: "Roxanne 5", // TRAINER_ROXANNE_5
+  774: "Brawly 2", // TRAINER_BRAWLY_2
+  775: "Brawly 3", // TRAINER_BRAWLY_3
+  776: "Brawly 4", // TRAINER_BRAWLY_4
+  777: "Brawly 5", // TRAINER_BRAWLY_5
+  778: "Wattson 2", // TRAINER_WATTSON_2
+  779: "Wattson 3", // TRAINER_WATTSON_3
+  780: "Wattson 4", // TRAINER_WATTSON_4
+  781: "Wattson 5", // TRAINER_WATTSON_5
+  782: "Flannery 2", // TRAINER_FLANNERY_2
+  783: "Flannery 3", // TRAINER_FLANNERY_3
+  784: "Flannery 4", // TRAINER_FLANNERY_4
+  785: "Flannery 5", // TRAINER_FLANNERY_5
+  786: "Norman 2", // TRAINER_NORMAN_2
+  787: "Norman 3", // TRAINER_NORMAN_3
+  788: "Norman 4", // TRAINER_NORMAN_4
+  789: "Norman 5", // TRAINER_NORMAN_5
+  790: "Winona 2", // TRAINER_WINONA_2
+  791: "Winona 3", // TRAINER_WINONA_3
+  792: "Winona 4", // TRAINER_WINONA_4
+  793: "Winona 5", // TRAINER_WINONA_5
+  794: "Tate & Liza 2", // TRAINER_TATE_AND_LIZA_2
+  795: "Tate & Liza 3", // TRAINER_TATE_AND_LIZA_3
+  796: "Tate & Liza 4", // TRAINER_TATE_AND_LIZA_4
+  797: "Tate & Liza 5", // TRAINER_TATE_AND_LIZA_5
+  798: "Juan & Wallace 2", // TRAINER_JUAN_2
+  799: "Juan & Wallace 3", // TRAINER_JUAN_3
+  800: "Juan & Wallace 4", // TRAINER_JUAN_4
+  801: "Juan & Wallace 5", // TRAINER_JUAN_5
+
+  // Gym Leader Rematches (Versions 6 - 8)
+  812: "Roxanne 6", // TRAINER_ROXANNE_6
+  813: "Roxanne 7", // TRAINER_ROXANNE_7
+  814: "Roxanne 8", // TRAINER_ROXANNE_8
+  815: "Brawly 6", // TRAINER_BRAWLY_6
+  816: "Brawly 7", // TRAINER_BRAWLY_7
+  817: "Brawly 8", // TRAINER_BRAWLY_8
+  818: "Wattson 6", // TRAINER_WATTSON_6
+  819: "Wattson 7", // TRAINER_WATTSON_7
+  820: "Wattson 8", // TRAINER_WATTSON_8
+  821: "Flannery 6", // TRAINER_FLANNERY_6
+  822: "Flannery 7", // TRAINER_FLANNERY_7
+  823: "Flannery 8", // TRAINER_FLANNERY_8
+  824: "Norman 6", // TRAINER_NORMAN_6
+  825: "Norman 7", // TRAINER_NORMAN_7
+  826: "Norman 8", // TRAINER_NORMAN_8
+  827: "Winona 6", // TRAINER_WINONA_6
+  828: "Winona 7", // TRAINER_WINONA_7
+  829: "Winona 8", // TRAINER_WINONA_8
+  830: "Tate & Liza 6", // TRAINER_TATE_AND_LIZA_6
+  831: "Tate & Liza 7", // TRAINER_TATE_AND_LIZA_7
+  832: "Tate & Liza 8", // TRAINER_TATE_AND_LIZA_8
+  833: "Juan & Wallace 6", // TRAINER_JUAN_6
+  834: "Juan & Wallace 7", // TRAINER_JUAN_7
+  835: "Juan & Wallace 8", // TRAINER_JUAN_8
+
+  855: "Viola 1"
+  856: "Viola 2"
+  857: "Viola 3"
+  858: "Viola 4"
+  859: "Viola 5"
+  860: "Viola 6"
+  861: "Viola 7"
+  862: "Viola 8"
+
+  601: "Maxie"
+  34: "Archie"
 };
 
 function getTrainerNameById(trainerId: number): string {
