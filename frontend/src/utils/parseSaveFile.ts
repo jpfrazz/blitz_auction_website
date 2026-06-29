@@ -32,23 +32,8 @@ const SUBSTRUCTURE_ORDERS = [
 export const NATURES = [
   'Hardy', 'Lonely', 'Brave', 'Adamant', 'Naughty', 'Bold', 'Docile', 'Relaxed',
   'Impish', 'Lax', 'Timid', 'Hasty', 'Serious', 'Jolly', 'Naive', 'Modest',
-  'Mild', 'Quiet', 'Rash', 'Calm', 'Gentle', 'Sassy', 'Careful', 'Quirky', 'Bashful',
+  'Mild', 'Quiet', 'Bashful', 'Rash', 'Calm', 'Gentle', 'Sassy', 'Careful', 'Quirky',
 ];
-
-// Mapping from parsed (incorrect) nature to correct nature based on user-reported errors
-const NATURE_CORRECTION: Record<string, string> = {
-  'Quirky': 'Careful',
-  'Bashful': 'Quirky',
-  'Calm': 'Rash',
-  'Careful': 'Sassy',
-  'Rash': 'Bashful',
-  'Gentle': 'Calm',
-  'Sassy': 'Gentle',
-};
-
-function correctNature(nature: string): string {
-  return NATURE_CORRECTION[nature] || nature;
-}
 
 // Mapping of trainer IDs to trainer names (for boss trainers)
 const TRAINER_ID_TO_NAME: Record<number, string> = {
@@ -133,17 +118,17 @@ const TRAINER_ID_TO_NAME: Record<number, string> = {
   834: "Juan & Wallace 7", // TRAINER_JUAN_7
   835: "Juan & Wallace 8", // TRAINER_JUAN_8
 
-  855: "Viola 1"
-  856: "Viola 2"
-  857: "Viola 3"
-  858: "Viola 4"
-  859: "Viola 5"
-  860: "Viola 6"
-  861: "Viola 7"
-  862: "Viola 8"
+  855: "Viola 1",
+  856: "Viola 2",
+  857: "Viola 3",
+  858: "Viola 4",
+  859: "Viola 5",
+  860: "Viola 6",
+  861: "Viola 7",
+  862: "Viola 8",
 
-  601: "Maxie"
-  34: "Archie"
+  601: "Maxie",
+  34: "Archie",
 };
 
 function getTrainerNameById(trainerId: number): string {
@@ -408,8 +393,7 @@ export function parseSaveFile(
           nickname,
           species_id,
           ability_num,
-          nature: correctNature(NATURES[personality % 25]),
-          ivs,
+          nature: NATURES[personality % 25],          ivs,
         });
       }
     }
