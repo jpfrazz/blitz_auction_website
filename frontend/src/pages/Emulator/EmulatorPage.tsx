@@ -818,27 +818,10 @@ const EmulatorPage: React.FC = () => {
       console.log('[ControlBindings] Bindings loaded, initializing emulator');
 
       // Set control settings directly in EmulatorJS configuration
+      // The correct property is EJS_defaultControls (mapped to config.defaultControllers)
       if (bindings) {
-        console.log('[ControlBindings] Setting EJS_controlSettings:', bindings);
-        (window as any).EJS_controlSettings = bindings;
-
-        // Also set EJS_settings which may be read before localStorage
-        (window as any).EJS_settings = {
-          controlSettings: bindings,
-          volume: 1,
-          muted: false
-        };
-        console.log('[ControlBindings] Setting EJS_settings:', (window as any).EJS_settings);
-
-        // Try setting virtual gamepad controls directly
-        (window as any).EJS_virtualGamepad = {
-          controls: bindings
-        };
-        console.log('[ControlBindings] Setting EJS_virtualGamepad:', (window as any).EJS_virtualGamepad);
-
-        // Try setting controls directly
-        (window as any).EJS_controls = bindings;
-        console.log('[ControlBindings] Setting EJS_controls:', (window as any).EJS_controls);
+        console.log('[ControlBindings] Setting EJS_defaultControls:', bindings);
+        (window as any).EJS_defaultControls = bindings;
       }
 
       // Poll localStorage for control binding changes and save to backend
@@ -1012,22 +995,43 @@ const EmulatorPage: React.FC = () => {
           const bindings = JSON.parse(lastKnownBindingsRef.current);
           console.log('[ControlBindings] Applying bindings on game start:', bindings);
 
-          const gameMgr = window.EJS_emulator?.gameManager;
-          if (gameMgr) {
-            // Try to set controls directly
-            if (typeof (gameMgr as any).setControls === 'function') {
-              (gameMgr as any).setControls(bindings);
-              console.log('[ControlBindings] Called setControls on game start');
+          // Try multiple approaches to set controls
+          setTimeout(() => {
+            const gameMgr = window.EJS_emulator?.gameManager;
+            if (gameMgr) {
+              console.log('[ControlBindings] Game manager available, exploring structure:', Object.keys(gameMgr));
+
+              // Try to find and update the virtual gamepad controls
+              if ((gameMgr as any).virtualGamepad) {
+                console.log('[ControlBindings] Found virtualGamepad, setting controls');
+                (gameMgr as any).virtualGamepad.controls = bindings;
+              }
+
+              // Try to update the controls object directly
+              if ((gameMgr as any).controls) {
+                console.log('[ControlBindings] Found controls object, updating');
+                Object.assign((gameMgr as any).controls, bindings);
+              }
+
+              // Try to access the input system
+              if ((gameMgr as any).input) {
+                console.log('[ControlBindings] Found input system, exploring:', Object.keys((gameMgr as any).input));
+                if ((gameMgr as any).input.controls) {
+                  (gameMgr as any).input.controls = bindings;
+                  console.log('[ControlBindings] Set input.controls');
+                }
+              }
+
+              // Try to call any available control update method
+              const possibleMethods = ['setControls', 'updateControls', 'loadControls', 'applyControls'];
+              for (const method of possibleMethods) {
+                if (typeof (gameMgr as any)[method] === 'function') {
+                  console.log('[ControlBindings] Calling method:', method);
+                  (gameMgr as any)[method](bindings);
+                }
+              }
             }
-            if (typeof (gameMgr as any).controls === 'object') {
-              (gameMgr as any).controls = bindings;
-              console.log('[ControlBindings] Set controls property on game start');
-            }
-            if (typeof (gameMgr as any).virtualGamepad === 'object') {
-              (gameMgr as any).virtualGamepad.controls = bindings;
-              console.log('[ControlBindings] Set virtualGamepad controls on game start');
-            }
-          }
+          }, 1000);
         }
 
         syncIntervalRef.current = setInterval(() => {
