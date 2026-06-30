@@ -769,7 +769,7 @@ const EmulatorPage: React.FC = () => {
     if (!romUrl) return;
 
     const core = getExtension(romName ?? '') === 'gba' ? 'gba' : 'gambatte';
-    const gameId = 1; // Default gameId used by EmulatorJS
+    const gameId = 1; // EmulatorJS uses this internally
     const gameName = draftId || 'game';
 
     // EmulatorJS generates localStorage keys dynamically with UUIDs
@@ -793,34 +793,14 @@ const EmulatorPage: React.FC = () => {
     let localStorageKey = getLocalStorageKey();
     console.log('[ControlBindings] Initial localStorage key:', localStorageKey);
 
-    // Load control bindings from backend before initializing emulator
+    // Load control bindings from backend
     const loadControlBindings = async () => {
       try {
         const bindings = await fetchControlBindings();
         console.log('[ControlBindings] Fetched from backend:', bindings);
         if (bindings && typeof bindings === 'object') {
-          // EmulatorJS stores settings in an object with controlSettings property
-          const settings = {
-            controlSettings: bindings,
-            volume: 1,
-            muted: false
-          };
-
-          // Write bindings to ALL matching localStorage keys
-          // EmulatorJS may use UUID-based keys, so we update all of them
-          const allKeys = Object.keys(localStorage).filter(k => k.startsWith('ejs-') && k.endsWith('-settings'));
-          const matchingKeys = allKeys.filter(k => k.startsWith(`ejs-${gameId}-${core}-`));
-
-          console.log('[ControlBindings] Writing bindings to keys:', matchingKeys);
-          matchingKeys.forEach(key => {
-            localStorage.setItem(key, JSON.stringify(settings));
-          });
-
-          // Also set the global ejs-settings key
-          localStorage.setItem('ejs-settings', JSON.stringify({ volume: 1, muted: false }));
-
           lastKnownBindingsRef.current = JSON.stringify(bindings);
-          console.log('[ControlBindings] Successfully set bindings to localStorage');
+          console.log('[ControlBindings] Stored bindings in ref, will apply after EmulatorJS initializes');
         } else {
           console.log('[ControlBindings] No bindings found or invalid format');
         }
@@ -961,6 +941,32 @@ const EmulatorPage: React.FC = () => {
       // Hook saveSaveFiles once the emulator is ready — fires on toolbar save
       // button, tab background/unload, and our 30-second auto-sync interval.
       window.EJS_ready = () => {
+        console.log('[ControlBindings] EmulatorJS ready, applying saved bindings');
+
+        // Apply saved bindings to the localStorage key EmulatorJS just created
+        if (lastKnownBindingsRef.current) {
+          const bindings = JSON.parse(lastKnownBindingsRef.current);
+          const settings = {
+            controlSettings: bindings,
+            volume: 1,
+            muted: false
+          };
+
+          // Find the localStorage key EmulatorJS just created
+          const allKeys = Object.keys(localStorage).filter(k => k.startsWith('ejs-') && k.endsWith('-settings'));
+          const matchingKeys = allKeys.filter(k => k.startsWith(`ejs-${gameId}-${core}-`));
+
+          console.log('[ControlBindings] Applying bindings to keys:', matchingKeys);
+          matchingKeys.forEach(key => {
+            localStorage.setItem(key, JSON.stringify(settings));
+          });
+
+          // Also set the global ejs-settings key
+          localStorage.setItem('ejs-settings', JSON.stringify({ volume: 1, muted: false }));
+
+          console.log('[ControlBindings] Successfully applied bindings');
+        }
+
         window.EJS_emulator?.on('saveSaveFiles', (rawData) => {
           const bytes = rawData as Uint8Array | null | undefined;
           if (!bytes || !(bytes instanceof Uint8Array) || bytes.length === 0) return;
