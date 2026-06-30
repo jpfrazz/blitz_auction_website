@@ -1043,7 +1043,7 @@ pub async fn post_player_save(
     // Store boss battle history
     // Get the team ID
     let team_row = sqlx::query(
-        "SELECT id FROM teams WHERE draft_id = $1 AND (user_id = $2 OR guest_id = $3)"
+        "SELECT team_id FROM teams WHERE draft_id = $1 AND (user_id = $2 OR guest_id = $3)"
     )
     .bind(draft_uuid)
     .bind(&user_db_id)
@@ -1052,7 +1052,7 @@ pub async fn post_player_save(
     .await;
 
     if let Ok(Some(row)) = team_row {
-        let team_id: i64 = row.get("id");
+        let team_id: i64 = row.get("team_id");
 
         // Delete existing boss battle history for this team/draft
         let _ = sqlx::query(
@@ -1084,7 +1084,6 @@ pub async fn post_player_save(
 
     // Broadcast to all WebSocket subscribers so other players update live
     if let Some(draft) = state.drafts.get(&draft_uuid) {
-        println!("[SaveUpdate] Broadcasting save update for user {} with map_name: {:?}", user_id, save_data.map_name);
         let _ = draft.broadcast_tx.send(crate::messages::ServerMessage::SaveUpdate {
             user_id: user_id.clone(),
             save_data: save_data.clone(),
