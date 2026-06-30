@@ -136,7 +136,7 @@ export function getTrainerNameById(trainerId: number, version?: number): string 
   // If version is provided and it's a gym leader, append version number
   if (version !== undefined) {
     // Gym leaders that have version numbers
-    const gymLeaderIds = [265, 266, 267, 268, 269, 270, 271, 272]; // Roxanne, Brawly, Wattson, Flannery, Norman, Winona, Tate & Liza, Juan & Wallace
+    const gymLeaderIds = [265, 855, 266, 267, 268, 269, 270, 271, 272]; // Roxanne, Viola, Brawly, Wattson, Flannery, Norman, Winona, Tate & Liza, Juan & Wallace
     if (gymLeaderIds.includes(trainerId)) {
       // Extract base name (remove " 1" if present)
       const baseWithoutVersion = baseName.replace(/ \d+$/, '');
@@ -409,7 +409,7 @@ export function parseSaveFile(
 
   // Track overall boss fight index for gym leaders to assign version numbers
   let bossFightIndex = 0;
-  const gymLeaderIds = [265, 266, 267, 268, 269, 270, 271, 272]; // Roxanne, Brawly, Wattson, Flannery, Norman, Winona, Tate & Liza, Juan & Wallace
+  const gymLeaderIds = [265, 855, 266, 267, 268, 269, 270, 271, 272]; // Roxanne, Viola, Brawly, Wattson, Flannery, Norman, Winona, Tate & Liza, Juan & Wallace
 
   if (sectionOffsets[0] !== undefined) {
     const baseOffset = sectionOffsets[0] + TRAINER_CARD_WINS_SECTION0_OFFSET;

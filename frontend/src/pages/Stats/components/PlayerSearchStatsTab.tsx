@@ -82,6 +82,8 @@ const TRAINER_ID_TO_NAME: Record<number, string> = {
   807: "Spenser",
   810: "Lucy",
   811: "Brandon",
+  804: "Steven",
+  656: "Wally",
 };
 
 function getTrainerNameById(trainerId: number, version?: number | null): string {
