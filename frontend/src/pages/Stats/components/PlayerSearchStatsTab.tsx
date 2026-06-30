@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { fetchMatchHistoryByUserId } from '../../../shared/api/stats';
+import { fetchMatchHistoryByUserId, fetchBossBattleHistory, BossBattleHistoryEntry } from '../../../shared/api/stats';
 import { MatchHistoryTeam, StatsAuction, StatsPagePlayer, StatsPageResponse } from '../../../types';
 import type { PlayerStatPill } from './playerStatPills';
 import { getPlayerStatPills } from './playerStatPills';
@@ -61,6 +61,63 @@ function getPokemonLabel(name: string, form: string): string {
   return form ? `${name} (${form})` : name;
 }
 
+// Mapping of trainer IDs to trainer names (from parseSaveFile.ts)
+const TRAINER_ID_TO_NAME: Record<number, string> = {
+  265: "Roxanne",
+  855: "Viola",
+  266: "Brawly",
+  267: "Wattson",
+  268: "Flannery",
+  269: "Norman",
+  270: "Winona",
+  271: "Tate & Liza",
+  272: "Juan & Wallace",
+  601: "Maxie",
+  34: "Archie",
+  261: "Sidney",
+  262: "Phoebe",
+  263: "Glacia",
+  264: "Drake",
+  806: "Tucker",
+  807: "Spenser",
+  810: "Lucy",
+  811: "Brandon",
+};
+
+function getTrainerNameById(trainerId: number, version?: number | null): string {
+  const baseName = TRAINER_ID_TO_NAME[trainerId] || `Trainer #${trainerId}`;
+  if (version !== undefined && version !== null && version > 0) {
+    return `${baseName} ${version}`;
+  }
+  return baseName;
+}
+
+function getRunResult(battles: BossBattleHistoryEntry[]): { result: string; trainer: string; isWin: boolean } | null {
+  if (!battles || battles.length === 0) return null;
+
+  const lastBattle = battles[battles.length - 1];
+
+  // Check if it's a win (Steven/Wally are the final bosses)
+  if (lastBattle.trainer_id === 816 || lastBattle.trainer_id === 817) {
+    return {
+      result: 'Beat',
+      trainer: lastBattle.trainer_id === 816 ? 'Steven' : 'Wally',
+      isWin: true,
+    };
+  }
+
+  // Otherwise it's a wipe - find the trainer that caused the wipe
+  if (lastBattle.is_loss) {
+    return {
+      result: 'Wiped to',
+      trainer: getTrainerNameById(lastBattle.trainer_id, lastBattle.version),
+      isWin: false,
+    };
+  }
+
+  return null;
+}
+
 const PlayerSearchStatsTab: React.FC<PlayerSearchStatsTabProps> = ({
   stats,
   loading = false,
@@ -74,6 +131,8 @@ const PlayerSearchStatsTab: React.FC<PlayerSearchStatsTabProps> = ({
   const [playerMatchHistory, setPlayerMatchHistory] = useState<MatchHistoryTeam[] | null>(null);
   const [playerMatchHistoryLoading, setPlayerMatchHistoryLoading] = useState(false);
   const [playerMatchHistoryError, setPlayerMatchHistoryError] = useState<string | null>(null);
+  const [bossBattleHistory, setBossBattleHistory] = useState<Map<number, BossBattleHistoryEntry[]>>(new Map());
+  const [bossBattleHistoryLoading, setBossBattleHistoryLoading] = useState(false);
 
   const filteredPlayers = useMemo(() => {
     if (!searchInput.trim() || !stats?.players) {
@@ -202,8 +261,21 @@ const PlayerSearchStatsTab: React.FC<PlayerSearchStatsTabProps> = ({
     await handleSelectPlayer(selectedMatch);
   };
 
-  const toggleExpandedTeam = (teamId: number) => {
+  const toggleExpandedTeam = async (teamId: number, draftId: string) => {
+    const isExpanding = expandedTeamId !== teamId;
     setExpandedTeamId((current) => current === teamId ? null : teamId);
+
+    if (isExpanding && !bossBattleHistory.has(teamId)) {
+      setBossBattleHistoryLoading(true);
+      try {
+        const history = await fetchBossBattleHistory(draftId, selectedPlayer?.user_id);
+        setBossBattleHistory(prev => new Map(prev).set(teamId, history));
+      } catch (e) {
+        console.error('[PlayerSearchStatsTab] Error fetching boss battle history:', e);
+      } finally {
+        setBossBattleHistoryLoading(false);
+      }
+    }
   };
 
   if (loading) {
@@ -432,7 +504,7 @@ const PlayerSearchStatsTab: React.FC<PlayerSearchStatsTabProps> = ({
                       <button
                         type="button"
                         className={`match-timeline-row ${resultClass} ${isExpanded ? 'expanded' : ''}`}
-                        onClick={() => toggleExpandedTeam(team.team_id)}
+                        onClick={() => toggleExpandedTeam(team.team_id, team.draft_id)}
                       >
                         <div className="match-result-badge">
                           <span className="result-text">{result}</span>
@@ -494,6 +566,47 @@ const PlayerSearchStatsTab: React.FC<PlayerSearchStatsTabProps> = ({
                               <span className="match-draft-details-cost">${(auction.winning_bid ?? 0).toLocaleString()}</span>
                             </div>
                           ))}
+
+                          {/* Boss Battle History */}
+                          {bossBattleHistoryLoading && (
+                            <div className="match-draft-details-empty">Loading boss battles...</div>
+                          )}
+                          {!bossBattleHistoryLoading && bossBattleHistory.has(team.team_id) && (
+                            <>
+                              <div className="match-draft-details-header" style={{ marginTop: '1rem' }}>
+                                <span>Boss Battles</span>
+                                <span>Time</span>
+                              </div>
+                              {bossBattleHistory.get(team.team_id)?.length === 0 && (
+                                <div className="match-draft-details-empty">No boss battles recorded.</div>
+                              )}
+                              {bossBattleHistory.get(team.team_id)?.map((battle, idx) => (
+                                <div className="match-draft-details-row" key={idx}>
+                                  <div className="match-draft-details-pokemon">
+                                    <span className={battle.is_loss ? 'loss' : 'win'}>
+                                      {getTrainerNameById(battle.trainer_id, battle.version)}
+                                    </span>
+                                  </div>
+                                  <span className="match-draft-details-cost">
+                                    {battle.hours}h {battle.minutes}m {battle.seconds}s
+                                  </span>
+                                </div>
+                              ))}
+
+                              {/* Run Result */}
+                              {(() => {
+                                const runResult = getRunResult(bossBattleHistory.get(team.team_id) || []);
+                                if (!runResult) return null;
+                                return (
+                                  <div className="match-run-result" style={{ marginTop: '1rem' }}>
+                                    <span className={runResult.isWin ? 'win' : 'loss'}>
+                                      {runResult.result} {runResult.trainer}!
+                                    </span>
+                                  </div>
+                                );
+                              })()}
+                            </>
+                          )}
                         </div>
                       )}
                     </div>

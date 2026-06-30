@@ -418,6 +418,33 @@
         padding-top: 0.25rem;
     }
 
+    .match-draft-details-pokemon {
+        .win {
+            color: #53df62;
+        }
+
+        .loss {
+            color: #ff6b6b;
+        }
+    }
+
+    .match-run-result {
+        padding: 0.6rem 0.8rem;
+        border-radius: 8px;
+        background: rgba(255, 255, 255, 0.05);
+        text-align: center;
+        font-weight: 700;
+        font-size: 1.1rem;
+
+        .win {
+            color: #53df62;
+        }
+
+        .loss {
+            color: #ff6b6b;
+        }
+    }
+
     .match-result-badge {
         display: flex;
         align-items: center;

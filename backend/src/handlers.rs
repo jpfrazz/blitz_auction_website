@@ -866,6 +866,72 @@ pub async fn get_draft_pokemon(
     Ok(Json(draft.get_pokemon()))
 }
 
+#[derive(Debug, Serialize, sqlx::FromRow)]
+pub struct BossBattleHistoryEntry {
+    pub trainer_id: i32,
+    pub version: Option<i32>,
+    pub hours: i32,
+    pub minutes: i32,
+    pub seconds: i32,
+    pub is_loss: bool,
+}
+
+#[debug_handler]
+pub async fn get_boss_battle_history(
+    State(state): State<ServerState>,
+    Path(draft_id): Path<String>,
+    Query(params): Query<std::collections::HashMap<String, String>>,
+) -> Result<Json<Vec<BossBattleHistoryEntry>>, (StatusCode, String)> {
+    let draft_uuid = Uuid::from_str(&draft_id).map_err(|_e| {
+        (
+            StatusCode::BAD_REQUEST,
+            format!("invalid draft id"),
+        )
+    })?;
+
+    // Check if draft exists
+    let draft_exists = sqlx::query(
+        "SELECT 1 FROM drafts WHERE draft_id = $1"
+    )
+    .bind(draft_uuid)
+    .fetch_optional(&state.db_pool)
+    .await
+    .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, format!("db error: {}", e)))?;
+
+    if draft_exists.is_none() {
+        return Err((StatusCode::NOT_FOUND, "draft not found".to_string()));
+    }
+
+    // If user_id is provided, filter by that user
+    let user_id_filter = params.get("user_id");
+    let query = if let Some(uid) = user_id_filter {
+        sqlx::query_as::<_, BossBattleHistoryEntry>(
+            "SELECT bbh.trainer_id, bbh.version, bbh.hours, bbh.minutes, bbh.seconds, bbh.is_loss
+             FROM boss_battle_history bbh
+             JOIN teams t ON bbh.team_id = t.team_id
+             WHERE bbh.draft_id = $1 AND (t.user_id = $2 OR t.guest_id = $2)
+             ORDER BY bbh.created_at ASC"
+        )
+        .bind(draft_uuid)
+        .bind(uid)
+    } else {
+        sqlx::query_as::<_, BossBattleHistoryEntry>(
+            "SELECT trainer_id, version, hours, minutes, seconds, is_loss
+             FROM boss_battle_history
+             WHERE draft_id = $1
+             ORDER BY created_at ASC"
+        )
+        .bind(draft_uuid)
+    };
+
+    let history = query
+        .fetch_all(&state.db_pool)
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, format!("db error: {}", e)))?;
+
+    Ok(Json(history))
+}
+
 #[debug_handler]
 pub async fn get_current_auction(
     State(state): State<ServerState>,
@@ -974,11 +1040,54 @@ pub async fn post_player_save(
     .await
     .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, format!("db error: {}", e)))?;
 
+    // Store boss battle history
+    // Get the team ID
+    let team_row = sqlx::query(
+        "SELECT id FROM teams WHERE draft_id = $1 AND (user_id = $2 OR guest_id = $3)"
+    )
+    .bind(draft_uuid)
+    .bind(&user_db_id)
+    .bind(&guest_db_id)
+    .fetch_optional(&state.db_pool)
+    .await;
+
+    if let Ok(Some(row)) = team_row {
+        let team_id: i64 = row.get("id");
+
+        // Delete existing boss battle history for this team/draft
+        let _ = sqlx::query(
+            "DELETE FROM boss_battle_history WHERE team_id = $1 AND draft_id = $2"
+        )
+        .bind(team_id)
+        .bind(draft_uuid)
+        .execute(&state.db_pool)
+        .await;
+
+        // Insert new boss battle records
+        for win in &save_data.trainer_card_wins {
+            let _ = sqlx::query(
+                "INSERT INTO boss_battle_history (team_id, draft_id, trainer_id, version, hours, minutes, seconds, is_loss)
+                 VALUES ($1, $2, $3, $4, $5, $6, $7, $8)"
+            )
+            .bind(team_id)
+            .bind(draft_uuid)
+            .bind(win.trainer_id as i32)
+            .bind(win.version.map(|v| v as i32))
+            .bind(win.hours as i32)
+            .bind(win.minutes as i32)
+            .bind(win.seconds as i32)
+            .bind(win.is_loss)
+            .execute(&state.db_pool)
+            .await;
+        }
+    }
+
     // Broadcast to all WebSocket subscribers so other players update live
     if let Some(draft) = state.drafts.get(&draft_uuid) {
+        println!("[SaveUpdate] Broadcasting save update for user {} with map_name: {:?}", user_id, save_data.map_name);
         let _ = draft.broadcast_tx.send(crate::messages::ServerMessage::SaveUpdate {
             user_id: user_id.clone(),
-            save_data,
+            save_data: save_data.clone(),
         });
     }
 
@@ -2311,6 +2420,39 @@ async fn handle_websocket(mut socket: WebSocket, tx: broadcast::Sender<ServerMes
             Some(result) = socket.recv() => {
                 if result.is_err() {
                     break;
+                }
+                if let Ok(Message::Text(text)) = result {
+                    // Handle incoming messages from clients
+                    if let Ok(client_msg) = serde_json::from_str::<serde_json::Value>(&text) {
+                        if let Some(msg_type) = client_msg.get("type").and_then(|v| v.as_str()) {
+                            if msg_type == "WipeNotification" {
+                                if let Some(data) = client_msg.get("data") {
+                                    if let (Some(username), Some(trainer)) = (
+                                        data.get("username").and_then(|v| v.as_str()),
+                                        data.get("trainer").and_then(|v| v.as_str())
+                                    ) {
+                                        let _ = tx.send(ServerMessage::WipeNotification {
+                                            username: username.to_string(),
+                                            trainer: trainer.to_string(),
+                                        });
+                                    }
+                                }
+                            }
+                            if msg_type == "WinNotification" {
+                                if let Some(data) = client_msg.get("data") {
+                                    if let (Some(username), Some(trainer)) = (
+                                        data.get("username").and_then(|v| v.as_str()),
+                                        data.get("trainer").and_then(|v| v.as_str())
+                                    ) {
+                                        let _ = tx.send(ServerMessage::WinNotification {
+                                            username: username.to_string(),
+                                            trainer: trainer.to_string(),
+                                        });
+                                    }
+                                }
+                            }
+                        }
+                    }
                 }
             }
         }

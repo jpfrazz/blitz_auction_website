@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import Header from '../../shared/components/Header';
-import { parseSaveFile, SaveData } from '../../utils/parseSaveFile';
+import { parseSaveFile, SaveData, getTrainerNameById } from '../../utils/parseSaveFile';
 import { fetchCurrentUser, fetchDraftById, claimEeveelution, unclaimEeveelution, fetchControlBindings, saveControlBindings } from '../../shared/api/draftData';
 import { fetchPokemonList } from '../../shared/api/pokemon';
 import EeveelutionClaimButton from './EeveelutionClaimButton';
@@ -488,7 +488,8 @@ const EmulatorPage: React.FC = () => {
           try {
             const msg = JSON.parse(event.data as string);
               if (msg.type === 'SaveUpdate') {
-                const { user_id, save_data } = msg.data as { user_id: string; save_data: SaveData };
+                const { user_id, save_data } = msg.data as { user_id: string; save_data: any };
+                console.log('[EmulatorPage] SaveUpdate received for', user_id, save_data);
               setOtherSaves((prev) => ({
                 ...prev,
                 [user_id]: { displayName: prev[user_id]?.displayName ?? user_id, save: save_data },
@@ -517,6 +518,16 @@ const EmulatorPage: React.FC = () => {
             if (msg.type === 'StateLoadNotification') {
               const { display_name } = msg.data as { display_name: string };
               addNotification(`${display_name} loaded a previous state!`);
+            }
+            // Wipe notification
+            if (msg.type === 'WipeNotification') {
+              const { username, trainer } = msg.data as { username: string; trainer: string };
+              addNotification(`${username} wiped to ${trainer}!`);
+            }
+            // Win notification
+            if (msg.type === 'WinNotification') {
+              const { username, trainer } = msg.data as { username: string; trainer: string };
+              addNotification(`${username} beat ${trainer}!`);
             }
             // Eeveelution claim notification
             if (msg.type === 'EeveelutionClaimed') {
@@ -640,6 +651,38 @@ const EmulatorPage: React.FC = () => {
     const now = new Date();
     setSaveLastSynced(now);
     console.log(`Synced save at ${now.toLocaleTimeString()}`);
+
+    // Check for wipe (InsideOfTruck) and send notification
+    const isWiped = parsed.map_name === 'InsideOfTruck';
+    const wasWiped = mySaveData?.map_name === 'InsideOfTruck';
+    if (isWiped && !wasWiped && parsed.most_recent_loss_name && currentUsername) {
+      // Send wipe notification via WebSocket
+      if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
+        wsRef.current.send(JSON.stringify({
+          type: 'WipeNotification',
+          data: {
+            username: currentUsername,
+            trainer: parsed.most_recent_loss_name,
+          }
+        }));
+      }
+    }
+
+    // Check for win (LilycoveCity_LilycoveMuseum_1F) and send notification
+    const isWinner = parsed.map_name === 'LilycoveCity_LilycoveMuseum_1F';
+    const wasWinner = mySaveData?.map_name === 'LilycoveCity_LilycoveMuseum_1F';
+    if (isWinner && !wasWinner && parsed.most_recent_loss_name && currentUsername) {
+      // Send win notification via WebSocket
+      if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
+        wsRef.current.send(JSON.stringify({
+          type: 'WinNotification',
+          data: {
+            username: currentUsername,
+            trainer: parsed.most_recent_loss_name,
+          }
+        }));
+      }
+    }
 
     if (draftId) {
       fetch(`/api/drafts/${draftId}/save`, {
@@ -1118,6 +1161,21 @@ const EmulatorPage: React.FC = () => {
                     <span className="overlay-title">Race Standings (Tab)</span>
                   </div>
                   <div className="overlay-content">
+                    {/* Boss battle history for current user */}
+                    {mySaveData?.trainer_card_wins && mySaveData.trainer_card_wins.length > 0 && (
+                      <div className="overlay-boss-battles">
+                        <div className="overlay-section-title">Boss Battle History</div>
+                        <div className="overlay-battle-list">
+                          {mySaveData.trainer_card_wins.map((win, i) => (
+                            <div key={i} className={`overlay-battle-item ${win.is_loss ? 'loss' : 'win'}`}>
+                              <span className="overlay-battle-trainer">{getTrainerNameById(win.trainer_id, win.version)}</span>
+                              <span className="overlay-battle-time">{win.hours}h {win.minutes}m {win.seconds}s</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                    {/* Race standings */}
                     {sidebarEntries.map(([uid, { displayName, save }]) => {
                       const isCurrentUser = uid === currentUserId;
                       const saveData = isCurrentUser ? mySaveData : save;
@@ -1278,10 +1336,24 @@ const EmulatorPage: React.FC = () => {
                   const saveData = isCurrentUser ? mySaveData : save;
                   const displayDisplayName = isCurrentUser ? (currentUsername || 'You') : displayName;
 
+                  // Detect wipe (InsideOfTruck) or win (LilycoveCity_LilycoveMuseum_1F)
+                  const isWiped = saveData?.map_name === 'InsideOfTruck';
+                  const isWinner = saveData?.map_name === 'LilycoveCity_LilycoveMuseum_1F';
+                  const mostRecentLoss = saveData?.most_recent_loss;
+                  const mostRecentLossName = saveData?.most_recent_loss_name;
+
                   return (
                     <div key={uid} className="sidebar-player-card">
                       <div className="sidebar-player-header">
-                        <span className="sidebar-username">{displayDisplayName}</span>
+                        <span className={`sidebar-username ${isWiped ? 'wiped' : ''} ${isWinner ? 'winner' : ''}`}>
+                          {displayDisplayName}
+                          {isWiped && mostRecentLossName && (
+                            <span className="wipe-text"> (Wiped to {mostRecentLossName})</span>
+                          )}
+                          {isWinner && mostRecentLossName && (
+                            <span className="win-text"> (Beat {mostRecentLossName})</span>
+                          )}
+                        </span>
                         <span className="sidebar-badges">
                           {saveData ? `${saveData.badge_count} ${saveData.badge_count === 1 ? 'badge' : 'badges'}` : '— badges'}
                         </span>

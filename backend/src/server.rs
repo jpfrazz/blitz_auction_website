@@ -134,6 +134,10 @@ impl Server {
                 "/drafts/{draft_id}/current_auction",
                 get(handlers::get_current_auction),
             )
+            .route(
+                "/drafts/{draft_id}/boss-battle-history",
+                get(handlers::get_boss_battle_history),
+            )
             .route("/ws/{draft_id}", any(handlers::websocket_handler))
             .route("/login", get(handlers::discord_oauth_redirect))
             .route("/auth/discord/callback", get(handlers::discord_callback))

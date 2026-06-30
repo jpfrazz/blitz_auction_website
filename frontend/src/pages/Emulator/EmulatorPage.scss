@@ -380,6 +380,26 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+
+  &.wiped {
+    color: #f87171;
+  }
+
+  &.winner {
+    color: #4ade80;
+  }
+}
+
+.wipe-text {
+  font-size: 1rem;
+  color: #f87171;
+  font-weight: 500;
+}
+
+.win-text {
+  font-size: 1rem;
+  color: #4ade80;
+  font-weight: 500;
 }
 
 .sidebar-badges {
@@ -497,6 +517,66 @@
   flex-direction: column;
   gap: 0.8rem;
   scrollbar-width: thin;
+}
+
+.overlay-section-title {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: $eb-text;
+  padding: 0.4rem 0.6rem;
+  border-bottom: 1px solid $eb-border;
+  margin-bottom: 0.4rem;
+}
+
+.overlay-boss-battles {
+  background: rgba(29, 29, 29, 0.85);
+  border: 1px solid $eb-border;
+  border-radius: 8px;
+  overflow: hidden;
+  margin-bottom: 0.8rem;
+}
+
+.overlay-battle-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  padding: 0.6rem;
+}
+
+.overlay-battle-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.4rem 0.6rem;
+  border-radius: 4px;
+  gap: 0.5rem;
+
+  &.win {
+    background: rgba(74, 222, 128, 0.1);
+  }
+
+  &.loss {
+    background: rgba(248, 113, 113, 0.1);
+  }
+}
+
+.overlay-battle-trainer {
+  font-size: 1rem;
+  font-weight: 500;
+  color: $eb-text;
+  flex: 1;
+}
+
+.overlay-battle-time {
+  font-size: 0.9rem;
+  color: $eb-text-muted;
+  white-space: nowrap;
+}
+
+.overlay-battle-deaths {
+  font-size: 0.85rem;
+  color: $eb-text-muted;
+  white-space: nowrap;
 }
 
 .overlay-player-card {

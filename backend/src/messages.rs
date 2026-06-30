@@ -43,6 +43,25 @@ pub struct SaveData {
     pub party: Vec<SavePokemon>,
     #[serde(default)]
     pub r#box: Vec<SaveBoxPokemon>,
+    #[serde(default)]
+    pub map_name: String,
+    #[serde(default)]
+    pub trainer_card_wins: Vec<TrainerCardWin>,
+    #[serde(default)]
+    pub most_recent_loss: Option<TrainerCardWin>,
+    #[serde(default)]
+    pub most_recent_loss_name: Option<String>,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct TrainerCardWin {
+    pub trainer_id: u16,
+    pub hours: u16,
+    pub minutes: u8,
+    pub seconds: u8,
+    pub is_loss: bool,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub version: Option<u8>,
 }
 
 #[derive(Clone, Debug, Serialize)]
@@ -69,6 +88,14 @@ pub enum ServerMessage {
     StateLoadNotification {
         user_id: String,
         display_name: String,
+    },
+    WipeNotification {
+        username: String,
+        trainer: String,
+    },
+    WinNotification {
+        username: String,
+        trainer: String,
     },
     EeveelutionClaimed {
         user_name: String,
