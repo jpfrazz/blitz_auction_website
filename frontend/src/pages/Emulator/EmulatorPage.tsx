@@ -685,22 +685,12 @@ const EmulatorPage: React.FC = () => {
     }
 
     if (draftId) {
-      console.log('[EmulatorPage] Posting save to backend for draft:', draftId, 'with', parsed.trainer_card_wins?.length, 'trainer card wins');
       fetch(`/api/drafts/${draftId}/save`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(parsed),
         credentials: 'include',
-      }).then(async (res) => {
-        if (!res.ok) {
-          console.error('[EmulatorPage] Save POST failed with status:', res.status);
-        } else {
-          const data = await res.json();
-          console.log('[EmulatorPage] Save POST succeeded:', data);
-        }
-      }).catch((e) => {
-        console.error('[EmulatorPage] Failed to save to backend:', e);
-      });
+      }).catch(() => {});
     }
   };
 

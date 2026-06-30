@@ -216,9 +216,8 @@ const Stats: React.FC = () => {
     // 3. Fewer than 40 Pokemon were sold.
     // 4. No single Pokemon sold for more than $12,000.
     // This filters out test drafts or incomplete "junk" data.
-    // Exception: 2-player drafts are always included for development/testing.
     draftStats.forEach((data, id) => {
-      if (data.teamCount === 2 || (data.total >= 40 && data.minBidCount <= 3 && data.total === 8 * data.teamCount && data.maxBid <= 12000)) {
+      if (data.total >= 40 && data.minBidCount <= 3 && data.total === 8 * data.teamCount && data.maxBid <= 12000) {
         valid.add(id);
       }
     });

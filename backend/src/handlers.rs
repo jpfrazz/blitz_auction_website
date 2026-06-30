@@ -1009,7 +1009,7 @@ pub async fn post_player_save(
     Path(draft_id): Path<String>,
     State(state): State<ServerState>,
     Json(save_data): Json<crate::messages::SaveData>,
-) -> Result<Json<serde_json::Value>, AppError> {
+) -> Result<(), AppError> {
     let Some(user) = auth_session.user else {
         return Err((StatusCode::FORBIDDEN, "user is not logged in".to_string()));
     };
@@ -1097,10 +1097,7 @@ pub async fn post_player_save(
         });
     }
 
-    Ok(Json(serde_json::json!({
-        "boss_battles_saved": boss_battles_saved,
-        "team_found": boss_battles_saved.is_some()
-    })))
+    Ok(())
 }
 
 #[debug_handler]
