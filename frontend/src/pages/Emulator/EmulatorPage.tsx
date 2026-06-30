@@ -765,15 +765,25 @@ const EmulatorPage: React.FC = () => {
   useEffect(() => {
     if (!romUrl) return;
 
+    const core = getExtension(romName ?? '') === 'gba' ? 'mgba' : 'gambatte';
+    const gameId = 1; // Default gameId used by EmulatorJS
+    const gameName = draftId || 'game';
+    const localStorageKey = `ejs-${gameId}-${core}-${gameName}-settings`;
+
     // Load control bindings from backend before initializing emulator
     const loadControlBindings = async () => {
       try {
         const bindings = await fetchControlBindings();
         console.log('[ControlBindings] Fetched from backend:', bindings);
         if (bindings && typeof bindings === 'object') {
-          console.log('[ControlBindings] Setting to localStorage:', bindings);
-          // Store in localStorage for EmulatorJS to pick up
-          localStorage.setItem('ejs_controlSettings', JSON.stringify(bindings));
+          console.log('[ControlBindings] Setting to localStorage key:', localStorageKey);
+          // EmulatorJS stores settings in an object with controlSettings property
+          const settings = {
+            controlSettings: bindings,
+            volume: 1,
+            muted: false
+          };
+          localStorage.setItem(localStorageKey, JSON.stringify(settings));
           lastKnownBindingsRef.current = JSON.stringify(bindings);
         } else {
           console.log('[ControlBindings] No bindings found or invalid format');
@@ -789,20 +799,25 @@ const EmulatorPage: React.FC = () => {
     // The storage event only fires for changes from other tabs/windows, so we need polling
     // to detect changes made by EmulatorJS in the same tab
     controlBindingsIntervalRef.current = setInterval(() => {
-      const currentBindings = localStorage.getItem('ejs_controlSettings');
-      console.log('[ControlBindings] Polling localStorage. Current:', currentBindings?.substring(0, 100), 'Last known:', lastKnownBindingsRef.current?.substring(0, 100));
-      if (currentBindings && currentBindings !== lastKnownBindingsRef.current) {
+      const settingsStr = localStorage.getItem(localStorageKey);
+      console.log('[ControlBindings] Polling localStorage key:', localStorageKey, 'Value:', settingsStr?.substring(0, 100));
+      if (settingsStr) {
         try {
-          const bindings = JSON.parse(currentBindings);
-          console.log('[ControlBindings] Detected change, saving to backend:', bindings);
-          saveControlBindings(bindings).then(() => {
-            console.log('[ControlBindings] Successfully saved to backend');
-          }).catch(err => {
-            console.error('[ControlBindings] Failed to save control bindings:', err);
-          });
-          lastKnownBindingsRef.current = currentBindings;
+          const settings = JSON.parse(settingsStr);
+          const currentBindings = settings.controlSettings;
+          const bindingsStr = currentBindings ? JSON.stringify(currentBindings) : null;
+          console.log('[ControlBindings] Extracted controlSettings:', bindingsStr?.substring(0, 100), 'Last known:', lastKnownBindingsRef.current?.substring(0, 100));
+          if (bindingsStr && bindingsStr !== lastKnownBindingsRef.current) {
+            console.log('[ControlBindings] Detected change, saving to backend:', currentBindings);
+            saveControlBindings(currentBindings).then(() => {
+              console.log('[ControlBindings] Successfully saved to backend');
+            }).catch(err => {
+              console.error('[ControlBindings] Failed to save control bindings:', err);
+            });
+            lastKnownBindingsRef.current = bindingsStr;
+          }
         } catch (err) {
-          console.error('[ControlBindings] Failed to parse control bindings:', err);
+          console.error('[ControlBindings] Failed to parse settings:', err);
         }
       }
     }, 20000); // Check every 20 seconds
@@ -851,8 +866,6 @@ const EmulatorPage: React.FC = () => {
     };
     document.addEventListener('contextmenu', blockContextMenu, true);
 
-    const core = getExtension(romName ?? '') === 'gba' ? 'mgba' : 'gambatte';
-
     window.EJS_player = '#game';
     window.EJS_core = core;
     window.EJS_gameUrl = romUrl;
@@ -861,7 +874,7 @@ const EmulatorPage: React.FC = () => {
     window.EJS_stopOnUnfocused = false;
     window.EJS_pauseOnBlur = false;
     window.EJS_language = 'en-US';
-    window.EJS_gameName = draftId || 'game';
+    window.EJS_gameName = gameName;
     // Emulator loader expects `window.EJS_Buttons` (capital B).
     // Keep `EJS_buttons` for backward compatibility.
     window.EJS_Buttons = window.EJS_buttons = {
