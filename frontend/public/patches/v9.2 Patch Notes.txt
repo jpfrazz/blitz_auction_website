@@ -24,9 +24,9 @@ Bug Fix
 Norman and Flannery AI standardized with other boss fights
 //Last week, I did a deep dive into understanding the AI switch behavior. In the process, I realized that Norman and Flannery had rare, specific conditions in which they'd swap out their Pokémon which the other leaders didn't share. All that this change does is standardize their AI switch behavior with all of the rules you're currently familiar with, like sometimes swapping when you have a lowered primary attacking stat and are leech seeded, swapping when your primary attacking stat is -3 or greater, swapping when Drowsy, etc. If you've ever observed Norman "randomly" swap his Zoroark for his Obstagoon, or Flannery swap out her Torkoal after hitting it with an electric- or poison-type attack to her Camerupt in the back, that's what this removes.
 
-New AI Check: Flannery's Torkoal and Winona's Tropius will never swap out if their SpAtk stage is -1 or greater
+New AI Check: Flannery's Torkoal, Slugma, Magcargo, Numel, Camerupt, Vulpix, Ninetales, and Winona's Tropius will never swap out if their SpAtk stage is -1 or greater
 //Ever. This means that Torkoal could be -6 in every stat, Leech Seeded, Drowsy from Yawn, etc... If it goes to -1 SpAtk, all other switch AI conditions are irrelevant and ignored.
-//This is to prevent a Torkoal that's used Overheat or a Tropius that's used Leaf Storm from swapping out and resetting their stat drops. Not really a bugfix, but I'd intended for the Flannery and Winona AI to already be doing this, it just wasn't working.
+//This is to prevent a Pokemon that's used Overheat or a Tropius that's used Leaf Storm from swapping out and resetting their stat drops. Not really a bugfix, but I'd intended for the Flannery and Winona AI to already be doing this, it just wasn't working.
 
 Tadbulb now glows green after gym 4 in the party menu
 //To signify that it can evolve
