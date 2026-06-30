@@ -784,7 +784,10 @@ const EmulatorPage: React.FC = () => {
             muted: false
           };
           localStorage.setItem(localStorageKey, JSON.stringify(settings));
+          // Also set the global ejs-settings key
+          localStorage.setItem('ejs-settings', JSON.stringify({ volume: 1, muted: false }));
           lastKnownBindingsRef.current = JSON.stringify(bindings);
+          console.log('[ControlBindings] Successfully set bindings to localStorage');
         } else {
           console.log('[ControlBindings] No bindings found or invalid format');
         }
@@ -793,204 +796,210 @@ const EmulatorPage: React.FC = () => {
       }
     };
 
-    loadControlBindings();
+    // Initialize emulator after bindings are loaded
+    const initializeEmulator = async () => {
+      await loadControlBindings();
+      console.log('[ControlBindings] Bindings loaded, initializing emulator');
 
-    // Poll localStorage for control binding changes and save to backend
-    // The storage event only fires for changes from other tabs/windows, so we need polling
-    // to detect changes made by EmulatorJS in the same tab
-    controlBindingsIntervalRef.current = setInterval(() => {
-      // Log all localStorage keys that start with 'ejs' to debug
-      const allKeys = Object.keys(localStorage).filter(k => k.startsWith('ejs'));
-      console.log('[ControlBindings] All ejs localStorage keys:', allKeys);
+      // Poll localStorage for control binding changes and save to backend
+      // The storage event only fires for changes from other tabs/windows, so we need polling
+      // to detect changes made by EmulatorJS in the same tab
+      controlBindingsIntervalRef.current = setInterval(() => {
+        // Log all localStorage keys that start with 'ejs' to debug
+        const allKeys = Object.keys(localStorage).filter(k => k.startsWith('ejs'));
+        console.log('[ControlBindings] All ejs localStorage keys:', allKeys);
 
-      const settingsStr = localStorage.getItem(localStorageKey);
-      console.log('[ControlBindings] Polling localStorage key:', localStorageKey, 'Value:', settingsStr?.substring(0, 100));
-      if (settingsStr) {
-        try {
-          const settings = JSON.parse(settingsStr);
-          const currentBindings = settings.controlSettings;
-          const bindingsStr = currentBindings ? JSON.stringify(currentBindings) : null;
-          console.log('[ControlBindings] Extracted controlSettings:', bindingsStr?.substring(0, 100), 'Last known:', lastKnownBindingsRef.current?.substring(0, 100));
-          if (bindingsStr && bindingsStr !== lastKnownBindingsRef.current) {
-            console.log('[ControlBindings] Detected change, saving to backend:', currentBindings);
-            saveControlBindings(currentBindings).then(() => {
-              console.log('[ControlBindings] Successfully saved to backend');
-            }).catch(err => {
-              console.error('[ControlBindings] Failed to save control bindings:', err);
+        const settingsStr = localStorage.getItem(localStorageKey);
+        console.log('[ControlBindings] Polling localStorage key:', localStorageKey, 'Value:', settingsStr?.substring(0, 100));
+        if (settingsStr) {
+          try {
+            const settings = JSON.parse(settingsStr);
+            const currentBindings = settings.controlSettings;
+            const bindingsStr = currentBindings ? JSON.stringify(currentBindings) : null;
+            console.log('[ControlBindings] Extracted controlSettings:', bindingsStr?.substring(0, 100), 'Last known:', lastKnownBindingsRef.current?.substring(0, 100));
+            if (bindingsStr && bindingsStr !== lastKnownBindingsRef.current) {
+              console.log('[ControlBindings] Detected change, saving to backend:', currentBindings);
+              saveControlBindings(currentBindings).then(() => {
+                console.log('[ControlBindings] Successfully saved to backend');
+              }).catch(err => {
+                console.error('[ControlBindings] Failed to save control bindings:', err);
+              });
+              lastKnownBindingsRef.current = bindingsStr;
+            }
+          } catch (err) {
+            console.error('[ControlBindings] Failed to parse settings:', err);
+          }
+        }
+      }, 20000); // Check every 20 seconds
+
+      // Remove any leftover script from a previous load
+      if (scriptRef.current) {
+        scriptRef.current.remove();
+        scriptRef.current = null;
+      }
+
+      // Intercept keyboard shortcuts (1,2,3) and prevent arrow keys from scrolling the page.
+      // When users map game controls to arrow keys, the browser scrolls the page by default.
+      const blockShortcuts = (e: KeyboardEvent) => {
+        if (['1', '2', '3', 'Fn', 'Function'].includes(e.key)) {
+          e.stopImmediatePropagation();
+        }
+        // Prevent arrow key scrolling when the emulator has focus.
+        // The emulator's own keydown handler still receives the event
+        // via normal propagation — we just stop the browser's default scroll.
+        if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key)) {
+          e.preventDefault();
+        }
+        // Toggle overlay on Tab key
+        if (e.key === 'Tab') {
+          e.preventDefault();
+          setShowOverlay(prev => !prev);
+        }
+      };
+      document.addEventListener('keydown', blockShortcuts, true);
+
+      // Add beforeunload confirmation to prevent accidental tab closure
+      const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+        e.preventDefault();
+        e.returnValue = ''; // Chrome requires returnValue to be set
+      };
+      window.addEventListener('beforeunload', handleBeforeUnload);
+
+      // Disable the right-click context menu entirely for the emulator
+      const blockContextMenu = (e: MouseEvent) => {
+        const target = e.target as HTMLElement;
+        if (target.closest('#game') || target.closest('.ejs_context_menu')) {
+          // Prevent the browser's native context menu but allow the emulator's
+          // custom contextmenu event handlers to receive the event.
+          e.preventDefault();
+        }
+      };
+      document.addEventListener('contextmenu', blockContextMenu, true);
+
+      window.EJS_player = '#game';
+      window.EJS_core = core; // Use 'gba' not 'mgba' to match EmulatorJS localStorage keys
+      window.EJS_gameUrl = romUrl;
+      window.EJS_pathtodata = '/emulatorjs/';
+      window.EJS_startOnLoaded = true;
+      window.EJS_stopOnUnfocused = false;
+      window.EJS_pauseOnBlur = false;
+      window.EJS_language = 'en-US';
+      window.EJS_gameName = gameName;
+      // Emulator loader expects `window.EJS_Buttons` (capital B).
+      // Keep `EJS_buttons` for backward compatibility.
+      window.EJS_Buttons = window.EJS_buttons = {
+        playPause: false,
+        restart: false,
+        saveState: false,
+        loadState: false,
+        quickSave: false,
+        quickLoad: false,
+        saveSavFiles: false,
+        loadSavFiles: false,
+        screenshot: true, // re-enable screenshot in the emulator context menu
+        gamepad: true,      // Keep custom controls visible
+        settings: false,     // Hide the gear icon
+        contextMenu: false,  // Hide the hamburger menu
+        cheat: false,
+        cacheManager: false,
+        netplay: false,
+        volume: false,
+        fullscreen: false,
+        exitEmulation: false,
+        diskButton: false,
+      };
+
+      window.EJS_hideSettings = [
+        'fastForward',
+        'slowMotion',
+        'rewindEnabled',
+        'save-state-slot',
+        'save-state-location',
+        'save-save-interval',
+      ];
+
+      // Hook saveSaveFiles once the emulator is ready — fires on toolbar save
+      // button, tab background/unload, and our 30-second auto-sync interval.
+      window.EJS_ready = () => {
+        window.EJS_emulator?.on('saveSaveFiles', (rawData) => {
+          const bytes = rawData as Uint8Array | null | undefined;
+          if (!bytes || !(bytes instanceof Uint8Array) || bytes.length === 0) return;
+          onRawSaveBytesRef.current?.(bytes);
+
+          // Sync Emscripten FS to IndexedDB
+          try {
+            window.EJS_emulator?.gameManager?.FS?.syncfs(false, (err: any) => {
+              if (err) console.error('Error syncing IDBFS:', err);
+              else console.log('Successfully synced IDBFS to browser IndexedDB.');
             });
-            lastKnownBindingsRef.current = bindingsStr;
+          } catch (e) {
+            console.error('Failed to run syncfs:', e);
           }
-        } catch (err) {
-          console.error('[ControlBindings] Failed to parse settings:', err);
+        });
+
+        // Whenever a state is loaded via quickLoad (keyboard shortcut '2'),
+        // notify other players in the race.
+        const gameMgr = window.EJS_emulator?.gameManager;
+        if (gameMgr && typeof gameMgr.quickLoad === 'function') {
+          const origQuickLoad = gameMgr.quickLoad.bind(gameMgr);
+          gameMgr.quickLoad = (slot?: number) => {
+            origQuickLoad(slot);
+            postStateLoadRef.current?.();
+          };
         }
-      }
-    }, 20000); // Check every 20 seconds
+      };
 
-    // Remove any leftover script from a previous load
-    if (scriptRef.current) {
-      scriptRef.current.remove();
-      scriptRef.current = null;
-    }
-
-    // Intercept keyboard shortcuts (1,2,3) and prevent arrow keys from scrolling the page.
-    // When users map game controls to arrow keys, the browser scrolls the page by default.
-    const blockShortcuts = (e: KeyboardEvent) => {
-      if (['1', '2', '3', 'Fn', 'Function'].includes(e.key)) {
-        e.stopImmediatePropagation();
-      }
-      // Prevent arrow key scrolling when the emulator has focus.
-      // The emulator's own keydown handler still receives the event
-      // via normal propagation — we just stop the browser's default scroll.
-      if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key)) {
-        e.preventDefault();
-      }
-      // Toggle overlay on Tab key
-      if (e.key === 'Tab') {
-        e.preventDefault();
-        setShowOverlay(prev => !prev);
-      }
-    };
-    document.addEventListener('keydown', blockShortcuts, true);
-
-    // Add beforeunload confirmation to prevent accidental tab closure
-    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
-      e.preventDefault();
-      e.returnValue = ''; // Chrome requires returnValue to be set
-    };
-    window.addEventListener('beforeunload', handleBeforeUnload);
-
-    // Disable the right-click context menu entirely for the emulator
-    const blockContextMenu = (e: MouseEvent) => {
-      const target = e.target as HTMLElement;
-      if (target.closest('#game') || target.closest('.ejs_context_menu')) {
-        // Prevent the browser's native context menu but allow the emulator's
-        // custom contextmenu event handlers to receive the event.
-        e.preventDefault();
-      }
-    };
-    document.addEventListener('contextmenu', blockContextMenu, true);
-
-    window.EJS_player = '#game';
-    window.EJS_core = core; // Use 'gba' not 'mgba' to match EmulatorJS localStorage keys
-    window.EJS_gameUrl = romUrl;
-    window.EJS_pathtodata = '/emulatorjs/';
-    window.EJS_startOnLoaded = true;
-    window.EJS_stopOnUnfocused = false;
-    window.EJS_pauseOnBlur = false;
-    window.EJS_language = 'en-US';
-    window.EJS_gameName = gameName;
-    // Emulator loader expects `window.EJS_Buttons` (capital B).
-    // Keep `EJS_buttons` for backward compatibility.
-    window.EJS_Buttons = window.EJS_buttons = {
-      playPause: false,
-      restart: false,
-      saveState: false,
-      loadState: false,
-      quickSave: false,
-      quickLoad: false,
-      saveSavFiles: false,
-      loadSavFiles: false,
-      screenshot: true, // re-enable screenshot in the emulator context menu
-      gamepad: true,      // Keep custom controls visible
-      settings: false,     // Hide the gear icon
-      contextMenu: false,  // Hide the hamburger menu
-      cheat: false,
-      cacheManager: false,
-      netplay: false,
-      volume: false,
-      fullscreen: false,
-      exitEmulation: false,
-      diskButton: false,
-    };
-
-    window.EJS_hideSettings = [
-      'fastForward',
-      'slowMotion',
-      'rewindEnabled',
-      'save-state-slot',
-      'save-state-location',
-      'save-save-interval',
-    ];
-
-    // Hook saveSaveFiles once the emulator is ready — fires on toolbar save
-    // button, tab background/unload, and our 30-second auto-sync interval.
-    window.EJS_ready = () => {
-      window.EJS_emulator?.on('saveSaveFiles', (rawData) => {
-        const bytes = rawData as Uint8Array | null | undefined;
-        if (!bytes || !(bytes instanceof Uint8Array) || bytes.length === 0) return;
-        onRawSaveBytesRef.current?.(bytes);
-
-        // Sync Emscripten FS to IndexedDB
-        try {
-          window.EJS_emulator?.gameManager?.FS?.syncfs(false, (err: any) => {
-            if (err) console.error('Error syncing IDBFS:', err);
-            else console.log('Successfully synced IDBFS to browser IndexedDB.');
-          });
-        } catch (e) {
-          console.error('Failed to run syncfs:', e);
-        }
-      });
-
-      // Whenever a state is loaded via quickLoad (keyboard shortcut '2'),
-      // notify other players in the race.
-      const gameMgr = window.EJS_emulator?.gameManager;
-      if (gameMgr && typeof gameMgr.quickLoad === 'function') {
-        const origQuickLoad = gameMgr.quickLoad.bind(gameMgr);
-        gameMgr.quickLoad = (slot?: number) => {
-          origQuickLoad(slot);
-          postStateLoadRef.current?.();
-        };
-      }
-    };
-
-    // Start the 30-second auto-sync once the game is actually running.
-    // Calling saveSaveFiles() before the game starts can throw, so we wait
-    // for the "start" event before scheduling the interval. 
-    // We use a "double-tap" save to fix mgba core buffer lag.
-    window.EJS_onGameStart = () => {
-      syncIntervalRef.current = setInterval(() => {
-        window.EJS_emulator?.gameManager?.saveSaveFiles();
-        setTimeout(() => {
+      // Start the 30-second auto-sync once the game is actually running.
+      // Calling saveSaveFiles() before the game starts can throw, so we wait
+      // for the "start" event before scheduling the interval.
+      // We use a "double-tap" save to fix mgba core buffer lag.
+      window.EJS_onGameStart = () => {
+        syncIntervalRef.current = setInterval(() => {
           window.EJS_emulator?.gameManager?.saveSaveFiles();
-        }, 200);
-      }, 10_000);
+          setTimeout(() => {
+            window.EJS_emulator?.gameManager?.saveSaveFiles();
+          }, 200);
+        }, 10_000);
 
-      // Autosave state every 60 seconds
-      stateIntervalRef.current = setInterval(() => {
-        try {
-          const stateData = window.EJS_emulator?.gameManager?.getState();
-          if (stateData && stateData.length > 0) {
-            const key = `state_${draftId || 'standalone'}`;
-            const timeKey = `state_time_${draftId || 'standalone'}`;
-            void setStoredSave(key, stateData);
-            const now = new Date();
-            localStorage.setItem(timeKey, now.toISOString());
-            setHasAutosave(true);
-            setAutosaveTime(now.toLocaleTimeString());
-            console.log('Autosaved emulator state successfully.');
+        // Autosave state every 60 seconds
+        stateIntervalRef.current = setInterval(() => {
+          try {
+            const stateData = window.EJS_emulator?.gameManager?.getState();
+            if (stateData && stateData.length > 0) {
+              const key = `state_${draftId || 'standalone'}`;
+              const timeKey = `state_time_${draftId || 'standalone'}`;
+              void setStoredSave(key, stateData);
+              const now = new Date();
+              localStorage.setItem(timeKey, now.toISOString());
+              setHasAutosave(true);
+              setAutosaveTime(now.toLocaleTimeString());
+              console.log('Autosaved emulator state successfully.');
+            }
+          } catch (e) {
+            console.warn('Failed to capture autosave state:', e);
           }
-        } catch (e) {
-          console.warn('Failed to capture autosave state:', e);
-        }
-      }, 60_000);
+        }, 60_000);
+      };
+
+      // Wipe the core cache before each load so stale decompressed entries
+      // from earlier failed attempts never cause "EJS_Runtime is not defined".
+      const deleteDb = (name: string) =>
+        new Promise<void>((res) => {
+          const req = indexedDB.deleteDatabase(name);
+          req.onsuccess = () => res();
+          req.onerror = () => res();
+          req.onblocked = () => res();
+        });
+
+      deleteDb('EmulatorJS-core').then(() => {
+        const script = document.createElement('script');
+        script.src = '/emulatorjs/loader.js';
+        document.body.appendChild(script);
+        scriptRef.current = script;
+      });
     };
 
-    // Wipe the core cache before each load so stale decompressed entries
-    // from earlier failed attempts never cause "EJS_Runtime is not defined".
-    const deleteDb = (name: string) =>
-      new Promise<void>((res) => {
-        const req = indexedDB.deleteDatabase(name);
-        req.onsuccess = () => res();
-        req.onerror = () => res();
-        req.onblocked = () => res();
-      });
-
-    deleteDb('EmulatorJS-core').then(() => {
-      const script = document.createElement('script');
-      script.src = '/emulatorjs/loader.js';
-      document.body.appendChild(script);
-      scriptRef.current = script;
-    });
+    initializeEmulator();
 
     return () => {
       document.removeEventListener('keydown', blockShortcuts, true);
