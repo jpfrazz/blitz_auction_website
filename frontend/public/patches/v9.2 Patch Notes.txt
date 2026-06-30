@@ -39,12 +39,12 @@ Fixed the Nathan's Lair Warp point existing before the trap door tile appears
 QoL
 -----------------------------------------------
 
-"Weather Continues" messages now display how many turns have passed of the weather
+"Weather Continues" messages now display how many turns have passed of that weather
 //For example, instead of just "Rain continues to fall," you'll see "Rain continues to fall for the first turn" at the end of a turn in which you used Rain Dance.
 
 Right/Left Scrolling on Shop Menus
 //Now, like the Notebook's Pokémon menu in the player's room, shop menus can jump up or down the menu by pressing Left/Right
 
-Hypno added to Nathan's Lair
+Hypno NPC added to Nathan's Lair
 //Talk to it to advance the time by 8 hours
 //Useful for adjusting for day/night evolutions while testing
