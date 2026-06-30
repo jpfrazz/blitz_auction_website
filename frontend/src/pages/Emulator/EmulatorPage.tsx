@@ -267,6 +267,8 @@ const EmulatorPage: React.FC = () => {
   const wsRef = useRef<WebSocket | null>(null);
   const reconnectCountRef = useRef(0);
   const reconnectTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const controlBindingsIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const lastKnownBindingsRef = useRef<string | null>(null);
 
   // Stable ref so window callbacks always see the latest handler
   const onRawSaveBytesRef = useRef<((bytes: Uint8Array) => void) | null>(null);
@@ -779,22 +781,24 @@ const EmulatorPage: React.FC = () => {
 
     loadControlBindings();
 
-    // Listen for control binding changes and save to backend
-    const handleStorageChange = (e: StorageEvent) => {
-      if (e.key === 'ejs_controlSettings' && e.newValue) {
+    // Poll localStorage for control binding changes and save to backend
+    // The storage event only fires for changes from other tabs/windows, so we need polling
+    // to detect changes made by EmulatorJS in the same tab
+    controlBindingsIntervalRef.current = setInterval(() => {
+      const currentBindings = localStorage.getItem('ejs_controlSettings');
+      if (currentBindings && currentBindings !== lastKnownBindingsRef.current) {
         try {
-          const bindings = JSON.parse(e.newValue);
+          const bindings = JSON.parse(currentBindings);
           console.log('Saving control bindings to backend:', bindings);
           saveControlBindings(bindings).catch(err => {
             console.error('Failed to save control bindings:', err);
           });
+          lastKnownBindingsRef.current = currentBindings;
         } catch (err) {
           console.error('Failed to parse control bindings:', err);
         }
       }
-    };
-
-    window.addEventListener('storage', handleStorageChange);
+    }, 20000); // Check every 20 seconds
 
     // Remove any leftover script from a previous load
     if (scriptRef.current) {
@@ -968,7 +972,6 @@ const EmulatorPage: React.FC = () => {
       document.removeEventListener('keydown', blockShortcuts, true);
       document.removeEventListener('contextmenu', blockContextMenu, true);
       window.removeEventListener('beforeunload', handleBeforeUnload);
-      window.removeEventListener('storage', handleStorageChange);
       scriptRef.current?.remove();
       scriptRef.current = null;
       window.EJS_ready = undefined;
@@ -980,6 +983,10 @@ const EmulatorPage: React.FC = () => {
       if (stateIntervalRef.current !== null) {
         clearInterval(stateIntervalRef.current);
         stateIntervalRef.current = null;
+      }
+      if (controlBindingsIntervalRef.current !== null) {
+        clearInterval(controlBindingsIntervalRef.current);
+        controlBindingsIntervalRef.current = null;
       }
     };
   }, [romUrl, romName]);
