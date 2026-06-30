@@ -829,6 +829,16 @@ const EmulatorPage: React.FC = () => {
           muted: false
         };
         console.log('[ControlBindings] Setting EJS_settings:', (window as any).EJS_settings);
+
+        // Try setting virtual gamepad controls directly
+        (window as any).EJS_virtualGamepad = {
+          controls: bindings
+        };
+        console.log('[ControlBindings] Setting EJS_virtualGamepad:', (window as any).EJS_virtualGamepad);
+
+        // Try setting controls directly
+        (window as any).EJS_controls = bindings;
+        console.log('[ControlBindings] Setting EJS_controls:', (window as any).EJS_controls);
       }
 
       // Poll localStorage for control binding changes and save to backend
