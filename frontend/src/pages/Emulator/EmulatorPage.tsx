@@ -799,6 +799,10 @@ const EmulatorPage: React.FC = () => {
     // The storage event only fires for changes from other tabs/windows, so we need polling
     // to detect changes made by EmulatorJS in the same tab
     controlBindingsIntervalRef.current = setInterval(() => {
+      // Log all localStorage keys that start with 'ejs' to debug
+      const allKeys = Object.keys(localStorage).filter(k => k.startsWith('ejs'));
+      console.log('[ControlBindings] All ejs localStorage keys:', allKeys);
+
       const settingsStr = localStorage.getItem(localStorageKey);
       console.log('[ControlBindings] Polling localStorage key:', localStorageKey, 'Value:', settingsStr?.substring(0, 100));
       if (settingsStr) {
