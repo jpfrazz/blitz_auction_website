@@ -801,17 +801,26 @@ const EmulatorPage: React.FC = () => {
         if (bindings && typeof bindings === 'object') {
           lastKnownBindingsRef.current = JSON.stringify(bindings);
           console.log('[ControlBindings] Stored bindings in ref, will apply after EmulatorJS initializes');
+          return bindings;
         } else {
           console.log('[ControlBindings] No bindings found or invalid format');
+          return null;
         }
       } catch (err) {
         console.error('[ControlBindings] Failed to load control bindings:', err);
+        return null;
       }
     };
 
     // Load bindings and then initialize emulator
-    loadControlBindings().then(() => {
+    loadControlBindings().then((bindings) => {
       console.log('[ControlBindings] Bindings loaded, initializing emulator');
+
+      // Set control settings directly in EmulatorJS configuration
+      if (bindings) {
+        console.log('[ControlBindings] Setting EJS_controlSettings:', bindings);
+        (window as any).EJS_controlSettings = bindings;
+      }
 
       // Poll localStorage for control binding changes and save to backend
       // The storage event only fires for changes from other tabs/windows, so we need polling
@@ -938,33 +947,38 @@ const EmulatorPage: React.FC = () => {
         'save-save-interval',
       ];
 
+      // Set callbacks BEFORE loading the emulator script
       // Hook saveSaveFiles once the emulator is ready — fires on toolbar save
       // button, tab background/unload, and our 30-second auto-sync interval.
       window.EJS_ready = () => {
         console.log('[ControlBindings] EmulatorJS ready, applying saved bindings');
 
-        // Apply saved bindings to the localStorage key EmulatorJS just created
+        // Apply saved bindings directly to the emulator instance
         if (lastKnownBindingsRef.current) {
           const bindings = JSON.parse(lastKnownBindingsRef.current);
-          const settings = {
-            controlSettings: bindings,
-            volume: 1,
-            muted: false
-          };
+          console.log('[ControlBindings] Applying bindings to emulator:', bindings);
 
-          // Find the localStorage key EmulatorJS just created
-          const allKeys = Object.keys(localStorage).filter(k => k.startsWith('ejs-') && k.endsWith('-settings'));
-          const matchingKeys = allKeys.filter(k => k.startsWith(`ejs-${gameId}-${core}-`));
-
-          console.log('[ControlBindings] Applying bindings to keys:', matchingKeys);
-          matchingKeys.forEach(key => {
-            localStorage.setItem(key, JSON.stringify(settings));
-          });
-
-          // Also set the global ejs-settings key
-          localStorage.setItem('ejs-settings', JSON.stringify({ volume: 1, muted: false }));
-
-          console.log('[ControlBindings] Successfully applied bindings');
+          // Try to set controls directly on the emulator
+          setTimeout(() => {
+            const gameMgr = window.EJS_emulator?.gameManager;
+            if (gameMgr) {
+              console.log('[ControlBindings] Game manager available, attempting to set controls');
+              // Try various methods to set controls
+              if (typeof (gameMgr as any).setControls === 'function') {
+                (gameMgr as any).setControls(bindings);
+                console.log('[ControlBindings] Called setControls');
+              }
+              if (typeof (gameMgr as any).controls === 'object') {
+                (gameMgr as any).controls = bindings;
+                console.log('[ControlBindings] Set controls property directly');
+              }
+              // Try to access the virtual gamepad and set controls there
+              if (typeof (gameMgr as any).virtualGamepad === 'object') {
+                (gameMgr as any).virtualGamepad.controls = bindings;
+                console.log('[ControlBindings] Set virtualGamepad controls');
+              }
+            }
+          }, 500);
         }
 
         window.EJS_emulator?.on('saveSaveFiles', (rawData) => {
@@ -1000,6 +1014,31 @@ const EmulatorPage: React.FC = () => {
       // for the "start" event before scheduling the interval.
       // We use a "double-tap" save to fix mgba core buffer lag.
       window.EJS_onGameStart = () => {
+        console.log('[ControlBindings] Game started, applying saved bindings');
+
+        // Apply saved bindings when the game starts
+        if (lastKnownBindingsRef.current) {
+          const bindings = JSON.parse(lastKnownBindingsRef.current);
+          console.log('[ControlBindings] Applying bindings on game start:', bindings);
+
+          const gameMgr = window.EJS_emulator?.gameManager;
+          if (gameMgr) {
+            // Try to set controls directly
+            if (typeof (gameMgr as any).setControls === 'function') {
+              (gameMgr as any).setControls(bindings);
+              console.log('[ControlBindings] Called setControls on game start');
+            }
+            if (typeof (gameMgr as any).controls === 'object') {
+              (gameMgr as any).controls = bindings;
+              console.log('[ControlBindings] Set controls property on game start');
+            }
+            if (typeof (gameMgr as any).virtualGamepad === 'object') {
+              (gameMgr as any).virtualGamepad.controls = bindings;
+              console.log('[ControlBindings] Set virtualGamepad controls on game start');
+            }
+          }
+        }
+
         syncIntervalRef.current = setInterval(() => {
           window.EJS_emulator?.gameManager?.saveSaveFiles();
           setTimeout(() => {
