@@ -272,6 +272,7 @@ const EmulatorPage: React.FC = () => {
   const blockShortcutsRef = useRef<((e: KeyboardEvent) => void) | null>(null);
   const blockContextMenuRef = useRef<((e: MouseEvent) => void) | null>(null);
   const handleBeforeUnloadRef = useRef<((e: BeforeUnloadEvent) => void) | null>(null);
+  const originalSetItemRef = useRef<((key: string, value: string) => void) | null>(null);
 
   // Stable ref so window callbacks always see the latest handler
   const onRawSaveBytesRef = useRef<((bytes: Uint8Array) => void) | null>(null);
@@ -820,6 +821,43 @@ const EmulatorPage: React.FC = () => {
       if (bindings) {
         console.log('[ControlBindings] Setting EJS_controlSettings:', bindings);
         (window as any).EJS_controlSettings = bindings;
+
+        // Also pre-populate localStorage with the bindings
+        // This ensures EmulatorJS reads the custom controls when it initializes
+        const settings = {
+          controlSettings: bindings,
+          volume: 1,
+          muted: false
+        };
+
+        // Write to the standard key
+        const standardKey = `ejs-${gameId}-${core}-${gameName}-settings`;
+        localStorage.setItem(standardKey, JSON.stringify(settings));
+        console.log('[ControlBindings] Pre-populated localStorage key:', standardKey);
+
+        // Also set the global ejs-settings key
+        localStorage.setItem('ejs-settings', JSON.stringify({ volume: 1, muted: false }));
+
+        // Monkey-patch localStorage.setItem to intercept EmulatorJS writes
+        // and replace default controls with our saved bindings
+        const originalSetItem = localStorage.setItem;
+        originalSetItemRef.current = originalSetItem;
+        localStorage.setItem = function(key: string, value: string) {
+          if (key.startsWith(`ejs-${gameId}-${core}-`) && key.endsWith('-settings')) {
+            try {
+              const parsed = JSON.parse(value);
+              if (parsed.controlSettings) {
+                console.log('[ControlBindings] Intercepting localStorage write to', key);
+                parsed.controlSettings = bindings;
+                value = JSON.stringify(parsed);
+                console.log('[ControlBindings] Replaced default controls with saved bindings');
+              }
+            } catch (e) {
+              // If parsing fails, just use the original value
+            }
+          }
+          return originalSetItem.call(this, key, value);
+        };
       }
 
       // Poll localStorage for control binding changes and save to backend
@@ -1109,6 +1147,10 @@ const EmulatorPage: React.FC = () => {
       if (controlBindingsIntervalRef.current !== null) {
         clearInterval(controlBindingsIntervalRef.current);
         controlBindingsIntervalRef.current = null;
+      }
+      // Restore original localStorage.setItem
+      if (originalSetItemRef.current) {
+        localStorage.setItem = originalSetItemRef.current;
       }
     };
   }, [romUrl, romName]);
