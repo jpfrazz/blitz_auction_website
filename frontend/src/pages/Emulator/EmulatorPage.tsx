@@ -769,13 +769,17 @@ const EmulatorPage: React.FC = () => {
     const loadControlBindings = async () => {
       try {
         const bindings = await fetchControlBindings();
+        console.log('[ControlBindings] Fetched from backend:', bindings);
         if (bindings && typeof bindings === 'object') {
-          console.log('Loaded control bindings from backend:', bindings);
+          console.log('[ControlBindings] Setting to localStorage:', bindings);
           // Store in localStorage for EmulatorJS to pick up
           localStorage.setItem('ejs_controlSettings', JSON.stringify(bindings));
+          lastKnownBindingsRef.current = JSON.stringify(bindings);
+        } else {
+          console.log('[ControlBindings] No bindings found or invalid format');
         }
       } catch (err) {
-        console.error('Failed to load control bindings:', err);
+        console.error('[ControlBindings] Failed to load control bindings:', err);
       }
     };
 
@@ -786,16 +790,19 @@ const EmulatorPage: React.FC = () => {
     // to detect changes made by EmulatorJS in the same tab
     controlBindingsIntervalRef.current = setInterval(() => {
       const currentBindings = localStorage.getItem('ejs_controlSettings');
+      console.log('[ControlBindings] Polling localStorage. Current:', currentBindings?.substring(0, 100), 'Last known:', lastKnownBindingsRef.current?.substring(0, 100));
       if (currentBindings && currentBindings !== lastKnownBindingsRef.current) {
         try {
           const bindings = JSON.parse(currentBindings);
-          console.log('Saving control bindings to backend:', bindings);
-          saveControlBindings(bindings).catch(err => {
-            console.error('Failed to save control bindings:', err);
+          console.log('[ControlBindings] Detected change, saving to backend:', bindings);
+          saveControlBindings(bindings).then(() => {
+            console.log('[ControlBindings] Successfully saved to backend');
+          }).catch(err => {
+            console.error('[ControlBindings] Failed to save control bindings:', err);
           });
           lastKnownBindingsRef.current = currentBindings;
         } catch (err) {
-          console.error('Failed to parse control bindings:', err);
+          console.error('[ControlBindings] Failed to parse control bindings:', err);
         }
       }
     }, 20000); // Check every 20 seconds
