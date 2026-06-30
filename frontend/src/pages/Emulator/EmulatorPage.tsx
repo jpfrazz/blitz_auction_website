@@ -822,6 +822,14 @@ const EmulatorPage: React.FC = () => {
         console.log('[ControlBindings] Setting EJS_controlSettings:', bindings);
         (window as any).EJS_controlSettings = bindings;
 
+        // Also set EJS_settings which may be read before localStorage
+        (window as any).EJS_settings = {
+          controlSettings: bindings,
+          volume: 1,
+          muted: false
+        };
+        console.log('[ControlBindings] Setting EJS_settings:', (window as any).EJS_settings);
+
         // Also pre-populate localStorage with the bindings
         // This ensures EmulatorJS reads the custom controls when it initializes
         const settings = {
@@ -837,27 +845,6 @@ const EmulatorPage: React.FC = () => {
 
         // Also set the global ejs-settings key
         localStorage.setItem('ejs-settings', JSON.stringify({ volume: 1, muted: false }));
-
-        // Monkey-patch localStorage.setItem to intercept EmulatorJS writes
-        // and replace default controls with our saved bindings
-        const originalSetItem = localStorage.setItem;
-        originalSetItemRef.current = originalSetItem;
-        localStorage.setItem = function(key: string, value: string) {
-          if (key.startsWith(`ejs-${gameId}-${core}-`) && key.endsWith('-settings')) {
-            try {
-              const parsed = JSON.parse(value);
-              if (parsed.controlSettings) {
-                console.log('[ControlBindings] Intercepting localStorage write to', key);
-                parsed.controlSettings = bindings;
-                value = JSON.stringify(parsed);
-                console.log('[ControlBindings] Replaced default controls with saved bindings');
-              }
-            } catch (e) {
-              // If parsing fails, just use the original value
-            }
-          }
-          return originalSetItem.call(this, key, value);
-        };
       }
 
       // Poll localStorage for control binding changes and save to backend
@@ -991,32 +978,40 @@ const EmulatorPage: React.FC = () => {
       window.EJS_ready = () => {
         console.log('[ControlBindings] EmulatorJS ready, applying saved bindings');
 
-        // Apply saved bindings directly to the emulator instance
+        // Apply saved bindings by finding and updating the localStorage key EmulatorJS created
         if (lastKnownBindingsRef.current) {
           const bindings = JSON.parse(lastKnownBindingsRef.current);
-          console.log('[ControlBindings] Applying bindings to emulator:', bindings);
+          console.log('[ControlBindings] Applying bindings to localStorage:', bindings);
 
-          // Try to set controls directly on the emulator
+          // Find the localStorage key EmulatorJS just created
           setTimeout(() => {
-            const gameMgr = window.EJS_emulator?.gameManager;
-            if (gameMgr) {
-              console.log('[ControlBindings] Game manager available, attempting to set controls');
-              // Try various methods to set controls
-              if (typeof (gameMgr as any).setControls === 'function') {
-                (gameMgr as any).setControls(bindings);
-                console.log('[ControlBindings] Called setControls');
+            const allKeys = Object.keys(localStorage).filter(k => k.startsWith('ejs-') && k.endsWith('-settings'));
+            const matchingKeys = allKeys.filter(k => k.startsWith(`ejs-${gameId}-${core}-`));
+            console.log('[ControlBindings] Found keys after EmulatorJS init:', matchingKeys);
+
+            matchingKeys.forEach(key => {
+              try {
+                const settingsStr = localStorage.getItem(key);
+                if (settingsStr) {
+                  const settings = JSON.parse(settingsStr);
+                  settings.controlSettings = bindings;
+                  localStorage.setItem(key, JSON.stringify(settings));
+                  console.log('[ControlBindings] Updated controlSettings in', key);
+                }
+              } catch (e) {
+                console.error('[ControlBindings] Failed to update', key, e);
               }
-              if (typeof (gameMgr as any).controls === 'object') {
-                (gameMgr as any).controls = bindings;
-                console.log('[ControlBindings] Set controls property directly');
-              }
-              // Try to access the virtual gamepad and set controls there
-              if (typeof (gameMgr as any).virtualGamepad === 'object') {
-                (gameMgr as any).virtualGamepad.controls = bindings;
-                console.log('[ControlBindings] Set virtualGamepad controls');
-              }
-            }
-          }, 500);
+            });
+
+            // Force EmulatorJS to reload settings by dispatching a storage event
+            window.dispatchEvent(new StorageEvent('storage', {
+              key: matchingKeys[0],
+              newValue: localStorage.getItem(matchingKeys[0]),
+              oldValue: null,
+              url: window.location.href,
+              storageArea: localStorage
+            }));
+          }, 100);
         }
 
         window.EJS_emulator?.on('saveSaveFiles', (rawData) => {
