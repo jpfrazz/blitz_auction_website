@@ -267,7 +267,7 @@ const PlayerSearchStatsTab: React.FC<PlayerSearchStatsTabProps> = ({
     const isExpanding = expandedTeamId !== teamId;
     setExpandedTeamId((current) => current === teamId ? null : teamId);
 
-    if (isExpanding && !bossBattleHistory.has(teamId)) {
+    if (isExpanding) {
       setBossBattleHistoryLoading(true);
       try {
         const history = await fetchBossBattleHistory(draftId, selectedPlayer?.user_id);
