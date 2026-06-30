@@ -765,7 +765,7 @@ const EmulatorPage: React.FC = () => {
   useEffect(() => {
     if (!romUrl) return;
 
-    const core = getExtension(romName ?? '') === 'gba' ? 'mgba' : 'gambatte';
+    const core = getExtension(romName ?? '') === 'gba' ? 'gba' : 'gambatte';
     const gameId = 1; // Default gameId used by EmulatorJS
     const gameName = draftId || 'game';
     const localStorageKey = `ejs-${gameId}-${core}-${gameName}-settings`;
@@ -871,7 +871,7 @@ const EmulatorPage: React.FC = () => {
     document.addEventListener('contextmenu', blockContextMenu, true);
 
     window.EJS_player = '#game';
-    window.EJS_core = core;
+    window.EJS_core = core; // Use 'gba' not 'mgba' to match EmulatorJS localStorage keys
     window.EJS_gameUrl = romUrl;
     window.EJS_pathtodata = '/emulatorjs/';
     window.EJS_startOnLoaded = true;
