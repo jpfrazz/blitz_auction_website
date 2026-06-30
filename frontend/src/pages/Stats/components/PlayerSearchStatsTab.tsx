@@ -584,7 +584,7 @@ const PlayerSearchStatsTab: React.FC<PlayerSearchStatsTabProps> = ({
                                   <span>Time</span>
                                 </div>
                                 {bossBattleHistory.get(team.team_id)?.length === 0 && (
-                                  <div className="match-draft-details-empty">No boss battles recorded.</div>
+                                  <div className="match-draft-details-empty">No boss battles recorded</div>
                                 )}
                                 {bossBattleHistory.get(team.team_id)?.map((battle, idx) => (
                                   <div className="match-draft-details-row" key={idx}>
