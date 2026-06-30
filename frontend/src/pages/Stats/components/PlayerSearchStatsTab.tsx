@@ -545,70 +545,75 @@ const PlayerSearchStatsTab: React.FC<PlayerSearchStatsTabProps> = ({
                       </button>
 
                       {isExpanded && (
-                        <div className="match-draft-details">
-                          <div className="match-draft-details-header">
-                            <span>Pokemon</span>
-                            <span>Paid</span>
-                          </div>
-                          {auctions.length === 0 && (
-                            <div className="match-draft-details-empty">No Pokemon won in this draft.</div>
-                          )}
-                          {auctions.map((auction) => (
-                            <div className="match-draft-details-row" key={auction.auction_id}>
-                              <div className="match-draft-details-pokemon">
-                                <img
-                                  src={`/MiniIcons/${formatPokemonName(auction.name)}.png`}
-                                  alt={auction.name}
-                                  onError={(ev) => {
-                                    (ev.currentTarget as HTMLImageElement).style.display = 'none';
-                                  }}
-                                />
-                                <span>{getPokemonLabel(auction.name, auction.form)}</span>
-                              </div>
-                              <span className="match-draft-details-cost">${(auction.winning_bid ?? 0).toLocaleString()}</span>
+                        <div className="match-draft-details" style={{ display: 'flex', gap: '1rem' }}>
+                          {/* Pokemon Section */}
+                          <div style={{ flex: 1 }}>
+                            <div className="match-draft-details-header">
+                              <span>Pokemon</span>
+                              <span>Paid</span>
                             </div>
-                          ))}
-
-                          {/* Boss Battle History */}
-                          {bossBattleHistoryLoading && (
-                            <div className="match-draft-details-empty">Loading boss battles...</div>
-                          )}
-                          {!bossBattleHistoryLoading && bossBattleHistory.has(team.team_id) && (
-                            <>
-                              <div className="match-draft-details-header" style={{ marginTop: '1rem' }}>
-                                <span>Boss Battles</span>
-                                <span>Time</span>
-                              </div>
-                              {bossBattleHistory.get(team.team_id)?.length === 0 && (
-                                <div className="match-draft-details-empty">No boss battles recorded.</div>
-                              )}
-                              {bossBattleHistory.get(team.team_id)?.map((battle, idx) => (
-                                <div className="match-draft-details-row" key={idx}>
-                                  <div className="match-draft-details-pokemon">
-                                    <span className={battle.is_loss ? 'loss' : 'win'}>
-                                      {getTrainerNameById(battle.trainer_id, battle.version)}
-                                    </span>
-                                  </div>
-                                  <span className="match-draft-details-cost">
-                                    {battle.hours}h {battle.minutes}m {battle.seconds}s
-                                  </span>
+                            {auctions.length === 0 && (
+                              <div className="match-draft-details-empty">No Pokemon won in this draft.</div>
+                            )}
+                            {auctions.map((auction) => (
+                              <div className="match-draft-details-row" key={auction.auction_id}>
+                                <div className="match-draft-details-pokemon">
+                                  <img
+                                    src={`/MiniIcons/${formatPokemonName(auction.name)}.png`}
+                                    alt={auction.name}
+                                    onError={(ev) => {
+                                      (ev.currentTarget as HTMLImageElement).style.display = 'none';
+                                    }}
+                                  />
+                                  <span>{getPokemonLabel(auction.name, auction.form)}</span>
                                 </div>
-                              ))}
+                                <span className="match-draft-details-cost">${(auction.winning_bid ?? 0).toLocaleString()}</span>
+                              </div>
+                            ))}
+                          </div>
 
-                              {/* Run Result */}
-                              {(() => {
-                                const runResult = getRunResult(bossBattleHistory.get(team.team_id) || []);
-                                if (!runResult) return null;
-                                return (
-                                  <div className="match-run-result" style={{ marginTop: '1rem' }}>
-                                    <span className={runResult.isWin ? 'win' : 'loss'}>
-                                      {runResult.result} {runResult.trainer}!
+                          {/* Boss Battle History Section */}
+                          <div style={{ flex: 1 }}>
+                            {bossBattleHistoryLoading && (
+                              <div className="match-draft-details-empty">Loading boss battles...</div>
+                            )}
+                            {!bossBattleHistoryLoading && bossBattleHistory.has(team.team_id) && (
+                              <>
+                                <div className="match-draft-details-header">
+                                  <span>Boss Battles</span>
+                                  <span>Time</span>
+                                </div>
+                                {bossBattleHistory.get(team.team_id)?.length === 0 && (
+                                  <div className="match-draft-details-empty">No boss battles recorded.</div>
+                                )}
+                                {bossBattleHistory.get(team.team_id)?.map((battle, idx) => (
+                                  <div className="match-draft-details-row" key={idx}>
+                                    <div className="match-draft-details-pokemon">
+                                      <span className={battle.is_loss ? 'loss' : 'win'}>
+                                        {getTrainerNameById(battle.trainer_id, battle.version)}
+                                      </span>
+                                    </div>
+                                    <span className="match-draft-details-cost">
+                                      {battle.hours}h {battle.minutes}m {battle.seconds}s
                                     </span>
                                   </div>
-                                );
-                              })()}
-                            </>
-                          )}
+                                ))}
+
+                                {/* Run Result */}
+                                {(() => {
+                                  const runResult = getRunResult(bossBattleHistory.get(team.team_id) || []);
+                                  if (!runResult) return null;
+                                  return (
+                                    <div className="match-run-result" style={{ marginTop: '1rem' }}>
+                                      <span className={runResult.isWin ? 'win' : 'loss'}>
+                                        {runResult.result} {runResult.trainer}!
+                                      </span>
+                                    </div>
+                                  );
+                                })()}
+                              </>
+                            )}
+                          </div>
                         </div>
                       )}
                     </div>

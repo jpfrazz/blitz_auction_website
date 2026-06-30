@@ -411,6 +411,9 @@ export function parseSaveFile(
   let bossFightIndex = 0;
   const gymLeaderIds = [265, 855, 266, 267, 268, 269, 270, 271, 272]; // Roxanne, Viola, Brawly, Wattson, Flannery, Norman, Winona, Tate & Liza, Juan & Wallace
 
+  // Use a Set to track seen entries and prevent duplicates
+  const seenEntries = new Set<string>();
+
   if (sectionOffsets[0] !== undefined) {
     const baseOffset = sectionOffsets[0] + TRAINER_CARD_WINS_SECTION0_OFFSET;
 
@@ -434,6 +437,14 @@ export function parseSaveFile(
         if (hours === 0 && minutes === 0 && seconds === 0) {
           continue;
         }
+
+        // Create a unique key for this entry to detect duplicates
+        const entryKey = `${actualTrainerId}-${hours}-${minutes}-${seconds}-${isLoss}`;
+        if (seenEntries.has(entryKey)) {
+          console.log(`[SaveParser] Skipping duplicate entry: ${entryKey}`);
+          continue;
+        }
+        seenEntries.add(entryKey);
 
         // Assign version number based on overall boss fight index for gym leaders
         let version: number | undefined;
