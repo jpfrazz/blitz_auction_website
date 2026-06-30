@@ -1009,7 +1009,7 @@ pub async fn post_player_save(
     Path(draft_id): Path<String>,
     State(state): State<ServerState>,
     Json(save_data): Json<crate::messages::SaveData>,
-) -> Result<(), AppError> {
+) -> Result<Json<serde_json::Value>, AppError> {
     let Some(user) = auth_session.user else {
         return Err((StatusCode::FORBIDDEN, "user is not logged in".to_string()));
     };
