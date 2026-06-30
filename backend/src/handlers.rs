@@ -1051,7 +1051,7 @@ pub async fn post_player_save(
     .fetch_optional(&state.db_pool)
     .await;
 
-    if let Ok(Some(row)) = team_row {
+    let boss_battles_saved = if let Ok(Some(row)) = team_row {
         let team_id: i64 = row.get("team_id");
 
         // Delete existing boss battle history for this team/draft
@@ -1064,8 +1064,9 @@ pub async fn post_player_save(
         .await;
 
         // Insert new boss battle records
+        let mut count = 0;
         for win in &save_data.trainer_card_wins {
-            let _ = sqlx::query(
+            let result = sqlx::query(
                 "INSERT INTO boss_battle_history (team_id, draft_id, trainer_id, version, hours, minutes, seconds, is_loss)
                  VALUES ($1, $2, $3, $4, $5, $6, $7, $8)"
             )
@@ -1079,8 +1080,14 @@ pub async fn post_player_save(
             .bind(win.is_loss)
             .execute(&state.db_pool)
             .await;
+            if result.is_ok() {
+                count += 1;
+            }
         }
-    }
+        Some(count)
+    } else {
+        None
+    };
 
     // Broadcast to all WebSocket subscribers so other players update live
     if let Some(draft) = state.drafts.get(&draft_uuid) {
@@ -1090,7 +1097,10 @@ pub async fn post_player_save(
         });
     }
 
-    Ok(())
+    Ok(Json(serde_json::json!({
+        "boss_battles_saved": boss_battles_saved,
+        "team_found": boss_battles_saved.is_some()
+    })))
 }
 
 #[debug_handler]
