@@ -269,6 +269,9 @@ const EmulatorPage: React.FC = () => {
   const reconnectTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const controlBindingsIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const lastKnownBindingsRef = useRef<string | null>(null);
+  const blockShortcutsRef = useRef<((e: KeyboardEvent) => void) | null>(null);
+  const blockContextMenuRef = useRef<((e: MouseEvent) => void) | null>(null);
+  const handleBeforeUnloadRef = useRef<((e: BeforeUnloadEvent) => void) | null>(null);
 
   // Stable ref so window callbacks always see the latest handler
   const onRawSaveBytesRef = useRef<((bytes: Uint8Array) => void) | null>(null);
@@ -796,9 +799,8 @@ const EmulatorPage: React.FC = () => {
       }
     };
 
-    // Initialize emulator after bindings are loaded
-    const initializeEmulator = async () => {
-      await loadControlBindings();
+    // Load bindings and then initialize emulator
+    loadControlBindings().then(() => {
       console.log('[ControlBindings] Bindings loaded, initializing emulator');
 
       // Poll localStorage for control binding changes and save to backend
@@ -840,7 +842,7 @@ const EmulatorPage: React.FC = () => {
 
       // Intercept keyboard shortcuts (1,2,3) and prevent arrow keys from scrolling the page.
       // When users map game controls to arrow keys, the browser scrolls the page by default.
-      const blockShortcuts = (e: KeyboardEvent) => {
+      blockShortcutsRef.current = (e: KeyboardEvent) => {
         if (['1', '2', '3', 'Fn', 'Function'].includes(e.key)) {
           e.stopImmediatePropagation();
         }
@@ -856,17 +858,17 @@ const EmulatorPage: React.FC = () => {
           setShowOverlay(prev => !prev);
         }
       };
-      document.addEventListener('keydown', blockShortcuts, true);
+      document.addEventListener('keydown', blockShortcutsRef.current, true);
 
       // Add beforeunload confirmation to prevent accidental tab closure
-      const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      handleBeforeUnloadRef.current = (e: BeforeUnloadEvent) => {
         e.preventDefault();
         e.returnValue = ''; // Chrome requires returnValue to be set
       };
-      window.addEventListener('beforeunload', handleBeforeUnload);
+      window.addEventListener('beforeunload', handleBeforeUnloadRef.current);
 
       // Disable the right-click context menu entirely for the emulator
-      const blockContextMenu = (e: MouseEvent) => {
+      blockContextMenuRef.current = (e: MouseEvent) => {
         const target = e.target as HTMLElement;
         if (target.closest('#game') || target.closest('.ejs_context_menu')) {
           // Prevent the browser's native context menu but allow the emulator's
@@ -874,7 +876,7 @@ const EmulatorPage: React.FC = () => {
           e.preventDefault();
         }
       };
-      document.addEventListener('contextmenu', blockContextMenu, true);
+      document.addEventListener('contextmenu', blockContextMenuRef.current, true);
 
       window.EJS_player = '#game';
       window.EJS_core = core; // Use 'gba' not 'mgba' to match EmulatorJS localStorage keys
@@ -997,14 +999,18 @@ const EmulatorPage: React.FC = () => {
         document.body.appendChild(script);
         scriptRef.current = script;
       });
-    };
-
-    initializeEmulator();
+    });
 
     return () => {
-      document.removeEventListener('keydown', blockShortcuts, true);
-      document.removeEventListener('contextmenu', blockContextMenu, true);
-      window.removeEventListener('beforeunload', handleBeforeUnload);
+      if (blockShortcutsRef.current) {
+        document.removeEventListener('keydown', blockShortcutsRef.current, true);
+      }
+      if (blockContextMenuRef.current) {
+        document.removeEventListener('contextmenu', blockContextMenuRef.current, true);
+      }
+      if (handleBeforeUnloadRef.current) {
+        window.removeEventListener('beforeunload', handleBeforeUnloadRef.current);
+      }
       scriptRef.current?.remove();
       scriptRef.current = null;
       window.EJS_ready = undefined;
