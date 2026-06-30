@@ -771,7 +771,27 @@ const EmulatorPage: React.FC = () => {
     const core = getExtension(romName ?? '') === 'gba' ? 'gba' : 'gambatte';
     const gameId = 1; // Default gameId used by EmulatorJS
     const gameName = draftId || 'game';
-    const localStorageKey = `ejs-${gameId}-${core}-${gameName}-settings`;
+
+    // EmulatorJS generates localStorage keys dynamically with UUIDs
+    // We need to find the key that matches our core and gameId pattern
+    const getLocalStorageKey = () => {
+      const allKeys = Object.keys(localStorage).filter(k => k.startsWith('ejs-') && k.endsWith('-settings'));
+      // Look for keys that match our core and gameId pattern (ejs-{gameId}-{core}-*-settings)
+      const matchingKeys = allKeys.filter(k => k.startsWith(`ejs-${gameId}-${core}-`));
+      if (matchingKeys.length > 0) {
+        // Return the most recently created key (the one with the UUID pattern)
+        // or the standard key if it exists
+        const standardKey = `ejs-${gameId}-${core}-${gameName}-settings`;
+        if (matchingKeys.includes(standardKey)) return standardKey;
+        // Otherwise return the first matching key (EmulatorJS will use the most recent)
+        return matchingKeys[0];
+      }
+      // If no matching key exists, use the standard pattern
+      return `ejs-${gameId}-${core}-${gameName}-settings`;
+    };
+
+    let localStorageKey = getLocalStorageKey();
+    console.log('[ControlBindings] Initial localStorage key:', localStorageKey);
 
     // Load control bindings from backend before initializing emulator
     const loadControlBindings = async () => {
@@ -779,16 +799,26 @@ const EmulatorPage: React.FC = () => {
         const bindings = await fetchControlBindings();
         console.log('[ControlBindings] Fetched from backend:', bindings);
         if (bindings && typeof bindings === 'object') {
-          console.log('[ControlBindings] Setting to localStorage key:', localStorageKey);
           // EmulatorJS stores settings in an object with controlSettings property
           const settings = {
             controlSettings: bindings,
             volume: 1,
             muted: false
           };
-          localStorage.setItem(localStorageKey, JSON.stringify(settings));
+
+          // Write bindings to ALL matching localStorage keys
+          // EmulatorJS may use UUID-based keys, so we update all of them
+          const allKeys = Object.keys(localStorage).filter(k => k.startsWith('ejs-') && k.endsWith('-settings'));
+          const matchingKeys = allKeys.filter(k => k.startsWith(`ejs-${gameId}-${core}-`));
+
+          console.log('[ControlBindings] Writing bindings to keys:', matchingKeys);
+          matchingKeys.forEach(key => {
+            localStorage.setItem(key, JSON.stringify(settings));
+          });
+
           // Also set the global ejs-settings key
           localStorage.setItem('ejs-settings', JSON.stringify({ volume: 1, muted: false }));
+
           lastKnownBindingsRef.current = JSON.stringify(bindings);
           console.log('[ControlBindings] Successfully set bindings to localStorage');
         } else {
@@ -807,29 +837,37 @@ const EmulatorPage: React.FC = () => {
       // The storage event only fires for changes from other tabs/windows, so we need polling
       // to detect changes made by EmulatorJS in the same tab
       controlBindingsIntervalRef.current = setInterval(() => {
-        // Log all localStorage keys that start with 'ejs' to debug
-        const allKeys = Object.keys(localStorage).filter(k => k.startsWith('ejs'));
-        console.log('[ControlBindings] All ejs localStorage keys:', allKeys);
+        // Check ALL matching localStorage keys for changes
+        const allKeys = Object.keys(localStorage).filter(k => k.startsWith('ejs-') && k.endsWith('-settings'));
+        const matchingKeys = allKeys.filter(k => k.startsWith(`ejs-${gameId}-${core}-`));
+        console.log('[ControlBindings] Checking matching keys:', matchingKeys);
 
-        const settingsStr = localStorage.getItem(localStorageKey);
-        console.log('[ControlBindings] Polling localStorage key:', localStorageKey, 'Value:', settingsStr?.substring(0, 100));
-        if (settingsStr) {
-          try {
-            const settings = JSON.parse(settingsStr);
-            const currentBindings = settings.controlSettings;
-            const bindingsStr = currentBindings ? JSON.stringify(currentBindings) : null;
-            console.log('[ControlBindings] Extracted controlSettings:', bindingsStr?.substring(0, 100), 'Last known:', lastKnownBindingsRef.current?.substring(0, 100));
-            if (bindingsStr && bindingsStr !== lastKnownBindingsRef.current) {
-              console.log('[ControlBindings] Detected change, saving to backend:', currentBindings);
-              saveControlBindings(currentBindings).then(() => {
-                console.log('[ControlBindings] Successfully saved to backend');
-              }).catch(err => {
-                console.error('[ControlBindings] Failed to save control bindings:', err);
-              });
-              lastKnownBindingsRef.current = bindingsStr;
+        for (const key of matchingKeys) {
+          const settingsStr = localStorage.getItem(key);
+          if (settingsStr) {
+            try {
+              const settings = JSON.parse(settingsStr);
+              const currentBindings = settings.controlSettings;
+              const bindingsStr = currentBindings ? JSON.stringify(currentBindings) : null;
+              console.log('[ControlBindings] Key:', key, 'Extracted controlSettings:', bindingsStr?.substring(0, 100), 'Last known:', lastKnownBindingsRef.current?.substring(0, 100));
+              if (bindingsStr && bindingsStr !== lastKnownBindingsRef.current) {
+                console.log('[ControlBindings] Detected change in', key, ', saving to backend:', currentBindings);
+                saveControlBindings(currentBindings).then(() => {
+                  console.log('[ControlBindings] Successfully saved to backend');
+                }).catch(err => {
+                  console.error('[ControlBindings] Failed to save control bindings:', err);
+                });
+                lastKnownBindingsRef.current = bindingsStr;
+                // Update all matching keys with the new bindings
+                matchingKeys.forEach(k => {
+                  const updatedSettings = { ...settings, controlSettings: currentBindings };
+                  localStorage.setItem(k, JSON.stringify(updatedSettings));
+                });
+                break; // Only save once per polling interval
+              }
+            } catch (err) {
+              console.error('[ControlBindings] Failed to parse settings from', key, ':', err);
             }
-          } catch (err) {
-            console.error('[ControlBindings] Failed to parse settings:', err);
           }
         }
       }, 20000); // Check every 20 seconds
