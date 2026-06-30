@@ -829,22 +829,6 @@ const EmulatorPage: React.FC = () => {
           muted: false
         };
         console.log('[ControlBindings] Setting EJS_settings:', (window as any).EJS_settings);
-
-        // Also pre-populate localStorage with the bindings
-        // This ensures EmulatorJS reads the custom controls when it initializes
-        const settings = {
-          controlSettings: bindings,
-          volume: 1,
-          muted: false
-        };
-
-        // Write to the standard key
-        const standardKey = `ejs-${gameId}-${core}-${gameName}-settings`;
-        localStorage.setItem(standardKey, JSON.stringify(settings));
-        console.log('[ControlBindings] Pre-populated localStorage key:', standardKey);
-
-        // Also set the global ejs-settings key
-        localStorage.setItem('ejs-settings', JSON.stringify({ volume: 1, muted: false }));
       }
 
       // Poll localStorage for control binding changes and save to backend
@@ -976,43 +960,7 @@ const EmulatorPage: React.FC = () => {
       // Hook saveSaveFiles once the emulator is ready — fires on toolbar save
       // button, tab background/unload, and our 30-second auto-sync interval.
       window.EJS_ready = () => {
-        console.log('[ControlBindings] EmulatorJS ready, applying saved bindings');
-
-        // Apply saved bindings by finding and updating the localStorage key EmulatorJS created
-        if (lastKnownBindingsRef.current) {
-          const bindings = JSON.parse(lastKnownBindingsRef.current);
-          console.log('[ControlBindings] Applying bindings to localStorage:', bindings);
-
-          // Find the localStorage key EmulatorJS just created
-          setTimeout(() => {
-            const allKeys = Object.keys(localStorage).filter(k => k.startsWith('ejs-') && k.endsWith('-settings'));
-            const matchingKeys = allKeys.filter(k => k.startsWith(`ejs-${gameId}-${core}-`));
-            console.log('[ControlBindings] Found keys after EmulatorJS init:', matchingKeys);
-
-            matchingKeys.forEach(key => {
-              try {
-                const settingsStr = localStorage.getItem(key);
-                if (settingsStr) {
-                  const settings = JSON.parse(settingsStr);
-                  settings.controlSettings = bindings;
-                  localStorage.setItem(key, JSON.stringify(settings));
-                  console.log('[ControlBindings] Updated controlSettings in', key);
-                }
-              } catch (e) {
-                console.error('[ControlBindings] Failed to update', key, e);
-              }
-            });
-
-            // Force EmulatorJS to reload settings by dispatching a storage event
-            window.dispatchEvent(new StorageEvent('storage', {
-              key: matchingKeys[0],
-              newValue: localStorage.getItem(matchingKeys[0]),
-              oldValue: null,
-              url: window.location.href,
-              storageArea: localStorage
-            }));
-          }, 100);
-        }
+        console.log('[ControlBindings] EmulatorJS ready');
 
         window.EJS_emulator?.on('saveSaveFiles', (rawData) => {
           const bytes = rawData as Uint8Array | null | undefined;
