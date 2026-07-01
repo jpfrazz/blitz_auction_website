@@ -98,7 +98,13 @@ const Admin: React.FC = () => {
     setBossBattleHistoryLoading(true);
     setBossBattleHistoryError(null);
     fetch('/api/admin/boss-battle-history')
-      .then((res) => res.json())
+      .then(async (res) => {
+        if (!res.ok) {
+          const text = await res.text();
+          throw new Error(text || res.statusText);
+        }
+        return res.json();
+      })
       .then((data) => setBossBattleHistory(data))
       .catch((err: any) => setBossBattleHistoryError(err?.message ?? 'Failed to load boss battle history.'))
       .finally(() => setBossBattleHistoryLoading(false));
