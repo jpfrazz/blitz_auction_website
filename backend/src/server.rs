@@ -188,6 +188,7 @@ impl Server {
                 "/admin/users/{user_id}/update",
                 post(handlers::update_admin_discord_user),
             )
+            .route("/admin/boss-battle-history", get(handlers::get_admin_boss_battle_history))
             .route(
                 "/drafts/{draft_id}/pending-settings",
                 post(handlers::update_pending_draft_settings),

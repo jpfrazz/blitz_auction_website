@@ -16,7 +16,7 @@ import {
 import './Admin.scss';
 import { fetchCurrentUser } from '../../shared/api/draftData';
 
-type AdminTab = 'draft-results' | 'discord-users' | 'upload-pokemon-data';
+type AdminTab = 'draft-results' | 'discord-users' | 'upload-pokemon-data' | 'boss-battle-history';
 
 const Admin: React.FC = () => {
   const [hasRefereeRole, setHasRefereeRole] = useState<boolean | null>(null);
@@ -39,6 +39,10 @@ const Admin: React.FC = () => {
   const [uploadingMoves, setUploadingMoves] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [uploadSuccess, setUploadSuccess] = useState<string | null>(null);
+
+  const [bossBattleHistory, setBossBattleHistory] = useState<any[]>([]);
+  const [bossBattleHistoryLoading, setBossBattleHistoryLoading] = useState(false);
+  const [bossBattleHistoryError, setBossBattleHistoryError] = useState<string | null>(null);
 
   useEffect(() => {
     fetchCurrentUser()
@@ -86,6 +90,18 @@ const Admin: React.FC = () => {
       .then((rows) => setDiscordUsers(rows))
       .catch((err: any) => setUsersError(err?.message ?? 'Failed to load users.'))
       .finally(() => setUsersLoading(false));
+  }, [hasRefereeRole, tab]);
+
+  useEffect(() => {
+    if (!hasRefereeRole || tab !== 'boss-battle-history') return;
+
+    setBossBattleHistoryLoading(true);
+    setBossBattleHistoryError(null);
+    fetch('/api/admin/boss-battle-history')
+      .then((res) => res.json())
+      .then((data) => setBossBattleHistory(data))
+      .catch((err: any) => setBossBattleHistoryError(err?.message ?? 'Failed to load boss battle history.'))
+      .finally(() => setBossBattleHistoryLoading(false));
   }, [hasRefereeRole, tab]);
 
   const sortedTeams = useMemo(
@@ -249,6 +265,13 @@ const Admin: React.FC = () => {
                 >
                   Upload Pokemon Data
                 </button>
+                <button
+                  className={`admin-tab ${tab === 'boss-battle-history' ? 'active' : ''}`}
+                  onClick={() => setTab('boss-battle-history')}
+                  type="button"
+                >
+                  Boss Battle History
+                </button>
               </div>
 
               {tab === 'draft-results' && (
@@ -391,11 +414,11 @@ const Admin: React.FC = () => {
                   {uploadSuccess && <div className="admin-message admin-success">{uploadSuccess}</div>}
 
                   <div className="admin-controls-row" style={{ alignItems: 'flex-start', marginTop: '20px', gap: '40px' }}>
-                    
+
                     <div className="upload-section">
                       <h3>Pokémon Roster</h3>
                       <p style={{ marginBottom: '15px' }}>Upload the main <code>pokemon.csv</code> database file.</p>
-                      
+
                       <input
                         type="file"
                         accept=".csv"
@@ -404,11 +427,11 @@ const Admin: React.FC = () => {
                         onChange={(e) => handleFileUpload(e, '/api/pokemon', setUploadingPokemon)}
                         disabled={uploadingPokemon}
                       />
-                      <label 
-                        htmlFor="pokemon-csv-upload" 
+                      <label
+                        htmlFor="pokemon-csv-upload"
                         className="button"
-                        style={{ 
-                          display: 'inline-block', 
+                        style={{
+                          display: 'inline-block',
                           cursor: uploadingPokemon ? 'wait' : 'pointer',
                           opacity: uploadingPokemon ? 0.7 : 1
                         }}
@@ -420,7 +443,7 @@ const Admin: React.FC = () => {
                     <div className="upload-section">
                       <h3>Key Moves</h3>
                       <p style={{ marginBottom: '15px' }}>Upload the <code>key_moves.csv</code> file.</p>
-                      
+
                       <input
                         type="file"
                         accept=".csv"
@@ -429,11 +452,11 @@ const Admin: React.FC = () => {
                         onChange={(e) => handleFileUpload(e, '/api/pokemon_key_moves', setUploadingMoves)}
                         disabled={uploadingMoves}
                       />
-                      <label 
-                        htmlFor="moves-csv-upload" 
+                      <label
+                        htmlFor="moves-csv-upload"
                         className="button"
-                        style={{ 
-                          display: 'inline-block', 
+                        style={{
+                          display: 'inline-block',
                           cursor: uploadingMoves ? 'wait' : 'pointer',
                           opacity: uploadingMoves ? 0.7 : 1
                         }}
@@ -443,6 +466,49 @@ const Admin: React.FC = () => {
                     </div>
 
                   </div>
+                </div>
+              )}
+              {tab === 'boss-battle-history' && (
+                <div className="admin-tab-content">
+                  <h2>Boss Battle History</h2>
+                  {bossBattleHistoryError && <div className="admin-message admin-error">{bossBattleHistoryError}</div>}
+
+                  {bossBattleHistoryLoading ? (
+                    <div className="admin-message">Loading boss battle history...</div>
+                  ) : (
+                    <div className="admin-table-wrap">
+                      <table>
+                        <thead>
+                          <tr>
+                            <th>ID</th>
+                            <th>Draft ID</th>
+                            <th>Team ID</th>
+                            <th>User</th>
+                            <th>Trainer ID</th>
+                            <th>Version</th>
+                            <th>Time</th>
+                            <th>Loss</th>
+                            <th>Created At</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {bossBattleHistory.map((battle) => (
+                            <tr key={battle.id}>
+                              <td>{battle.id}</td>
+                              <td>{battle.draft_id.slice(0, 8)}</td>
+                              <td>{battle.team_id}</td>
+                              <td>{battle.user_name ?? battle.user_id ?? battle.guest_id ?? '-'}</td>
+                              <td>{battle.trainer_id}</td>
+                              <td>{battle.version ?? '-'}</td>
+                              <td>{battle.hours}h {battle.minutes}m {battle.seconds}s</td>
+                              <td>{battle.is_loss ? 'Yes' : 'No'}</td>
+                              <td>{new Date(battle.created_at).toLocaleString()}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
                 </div>
               )}
             </>

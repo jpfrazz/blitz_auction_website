@@ -932,6 +932,42 @@ pub async fn get_boss_battle_history(
     Ok(Json(history))
 }
 
+#[derive(serde::Serialize, serde::Deserialize)]
+pub struct AdminBossBattleHistoryEntry {
+    pub id: i64,
+    pub team_id: i64,
+    pub draft_id: String,
+    pub user_id: Option<String>,
+    pub guest_id: Option<String>,
+    pub user_name: Option<String>,
+    pub trainer_id: i32,
+    pub version: Option<i32>,
+    pub hours: i32,
+    pub minutes: i32,
+    pub seconds: i32,
+    pub is_loss: bool,
+    pub created_at: String,
+}
+
+#[debug_handler]
+pub async fn get_admin_boss_battle_history(
+    State(state): State<ServerState>,
+) -> Result<Json<Vec<AdminBossBattleHistoryEntry>>, (StatusCode, String)> {
+    let history = sqlx::query_as::<_, AdminBossBattleHistoryEntry>(
+        "SELECT bbh.id, bbh.team_id, bbh.draft_id::text, t.user_id, t.guest_id, t.user_name,
+                bbh.trainer_id, bbh.version, bbh.hours, bbh.minutes, bbh.seconds, bbh.is_loss,
+                bbh.created_at::text
+         FROM boss_battle_history bbh
+         JOIN teams t ON bbh.team_id = t.team_id
+         ORDER BY bbh.created_at DESC"
+    )
+    .fetch_all(&state.db_pool)
+    .await
+    .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, format!("db error: {}", e)))?;
+
+    Ok(Json(history))
+}
+
 #[debug_handler]
 pub async fn get_current_auction(
     State(state): State<ServerState>,
