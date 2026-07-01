@@ -260,6 +260,20 @@ const PlayerSearchStatsTab: React.FC<PlayerSearchStatsTabProps> = ({
     try {
       const history = await fetchMatchHistoryByUserId(player.user_id);
       setPlayerMatchHistory(history);
+
+      // Fetch boss battle history for all teams
+      const bossHistoryMap = new Map<number, BossBattleHistoryEntry[]>();
+      await Promise.all(
+        history.map(async (team) => {
+          try {
+            const battles = await fetchBossBattleHistory(team.draft_id, player.user_id);
+            bossHistoryMap.set(team.team_id, battles);
+          } catch (e) {
+            console.error('[PlayerSearchStatsTab] Error fetching boss battle history for team:', team.team_id, e);
+          }
+        })
+      );
+      setBossBattleHistory(bossHistoryMap);
     } catch (e: any) {
       console.error('[PlayerSearchStatsTab] Error fetching player match history:', e);
       setPlayerMatchHistoryError('Failed to load player match history.');
