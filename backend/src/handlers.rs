@@ -954,11 +954,14 @@ pub async fn get_admin_boss_battle_history(
     State(state): State<ServerState>,
 ) -> Result<Json<Vec<AdminBossBattleHistoryEntry>>, (StatusCode, String)> {
     let history = sqlx::query_as::<_, AdminBossBattleHistoryEntry>(
-        "SELECT bbh.id, bbh.team_id, bbh.draft_id::text, t.user_id, t.guest_id, t.user_name,
+        "SELECT bbh.id, bbh.team_id, bbh.draft_id::text, t.user_id, t.guest_id,
+                COALESCE(u.user_name, g.user_name) as user_name,
                 bbh.trainer_id, bbh.version, bbh.hours, bbh.minutes, bbh.seconds, bbh.is_loss,
                 bbh.created_at::text
          FROM boss_battle_history bbh
          JOIN teams t ON bbh.team_id = t.team_id
+         LEFT JOIN users u ON t.user_id = u.user_id
+         LEFT JOIN guests g ON t.guest_id = g.user_id
          ORDER BY bbh.created_at DESC"
     )
     .fetch_all(&state.db_pool)
