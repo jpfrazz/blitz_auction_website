@@ -386,6 +386,10 @@
     .match-draft-details-row {
         padding: 0.45rem 0;
         color: $eb-text;
+
+        &:nth-child(even) {
+            background: rgba(255, 255, 255, 0.03);
+        }
     }
 
     .match-draft-details-pokemon {

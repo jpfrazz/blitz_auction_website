@@ -541,7 +541,7 @@ const PlayerSearchStatsTab: React.FC<PlayerSearchStatsTabProps> = ({
                             {bossVictory && (
                               <>
                                 <span className="separator">•</span>
-                                <span className="placement">{bossVictory}</span>
+                                <span className="placement" style={{ color: '#90EE90' }}>{bossVictory}</span>
                                 <span className="separator">•</span>
                               </>
                             )}
