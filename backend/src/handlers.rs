@@ -932,7 +932,7 @@ pub async fn get_boss_battle_history(
     Ok(Json(history))
 }
 
-#[derive(serde::Serialize, serde::Deserialize)]
+#[derive(serde::Serialize, serde::Deserialize, sqlx::FromRow)]
 pub struct AdminBossBattleHistoryEntry {
     pub id: i64,
     pub team_id: i64,
