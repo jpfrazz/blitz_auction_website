@@ -44,7 +44,7 @@ function getPlacementLabel(placement: number | null, isRanked: boolean): string 
         ? 'rd'
         : 'th';
 
-  return `${placement}${suffix}`;
+  return `Ranked: ${placement}${suffix}`;
 }
 
 function getPlacementClass(placement: number | null, isRanked: boolean): string {
@@ -92,6 +92,27 @@ function getTrainerNameById(trainerId: number, version?: number | null): string 
     return `${baseName} ${version}`;
   }
   return baseName;
+}
+
+function getBossBattleVictory(battles: BossBattleHistoryEntry[] | undefined): string | null {
+  if (!battles || battles.length === 0) return null;
+
+  // Check for Steven (804) or Wally (656) wins (not losses)
+  const stevenWin = battles.find(b => b.trainer_id === 804 && !b.is_loss);
+  const wallyWin = battles.find(b => b.trainer_id === 656 && !b.is_loss);
+
+  const formatTime = (hours: number, minutes: number, seconds: number) => {
+    return `${hours > 0 ? `${hours}h ` : ''}${minutes}m ${seconds}s`;
+  };
+
+  if (stevenWin) {
+    return `Beat Steven (${formatTime(stevenWin.hours, stevenWin.minutes, stevenWin.seconds)})`;
+  }
+  if (wallyWin) {
+    return `Beat Wally (${formatTime(wallyWin.hours, wallyWin.minutes, wallyWin.seconds)})`;
+  }
+
+  return null;
 }
 
 function getRunResult(battles: BossBattleHistoryEntry[]): { result: string; trainer: string; isWin: boolean } | null {
@@ -500,6 +521,8 @@ const PlayerSearchStatsTab: React.FC<PlayerSearchStatsTabProps> = ({
                   const result = getPlacementLabel(team.placement, isRanked);
                   const resultClass = getPlacementClass(team.placement, isRanked);
                   const isExpanded = expandedTeamId === team.team_id;
+                  const battles = bossBattleHistory.get(team.team_id);
+                  const bossVictory = getBossBattleVictory(battles);
 
                   return (
                     <div className="match-timeline-entry" key={team.team_id}>
@@ -515,9 +538,14 @@ const PlayerSearchStatsTab: React.FC<PlayerSearchStatsTabProps> = ({
                         <div className="match-info">
                           <div className="match-row-details">
                             <span className="draft-id">{draftDateMap.get(team.draft_id) || 'Unknown Date'}</span>
-                            <span className="separator">•</span>
-                            <span className="placement">{result}</span>
-                            <span className="separator">•</span>
+                            {bossVictory && (
+                              <>
+                                <span className="separator">•</span>
+                                <span className="placement">{bossVictory}</span>
+                                <span className="separator">•</span>
+                              </>
+                            )}
+                            {!bossVictory && <span className="separator">•</span>}
                             <span className="team-count">{team.team_count} players</span>
                           </div>
                         </div>
@@ -594,7 +622,7 @@ const PlayerSearchStatsTab: React.FC<PlayerSearchStatsTabProps> = ({
                                       </span>
                                     </div>
                                     <span className="match-draft-details-cost">
-                                      {battle.hours}h {battle.minutes}m {battle.seconds}s
+                                      {battle.hours > 0 ? `${battle.hours}h ` : ''}{battle.minutes}m {battle.seconds}s
                                     </span>
                                   </div>
                                 ))}
