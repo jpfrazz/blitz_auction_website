@@ -691,6 +691,7 @@ const EmulatorPage: React.FC = () => {
     }
 
     if (draftId) {
+      console.log('[EmulatorPage] Sending save data with trainer_card_wins:', parsed.trainer_card_wins);
       fetch(`/api/drafts/${draftId}/save`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
