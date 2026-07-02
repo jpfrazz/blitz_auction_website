@@ -431,7 +431,6 @@ export function parseSaveFile(
         const isLoss = (trainerId & 0x8000) !== 0;
         const actualTrainerId = trainerId & 0x7FFF;
 
-        console.log(`[SaveParser] Entry ${i} Record ${j}: offset=${recordOffset}, trainerId=${trainerId} (actual=${actualTrainerId}), isLoss=${isLoss}, time=${hours}h${minutes}m${seconds}s`);
 
         // Skip entries with zero time (invalid/empty entries)
         if (hours === 0 && minutes === 0 && seconds === 0) {

@@ -1102,9 +1102,32 @@ pub async fn post_player_save(
         .execute(&state.db_pool)
         .await;
 
-        // Insert new boss battle records
+        // Sort trainer card wins by time to maintain chronological order
+        let mut sorted_wins = save_data.trainer_card_wins.clone();
+        sorted_wins.sort_by(|a, b| {
+            let a_total = a.hours as u64 * 3600 + a.minutes as u64 * 60 + a.seconds as u64;
+            let b_total = b.hours as u64 * 3600 + b.minutes as u64 * 60 + b.seconds as u64;
+            a_total.cmp(&b_total)
+        });
+
+        // Insert new boss battle records with deduplication
         let mut count = 0;
-        for win in &save_data.trainer_card_wins {
+        let mut seen_entries = std::collections::HashSet::new();
+        for win in &sorted_wins {
+            // Create a unique key to detect duplicates within the same submission
+            let entry_key = (
+                win.trainer_id,
+                win.hours,
+                win.minutes,
+                win.seconds,
+                win.is_loss,
+            );
+
+            if seen_entries.contains(&entry_key) {
+                continue; // Skip duplicate within the same submission
+            }
+            seen_entries.insert(entry_key);
+
             let result = sqlx::query(
                 "INSERT INTO boss_battle_history (team_id, draft_id, trainer_id, version, hours, minutes, seconds, is_loss)
                  VALUES ($1, $2, $3, $4, $5, $6, $7, $8)"
