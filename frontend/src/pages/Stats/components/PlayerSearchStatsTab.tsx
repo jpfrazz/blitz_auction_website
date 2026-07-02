@@ -711,19 +711,6 @@ const PlayerSearchStatsTab: React.FC<PlayerSearchStatsTabProps> = ({
                                     </span>
                                   </div>
                                 ))}
-
-                                {/* Run Result */}
-                                {(() => {
-                                  const runResult = getRunResult(bossBattleHistory.get(team.team_id) || []);
-                                  if (!runResult) return null;
-                                  return (
-                                    <div className="match-run-result" style={{ marginTop: '1rem' }}>
-                                      <span className={runResult.isWin ? 'win' : 'loss'}>
-                                        {runResult.result} {runResult.trainer}!
-                                      </span>
-                                    </div>
-                                  );
-                                })()}
                               </>
                             )}
                           </div>
