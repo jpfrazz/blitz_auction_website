@@ -61,7 +61,7 @@ function getPokemonLabel(name: string, form: string): string {
   return form ? `${name} (${form})` : name;
 }
 
-// Mapping of trainer IDs to trainer names (from parseSaveFile.ts)
+// Mapping of trainer IDs to trainer names (from parseSaveFile.ts and opponents.h)
 const TRAINER_ID_TO_NAME: Record<number, string> = {
   265: "Roxanne",
   855: "Viola",
@@ -84,10 +84,81 @@ const TRAINER_ID_TO_NAME: Record<number, string> = {
   811: "Brandon",
   804: "Steven",
   656: "Wally",
+  // Gym leader versions from opponents.h
+  770: "Roxanne 2",
+  771: "Roxanne 3",
+  772: "Roxanne 4",
+  773: "Roxanne 5",
+  812: "Roxanne 6",
+  813: "Roxanne 7",
+  814: "Roxanne 8",
+  774: "Brawly 2",
+  775: "Brawly 3",
+  776: "Brawly 4",
+  777: "Brawly 5",
+  815: "Brawly 6",
+  816: "Brawly 7",
+  817: "Brawly 8",
+  778: "Wattson 2",
+  779: "Wattson 3",
+  780: "Wattson 4",
+  781: "Wattson 5",
+  818: "Wattson 6",
+  819: "Wattson 7",
+  820: "Wattson 8",
+  782: "Flannery 2",
+  783: "Flannery 3",
+  784: "Flannery 4",
+  785: "Flannery 5",
+  821: "Flannery 6",
+  822: "Flannery 7",
+  823: "Flannery 8",
+  786: "Norman 2",
+  787: "Norman 3",
+  788: "Norman 4",
+  789: "Norman 5",
+  824: "Norman 6",
+  825: "Norman 7",
+  826: "Norman 8",
+  790: "Winona 2",
+  791: "Winona 3",
+  792: "Winona 4",
+  793: "Winona 5",
+  827: "Winona 6",
+  828: "Winona 7",
+  829: "Winona 8",
+  794: "Tate & Liza 2",
+  795: "Tate & Liza 3",
+  796: "Tate & Liza 4",
+  797: "Tate & Liza 5",
+  830: "Tate & Liza 6",
+  831: "Tate & Liza 7",
+  832: "Tate & Liza 8",
+  798: "Juan & Wallace 2",
+  799: "Juan & Wallace 3",
+  800: "Juan & Wallace 4",
+  801: "Juan & Wallace 5",
+  833: "Juan & Wallace 6",
+  834: "Juan & Wallace 7",
+  835: "Juan & Wallace 8",
+  856: "Viola 2",
+  857: "Viola 3",
+  858: "Viola 4",
+  859: "Viola 5",
+  860: "Viola 6",
+  861: "Viola 7",
+  862: "Viola 8",
 };
 
 function getTrainerNameById(trainerId: number, version?: number | null): string {
   const baseName = TRAINER_ID_TO_NAME[trainerId] || `Trainer #${trainerId}`;
+
+  // If the trainer ID is already mapped with a version number (e.g., 801 = "Juan & Wallace 5"),
+  // return it directly without appending another version
+  if (baseName.includes(' ')) {
+    return baseName;
+  }
+
   if (version !== undefined && version !== null && version > 0) {
     return `${baseName} ${version}`;
   }
