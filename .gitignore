@@ -6,3 +6,5 @@
 backend/target/
 backend/**/*.rs.bk
 add_pokemon_script/__pycache__/
+create_pokedex_script/porydex_src/porydex/__pycache__/
+create_pokedex_script/porydex_src/porydex/parse/__pycache__/

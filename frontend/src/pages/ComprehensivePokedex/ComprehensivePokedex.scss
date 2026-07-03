@@ -1,0 +1,16 @@
+.comprehensive-pokedex-main {
+  position: fixed;
+  top: 5rem; // below the fixed header
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.comprehensive-pokedex-frame {
+  width: 100%;
+  flex: 1;
+  border: none;
+  background: #fff;
+}
