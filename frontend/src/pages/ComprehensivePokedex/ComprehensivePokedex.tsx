@@ -11,7 +11,6 @@ const ComprehensivePokedex: React.FC = () => {
           src="/ComprehensiveDex/"
           title="Comprehensive Pokédex"
           className="comprehensive-pokedex-frame"
-          allow="cross-origin-isolated"
         />
       </main>
     </>
