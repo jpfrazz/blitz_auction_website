@@ -58,6 +58,9 @@ const SaveChecker: React.FC = () => {
   const [mostRecentLoss, setMostRecentLoss] = useState<{ trainer_id: number; hours: number; minutes: number; seconds: number } | null>(null);
   const [mostRecentLossName, setMostRecentLossName] = useState<string | null>(null);
   const [trainerCardWins, setTrainerCardWins] = useState<{ trainer_id: number; hours: number; minutes: number; seconds: number; is_loss: boolean; version?: number }[]>([]);
+  const [playerFaintCounter, setPlayerFaintCounter] = useState<number | null>(null);
+  const [debugOffsets, setDebugOffsets] = useState<string[]>([]);
+  const [areaDebugOffsets, setAreaDebugOffsets] = useState<string[]>([]);
 
   useEffect(() => {
     fetchPokemonList().then((list) => {
@@ -174,6 +177,52 @@ const SaveChecker: React.FC = () => {
         const saveDataBytes = new Uint8Array(buffer);
         const parsedData = parseSaveFile(saveDataBytes, pokemonMetadata, pokemonById);
 
+        // Debug: Scan for value 15 (new death count) and also scan for 17 to compare
+        const offsets15: string[] = [];
+        const offsets17: string[] = [];
+        for (let i = 0; i < saveDataBytes.length - 1; i++) {
+          // Check as u16 (little-endian)
+          const value = saveDataBytes[i] | (saveDataBytes[i + 1] << 8);
+          if (value === 15) {
+            offsets15.push(`0x${i.toString(16).padStart(4, '0')} (u16)`);
+          }
+          if (value === 17) {
+            offsets17.push(`0x${i.toString(16).padStart(4, '0')} (u16)`);
+          }
+          // Check as u8
+          if (saveDataBytes[i] === 15) {
+            offsets15.push(`0x${i.toString(16).padStart(4, '0')} (u8)`);
+          }
+          if (saveDataBytes[i] === 17) {
+            offsets17.push(`0x${i.toString(16).padStart(4, '0')} (u8)`);
+          }
+        }
+        setDebugOffsets(offsets15); // Show all offsets, not limited
+        console.log('[Debug] Found value 15 at ALL offsets:', offsets15);
+        console.log('[Debug] Found value 17 at ALL offsets:', offsets17);
+
+        // Debug: Scan around 0xB000-0xC000 area for value 15
+        const areaOffsets: string[] = [];
+        const areaStart = 0xB000;
+        const areaEnd = 0xC000;
+        for (let i = areaStart; i < Math.min(areaEnd, saveDataBytes.length - 1); i++) {
+          // Check as u16 (little-endian)
+          const value = saveDataBytes[i] | (saveDataBytes[i + 1] << 8);
+          if (value === 15) {
+            areaOffsets.push(`0x${i.toString(16).padStart(4, '0')} (u16)`);
+          }
+          // Check as u8
+          if (saveDataBytes[i] === 15) {
+            areaOffsets.push(`0x${i.toString(16).padStart(4, '0')} (u8)`);
+          }
+        }
+        setAreaDebugOffsets(areaOffsets);
+        console.log('[Debug] Found value 15 in area 0xB000-0xC000:', areaOffsets);
+
+        // Debug: Log section offsets to understand the save structure
+        console.log('[Debug] Save file length:', saveDataBytes.length);
+        console.log('[Debug] Looking for section signatures...');
+
         setTrainerName(parsedData.trainer_name);
         setMoney(parsedData.money);
         setBadgeCount(parsedData.badge_count);
@@ -184,6 +233,7 @@ const SaveChecker: React.FC = () => {
         setMostRecentLoss(parsedData.most_recent_loss);
         setMostRecentLossName(parsedData.most_recent_loss_name);
         setTrainerCardWins(parsedData.trainer_card_wins);
+        setPlayerFaintCounter(parsedData.player_faint_counter);
         setError(null);
 
       } catch (err) {
@@ -244,7 +294,33 @@ const SaveChecker: React.FC = () => {
                 <span className="stat-label">Location</span>
                 <span className="stat-value">{mapName}</span>
               </div>
+              <div className="stat-item">
+                <span className="stat-label">Player Faint Counter</span>
+                <span className="stat-value">{playerFaintCounter !== null ? playerFaintCounter : 'Not found'}</span>
+              </div>
             </div>
+            {areaDebugOffsets.length > 0 && (
+              <div className="debug-section" style={{ marginTop: '20px', padding: '15px', background: '#1a1a2e', borderRadius: '8px', fontSize: '12px' }}>
+                <h4 style={{ margin: '0 0 10px 0', color: '#ffd700' }}>Debug: Value 15 in area 0xB000-0xC000</h4>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '5px' }}>
+                  {areaDebugOffsets.map((offset, i) => (
+                    <span key={i} style={{ background: '#16213e', padding: '2px 6px', borderRadius: '3px', fontFamily: 'monospace' }}>{offset}</span>
+                  ))}
+                </div>
+                {areaDebugOffsets.length === 0 && <div style={{ marginTop: '10px', color: '#888' }}>No value 15 found in this area</div>}
+              </div>
+            )}
+            {debugOffsets.length > 0 && (
+              <div className="debug-section" style={{ marginTop: '20px', padding: '15px', background: '#1a1a2e', borderRadius: '8px', fontSize: '12px' }}>
+                <h4 style={{ margin: '0 0 10px 0', color: '#ffd700' }}>Debug: Value 15 found at offsets (first 50)</h4>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '5px' }}>
+                  {debugOffsets.map((offset, i) => (
+                    <span key={i} style={{ background: '#16213e', padding: '2px 6px', borderRadius: '3px', fontFamily: 'monospace' }}>{offset}</span>
+                  ))}
+                </div>
+                {debugOffsets.length >= 50 && <div style={{ marginTop: '10px', color: '#888' }}>...and more (limited to 50)</div>}
+              </div>
+            )}
             {mostRecentLoss && (
               <div className="stats-summary">
                 <div className="stat-item">
