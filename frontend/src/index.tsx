@@ -6,7 +6,6 @@ import AuctionSetup from './pages/AuctionSetup/AuctionSetup';
 import TeamPlanner from './pages/TeamPlanner/TeamPlanner';
 import FAQ from './pages/FAQ/FAQ';
 import Pokedex from './pages/Pokedex/Pokedex';
-import ComprehensivePokedex from './pages/ComprehensivePokedex/ComprehensivePokedex';
 import Info from './pages/Info/Info';
 import BossBattles from './pages/BossBattles/BossBattles';
 import SpeedTest from './pages/SpeedTest/SpeedTest';
@@ -41,7 +40,6 @@ if (container) {
           <Route path="/TeamPlanner" element={<TeamPlanner />} />
           <Route path="/FAQ" element={<FAQ />} />
           <Route path="/Pokedex" element={<Pokedex />} />
-          <Route path="/ComprehensivePokedex" element={<ComprehensivePokedex />} />
           <Route path="/Info" element={<Info />} />
           <Route path="/BossBattles" element={<BossBattles />} />
           <Route path="/SpeedTest" element={<SpeedTest />} />
