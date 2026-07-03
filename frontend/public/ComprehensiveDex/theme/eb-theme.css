@@ -1,0 +1,177 @@
+/*
+ * Emerald Blitz dark theme - CDN + global overrides
+ * Loaded last so these always win.
+ */
+
+/* Base */
+html, body {
+  background: #111111 !important;
+  color: #e0e0e0 !important;
+}
+
+/* CDN utilichart.css - generation/category headers (CDN: background #DAE5F0) */
+.utilichart h3,
+.dexentry h3,
+.resultheader h3 {
+  background: #2a2a2a !important;
+  color: #7CB946 !important;
+  border-color: #3a3a3a !important;
+  text-shadow: none !important;
+  box-shadow: none !important;
+}
+
+/* CDN utilichart.css - sort row (CDN: background #D0D0D0) */
+.utilichart .sortrow {
+  background: #1e1e1e !important;
+  color: #e0e0e0 !important;
+  border-color: #3a3a3a !important;
+}
+.utilichart .sortcol {
+  color: #e0e0e0 !important;
+  background: transparent !important;
+}
+.utilichart .sortcol.cur,
+.utilichart .sortcol.numsortcol.cur,
+.utilichart .sortcol.numsortcol.cur:hover {
+  background: #2a2a2a !important;
+  color: #7CB946 !important;
+}
+.utilichart .sortcol:hover {
+  background: #2a2a2a !important;
+  color: #90d152 !important;
+}
+
+/* CDN utilichart.css - text inside rows (CDN: color #444/#000) */
+.utilichart .col {
+  color: #e0e0e0 !important;
+}
+.utilichart .namecol,
+.utilichart .pokemonnamecol,
+.utilichart .shortpokemonnamecol,
+.utilichart .movenamecol,
+.utilichart .shortmovenamecol,
+.utilichart .abilitycol,
+.utilichart .twoabilitycol,
+.utilichart .tagcol {
+  color: #e0e0e0 !important;
+}
+.utilichart .numcol,
+.utilichart .stattitlecol,
+.utilichart .labelcol em,
+.utilichart .widelabelcol em,
+.utilichart .statcol em,
+.utilichart .bstcol em {
+  color: #999999 !important;
+}
+.utilichart b {
+  color: #7CB946 !important;
+}
+.utilichart .itemdesccol,
+.utilichart .abilitydesccol,
+.utilichart .movedesccol {
+  color: #888888 !important;
+}
+.utilichart .tagcol {
+  border-right-color: #3a3a3a !important;
+}
+
+/* CDN utilichart.css - hover/selected row (CDN: background #F2F2F2) */
+.utilichart li > a.cur {
+  border-color: #7CB946 !important;
+  background: #1e1e1e !important;
+}
+.utilichart li > a:hover {
+  background: #1e1e1e !important;
+  border-color: #7CB946 !important;
+}
+
+/* CDN utilichart.css - filter tags */
+.utilichart .filter,
+.searchboxwrapper .filter {
+  background: #1e1e1e !important;
+  border-color: #3a3a3a !important;
+  color: #7CB946 !important;
+}
+
+/* Search input */
+.searchbox,
+input[type="text"],
+input[type="search"] {
+  background: #1e1e1e !important;
+  border-color: #3a3a3a !important;
+  color: #e0e0e0 !important;
+  box-shadow: inset 0 1px 3px rgba(0,0,0,.5) !important;
+}
+.searchbox:focus,
+input[type="text"]:focus {
+  border-color: #7CB946 !important;
+  box-shadow: inset 0 1px 3px rgba(0,0,0,.5), 0 0 5px rgba(124,185,70,.4) !important;
+  outline: none !important;
+}
+
+/* Dex entry text */
+.dexentry {
+  color: #e0e0e0 !important;
+}
+.dexentry h1,
+.dexentry h1 a,
+.dexentry h1 a:hover {
+  color: #e0e0e0 !important;
+}
+.dexentry dt {
+  color: #999999 !important;
+}
+.dexentry dd,
+.dexentry p {
+  color: #e0e0e0 !important;
+}
+.dexentry h1 code,
+.dexentry .minor {
+  color: #999999 !important;
+}
+.dexentry .tier {
+  color: #999999 !important;
+  border-color: #3a3a3a !important;
+}
+.dexentry dl.ppentry dd {
+  color: #999999 !important;
+}
+
+/* Tables */
+table.stats th,
+table.evos th,
+table.sprites th {
+  color: #999999 !important;
+}
+table.stats td,
+table.evos td {
+  color: #e0e0e0 !important;
+  border-color: #3a3a3a !important;
+}
+
+/* Ladder tables (main.css) */
+.ladder table,
+.ladder td,
+.ladder th {
+  border-color: #3a3a3a !important;
+}
+.ladder th {
+  background: #2a2a2a !important;
+  color: #999999 !important;
+}
+
+/* Main page title */
+.pokedex h1 a {
+  color: #e0e0e0 !important;
+}
+p a.subtle {
+  color: #7CB946 !important;
+}
+
+/* Stat bars */
+.stat-graph {
+  background: #2a2a2a !important;
+}
+.stat-bar {
+  background: #7CB946 !important;
+}

@@ -316,6 +316,9 @@ function Header() {
               <Link to="/Pokedex" className="navButton navDropdownItem" onClick={handleNavLinkClick} target={linkTarget} rel={linkRel}>
                 Pokédex
               </Link>
+              <Link to="/ComprehensivePokedex" className="navButton navDropdownItem" onClick={handleNavLinkClick} target={linkTarget} rel={linkRel}>
+                Comprehensive Pokédex
+              </Link>
               <Link to="/TeamPlanner" className="navButton navDropdownItem" onClick={handleNavLinkClick} target={linkTarget} rel={linkRel}>
                 Team Planner
               </Link>
