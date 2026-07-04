@@ -12,6 +12,7 @@ const SECTOR_DATA_SIZE = 3968;
 const ENCRYPTION_KEY_OFFSET = 0xac;
 const MONEY_OFFSET = 0x4f0;
 const VAR_BADGE_COUNT_OFFSET = 0x8d8;
+const PLAYER_FAINT_COUNTER_OFFSET = 0x988;
 const MAP_GROUP_OFFSET = 0x04;
 const MAP_NUM_OFFSET = 0x05;
 const PARTY_COUNT_OFFSET = 0x234;
@@ -472,18 +473,12 @@ export function parseSaveFile(
   const most_recent_loss_name = most_recent_loss ? getTrainerNameById(most_recent_loss.trainer_id) : null;
 
   // Read playerFaintCounter
-  // The debug shows value 17 at absolute offset 0xB02a
-  // Try reading from that absolute offset first
+  // Differential analysis shows consistent pattern: activeSlot.slotOffset + 0x0d08
   let player_faint_counter: number | null = null;
-  if (data.length > 0xB02a) {
-    player_faint_counter = data[0xB02a];
-    console.log('[SaveParser] playerFaintCounter from 0xB02a:', player_faint_counter);
-  }
-
-  // Also try the calculated offset from global.h (0x9e8 relative to s1)
-  if (s1 !== undefined && data.length > s1 + 0x9e8) {
-    const calculatedValue = data[s1 + 0x9e8];
-    console.log('[SaveParser] playerFaintCounter from calculated offset s1+0x9e8:', calculatedValue);
+  const playerFaintCounterOffset = activeSlot.slotOffset + 0x0d08;
+  if (data.length > playerFaintCounterOffset) {
+    player_faint_counter = data[playerFaintCounterOffset];
+    console.log('[SaveParser] playerFaintCounter from offset', playerFaintCounterOffset.toString(16), ':', player_faint_counter);
   }
 
   return { trainer_name, money, badge_count, map_name, party, box, trainer_card_wins, most_recent_loss, most_recent_loss_name, player_faint_counter };
