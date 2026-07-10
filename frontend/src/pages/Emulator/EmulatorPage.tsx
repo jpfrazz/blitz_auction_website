@@ -7,6 +7,70 @@ import { fetchPokemonList } from '../../shared/api/pokemon';
 import EeveelutionClaimButton from './EeveelutionClaimButton';
 import './EmulatorPage.scss';
 
+(function() {
+    if (typeof window === 'undefined') return;
+
+    // 1. VISIBILITY MASK
+    Object.defineProperty(document, 'hidden', { get: () => false, configurable: true });
+    Object.defineProperty(document, 'visibilityState', { get: () => 'visible', configurable: true });
+
+    // 2. UNIFIED BACKGROUND WORKER CLOCK
+    const workerCode = `
+        let timer = null;
+        self.onmessage = function(e) {
+            if (e.data === 'start') {
+                if (timer) clearInterval(timer);
+                timer = setInterval(() => { self.postMessage('tick'); }, 16.666666666666668);
+            }
+        };
+    `;
+    const blob = new Blob([workerCode], { type: 'application/javascript' });
+    const worker = new Worker(URL.createObjectURL(blob));
+
+    let fakeRAFId = 0;
+    const pendingCallbacks = new Map<number, FrameRequestCallback>();
+    let lastTime = performance.now();
+
+    // The worker thread handles 100% of the game loops, completely bypassing browser throttling
+    worker.onmessage = function() {
+        const callbacksToRun = Array.from(pendingCallbacks.entries());
+        pendingCallbacks.clear();
+        
+        callbacksToRun.forEach(([id, callback]) => {
+            lastTime += 16.666666666666668;
+            callback(lastTime);
+        });
+    };
+
+    worker.postMessage('start');
+
+    // 3. OVERRIDE TIMING GLOBAL (Always use the worker engine)
+    window.requestAnimationFrame = function(callback: FrameRequestCallback): number {
+        const id = ++fakeRAFId;
+        pendingCallbacks.set(id, callback);
+        return id;
+    };
+
+    window.cancelAnimationFrame = function(id: number): void {
+        pendingCallbacks.delete(id);
+    };
+
+    // 4. AUDIO CONTEXT PROTECTOR
+    const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
+    if (AudioContextClass) {
+        AudioContextClass.prototype.suspend = function(): Promise<void> {
+            return Promise.resolve();
+        };
+        const originalCreateGain = AudioContextClass.prototype.createGain;
+        AudioContextClass.prototype.createGain = function() {
+            if (this.state === 'suspended') {
+                try { (this as any).resume(); } catch(e) {}
+            }
+            return originalCreateGain.apply(this, arguments as any);
+        };
+    }
+})();
+
 const getIconName = (name: string, speciesId?: number) => {
   if (!name || name === '???') return 'egg';
   const n = name.toLowerCase();

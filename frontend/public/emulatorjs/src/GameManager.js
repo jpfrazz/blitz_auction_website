@@ -429,6 +429,7 @@ class EJS_GameManager {
         this.functions.setFastForwardRatio(ratio);
     }
     toggleFastForward(active) {
+        return;
         this.functions.toggleFastForward(active);
     }
     setSlowMotionRatio(ratio) {
