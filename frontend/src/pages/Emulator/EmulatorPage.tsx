@@ -341,6 +341,10 @@ const EmulatorPage: React.FC = () => {
   // Stable ref so window callbacks always see the latest handler
   const onRawSaveBytesRef = useRef<((bytes: Uint8Array) => void) | null>(null);
 
+  // Latest raw .sav bytes for the download button
+  const latestSaveBytesRef = useRef<Uint8Array | null>(null);
+  const [hasSaveBytes, setHasSaveBytes] = useState(false);
+
   // Stable ref for the notification fetch so EJS_ready closure always gets the current draftId
   const postStateLoadRef = useRef<(() => void) | null>(null);
   postStateLoadRef.current = () => {
@@ -711,6 +715,8 @@ const EmulatorPage: React.FC = () => {
 
   // ── Save bytes handler: parse + POST to backend ──────────────────────────
   onRawSaveBytesRef.current = (bytes: Uint8Array) => {
+    latestSaveBytesRef.current = bytes;
+    setHasSaveBytes(true);
     let parsed: SaveData;
     try {
       parsed = parseSaveFile(bytes, pokemonMetadata, pokemonById);
@@ -1186,6 +1192,20 @@ const EmulatorPage: React.FC = () => {
     };
   }, []);
 
+  const handleDownloadSave = () => {
+    const bytes = latestSaveBytesRef.current;
+    if (!bytes || bytes.length === 0) return;
+    const blob = new Blob([bytes.slice().buffer as ArrayBuffer], { type: 'application/octet-stream' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'pokemon_emerald.sav';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
   const handleLoadAutosave = () => {
     const key = `state_${draftId || 'standalone'}`;
     getStoredSave(key).then((bytes) => {
@@ -1430,6 +1450,20 @@ const EmulatorPage: React.FC = () => {
                     </>
                   ) : (
                     <span className="save-panel-trainer" style={{ opacity: 0.5 }}>Save the game to display game data</span>
+                  )}
+                  {hasSaveBytes && (
+                    <button
+                      className="autosave-btn"
+                      onClick={handleDownloadSave}
+                      title="Download .sav file"
+                    >
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ verticalAlign: 'middle', marginRight: 4 }}>
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                        <polyline points="7 10 12 15 17 10" />
+                        <line x1="12" y1="15" x2="12" y2="3" />
+                      </svg>
+                      .sav
+                    </button>
                   )}
                   {hasAutosave && (
                     <button
