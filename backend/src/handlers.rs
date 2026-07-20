@@ -1093,15 +1093,6 @@ pub async fn post_player_save(
     let boss_battles_saved = if let Ok(Some(row)) = team_row {
         let team_id: i64 = row.get("team_id");
 
-        // Delete existing boss battle history for this team/draft
-        let _ = sqlx::query(
-            "DELETE FROM boss_battle_history WHERE team_id = $1 AND draft_id = $2"
-        )
-        .bind(team_id)
-        .bind(draft_uuid)
-        .execute(&state.db_pool)
-        .await;
-
         // Sort trainer card wins by time to maintain chronological order
         let mut sorted_wins = save_data.trainer_card_wins.clone();
         sorted_wins.sort_by(|a, b| {
@@ -1109,6 +1100,36 @@ pub async fn post_player_save(
             let b_total = b.hours as u64 * 3600 + b.minutes as u64 * 60 + b.seconds as u64;
             a_total.cmp(&b_total)
         });
+
+        // Recalculate version numbers for gym leaders based on chronological order
+        let gym_leader_ids: std::collections::HashSet<i32> = [265, 855, 266, 267, 268, 269, 270, 271, 272].iter().copied().collect();
+        let mut gym_leader_version = 0u32;
+        for win in &mut sorted_wins {
+            if gym_leader_ids.contains(&(win.trainer_id as i32)) && !win.is_loss {
+                gym_leader_version += 1;
+                win.version = Some(gym_leader_version as u8);
+            } else {
+                win.version = None;
+            }
+        }
+
+        // Use a transaction to prevent race conditions from concurrent saves
+        let mut tx = match state.db_pool.begin().await {
+            Ok(tx) => tx,
+            Err(e) => {
+                eprintln!("[post_player_save] Failed to begin transaction: {}", e);
+                return Err((StatusCode::INTERNAL_SERVER_ERROR, format!("db error: {}", e)).into());
+            }
+        };
+
+        // Delete existing boss battle history for this team/draft
+        let _ = sqlx::query(
+            "DELETE FROM boss_battle_history WHERE team_id = $1 AND draft_id = $2"
+        )
+        .bind(team_id)
+        .bind(draft_uuid)
+        .execute(&mut *tx)
+        .await;
 
         // Insert new boss battle records with deduplication
         let mut count = 0;
@@ -1140,12 +1161,18 @@ pub async fn post_player_save(
             .bind(win.minutes as i32)
             .bind(win.seconds as i32)
             .bind(win.is_loss)
-            .execute(&state.db_pool)
+            .execute(&mut *tx)
             .await;
             if result.is_ok() {
                 count += 1;
             }
         }
+
+        if let Err(e) = tx.commit().await {
+            eprintln!("[post_player_save] Failed to commit transaction: {}", e);
+            return Err((StatusCode::INTERNAL_SERVER_ERROR, format!("db error: {}", e)).into());
+        }
+
         Some(count)
     } else {
         None

@@ -334,6 +334,7 @@ const Stats: React.FC = () => {
       draftId: string;
       draftName: string | null;
       hostId: string | null;
+      ranked: boolean;
       teamCount: number;
       auctionCount: number;
       highestBid: number;
@@ -350,6 +351,7 @@ const Stats: React.FC = () => {
         draftId: team.draft_id,
         draftName: (team as any).draft_name || null,
         hostId: (team as any).host || null,
+        ranked: !!(team as any).ranked,
         teamCount: 0,
         auctionCount: 0,
         highestBid: 0,
@@ -380,6 +382,7 @@ const Stats: React.FC = () => {
         draftId: auction.draft_id,
         draftName: auction.draft_name || null,
         hostId: (auction as any).host || null,
+        ranked: !!auction.ranked,
         teamCount: 0,
         auctionCount: 0,
         highestBid: 0,
@@ -631,6 +634,7 @@ const Stats: React.FC = () => {
                   <thead>
                     <tr>
                       <th>Draft ID</th>
+                      <th>Ranked</th>
                       <th>Host</th>
                       <th>Date</th>
                       <th>Players</th>
@@ -657,6 +661,7 @@ const Stats: React.FC = () => {
                           }}
                         >
                           <td>{draft.draftId}</td>
+                          <td style={{ textAlign: 'center' }}>{draft.ranked ? '\u2713' : ''}</td>
                           <td>{playersById.get(draft.hostId || '')?.user_name || '-'}</td>
                           <td>{draft.formattedDate}</td>
                           <td>{draft.teamCount}</td>
@@ -677,7 +682,7 @@ const Stats: React.FC = () => {
                         </tr>
                         {expandedDraftId === draft.draftId && (
                           <tr className="draft-details-row">
-                            <td colSpan={6}>
+                            <td colSpan={7}>
                               <div className="draft-details-controls" style={{ display: 'flex', gap: '8px', marginBottom: '12px', padding: '10px 10px 0' }}>
                                 <button
                                   className={`tab-chip ${draftSortMode === 'order' ? 'active' : ''}`}

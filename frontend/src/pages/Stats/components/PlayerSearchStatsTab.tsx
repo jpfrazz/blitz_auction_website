@@ -155,7 +155,7 @@ function getTrainerNameById(trainerId: number, version?: number | null): string 
 
   // If the trainer ID is already mapped with a version number (e.g., 801 = "Juan & Wallace 5"),
   // return it directly without appending another version
-  if (baseName.includes(' ')) {
+  if (/\d$/.test(baseName)) {
     return baseName;
   }
 
