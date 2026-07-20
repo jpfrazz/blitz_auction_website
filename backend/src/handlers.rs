@@ -910,7 +910,7 @@ pub async fn get_boss_battle_history(
              FROM boss_battle_history bbh
              JOIN teams t ON bbh.team_id = t.team_id
              WHERE bbh.draft_id = $1 AND (t.user_id = $2 OR t.guest_id = $2)
-             ORDER BY bbh.created_at ASC"
+             ORDER BY bbh.hours ASC, bbh.minutes ASC, bbh.seconds ASC"
         )
         .bind(draft_uuid)
         .bind(uid)
@@ -919,7 +919,7 @@ pub async fn get_boss_battle_history(
             "SELECT trainer_id, version, hours, minutes, seconds, is_loss
              FROM boss_battle_history
              WHERE draft_id = $1
-             ORDER BY created_at ASC"
+             ORDER BY hours ASC, minutes ASC, seconds ASC"
         )
         .bind(draft_uuid)
     };
