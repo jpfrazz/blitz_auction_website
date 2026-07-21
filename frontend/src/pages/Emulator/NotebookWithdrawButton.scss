@@ -1,0 +1,57 @@
+@import '../../shared/style/theme.scss';
+
+.notebook-withdraw-container {
+  position: relative;
+  display: inline-block;
+}
+
+.notebook-withdraw-notification {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  background-color: $eb-surface;
+  border: 0.125rem solid $eb-primary;
+  border-radius: 0.25rem;
+  padding: 1rem 1.5rem;
+  color: $eb-text;
+  font-weight: 600;
+  z-index: 2000;
+  box-shadow: $eb-shadow;
+  animation: slideIn 0.3s ease;
+}
+
+@keyframes slideIn {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+.notebook-withdraw-button {
+  background: transparent;
+  border: 1px solid #6366f1;
+  border-radius: 6px;
+  color: #6366f1;
+  padding: 0.3rem 0.8rem;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 1.1rem;
+  white-space: nowrap;
+  transition: border-color 0.15s, color 0.15s, background 0.15s;
+
+  &:hover:not(:disabled) {
+    background: rgba(99, 102, 241, 0.1);
+    color: #818cf8;
+    border-color: #818cf8;
+  }
+
+  &:disabled {
+    cursor: not-allowed;
+    opacity: 0.7;
+  }
+}

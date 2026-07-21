@@ -5,6 +5,7 @@ import { parseSaveFile, SaveData, getTrainerNameById } from '../../utils/parseSa
 import { fetchCurrentUser, fetchDraftById, claimEeveelution, unclaimEeveelution, fetchControlBindings, saveControlBindings } from '../../shared/api/draftData';
 import { fetchPokemonList } from '../../shared/api/pokemon';
 import EeveelutionClaimButton from './EeveelutionClaimButton';
+import NotebookWithdrawButton from './NotebookWithdrawButton';
 import './EmulatorPage.scss';
 
 (function() {
@@ -137,6 +138,7 @@ declare global {
     EJS_emulator: {
       on(event: string, callback: (data?: unknown) => void): void;
       gameManager?: {
+        simulateInput(player: number, index: number, value: number): void;
         saveSaveFiles(): void;
         getState(): Uint8Array;
         loadState(state: Uint8Array): void;
@@ -1451,7 +1453,7 @@ const EmulatorPage: React.FC = () => {
                   ) : (
                     <span className="save-panel-trainer" style={{ opacity: 0.5 }}>Save the game to display game data</span>
                   )}
-                  {hasSaveBytes && (
+                  {mySaveData && (
                     <button
                       className="autosave-btn"
                       onClick={handleDownloadSave}
@@ -1490,6 +1492,12 @@ const EmulatorPage: React.FC = () => {
                       currentUsername={currentUsername}
                       onClaim={handleClaimEeveelution}
                       onUnclaim={handleUnclaimEeveelution}
+                    />
+                  )}
+                  {draftId && draftData && !mySaveData && (
+                    <NotebookWithdrawButton
+                      teams={draftData.teams}
+                      currentUserId={currentUserId}
                     />
                   )}
 
