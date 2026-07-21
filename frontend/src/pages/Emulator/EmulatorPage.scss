@@ -362,6 +362,12 @@
   background: transparent;
   border-bottom: 1px solid $eb-border;
   overflow: hidden;
+  transition: background 0.2s;
+
+  &.race-ready {
+    background: rgba(74, 222, 128, 0.15);
+    border-left: 3px solid #4ade80;
+  }
 }
 
 .sidebar-player-header {
@@ -657,4 +663,62 @@
     transform: translateX(0);
     opacity: 1;
   }
+}
+
+// ── Ready to Race button ─────────────────────────────────────────────────────
+
+.ready-race-button {
+  background: transparent;
+  border: 1px solid #4ade80;
+  border-radius: 6px;
+  color: #4ade80;
+  padding: 0.3rem 0.8rem;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 1.1rem;
+  white-space: nowrap;
+  transition: border-color 0.15s, color 0.15s, background 0.15s;
+
+  &:hover {
+    background: rgba(74, 222, 128, 0.1);
+    color: #86efac;
+    border-color: #86efac;
+  }
+
+  &.ready {
+    background: #4ade80;
+    color: #111;
+    border-color: #4ade80;
+
+    &:hover {
+      background: #22c55e;
+      border-color: #22c55e;
+    }
+  }
+}
+
+// ── Countdown overlay ────────────────────────────────────────────────────────
+
+.countdown-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.6);
+  z-index: 100;
+  pointer-events: none;
+}
+
+.countdown-text {
+  font-size: 6rem;
+  font-weight: 900;
+  color: #fff;
+  text-shadow: 0 0 30px rgba(74, 222, 128, 0.8), 0 0 60px rgba(74, 222, 128, 0.4);
+  animation: countdown-pulse 1s ease-in-out infinite;
+}
+
+@keyframes countdown-pulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.1); }
 }

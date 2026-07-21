@@ -2546,6 +2546,28 @@ async fn handle_websocket(mut socket: WebSocket, tx: broadcast::Sender<ServerMes
                                     }
                                 }
                             }
+                            if msg_type == "ReadyToRace" {
+                                if let Some(data) = client_msg.get("data") {
+                                    if let (Some(user_id), Some(user_name)) = (
+                                        data.get("user_id").and_then(|v| v.as_str()),
+                                        data.get("user_name").and_then(|v| v.as_str())
+                                    ) {
+                                        let _ = tx.send(ServerMessage::ReadyToRace {
+                                            user_id: user_id.to_string(),
+                                            user_name: user_name.to_string(),
+                                        });
+                                    }
+                                }
+                            }
+                            if msg_type == "ReadyToRaceCancelled" {
+                                if let Some(data) = client_msg.get("data") {
+                                    if let Some(user_id) = data.get("user_id").and_then(|v| v.as_str()) {
+                                        let _ = tx.send(ServerMessage::ReadyToRaceCancelled {
+                                            user_id: user_id.to_string(),
+                                        });
+                                    }
+                                }
+                            }
                         }
                     }
                 }

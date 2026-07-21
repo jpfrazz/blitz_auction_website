@@ -328,6 +328,10 @@ const EmulatorPage: React.FC = () => {
   // Draft data for eeveelution claiming
   const [draftData, setDraftData] = useState<any>(null);
 
+  // Ready to Race state
+  const [readyPlayers, setReadyPlayers] = useState<Set<string>>(new Set());
+  const [countdown, setCountdown] = useState<number | null>(null);
+
   // Persist fainted state via Personality ID (User ID -> Set of PIDs)
   const [faintedPids, setFaintedPids] = useState<Record<string, Set<number>>>({});
 
@@ -670,6 +674,23 @@ const EmulatorPage: React.FC = () => {
                   return team;
                 });
                 return { ...prev, teams: updatedTeams };
+              });
+            }
+            // Ready to Race
+            if (msg.type === 'ReadyToRace') {
+              const { user_id } = msg.data as { user_id: string };
+              setReadyPlayers(prev => {
+                const next = new Set(prev);
+                next.add(user_id);
+                return next;
+              });
+            }
+            if (msg.type === 'ReadyToRaceCancelled') {
+              const { user_id } = msg.data as { user_id: string };
+              setReadyPlayers(prev => {
+                const next = new Set(prev);
+                next.delete(user_id);
+                return next;
               });
             }
           } catch {
@@ -1273,6 +1294,53 @@ const EmulatorPage: React.FC = () => {
     }
   };
 
+  // ── Ready to Race ──────────────────────────────────────────────────────────
+  const handleToggleReady = useCallback(() => {
+    if (!currentUserId || !currentUsername) return;
+    const isReady = readyPlayers.has(currentUserId);
+    const ws = wsRef.current;
+    if (!ws || ws.readyState !== WebSocket.OPEN) return;
+
+    if (isReady) {
+      ws.send(JSON.stringify({ type: 'ReadyToRaceCancelled', data: { user_id: currentUserId } }));
+      setReadyPlayers(prev => {
+        const next = new Set(prev);
+        next.delete(currentUserId);
+        return next;
+      });
+    } else {
+      ws.send(JSON.stringify({ type: 'ReadyToRace', data: { user_id: currentUserId, user_name: currentUsername } }));
+      setReadyPlayers(prev => {
+        const next = new Set(prev);
+        next.add(currentUserId);
+        return next;
+      });
+    }
+  }, [currentUserId, currentUsername, readyPlayers]);
+
+  // Countdown timer
+  useEffect(() => {
+    if (countdown === null || countdown <= 0) return;
+    const timer = setTimeout(() => {
+      if (countdown <= 1) {
+        setCountdown(0);
+      } else {
+        setCountdown(countdown - 1);
+      }
+    }, 1000);
+    return () => clearTimeout(timer);
+  }, [countdown]);
+
+  // Clear "Go!" after 1 second
+  useEffect(() => {
+    if (countdown !== 0) return;
+    const timer = setTimeout(() => {
+      setCountdown(null);
+      setReadyPlayers(new Set());
+    }, 1000);
+    return () => clearTimeout(timer);
+  }, [countdown]);
+
   useEffect(() => {
     if (!romUrl) {
       setHasAutosave(false);
@@ -1307,6 +1375,16 @@ const EmulatorPage: React.FC = () => {
     })
     .slice(0, 9);
   const hasSidebar = draftId !== undefined;
+
+  // Start countdown when all players are ready
+  useEffect(() => {
+    if (countdown !== null) return;
+    if (sidebarEntries.length === 0) return;
+    const allReady = sidebarEntries.every(([uid]) => readyPlayers.has(uid));
+    if (allReady && sidebarEntries.length > 1) {
+      setCountdown(10);
+    }
+  }, [readyPlayers, sidebarEntries, countdown]);
 
   // Sorting helper: Active -> Boxed -> Fainted (at end)
   const sortPokemon = (uid: string, mons: any[]) => {
@@ -1390,6 +1468,13 @@ const EmulatorPage: React.FC = () => {
             {/* ── Left column: emulator + own save panel ── */}
             <div className="emulator-col" style={{ flexGrow: 1 }}>
               <div id="game" />
+              {countdown !== null && (
+                <div className="countdown-overlay">
+                  <span className="countdown-text">
+                    {countdown > 0 ? countdown : 'Go!'}
+                  </span>
+                </div>
+              )}
               {/* Tab key overlay for race standings */}
               {showOverlay && hasSidebar && (
                 <div className="race-standings-overlay">
@@ -1526,6 +1611,14 @@ const EmulatorPage: React.FC = () => {
                   {!draftId && urlPokemon.length > 0 && !mySaveData && (
                     <NotebookWithdrawButton pokemon={urlPokemon} />
                   )}
+                  {draftId && draftData && countdown === null && (
+                    <button
+                      className={`ready-race-button ${readyPlayers.has(currentUserId ?? '') ? 'ready' : ''}`}
+                      onClick={handleToggleReady}
+                    >
+                      {readyPlayers.has(currentUserId ?? '') ? 'Ready!' : 'Ready to Race'}
+                    </button>
+                  )}
 
                   <button 
                     className="panel-minimize-btn"
@@ -1604,7 +1697,7 @@ const EmulatorPage: React.FC = () => {
                   const mostRecentLossName = saveData?.most_recent_loss_name;
 
                   return (
-                    <div key={uid} className="sidebar-player-card">
+                    <div key={uid} className={`sidebar-player-card ${readyPlayers.has(uid) ? 'race-ready' : ''}`}>
                       <div className="sidebar-player-header">
                         <span className={`sidebar-username ${isWiped ? 'wiped' : ''} ${isWinner ? 'winner' : ''}`}>
                           {displayDisplayName}

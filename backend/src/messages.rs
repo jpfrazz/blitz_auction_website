@@ -111,6 +111,13 @@ pub enum ServerMessage {
         pokedex_id: u32,
         form: Option<String>,
     },
+    ReadyToRace {
+        user_id: String,
+        user_name: String,
+    },
+    ReadyToRaceCancelled {
+        user_id: String,
+    },
 }
 
 #[derive(Clone, Debug, Deserialize)]

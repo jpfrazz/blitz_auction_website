@@ -237,7 +237,8 @@ interface DraftedPokemon {
 }
 
 interface ButtonInput {
-  button: 'UP' | 'DOWN' | 'LEFT' | 'RIGHT' | 'A' | 'B';
+  button: 'UP' | 'DOWN' | 'LEFT' | 'RIGHT' | 'A' | 'B' | 'WAIT';
+  delayMs?: number;
 }
 
 export const BUTTON_MAP: Record<string, number> = {
@@ -368,12 +369,15 @@ function findShortestPath(
 export function buildNotebookWithdrawSequence(
   draftedPokemon: DraftedPokemon[],
 ): ButtonInput[] {
-  const positions: number[] = [];
+  // Split into batches of MAX_WITHDRAW slots each.
+  // Plusle/Minun count as 2 slots.
+  const batches: number[][] = [];
+  let currentBatch: number[] = [];
   let slotsUsed = 0;
+  const plusleIdx = findMenuIndex('Plusle');
+  let plusleAdded = false;
 
   for (const mon of draftedPokemon) {
-    if (slotsUsed >= MAX_WITHDRAW) break;
-
     const idx = findMenuIndex(mon.name);
     if (idx === -1) continue;
 
@@ -383,38 +387,59 @@ export function buildNotebookWithdrawSequence(
       normalizeName(mon.name) === 'minun';
 
     if (isPlusleMinun) {
-      const plusleIdx = findMenuIndex('Plusle');
-      if (positions.includes(plusleIdx)) continue;
-      if (slotsUsed + 2 > MAX_WITHDRAW) break;
+      if (plusleAdded) continue;
+      if (slotsUsed + 2 > MAX_WITHDRAW) {
+        batches.push(currentBatch);
+        currentBatch = [];
+        slotsUsed = 0;
+      }
+      plusleAdded = true;
       slotsUsed += 2;
+      currentBatch.push(plusleIdx);
     } else {
+      if (slotsUsed + 1 > MAX_WITHDRAW) {
+        batches.push(currentBatch);
+        currentBatch = [];
+        slotsUsed = 0;
+      }
       slotsUsed += 1;
+      currentBatch.push(idx);
+    }
+  }
+  if (currentBatch.length > 0) batches.push(currentBatch);
+
+  if (batches.length === 0) return [];
+
+  const totalItems = NOTEBOOK_POKEMON_LIST.length + 2;
+  const inputs: ButtonInput[] = [];
+
+  for (let b = 0; b < batches.length; b++) {
+    const positions = batches[b].sort((a, c) => a - c);
+    let currentState: MenuState = [0, 0];
+
+    for (const targetPos of positions) {
+      const targetRow = Math.min(CURSOR_CENTER, targetPos);
+      const targetScroll = targetPos - targetRow;
+      const target: MenuState = [targetScroll, targetRow];
+
+      const seg = findShortestPath(currentState, target, totalItems);
+      inputs.push(...seg);
+      inputs.push({ button: 'A' });
+      currentState = target;
     }
 
-    positions.push(idx);
+    // Exit notebook after each batch
+    inputs.push({ button: 'B' });
+
+    // Re-open notebook for next batch (wait for menu to close, then A twice)
+    if (b < batches.length - 1) {
+      inputs.push({ button: 'WAIT', delayMs: 1200 });
+      inputs.push({ button: 'A' });
+      inputs.push({ button: 'WAIT', delayMs: 400 });
+      inputs.push({ button: 'A' });
+      inputs.push({ button: 'WAIT', delayMs: 600 });
+    }
   }
-
-  positions.sort((a, b) => a - b);
-
-  const totalItems = NOTEBOOK_POKEMON_LIST.length + 2; // +2 for "Finish" and "Random"
-
-  const inputs: ButtonInput[] = [];
-  let currentState: MenuState = [0, 0];
-
-  for (const targetPos of positions) {
-    const targetRow = Math.min(CURSOR_CENTER, targetPos);
-    const targetScroll = targetPos - targetRow;
-    const target: MenuState = [targetScroll, targetRow];
-
-    const seg = findShortestPath(currentState, target, totalItems);
-    inputs.push(...seg);
-    inputs.push({ button: 'A' });
-    currentState = target;
-  }
-
-  if (inputs.length === 0) return [];
-
-  inputs.push({ button: 'B' });
 
   return inputs;
 }

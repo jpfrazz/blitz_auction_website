@@ -51,6 +51,10 @@ const NotebookWithdrawButton: React.FC<NotebookWithdrawButtonProps> = ({
       }
 
       for (const input of inputs) {
+        if (input.button === 'WAIT') {
+          await sleep(input.delayMs ?? 100);
+          continue;
+        }
         const btnIndex = BUTTON_MAP[input.button];
         if (btnIndex === undefined) continue;
 
