@@ -413,6 +413,7 @@ export function buildNotebookWithdrawSequence(
   if (batches.length === 0) return [];
 
   const totalItems = NOTEBOOK_POKEMON_LIST.length + 2;
+  const maxScroll = totalItems - PAGE_SIZE;
   const inputs: ButtonInput[] = [];
 
   for (let b = 0; b < batches.length; b++) {
