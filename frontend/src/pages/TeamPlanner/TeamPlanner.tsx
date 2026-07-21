@@ -130,9 +130,23 @@ const TeamPlanner = () => {
           {loading ? (
             <p className="teamplanner-loading">Loading Pokémon...</p>
           ) : (
-            <button className="button teamplanner-add-btn" onClick={handleOpenModal}>
-              {selectedPokemon.length > 0 ? 'Edit Team' : 'Add Pokémon'}
-            </button>
+            <div className="teamplanner-actions">
+              <button className="button teamplanner-add-btn" onClick={handleOpenModal}>
+                {selectedPokemon.length > 0 ? 'Edit Team' : 'Add Pokémon'}
+              </button>
+              {selectedPokemon.length > 0 && (
+                <button
+                  className="button teamplanner-emulator-btn"
+                  onClick={() => {
+                    const params = new URLSearchParams();
+                    selectedPokemon.forEach(o => params.append('pokemon', o.value));
+                    window.open(`/Emulator?${params.toString()}`, '_blank');
+                  }}
+                >
+                  Emulator
+                </button>
+              )}
+            </div>
           )}
 
           {!loading && (

@@ -1,11 +1,9 @@
 import React, { useState, useCallback } from 'react';
-import { Team } from '../../types';
 import { buildNotebookWithdrawSequence, BUTTON_MAP } from './notebookPokemonList';
 import './NotebookWithdrawButton.scss';
 
 interface NotebookWithdrawButtonProps {
-  teams: Team[];
-  currentUserId: string | null;
+  pokemon: { name: string; pokedex_id?: number; form?: string | null }[];
 }
 
 function sleep(ms: number): Promise<void> {
@@ -13,8 +11,7 @@ function sleep(ms: number): Promise<void> {
 }
 
 const NotebookWithdrawButton: React.FC<NotebookWithdrawButtonProps> = ({
-  teams,
-  currentUserId,
+  pokemon,
 }) => {
   const [isRunning, setIsRunning] = useState(false);
   const [status, setStatus] = useState<string | null>(null);
@@ -29,11 +26,8 @@ const NotebookWithdrawButton: React.FC<NotebookWithdrawButtonProps> = ({
       return;
     }
 
-    const myTeam = teams.find(t => t.user_id === currentUserId);
-    const pokemon = myTeam?.auctions_won ?? myTeam?.pokemon ?? [];
-
     if (pokemon.length === 0) {
-      setStatus('No Pokémon drafted');
+      setStatus('No Pokémon to withdraw');
       setTimeout(() => setStatus(null), 3000);
       return;
     }
@@ -79,7 +73,7 @@ const NotebookWithdrawButton: React.FC<NotebookWithdrawButtonProps> = ({
       setIsRunning(false);
       setStatus(null);
     }, 2000);
-  }, [isRunning, teams, currentUserId]);
+  }, [isRunning, pokemon]);
 
   return (
     <div className="notebook-withdraw-container">

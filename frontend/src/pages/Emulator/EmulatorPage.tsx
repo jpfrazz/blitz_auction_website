@@ -1,5 +1,5 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { useParams } from 'react-router-dom';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useParams, useSearchParams } from 'react-router-dom';
 import Header from '../../shared/components/Header';
 import { parseSaveFile, SaveData, getTrainerNameById } from '../../utils/parseSaveFile';
 import { fetchCurrentUser, fetchDraftById, claimEeveelution, unclaimEeveelution, fetchControlBindings, saveControlBindings } from '../../shared/api/draftData';
@@ -279,6 +279,27 @@ interface ToastNotification {
 
 const EmulatorPage: React.FC = () => {
   const { draftId } = useParams<{ draftId?: string }>();
+  const [searchParams] = useSearchParams();
+
+  const urlPokemon = useMemo(() => {
+    const names = searchParams.getAll('pokemon');
+    if (names.length === 0) return [];
+
+    // Handle Plusle and Minun: in-game they're separate entries but selecting
+    // Plusle gives both. Website has "plusle and minun" as one entry, or
+    // individual "plusle"/"minun". If both are present, keep only Plusle.
+    const hasPlusle = names.includes('plusle');
+    const hasMinun = names.includes('minun');
+    const hasCombined = names.includes('plusle and minun');
+
+    const deduped = names.filter(n => {
+      if (n === 'minun' && (hasPlusle || hasCombined)) return false;
+      if (n === 'plusle' && hasCombined) return false;
+      return true;
+    });
+
+    return deduped.map(name => ({ name }));
+  }, [searchParams]);
 
   const [romUrl, setRomUrl] = useState<string | null>(null);
   const [romName, setRomName] = useState<string | null>(null);
@@ -1496,9 +1517,14 @@ const EmulatorPage: React.FC = () => {
                   )}
                   {draftId && draftData && !mySaveData && (
                     <NotebookWithdrawButton
-                      teams={draftData.teams}
-                      currentUserId={currentUserId}
+                      pokemon={
+                        draftData.teams.find((t: any) => t.user_id === currentUserId)
+                          ?.auctions_won ?? []
+                      }
                     />
+                  )}
+                  {!draftId && urlPokemon.length > 0 && !mySaveData && (
+                    <NotebookWithdrawButton pokemon={urlPokemon} />
                   )}
 
                   <button 

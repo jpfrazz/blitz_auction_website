@@ -43,9 +43,33 @@
   color: $eb-text;
 }
 
+.teamplanner-actions {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+}
+
 .teamplanner-add-btn {
   padding: 0.6rem 1.8rem;
   font-size: 1rem;
+}
+
+.teamplanner-emulator-btn {
+  padding: 0.6rem 1.8rem;
+  font-size: 1rem;
+  background: transparent;
+  border: 1px solid #6366f1;
+  color: #6366f1;
+  border-radius: 6px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: border-color 0.15s, color 0.15s, background 0.15s;
+
+  &:hover {
+    background: rgba(99, 102, 241, 0.1);
+    color: #818cf8;
+    border-color: #818cf8;
+  }
 }
 
 .teamplanner-loading {
