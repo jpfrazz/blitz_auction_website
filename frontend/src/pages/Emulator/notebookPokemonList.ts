@@ -292,43 +292,59 @@ function findShortestPath(
 
   const toKey = `${to[0]},${to[1]}`;
 
+  function stepDown([scroll, row]: MenuState): MenuState {
+    if (scroll >= maxScroll) {
+      if (row < PAGE_SIZE - 1) return [scroll, row + 1];
+      return [scroll, row];
+    } else if (row <= CURSOR_CENTER) {
+      return [scroll, row + 1];
+    } else {
+      return [scroll + 1, CURSOR_CENTER + 1];
+    }
+  }
+
+  function stepUp([scroll, row]: MenuState): MenuState {
+    if (scroll === 0) {
+      if (row > 0) return [scroll, row - 1];
+      return [scroll, row];
+    } else if (row > CURSOR_CENTER) {
+      return [scroll, row - 1];
+    } else {
+      return [scroll - 1, CURSOR_CENTER];
+    }
+  }
+
   function nextStates([scroll, row]: MenuState): [MenuState, ButtonInput['button']][] {
     const result: [MenuState, ButtonInput['button']][] = [];
 
-    // UP: move cursor up or scroll up
-    if (scroll === 0) {
-      if (row > 0) {
-        result.push([[scroll, row - 1], 'UP']);
-      }
-    } else if (row > CURSOR_CENTER) {
-      result.push([[scroll, row - 1], 'UP']);
-    } else {
-      result.push([[scroll - 1, row], 'UP']);
+    const upState = stepUp([scroll, row]);
+    if (upState[0] !== scroll || upState[1] !== row) {
+      result.push([upState, 'UP']);
     }
 
-    // DOWN: move cursor down or scroll down
-    if (scroll >= maxScroll) {
-      if (row < PAGE_SIZE - 1) {
-        result.push([[scroll, row + 1], 'DOWN']);
-      }
-    } else if (row < CURSOR_CENTER) {
-      result.push([[scroll, row + 1], 'DOWN']);
-    } else {
-      result.push([[scroll + 1, row], 'DOWN']);
+    const downState = stepDown([scroll, row]);
+    if (downState[0] !== scroll || downState[1] !== row) {
+      result.push([downState, 'DOWN']);
     }
 
-    // LEFT: page up by PAGE_SIZE
-    const leftScroll = Math.max(0, scroll - PAGE_SIZE);
-    if (leftScroll !== scroll) {
-      const leftRow = Math.min(row, Math.min(CURSOR_CENTER, totalItems - leftScroll - 1));
-      result.push([[leftScroll, leftRow], 'LEFT']);
+    let leftState: MenuState = [scroll, row];
+    for (let i = 0; i < PAGE_SIZE; i++) {
+      const next = stepUp(leftState);
+      if (next[0] === leftState[0] && next[1] === leftState[1]) break;
+      leftState = next;
+    }
+    if (leftState[0] !== scroll || leftState[1] !== row) {
+      result.push([leftState, 'LEFT']);
     }
 
-    // RIGHT: page down by PAGE_SIZE
-    const rightScroll = Math.min(maxScroll, scroll + PAGE_SIZE);
-    if (rightScroll !== scroll) {
-      const rightRow = Math.min(row, Math.min(CURSOR_CENTER, totalItems - rightScroll - 1));
-      result.push([[rightScroll, rightRow], 'RIGHT']);
+    let rightState: MenuState = [scroll, row];
+    for (let i = 0; i < PAGE_SIZE; i++) {
+      const next = stepDown(rightState);
+      if (next[0] === rightState[0] && next[1] === rightState[1]) break;
+      rightState = next;
+    }
+    if (rightState[0] !== scroll || rightState[1] !== row) {
+      result.push([rightState, 'RIGHT']);
     }
 
     return result;
@@ -412,7 +428,7 @@ export function buildNotebookWithdrawSequence(
 
   if (batches.length === 0) return [];
 
-  const totalItems = NOTEBOOK_POKEMON_LIST.length + 2;
+  const totalItems = NOTEBOOK_POKEMON_LIST.length + 3;
   const maxScroll = totalItems - PAGE_SIZE;
   const inputs: ButtonInput[] = [];
 
