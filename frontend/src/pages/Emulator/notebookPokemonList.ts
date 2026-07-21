@@ -420,8 +420,12 @@ export function buildNotebookWithdrawSequence(
     let currentState: MenuState = [0, 0];
 
     for (const targetPos of positions) {
-      const targetRow = Math.min(CURSOR_CENTER, targetPos);
-      const targetScroll = targetPos - targetRow;
+      let targetRow = Math.min(CURSOR_CENTER, targetPos);
+      let targetScroll = targetPos - targetRow;
+      if (targetScroll > maxScroll) {
+        targetScroll = maxScroll;
+        targetRow = targetPos - targetScroll;
+      }
       const target: MenuState = [targetScroll, targetRow];
 
       const seg = findShortestPath(currentState, target, totalItems);
