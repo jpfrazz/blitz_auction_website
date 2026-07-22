@@ -29,6 +29,7 @@ interface PlayerRowProps {
   wsConnected?: boolean;
   currentUserId?: string | null;
   highestBid?: number;
+  auctionCompleted?: boolean;
 }
 
 interface SortableItemProps {
@@ -38,9 +39,10 @@ interface SortableItemProps {
   animatingId: string | null;
   autoSortByFunds: boolean;
   getIconName: (name: string) => string;
+  auctionCompleted?: boolean;
 }
 
-const SortableItem: React.FC<SortableItemProps> = ({ team, highestBidderId, wsConnected, animatingId, autoSortByFunds, getIconName }) => {
+const SortableItem: React.FC<SortableItemProps> = ({ team, highestBidderId, wsConnected, animatingId, autoSortByFunds, getIconName, auctionCompleted }) => {
   const {
     attributes,
     listeners,
@@ -95,7 +97,7 @@ const SortableItem: React.FC<SortableItemProps> = ({ team, highestBidderId, wsCo
       <motion.div
         ref={setNodeRef}
         {...attributes}
-        className={`auction-player-box ${playerStateClass} ${team.user_id === highestBidderId ? 'highest-bidder' : ''} ${disconnectedClass} ${team.user_id === animatingId ? 'player-bidding' : ''}`}
+        className={`auction-player-box ${playerStateClass} ${team.user_id === highestBidderId && !auctionCompleted ? 'highest-bidder' : ''} ${disconnectedClass} ${team.user_id === animatingId ? 'player-bidding' : ''}`}
         layout
         layoutId={team.dragId}
         transition={{ duration: 0.4, ease: [0.25, 0.1, 0.25, 1] }}
@@ -118,7 +120,7 @@ const SortableItem: React.FC<SortableItemProps> = ({ team, highestBidderId, wsCo
   );
 };
 
-const PlayerRow: React.FC<PlayerRowProps> = ({ teams, numPlayers, highestBidderId, wsConnected = true, currentUserId, highestBid }) => {
+const PlayerRow: React.FC<PlayerRowProps> = ({ teams, numPlayers, highestBidderId, wsConnected = true, currentUserId, highestBid, auctionCompleted }) => {
   const [animatingId, setAnimatingId] = React.useState<string | null>(null);
   const isInitial = React.useRef(true);
 
@@ -285,6 +287,7 @@ const PlayerRow: React.FC<PlayerRowProps> = ({ teams, numPlayers, highestBidderI
               animatingId={animatingId}
               autoSortByFunds={autoSortByFunds}
               getIconName={getIconName}
+              auctionCompleted={auctionCompleted}
             />
           ))}
         </div>

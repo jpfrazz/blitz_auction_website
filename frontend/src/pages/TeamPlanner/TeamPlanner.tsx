@@ -58,11 +58,13 @@ const TeamPlanner = () => {
   );
 
   const pokemonOptions: PokemonOption[] = useMemo(() => 
-    baseFormPokemon.map(p => ({
-      value: p.name.toLowerCase(),
-      label: p.name,
-      pokemon: p,
-    })),
+    baseFormPokemon
+      .map(p => ({
+        value: p.name.toLowerCase(),
+        label: p.name,
+        pokemon: p,
+      }))
+      .sort((a, b) => a.label.localeCompare(b.label)),
     [baseFormPokemon]
   );
 
@@ -232,7 +234,7 @@ const TeamPlanner = () => {
                     : '#26282b',
                   color: state.isSelected ? '#111' : '#f1f1f1',
                   cursor: 'pointer',
-                  fontSize: '1.05rem',
+                  fontSize: '1.15rem',
                 }),
                 input: (base) => ({
                   ...base,

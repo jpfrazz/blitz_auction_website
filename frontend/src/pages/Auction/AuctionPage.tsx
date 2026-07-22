@@ -739,6 +739,7 @@ const AuctionPage: React.FC = () => {
                 wsConnected={wsConnected}
                 currentUserId={currentUserId}
                 highestBid={currentAuction?.highest_bid}
+                auctionCompleted={auctionState === 'COMPLETED'}
               />
             </div>
             {/* Main content grid */}
