@@ -29,6 +29,12 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ onClose }) => {
     return stored === null ? true : stored === 'true';
   });
 
+  const [notesHotkey, setNotesHotkey] = useState(() => {
+    return localStorage.getItem('eb-notes-hotkey') || 'n';
+  });
+
+  const [isCapturingHotkey, setIsCapturingHotkey] = useState(false);
+
   useEffect(() => {
     document.documentElement.style.setProperty('--eb-primary', primaryColor);
     localStorage.setItem('eb-primary-color', primaryColor);
@@ -43,6 +49,11 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ onClose }) => {
     localStorage.setItem('eb-auto-sort-by-funds', String(autoSortByFunds));
     window.dispatchEvent(new CustomEvent('eb-settings-changed'));
   }, [autoSortByFunds]);
+
+  useEffect(() => {
+    localStorage.setItem('eb-notes-hotkey', notesHotkey);
+    window.dispatchEvent(new CustomEvent('eb-settings-changed'));
+  }, [notesHotkey]);
 
   const handleColorChange = (color: string) => {
     setPrimaryColor(color);
@@ -142,6 +153,43 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ onClose }) => {
               </div>
               <div style={{ fontSize: '0.95rem', color: '#888', marginTop: '-0.5rem' }}>
                 Automatically sort players by remaining funds
+              </div>
+            </div>
+
+            <label style={{ fontSize: '1.4rem', color: '#b0b0b0', fontWeight: 'bold', marginBottom: '0.5rem' }}>Hotkeys</label>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', background: 'rgba(255,255,255,0.05)', padding: '1rem', borderRadius: '8px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <span style={{ fontSize: '1.1rem' }}>Notes Hotkey</span>
+                <button
+                  onClick={() => setIsCapturingHotkey(true)}
+                  onKeyDown={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    const key = e.key.length === 1 ? e.key.toLowerCase() : e.key;
+                    setNotesHotkey(key);
+                    setIsCapturingHotkey(false);
+                  }}
+                  onBlur={() => setIsCapturingHotkey(false)}
+                  style={{
+                    padding: '8px 16px',
+                    background: isCapturingHotkey ? 'var(--eb-primary, #7CB946)' : '#555',
+                    color: '#f1f1f1',
+                    border: 'none',
+                    borderRadius: '6px',
+                    cursor: 'pointer',
+                    fontSize: '0.95rem',
+                    fontWeight: 'bold',
+                    transition: 'background 0.2s',
+                    minWidth: '60px',
+                    textTransform: 'uppercase',
+                  }}
+                >
+                  {isCapturingHotkey ? 'Press a key...' : notesHotkey}
+                </button>
+              </div>
+              <div style={{ fontSize: '0.95rem', color: '#888', marginTop: '-0.5rem' }}>
+                Key to toggle the notes panel
               </div>
             </div>
           </div>

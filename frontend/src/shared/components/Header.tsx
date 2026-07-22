@@ -141,7 +141,8 @@ function Header() {
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key.toLowerCase() === 'n') {
+      const notesHotkey = localStorage.getItem('eb-notes-hotkey') || 'n';
+      if (e.key.toLowerCase() === notesHotkey.toLowerCase()) {
         // Only trigger if user is logged in via Discord (not a guest)
         if (!user || user.is_guest) return;
         

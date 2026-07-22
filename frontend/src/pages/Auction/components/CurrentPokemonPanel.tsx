@@ -124,6 +124,7 @@ const EvolutionTree: React.FC<{ node: EvoNode }> = ({ node }) => {
         <img
           src={getImageSrc(node.pokemon)}
           alt={node.pokemon.name}
+          title={node.pokemon.name}
           className={isBaseform ? "evo-pokemon-img-baseform" : "evo-pokemon-img-evolution"}
         />
         <div className="pokemon-type-ability">

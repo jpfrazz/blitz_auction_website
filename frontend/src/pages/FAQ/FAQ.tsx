@@ -138,9 +138,6 @@ const FAQ = () => (
         <p className="faq-answer">
           Yes! The notebook includes a "Random" option at the bottom of its list. Choose this option eight times to generate yourself a random team of Pokémon, then get racing!
         </p>
-        <p className="faq-answer" style={{ marginTop: '1rem' }}>
-          Additionally, a "Solo Mode" is accessible by interacting the television in the starting room. This mode adjusts all Pokemon to cost "points," challenging you to construct a team of your choice within an 80 point limit (without any need to draft).
-        </p>
       </section>
 
       <section id="whats-changed" className="faq-section" style={{ scrollMarginTop: '120px' }}>
