@@ -751,7 +751,7 @@ const PlayerSearchStatsTab: React.FC<PlayerSearchStatsTabProps> = ({
                             <h3>{personalBestTime ?? '---'}</h3>
                           </div>
                           <div className="player-draft-overview-kicker-group">
-                            <span className="player-draft-overview-kicker">Total Games</span>
+                            <span className="player-draft-overview-kicker">Total Races Played</span>
                             <h3>{totalGames}</h3>
                           </div>
                         </div>
@@ -765,7 +765,7 @@ const PlayerSearchStatsTab: React.FC<PlayerSearchStatsTabProps> = ({
                           Pokemon {tableSortConfig.key === 'name' ? (tableSortConfig.direction === 'asc' ? '↑' : '↓') : ''}
                         </span>
                         <span className="sortable" onClick={() => handleTableSort('playerGames')}>
-                          Games {tableSortConfig.key === 'playerGames' ? (tableSortConfig.direction === 'asc' ? '↑' : '↓') : ''}
+                          Times Drafted {tableSortConfig.key === 'playerGames' ? (tableSortConfig.direction === 'asc' ? '↑' : '↓') : ''}
                         </span>
                         <span className="sortable" onClick={() => handleTableSort('appearances')}>
                           Appearances {tableSortConfig.key === 'appearances' ? (tableSortConfig.direction === 'asc' ? '↑' : '↓') : ''}
