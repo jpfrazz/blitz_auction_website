@@ -153,6 +153,23 @@
         color: #7ed9c0;
     }
 
+    .player-draft-overview-kickers {
+        display: flex;
+        gap: 2rem;
+        flex-wrap: wrap;
+    }
+
+    .player-draft-overview-kicker-group {
+        display: flex;
+        flex-direction: column;
+
+        h3 {
+            margin: 0.2rem 0 0;
+            font-size: 1.45rem;
+            color: $eb-text;
+        }
+    }
+
     .player-draft-overview-profile-name {
         margin-bottom: 0.2rem;
         color: #f5fdfd;
@@ -187,11 +204,19 @@
     .player-draft-overview-table-header,
     .player-draft-overview-row {
         display: grid;
-        grid-template-columns: minmax(0, 1fr) 64px 84px;
+        grid-template-columns: minmax(0, 1fr) 64px 84px 84px 84px;
         gap: 0.75rem;
         align-items: center;
 
-        span:last-child {
+        span:nth-child(5) {
+            text-align: right;
+        }
+
+        span:nth-child(4) {
+            text-align: right;
+        }
+
+        span:nth-child(3) {
             text-align: right;
         }
 
@@ -214,6 +239,51 @@
         padding: 0.45rem 0;
         color: $eb-text;
         font-size: 1.15rem;
+    }
+
+    .diff-negative {
+        color: #53df62;
+        font-weight: 600;
+    }
+
+    .diff-positive {
+        color: #ff6b6b;
+        font-weight: 600;
+    }
+
+    .player-draft-overview-pagination {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 1rem;
+        padding-top: 0.5rem;
+        margin-top: 0.25rem;
+        border-top: 1px solid #27323a;
+    }
+
+    .pagination-btn {
+        background: rgba(255, 255, 255, 0.06);
+        border: 1px solid #32424c;
+        border-radius: 6px;
+        color: $eb-text;
+        padding: 0.3rem 0.7rem;
+        font-size: 0.9rem;
+        cursor: pointer;
+        transition: background 0.15s ease;
+
+        &:hover:not(:disabled) {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        &:disabled {
+            opacity: 0.35;
+            cursor: default;
+        }
+    }
+
+    .pagination-info {
+        color: $eb-text-muted;
+        font-size: 0.9rem;
     }
 
     .player-stat-pill-grid {
@@ -279,24 +349,6 @@
         color: #a5b4fc;
         background: rgba(63, 71, 173, 0.34);
         border-color: rgba(63, 71, 173, 0.46);
-    }
-
-    .player-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        padding-bottom: 0.75rem;
-        border-bottom: 1px solid #27323a;
-
-        h3 {
-            margin: 0;
-            font-size: 1.4rem;
-        }
-
-        .player-stats {
-            color: $eb-text-muted;
-            font-size: 1.1rem;
-        }
     }
 
     .match-timeline {
@@ -573,7 +625,7 @@
 
         .player-draft-overview-table-header,
         .player-draft-overview-row {
-            grid-template-columns: minmax(0, 1fr) 54px 72px;
+            grid-template-columns: minmax(0, 1fr) 54px 72px 72px 72px;
             gap: 0.5rem;
             font-size: 0.9rem;
         }

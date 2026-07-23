@@ -31,6 +31,48 @@ function formatPokemonName(name: string | undefined): string {
   return lower.replace(/'/g, '');
 }
 
+function calculateQuantile(sortedData: number[], q: number) {
+  const pos = (sortedData.length - 1) * q;
+  const base = Math.floor(pos);
+  const rest = pos - base;
+  if (sortedData[base + 1] !== undefined) {
+    return sortedData[base] + rest * (sortedData[base + 1] - sortedData[base]);
+  }
+  return sortedData[base];
+}
+
+const formOverrides: Record<string, { form: string; key: string }> = {
+  'Wooper': { form: 'Paldea', key: 'Wooper-Paldea' },
+  'Vulpix': { form: 'Alola', key: 'Vulpix-Alola' },
+  'Voltorb': { form: 'Hisui', key: 'Voltorb-Hisui' },
+  "Farfetch'd": { form: 'Galar', key: "Farfetch'd-Galar" },
+  'Sandshrew': { form: 'Alola', key: 'Sandshrew-Alola' },
+  'Meowth': { form: 'Galar', key: 'Meowth-Galar' },
+  'Slowpoke': { form: 'Galar', key: 'Slowpoke-Galar' },
+  'Zigzagoon': { form: 'Galar', key: 'Zigzagoon-Galar' },
+};
+
+const resolveIdentity = (name: string, form: string) => {
+  let currentName = name;
+  let currentForm = form;
+
+  const knownForms = ['Alola', 'Galar', 'Hisui', 'Paldea'];
+  for (const f of knownForms) {
+    if (currentName.endsWith(`-${f}`)) {
+      currentName = currentName.slice(0, -(f.length + 1));
+      currentForm = f;
+      break;
+    }
+  }
+
+  if ((!currentForm || currentForm === 'base') && formOverrides[currentName]) {
+    return { name: currentName, ...formOverrides[currentName] };
+  }
+  const effectiveForm = currentForm && currentForm !== 'base' ? currentForm : '';
+  const key = `${currentName}${effectiveForm ? '-' + effectiveForm : ''}`;
+  return { name: currentName, form: effectiveForm, key };
+};
+
 function getPlacementLabel(placement: number | null, isRanked: boolean): string {
   if (!isRanked || placement === null) {
     return 'Normal';
@@ -320,11 +362,138 @@ const PlayerSearchStatsTab: React.FC<PlayerSearchStatsTabProps> = ({
 
   const featuredPokemon = pokemonDraftSummary[0] ?? null;
 
+  const personalBestTime = useMemo(() => {
+    let bestSeconds = Infinity;
+    bossBattleHistory.forEach((battles) => {
+      battles.forEach((b) => {
+        if (b.is_loss) return;
+        if (b.trainer_id !== 804 && b.trainer_id !== 656) return;
+        const total = b.hours * 3600 + b.minutes * 60 + b.seconds;
+        if (total < bestSeconds) bestSeconds = total;
+      });
+    });
+    if (bestSeconds === Infinity) return null;
+    const h = Math.floor(bestSeconds / 3600);
+    const m = Math.floor((bestSeconds % 3600) / 60);
+    const s = bestSeconds % 60;
+    return `${h > 0 ? `${h}h ` : ''}${m}m ${s}s`;
+  }, [bossBattleHistory]);
+
+  const totalGames = filteredMatchHistory?.length ?? 0;
+
+  const globalPokemonPrices = useMemo(() => {
+    const map = new Map<string, number>();
+    if (!stats?.auctions) return map;
+
+    const grouped = new Map<string, number[]>();
+    stats.auctions.forEach((auction) => {
+      if (auction.winning_bid === null) return;
+      if (!validDraftIds.has(auction.draft_id)) return;
+      const { key } = resolveIdentity(auction.name, auction.form || '');
+      if (!grouped.has(key)) grouped.set(key, []);
+      grouped.get(key)!.push(auction.winning_bid);
+    });
+
+    (stats.legacy ?? []).forEach((legacyRow) => {
+      const normalized = legacyRow.cost.trim().replace(/,/g, '');
+      if (!/^\d+$/.test(normalized)) return;
+      const bid = Number(normalized);
+      const { key } = resolveIdentity(legacyRow.pokemon, '');
+      if (!grouped.has(key)) grouped.set(key, []);
+      grouped.get(key)!.push(bid);
+    });
+
+    grouped.forEach((bids, key) => {
+      let filtered = bids.filter((b) => b !== 100);
+      if (filtered.length > 1) {
+        const sorted = [...filtered].sort((a, b) => a - b);
+        const q1 = calculateQuantile(sorted, 0.25);
+        const q3 = calculateQuantile(sorted, 0.75);
+        const iqr = q3 - q1;
+        const lower = q1 - 1.5 * iqr;
+        const upper = q3 + 2.0 * iqr;
+        filtered = sorted.filter((b) => b >= lower && b <= upper);
+      }
+      if (filtered.length === 0) return;
+      const sum = filtered.reduce((a, b) => a + b, 0);
+      const avg = Math.round(sum / filtered.length);
+      if (avg > 100) map.set(key, avg);
+    });
+
+    return map;
+  }, [stats?.auctions, stats?.legacy, validDraftIds]);
+
+  interface AllPokemonRow {
+    key: string;
+    name: string;
+    form: string;
+    playerGames: number;
+    avgPaid: number | null;
+    avgPrice: number | null;
+    diff: number | null;
+  }
+
+  const allPokemonList = useMemo<AllPokemonRow[]>(() => {
+    const playerMap = new Map<string, PokemonDraftSummary>();
+    pokemonDraftSummary.forEach((p) => playerMap.set(p.key, p));
+
+    const globalPokemonKeys = new Map<string, { name: string; form: string }>();
+    stats?.auctions.forEach((auction) => {
+      if (!validDraftIds.has(auction.draft_id)) return;
+      const { key, name, form } = resolveIdentity(auction.name, auction.form || '');
+      if (!globalPokemonKeys.has(key)) globalPokemonKeys.set(key, { name, form });
+    });
+
+    const rows: AllPokemonRow[] = [];
+    globalPokemonKeys.forEach(({ name, form }, key) => {
+      const player = playerMap.get(key);
+      const avgPrice = globalPokemonPrices.get(key) ?? null;
+      const avgPaid = player ? Math.round(player.avgSpend) : null;
+      const diff = avgPaid !== null && avgPrice !== null ? avgPaid - avgPrice : null;
+      rows.push({
+        key,
+        name,
+        form,
+        playerGames: player?.games ?? 0,
+        avgPaid,
+        avgPrice,
+        diff,
+      });
+    });
+
+    playerMap.forEach(({ name, form }, key) => {
+      if (globalPokemonKeys.has(key)) return;
+      const avgPaid = Math.round(playerMap.get(key)!.avgSpend);
+      rows.push({
+        key,
+        name,
+        form,
+        playerGames: playerMap.get(key)!.games,
+        avgPaid,
+        avgPrice: null,
+        diff: null,
+      });
+    });
+
+    rows.sort((a, b) => {
+      if (b.playerGames !== a.playerGames) return b.playerGames - a.playerGames;
+      return getPokemonLabel(a.name, a.form).localeCompare(getPokemonLabel(b.name, b.form));
+    });
+
+    return rows;
+  }, [pokemonDraftSummary, stats?.auctions, validDraftIds, globalPokemonPrices]);
+
+  const [pokemonPage, setPokemonPage] = useState(0);
+  const POKEMON_PAGE_SIZE = 10;
+  const pokemonTotalPages = Math.max(1, Math.ceil(allPokemonList.length / POKEMON_PAGE_SIZE));
+  const pagedPokemonList = allPokemonList.slice(pokemonPage * POKEMON_PAGE_SIZE, (pokemonPage + 1) * POKEMON_PAGE_SIZE);
+
   const handleSelectPlayer = async (player: StatsPagePlayer) => {
     setIsAutocompleteOpen(false);
     setExpandedTeamId(null);
     setSelectedPlayer(player);
     setSearchInput(player.user_name);
+    setPokemonPage(0);
     setPlayerMatchHistoryLoading(true);
     setPlayerMatchHistoryError(null);
 
@@ -513,10 +682,22 @@ const PlayerSearchStatsTab: React.FC<PlayerSearchStatsTabProps> = ({
                             </div>
                           </div>
                         )}
-                        <span className="player-draft-overview-kicker">Most Drafted Pokemon</span>
-                        {featuredPokemon && (
-                          <h3>{getPokemonLabel(featuredPokemon.name, featuredPokemon.form)}</h3>
-                        )}
+                        <div className="player-draft-overview-kickers">
+                          <div className="player-draft-overview-kicker-group">
+                            <span className="player-draft-overview-kicker">Most Drafted Pokemon</span>
+                            {featuredPokemon && (
+                              <h3>{getPokemonLabel(featuredPokemon.name, featuredPokemon.form)}</h3>
+                            )}
+                          </div>
+                          <div className="player-draft-overview-kicker-group">
+                            <span className="player-draft-overview-kicker">Personal Best Time</span>
+                            <h3>{personalBestTime ?? '---'}</h3>
+                          </div>
+                          <div className="player-draft-overview-kicker-group">
+                            <span className="player-draft-overview-kicker">Total Games</span>
+                            <h3>{totalGames}</h3>
+                          </div>
+                        </div>
                       </div>
                       {featuredPokemon && (
                         <div className="player-draft-overview-featured-stats">
@@ -534,10 +715,12 @@ const PlayerSearchStatsTab: React.FC<PlayerSearchStatsTabProps> = ({
                       <div className="player-draft-overview-table-header">
                         <span>Pokemon</span>
                         <span>Games</span>
-                        <span>Avg</span>
+                        <span>Avg Paid</span>
+                        <span>Avg Price</span>
+                        <span>Diff</span>
                       </div>
 
-                      {pokemonDraftSummary.slice(0, 10).map((pokemon) => (
+                      {pagedPokemonList.map((pokemon) => (
                         <div className="player-draft-overview-row" key={pokemon.key}>
                           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                             <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
@@ -558,42 +741,46 @@ const PlayerSearchStatsTab: React.FC<PlayerSearchStatsTabProps> = ({
                                 fontWeight: 'bold',
                                 border: '1px solid #555',
                                 lineHeight: '1'
-                              }}>{pokemon.games}</span>
+                              }}>{pokemon.playerGames}</span>
                             </div>
                             <span>{getPokemonLabel(pokemon.name, pokemon.form)}</span>
                           </div>
-                          <span>{pokemon.games}</span>
-                          <span>${Math.round(pokemon.avgSpend).toLocaleString()}</span>
+                          <span>{pokemon.playerGames}</span>
+                          <span>{pokemon.avgPaid !== null ? `$${pokemon.avgPaid.toLocaleString()}` : '---'}</span>
+                          <span>{pokemon.avgPrice !== null ? `$${pokemon.avgPrice.toLocaleString()}` : '---'}</span>
+                          <span className={pokemon.diff !== null ? (pokemon.diff < 0 ? 'diff-negative' : pokemon.diff > 0 ? 'diff-positive' : '') : ''}>
+                            {pokemon.diff !== null
+                              ? (pokemon.diff < 0 ? `-$${Math.abs(pokemon.diff).toLocaleString()}` : pokemon.diff > 0 ? `+$${pokemon.diff.toLocaleString()}` : '$0')
+                              : '---'}
+                          </span>
                         </div>
                       ))}
+
+                      {pokemonTotalPages > 1 && (
+                        <div className="player-draft-overview-pagination">
+                          <button
+                            type="button"
+                            className="pagination-btn"
+                            disabled={pokemonPage === 0}
+                            onClick={() => setPokemonPage((p) => p - 1)}
+                          >
+                            ‹ Prev
+                          </button>
+                          <span className="pagination-info">{pokemonPage + 1} / {pokemonTotalPages}</span>
+                          <button
+                            type="button"
+                            className="pagination-btn"
+                            disabled={pokemonPage >= pokemonTotalPages - 1}
+                            onClick={() => setPokemonPage((p) => p + 1)}
+                          >
+                            Next ›
+                          </button>
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>
               )}
-
-              <div className="player-header">
-                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                  {(selectedPlayer as any).avatar && (
-                    <img
-                      src={`https://cdn.discordapp.com/avatars/${selectedPlayer.user_id}/${(selectedPlayer as any).avatar}.png`}
-                      alt=""
-                      style={{ width: '32px', height: '32px', borderRadius: '50%' }}
-                      onError={(e) => {
-                        (e.target as HTMLImageElement).src = '/generic/DiscordAvatar.png';
-                      }}
-                    />
-                  )}
-                  <div>
-                    <h3 style={{ margin: 0 }}>
-                      {selectedPlayer.user_name}
-                      {selectedPlayer.global_name && <span style={{ fontSize: '0.8em', opacity: 0.7, marginLeft: '8px' }}>({selectedPlayer.global_name})</span>}
-                    </h3>
-                    <span className="player-stats">
-                      {filteredMatchHistory.length} game{filteredMatchHistory.length !== 1 ? 's' : ''}
-                    </span>
-                  </div>
-                </div>
-              </div>
 
               <div className="match-timeline">
                 {filteredMatchHistory.length === 0 && (
