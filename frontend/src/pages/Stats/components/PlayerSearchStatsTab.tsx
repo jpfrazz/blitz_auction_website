@@ -495,7 +495,7 @@ const PlayerSearchStatsTab: React.FC<PlayerSearchStatsTabProps> = ({
   }, [pokemonDraftSummary, stats?.auctions, validDraftIds, globalPokemonPrices, filteredMatchHistory]);
 
   const signaturePokemon = useMemo(() => {
-    const candidates = allPokemonList.filter((p) => p.pctDrafted !== null && p.pctDrafted > 0);
+    const candidates = allPokemonList.filter((p) => p.pctDrafted !== null && p.pctDrafted > 0 && p.playerGames >= 3);
     if (candidates.length === 0) return null;
     return candidates.reduce((best, p) => (p.pctDrafted! > best.pctDrafted! ? p : best), candidates[0]);
   }, [allPokemonList]);
