@@ -435,7 +435,10 @@ const PlayerSearchStatsTab: React.FC<PlayerSearchStatsTabProps> = ({
 
   const allPokemonList = useMemo<AllPokemonRow[]>(() => {
     const playerMap = new Map<string, PokemonDraftSummary>();
-    pokemonDraftSummary.forEach((p) => playerMap.set(p.key, p));
+    pokemonDraftSummary.forEach((p) => {
+      const { key } = resolveIdentity(p.name, p.form);
+      playerMap.set(key, p);
+    });
 
     const globalPokemonKeys = new Map<string, { name: string; form: string }>();
     stats?.auctions.forEach((auction) => {
@@ -461,20 +464,6 @@ const PlayerSearchStatsTab: React.FC<PlayerSearchStatsTabProps> = ({
       });
     });
 
-    playerMap.forEach(({ name, form }, key) => {
-      if (globalPokemonKeys.has(key)) return;
-      const avgPaid = Math.round(playerMap.get(key)!.avgSpend);
-      rows.push({
-        key,
-        name,
-        form,
-        playerGames: playerMap.get(key)!.games,
-        avgPaid,
-        avgPrice: null,
-        diff: null,
-      });
-    });
-
     rows.sort((a, b) => {
       if (b.playerGames !== a.playerGames) return b.playerGames - a.playerGames;
       return getPokemonLabel(a.name, a.form).localeCompare(getPokemonLabel(b.name, b.form));
@@ -483,17 +472,11 @@ const PlayerSearchStatsTab: React.FC<PlayerSearchStatsTabProps> = ({
     return rows;
   }, [pokemonDraftSummary, stats?.auctions, validDraftIds, globalPokemonPrices]);
 
-  const [pokemonPage, setPokemonPage] = useState(0);
-  const POKEMON_PAGE_SIZE = 10;
-  const pokemonTotalPages = Math.max(1, Math.ceil(allPokemonList.length / POKEMON_PAGE_SIZE));
-  const pagedPokemonList = allPokemonList.slice(pokemonPage * POKEMON_PAGE_SIZE, (pokemonPage + 1) * POKEMON_PAGE_SIZE);
-
   const handleSelectPlayer = async (player: StatsPagePlayer) => {
     setIsAutocompleteOpen(false);
     setExpandedTeamId(null);
     setSelectedPlayer(player);
     setSearchInput(player.user_name);
-    setPokemonPage(0);
     setPlayerMatchHistoryLoading(true);
     setPlayerMatchHistoryError(null);
 
@@ -711,6 +694,7 @@ const PlayerSearchStatsTab: React.FC<PlayerSearchStatsTabProps> = ({
                       )}
                     </div>
 
+                    <div className="player-draft-overview-table-wrapper">
                     <div className="player-draft-overview-table">
                       <div className="player-draft-overview-table-header">
                         <span>Pokemon</span>
@@ -720,7 +704,7 @@ const PlayerSearchStatsTab: React.FC<PlayerSearchStatsTabProps> = ({
                         <span>Diff</span>
                       </div>
 
-                      {pagedPokemonList.map((pokemon) => (
+                      {allPokemonList.map((pokemon) => (
                         <div className="player-draft-overview-row" key={pokemon.key}>
                           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                             <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
@@ -755,28 +739,7 @@ const PlayerSearchStatsTab: React.FC<PlayerSearchStatsTabProps> = ({
                           </span>
                         </div>
                       ))}
-
-                      {pokemonTotalPages > 1 && (
-                        <div className="player-draft-overview-pagination">
-                          <button
-                            type="button"
-                            className="pagination-btn"
-                            disabled={pokemonPage === 0}
-                            onClick={() => setPokemonPage((p) => p - 1)}
-                          >
-                            ‹ Prev
-                          </button>
-                          <span className="pagination-info">{pokemonPage + 1} / {pokemonTotalPages}</span>
-                          <button
-                            type="button"
-                            className="pagination-btn"
-                            disabled={pokemonPage >= pokemonTotalPages - 1}
-                            onClick={() => setPokemonPage((p) => p + 1)}
-                          >
-                            Next ›
-                          </button>
-                        </div>
-                      )}
+                    </div>
                     </div>
                   </div>
                 </div>

@@ -162,6 +162,9 @@
     .player-draft-overview-kicker-group {
         display: flex;
         flex-direction: column;
+        border: 1px solid $eb-primary;
+        border-radius: 10px;
+        padding: 0.4rem 0.7rem;
 
         h3 {
             margin: 0.2rem 0 0;
@@ -195,10 +198,29 @@
         gap: 0.5rem;
     }
 
+    .player-draft-overview-table-wrapper {
+        max-height: 480px;
+        overflow-y: auto;
+        scrollbar-width: thin;
+        scrollbar-color: #32424c transparent;
+
+        &::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        &::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        &::-webkit-scrollbar-thumb {
+            background-color: #32424c;
+            border-radius: 3px;
+        }
+    }
+
     .player-draft-overview-table {
         display: grid;
         gap: 0.4rem;
-        max-width: 420px;
     }
 
     .player-draft-overview-table-header,
@@ -249,41 +271,6 @@
     .diff-positive {
         color: #ff6b6b;
         font-weight: 600;
-    }
-
-    .player-draft-overview-pagination {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        gap: 1rem;
-        padding-top: 0.5rem;
-        margin-top: 0.25rem;
-        border-top: 1px solid #27323a;
-    }
-
-    .pagination-btn {
-        background: rgba(255, 255, 255, 0.06);
-        border: 1px solid #32424c;
-        border-radius: 6px;
-        color: $eb-text;
-        padding: 0.3rem 0.7rem;
-        font-size: 0.9rem;
-        cursor: pointer;
-        transition: background 0.15s ease;
-
-        &:hover:not(:disabled) {
-            background: rgba(255, 255, 255, 0.1);
-        }
-
-        &:disabled {
-            opacity: 0.35;
-            cursor: default;
-        }
-    }
-
-    .pagination-info {
-        color: $eb-text-muted;
-        font-size: 0.9rem;
     }
 
     .player-stat-pill-grid {
