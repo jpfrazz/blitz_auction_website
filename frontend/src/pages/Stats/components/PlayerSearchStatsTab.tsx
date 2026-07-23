@@ -766,7 +766,7 @@ const PlayerSearchStatsTab: React.FC<PlayerSearchStatsTabProps> = ({
                           Games {tableSortConfig.key === 'playerGames' ? (tableSortConfig.direction === 'asc' ? '↑' : '↓') : ''}
                         </span>
                         <span className="sortable" onClick={() => handleTableSort('appearances')}>
-                          Apps {tableSortConfig.key === 'appearances' ? (tableSortConfig.direction === 'asc' ? '↑' : '↓') : ''}
+                          Appearances {tableSortConfig.key === 'appearances' ? (tableSortConfig.direction === 'asc' ? '↑' : '↓') : ''}
                         </span>
                         <span className="sortable" onClick={() => handleTableSort('pctDrafted')}>
                           % Drafted {tableSortConfig.key === 'pctDrafted' ? (tableSortConfig.direction === 'asc' ? '↑' : '↓') : ''}

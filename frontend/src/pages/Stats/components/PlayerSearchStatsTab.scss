@@ -162,7 +162,7 @@
     .player-draft-overview-kicker-group {
         display: flex;
         flex-direction: column;
-        border: 1px solid $eb-primary;
+        border: 1px solid #32424c;
         border-radius: 10px;
         padding: 0.4rem 0.7rem;
 
@@ -200,7 +200,7 @@
 
     .player-draft-overview-table-wrapper {
         max-height: 480px;
-        max-width: 580px;
+        max-width: 700px;
         overflow-y: auto;
         scrollbar-width: thin;
         scrollbar-color: #32424c transparent;
@@ -227,7 +227,7 @@
     .player-draft-overview-table-header,
     .player-draft-overview-row {
         display: grid;
-        grid-template-columns: minmax(0, 1fr) 64px 54px 64px 84px 84px 84px;
+        grid-template-columns: minmax(0, 1fr) 64px 110px 80px 84px 84px 84px;
         gap: 0.75rem;
         align-items: center;
 
@@ -257,10 +257,14 @@
     }
 
     .player-draft-overview-table-header {
+        position: sticky;
+        top: 0;
+        z-index: 1;
+        background: rgba(15, 20, 24, 0.95);
         padding-bottom: 0.35rem;
         border-bottom: 1px solid #27323a;
         color: #8ea1ac;
-        font-size: 1rem;
+        font-size: 1.1rem;
         font-weight: 700;
         letter-spacing: 0.04em;
         text-transform: uppercase;
@@ -279,7 +283,7 @@
     .player-draft-overview-row {
         padding: 0.45rem 0;
         color: $eb-text;
-        font-size: 1.15rem;
+        font-size: 1.25rem;
     }
 
     .diff-negative {
@@ -648,9 +652,13 @@
 
         .player-draft-overview-table-header,
         .player-draft-overview-row {
-            grid-template-columns: minmax(0, 1fr) 54px 46px 54px 72px 72px 72px;
+            grid-template-columns: minmax(0, 1fr) 54px 92px 68px 72px 72px 72px;
             gap: 0.5rem;
-            font-size: 0.9rem;
+            font-size: 1.0rem;
+        }
+
+        .player-draft-overview-table-header {
+            font-size: 1.0rem;
         }
 
         .player-stat-pill-grid {
