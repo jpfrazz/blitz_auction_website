@@ -494,6 +494,12 @@ const PlayerSearchStatsTab: React.FC<PlayerSearchStatsTabProps> = ({
     return rows;
   }, [pokemonDraftSummary, stats?.auctions, validDraftIds, globalPokemonPrices, filteredMatchHistory]);
 
+  const signaturePokemon = useMemo(() => {
+    const candidates = allPokemonList.filter((p) => p.pctDrafted !== null && p.pctDrafted > 0);
+    if (candidates.length === 0) return null;
+    return candidates.reduce((best, p) => (p.pctDrafted! > best.pctDrafted! ? p : best), candidates[0]);
+  }, [allPokemonList]);
+
   type TableSortKey = 'name' | 'playerGames' | 'appearances' | 'pctDrafted' | 'avgPaid' | 'avgPrice' | 'diff';
   const [tableSortConfig, setTableSortConfig] = useState<{ key: TableSortKey; direction: 'asc' | 'desc' }>({ key: 'playerGames', direction: 'desc' });
 
@@ -661,7 +667,7 @@ const PlayerSearchStatsTab: React.FC<PlayerSearchStatsTabProps> = ({
 
           {!selectedPlayer && !playerMatchHistoryLoading && topPlayers.length > 0 && (
             <div className="player-search-suggestions" style={{ marginTop: '0.3rem' }}>
-              <p style={{ opacity: 0.6, fontSize: '1.1rem', marginBottom: '1rem' }}>Active Racers (Top Games Played)</p>
+              <p style={{ opacity: 0.6, fontSize: '1.2rem', marginBottom: '1rem' }}>Active Racers (Top Games Played)</p>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '10px' }}>
                 {topPlayers.map((player) => (
                   <button
@@ -683,8 +689,8 @@ const PlayerSearchStatsTab: React.FC<PlayerSearchStatsTabProps> = ({
                       <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: '#333' }} />
                     )}
                     <div style={{ display: 'flex', flexDirection: 'column' }}>
-                      <span style={{ fontWeight: 'bold', fontSize: '1rem' }}>{player.global_name || player.user_name}</span>
-                      <span style={{ fontSize: '0.85rem', opacity: 0.7 }}>{player.gamesPlayed} games</span>
+                      <span style={{ fontWeight: 'bold', fontSize: '1.1rem' }}>{player.global_name || player.user_name}</span>
+                      <span style={{ fontSize: '0.95rem', opacity: 0.7 }}>{player.gamesPlayed} games</span>
                     </div>
                   </button>
                 ))}
@@ -729,11 +735,17 @@ const PlayerSearchStatsTab: React.FC<PlayerSearchStatsTabProps> = ({
                         )}
                         <div className="player-draft-overview-kickers">
                           <div className="player-draft-overview-kicker-group">
-                            <span className="player-draft-overview-kicker">Most Drafted Pokemon</span>
+                            <span className="player-draft-overview-kicker">Most Drafted</span>
                             {featuredPokemon && (
                               <h3>{getPokemonLabel(featuredPokemon.name, featuredPokemon.form)}</h3>
                             )}
                           </div>
+                          {signaturePokemon && (
+                            <div className="player-draft-overview-kicker-group">
+                              <span className="player-draft-overview-kicker">Signature Pokemon</span>
+                              <h3>{getPokemonLabel(signaturePokemon.name, signaturePokemon.form)} ({signaturePokemon.pctDrafted}%)</h3>
+                            </div>
+                          )}
                           <div className="player-draft-overview-kicker-group">
                             <span className="player-draft-overview-kicker">Personal Best Time</span>
                             <h3>{personalBestTime ?? '---'}</h3>
@@ -744,16 +756,6 @@ const PlayerSearchStatsTab: React.FC<PlayerSearchStatsTabProps> = ({
                           </div>
                         </div>
                       </div>
-                      {featuredPokemon && (
-                        <div className="player-draft-overview-featured-stats">
-                          <span className="player-draft-overview-featured-count">
-                            {featuredPokemon.games} game{featuredPokemon.games !== 1 ? 's' : ''}
-                          </span>
-                          <span className="player-draft-overview-featured-count">
-                            Avg ${Math.round(featuredPokemon.avgSpend).toLocaleString()}
-                          </span>
-                        </div>
-                      )}
                     </div>
 
                     <div className="player-draft-overview-table-wrapper">
@@ -812,7 +814,7 @@ const PlayerSearchStatsTab: React.FC<PlayerSearchStatsTabProps> = ({
                           <span>{pokemon.pctDrafted !== null ? `${pokemon.pctDrafted}%` : '---'}</span>
                           <span>{pokemon.avgPaid !== null ? `$${pokemon.avgPaid.toLocaleString()}` : '---'}</span>
                           <span>{pokemon.avgPrice !== null ? `$${pokemon.avgPrice.toLocaleString()}` : '---'}</span>
-                          <span className={pokemon.diff !== null ? (pokemon.diff < 0 ? 'diff-negative' : pokemon.diff > 0 ? 'diff-positive' : '') : ''}>
+                          <span className={pokemon.diff !== null ? (pokemon.diff < 0 ? 'diff-negative' : pokemon.diff > 0 ? 'diff-positive' : '') : ''} style={{ padding: '2px 6px' }}>
                             {pokemon.diff !== null
                               ? (pokemon.diff < 0 ? `-$${Math.abs(pokemon.diff).toLocaleString()}` : pokemon.diff > 0 ? `+$${pokemon.diff.toLocaleString()}` : '$0')
                               : '---'}

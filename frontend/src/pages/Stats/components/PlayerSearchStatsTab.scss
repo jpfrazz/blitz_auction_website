@@ -78,7 +78,7 @@
         text-align: center;
         color: $eb-text-muted;
         padding: 1rem;
-        font-size: 1.05rem;
+        font-size: 1.25rem;
 
         &.error {
             color: #f85149;
@@ -200,8 +200,9 @@
 
     .player-draft-overview-table-wrapper {
         max-height: 480px;
-        max-width: 700px;
+        max-width: 720px;
         overflow-y: auto;
+        scrollbar-gutter: stable;
         scrollbar-width: thin;
         scrollbar-color: #32424c transparent;
 
@@ -287,13 +288,17 @@
     }
 
     .diff-negative {
-        color: #53df62;
+        color: #4caf50;
+        background: rgba(0, 255, 0, 0.15);
         font-weight: 600;
+        border-radius: 4px;
     }
 
     .diff-positive {
-        color: #ff6b6b;
+        color: #f44336;
+        background: rgba(255, 0, 0, 0.15);
         font-weight: 600;
+        border-radius: 4px;
     }
 
     .player-stat-pill-grid {
