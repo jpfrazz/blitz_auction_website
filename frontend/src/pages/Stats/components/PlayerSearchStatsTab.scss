@@ -200,6 +200,7 @@
 
     .player-draft-overview-table-wrapper {
         max-height: 480px;
+        max-width: 580px;
         overflow-y: auto;
         scrollbar-width: thin;
         scrollbar-color: #32424c transparent;
@@ -226,9 +227,17 @@
     .player-draft-overview-table-header,
     .player-draft-overview-row {
         display: grid;
-        grid-template-columns: minmax(0, 1fr) 64px 84px 84px 84px;
+        grid-template-columns: minmax(0, 1fr) 64px 54px 64px 84px 84px 84px;
         gap: 0.75rem;
         align-items: center;
+
+        span:nth-child(7) {
+            text-align: right;
+        }
+
+        span:nth-child(6) {
+            text-align: right;
+        }
 
         span:nth-child(5) {
             text-align: right;
@@ -255,6 +264,16 @@
         font-weight: 700;
         letter-spacing: 0.04em;
         text-transform: uppercase;
+
+        span.sortable {
+            cursor: pointer;
+            user-select: none;
+            transition: color 0.12s ease;
+
+            &:hover {
+                color: #c0d0da;
+            }
+        }
     }
 
     .player-draft-overview-row {
@@ -343,6 +362,23 @@
         flex-direction: column;
         gap: 0.65rem;
         margin-top: 0.75rem;
+        max-height: 1400px;
+        overflow-y: auto;
+        scrollbar-width: thin;
+        scrollbar-color: #32424c transparent;
+
+        &::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        &::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        &::-webkit-scrollbar-thumb {
+            background-color: #32424c;
+            border-radius: 3px;
+        }
     }
 
     .match-timeline-entry {
@@ -612,7 +648,7 @@
 
         .player-draft-overview-table-header,
         .player-draft-overview-row {
-            grid-template-columns: minmax(0, 1fr) 54px 72px 72px 72px;
+            grid-template-columns: minmax(0, 1fr) 54px 46px 54px 72px 72px 72px;
             gap: 0.5rem;
             font-size: 0.9rem;
         }

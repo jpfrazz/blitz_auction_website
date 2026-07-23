@@ -428,6 +428,8 @@ const PlayerSearchStatsTab: React.FC<PlayerSearchStatsTabProps> = ({
     name: string;
     form: string;
     playerGames: number;
+    appearances: number;
+    pctDrafted: number | null;
     avgPaid: number | null;
     avgPrice: number | null;
     diff: number | null;
@@ -439,6 +441,18 @@ const PlayerSearchStatsTab: React.FC<PlayerSearchStatsTabProps> = ({
       const { key } = resolveIdentity(p.name, p.form);
       playerMap.set(key, p);
     });
+
+    // For each pokemon, the set of draft_ids where it was auctioned
+    const pokemonDraftAppearances = new Map<string, Set<string>>();
+    stats?.auctions.forEach((auction) => {
+      if (!validDraftIds.has(auction.draft_id)) return;
+      const { key } = resolveIdentity(auction.name, auction.form || '');
+      if (!pokemonDraftAppearances.has(key)) pokemonDraftAppearances.set(key, new Set());
+      pokemonDraftAppearances.get(key)!.add(auction.draft_id);
+    });
+
+    // Set of draft_ids the player participated in
+    const playerDraftIds = new Set(filteredMatchHistory?.map((t) => t.draft_id) ?? []);
 
     const globalPokemonKeys = new Map<string, { name: string; form: string }>();
     stats?.auctions.forEach((auction) => {
@@ -453,11 +467,19 @@ const PlayerSearchStatsTab: React.FC<PlayerSearchStatsTabProps> = ({
       const avgPrice = globalPokemonPrices.get(key) ?? null;
       const avgPaid = player ? Math.round(player.avgSpend) : null;
       const diff = avgPaid !== null && avgPrice !== null ? avgPaid - avgPrice : null;
+
+      const draftSets = pokemonDraftAppearances.get(key);
+      const appearances = draftSets ? Array.from(draftSets).filter((id) => playerDraftIds.has(id)).length : 0;
+      const timesDrafted = player?.games ?? 0;
+      const pctDrafted = appearances > 0 ? Math.round((timesDrafted / appearances) * 100) : null;
+
       rows.push({
         key,
         name,
         form,
-        playerGames: player?.games ?? 0,
+        playerGames: timesDrafted,
+        appearances,
+        pctDrafted,
         avgPaid,
         avgPrice,
         diff,
@@ -470,13 +492,53 @@ const PlayerSearchStatsTab: React.FC<PlayerSearchStatsTabProps> = ({
     });
 
     return rows;
-  }, [pokemonDraftSummary, stats?.auctions, validDraftIds, globalPokemonPrices]);
+  }, [pokemonDraftSummary, stats?.auctions, validDraftIds, globalPokemonPrices, filteredMatchHistory]);
+
+  type TableSortKey = 'name' | 'playerGames' | 'appearances' | 'pctDrafted' | 'avgPaid' | 'avgPrice' | 'diff';
+  const [tableSortConfig, setTableSortConfig] = useState<{ key: TableSortKey; direction: 'asc' | 'desc' }>({ key: 'playerGames', direction: 'desc' });
+
+  const handleTableSort = (key: TableSortKey) => {
+    setTableSortConfig((current) => ({
+      key,
+      direction: current.key === key && current.direction === 'desc' ? 'asc' : 'desc',
+    }));
+  };
+
+  const sortedPokemonList = useMemo(() => {
+    const sorted = [...allPokemonList];
+    const { key, direction } = tableSortConfig;
+    const mult = direction === 'asc' ? 1 : -1;
+
+    sorted.sort((a, b) => {
+      switch (key) {
+        case 'name':
+          return mult * getPokemonLabel(a.name, a.form).localeCompare(getPokemonLabel(b.name, b.form));
+        case 'playerGames':
+          return mult * (a.playerGames - b.playerGames);
+        case 'appearances':
+          return mult * (a.appearances - b.appearances);
+        case 'pctDrafted':
+          return mult * ((a.pctDrafted ?? -1) - (b.pctDrafted ?? -1));
+        case 'avgPaid':
+          return mult * ((a.avgPaid ?? -Infinity) - (b.avgPaid ?? -Infinity));
+        case 'avgPrice':
+          return mult * ((a.avgPrice ?? -Infinity) - (b.avgPrice ?? -Infinity));
+        case 'diff':
+          return mult * ((a.diff ?? -Infinity) - (b.diff ?? -Infinity));
+        default:
+          return 0;
+      }
+    });
+
+    return sorted;
+  }, [allPokemonList, tableSortConfig]);
 
   const handleSelectPlayer = async (player: StatsPagePlayer) => {
     setIsAutocompleteOpen(false);
     setExpandedTeamId(null);
     setSelectedPlayer(player);
     setSearchInput(player.user_name);
+    setTableSortConfig({ key: 'playerGames', direction: 'desc' });
     setPlayerMatchHistoryLoading(true);
     setPlayerMatchHistoryError(null);
 
@@ -697,14 +759,30 @@ const PlayerSearchStatsTab: React.FC<PlayerSearchStatsTabProps> = ({
                     <div className="player-draft-overview-table-wrapper">
                     <div className="player-draft-overview-table">
                       <div className="player-draft-overview-table-header">
-                        <span>Pokemon</span>
-                        <span>Games</span>
-                        <span>Avg Paid</span>
-                        <span>Avg Price</span>
-                        <span>Diff</span>
+                        <span className="sortable" onClick={() => handleTableSort('name')}>
+                          Pokemon {tableSortConfig.key === 'name' ? (tableSortConfig.direction === 'asc' ? '↑' : '↓') : ''}
+                        </span>
+                        <span className="sortable" onClick={() => handleTableSort('playerGames')}>
+                          Games {tableSortConfig.key === 'playerGames' ? (tableSortConfig.direction === 'asc' ? '↑' : '↓') : ''}
+                        </span>
+                        <span className="sortable" onClick={() => handleTableSort('appearances')}>
+                          Apps {tableSortConfig.key === 'appearances' ? (tableSortConfig.direction === 'asc' ? '↑' : '↓') : ''}
+                        </span>
+                        <span className="sortable" onClick={() => handleTableSort('pctDrafted')}>
+                          % Drafted {tableSortConfig.key === 'pctDrafted' ? (tableSortConfig.direction === 'asc' ? '↑' : '↓') : ''}
+                        </span>
+                        <span className="sortable" onClick={() => handleTableSort('avgPaid')}>
+                          Avg Paid {tableSortConfig.key === 'avgPaid' ? (tableSortConfig.direction === 'asc' ? '↑' : '↓') : ''}
+                        </span>
+                        <span className="sortable" onClick={() => handleTableSort('avgPrice')}>
+                          Avg Price {tableSortConfig.key === 'avgPrice' ? (tableSortConfig.direction === 'asc' ? '↑' : '↓') : ''}
+                        </span>
+                        <span className="sortable" onClick={() => handleTableSort('diff')}>
+                          Diff {tableSortConfig.key === 'diff' ? (tableSortConfig.direction === 'asc' ? '↑' : '↓') : ''}
+                        </span>
                       </div>
 
-                      {allPokemonList.map((pokemon) => (
+                      {sortedPokemonList.map((pokemon) => (
                         <div className="player-draft-overview-row" key={pokemon.key}>
                           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                             <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
@@ -730,6 +808,8 @@ const PlayerSearchStatsTab: React.FC<PlayerSearchStatsTabProps> = ({
                             <span>{getPokemonLabel(pokemon.name, pokemon.form)}</span>
                           </div>
                           <span>{pokemon.playerGames}</span>
+                          <span>{pokemon.appearances}</span>
+                          <span>{pokemon.pctDrafted !== null ? `${pokemon.pctDrafted}%` : '---'}</span>
                           <span>{pokemon.avgPaid !== null ? `$${pokemon.avgPaid.toLocaleString()}` : '---'}</span>
                           <span>{pokemon.avgPrice !== null ? `$${pokemon.avgPrice.toLocaleString()}` : '---'}</span>
                           <span className={pokemon.diff !== null ? (pokemon.diff < 0 ? 'diff-negative' : pokemon.diff > 0 ? 'diff-positive' : '') : ''}>
