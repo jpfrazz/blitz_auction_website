@@ -269,6 +269,7 @@ const PlayerSearchStatsTab: React.FC<PlayerSearchStatsTabProps> = ({
   const [playerMatchHistoryError, setPlayerMatchHistoryError] = useState<string | null>(null);
   const [bossBattleHistory, setBossBattleHistory] = useState<Map<number, BossBattleHistoryEntry[]>>(new Map());
   const [bossBattleHistoryLoading, setBossBattleHistoryLoading] = useState(false);
+  const [pokemonFilterQuery, setPokemonFilterQuery] = useState('');
 
   const filteredPlayers = useMemo(() => {
     if (!searchInput.trim() || !stats?.players) {
@@ -539,12 +540,21 @@ const PlayerSearchStatsTab: React.FC<PlayerSearchStatsTabProps> = ({
     return sorted;
   }, [allPokemonList, tableSortConfig]);
 
+  const filteredPokemonList = useMemo(() => {
+    if (!pokemonFilterQuery.trim()) return sortedPokemonList;
+    const q = pokemonFilterQuery.trim().toLowerCase();
+    return sortedPokemonList.filter((p) =>
+      getPokemonLabel(p.name, p.form).toLowerCase().includes(q)
+    );
+  }, [sortedPokemonList, pokemonFilterQuery]);
+
   const handleSelectPlayer = async (player: StatsPagePlayer) => {
     setIsAutocompleteOpen(false);
     setExpandedTeamId(null);
     setSelectedPlayer(player);
     setSearchInput(player.user_name);
     setTableSortConfig({ key: 'playerGames', direction: 'desc' });
+    setPokemonFilterQuery('');
     setPlayerMatchHistoryLoading(true);
     setPlayerMatchHistoryError(null);
 
@@ -759,6 +769,13 @@ const PlayerSearchStatsTab: React.FC<PlayerSearchStatsTabProps> = ({
                     </div>
 
                     <div className="player-draft-overview-table-wrapper">
+                    <input
+                      type="text"
+                      className="pokemon-filter-input"
+                      placeholder="Search pokemon..."
+                      value={pokemonFilterQuery}
+                      onChange={(e) => setPokemonFilterQuery(e.target.value)}
+                    />
                     <div className="player-draft-overview-table">
                       <div className="player-draft-overview-table-header">
                         <span className="sortable" onClick={() => handleTableSort('name')}>
@@ -784,7 +801,7 @@ const PlayerSearchStatsTab: React.FC<PlayerSearchStatsTabProps> = ({
                         </span>
                       </div>
 
-                      {sortedPokemonList.map((pokemon) => (
+                      {filteredPokemonList.map((pokemon) => (
                         <div className="player-draft-overview-row" key={pokemon.key}>
                           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                             <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>

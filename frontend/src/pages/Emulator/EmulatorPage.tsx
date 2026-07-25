@@ -331,6 +331,7 @@ const EmulatorPage: React.FC = () => {
   // Ready to Race state
   const [readyPlayers, setReadyPlayers] = useState<Set<string>>(new Set());
   const [countdown, setCountdown] = useState<number | null>(null);
+  const [raceStarted, setRaceStarted] = useState(false);
 
   // Persist fainted state via Personality ID (User ID -> Set of PIDs)
   const [faintedPids, setFaintedPids] = useState<Record<string, Set<number>>>({});
@@ -505,6 +506,12 @@ const EmulatorPage: React.FC = () => {
       // If the ID lookup fails or is ambiguous, immediately try to find a form-based match
       // using the nickname. This is crucial for Pokémon like Deerling.
       if ((!singleCandidate || isNameMismatch) && nickname) {
+        // Try exact name match first to avoid ambiguous prefix matches
+        // (e.g. "Corsola" matching both "Corsola" and "Corsola-Galar")
+        const exactMatch = pokemonMetadata[nickname.toLowerCase()];
+        if (exactMatch && Number(exactMatch.pokedex_id) === dbSpeciesId) {
+          return exactMatch;
+        }
         const formMatch = Object.values(pokemonMetadata).find(p => 
           p.name.toLowerCase().startsWith(nickname.toLowerCase()) && Number(p.pokedex_id) === dbSpeciesId
         );
@@ -1383,6 +1390,7 @@ const EmulatorPage: React.FC = () => {
     const allReady = sidebarEntries.every(([uid]) => readyPlayers.has(uid));
     if (allReady && sidebarEntries.length > 1) {
       setCountdown(10);
+      setRaceStarted(true);
     }
   }, [readyPlayers, sidebarEntries, countdown]);
 
@@ -1611,7 +1619,7 @@ const EmulatorPage: React.FC = () => {
                   {!draftId && urlPokemon.length > 0 && !mySaveData && (
                     <NotebookWithdrawButton pokemon={urlPokemon} />
                   )}
-                  {draftId && draftData && countdown === null && (
+                  {draftId && draftData && countdown === null && !raceStarted && (
                     <button
                       className={`ready-race-button ${readyPlayers.has(currentUserId ?? '') ? 'ready' : ''}`}
                       onClick={handleToggleReady}

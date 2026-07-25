@@ -220,6 +220,28 @@
         }
     }
 
+    .pokemon-filter-input {
+        width: 100%;
+        box-sizing: border-box;
+        padding: 0.5rem 0.75rem;
+        margin-bottom: 0.5rem;
+        border: 1px solid #32424c;
+        background: #0f1418;
+        color: $eb-text;
+        border-radius: 8px;
+        font-size: 0.95rem;
+
+        &::placeholder {
+            color: #7a8a93;
+        }
+
+        &:focus {
+            outline: none;
+            border-color: #40c9a2;
+            box-shadow: 0 0 0 2px rgba(64, 201, 162, 0.1);
+        }
+    }
+
     .player-draft-overview-table {
         display: grid;
         gap: 0.4rem;
