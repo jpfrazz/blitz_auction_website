@@ -143,7 +143,7 @@ Cost: 4000
 Cost: 8000
 -Hone Claws
 
-//Notably, the player has access to a few speed-dropping moves after gym 2, such as Pounce, Icy Wind and Mud Shot
+//Notably, the player has access to a few speed-dropping moves after gym 2, including Pounce, Icy Wind and Mud Shot
 //In terms of early-game TMs, I'm interested in generic moves learned by a lot of Pokémon that you sometimes buy as ways to counter specific fights, NOT in moves that you always buy as best-in-class STABs for that point in the game. For example, if every Flying-type Pokémon buys a Pluck TM after gym 1, it homogenizes the type such that all of the Pokémon play the same, and it doesn't create any interesting decisions. Icy Wind, on the other hand, gives you some added counterplay against Winona's Tropius that can be learned by a wide range of Pokémon. Many Psychic, Flying, and Water types have access to the move. Mud Shot and Pounce are similar; low-BP moves with a useful niche that can be learned by a relatively wide range of Pokémon. They're like Thief; sometimes you buy them, but they're context dependent and create meaningful decisions.
 //RIP Snarl and Dig. Sorry to dogs everywhere.
 
