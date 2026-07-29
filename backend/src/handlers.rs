@@ -2047,9 +2047,12 @@ pub async fn remove_admin_draft_team(
         .map(|r| (r.get::<String, _>("user_id"), r.get::<i32, _>("count")))
         .collect();
 
+    let any_placement_set = old_team_data.values().any(|(_, place, _)| *place != 0);
+
     let mut user_adjustments: HashMap<String, (i32, i32, i32)> = HashMap::new();
 
-    for tid in &remaining_team_ids {
+    if any_placement_set {
+        for tid in &remaining_team_ids {
         let (uid_opt, old_place, pre_mmr) = old_team_data.get(tid).unwrap();
         let Some(user_id) = uid_opt else {
             continue;
@@ -2107,6 +2110,7 @@ pub async fn remove_admin_draft_team(
                 -reversed_losses,
             ),
         );
+    }
     }
 
     let old_placement_map: HashMap<i64, i32> = old_team_data
@@ -2232,7 +2236,7 @@ pub async fn admin_recalculate_all_stats(
         .await
         .map_err(|e: sqlx::Error| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
 
-        if teams.len() < 6 {
+        if teams.len() < 5 {
             continue;
         }
 
