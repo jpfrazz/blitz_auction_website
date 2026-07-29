@@ -369,7 +369,7 @@ Fixed a bug where the enemy AI didn't consider Zoroark's illusion type for statu
 //This stops Cacturne from using Leech Seed into a grass-disguised Zoroark, for example
 
 Fixed a bug where Kommo-o was the only Pokémon that could appear in the truck
-//No more side eye for you.
+//Thank you to other players for reporting this. Unfortunately, this was a case of a bug that was impossible for me to find personally, as all of my runs end in the museum.
 
 
 -----------------------------------------------
@@ -384,4 +384,4 @@ Psyduck
 //If these four formed a boy band, would you buy their debut album?
 
 
-Ping me with bugs or make a post in bug reports! Have fun concocting new sets with these new TMs, and happy Blitzing!
+Ping me with bugs or make a post in bug reports! Have fun concocting new sets with these new TMs, and happy blitzing!

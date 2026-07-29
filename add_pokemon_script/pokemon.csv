@@ -595,6 +595,8 @@ dex_number,name,form,evolves_from_id,evolves_from_form,type1,type2,stage,ability
 41,Zubat,,,,Poison,Flying,base,Inner Focus,,Infiltrator,40,45,35,30,40,55,,,,
 42,Golbat,,41,,Poison,Flying,evo,Inner Focus,,Infiltrator,75,80,70,65,75,90,"Level 22",,,
 169,Crobat,,42,,Poison,Flying,evo,Inner Focus,,Infiltrator,85,90,80,70,80,130,"Level 30",,,
+347,Anorith,,,,Rock,Bug,base,Battle Armor,,Swift Swim,45,95,50,40,50,75,,,,
+348,Armaldo,,347,,Rock,Bug,evo,Battle Armor,,Swift Swim,75,125,100,70,80,45,"Level 40 (Oracle)",,,
 65536,Egg,,,,Egg,,base,,,,0,0,0,0,0,0,,,,"Tip: Baby Pokemon\nAn egg can hatch into any of these baby Pokemon: Azurill, Cleffa, Igglybuff, and Togepi."
 298,Azurill,,,,Normal,Fairy,base,Thick Fat,Huge Power,Sap Sipper,50,20,40,20,40,20,,,Baby,
 183,Marill,,298,,Water,Fairy,evo,Thick Fat,Huge Power,Sap Sipper,70,20,50,20,50,40,"Level 10",,Baby,
