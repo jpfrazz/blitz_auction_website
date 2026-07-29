@@ -33,7 +33,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  background: #1e3328;
+  background: #1f2933;
   color: #ffffff;
   padding: 0.6rem 0.8rem;
   border-radius: 6px;
@@ -41,8 +41,16 @@
   user-select: none;
 }
 
+.patch-list > :first-child .patch-bar {
+  background: #1e3328;
+}
+
 .patch-date {
   font-weight: 600;
+  color: #cfe7ff;
+}
+
+.patch-list > :first-child .patch-date {
   color: #a8d68a;
 }
 
