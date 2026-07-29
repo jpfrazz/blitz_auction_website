@@ -331,7 +331,7 @@ When the enemy Pokémon faints, if the player's Pokémon is Mega Evolved, AI mod
 If the player's Pokémon is Mega Evolved, AI modified to always use Fake Out or Protect
 
 //In most cases, these changes replace useless attacks with niche, anti-sweep moves intended to tap down the power of Substitute and Mega-Evolution sweeps.
-//The goal here isn't to kill substitute strategies, and I don't think that it does. But you're going to need to be a bit more creative than Substituting on a Dusclops that's guaranteed to use a status move and then also can't hurt you.
+//The goal here isn't to kill substitute strategies, and I don't think that it does. But you're going to need to be a bit more creative than Substituting on a Dusclops that's guaranteed to use a status move and then roll over.
 
 
 -----------------------------------------------
