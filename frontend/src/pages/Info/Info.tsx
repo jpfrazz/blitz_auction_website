@@ -230,7 +230,7 @@ const Info = () => (
             </ul>
           </div>
           <div className="slateport-market-card">
-            <div className="slateport-market-title">Badge 8 — 4000</div>
+            <div className="slateport-market-title">Badge 6 — 4000</div>
             <ul className="slateport-list">
               <li className="tm-ice">Blizzard</li>
               <li className="tm-fire">Fire Blast</li>
