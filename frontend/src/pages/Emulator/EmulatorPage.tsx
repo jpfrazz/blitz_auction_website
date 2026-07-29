@@ -1423,7 +1423,7 @@ const EmulatorPage: React.FC = () => {
           <div className="emulator-picker">
             <h1 className="emulator-title">GBA Emulator</h1>
             <p className="emulator-subtitle">
-              Select a ROM of Pokemon Emerald from your device. The browser will then apply the v9.2 patch for Blitz automatically.
+              Select a ROM of Pokemon Emerald from your device. The browser will then apply the v1.0.0 patch for Blitz automatically.
               Your ROM is never uploaded — it stays entirely on your machine.
             </p>
 

@@ -1919,6 +1919,278 @@ pub async fn update_admin_draft_team_placements(
 }
 
 #[debug_handler]
+pub async fn remove_admin_draft_team(
+    State(state): State<ServerState>,
+    Path((draft_id, team_id)): Path<(String, i64)>,
+    auth_session: AuthSession<AuthBackend>,
+) -> Result<(), AppError> {
+    let _ = require_referee_user(auth_session.user)?;
+
+    let draft_uuid = Uuid::from_str(&draft_id)
+        .map_err(|_| (StatusCode::BAD_REQUEST, "invalid draft id".to_string()))?;
+
+    let draft_row = sqlx::query(
+        "SELECT state, ranked, num_teams
+         FROM drafts
+         WHERE draft_id = $1",
+    )
+    .bind(draft_uuid)
+    .fetch_optional(&state.db_pool)
+    .await
+    .map_err(|e: sqlx::Error| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?
+    .ok_or((StatusCode::NOT_FOUND, "draft does not exist".to_string()))?;
+
+    let draft_state: String = draft_row
+        .try_get("state")
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let is_ranked: bool = draft_row
+        .try_get("ranked")
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let mut current_num_teams: i32 = draft_row
+        .try_get("num_teams")
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    if draft_state != DraftState::COMPLETED.to_string() {
+        return Err((
+            StatusCode::PRECONDITION_FAILED,
+            "only completed drafts can be edited".to_string(),
+        ));
+    }
+
+    if !is_ranked {
+        return Err((
+            StatusCode::PRECONDITION_FAILED,
+            "only ranked drafts can be edited here".to_string(),
+        ));
+    }
+
+    let team_rows = sqlx::query(
+        "SELECT team_id, user_id, placement, pre_match_mmr
+         FROM teams
+         WHERE draft_id = $1",
+    )
+    .bind(draft_uuid)
+    .fetch_all(&state.db_pool)
+    .await
+    .map_err(|e: sqlx::Error| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    if team_rows.is_empty() {
+        return Err((StatusCode::BAD_REQUEST, "draft has no teams".to_string()));
+    }
+
+    let team_to_remove = team_rows
+        .iter()
+        .find(|r| r.try_get::<i64, _>("team_id").map_or(false, |id| id == team_id))
+        .ok_or((StatusCode::NOT_FOUND, "team not found in this draft".to_string()))?;
+
+    let removed_user_id: Option<String> = team_to_remove
+        .try_get("user_id")
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let removed_placement: i32 = team_to_remove
+        .try_get::<Option<i32>, _>("placement")
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?
+        .unwrap_or(0);
+    let removed_pre_mmr: i32 = team_to_remove
+        .try_get::<Option<i32>, _>("pre_match_mmr")
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?
+        .unwrap_or(1500);
+
+    let mut old_team_data: HashMap<i64, (Option<String>, i32, i32)> = HashMap::new();
+    for row in &team_rows {
+        let tid: i64 = row
+            .try_get("team_id")
+            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+        let uid: Option<String> = row
+            .try_get("user_id")
+            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+        let place: i32 = row
+            .try_get::<Option<i32>, _>("placement")
+            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?
+            .unwrap_or(0);
+        let mmr: i32 = row
+            .try_get::<Option<i32>, _>("pre_match_mmr")
+            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?
+            .unwrap_or(1500);
+        old_team_data.insert(tid, (uid, place, mmr));
+    }
+
+    let all_team_ids: Vec<i64> = old_team_data.keys().cloned().collect();
+    let remaining_team_ids: Vec<i64> = all_team_ids
+        .iter()
+        .filter(|tid| **tid != team_id)
+        .cloned()
+        .collect();
+
+    if remaining_team_ids.is_empty() {
+        return Err((StatusCode::BAD_REQUEST, "cannot remove the last team from a draft".to_string()));
+    }
+
+    let race_numbers_rows = sqlx::query(
+        "SELECT t.user_id, COUNT(past_drafts.draft_id)::INT as count
+         FROM teams t
+         JOIN drafts current_draft ON t.draft_id = current_draft.draft_id
+         JOIN teams past_teams ON t.user_id = past_teams.user_id
+         JOIN drafts past_drafts ON past_teams.draft_id = past_drafts.draft_id
+         WHERE t.draft_id = $1
+           AND past_drafts.ranked = TRUE
+           AND past_drafts.state = 'COMPLETED'
+           AND past_drafts.created_at <= current_draft.created_at
+         GROUP BY t.user_id",
+    )
+    .bind(draft_uuid)
+    .fetch_all(&state.db_pool)
+    .await
+    .map_err(|e: sqlx::Error| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    let race_numbers: HashMap<String, i32> = race_numbers_rows
+        .into_iter()
+        .map(|r| (r.get::<String, _>("user_id"), r.get::<i32, _>("count")))
+        .collect();
+
+    let mut user_adjustments: HashMap<String, (i32, i32, i32)> = HashMap::new();
+
+    for tid in &remaining_team_ids {
+        let (uid_opt, old_place, pre_mmr) = old_team_data.get(tid).unwrap();
+        let Some(user_id) = uid_opt else {
+            continue;
+        };
+        let k_factor = get_k_factor(*race_numbers.get(user_id).unwrap_or(&1));
+
+        let expected = expected_score(*pre_mmr, removed_pre_mmr);
+        let old_result = if *old_place != 0 && *old_place < removed_placement {
+            1.0
+        } else {
+            0.0
+        };
+
+        let net_mmr_delta = -(k_factor * (old_result - expected)).round() as i32;
+        let wins_adj = if old_result == 1.0 { -1 } else { 0 };
+        let losses_adj = if old_result == 0.0 && *old_place != 0 { -1 } else { 0 };
+
+        user_adjustments.insert(
+            user_id.clone(),
+            (
+                user_adjustments.get(user_id).map_or(net_mmr_delta, |(m, _, _)| m + net_mmr_delta),
+                user_adjustments.get(user_id).map_or(wins_adj, |(_, w, _)| w + wins_adj),
+                user_adjustments.get(user_id).map_or(losses_adj, |(_, _, l)| l + losses_adj),
+            ),
+        );
+    }
+
+    if let Some(uid) = &removed_user_id {
+        let k_factor = get_k_factor(*race_numbers.get(uid).unwrap_or(&1));
+
+        let mut reversed_mmr = 0.0_f64;
+        let mut reversed_wins = 0_i32;
+        let mut reversed_losses = 0_i32;
+
+        for other_tid in &all_team_ids {
+            if *other_tid == team_id {
+                continue;
+            }
+            let (_, other_place, other_mmr) = old_team_data.get(other_tid).unwrap();
+            let expected = expected_score(removed_pre_mmr, *other_mmr);
+            if removed_placement != 0 && removed_placement < *other_place {
+                reversed_wins += 1;
+                reversed_mmr += k_factor * (1.0 - expected);
+            } else if removed_placement != 0 {
+                reversed_losses += 1;
+                reversed_mmr += k_factor * (0.0 - expected);
+            }
+        }
+
+        user_adjustments.insert(
+            uid.clone(),
+            (
+                -(reversed_mmr.round() as i32),
+                -reversed_wins,
+                -reversed_losses,
+            ),
+        );
+    }
+
+    let old_placement_map: HashMap<i64, i32> = old_team_data
+        .iter()
+        .map(|(tid, (_, place, _))| (*tid, *place))
+        .collect();
+
+    let mut remaining_with_place: Vec<(i64, i32)> = remaining_team_ids
+        .iter()
+        .map(|tid| (*tid, *old_placement_map.get(tid).unwrap_or(&9999)))
+        .collect();
+    remaining_with_place.sort_by_key(|(_, place)| *place);
+
+    let new_placements: HashMap<i64, i32> = remaining_with_place
+        .iter()
+        .enumerate()
+        .map(|(i, (tid, _))| (*tid, (i + 1) as i32))
+        .collect();
+
+    let mut tx = state
+        .db_pool
+        .begin()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    for (uid, (mmr_adj, wins_adj, losses_adj)) in &user_adjustments {
+        sqlx::query(
+            "UPDATE users
+             SET mmr = mmr + $1,
+                 wins = wins + $2,
+                 losses = losses + $3
+             WHERE user_id = $4",
+        )
+        .bind(mmr_adj)
+        .bind(wins_adj)
+        .bind(losses_adj)
+        .bind(uid)
+        .execute(&mut *tx)
+        .await
+        .map_err(|e: sqlx::Error| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    }
+
+    for tid in &remaining_team_ids {
+        let new_place = new_placements.get(tid).unwrap();
+        let (_, _, pre_mmr) = old_team_data.get(tid).unwrap();
+        sqlx::query(
+            "UPDATE teams
+             SET placement = $1,
+                 pre_match_mmr = $2
+             WHERE team_id = $3
+               AND draft_id = $4",
+        )
+        .bind(new_place)
+        .bind(pre_mmr)
+        .bind(tid)
+        .bind(draft_uuid)
+        .execute(&mut *tx)
+        .await
+        .map_err(|e: sqlx::Error| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    }
+
+    sqlx::query("DELETE FROM teams WHERE team_id = $1 AND draft_id = $2")
+        .bind(team_id)
+        .bind(draft_uuid)
+        .execute(&mut *tx)
+        .await
+        .map_err(|e: sqlx::Error| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    current_num_teams -= 1;
+    sqlx::query("UPDATE drafts SET num_teams = $1 WHERE draft_id = $2")
+        .bind(current_num_teams)
+        .bind(draft_uuid)
+        .execute(&mut *tx)
+        .await
+        .map_err(|e: sqlx::Error| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    tx.commit()
+        .await
+        .map_err(|e: sqlx::Error| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    Ok(())
+}
+
+#[debug_handler]
 pub async fn admin_recalculate_all_stats(
     State(state): State<ServerState>,
     auth_session: AuthSession<AuthBackend>,

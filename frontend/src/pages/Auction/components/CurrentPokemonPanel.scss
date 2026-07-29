@@ -7,6 +7,8 @@
 	align-items: flex-start;
 	overflow-x: auto;
 	overflow-y: auto;
+	scrollbar-width: thin;
+	scrollbar-color: $eb-border $eb-surface;
 	width: 100%;
 	padding-left: 1rem;
 	padding-right: 1rem;
@@ -191,6 +193,8 @@
 	min-width: 0;
 	overflow-y: auto;
 	overflow-x: hidden;
+	scrollbar-width: thin;
+	scrollbar-color: $eb-border $eb-surface;
 	max-height: 100%;
 	padding-left: 1rem;
 }
@@ -204,6 +208,8 @@
 	min-width: 28rem;
 	overflow-y: auto;
 	overflow-x: auto;
+	scrollbar-width: thin;
+	scrollbar-color: $eb-border $eb-surface;
 	max-height: 100%;
 }
 
@@ -407,6 +413,8 @@
 	min-width: 20rem;
 	max-width: 25vw;
 	overflow-y: auto;
+	scrollbar-width: thin;
+	scrollbar-color: $eb-border $eb-surface;
 	position: relative;
 }
 

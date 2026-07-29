@@ -5,6 +5,7 @@ import {
   fetchAdminCompletedDrafts,
   fetchAdminDiscordUsers,
   fetchAdminDraftTeamPlacements,
+  removeAdminDraftTeam,
   updateAdminDiscordUser,
   updateAdminDraftPlacements,
 } from '../../shared/api/users';
@@ -171,6 +172,22 @@ const Admin: React.FC = () => {
     }
   };
 
+  const handleRemoveTeam = async (teamId: number, userName: string | null) => {
+    if (!selectedDraftId) return;
+    if (!window.confirm(`Remove ${userName ?? 'this team'} from the race? This will adjust MMR/Win/Loss records for all remaining participants.`)) return;
+
+    setDraftError(null);
+    setDraftSuccess(null);
+
+    try {
+      await removeAdminDraftTeam(selectedDraftId, teamId);
+      setDraftTeams((current) => current.filter((team) => team.team_id !== teamId));
+      setDraftSuccess(`Removed team #${teamId} from the draft.`);
+    } catch (err: any) {
+      setDraftError(err?.message ?? 'Failed to remove team.');
+    }
+  };
+
   const handleUserFieldChange = (
     userId: string,
     field: 'mmr' | 'wins' | 'losses',
@@ -321,6 +338,7 @@ const Admin: React.FC = () => {
                             <th>User</th>
                             <th>Pre-Match MMR</th>
                             <th>Placement</th>
+                            <th>Remove User</th>
                           </tr>
                         </thead>
                         <tbody>
@@ -338,6 +356,16 @@ const Admin: React.FC = () => {
                                   value={team.placement ?? ''}
                                   onChange={(e) => handlePlacementChange(team.team_id, e.target.value)}
                                 />
+                              </td>
+                              <td>
+                                <button
+                                  type="button"
+                                  className="button danger"
+                                  style={{ padding: '0.25rem 0.5rem', fontSize: '0.8rem' }}
+                                  onClick={() => handleRemoveTeam(team.team_id, team.user_name)}
+                                >
+                                  Remove
+                                </button>
                               </td>
                             </tr>
                           ))}

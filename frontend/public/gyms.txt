@@ -12,7 +12,7 @@ Geodude (F)
 Level: 12
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
-Ability: Rock Head
+Ability: Sturdy
 - Tackle
 - Defense Curl
 - Rock Throw
@@ -52,7 +52,7 @@ Geodude (F)
 Level: 16
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
-Ability: Rock Head
+Ability: Sturdy
 - Magnitude
 - Defense Curl
 - Rock Throw
@@ -102,7 +102,7 @@ Graveler (F)
 Level: 21
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
-Ability: Rock Head
+Ability: Sturdy
 - Bulldoze
 - Stealth Rock
 - Defense Curl
@@ -152,7 +152,7 @@ Graveler (F)
 Level: 26
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
-Ability: Rock Head
+Ability: Sturdy
 - Bulldoze
 - Stealth Rock
 - Defense Curl
@@ -202,7 +202,7 @@ Graveler (F)
 Level: 28
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
-Ability: Rock Head
+Ability: Sturdy
 - Bulldoze
 - Stealth Rock
 - Self Destruct
@@ -252,7 +252,7 @@ Graveler (F)
 Level: 32
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
-Ability: Rock Head
+Ability: Sturdy
 - Bulldoze
 - Stealth Rock
 - Self Destruct
@@ -312,10 +312,10 @@ Golem (F)
 Level: 40
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
-Ability: Rock Head
+Ability: Sturdy
 - Earthquake
 - Stealth Rock
-- Self Destruct
+- Roar
 - Rock Tomb
 
 Relicanth (F)
@@ -372,10 +372,10 @@ Golem (F)
 Level: 44
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
-Ability: Rock Head
+Ability: Sturdy
 - Earthquake
 - Stealth Rock
-- Explosion
+- Roar
 - Rock Tomb
 
 Relicanth (F)
@@ -734,7 +734,7 @@ IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
 Ability: Intimidate
 - Hydro Pump
-- Quiver Dance
+- Whirlwind
 - Bug Buzz
 - Air Cutter
 
@@ -794,7 +794,7 @@ IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
 Ability: Intimidate
 - Hydro Pump
-- Quiver Dance
+- Whirlwind
 - Bug Buzz
 - Air Cutter
 
@@ -862,7 +862,7 @@ Farfetch'd-Galar (M)
 Level: 12
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
-Ability: Inner Focus
+Ability: Steadfast
 - Brutal Swing
 - Peck
 - Rock Smash
@@ -912,7 +912,7 @@ Farfetch'd-Galar (M)
 Level: 17
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
-Ability: Inner Focus
+Ability: Steadfast
 - Brutal Swing
 - Peck
 - Rock Smash
@@ -962,7 +962,7 @@ Farfetch'd-Galar (M)
 Level: 23
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
-Ability: Inner Focus
+Ability: Steadfast
 - Brutal Swing
 - Peck
 - Rock Smash
@@ -1012,7 +1012,7 @@ Farfetch'd-Galar (M)
 Level: 26
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
-Ability: Inner Focus
+Ability: Steadfast
 - Brutal Swing
 - Fury Cutter
 - Rock Smash
@@ -1183,7 +1183,7 @@ Level: 41
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
 Ability: Steadfast
-- Brutal Swing
+- Sucker Punch
 - Fury Cutter
 - Brick Break
 - Iron Defense
@@ -1193,7 +1193,7 @@ Level: 42
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
 Ability: Guts
-- Close Combat
+- Brick Break
 - Strength
 - Knock Off
 - Bulk Up
@@ -1243,7 +1243,7 @@ Level: 46
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
 Ability: Steadfast
-- Brutal Swing
+- Sucker Punch
 - Fury Cutter
 - Brick Break
 - Leaf Blade
@@ -1253,7 +1253,7 @@ Level: 48
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
 Ability: Guts
-- Close Combat
+- Brick Break
 - Strength
 - Knock Off
 - Bulk Up
@@ -1294,7 +1294,7 @@ IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
 Ability: Static
 - Quick Attack
-- Thunder Wave
+- Fire Fang
 - Shock Wave
 - Howl
 
@@ -1343,8 +1343,8 @@ Level: 19
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
 Ability: Static
+- Bite
 - Fire Fang
-- Thunder Wave
 - Shock Wave
 - Howl
 
@@ -1393,8 +1393,8 @@ Level: 24
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
 Ability: Static
+- Bite
 - Fire Fang
-- Thunder Wave
 - Shock Wave
 - Howl
 
@@ -1443,10 +1443,10 @@ Level: 29
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
 Ability: Static
-- Fire Fang
-- Thunder Wave
-- Shock Wave
 - Bite
+- Fire Fang
+- Shock Wave
+- Howl
 
 === TRAINER_WATTSON_5 ===
 Name: WATTSON
@@ -1524,9 +1524,9 @@ IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
 Ability: Soundproof
 - Shock Wave
-- Discharge
+- Charge Beam
 - Energy Ball
-- Self Destruct
+- Explosion
 
 Magneton
 Level: 33
@@ -1584,7 +1584,7 @@ IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
 Ability: Soundproof
 - Shock Wave
-- Discharge
+- Charge Beam
 - Energy Ball
 - Explosion
 
@@ -1644,7 +1644,7 @@ IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
 Ability: Soundproof
 - Shock Wave
-- Discharge
+- Charge Beam
 - Energy Ball
 - Explosion
 
@@ -1686,7 +1686,7 @@ Gender: Female
 Music: Female
 Items: Potion
 Double Battle: No
-AI: Basic Trainer / Smart Mon Choices
+AI: Basic Trainer / Smart Mon Choices / Smart Switching
 
 Slugma (F)
 Level: 12
@@ -1726,7 +1726,7 @@ Gender: Female
 Music: Female
 Items: Super Potion
 Double Battle: No
-AI: Basic Trainer / Smart Mon Choices
+AI: Basic Trainer / Smart Mon Choices / Smart Switching
 
 Slugma (F) 
 Level: 16
@@ -1776,7 +1776,7 @@ Gender: Female
 Music: Female
 Items: Super Potion
 Double Battle: No
-AI: Basic Trainer / Smart Mon Choices
+AI: Basic Trainer / Smart Mon Choices / Smart Switching
 
 Slugma (F) 
 Level: 22
@@ -1826,7 +1826,7 @@ Gender: Female
 Music: Female
 Items: Hyper Potion
 Double Battle: No
-AI: Basic Trainer / Smart Mon Choices
+AI: Basic Trainer / Smart Mon Choices / Smart Switching
 
 Marowak-Alola (F) 
 Level: 26
@@ -1854,7 +1854,7 @@ IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
 Ability: Magma Armor
 - Overheat
-- Earth Power
+- Scorching Sands
 - Sunny Day
 - Amnesia
 
@@ -1876,7 +1876,7 @@ Gender: Female
 Music: Female
 Items: Hyper Potion / Hyper Potion
 Double Battle: No
-AI: Basic Trainer / Smart Mon Choices
+AI: Basic Trainer / Smart Mon Choices / Smart Switching
 
 Marowak-Alola (F) @ Thick Club
 Level: 30
@@ -1904,7 +1904,7 @@ IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
 Ability: Magma Armor
 - Overheat
-- Earth Power
+- Scorching Sands
 - Sunny Day
 - Take Down
 
@@ -1926,7 +1926,7 @@ Gender: Female
 Music: Female
 Items: Hyper Potion / Hyper Potion
 Double Battle: No
-AI: Basic Trainer / Smart Mon Choices
+AI: Basic Trainer / Smart Mon Choices / Smart Switching
 
 Marowak-Alola (F) @ Thick Club
 Level: 33
@@ -1935,7 +1935,7 @@ Nature: Serious
 Ability: Cursed Body
 - Overheat
 - Shadow Bone
-- Thrash
+- Perish Song
 - Sunny Day
 
 Magcargo (F)
@@ -1986,7 +1986,7 @@ Gender: Female
 Music: Female
 Items: Hyper Potion / Hyper Potion
 Double Battle: No
-AI: Basic Trainer / Smart Mon Choices
+AI: Basic Trainer / Smart Mon Choices / Smart Switching
 
 Marowak-Alola (F) @ Thick Club
 Level: 41
@@ -1995,7 +1995,7 @@ Nature: Serious
 Ability: Cursed Body
 - Overheat
 - Shadow Bone
-- Stomping Tantrum
+- Perish Song
 - Sunny Day
 
 Magcargo (F)
@@ -2046,7 +2046,7 @@ Gender: Female
 Music: Female
 Items: Hyper Potion / Hyper Potion
 Double Battle: No
-AI: Basic Trainer / Smart Mon Choices
+AI: Basic Trainer / Smart Mon Choices / Smart Switching
 
 Marowak-Alola (F) @ Thick Club
 Level: 46
@@ -2055,7 +2055,7 @@ Nature: Serious
 Ability: Cursed Body
 - Overheat
 - Shadow Bone
-- Stomping Tantrum
+- Perish Song
 - Bone Rush
 
 Magcargo (F)
@@ -2106,7 +2106,7 @@ Gender: Male
 Music: Male
 Items: Potion
 Double Battle: No
-AI: Basic Trainer
+AI: Basic Trainer / Smart Mon Choices / Smart Switching
 
 Zorua-Hisui (M)
 Level: 12
@@ -2146,7 +2146,7 @@ Gender: Male
 Music: Male
 Items: Super Potion
 Double Battle: No
-AI: Basic Trainer
+AI: Basic Trainer / Smart Mon Choices / Smart Switching
 
 Spinda (M)
 Level: 15
@@ -2196,7 +2196,7 @@ Gender: Male
 Music: Male
 Items: Super Potion
 Double Battle: No
-AI: Basic Trainer
+AI: Basic Trainer / Smart Mon Choices / Smart Switching
 
 Spinda (M)
 Level: 20
@@ -2246,7 +2246,7 @@ Gender: Male
 Music: Male
 Items: Hyper Potion
 Double Battle: No
-AI: Basic Trainer
+AI: Basic Trainer / Smart Mon Choices / Smart Switching
 
 Spinda (M)
 Level: 24
@@ -2296,7 +2296,7 @@ Gender: Male
 Music: Male
 Items: Hyper Potion / Hyper Potion
 Double Battle: No
-AI: Basic Trainer
+AI: Basic Trainer / Smart Mon Choices / Smart Switching
 
 Spinda (M)
 Level: 28
@@ -2346,7 +2346,7 @@ Gender: Male
 Music: Male
 Items: Hyper Potion / Hyper Potion
 Double Battle: No
-AI: Basic Trainer
+AI: Basic Trainer / Smart Mon Choices / Smart Switching
 
 Spinda (M)
 Level: 31
@@ -2406,7 +2406,7 @@ Gender: Male
 Music: Male
 Items: Hyper Potion / Hyper Potion
 Double Battle: No
-AI: Basic Trainer
+AI: Basic Trainer / Smart Mon Choices / Smart Switching
 
 Spinda (M)
 Level: 40
@@ -2466,7 +2466,7 @@ Gender: Male
 Music: Male
 Items: Hyper Potion / Hyper Potion
 Double Battle: No
-AI: Basic Trainer
+AI: Basic Trainer / Smart Mon Choices / Smart Switching
 
 Spinda (M)
 Level: 43
@@ -2836,7 +2836,7 @@ Ability: Chlorophyll
 - Sunny Day
 - Aerial Ace
 - Solar Beam
-- Synthesis
+- Whirlwind
 
 Braviary-Hisui (M)
 Level: 40
@@ -2896,7 +2896,7 @@ Ability: Chlorophyll
 - Sunny Day
 - Aerial Ace
 - Solar Beam
-- Leaf Storm
+- Whirlwind
 
 Braviary-Hisui (M)
 Level: 44
@@ -3513,7 +3513,7 @@ Level: 29
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
 Ability: Commander
-- Flip Turn
+- Rain Dance
 - Water Pulse
 - Rapid Spin
 - Dark Pulse
@@ -3563,7 +3563,7 @@ Level: 31
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
 Ability: Commander
-- Flip Turn
+- Rain Dance
 - Water Pulse
 - Rapid Spin
 - Dark Pulse
@@ -3574,7 +3574,7 @@ IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
 Ability: Oblivious
 - Mud Bomb
-- Rain Dance
+- Zen Headbutt
 - Waterfall
 - Rock Slide
 
@@ -3623,7 +3623,7 @@ Level: 38
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
 Ability: Commander
-- Flip Turn
+- Rain Dance
 - Water Pulse
 - Rapid Spin
 - Dark Pulse
@@ -3634,7 +3634,7 @@ IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
 Ability: Oblivious
 - Mud Bomb
-- Rain Dance
+- Zen Headbutt
 - Waterfall
 - Rock Slide
 
@@ -3643,7 +3643,7 @@ Level: 42
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
 Ability: Marvel Scale
-- Disarming Voice
+- Dazzling Gleam
 - Water Pulse
 - Icy Wind
 - Recover
@@ -3683,7 +3683,7 @@ Level: 43
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
 Ability: Commander
-- Flip Turn
+- Rain Dance
 - Water Pulse
 - Dragon Pulse
 - Dark Pulse
@@ -3694,7 +3694,7 @@ IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
 Ability: Oblivious
 - Earthquake
-- Rain Dance
+- Zen Headbutt
 - Waterfall
 - Rock Slide
 
@@ -3742,7 +3742,7 @@ Crobat (M)
 Level: 47
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
-Ability: Inner Focus
+Ability: Infiltrator
 - Poison Fang
 - Acrobatics
 - Steel Wing
@@ -3756,7 +3756,7 @@ Ability: Water Absorb
 - Surf
 - Thunderbolt
 - Charge
-- Take Down
+- Protect
 
 Walrein (M)
 Level: 47
@@ -3778,7 +3778,7 @@ Ability: Rough Skin
 - Slash
 - Aqua Jet
 
-=== TRAINER_MAXIE ===
+=== TRAINER_MAXIE_MAGMA_HIDEOUT ===
 Name: MAXIE
 Class: Magma Leader
 Pic: Magma Leader Maxie
@@ -3802,7 +3802,7 @@ Crobat (M)
 Level: 47
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
-Ability: Inner Focus
+Ability: Infiltrator
 - Poison Fang
 - Acrobatics
 - Steel Wing
@@ -3916,9 +3916,9 @@ IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
 Ability: Chlorophyll
 - Leaf Tornado
-- Double Team
-- Swagger
 - Hurricane
+- Whirlwind
+- Double Team
 
 Decidueye-Hisui (M)
 Level: 54
@@ -3977,7 +3977,7 @@ IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
 Ability: Pressure
 - Shadow Punch
-- Confuse Ray
+- Perish Song
 - Will O Wisp
 - Earthquake
 
@@ -3997,7 +3997,7 @@ IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
 Ability: Keen Eye
 - Shadow Ball
-- Double Team
+- Fake Out
 - Foul Play
 - Thief
 
@@ -4036,8 +4036,8 @@ Seviper (F) @ Salac Berry
 Level: 52
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
-Ability: Shed Skin
-- Coil
+Ability: Infiltrator
+- Dragon Tail
 - Belch
 - Giga Drain
 - Crunch
@@ -4076,7 +4076,7 @@ Crobat (F) @ Sitrus Berry
 Level: 55
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
-Ability: Inner Focus
+Ability: Infiltrator
 - Cross Poison
 - Aerial Ace
 - Leech Life
@@ -4128,10 +4128,10 @@ Level: 53
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
 Ability: Inner Focus
-- Crunch
-- Headbutt
-- Hail
 - Freeze Dry
+- Crunch
+- Hail
+- Protect
 
 Walrein (F) @ Sitrus Berry
 Level: 55
@@ -4342,10 +4342,10 @@ Level: 57
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
 Ability: Sturdy
-- Drill Peck
-- Rock Slide
 - Spikes
+- Drill Peck
 - Steel Wing
+- Whirlwind
 
 Goodra-Hisui (M)
 Level: 55
@@ -4385,7 +4385,7 @@ Ability: Swift Swim
 - Aqua Jet
 - Rock Blast
 - X Scissor
-- Crush Claw
+- Protect
 
 Metagross @ Metagrossite
 Level: 58
@@ -4394,8 +4394,8 @@ Nature: Serious
 Ability: Clear Body
 - Meteor Mash
 - Hammer Arm
-- Psychic
-- Hyper Beam
+- Zen Headbutt
+- Psychic Noise
 
 === TRAINER_WALLY ===
 Name: WALLY

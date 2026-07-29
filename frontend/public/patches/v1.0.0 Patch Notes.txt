@@ -1,0 +1,387 @@
+7/29/2026
+
+//With a new season comes a new numbering system! Now the patch name will actually reflect size and significance of the update. All previous versions will be retroactively labeled as 0.9.1, 0.9.2, etc.
+
+Wow! Four months already! What a smoking hot season filled with smoking hot racers (and Christian)! Congratulations to Jeans for a well deserved first place, and thanks for everyone for blitzing. We'll have a small intermission of at least one month before the start of season two. Look forward to all of the season one incentives to begin rolling out over this time (floor two of the museum is coming soon)! But in the meantime, it's time for what we've all been waiting for... the season two balance changes!
+
+
+-----------------------------------------------
+Status Effect Changes
+-----------------------------------------------
+
+Status Effects now use Champions Changes
+-Paralysis: 12.5% chance not to act (down from 25%)
+-Freeze: 25% chance to thaw (up from 20%), two turns max
+-Sleep: 33% chance to wake on turn 2, 100% chance on turn 3 (changed from scaling percentage with 2-4 turns)
+
+//A significant nerf to gym fights. Between Force Palm, Body Slam, Spark, and Wattson's antics, paralysis is the most frequent status you have to deal with in Blitz, and you'll now only get fully paralyzed half as often as you did before.
+
+
+-----------------------------------------------
+New NPC: Scott
+-----------------------------------------------
+
+Starting at badge 4, after defeating a gym, Scott approaches you. He offer 5 TMs for sale, chosen at random from the following pool:
+
+Seed Bomb / Giga Drain
+Fire Punch / Flamethrower
+Thunder Punch / Thunderbolt
+Ice Punch / Ice Beam
+Flip Turn / Scald
+X Scissor / Bug Buzz
+Rock Slide / Power Gem 
+Dragon Claw / Dragon Pulse 
+Iron Tail / Flash Cannon
+Play Rough / Dazzling Gleam 
+Earthquake / Scorching Sands
+Shadow Claw / Shadow Ball
+Zen Headbutt / Psychic
+Brick Break / Body Press
+Return / Hyper Voice
+Poison Jab / Sludge Bomb 
+Crunch / Dark Pulse
+Dual Wingbeat / Air Slash
+
+-Each time Scott approaches you, he has a new, randomly chosen pool of 5 TMs to offer.
+
+-Each TM costs $4000. In addition to TMs, for $2000, you can choose to "invert" the shop, swapping all TMs with their same-type counterpart. For example, if you're offered Giga Drain, Flamethrower, Ice Punch, Flip turn, and Brick Break, you could pay $2000 to invert the selection to Seed Bomb, Fire Punch, Ice Beam, Scald, and Body Press.
+
+-Pressing "Select" while in the shop allows you to preview the inverted TMs so that you can check which Pokémon in your party could learn them.
+
+-If, at gym 8, there's a TM-type that you've yet to see, Scott is guaranteed to offer you a TM of that type. For example, if you complete gyms 4-7 but are never offered a grass-type TM, Scott is guaranteed to offer either Seed Bomb or Giga Drain after gym 8.
+
+-Buying a TM causes all other TMs in the shop to have their price reduced by half. For example, once you buy one TM from Scott, the price of all other TMs in that shop drop to 2000. This means that you can buy all five TMs for $7750 ($4000+$2000+$1000+$500+$250).
+
+-You can only buy one of each TM per shop, and only one of each type per shop. For example, if you buy Giga Drain, then buy Invert, you cannot buy Seed Bomb. But if Scott offers you Giga Drain after gym 5, he could offer you Giga Drain again after any subsequent gym.
+
+-As your new guardian angel, Scott now gives you the Surf and Fly HMs for free after defeating gyms 5 and 6.
+
+-If you steal a Pokémon, Scott will stop meeting with you to offer TMs for sale. Crime doesn't pay!
+
+//Extended Commentary Start
+The premier change of the patch! I have a lot to say on TMs, but I didn't want to bog down the notes with an essay on learnset philosophy. Instead, I will invent a nifty new collapsible patch note format!
+
+In no particular order, I went into the patch looking to address the following problems:
+
+1. TMs homogenize Pokémon and overshadow learnsets.
+Currently, it barely matters that Cacturne learns Energy Ball at level 44 or Abomasnow Wood Hammer at level 36. The reason these moves barely matter is because these Pokémon would prefer to learn Giga Drain after gym 4, making their level-up learnsets for STAB moves after level 29 insignificant. Their comparatively weak or strong post-level-29 grass-type learnsets aren't a notable advantage or disadvantage. In a game where every type has 20+ Pokémon in the pool, it's important that the Pokémon within that type feel distinct. Some Pokémon should feel strong because they have access to good grass moves after 29, and some should feel weak because they don't. At the moment, though, you don't see this relative strength or weakness fully play out because the TM system homogenizes all Pokémon of a given type to fit the same power curve. Most grass types use Giga Drain as soon as you can afford to buy it. This isn't to say that a Giga Drain TM shouldn't exist, but that it needs to exist in a way where grass-type-level-up moves after level 29 are still meaningful.
+
+2. It feels bad that the game is missing certain moves.
+//I sympathize with players who want access to TMs like Flash Cannon and Dark Pulse. My reservation with adding these options always comes back to problem 1 and that expanding the TM pool further decreases the significance of level-up learnsets. Who cares what dark-type moves Thievul, Greninja, and Houndoom do or don't learn if they all just swap to Dark Pulse at level 30? That said, it is disappointing when a Pokémon you associate with a specific STAB option doesn't have access to it, and it's something worthy of trying to fix.
+
+3. The increase in player power level from gym 4 to gym 5 is too steep relative to how shallow it is from gym 5 to the Elite Four.
+//Because evolution items, the Energy Oracle, TMs, and the Move Relearner all become accessible at the same threshold, there are many Pokémon who gain massive boosts in power all at once. For example, you go from a 370 BST Lampent with Hex/Flame Burst STAB to a 520 BST Chandelure with Shadow Ball/Flamethrower all in one gym. I don't necessarily mind this big power jump. I like having a definitive change in how the game feels between the first and second half of the gym phase. However, the jump is so large that it doesn't allow for Chandelure to continue increasing in power as the game continues. Chandelure, like Aegislash, Gardevoir, Jellicent, Slowking, Ludicolo, and others, all reach full power after the game's first four-five fights and stay at that same power level all the way until the champion. I'd like for there to be more power scaling across the final 2/3rds of the game.
+
+4. Gyms 5-6 are too easy.
+//A direct result of the above problem. The player's power level is so high at this threshold that these gyms often end up being the easiest portion of the game. The issue is most glaring when the boss's level 29 lead is facing down an Archeops with Acrobatics, Rock Slide, and Earthquake or Hone Claws. I don't mind the player having an Archeops this early (the Oracle must be after gym 4 in order to keep all of the weak Pokémon it evolves feeling decent to use), but Archeops doesn't need to have access to its Elite Four learnset at gym 5.
+
+5. The current system allows you to do things that are lame
+//In my mind, TMs are at their most interesting when they're used as supplementary tools to help counter specific fights. For example, I like when players buy Brick Break for Norman's Obstagoon or Shadow Ball for Brawly's Medicham. These aren't your go-to attacking options generically, but you consider buying them regardless to fulfill a niche. They reward careful planners and differentiate runs depending on your gym order. Similarly, it's great when mediocre Pokémon like Octillery get stronger by being able to show off the depth of their teachable learnset. The problem is that as often as not, players finish runs by buying multiple Earthquake TMs to stack their Steven matchup, or use their post-gym-5 shop just to buy Flamethrower and Shadow Ball on their Chandelure to jump way ahead of the power curve. I want a system that more significantly leans into the former use cases while mitigating the latter.
+
+6. I'd like for there to be more diversity from run to run when using the same Pokémon.
+//Another aspect of TMs that always appealed to me is their ability to differentiate runs. A run where a Yanmega has Giga Drain and Psychic feels very different than Air Cutter and Shadow Ball. That said, the current system isn't conducive to creating situations where a Pokemon's learnset follows a notably different trajectory from run to run. Always having access to the full range of TMs makes it so that you can follow a flowchart when shopping. Again, this goes back to problem 1, where TMs are currently serving to homogenize runs when they could theoretically be doing the opposite.
+
+7. Special attackers benefit more from TMs than physical attackers
+//Straightforward enough. There are more special TMs than physical ones, and the special TMs that exist are generally stronger and more impactful than the physical moves. It would be ideal for this to be less randomly lopsided.
+
+
+It's with these concerns in mind that I began tackling a TM-system rework. Here's how the new system attempts to resolve each of the problems...
+
+1. By shuffling the order at which TMs are given to the player from run to run, learnsets become more meaningful. In some runs, Abomasnow will get Giga Drain at the same threshold as usual and use it as its primary stab from gyms 5 until the end of the game. But in others, you'll need to rely on Wood Hammer if you want a Grass STAB.
+
+2. Although Scott's system takes power away from the player in gyms 5-6 (at which point you've seen relatively few TMs), by the time the Elite Four rolls around, you'll have assembled a more powerful assortment of TMs than you have access to in season one. By making sure that they aren't all available after at the same threshold, Blitz can distribute more powerful moves in a way that doesn't homogenize runs.
+
+3. Because TMs are distributed gradually over the back half of the game, it's no longer possible to buy your Chandelure Flamethrower and Shadow Ball ahead of gym 5. Now, Chandelure's power will scale over the course of these gyms.
+
+4. For that same reason, gyms 5-6 are comparatively more difficult.
+
+5. Because TMs get cheaper the more you buy, Scott's system often results in you paying $1000 for a Sludge Bomb or $500 for an X-Scissor that you never would have purchased previously. The scarcity of TMs and relatively cheap prices creates situations where you end up buying TMs for your weaker Pokémon that you rarely would have invested in during season one.
+
+6. All of this said, occasional runs will roll Body Press and Earthquake for your Mudsdale after gym four, and you'll find yourself with a juggernaut at a higher power level than what was possible previously. I like this element too--it makes some runs feel special. Much like the decision to randomize the gym order or to extend the elite four from four possible bosses to eight, this change improves replayability and makes runs feel unique.
+
+7. When updating the key moves spreadsheet, a huge number of physical attackers had the full package of Fire/Ice/Thunder Punch, Poison Jab and Zen Headbutt added to their list. All in all, the special attacking TMs are still probably a cut above, but physical attackers are eating good this patch.
+
+All of that said, while I'm personally excited about this change and enjoyed it while testing, I know it's likely to be unpopular. It results in you being at a lower power threshold at certain points than you're used to (there will be situations now where Jolteon will be left with Thundershock to face Juan & Wallace 6), and it disrupts existing play patterns (players who always buy X, Y, and Z with their bread-and-butter team comps will no longer have such freedom). Taking power away from the player usually results in people getting upset. Regardless, I think Scott is fun (he reminds me of when I first randomized the gym order and you got a rush of relief or dread each time you stepped through the doors of a gym), and I like how he affects the gameplay loop. 
+//Extended Commentary End
+
+-----------------------------------------------
+Slateport Mart Changes
+-----------------------------------------------
+
+Scott hasn't quite put the Slateport Saleswoman out of business, but her wares have changed...
+
+Available After: Gym 1
+Cost: 1000
+-Bullet Seed
+-Icy Wind
+-Mud Shot
+-Pounce
+-Steel Wing
+-Thief
+-Taunt
+
+Available After: Gym 4
+Cost: 2000
+-Sunny Day
+-Rain Dance
+-Sandstorm
+-Hail
+-Light Screen
+-Reflect
+-Rest
+-Trick Room
+Cost: 4000
+-Protect
+
+Available After: Gym 6
+Cost: 4000
+-Blizzard
+-Fire Blast
+-Thunder
+-Solar Beam
+-Hyper Beam
+Cost: 8000
+-Hone Claws
+
+//Notably, the player has access to a few speed-dropping moves after gym 2, such as Pounce, Icy Wind and Mud Shot
+//In terms of early-game TMs, I'm interested in generic moves learned by a lot of Pokémon that you sometimes buy as ways to counter specific fights, NOT in moves that you always buy as best-in-class STABs for that point in the game. For example, if every Flying-type Pokémon buys a Pluck TM after gym 1, it homogenizes the type such that all of the Pokémon play the same, and it doesn't create any interesting decisions. Icy Wind, on the other hand, gives you some added counterplay against Winona's Tropius that can be learned by a wide range of Pokémon. Many Psychic, Flying, and Water types have access to the move. Mud Shot and Pounce are similar; low-BP moves with a useful niche that can be learned by a relatively wide range of Pokémon. They're like Thief; sometimes you buy them, but they're context dependent and create meaningful decisions.
+//RIP Snarl and Dig. Sorry to dogs everywhere.
+
+
+Price Changes:
+Ability Capsule 3000 > 2000
+Ability Patch 5000 > 4000
+Mega Stone 10,000 > 8,000
+Energy Guru / Oracle 0 > 1000
+//Enough free handouts! A guru's gotta eat too!
+
+
+-----------------------------------------------
+Level Up Learnset Changes
+-----------------------------------------------
+
+Pokémon who evolve via stone now incorporate the learnsets of their previous form
+
+As an example, Aegislash goes from...
+
+    On Evo., Kings Shield
+    1, Head Smash
+    1, Swords Dance
+    1, Shadow Sneak
+    1, Night Slash
+    1, Iron Head
+    1, Aerial Ace
+    1, Sacred Sword
+
+To...
+
+    On Evo., Kings Shield
+    1, Head Smash
+    1, Swords Dance
+    20, Shadow Sneak
+    22, Aerial Ace
+    26, Retaliate
+    36, Night Slash
+    45, Iron Head
+    51, Sacred Sword
+
+//Extended Commentary Start
+In the main series games, Pokémon like Arcanine, Aegislash and Politoed stop learning moves once they evolve. Gamefreak does this to try to create an opportunity cost: do you evolve your Growlithe early for a super powerful Arcanine that can no longer learn new moves, or do you delay the evolution and stick to your underwhelming Growlithe in order to gain access to more powerful attacks? In Blitz, however, this trade off doesn't exist; you're never choosing to delay stone evolutions. This is in large part because the Move Relearner becomes available at the same threshold you gain access to evolution items, making all of those "forgone" moves instantly accessible.
+
+This change removes awkward situations like Sandshrew delaying for Iron Head at level 30 or Gloom learning Moonblast at 32 but Belossom only learning it via Move Relearner. (Now, Sandlash learns Iron Head at level 30, just like Sandshrew, and both Belossom and Vileplume learn Moonblast via level up at level 32.)
+
+Note that this doesn't mean the evolution uses the exact same learnset as the previous form. Doublade, for instance, doesn't learn Swords Dance, but Aegislash still does. Moves that are unique to the evolution remain unique to the evolution. But, the level up moves learned by the prior form now transfer to the final form. In short, now stone-evolution learnsets work just like they work for regular, not-evolution-item Pokemon.
+
+This change is more significant than it might look at a glance. There are over 20 Pokemon in the pool affected. Some Pokemon now learn moves by level up which they previously only learned via TM, such as Vileplume Giga Drain and Ampharos Thunderbolt. Other Pokemon gain access to new moves entirely, like Simisear Crunch and Arcanine Outrage.
+
+But primarily, this change helps to even out the power curve. No longer is Aegislash at its final learnset with just 4 badges obtained. Evolution-stone Pokemon will now curve out more smoothly into the back half of the game.
+//Extended Commentary End
+
+Generation 8/9 Move Backports
+//There are about 25 moves that, if they appear on a Pokémon's learnset in a future generation, are backported to Blitz. This patch adds a few moves to that list...
+
+Dazzling Gleam: Clefable, Ampharos, Aromatisse
+Energy Ball: Florges, Ludicolo
+Giga Drain: Whimsicott, Exeggutor, Masquerain, Grovile/Sceptile
+Thunderbolt: Ampharos, Manectric, Heliolisk, Eelektross
+Snarl: Umbreon, Houndoom, Electrike, Grumpig, Litleo/Pyroar, Fidough, Greavard, Liepard
+Ice Beam: Glaceon
+
+//The goal is to reduce certain Pokemon's reliance on key TMs. Now that you can't just buy a Giga Drain TM, for instance, it's important that Ludicolo has at least some guaranteed Grass STAB option, as its best grass-type attack is otherwise Mega Drain.
+
+
+Every instance of the following moves have been shifted to level 1:
+Agility
+Aromatherapy
+Autotomize
+Endeavor
+Endure
+Explosion
+Hail
+Heal Block
+Imprison
+Roar
+Rock Polish
+Role Play
+Sandstorm
+Soak
+Whirlwind
+Wide Guard
+Wonder Room
+Worry Seed
+
+//Across the game, there are about 3000 instances of moves that are outright removed from a Pokémon's learnset--moves like Bide and Fury Attack that do nothing more than slow down your leveling up process. The above moves, however, fall into an awkward middle ground. They're not outright useless... but you're still almost never learning them. Moving forward, they're now only accessible via the move relearner. Usually, this actually makes the moves more accessible (instead of waiting until level 53 for a chance at learning Hail without needing to buy the TM, you can learn it via the Move Relearner for the 5th gym). Overall though, this is about reducing time spent pressing "No" on the Party Menu while still allowing livii to cook.
+
+
+Learnset Nerfs
+The following moves have been shifted later in level-up learnsets:
+
+Acrobatics: Archen (28 > 40)
+Earthquake: Excadrill (36 > 49)
+Obstruct: Obstagoon (35 > 49)
+Draining Kiss: Sylveon (20 > 41), Ralts (23 > 40), Spritzee (21 > 40), Swirlix (31 > 41)
+//In Swirlix's case, Draining Kiss has flipped places with Play Rough. Ralts and Spritzee learn Psybeam at the previous Draining Kiss threshold. Spritzee now learns Dazzling Gleam at level 27 via backport from generation 8.
+
+//Extended Commentary Start
+There are certain moves which are better in Blitz than they are in the traditional games. Draining Kiss, which often serves as a Pokémon's "early game" STAB option, is not an early-game-power-level move in a nuzlocke setting. I don't mind good Pokémon being good, and my goal is not to take top tier Pokémon and make them no longer top tier. Instead, these changes are trying to stop already strong Pokémon from learning their most powerful STAB option at a point in time where they can use it to overpower gyms 5-8. I considered a lot of options here, including modifying the moves themselves, but I'm hoping that this change is the least jarring and most "natural" way to smooth over the moves that are out of place. The high tier Pokémon you love are still going to do the exact same stuff, they just need to wait a few more gyms to come online.
+
+Because I expect I'll end up responding to this one way or another: I know that a Spritzee with Draining Kiss is not at the same juggernaut power level as many Pokémon absent from this list (say, Ceruledge with Bitter Blade). However, Ceruledge already has to wait until level 48 to learn its most powerful STAB. The goal here was not to make a list of the ~5 best Pokémon in the game and nerf them--it was to make a list of the move/Pokémon combinations that come online too early and delay them until they're more in line with the game's power curve.
+//Extended Commentary End
+
+Lucario Meteor Mash Removed
+//Lucario doesn't actually learn Meteor Mash in generation 7; this was a backported move that I liked because it's iconically Hoenn. Unfortunately, Lucario is too good of a Pokémon to get a handout. Still, it's picking up access to the Flash Cannon TM, so it won't be hurting too badly...
+
+
+-----------------------------------------------
+Teachable Learnset Changes
+-----------------------------------------------
+
+All Pokemon now use their generation 9/Champions TM learnsets
+//...Except Pokemon which learn Bulk Up and Calm Mind. These two moves became much more widely distributed in generation 9 and they aren't being backported. Calm Mind Jolteon or Bulk Up Swampert are too much.
+//Improves the average relevance of Scott's selection. Dazzling Gleam, for instance, now goes on Raichu, Milotic, Vivillon and Grumpig. Sludge Bomb goes on Swampert and Zoroark. And more!
+//I've taken some liberties at distributing the generation 9 TMs to Pokemon that aren't in generation 9. For example, Pounce is learnable by Skorupi, Anorith, Nincada, Paras, Sizzlipede, and their evolutions, even though none of these Pokemon are in generation 9 and therefore don't technically learn the move. If these Pokémon are added to Champions later and don't learn Pounce, they'll have it removed from Blitz, but I have to imagine that they will.
+//The Key Moves List has been updated to reflect these changes. I've tried my best, but I'm sure I've missed some smoking hot Bug Buzz or Body Press options. Thanks in advance to the people who continue further updating the key moves list.
+
+
+These Pokémon now learn the Hone Claws TM:
+Litten
+Torracat
+Incineroar
+Rockruff
+Lycanroc
+Shroodle
+Grafaiai
+Ursaluna
+//Some TMs have been removed from modern generations. I've added Shock Wave and Steel Wing onto newer Pokémon who obviously would have learned them, but never did Hone Claws.
+
+
+-----------------------------------------------
+Boss Battle Changes
+-----------------------------------------------
+
+Roxanne 1-8 Geodude/Graveler/Golem Rock Head > Sturdy
+Roxanne 7-8 Golem Explosion > Roar
+
+Viola 7-8 Masquerain Quiver Dance > Whirlwind
+
+Brawly 7-8 Hariyama Close Combat > Brick Break
+Brawly 7-8 Sirfetch'd Brutal Swing > Sucker Punch
+//Espeon beware
+
+Wattson 1 Electrike Thunder Wave > Fire Fang
+Wattson 2 Electrike Thunder Wave > Bite
+Wattson 3 Manectric Thunder Wave > Bite
+Wattson 6-8 Electrode Discharge > Charge Beam
+Wattson 6 Electrode Self Destruct > Explosion
+
+Flannery 4-5 Camerupt Earth Power > Scorching Sands
+Flannery 6-8 Marowak Thrash / Sunny Day / Bone Rush > Perish Song
+
+Winona 7-8 Tropius Synthesis / Leaf Storm > Whirlwind
+
+Juan & Wallace 5-8 Tatsugiri Flip Turn > Rain Dance
+Juan & Wallace 6-8 Whiscash Rain Dance > Zen Headbutt
+Juan & Wallace 7 Milotic Disarming Voice > Dazzling Gleam
+
+Archie Lanturn Take Down > Protect
+Archie/Maxie Crobat Inner Focus > Infiltrator
+
+Spenser Shiftry Swagger > Whirlwind
+
+Phoebe Dusclops Confuse Ray > Perish Song
+Phoebe Sableye Double Team > Fake Out
+
+Lucy Seviper Coil > Dragon Tail
+Lucy Seviper Shed Skin > Infiltrator
+Lucy Crobat Inner Focus > Infiltrator
+
+Glacia Glalie Headbutt > Protect
+
+Added Exeggutor Alola to the list of Pokémon who don't swap out while at minus SpAtk (to prevent it from switching out after Leaf Storming twice, like Winona's Tropius)
+
+Steven Skarmory Rock Slide > Whirlwind
+Steven Armaldo Crush Claw > Protect
+Steven Metagross Psychic > Zen Headbutt
+Steven Metagross Hyper Beam > Psychic Noise 
+
+If foe is behind a Substitute, AI modified to always use Whirlwind, Roar, or Dragon Tail (if has Infiltrator)
+Substitute added to list of moves that provoke Perish Song
+
+When the enemy Pokémon faints, if the player's Pokémon is Mega Evolved, AI modified to always send out next a Pokémon that knows Fake Out or Protect
+If the player's Pokémon is Mega Evolved, AI modified to always use Fake Out or Protect
+
+//In most cases, these changes replace useless attacks with niche, anti-sweep moves intended to tap down the power of Substitute and Mega-Evolution sweeps.
+//The goal here isn't to kill substitute strategies, and I don't think that it does. But you're going to need to be a bit more creative than Substituting on a Dusclops that's guaranteed to use a status move and then also can't hurt you.
+
+
+-----------------------------------------------
+QoL
+-----------------------------------------------
+
+The TM Preview display that shows which Pokémon in your party learn a given TM now also checks your PC boxes
+//For example, if you draft eight Pokémon and they can all learn Rain Dance, it'll now show mini icons for all eight
+
+Mini Icon TM Preview added to the bag
+//Now, skimming the cursor over the bag's TMs will show you which Pokémon can learn the move
+
+Mini Icons of fainted Pokémon appear in greyscale while in the party and the PC
+//Making it easy to see at a glance who's fainted and who isn't
+
+There's a shadow beneath Birch's Flygon
+//We're flying high now!
+
+Added Mega Pidgeot NPC to Nathan's Lair
+//Allows the player to turn off accuracy checks and make moves always hit, similar to how Mega Slowbro can disable crits for help testing lines.
+
+Added Mailbox to player's room
+//The bottom of the player's room now contains a box with some useful resources to new players
+//Each run also includes one unique, randomly selected letter from one of our season 1 leaderboard players. I wonder what they have to say!
+
+
+-----------------------------------------------
+Bug Fixes
+-----------------------------------------------
+
+Fixed a bug where Mega Evolving Greninja wasn't resetting Protean
+//Yes, de-mega evolving also resets Protean, allowing it to potentially swap types three times in a single fight
+
+Fixed a bug where the enemy AI didn't consider Zoroark's illusion type for status moves
+//This stops Cacturne from using Leech Seed into a grass-disguised Zoroark, for example
+
+Fixed a bug where Kommo-o was the only Pokémon that could appear in the truck
+//No more side eye for you.
+
+
+-----------------------------------------------
+Pool Additions
+-----------------------------------------------
+
+Anorith
+Dratini
+Pineco
+Psyduck
+
+//If these four formed a boy band, would you buy their debut album?
+
+
+Ping me with bugs or make a post in bug reports! Have fun concocting new sets with these new TMs, and happy Blitzing!

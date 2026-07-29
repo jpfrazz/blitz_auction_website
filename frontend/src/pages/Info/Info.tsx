@@ -19,6 +19,7 @@ const Info = () => (
           <li><a href="#key-npcs">Key NPCs</a></li>
           <li><a href="#sitrus-berries">Sitrus Berries</a></li>
           <li><a href="#slateport-market-items">Slateport Market Items</a></li>
+          <li><a href="#scotts-tms">Scott's TMs</a></li>
           <li><a href="#gym-benchmarks">Gym Benchmarks</a></li>
           <li><a href="#inter-gym-mechanics">Inter-Gym Mechanics</a></li>
           <li><a href="#ai-logic">AI Logic</a></li>
@@ -203,66 +204,40 @@ const Info = () => (
         <h3 className="info-subheading">TMs</h3>
         <div className="slateport-market-grid tms">
           <div className="slateport-market-card">
-            <div className="slateport-market-title">Game Start — 1000</div>
+            <div className="slateport-market-title">Badge 1 — 1000</div>
             <ul className="slateport-list">
               <li className="tm-grass">Bullet Seed</li>
-              <li className='tm-normal'>Safeguard</li>
+              <li className="tm-ice">Icy Wind</li>
+              <li className="tm-ground">Mud Shot</li>
+              <li className="tm-bug">Pounce</li>
               <li className="tm-steel">Steel Wing</li>
-              <li className="tm-dark">Taunt</li>
               <li className="tm-dark">Thief</li>
-              <li className="tm-psychic">Trick Room</li>
+              <li className="tm-dark">Taunt</li>
             </ul>
           </div>
           <div className="slateport-market-card">
             <div className="slateport-market-title">Badge 4 — 2000</div>
             <ul className="slateport-list">
-              <li className='tm-normal'>Double Team</li>
+              <li className="tm-fire">Sunny Day</li>
+              <li className="tm-water">Rain Dance</li>
+              <li className="tm-rock">Sandstorm</li>
               <li className="tm-ice">Hail</li>
               <li className="tm-psychic">Light Screen</li>
-              <li className="tm-water">Rain Dance</li>
               <li className="tm-psychic">Reflect</li>
               <li className="tm-psychic">Rest</li>
-              <li className="tm-rock">Sandstorm</li>
-              <li className="tm-fire">Sunny Day</li>
+              <li className="tm-psychic">Trick Room</li>
+              <li className="tm-normal">Protect (4000)</li>
             </ul>
           </div>
           <div className="slateport-market-card">
-            <div className="slateport-market-title">Badge 4 — 3000</div>
-            <ul className="slateport-list">
-              <li className="tm-fighting">Brick Break</li>
-              <li className="tm-fairy">Dazzling Gleam</li>
-              <li className="tm-ground">Dig</li>
-              <li className="tm-dragon">Dragon Claw</li>
-              <li className="tm-grass">Giga Drain</li>
-              <li className="tm-normal">Hyper Beam</li>
-              <li className="tm-steel">Iron Tail</li>
-              <li className="tm-normal">Return</li>
-              <li className="tm-rock">Rock Slide</li>
-              <li className="tm-ghost">Shadow Ball</li>
-              <li className="tm-dark">Snarl</li>
-              <li className="tm-grass">Solar Beam</li>
-              <li className="tm-bug">X Scissor</li>
-            </ul>
-          </div>
-          <div className="slateport-market-card">
-            <div className="slateport-market-title">Badge 4 — 5000</div>
+            <div className="slateport-market-title">Badge 8 — 4000</div>
             <ul className="slateport-list">
               <li className="tm-ice">Blizzard</li>
               <li className="tm-fire">Fire Blast</li>
-              <li className="tm-fire">Flamethrower</li>
-              <li className="tm-ice">Ice Beam</li>
-              <li className="tm-poison">Sludge Bomb</li>
-              <li className="tm-electric">Thunderbolt</li>
               <li className="tm-electric">Thunder</li>
-              <li className='tm-normal'>Protect</li>
-              <li className="tm-psychic">Psychic</li>
-            </ul>
-          </div>
-          <div className="slateport-market-card">
-            <div className="slateport-market-title">Badge 4 — 8000</div>
-            <ul className="slateport-list">
-              <li className="tm-ground">Earthquake</li>
-              <li className="tm-dark">Hone Claws</li>
+              <li className="tm-grass">Solar Beam</li>
+              <li className="tm-normal">Hyper Beam</li>
+              <li className="tm-dark">Hone Claws (8000)</li>
             </ul>
           </div>
         </div>
@@ -410,6 +385,7 @@ const Info = () => (
               <summary className='slateport-market-dropdown'>Energy Oracle</summary>
               <div className="evo-icons">
                 <img src="/MiniIcons/amaura.png" alt="Amaura" />
+                <img src="/MiniIcons/anorith.png" alt="Anorith" />
                 <img src="/MiniIcons/archen.png" alt="Archen" />
                 <img src="/MiniIcons/binacle.png" alt="Binacle" />
                 <img src="/MiniIcons/clauncher.png" alt="Clauncher" />
@@ -434,6 +410,7 @@ const Info = () => (
               </div>
               <ul>
                 <li>Amaura &gt; Aurorus</li>
+                <li>Anorith &gt; Armaldo</li>
                 <li>Archen &gt; Archeops</li>
                 <li>Binacle &gt; Barbaracle</li>
                 <li>Clauncher &gt; Clawitzer</li>
@@ -668,6 +645,81 @@ const Info = () => (
           </div>
         </div>
       </section>
+
+      <section id="scotts-tms" className="info-section">
+        <h2 className="info-question">Scott's TMs</h2>
+        <hr />
+        <p className="info-answer">
+          Starting at badge 4, after defeating a gym, Scott approaches you. He offers 5 TMs for sale, chosen at random from the following pool:
+        </p>
+        <div className="slateport-market-grid tms">
+          <div className="slateport-market-card">
+            <h3 className="slateport-card-title">Pool 1</h3>
+            <ul className="slateport-list">
+              <li className="tm-grass">Seed Bomb</li>
+              <li className="tm-fire">Fire Punch</li>
+              <li className="tm-electric">Thunder Punch</li>
+              <li className="tm-ice">Ice Punch</li>
+              <li className="tm-water">Flip Turn</li>
+              <li className="tm-bug">X Scissor</li>
+              <li className="tm-rock">Rock Slide</li>
+              <li className="tm-dragon">Dragon Claw</li>
+              <li className="tm-steel">Iron Tail</li>
+              <li className="tm-fairy">Play Rough</li>
+              <li className="tm-ground">Earthquake</li>
+              <li className="tm-ghost">Shadow Claw</li>
+              <li className="tm-psychic">Zen Headbutt</li>
+              <li className="tm-fighting">Brick Break</li>
+              <li className="tm-normal">Return</li>
+              <li className="tm-poison">Poison Jab</li>
+              <li className="tm-dark">Crunch</li>
+              <li className="tm-flying">Dual Wingbeat</li>
+            </ul>
+          </div>
+          <div className="slateport-market-card">
+            <h3 className="slateport-card-title">Pool 2</h3>
+            <ul className="slateport-list">
+              <li className="tm-grass">Giga Drain</li>
+              <li className="tm-fire">Flamethrower</li>
+              <li className="tm-electric">Thunderbolt</li>
+              <li className="tm-ice">Ice Beam</li>
+              <li className="tm-water">Scald</li>
+              <li className="tm-bug">Bug Buzz</li>
+              <li className="tm-rock">Power Gem</li>
+              <li className="tm-dragon">Dragon Pulse</li>
+              <li className="tm-steel">Flash Cannon</li>
+              <li className="tm-fairy">Dazzling Gleam</li>
+              <li className="tm-ground">Scorching Sands</li>
+              <li className="tm-ghost">Shadow Ball</li>
+              <li className="tm-psychic">Psychic</li>
+              <li className="tm-fighting">Body Press</li>
+              <li className="tm-normal">Hyper Voice</li>
+              <li className="tm-poison">Sludge Bomb</li>
+              <li className="tm-dark">Dark Pulse</li>
+              <li className="tm-flying">Air Slash</li>
+            </ul>
+          </div>
+        </div>
+        <p className="info-answer">
+          Each time Scott approaches you, he has a new, randomly chosen pool of 5 TMs to offer.
+        </p>
+        <p className="info-answer">
+          Each TM costs $4000. In addition to TMs, for $2000, you can choose to "invert" the shop, swapping all TMs with their same-type counterpart.
+        </p>
+        <p className="info-answer">
+          Pressing "Select" while in the shop allows you to preview the inverted TMs so that you can check which Pokémon in your party could learn them.
+        </p>
+        <p className="info-answer">
+          If, at gym 8, there's a TM-type that you've yet to see, Scott is guaranteed to offer you a TM of that type.
+        </p>
+        <p className="info-answer">
+          Buying a TM causes all other TMs in the shop to have their price reduced by half.
+        </p>
+        <p className="info-answer">
+          If you steal a Pokémon, Scott will stop meeting with you to offer TMs for sale. Crime doesn't pay!
+        </p>
+      </section>
+
       <section id="gym-benchmarks" className="info-section">
         <h2 className="info-question">Gym Benchmarks</h2>
         <hr />

@@ -180,6 +180,10 @@ impl Server {
                 post(handlers::update_admin_draft_team_placements),
             )
             .route(
+                "/admin/drafts/{draft_id}/teams/{team_id}",
+                delete(handlers::remove_admin_draft_team),
+            )
+            .route(
                 "/admin/recalculate-stats",
                 post(handlers::admin_recalculate_all_stats),
             )

@@ -1,0 +1,50 @@
+6/30/2026
+
+//A small patch with a big heart. This update makes the necessary game changes for the website's emulator to compile stats.
+
+-----------------------------------------------
+Website Compatibility Changes
+-----------------------------------------------
+
+The game now forces a save when you respawn in the moving truck after a wipe
+//The website is now able to read your emulator's .sav file to find all boss trainers you fight during your run, the time you beat them at, and if you won or lost. It stores this information in a database, which it then displays in the Player Match History. However, to take advantage of this, we need to guarantee that there's a save after the final wipe so that the website can log it.
+//In short, the website uses this save to track where you lost, which is recorded in your player match history.
+//It also uses this save to send a notification to all other racers that you've wiped. A similar notification exists for when you defeat the champion!
+//Vanilla Emerald already has an automatic save when you enter the hall of fame, so we don't need to add one there. Now, the website will be able to display your time of victory, your % of runs that beat the game, most difficult boss by % of player runs it ends, etc.
+
+When you wipe, the trainer card now records the time you started the fight you wiped to, not the time you wiped
+//This allows the trainer card to be used as an accurate "tie breaker" when two players wipe to the same fight, as we break ties by the first player to start the fight, not the first player to wipe to it.
+//Since the website also receives this time, this effectively allows the website to track and break ties itself. Theoretically, the website now has everything it needs to determine final race placements autonomously.
+
+
+-----------------------------------------------
+Bug Fix
+-----------------------------------------------
+
+Norman and Flannery AI standardized with other boss fights
+//Last week, I did a deep dive into understanding the AI switch behavior. In the process, I realized that Norman and Flannery had rare, specific conditions in which they'd swap out their Pokémon which the other leaders didn't share. All that this change does is standardize their AI switch behavior with all of the rules you're currently familiar with, like sometimes swapping when you have a lowered primary attacking stat and are leech seeded, swapping when your primary attacking stat is -3 or greater, swapping when Drowsy, etc. If you've ever observed Norman "randomly" swap his Zoroark for his Obstagoon, or Flannery swap out her Torkoal after hitting it with an electric- or poison-type attack to her Camerupt in the back, that's what this removes.
+
+New AI Check: Flannery's Torkoal, Slugma, Magcargo, Numel, Camerupt, Vulpix, Ninetales, and Winona's Tropius will never swap out if their SpAtk stage is -1 or greater
+//Ever. This means that Torkoal could be -6 in every stat, Leech Seeded, Drowsy from Yawn, etc... If it goes to -1 SpAtk, all other switch AI conditions are irrelevant and ignored.
+//This is to prevent a Pokemon that's used Overheat or a Tropius that's used Leaf Storm from swapping out and resetting their stat drops. Not really a bugfix, but I'd intended for the Flannery and Winona AI to already be doing this, it just wasn't working.
+
+Tadbulb now glows green after gym 4 in the party menu
+//To signify that it can evolve
+
+Fixed the Nathan's Lair Warp point existing before the trap door tile appears
+//Gotta know the password
+
+
+-----------------------------------------------
+QoL
+-----------------------------------------------
+
+"Weather Continues" messages now display how many turns have passed of that weather
+//For example, instead of just "Rain continues to fall," you'll see "Rain continues to fall for the first turn" at the end of a turn in which you used Rain Dance.
+
+Right/Left Scrolling on Shop Menus
+//Now, like the Notebook's Pokémon menu in the player's room, shop menus can jump up or down the menu by pressing Left/Right
+
+Hypno NPC added to Nathan's Lair
+//Talk to it to advance the time by 8 hours
+//Useful for adjusting for day/night evolutions while testing

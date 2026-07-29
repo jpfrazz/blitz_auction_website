@@ -4,22 +4,60 @@ import Footer from '../../shared/components/Footer';
 import './PatchNotes.scss';
 
 const patches = [
-  'v9.2 Patch Notes.txt','v9.1 Patch Notes.txt','v9.0 Patch Notes.txt',
-  'v8.9 Patch Notes.txt','v8.8 Patch Notes.txt','v8.7 Patch Notes.txt','v8.6 Patch Notes.txt','v8.5 Patch Notes.txt','v8.4 Patch Notes.txt','v8.3 Patch Notes.txt','v8.2 Patch Notes.txt','v8.1 Patch Notes.txt','v8.0 Patch Notes.txt',
-  'v7.9 Patch Notes.txt','v7.8 Patch Notes.txt','v7.7 Patch Notes.txt','v7.6 Patch Notes.txt','v7.5 Patch Notes.txt','v7.4 Patch Notes.txt','v7.3 Patch Notes.txt','v7.2 Patch Notes.txt','v7.1 Patch Notes.txt','v7.0 Patch Notes.txt',
-  'v6.9 Patch Notes.txt','v6.8 Patch Notes.txt','v6.7 Patch Notes.txt','v6.6 Patch Notes.txt','v6.5 Patch Notes.txt','v6.4 Patch Notes.txt','v6.3 Patch Notes.txt','v6.2 Patch Notes.txt','v6.1 Patch Notes.txt','v6.0 Patch Notes.txt',
-  'v5.9 Patch Notes.txt','v5.8 Patch Notes.txt','v5.7 Patch Notes.txt','v5.5 Patch Notes.txt','v5.4 Patch Notes.txt','v5.3 Patch Notes.txt','v5.2 Patch Notes.txt','v5.1 Patch Notes.txt','v5.0 Patch Notes.txt',
-  'v4.9 Patch Notes.txt','v4.8 Patch Notes.txt','v4.7 Patch Notes.txt','v4.6 Patch Notes.txt','v4.5 Patch Notes.txt','v4.4 Patch Notes.txt','v4.3 Patch Notes.txt','v4.2 Patch Notes.txt','v4.1 Patch Notes.txt','v4.0 Patch Notes.txt',
-  'v3.0 Patch Notes.txt',
-  'v2.9 Patch Notes.txt','v2.8 Patch Notes.txt','v2.7 Patch Notes.txt','v2.6 Patch Notes.txt','v2.5 Patch Notes.txt','v2.4 Patch Notes.txt','v2.3 Patch Notes.txt','v2.2 Patch Notes.txt','v2.1 Patch Notes.txt','v2.0 Patch Notes.txt',
-  'v1.9 Patch Notes.txt','v1.8 Patch Notes.txt','v1.7 Patch Notes.txt'
+  'v1.0.0 Patch Notes.txt',
+  'v0.9.2 Patch Notes.txt','v0.9.1 Patch Notes.txt','v0.9.0 Patch Notes.txt',
+  'v0.8.9 Patch Notes.txt','v0.8.8 Patch Notes.txt','v0.8.7 Patch Notes.txt','v0.8.6 Patch Notes.txt','v0.8.5 Patch Notes.txt','v0.8.4 Patch Notes.txt','v0.8.32 Patch Notes.txt','v0.8.3 Patch Notes.txt','v0.8.2 Patch Notes.txt','v0.8.1 Patch Notes.txt','v0.8.0 Patch Notes.txt',
+  'v0.7.9 Patch Notes.txt','v0.7.8 Patch Notes.txt','v0.7.7 Patch Notes.txt','v0.7.6 Patch Notes.txt','v0.7.5 Patch Notes.txt','v0.7.4 Patch Notes.txt','v0.7.3 Patch Notes.txt','v0.7.2 Patch Notes.txt','v0.7.1 Patch Notes.txt','v0.7.0 Patch Notes.txt',
+  'v0.6.9 Patch Notes.txt','v0.6.8 Patch Notes.txt','v0.6.7 Patch Notes.txt','v0.6.6 Patch Notes.txt','v0.6.5 Patch Notes.txt','v0.6.4 Patch Notes.txt','v0.6.3 Patch Notes.txt','v0.6.2 Patch Notes.txt','v0.6.1 Patch Notes.txt','v0.6.0 Patch Notes.txt',
+  'v0.5.9 Patch Notes.txt','v0.5.8 Patch Notes.txt','v0.5.7 Patch Notes.txt','v0.5.5 Patch Notes.txt','v0.5.4 Patch Notes.txt','v0.5.3 Patch Notes.txt','v0.5.2 Patch Notes.txt','v0.5.1 Patch Notes.txt','v0.5.0 Patch Notes.txt',
+  'v0.4.9 Patch Notes.txt','v0.4.8 Patch Notes.txt','v0.4.7 Patch Notes.txt','v0.4.6 Patch Notes.txt','v0.4.5 Patch Notes.txt','v0.4.4 Patch Notes.txt','v0.4.3 Patch Notes.txt','v0.4.2 Patch Notes.txt','v0.4.1 Patch Notes.txt','v0.4.0 Patch Notes.txt',
+  'v0.3.0 Patch Notes.txt',
+  'v0.2.9 Patch Notes.txt','v0.2.8 Patch Notes.txt','v0.2.7 Patch Notes.txt','v0.2.6 Patch Notes.txt','v0.2.5 Patch Notes.txt','v0.2.4 Patch Notes.txt','v0.2.3 Patch Notes.txt','v0.2.2 Patch Notes.txt','v0.2.1 Patch Notes.txt','v0.2.0 Patch Notes.txt',
+  'v0.1.9 Patch Notes.txt','v0.1.8 Patch Notes.txt','v0.1.7 Patch Notes.txt'
 ];
+
+const START_MARKER = '//Extended Commentary Start';
+const END_MARKER = '//Extended Commentary End';
+
+type Segment =
+  | { type: 'text'; content: string }
+  | { type: 'commentary'; content: string };
+
+const parseContent = (text: string): Segment[] => {
+  const segments: Segment[] = [];
+  let cursor = 0;
+
+  while (cursor < text.length) {
+    const startIdx = text.indexOf(START_MARKER, cursor);
+    if (startIdx === -1) {
+      segments.push({ type: 'text', content: text.slice(cursor) });
+      break;
+    }
+
+    if (startIdx > cursor) {
+      segments.push({ type: 'text', content: text.slice(cursor, startIdx) });
+    }
+
+    const afterStart = startIdx + START_MARKER.length;
+    const endIdx = text.indexOf(END_MARKER, afterStart);
+    if (endIdx === -1) {
+      segments.push({ type: 'text', content: text.slice(startIdx) });
+      break;
+    }
+
+    segments.push({ type: 'commentary', content: text.slice(afterStart, endIdx).replace(/^\n+/, '') });
+    cursor = endIdx + END_MARKER.length;
+  }
+
+  return segments;
+};
 
 const PatchItem = ({ filename }: { filename: string }) => {
   const [expanded, setExpanded] = useState(false);
   const [content, setContent] = useState('');
   const [date, setDate] = useState('');
   const [loading, setLoading] = useState(false);
+  const [openCommentary, setOpenCommentary] = useState<Record<number, boolean>>({});
 
   useEffect(() => {
     const fetchDate = async () => {
@@ -59,6 +97,8 @@ const PatchItem = ({ filename }: { filename: string }) => {
   };
 
   const shortName = filename.replace(' Patch Notes.txt', '').replace(/^v/, '');
+  const segments = content ? parseContent(content) : null;
+  const commentaryCount = segments ? segments.filter(s => s.type === 'commentary').length : 0;
 
   return (
     <div className="patch-item">
@@ -74,7 +114,35 @@ const PatchItem = ({ filename }: { filename: string }) => {
       </div>
       {expanded && (
         <div className="patch-content">
-          {loading ? 'Loading...' : content}
+          {loading ? 'Loading...' : segments ? (
+            <>
+              {(() => {
+                let commentaryIdx = 0;
+                return segments.map((seg, i) => {
+                  if (seg.type === 'text') {
+                    return <span key={i}>{seg.content}</span>;
+                  }
+                  const idx = commentaryIdx++;
+                  const isOpen = openCommentary[idx] || false;
+                  return (
+                    <div key={i} className="extended-commentary">
+                      <button
+                        className="commentary-toggle"
+                        onClick={() => setOpenCommentary(prev => ({ ...prev, [idx]: !prev[idx] }))}
+                      >
+                        {isOpen ? '▾' : '▸'} Extended Commentary
+                      </button>
+                      {isOpen && (
+                        <div className="commentary-body">
+                          {seg.content}
+                        </div>
+                      )}
+                    </div>
+                  );
+                });
+              })()}
+            </>
+          ) : content}
         </div>
       )}
     </div>

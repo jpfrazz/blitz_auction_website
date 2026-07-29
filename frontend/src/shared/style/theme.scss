@@ -46,6 +46,8 @@ body, html {
   padding: 0;
   font-size: 67%;
   overflow-x: hidden;
+  scrollbar-width: thin;
+  scrollbar-color: $eb-border $eb-surface;
 }
 
 main {

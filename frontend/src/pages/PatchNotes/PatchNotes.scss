@@ -57,3 +57,39 @@
   font-size: 1.5rem;
   line-height: 1.5;
 }
+
+.extended-commentary {
+  margin: 0.2rem 0;
+}
+
+.commentary-toggle {
+  background: #1a2a3a;
+  color: #cfe7ff;
+  border: 1px solid #2a4a6a;
+  border-radius: 4px;
+  padding: 0.4rem 0.8rem;
+  font-family: Consolas, 'Courier New', monospace;
+  font-size: 1.5rem;
+  cursor: pointer;
+  user-select: none;
+  width: 100%;
+  text-align: left;
+
+  &:hover {
+    background: #243a50;
+    color: #cfe7ff !important;
+  }
+}
+
+.commentary-body {
+  background: #0a1520;
+  border: 1px solid #1a3050;
+  border-radius: 4px;
+  padding: 0.5rem 0.8rem;
+  margin-top: 0.2rem;
+  white-space: pre-wrap;
+  font-family: Consolas, 'Courier New', monospace;
+  font-size: 1.5rem;
+  line-height: 1.5;
+  color: #b0c8e0;
+}

@@ -218,6 +218,10 @@ export async function fetchAdminDraftTeamPlacements(draft_id: string): Promise<A
   return response.data;
 }
 
+export async function removeAdminDraftTeam(draft_id: string, team_id: number): Promise<void> {
+  await axios.delete(`/api/admin/drafts/${draft_id}/teams/${team_id}`);
+}
+
 export async function updateAdminDraftPlacements(
   draft_id: string,
   placements: AdminTeamPlacementUpdate[],
