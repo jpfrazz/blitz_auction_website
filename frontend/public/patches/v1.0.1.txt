@@ -1,0 +1,37 @@
+7/29/2026
+
+//Found a severe bug that necessitates a patch
+
+-----------------------------------------------
+Scott Tweaks
+-----------------------------------------------
+
+Buying Invert now resets the TM prices
+//All TMs reset to $4000 after inverting the shop. (After buying a TM for $4000, then buying Invert, your next TM purchase will be $4000, not $2000.) This is how it was at one point in testing, and I like the emphasis it puts on order of operations. Let me know if you like it more or less.
+
+Scott now can no longer randomly generate TMs of the same type in consecutive pools
+//For example, if you get offered a fire-type TM after gym 4, you can't get offered one again until gym 6
+//Guarantees that the first 10 TMs you roll from Scott will all be unique types. Results in a 99.36% chance of seeing each TM type at least once by the time the gym phase is over.
+
+
+-----------------------------------------------
+QoL
+-----------------------------------------------
+
+Pokémon holding their Mega Stones on the Hall of Fame screen now use their Mega sprite when posing
+//Wishiwashi is also now schoolin on 'em
+
+The in-bag TM preview now also works for HMs
+//Now everybody will know your Masquerain is Surfin USA
+
+
+-----------------------------------------------
+Bug Fix
+-----------------------------------------------
+
+Fixed a bug where Scott's script froze under specific circumstances
+//He and rentals don't play nicely
+
+Added Bullet Seed TM back to Phantump
+//Accidentally got shaved of in the shift to generation 9 teachable learnsets. There's probably a couple more of these, so if you spot them let me know.
+
