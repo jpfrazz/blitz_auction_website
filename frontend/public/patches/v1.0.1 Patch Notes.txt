@@ -33,5 +33,5 @@ Fixed a bug where Scott's script froze under specific circumstances
 //He and rentals don't play nicely
 
 Added Bullet Seed TM back to Phantump
-//Accidentally got shaved of in the shift to generation 9 teachable learnsets. There's probably a couple more of these, so if you spot them let me know.
+//Accidentally got shaved off in the shift to generation 9 teachable learnsets. There's probably a couple more of these, so if you spot them let me know.
 
