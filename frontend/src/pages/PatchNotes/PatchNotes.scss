@@ -41,7 +41,7 @@
   user-select: none;
 }
 
-.patch-list > :first-child .patch-bar {
+.current-major .patch-bar {
   background: #1e3328;
 }
 
@@ -50,7 +50,7 @@
   color: #cfe7ff;
 }
 
-.patch-list > :first-child .patch-date {
+.current-major .patch-date {
   color: #a8d68a;
 }
 

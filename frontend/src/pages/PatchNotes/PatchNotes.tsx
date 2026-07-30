@@ -4,7 +4,7 @@ import Footer from '../../shared/components/Footer';
 import './PatchNotes.scss';
 
 const patches = [
-  'v1.0.1 Patch Notes.txt','v1.0.0 Patch Notes.txt'
+  'v1.0.1 Patch Notes.txt','v1.0.0 Patch Notes.txt',
   'v0.9.2 Patch Notes.txt','v0.9.1 Patch Notes.txt','v0.9.0 Patch Notes.txt',
   'v0.8.9 Patch Notes.txt','v0.8.8 Patch Notes.txt','v0.8.7 Patch Notes.txt','v0.8.6 Patch Notes.txt','v0.8.5 Patch Notes.txt','v0.8.4 Patch Notes.txt','v0.8.32 Patch Notes.txt','v0.8.3 Patch Notes.txt','v0.8.2 Patch Notes.txt','v0.8.1 Patch Notes.txt','v0.8.0 Patch Notes.txt',
   'v0.7.9 Patch Notes.txt','v0.7.8 Patch Notes.txt','v0.7.7 Patch Notes.txt','v0.7.6 Patch Notes.txt','v0.7.5 Patch Notes.txt','v0.7.4 Patch Notes.txt','v0.7.3 Patch Notes.txt','v0.7.2 Patch Notes.txt','v0.7.1 Patch Notes.txt','v0.7.0 Patch Notes.txt',
@@ -97,11 +97,15 @@ const PatchItem = ({ filename }: { filename: string }) => {
   };
 
   const shortName = filename.replace(' Patch Notes.txt', '').replace(/^v/, '');
+  const isCurrentMajor = (() => {
+    const parts = shortName.split('.').map(Number);
+    return parts.length >= 2 && parts[0] >= 1;
+  })();
   const segments = content ? parseContent(content) : null;
   const commentaryCount = segments ? segments.filter(s => s.type === 'commentary').length : 0;
 
   return (
-    <div className="patch-item">
+    <div className={`patch-item${isCurrentMajor ? ' current-major' : ''}`}>
       <div 
         className="patch-bar" 
         onClick={toggle}
