@@ -1,0 +1,10 @@
+7/30/2026
+
+-----------------------------------------------
+Bug Fixes
+-----------------------------------------------
+
+Fixed a bug where the Energy Guru and Oracle could evolve Pokémon who shouldn't be eligible
+
+Fixed a bug where Scott's final TM pool could include multiple TMs of the same type
+//The five TMs Scott offers are always unique types.
