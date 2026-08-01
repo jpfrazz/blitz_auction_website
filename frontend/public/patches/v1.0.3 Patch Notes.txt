@@ -1,0 +1,7 @@
+8/1/2026
+
+-----------------------------------------------
+Bug Fixes
+-----------------------------------------------
+
+Fixed a bug where self-confusion inflicting moves weren't proccing held berries
