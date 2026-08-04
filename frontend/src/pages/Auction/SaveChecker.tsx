@@ -1,7 +1,8 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import Header from '../../shared/components/Header';
 import Footer from '../../shared/components/Footer';
 import { parseSaveFile, SavePokemon, SaveBoxPokemon, getTrainerNameById } from '../../utils/parseSaveFile';
+import { createResolveMetadata, isActuallyNicknamed } from '../../utils/speciesUtils';
 import { fetchPokemonList } from '../../shared/api/pokemon';
 import './SaveChecker.scss';
 
@@ -93,79 +94,10 @@ const SaveChecker: React.FC = () => {
     }).catch(() => {});
   }, []);
 
-  const resolveMetadata = (speciesId: number, nickname: string | undefined) => {
-    console.log(`[Debug] Resolving: speciesId=${speciesId}, nickname=${nickname}`);
-
-    // 1. Try direct ID lookup. This is the most reliable method.
-    const candidates = pokemonById.get(speciesId);
-    let data: any = null;
-
-    if (candidates) {
-      const singleCandidate = candidates.length === 1 ? candidates[0] : null;
-      const isNameMismatch = singleCandidate && nickname && !singleCandidate.name.toLowerCase().startsWith(nickname.toLowerCase());
-
-      // If the ID lookup fails or is ambiguous, immediately try to find a form-based match
-      // using the nickname. This is crucial for Pokémon like Deerling.
-      if ((!singleCandidate || isNameMismatch) && nickname) {
-        const formMatch = Object.values(pokemonMetadata).find(p => 
-          p.name.toLowerCase().startsWith(nickname.toLowerCase()) && Number(p.pokedex_id) === speciesId
-        );
-        if (formMatch) return formMatch;
-      }
-      else if (candidates.length > 1 || isNameMismatch) {
-        // If multiple candidates or a name mismatch, use the nickname to find the correct form.
-        if (nickname) {
-          data = candidates.find(p => p.name.toLowerCase().startsWith(nickname.toLowerCase()));
-        }
-        // If still no match, we can't be sure, so we don't assign data yet.
-      } else if (singleCandidate) {
-        data = singleCandidate;
-      }
-    }
-    if (data) console.log(`[Debug] Found by ID: ${data.name}`);
-    else console.log(`[Debug] Not found by ID, or ID match was ambiguous.`);
-    
-    if (!data && nickname) {
-      let searchName = nickname.toLowerCase();
-      // Special handling for Deerling/Sawsbuck, which have no base form in the DB.
-      if (searchName === 'deerling') {
-        searchName = 'deerling-spring';
-      } else if (searchName === 'sawsbuck') {
-        searchName = 'sawsbuck-spring';
-      }
-      data = pokemonMetadata[searchName];
-      
-      // Try normalized lookup for accented names
-      if (!data) {
-        console.log(`[Debug] Nickname fallback: trying normalized '${searchName}'`);
-        const normalized = searchName.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-        data = pokemonMetadata[normalized];
-      }
-
-      // Handle forms (e.g. "Deerling" matching "Deerling-Spring") or truncated names
-      if (!data) {
-        console.log(`[Debug] Nickname fallback: trying startsWith '${searchName}'`);
-        data = Object.values(pokemonMetadata).find(p => 
-          p.name.toLowerCase().startsWith(searchName)
-        );
-      }
-
-      if (data) console.log(`[Debug] Found by nickname fallback: ${data.name}`);
-      else console.log(`[Debug] Not found by nickname fallback.`);
-
-    }
-
-    // 4. Handle Mega Evolution redirection to treat them as base forms
-    if (data && data.name.toLowerCase().includes('mega')) {
-      const baseName = data.name.toLowerCase()
-        .replace(/\s*\(mega .*\)/, '') // Handles "(Mega ...)"
-        .replace(/^mega\s*/, '') // Handles "Mega ..."
-        .trim();
-      if (pokemonMetadata[baseName]) return pokemonMetadata[baseName];
-    }
-
-    return data;
-  };
+  const resolveMetadata = useMemo(
+    () => createResolveMetadata(pokemonById, pokemonMetadata),
+    [pokemonById, pokemonMetadata]
+  );
 
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -340,9 +272,7 @@ const SaveChecker: React.FC = () => {
                   const realName = (mon.species_id === 412 && mon.nickname?.toLowerCase() === 'egg') ? "Egg" : (speciesData?.name || `ID ${mon.species_id}`);
                   const abilityName = speciesData?.abilities ? speciesData.abilities[mon.ability_num] : 'Unknown';
                   
-                  // Only show the nickname if it's actually a nickname, not just a truncated species name
-                  const isTruncatedMatch = realName.toLowerCase().startsWith(mon.nickname.toLowerCase()) && mon.nickname.length >= 10;
-                  const hasNickname = mon.nickname && mon.nickname.toLowerCase() !== realName.toLowerCase() && !isTruncatedMatch;
+                  const hasNickname = isActuallyNicknamed(mon.nickname, mon.species_id, realName);
 
                   return (
                     <div key={i} className={`pokemon-card ${mon.hp === 0 ? 'fainted' : ''}`} data-testid={`party-mon-${i}`}>
@@ -406,8 +336,7 @@ const SaveChecker: React.FC = () => {
                   const realName = (mon.species_id === 412 && mon.nickname?.toLowerCase() === 'egg') ? "Egg" : (speciesData?.name || `ID ${mon.species_id}`);
                   const abilityName = speciesData?.abilities ? speciesData.abilities[mon.ability_num] : 'Unknown';
                   
-                  const isTruncatedMatch = realName.toLowerCase().startsWith(mon.nickname.toLowerCase()) && mon.nickname.length >= 10;
-                  const hasNickname = mon.nickname && mon.nickname.toLowerCase() !== realName.toLowerCase() && !isTruncatedMatch;
+                  const hasNickname = isActuallyNicknamed(mon.nickname, mon.species_id, realName);
 
                   return (
                     <div key={i} className="pokemon-card">

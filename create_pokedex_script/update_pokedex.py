@@ -35,10 +35,10 @@ if sys.stdout.encoding and sys.stdout.encoding.lower() != 'utf-8':
 # ══════════════════════════════════════════════════════════════════════════════
 
 # Root of your cloned EmeraldBlitz ROM source repo
-EMERALD_BLITZ_REPO = Path("C:/Users/pluto/EmeraldBlitz")
+    EMERALD_BLITZ_REPO = Path(r"C:\Users\willi\Desktop\EmeraldBlitz")
 
 # Path to GCC (from MSYS2 MinGW64)
-GCC_BIN = Path("C:/msys64/mingw64/bin")
+    GCC_BIN = Path(r"C:\Users\willi\Desktop\gcc\mingw64\bin")
 
 # Paths derived from this script's location – do not edit
 _SCRIPT_DIR   = Path(__file__).resolve().parent

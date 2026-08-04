@@ -2,21 +2,22 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useParams, useSearchParams } from 'react-router-dom';
 import Header from '../../shared/components/Header';
 import { parseSaveFile, SaveData, getTrainerNameById } from '../../utils/parseSaveFile';
+import { getIconName, createResolveMetadata, isActuallyNicknamed } from '../../utils/speciesUtils';
 import { fetchCurrentUser, fetchDraftById, claimEeveelution, unclaimEeveelution, fetchControlBindings, saveControlBindings } from '../../shared/api/draftData';
 import { fetchPokemonList } from '../../shared/api/pokemon';
 import EeveelutionClaimButton from './EeveelutionClaimButton';
 import NotebookWithdrawButton from './NotebookWithdrawButton';
 import './EmulatorPage.scss';
 
-(function() {
-    if (typeof window === 'undefined') return;
+(function () {
+  if (typeof window === 'undefined') return;
 
-    // 1. VISIBILITY MASK
-    Object.defineProperty(document, 'hidden', { get: () => false, configurable: true });
-    Object.defineProperty(document, 'visibilityState', { get: () => 'visible', configurable: true });
+  // 1. VISIBILITY MASK
+  Object.defineProperty(document, 'hidden', { get: () => false, configurable: true });
+  Object.defineProperty(document, 'visibilityState', { get: () => 'visible', configurable: true });
 
-    // 2. UNIFIED BACKGROUND WORKER CLOCK
-    const workerCode = `
+  // 2. UNIFIED BACKGROUND WORKER CLOCK
+  const workerCode = `
         let timer = null;
         self.onmessage = function(e) {
             if (e.data === 'start') {
@@ -25,75 +26,52 @@ import './EmulatorPage.scss';
             }
         };
     `;
-    const blob = new Blob([workerCode], { type: 'application/javascript' });
-    const worker = new Worker(URL.createObjectURL(blob));
+  const blob = new Blob([workerCode], { type: 'application/javascript' });
+  const worker = new Worker(URL.createObjectURL(blob));
 
-    let fakeRAFId = 0;
-    const pendingCallbacks = new Map<number, FrameRequestCallback>();
-    let lastTime = performance.now();
+  let fakeRAFId = 0;
+  const pendingCallbacks = new Map<number, FrameRequestCallback>();
+  let lastTime = performance.now();
 
-    // The worker thread handles 100% of the game loops, completely bypassing browser throttling
-    worker.onmessage = function() {
-        const callbacksToRun = Array.from(pendingCallbacks.entries());
-        pendingCallbacks.clear();
-        
-        callbacksToRun.forEach(([id, callback]) => {
-            lastTime += 16.666666666666668;
-            callback(lastTime);
-        });
+  // The worker thread handles 100% of the game loops, completely bypassing browser throttling
+  worker.onmessage = function () {
+    const callbacksToRun = Array.from(pendingCallbacks.entries());
+    pendingCallbacks.clear();
+
+    callbacksToRun.forEach(([id, callback]) => {
+      lastTime += 16.666666666666668;
+      callback(lastTime);
+    });
+  };
+
+  worker.postMessage('start');
+
+  // 3. OVERRIDE TIMING GLOBAL (Always use the worker engine)
+  window.requestAnimationFrame = function (callback: FrameRequestCallback): number {
+    const id = ++fakeRAFId;
+    pendingCallbacks.set(id, callback);
+    return id;
+  };
+
+  window.cancelAnimationFrame = function (id: number): void {
+    pendingCallbacks.delete(id);
+  };
+
+  // 4. AUDIO CONTEXT PROTECTOR
+  const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
+  if (AudioContextClass) {
+    AudioContextClass.prototype.suspend = function (): Promise<void> {
+      return Promise.resolve();
     };
-
-    worker.postMessage('start');
-
-    // 3. OVERRIDE TIMING GLOBAL (Always use the worker engine)
-    window.requestAnimationFrame = function(callback: FrameRequestCallback): number {
-        const id = ++fakeRAFId;
-        pendingCallbacks.set(id, callback);
-        return id;
+    const originalCreateGain = AudioContextClass.prototype.createGain;
+    AudioContextClass.prototype.createGain = function () {
+      if (this.state === 'suspended') {
+        try { (this as any).resume(); } catch (e) { }
+      }
+      return originalCreateGain.apply(this, arguments as any);
     };
-
-    window.cancelAnimationFrame = function(id: number): void {
-        pendingCallbacks.delete(id);
-    };
-
-    // 4. AUDIO CONTEXT PROTECTOR
-    const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
-    if (AudioContextClass) {
-        AudioContextClass.prototype.suspend = function(): Promise<void> {
-            return Promise.resolve();
-        };
-        const originalCreateGain = AudioContextClass.prototype.createGain;
-        AudioContextClass.prototype.createGain = function() {
-            if (this.state === 'suspended') {
-                try { (this as any).resume(); } catch(e) {}
-            }
-            return originalCreateGain.apply(this, arguments as any);
-        };
-    }
-})();
-
-const getIconName = (name: string, speciesId?: number) => {
-  if (!name || name === '???') return 'egg';
-  const n = name.toLowerCase();
-  if (n.startsWith('egg')) return 'egg';
-  
-  // Special handling for specific Pokemon with non-standard names
-  if (n.includes('plusle')) return 'plusle';
-  if (n.includes('minun')) return 'minun';
-  if (n.includes('deerling')) return 'deerling';
-  if (n.includes('mime jr')) return 'mime jr';
-  if (n.includes('mime.')) return 'mime jr';
-  
-  // Fallback: handle by species ID if name lookup failed
-  if (n.startsWith('id') && speciesId) {
-    if (speciesId === 312) return 'minun';
-    if (speciesId === 311) return 'plusle';
-    if (speciesId === 1094 || speciesId === 1095 || speciesId === 1096 || speciesId === 1097) return 'deerling';
-    if (speciesId === 439) return 'mime jr';
   }
-  
-  return n.replace(/é/g, 'e').replace(/[^a-z0-9- .]/g, '');
-};
+})();
 
 const NATURE_EFFECTS: Record<string, string> = {
   "Hardy": "",
@@ -214,6 +192,77 @@ function applyBpsPatch(source: Uint8Array, patch: Uint8Array): Uint8Array {
     }
   }
   return target;
+}
+
+// CRC32 lookup table, used to verify the uploaded ROM matches the source ROM
+// the Blitz patch was built against.
+const CRC32_TABLE = (() => {
+  const table = new Uint32Array(256);
+  for (let n = 0; n < 256; n++) {
+    let c = n;
+    for (let k = 0; k < 8; k++) {
+      c = c & 1 ? 0xedb88320 ^ (c >>> 1) : c >>> 1;
+    }
+    table[n] = c >>> 0;
+  }
+  return table;
+})();
+
+function crc32(data: Uint8Array): number {
+  let crc = 0xffffffff;
+  const table = CRC32_TABLE;
+  for (let i = 0; i < data.length; i++) {
+    crc = table[(crc ^ data[i]) & 0xff] ^ (crc >>> 8);
+  }
+  return (crc ^ 0xffffffff) >>> 0;
+}
+
+function readBpsVli(patch: Uint8Array, offset: number): { value: number; nextOffset: number } {
+  let value = 0;
+  let shift = 1;
+  while (true) {
+    const byte = patch[offset++];
+    value += (byte & 0x7f) * shift;
+    if (byte & 0x80) break;
+    shift <<= 7;
+    value += shift;
+  }
+  return { value, nextOffset: offset };
+}
+
+/**
+ * Refuses to proceed unless `rom` is a clean (vanilla, unmodified) copy of the
+ * exact Pokémon Emerald ROM the Blitz patch expects. Running the BPS patch on a
+ * different or already-patched ROM silently produces corrupted game data, so we
+ * verify the ROM before patching instead of letting a bad result get played.
+ */
+function validateEmeraldRom(rom: Uint8Array, patch: Uint8Array): void {
+  if (patch.length < 16 || patch[0] !== 0x42 || patch[1] !== 0x50 || patch[2] !== 0x53 || patch[3] !== 0x31) {
+    throw new Error('Failed to load the Blitz patch.');
+  }
+
+  const sourceSize = readBpsVli(patch, 4).value;
+  if (rom.length !== sourceSize) {
+    throw new Error(`That file is the wrong size for Pokémon Emerald. Please use an unpatched ROM.`);
+  }
+
+  // GBA header game code (offset 0xAC) — "BPEE" identifies Pokémon Emerald.
+  const gameCode = String.fromCharCode(rom[0xAC], rom[0xAD], rom[0xAE], rom[0xAF]);
+  if (gameCode !== 'BPEE') {
+    throw new Error('That file does not appear to be Pokémon Emerald. Please select a clean, unmodified Emerald ROM.');
+  }
+
+  // The final 12 bytes of a BPS patch are the source CRC32, target CRC32, and
+  // patch CRC32. The source CRC32 is the checksum of the vanilla ROM the patch
+  // was created from, so a match proves the upload is that exact clean ROM.
+  const sourceCrc = (patch[patch.length - 12]
+    | patch[patch.length - 11] << 8
+    | patch[patch.length - 10] << 16
+    | patch[patch.length - 9] << 24) >>> 0;
+  const romCrc = crc32(rom);
+  if (romCrc !== sourceCrc) {
+    throw new Error('That Pokémon Emerald ROM has already been modified (patched or hacked). Please use a clean, unmodified vanilla Emerald ROM.');
+  }
 }
 
 function getExtension(filename: string): string {
@@ -380,7 +429,7 @@ const EmulatorPage: React.FC = () => {
       fetch(`/api/drafts/${draftId}/state-load-notification`, {
         method: 'POST',
         credentials: 'include',
-      }).catch(() => {});
+      }).catch(() => { });
     }
   };
 
@@ -393,7 +442,7 @@ const EmulatorPage: React.FC = () => {
         (u.roles ?? []).some((role) => role.role_name === 'Referee' || role.role_name === 'Admin') ||
         u.username === 'franklynathan' || u.username === 'jage04' || u.username === 'Jason' || u.username === 'mfrazz'
       );
-    }).catch(() => {});
+    }).catch(() => { });
   }, []);
 
   useEffect(() => {
@@ -414,7 +463,7 @@ const EmulatorPage: React.FC = () => {
           return next;
         });
       })
-      .catch(() => {});
+      .catch(() => { });
     return () => {
       cancelled = true;
     };
@@ -439,7 +488,7 @@ const EmulatorPage: React.FC = () => {
         };
         const name = p.name?.toLowerCase();
         if (name) map[name] = entry;
-        
+
         const id = p.id || p.pokedex_id;
         if (id) {
           const numId = Number(id);
@@ -457,124 +506,10 @@ const EmulatorPage: React.FC = () => {
     return () => { cancelled = true; };
   }, []);
 
-  // Map Blitz mod species IDs to database species IDs
-  const mapSpeciesId = (id: number): number => {
-    // Deerling forms: Blitz uses 1094-1097, database uses 585
-    if (id >= 1094 && id <= 1097) return 585;
-    // Plusle and Minun: Blitz uses 311/312, database uses 311 for combined
-    if (id === 312) return 311;
-    return id;
-  };
-
-  const resolveMetadata = (speciesId: number, nickname: string | undefined) => {
-    // Map Blitz species ID to database species ID
-    const dbSpeciesId = mapSpeciesId(speciesId);
-
-    // Special handling for Plusle/Minun since they're combined in database
-    if (speciesId === 311 || speciesId === 312) {
-      const combinedEntry = pokemonById.get(311)?.[0];
-      if (combinedEntry) {
-        const isMinun = speciesId === 312;
-        return {
-          ...combinedEntry,
-          name: isMinun ? 'Minun' : 'Plusle',
-          pokedex_id: speciesId,
-          // Override abilities: Plusle always has Plus, Minun always has Minus
-          ability1: isMinun ? 'Minus' : 'Plus',
-          ability2: isMinun ? 'Plus' : 'Minus',
-        };
-      }
-    }
-
-    // Special handling for Farfetch'd - map to Galar variant (ID 83)
-    if (speciesId === 83) {
-      const farfetchdCandidates = pokemonById.get(83);
-      if (farfetchdCandidates) {
-        const galarVariant = farfetchdCandidates.find(p => p.form === 'Galar');
-        if (galarVariant) return galarVariant;
-      }
-    }
-
-    // 1. Try direct ID lookup. This is the most reliable method.
-    const candidates = pokemonById.get(dbSpeciesId);
-    let data: any = null;
-
-    if (candidates) {
-      const singleCandidate = candidates.length === 1 ? candidates[0] : null;
-      const isNameMismatch = singleCandidate && nickname && !singleCandidate.name.toLowerCase().startsWith(nickname.toLowerCase());
-
-      // If the ID lookup fails or is ambiguous, immediately try to find a form-based match
-      // using the nickname. This is crucial for Pokémon like Deerling.
-      if ((!singleCandidate || isNameMismatch) && nickname) {
-        // Try exact name match first to avoid ambiguous prefix matches
-        // (e.g. "Corsola" matching both "Corsola" and "Corsola-Galar")
-        const exactMatch = pokemonMetadata[nickname.toLowerCase()];
-        if (exactMatch && Number(exactMatch.pokedex_id) === dbSpeciesId) {
-          return exactMatch;
-        }
-        const formMatch = Object.values(pokemonMetadata).find(p => 
-          p.name.toLowerCase().startsWith(nickname.toLowerCase()) && Number(p.pokedex_id) === dbSpeciesId
-        );
-        if (formMatch) return formMatch;
-      }
-      else if (candidates.length > 1 || isNameMismatch) {
-        // If multiple candidates or a name mismatch, use the nickname to find the correct form.
-        if (nickname) {
-          data = candidates.find(p => p.name.toLowerCase().startsWith(nickname.toLowerCase()));
-        }
-        // If still no match, we can't be sure, so we don't assign data yet.
-      } else if (singleCandidate) {
-        data = singleCandidate;
-      }
-    }
-    
-    if (!data && nickname) {
-      let searchName = nickname.toLowerCase();
-      // Special handling for Deerling/Sawsbuck - strip form suffixes to match base form in DB
-      if (searchName.startsWith('deerling')) {
-        searchName = 'deerling';
-      } else if (searchName.startsWith('sawsbuck')) {
-        searchName = 'sawsbuck';
-      }
-      // Handle Mime Jr. period issue - database has "Mime Jr" without period
-      else if (searchName === 'mime jr.' || searchName === 'mime jr') {
-        searchName = 'mime jr';
-      }
-      // Handle Farfetch'd - database has apostrophe, save file might not
-      else if (searchName === 'farfetchd' || searchName === 'farfetch\'d') {
-        searchName = 'farfetch\'d';
-      }
-      // Handle Farfetch'd Galar - database has "Farfetch'd,Galar"
-      else if (searchName === 'farfetch\'d galar' || searchName === 'farfetchd galar') {
-        searchName = 'farfetch\'d,galar';
-      }
-      data = pokemonMetadata[searchName];
-      
-      // Try normalized lookup for accented names
-      if (!data) {
-        const normalized = searchName.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-        data = pokemonMetadata[normalized];
-      }
-
-      // Handle forms (e.g. "Deerling" matching "Deerling-Spring") or truncated names
-      if (!data) {
-        data = Object.values(pokemonMetadata).find(p => 
-          p.name.toLowerCase().startsWith(searchName)
-        );
-      }
-    }
-
-    // 4. Handle Mega Evolution redirection to treat them as base forms
-    if (data && data.name.toLowerCase().includes('mega')) {
-      const baseName = data.name.toLowerCase()
-        .replace(/\s*\(mega .*\)/, '') // Handles "(Mega ...)"
-        .replace(/^mega\s*/, '') // Handles "Mega ..."
-        .trim();
-      if (pokemonMetadata[baseName]) return pokemonMetadata[baseName];
-    }
-
-    return data;
-  };
+  const resolveMetadata = useMemo(
+    () => createResolveMetadata(pokemonById, pokemonMetadata),
+    [pokemonById, pokemonMetadata]
+  );
 
   useEffect(() => {
     if (!draftId) return;
@@ -585,153 +520,153 @@ const EmulatorPage: React.FC = () => {
     const baseReconnectInterval = 1000;
 
     const wsConnect = () => {
-        const ws = new WebSocket(wsUrl);
-        wsRef.current = ws;
+      const ws = new WebSocket(wsUrl);
+      wsRef.current = ws;
 
-        ws.onopen = () => {
-            reconnectCountRef.current = 0;
-        }
+      ws.onopen = () => {
+        reconnectCountRef.current = 0;
+      }
 
-        ws.onmessage = (event) => {
-          try {
-            const msg = JSON.parse(event.data as string);
-              if (msg.type === 'SaveUpdate') {
-                const { user_id, save_data } = msg.data as { user_id: string; save_data: any };
-                console.log('[EmulatorPage] SaveUpdate received for', user_id, save_data);
-              setOtherSaves((prev) => ({
-                ...prev,
-                [user_id]: { displayName: prev[user_id]?.displayName ?? user_id, save: save_data },
-              }));
-            }
-            // DraftUpdate gives us the username list for the sidebar
-            if (msg.type === 'DraftUpdate') {
-              const teams = (msg.data?.teams ?? []) as Array<{
-                user_id: string;
-                username: string;
-                global_name?: string | null;
-                save_data?: SaveData | null;
-              }>;
-              setOtherSaves((prev) => {
-                const next = { ...prev };
-                for (const t of teams) {
-                  next[t.user_id] = {
-                    displayName: t.global_name?.trim() || t.username,
-                    save: t.save_data ?? next[t.user_id]?.save ?? null,
+      ws.onmessage = (event) => {
+        try {
+          const msg = JSON.parse(event.data as string);
+          if (msg.type === 'SaveUpdate') {
+            const { user_id, save_data } = msg.data as { user_id: string; save_data: any };
+            console.log('[EmulatorPage] SaveUpdate received for', user_id, save_data);
+            setOtherSaves((prev) => ({
+              ...prev,
+              [user_id]: { displayName: prev[user_id]?.displayName ?? user_id, save: save_data },
+            }));
+          }
+          // DraftUpdate gives us the username list for the sidebar
+          if (msg.type === 'DraftUpdate') {
+            const teams = (msg.data?.teams ?? []) as Array<{
+              user_id: string;
+              username: string;
+              global_name?: string | null;
+              save_data?: SaveData | null;
+            }>;
+            setOtherSaves((prev) => {
+              const next = { ...prev };
+              for (const t of teams) {
+                next[t.user_id] = {
+                  displayName: t.global_name?.trim() || t.username,
+                  save: t.save_data ?? next[t.user_id]?.save ?? null,
+                };
+              }
+              return next;
+            });
+          }
+          // State load notification from another player
+          if (msg.type === 'StateLoadNotification') {
+            const { display_name } = msg.data as { display_name: string };
+            addNotification(`${display_name} loaded a previous state!`);
+          }
+          // Wipe notification
+          if (msg.type === 'WipeNotification') {
+            const { username, trainer } = msg.data as { username: string; trainer: string };
+            addNotification(`${username} wiped to ${trainer}!`);
+          }
+          // Win notification
+          if (msg.type === 'WinNotification') {
+            const { username, trainer } = msg.data as { username: string; trainer: string };
+            addNotification(`${username} beat ${trainer}!`);
+          }
+          // Eeveelution claim notification
+          if (msg.type === 'EeveelutionClaimed') {
+            const { user_name, eeveelution_name, user_id, pokedex_id, form } = msg.data as { user_name: string; eeveelution_name: string; user_id: string; pokedex_id: number; form: string | null };
+            addNotification(`${user_name} claimed ${eeveelution_name}!`);
+
+            // Update draft data locally to reflect the claim instantly
+            setDraftData((prev: any) => {
+              if (!prev) return prev;
+              const updatedTeams = prev.teams.map((team: any) => {
+                if (team.user_id === user_id) {
+                  const existingAuctions = team.auctions_won || [];
+                  // Check if already claimed to avoid duplicates
+                  const alreadyClaimed = existingAuctions.some((p: any) => p.pokedex_id === pokedex_id && p.form === form);
+                  if (alreadyClaimed) return team;
+
+                  return {
+                    ...team,
+                    auctions_won: [...existingAuctions, { pokedex_id, form, name: eeveelution_name }]
                   };
                 }
-                return next;
+                return team;
               });
-            }
-            // State load notification from another player
-            if (msg.type === 'StateLoadNotification') {
-              const { display_name } = msg.data as { display_name: string };
-              addNotification(`${display_name} loaded a previous state!`);
-            }
-            // Wipe notification
-            if (msg.type === 'WipeNotification') {
-              const { username, trainer } = msg.data as { username: string; trainer: string };
-              addNotification(`${username} wiped to ${trainer}!`);
-            }
-            // Win notification
-            if (msg.type === 'WinNotification') {
-              const { username, trainer } = msg.data as { username: string; trainer: string };
-              addNotification(`${username} beat ${trainer}!`);
-            }
-            // Eeveelution claim notification
-            if (msg.type === 'EeveelutionClaimed') {
-              const { user_name, eeveelution_name, user_id, pokedex_id, form } = msg.data as { user_name: string; eeveelution_name: string; user_id: string; pokedex_id: number; form: string | null };
-              addNotification(`${user_name} claimed ${eeveelution_name}!`);
-
-              // Update draft data locally to reflect the claim instantly
-              setDraftData((prev: any) => {
-                if (!prev) return prev;
-                const updatedTeams = prev.teams.map((team: any) => {
-                  if (team.user_id === user_id) {
-                    const existingAuctions = team.auctions_won || [];
-                    // Check if already claimed to avoid duplicates
-                    const alreadyClaimed = existingAuctions.some((p: any) => p.pokedex_id === pokedex_id && p.form === form);
-                    if (alreadyClaimed) return team;
-
-                    return {
-                      ...team,
-                      auctions_won: [...existingAuctions, { pokedex_id, form, name: eeveelution_name }]
-                    };
-                  }
-                  return team;
-                });
-                return { ...prev, teams: updatedTeams };
-              });
-            }
-            // Eeveelution unclaim notification
-            if (msg.type === 'EeveelutionUnclaimed') {
-              const { user_name, eeveelution_name, user_id, pokedex_id, form } = msg.data as { user_name: string; eeveelution_name: string; user_id: string; pokedex_id: number; form: string | null };
-              addNotification(`${user_name} unclaimed ${eeveelution_name}!`);
-
-              // Update draft data locally to reflect the unclaim instantly
-              setDraftData((prev: any) => {
-                if (!prev) return prev;
-                const updatedTeams = prev.teams.map((team: any) => {
-                  if (team.user_id === user_id) {
-                    const existingAuctions = team.auctions_won || [];
-                    return {
-                      ...team,
-                      auctions_won: existingAuctions.filter((p: any) => !(p.pokedex_id === pokedex_id && p.form === form))
-                    };
-                  }
-                  return team;
-                });
-                return { ...prev, teams: updatedTeams };
-              });
-            }
-            // Ready to Race
-            if (msg.type === 'ReadyToRace') {
-              const { user_id } = msg.data as { user_id: string };
-              setReadyPlayers(prev => {
-                const next = new Set(prev);
-                next.add(user_id);
-                return next;
-              });
-            }
-            if (msg.type === 'ReadyToRaceCancelled') {
-              const { user_id } = msg.data as { user_id: string };
-              setReadyPlayers(prev => {
-                const next = new Set(prev);
-                next.delete(user_id);
-                return next;
-              });
-            }
-          } catch {
-            // ignore parse errors
+              return { ...prev, teams: updatedTeams };
+            });
           }
-        };
+          // Eeveelution unclaim notification
+          if (msg.type === 'EeveelutionUnclaimed') {
+            const { user_name, eeveelution_name, user_id, pokedex_id, form } = msg.data as { user_name: string; eeveelution_name: string; user_id: string; pokedex_id: number; form: string | null };
+            addNotification(`${user_name} unclaimed ${eeveelution_name}!`);
 
-        // reconnect if ws is disconnected unintentionally
-        ws.onclose = (event) => {
-            if (event.wasClean) return;
-
-            if (reconnectCountRef.current < maxReconnectAttempts) {
-                const delay = baseReconnectInterval * Math.pow(2, reconnectCountRef.current);
-                console.log('reconnecting ws');
-                reconnectTimeoutRef.current = setTimeout(() => {
-                    reconnectCountRef.current += 1;
-                    wsConnect();
-                }, delay);
-            }
-            else {
-                console.log('failed to reconnect ws in 5 tries, aborting...');
-            }
+            // Update draft data locally to reflect the unclaim instantly
+            setDraftData((prev: any) => {
+              if (!prev) return prev;
+              const updatedTeams = prev.teams.map((team: any) => {
+                if (team.user_id === user_id) {
+                  const existingAuctions = team.auctions_won || [];
+                  return {
+                    ...team,
+                    auctions_won: existingAuctions.filter((p: any) => !(p.pokedex_id === pokedex_id && p.form === form))
+                  };
+                }
+                return team;
+              });
+              return { ...prev, teams: updatedTeams };
+            });
+          }
+          // Ready to Race
+          if (msg.type === 'ReadyToRace') {
+            const { user_id } = msg.data as { user_id: string };
+            setReadyPlayers(prev => {
+              const next = new Set(prev);
+              next.add(user_id);
+              return next;
+            });
+          }
+          if (msg.type === 'ReadyToRaceCancelled') {
+            const { user_id } = msg.data as { user_id: string };
+            setReadyPlayers(prev => {
+              const next = new Set(prev);
+              next.delete(user_id);
+              return next;
+            });
+          }
+        } catch {
+          // ignore parse errors
         }
+      };
+
+      // reconnect if ws is disconnected unintentionally
+      ws.onclose = (event) => {
+        if (event.wasClean) return;
+
+        if (reconnectCountRef.current < maxReconnectAttempts) {
+          const delay = baseReconnectInterval * Math.pow(2, reconnectCountRef.current);
+          console.log('reconnecting ws');
+          reconnectTimeoutRef.current = setTimeout(() => {
+            reconnectCountRef.current += 1;
+            wsConnect();
+          }, delay);
+        }
+        else {
+          console.log('failed to reconnect ws in 5 tries, aborting...');
+        }
+      }
     };
 
     wsConnect();
 
 
     return () => {
-        if (reconnectTimeoutRef.current) clearTimeout(reconnectTimeoutRef.current);
-        if (wsRef.current) {
-            wsRef.current.close(1000, 'closing socket');
-            wsRef.current = null;
-        }
+      if (reconnectTimeoutRef.current) clearTimeout(reconnectTimeoutRef.current);
+      if (wsRef.current) {
+        wsRef.current.close(1000, 'closing socket');
+        wsRef.current = null;
+      }
     };
   }, [draftId, addNotification]);
 
@@ -818,7 +753,7 @@ const EmulatorPage: React.FC = () => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(parsed),
         credentials: 'include',
-      }).catch(() => {});
+      }).catch(() => { });
     }
   };
 
@@ -845,7 +780,15 @@ const EmulatorPage: React.FC = () => {
         if (!patchRes.ok) throw new Error('Failed to fetch Blitz patch');
 
         const patchBuffer = await patchRes.arrayBuffer();
-        const patchedData = applyBpsPatch(new Uint8Array(romBuffer), new Uint8Array(patchBuffer));
+        const romBytes = new Uint8Array(romBuffer);
+        const patchBytes = new Uint8Array(patchBuffer);
+
+        // Verify the ROM is the exact clean Emerald the patch expects before
+        // applying anything, so a wrong or already-patched ROM can never get
+        // corrupted and played.
+        validateEmeraldRom(romBytes, patchBytes);
+
+        const patchedData = applyBpsPatch(romBytes, patchBytes);
         finalBlob = new Blob([patchedData as any], { type: 'application/octet-stream' });
       }
 
@@ -860,7 +803,11 @@ const EmulatorPage: React.FC = () => {
       setRomUrl(url);
     } catch (err) {
       console.error('Patching error:', err);
-      setError('Failed to apply Blitz patch. Please ensure you are using a clean Emerald ROM.');
+      setError(err instanceof Error && err.message
+        ? err.message
+        : 'Failed to apply Blitz patch. Please ensure you are using a clean Emerald ROM.');
+    } finally {
+      setIsPatching(false);
     }
   }, []);
 
@@ -1368,7 +1315,7 @@ const EmulatorPage: React.FC = () => {
             setAutosaveTime(storedTime);
           }
         }
-      }).catch(() => {});
+      }).catch(() => { });
     }
   }, [romUrl, draftId]);
 
@@ -1554,140 +1501,139 @@ const EmulatorPage: React.FC = () => {
                 </div>
               )}
 
-            <div className={`save-panel-container ${isPanelMinimized ? 'minimized' : ''}`}>
-              <div className="save-panel own-save-panel">
-                <div className="save-panel-header">
-                  {mySaveData ? (
-                    <>
-                      <span className="save-panel-trainer">{mySaveData.trainer_name}</span>
-                      <span className="save-panel-badges">
-                        {mySaveData.badge_count} {mySaveData.badge_count === 1 ? 'badge' : 'badges'}
-                      </span>
-                      <span className="save-panel-money">₽{mySaveData.money.toLocaleString()}</span>
-                    </>
-                  ) : (
-                    <span className="save-panel-trainer" style={{ opacity: 0.5 }}>Save the game to display game data</span>
-                  )}
-                  {mySaveData && (
-                    <button
-                      className="autosave-btn"
-                      onClick={handleDownloadSave}
-                      title="Download .sav file"
-                    >
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ verticalAlign: 'middle', marginRight: 4 }}>
-                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-                        <polyline points="7 10 12 15 17 10" />
-                        <line x1="12" y1="15" x2="12" y2="3" />
-                      </svg>
-                      .sav
-                    </button>
-                  )}
-                  {hasAutosave && (
-                    <button
-                      className="autosave-btn"
-                      onClick={handleLoadAutosave}
-                    >
-                      Load Autosave {autosaveTime ? `(${autosaveTime.replace(/\s*[aApP][mM]\s*$/, '')})` : ''}
-                    </button>
-                  )}
-                  {draftId && draftData && (
-                    <EeveelutionClaimButton
-                      eeveelutions={[
-                        { pokedex_id: 134, name: 'Vaporeon', form: null },
-                        { pokedex_id: 135, name: 'Jolteon', form: null },
-                        { pokedex_id: 136, name: 'Flareon', form: null },
-                        { pokedex_id: 196, name: 'Espeon', form: null },
-                        { pokedex_id: 197, name: 'Umbreon', form: null },
-                        { pokedex_id: 470, name: 'Leafeon', form: null },
-                        { pokedex_id: 471, name: 'Glaceon', form: null },
-                        { pokedex_id: 700, name: 'Sylveon', form: null },
-                      ]}
-                      teams={draftData.teams}
-                      currentUserId={currentUserId}
-                      currentUsername={currentUsername}
-                      onClaim={handleClaimEeveelution}
-                      onUnclaim={handleUnclaimEeveelution}
-                    />
-                  )}
-                  {draftId && draftData && !mySaveData && (
-                    <NotebookWithdrawButton
-                      pokemon={
-                        draftData.teams.find((t: any) => t.user_id === currentUserId)
-                          ?.auctions_won ?? []
-                      }
-                    />
-                  )}
-                  {!draftId && urlPokemon.length > 0 && !mySaveData && (
-                    <NotebookWithdrawButton pokemon={urlPokemon} />
-                  )}
-                  {draftId && draftData && countdown === null && !raceStarted && (
-                    <button
-                      className={`ready-race-button ${readyPlayers.has(currentUserId ?? '') ? 'ready' : ''}`}
-                      onClick={handleToggleReady}
-                    >
-                      {readyPlayers.has(currentUserId ?? '') ? 'Ready!' : 'Ready to Race'}
-                    </button>
-                  )}
+              <div className={`save-panel-container ${isPanelMinimized ? 'minimized' : ''}`}>
+                <div className="save-panel own-save-panel">
+                  <div className="save-panel-header">
+                    {mySaveData ? (
+                      <>
+                        <span className="save-panel-trainer">{mySaveData.trainer_name}</span>
+                        <span className="save-panel-badges">
+                          {mySaveData.badge_count} {mySaveData.badge_count === 1 ? 'badge' : 'badges'}
+                        </span>
+                        <span className="save-panel-money">₽{mySaveData.money.toLocaleString()}</span>
+                      </>
+                    ) : (
+                      <span className="save-panel-trainer" style={{ opacity: 0.5 }}>Save the game to display game data</span>
+                    )}
+                    {mySaveData && (
+                      <button
+                        className="autosave-btn"
+                        onClick={handleDownloadSave}
+                        title="Download .sav file"
+                      >
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ verticalAlign: 'middle', marginRight: 4 }}>
+                          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                          <polyline points="7 10 12 15 17 10" />
+                          <line x1="12" y1="15" x2="12" y2="3" />
+                        </svg>
+                        .sav
+                      </button>
+                    )}
+                    {hasAutosave && (
+                      <button
+                        className="autosave-btn"
+                        onClick={handleLoadAutosave}
+                      >
+                        Load Autosave {autosaveTime ? `(${autosaveTime.replace(/\s*[aApP][mM]\s*$/, '')})` : ''}
+                      </button>
+                    )}
+                    {draftId && draftData && (
+                      <EeveelutionClaimButton
+                        eeveelutions={[
+                          { pokedex_id: 134, name: 'Vaporeon', form: null },
+                          { pokedex_id: 135, name: 'Jolteon', form: null },
+                          { pokedex_id: 136, name: 'Flareon', form: null },
+                          { pokedex_id: 196, name: 'Espeon', form: null },
+                          { pokedex_id: 197, name: 'Umbreon', form: null },
+                          { pokedex_id: 470, name: 'Leafeon', form: null },
+                          { pokedex_id: 471, name: 'Glaceon', form: null },
+                          { pokedex_id: 700, name: 'Sylveon', form: null },
+                        ]}
+                        teams={draftData.teams}
+                        currentUserId={currentUserId}
+                        currentUsername={currentUsername}
+                        onClaim={handleClaimEeveelution}
+                        onUnclaim={handleUnclaimEeveelution}
+                      />
+                    )}
+                    {draftId && draftData && !mySaveData && (
+                      <NotebookWithdrawButton
+                        pokemon={
+                          draftData.teams.find((t: any) => t.user_id === currentUserId)
+                            ?.auctions_won ?? []
+                        }
+                      />
+                    )}
+                    {!draftId && urlPokemon.length > 0 && !mySaveData && (
+                      <NotebookWithdrawButton pokemon={urlPokemon} />
+                    )}
+                    {draftId && draftData && countdown === null && !raceStarted && (
+                      <button
+                        className={`ready-race-button ${readyPlayers.has(currentUserId ?? '') ? 'ready' : ''}`}
+                        onClick={handleToggleReady}
+                      >
+                        {readyPlayers.has(currentUserId ?? '') ? 'Ready!' : 'Ready to Race'}
+                      </button>
+                    )}
 
-                  <button 
-                    className="panel-minimize-btn"
-                    onClick={() => setIsPanelMinimized(!isPanelMinimized)}
-                    title={isPanelMinimized ? "Expand" : "Minimize"}
-                  >
-                    {isPanelMinimized ? '＋' : '－'}
-                  </button>
-                </div>
-                {!isPanelMinimized && mySaveData && (
-                  <div className="save-party-grid">
-                    {sortPokemon(currentUserId || 'me', [
-                      ...(mySaveData.party ?? []).map((m: any) => ({ ...m, _isParty: true })),
-                      ...(mySaveData.box ?? []).map((m: any) => ({ ...m, _isParty: false })),
-                    ]).map((mon: any, i: number) => {
-                      const speciesId = mon.species_id ?? mon.speciesId;
-                      const speciesData = resolveMetadata(speciesId, mon.nickname);
-                      const realName = (speciesId === 412 && mon.nickname?.toLowerCase() === 'egg') ? "Egg" : (speciesData?.name || `ID ${speciesId}`);
-                      const iconName = getIconName(realName, speciesId);
-                      const abilityName = speciesData?.abilities?.[mon.ability_num] || 'Unknown';
-                      const fainted = isMonFainted(currentUserId || 'me', mon);
-                      const isTruncatedMatch = realName.toLowerCase().startsWith(mon.nickname.toLowerCase()) && mon.nickname.length >= 10;
-                      const hasNickname = mon.nickname && mon.nickname.toLowerCase() !== realName.toLowerCase() && !isTruncatedMatch;
-
-                      return (
-                        <div key={`combined-${i}`} className={`save-mon-card${fainted ? ' fainted' : ''}`}>
-                          <div className="mon-name-row">
-                            <span className="mon-name" style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                              {hasNickname ? (
-                                <>{mon.nickname} <span style={{ opacity: 0.6, fontSize: '0.9em' }}>({realName})</span></>
-                              ) : realName}
-                              <img
-                                src={`/MiniIcons/${iconName}.png`}
-                                alt=""
-                                style={{ width: '24px', height: '24px', imageRendering: 'pixelated' }}
-                                onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
-                              />
-                              <span className="mon-ability" style={{ fontSize: '0.9rem', opacity: 0.7, fontWeight: 'normal', marginLeft: '4px' }}>
-                                {abilityName}
-                              </span>
-                            </span>
-                          </div>
-                          {mon.nature && <div className="mon-nature">{mon.nature}{NATURE_EFFECTS[mon.nature]}</div>}
-                          {mon.ivs && (
-                            <div className="mon-ivs">
-                              <span className="iv-item"><span className="iv-label">HP </span><span className="iv-value" data-good={mon.ivs.hp > 24} data-bad={mon.ivs.hp < 7}>{mon.ivs.hp}</span></span>
-                              <span className="iv-item"><span className="iv-label">ATK </span><span className="iv-value" data-good={mon.ivs.atk > 24} data-bad={mon.ivs.atk < 7}>{mon.ivs.atk}</span></span>
-                              <span className="iv-item"><span className="iv-label">DEF </span><span className="iv-value" data-good={mon.ivs.def > 24} data-bad={mon.ivs.def < 7}>{mon.ivs.def}</span></span>
-                              <span className="iv-item"><span className="iv-label">SPA </span><span className="iv-value" data-good={mon.ivs.spa > 24} data-bad={mon.ivs.spa < 7}>{mon.ivs.spa}</span></span>
-                              <span className="iv-item"><span className="iv-label">SPD </span><span className="iv-value" data-good={mon.ivs.spd > 24} data-bad={mon.ivs.spd < 7}>{mon.ivs.spd}</span></span>
-                              <span className="iv-item"><span className="iv-label">SPE </span><span className="iv-value" data-good={mon.ivs.spe > 24} data-bad={mon.ivs.spe < 7}>{mon.ivs.spe}</span></span>
-                            </div>
-                          )}
-                        </div>
-                      );
-                    })}
+                    <button
+                      className="panel-minimize-btn"
+                      onClick={() => setIsPanelMinimized(!isPanelMinimized)}
+                      title={isPanelMinimized ? "Expand" : "Minimize"}
+                    >
+                      {isPanelMinimized ? '＋' : '－'}
+                    </button>
                   </div>
-                )}
+                  {!isPanelMinimized && mySaveData && (
+                    <div className="save-party-grid">
+                      {sortPokemon(currentUserId || 'me', [
+                        ...(mySaveData.party ?? []).map((m: any) => ({ ...m, _isParty: true })),
+                        ...(mySaveData.box ?? []).map((m: any) => ({ ...m, _isParty: false })),
+                      ]).map((mon: any, i: number) => {
+                        const speciesId = mon.species_id ?? mon.speciesId;
+                        const speciesData = resolveMetadata(speciesId, mon.nickname);
+                        const realName = (speciesId === 412 && mon.nickname?.toLowerCase() === 'egg') ? "Egg" : (speciesData?.name || `ID ${speciesId}`);
+                        const iconName = getIconName(realName, speciesId);
+                        const abilityName = speciesData?.abilities?.[mon.ability_num] || 'Unknown';
+                        const fainted = isMonFainted(currentUserId || 'me', mon);
+                        const hasNickname = isActuallyNicknamed(mon.nickname, speciesId, realName);
+
+                        return (
+                          <div key={`combined-${i}`} className={`save-mon-card${fainted ? ' fainted' : ''}`}>
+                            <div className="mon-name-row">
+                              <span className="mon-name" style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                {hasNickname ? (
+                                  <>{mon.nickname} <span style={{ opacity: 0.6, fontSize: '0.9em' }}>({realName})</span></>
+                                ) : realName}
+                                <img
+                                  src={`/MiniIcons/${iconName}.png`}
+                                  alt=""
+                                  style={{ width: '24px', height: '24px', imageRendering: 'pixelated' }}
+                                  onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+                                />
+                                <span className="mon-ability" style={{ fontSize: '0.9rem', opacity: 0.7, fontWeight: 'normal', marginLeft: '4px' }}>
+                                  {abilityName}
+                                </span>
+                              </span>
+                            </div>
+                            {mon.nature && <div className="mon-nature">{mon.nature}{NATURE_EFFECTS[mon.nature]}</div>}
+                            {mon.ivs && (
+                              <div className="mon-ivs">
+                                <span className="iv-item"><span className="iv-label">HP </span><span className="iv-value" data-good={mon.ivs.hp > 24} data-bad={mon.ivs.hp < 7}>{mon.ivs.hp}</span></span>
+                                <span className="iv-item"><span className="iv-label">ATK </span><span className="iv-value" data-good={mon.ivs.atk > 24} data-bad={mon.ivs.atk < 7}>{mon.ivs.atk}</span></span>
+                                <span className="iv-item"><span className="iv-label">DEF </span><span className="iv-value" data-good={mon.ivs.def > 24} data-bad={mon.ivs.def < 7}>{mon.ivs.def}</span></span>
+                                <span className="iv-item"><span className="iv-label">SPA </span><span className="iv-value" data-good={mon.ivs.spa > 24} data-bad={mon.ivs.spa < 7}>{mon.ivs.spa}</span></span>
+                                <span className="iv-item"><span className="iv-label">SPD </span><span className="iv-value" data-good={mon.ivs.spd > 24} data-bad={mon.ivs.spd < 7}>{mon.ivs.spd}</span></span>
+                                <span className="iv-item"><span className="iv-label">SPE </span><span className="iv-value" data-good={mon.ivs.spe > 24} data-bad={mon.ivs.spe < 7}>{mon.ivs.spe}</span></span>
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
               </div>
-            </div>
             </div>
 
 
@@ -1733,8 +1679,7 @@ const EmulatorPage: React.FC = () => {
                             const iconName = getIconName(realName, speciesId);
                             const abilityName = speciesData?.abilities?.[mon.ability_num] || 'Unknown';
                             const fainted = isMonFainted(uid, mon);
-                            const isTruncatedMatch = realName.toLowerCase().startsWith(mon.nickname.toLowerCase()) && mon.nickname.length >= 10;
-                            const hasNickname = mon.nickname && mon.nickname.toLowerCase() !== realName.toLowerCase() && !isTruncatedMatch;
+                            const hasNickname = isActuallyNicknamed(mon.nickname, speciesId, realName);
 
                             return (
                               <img

@@ -1,0 +1,57 @@
+8/4/2026
+
+-----------------------------------------------
+Boss Battle Tweaks
+-----------------------------------------------
+
+Roxanne 1-3 Growlithe Leer > Bite
+Roxanne 5 Arcanine Bite > Crunch
+
+Roxanne 2 Nosepass Rock Throw > Spark
+Roxanne 2 Nosepass Thunder Wave > Harden
+Roxanne 3 Nosepass Rock Slide > Harden
+Roxanne 5 Probopass Tri Attack > Body Press
+Roxanne 6-8 Probopass Earth Power > Body Press 
+
+//Buffs Roxanne's ace to be more formidable and puts a stop to Growlithe's Leer obsession.
+
+Brawly 7 Sirfetch'd Brick Break > Rock Smash
+
+Maxie Aggron Sturdy > Rock Head
+Maxie Torkoal Rock Slide > Body Press
+
+
+-----------------------------------------------
+QoL
+-----------------------------------------------
+
+Added an option to the bag's Med Kit called "Full Heal"
+//Choosing this option fully heals all Pokémon, including clearing status conditions.
+
+Browsing TMs in your bag while in the Elite Four no longer shows mini icons for Pokémon in the PC
+//It's distracting to see Pokémon not in your party when you no longer have access to your PC.
+
+Added more Pro Letters to the mailbox
+
+
+-----------------------------------------------
+Bug Fixes
+-----------------------------------------------
+
+Fixed a bug where held berries didn't immediately proc when Psychic Noise's Heal Block effect expired
+
+Fixed a bug where fainted Pokémon mini sprites were still appearing in color
+
+Fixed a bug where the TM mini sprite display could break in Slateport
+
+Hakamo-o and Kommo-o now learn Rock Smash
+//Rock Smash was removed from the mainline games after generation 6. Like Stufful, these two should be able to smash rocks.
+
+
+-----------------------------------------------
+Pool Additions
+-----------------------------------------------
+
+Skwovet
+//May I please have one Bullet Seed?
+

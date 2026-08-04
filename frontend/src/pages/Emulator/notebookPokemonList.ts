@@ -170,6 +170,7 @@ export const NOTEBOOK_POKEMON_LIST: string[] = [
   'Skiddo',
   'Skorupi',
   'Skrelp',
+  'Skwovet',
   'Slakoth',
   'Slowpoke',
   'Smeargle',
@@ -268,6 +269,11 @@ function findMenuIndex(pokemonName: string): number {
 
   if (normalized === 'plusle and minun') {
     return NOTEBOOK_POKEMON_LIST.findIndex(n => normalizeName(n) === 'plusle');
+  }
+
+  // Mystery Egg is the entry right after Zubat in the notebook
+  if (normalized === 'egg' || normalized === 'mystery egg') {
+    return NOTEBOOK_POKEMON_LIST.length;
   }
 
   return NOTEBOOK_POKEMON_LIST.findIndex(n => normalizeName(n) === normalized);

@@ -299,10 +299,10 @@ export function parseSaveFile(
     const miscOffset = pStart + 32 + miscIdx * SUBSTRUCTURE_SIZE;
     const miscWord2 = (view.getUint32(miscOffset + 8, true) ^ key) >>> 0;
     const decryptedMisc = (view.getUint32(miscOffset + 4, true) ^ key) >>> 0;
-    
+
     const ability_num = (miscWord2 >> 29) & 3;
     const ivs: SaveIvs = {
-      hp:  decryptedMisc & 0x1f,
+      hp: decryptedMisc & 0x1f,
       atk: (decryptedMisc >> 5) & 0x1f,
       def: (decryptedMisc >> 10) & 0x1f,
       spe: (decryptedMisc >> 15) & 0x1f,
@@ -376,7 +376,7 @@ export function parseSaveFile(
 
       const ability_num = (miscWord2 >> 29) & 3;
       const ivs: SaveIvs = {
-        hp:  decryptedMisc & 0x1f,
+        hp: decryptedMisc & 0x1f,
         atk: (decryptedMisc >> 5) & 0x1f,
         def: (decryptedMisc >> 10) & 0x1f,
         spe: (decryptedMisc >> 15) & 0x1f,
@@ -391,7 +391,7 @@ export function parseSaveFile(
           nickname,
           species_id,
           ability_num,
-          nature: NATURES[personality % 25],          ivs,
+          nature: NATURES[personality % 25], ivs,
         });
       }
     }

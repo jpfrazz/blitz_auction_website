@@ -450,6 +450,8 @@ dex_number,name,form,evolves_from_id,evolves_from_form,type1,type2,stage,ability
 690,Skrelp,,,,Poison,Water,base,Poison Point,Poison Touch,Adaptability,50,60,60,60,60,30,,"Stage 1",,
 691,Dragalge,,690,,Poison,Dragon,evo,Poison Point,Poison Touch,Adaptability,65,75,90,97,123,44,"Level 48 (Oracle)","Stage 1",,
 691,Mega Dragalge,Mega,691,,Poison,Dragon,mega,Regenerator,,,65,85,105,132,163,44,Dragalgite,"Stage 1",,
+819,Skwovet,,,,Normal,,base,Cheek Pouch,,Gluttony,70,55,55,35,35,25,,,,
+820,Greedent,,819,,Normal,,evo,Cheek Pouch,,Gluttony,120,95,95,55,75,20,"Level 24",,,
 287,Slakoth,,,,Normal,,base,Truant,,,60,60,60,35,35,30,,,,
 288,Vigoroth,,287,,Normal,,evo,Vital Spirit,,,80,80,80,55,55,90,"Level 18",,,
 289,Slaking,,288,,Normal,,evo,Truant,,,150,160,100,95,65,100,"Level 36",,,

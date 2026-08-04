@@ -26,7 +26,7 @@ Ability: Intimidate
 - Flame Wheel
 - Rock Tomb
 - Howl
-- Leer
+- Bite
 
 Nosepass (F) @ Oran Berry
 Level: 15
@@ -76,7 +76,7 @@ Ability: Intimidate
 - Flame Wheel
 - Rock Tomb
 - Howl
-- Leer
+- Bite
 
 Nosepass (F) @ Oran Berry
 Level: 19
@@ -84,8 +84,8 @@ IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
 Ability: Sturdy
 - Block
-- Rock Throw
-- Thunder Wave
+- Harden
+- Spark
 - Rock Tomb
 
 === TRAINER_ROXANNE_3 ===
@@ -126,16 +126,16 @@ Ability: Intimidate
 - Flame Wheel
 - Rock Tomb
 - Howl
-- Fire Fang
+- Bite
 
 Nosepass (F) @ Sitrus Berry
 Level: 24
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
 Ability: Sturdy
-- Rock Slide
-- Spark
 - Block
+- Harden
+- Spark
 - Rock Tomb
 
 === TRAINER_ROXANNE_4 ===
@@ -173,10 +173,10 @@ Level: 26
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
 Ability: Intimidate
-- Bite
+- Fire Fang
 - Rock Tomb
 - Howl
-- Fire Fang
+- Bite
 
 Probopass (F) @ Sitrus Berry
 Level: 29
@@ -223,7 +223,7 @@ Level: 30
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
 Ability: Intimidate
-- Bite
+- Crunch
 - Rock Tomb
 - Howl
 - Fire Fang
@@ -235,7 +235,7 @@ Nature: Serious
 Ability: Sturdy
 - Magnet Bomb
 - Discharge
-- Tri Attack
+- Body Press
 - Rock Tomb
 
 === TRAINER_ROXANNE_6 ===
@@ -295,7 +295,7 @@ Nature: Serious
 Ability: Sturdy
 - Magnet Bomb
 - Discharge
-- Earth Power
+- Body Press
 - Rock Tomb
 
 === TRAINER_ROXANNE_7 ===
@@ -355,7 +355,7 @@ Nature: Serious
 Ability: Sturdy
 - Magnet Bomb
 - Zap Cannon
-- Earth Power
+- Body Press
 - Rock Tomb
 
 === TRAINER_ROXANNE_8 ===
@@ -415,7 +415,7 @@ Nature: Serious
 Ability: Sturdy
 - Magnet Bomb
 - Zap Cannon
-- Earth Power
+- Body Press
 - Rock Tomb
 
 === TRAINER_VIOLA_1 ===
@@ -1185,7 +1185,7 @@ Nature: Serious
 Ability: Steadfast
 - Sucker Punch
 - Fury Cutter
-- Brick Break
+- Rock Smash
 - Iron Defense
 
 Hariyama (M) @ Sitrus Berry
@@ -3778,7 +3778,7 @@ Ability: Rough Skin
 - Slash
 - Aqua Jet
 
-=== TRAINER_MAXIE_MAGMA_HIDEOUT ===
+=== TRAINER_MAXIE ===
 Name: MAXIE
 Class: Magma Leader
 Pic: Magma Leader Maxie
@@ -3812,7 +3812,7 @@ Aggron (M)
 Level: 46
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
-Ability: Sturdy
+Ability: Rock Head
 - Iron Tail
 - Rock Slide
 - Iron Defense
@@ -3826,7 +3826,7 @@ Ability: Drought
 - Earthquake
 - Heat Wave
 - Smokescreen
-- Rock Slide
+- Body Press
 
 Camerupt (M) @ Cameruptite
 Level: 48
