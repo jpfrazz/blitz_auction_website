@@ -1373,26 +1373,27 @@ const EmulatorPage: React.FC = () => {
   }, [romUrl, draftId]);
 
   // ── Other-player sidebar ─────────────────────────────────────────────────
-  // Include current user and cap at 9
-  const sidebarEntries = Object.entries(otherSaves)
+  // Full sorted list for readiness check (no cap)
+  const allPlayerEntries = Object.entries(otherSaves)
     .sort(([, a], [, b]) => {
       const badgesA = a.save?.badge_count ?? 0;
       const badgesB = b.save?.badge_count ?? 0;
       return badgesB - badgesA;
-    })
-    .slice(0, 9);
+    });
+  // Display list capped at 9
+  const sidebarEntries = allPlayerEntries.slice(0, 9);
   const hasSidebar = draftId !== undefined;
 
   // Start countdown when all players are ready
   useEffect(() => {
     if (countdown !== null) return;
-    if (sidebarEntries.length === 0) return;
-    const allReady = sidebarEntries.every(([uid]) => readyPlayers.has(uid));
-    if (allReady && sidebarEntries.length > 1) {
+    if (allPlayerEntries.length === 0) return;
+    const allReady = allPlayerEntries.every(([uid]) => readyPlayers.has(uid));
+    if (allReady && allPlayerEntries.length > 1) {
       setCountdown(10);
       setRaceStarted(true);
     }
-  }, [readyPlayers, sidebarEntries, countdown]);
+  }, [readyPlayers, allPlayerEntries, countdown]);
 
   // Sorting helper: Active -> Boxed -> Fainted (at end)
   const sortPokemon = (uid: string, mons: any[]) => {
