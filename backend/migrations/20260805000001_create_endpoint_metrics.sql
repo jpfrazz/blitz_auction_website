@@ -4,6 +4,8 @@ CREATE TABLE IF NOT EXISTS endpoint_metrics (
     method VARCHAR(10) NOT NULL,
     status_code SMALLINT NOT NULL,
     duration_ms DOUBLE PRECISION NOT NULL,
+    request TEXT NOT NULL,
+    response TEXT NOT NULL,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 

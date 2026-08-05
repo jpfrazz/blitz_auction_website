@@ -260,15 +260,19 @@ impl Server {
 
         let metrics_collector = self.server_state.metrics_collector.clone();
 
-        Router::new()
+        let api_routes = Router::new()
             .merge(public_routes)
             .merge(private_routes)
-            .layer(middleware::from_fn_with_state(
+            .route_layer(middleware::from_fn_with_state(
                 metrics_collector,
                 metrics::track_metrics_middleware,
             ))
             .with_state(self.server_state)
-            .layer(auth_layer)
+            .layer(auth_layer);
+
+        Router::new()
+            .merge(api_routes)
+            .fallback(|| async { (StatusCode::NOT_FOUND, "") })
             .layer(cors_layer)
     }
 

@@ -1,5 +1,7 @@
 use axum::{
+    body::{to_bytes, Body},
     extract::{MatchedPath, Request, State},
+    http::{header, HeaderMap},
     middleware::Next,
     response::Response,
 };
@@ -10,12 +12,17 @@ use std::time::Instant;
 use tokio::sync::mpsc;
 use tokio::time::{self, Duration};
 
+const MAX_BYTE_BUFFER: usize = 64 * 1024; // 64 KB buffer limit for metrics
+const MAX_STORED_CHARS: usize = 2000; // 2,000 max stored characters
+
 #[derive(Debug, Clone)]
 pub struct EndpointMetric {
     pub path: String,
     pub method: String,
     pub status_code: u16,
     pub duration_ms: f64,
+    pub request: String,
+    pub response: String,
     pub created_at: DateTime<Utc>,
 }
 
@@ -83,7 +90,7 @@ async fn flush_metrics(db_pool: &PgPool, buffer: &mut Vec<EndpointMetric>) {
     let metrics_to_insert = std::mem::take(buffer);
 
     let mut query_builder: QueryBuilder<sqlx::Postgres> = QueryBuilder::new(
-        "INSERT INTO endpoint_metrics (path, method, status_code, duration_ms, created_at) ",
+        "INSERT INTO endpoint_metrics (path, method, status_code, duration_ms, request, response, created_at) ",
     );
 
     query_builder.push_values(metrics_to_insert, |mut b, item| {
@@ -91,12 +98,72 @@ async fn flush_metrics(db_pool: &PgPool, buffer: &mut Vec<EndpointMetric>) {
             .push_bind(item.method)
             .push_bind(item.status_code as i16)
             .push_bind(item.duration_ms)
+            .push_bind(item.request)
+            .push_bind(item.response)
             .push_bind(item.created_at);
     });
 
     let query = query_builder.build();
     if let Err(e) = query.execute(db_pool).await {
         eprintln!("[METRICS ERROR] Failed to batch flush endpoint metrics to DB: {}", e);
+    }
+}
+
+fn truncate_str(s: &str, max_chars: usize) -> String {
+    match s.char_indices().nth(max_chars) {
+        None => s.to_string(),
+        Some((idx, _)) => format!("{}... (truncated)", &s[..idx]),
+    }
+}
+
+fn is_text_or_json(headers: &HeaderMap) -> bool {
+    if let Some(content_type) = headers.get(header::CONTENT_TYPE) {
+        if let Ok(ct) = content_type.to_str() {
+            let lower = ct.to_lowercase();
+            return lower.contains("application/json")
+                || lower.contains("text/")
+                || lower.contains("application/x-www-form-urlencoded");
+        }
+    }
+    false
+}
+
+async fn extract_body_string(
+    headers: &HeaderMap,
+    body: Body,
+    max_bytes: usize,
+    max_chars: usize,
+) -> (String, Body) {
+    if let Some(cl) = headers.get(header::CONTENT_LENGTH).and_then(|v| v.to_str().ok()) {
+        if cl == "0" {
+            return ("".to_string(), body);
+        }
+    }
+
+    if is_text_or_json(headers) {
+        let bytes = to_bytes(body, max_bytes).await.unwrap_or_default();
+        let s = truncate_str(&String::from_utf8_lossy(&bytes), max_chars);
+        (s, Body::from(bytes))
+    } else if headers.contains_key(header::CONTENT_TYPE) || headers.contains_key(header::CONTENT_LENGTH) {
+        let content_type = headers
+            .get(header::CONTENT_TYPE)
+            .and_then(|v| v.to_str().ok())
+            .unwrap_or("unknown type");
+        let content_length = headers
+            .get(header::CONTENT_LENGTH)
+            .and_then(|v| v.to_str().ok())
+            .map(|len| format!("{} bytes", len))
+            .unwrap_or_else(|| "unknown length".to_string());
+
+        (format!("<Content Type: {}, Length: {}>", content_type, content_length), body)
+    } else {
+        let bytes = to_bytes(body, max_bytes).await.unwrap_or_default();
+        if bytes.is_empty() {
+            ("".to_string(), Body::from(bytes))
+        } else {
+            let s = truncate_str(&String::from_utf8_lossy(&bytes), max_chars);
+            (s, Body::from(bytes))
+        }
     }
 }
 
@@ -114,16 +181,28 @@ pub async fn track_metrics_middleware(
         .map(|path| path.as_str().to_string())
         .unwrap_or_else(|| request.uri().path().to_string());
 
+    let (req_parts, req_body) = request.into_parts();
+    let (request_str, req_body) =
+        extract_body_string(&req_parts.headers, req_body, MAX_BYTE_BUFFER, MAX_STORED_CHARS).await;
+    let request = Request::from_parts(req_parts, req_body);
+
     let response = next.run(request).await;
 
     let duration_ms = start.elapsed().as_secs_f64() * 1000.0;
     let status_code = response.status().as_u16();
+
+    let (res_parts, res_body) = response.into_parts();
+    let (response_str, res_body) =
+        extract_body_string(&res_parts.headers, res_body, MAX_BYTE_BUFFER, MAX_STORED_CHARS).await;
+    let response = Response::from_parts(res_parts, res_body);
 
     collector.record(EndpointMetric {
         path: matched_path,
         method,
         status_code,
         duration_ms,
+        request: request_str,
+        response: response_str,
         created_at: Utc::now(),
     });
 
@@ -183,6 +262,8 @@ mod tests {
             method: "GET".to_string(),
             status_code: 200,
             duration_ms: 12.5,
+            request: "{}".to_string(),
+            response: "{\"status\":\"ok\"}".to_string(),
             created_at: Utc::now(),
         });
 
@@ -193,6 +274,7 @@ mod tests {
         assert_eq!(item.method, "GET");
         assert_eq!(item.status_code, 200);
         assert_eq!(item.duration_ms, 12.5);
+        assert_eq!(item.request, "{}");
+        assert_eq!(item.response, "{\"status\":\"ok\"}");
     }
 }
-
