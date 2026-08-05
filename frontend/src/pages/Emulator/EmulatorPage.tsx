@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { useParams, useSearchParams } from 'react-router-dom';
 import Header from '../../shared/components/Header';
 import { parseSaveFile, SaveData, getTrainerNameById } from '../../utils/parseSaveFile';
@@ -217,6 +217,49 @@ function crc32(data: Uint8Array): number {
   return (crc ^ 0xffffffff) >>> 0;
 }
 
+const IVRow: React.FC<{ ivs: { hp: number; atk: number; def: number; spa: number; spd: number; spe: number } }> = ({ ivs }) => {
+  const ref = useRef<HTMLDivElement>(null);
+  const [gapPx, setGapPx] = useState(12);
+
+  const updateGap = useCallback(() => {
+    const el = ref.current;
+    if (!el) return;
+    const parentWidth = el.clientWidth;
+    const items = Array.from(el.children) as HTMLElement[];
+    if (items.length < 2) return;
+
+    const contentWidth = items.reduce((sum, item) => sum + item.getBoundingClientRect().width, 0);
+    const maxGap = 0.8 * parseFloat(getComputedStyle(document.documentElement).fontSize);
+    const minGap = 0.15 * parseFloat(getComputedStyle(document.documentElement).fontSize);
+    const requiredGap = (parentWidth - contentWidth) / (items.length - 1);
+    const newGap = Math.max(minGap, Math.min(maxGap, requiredGap));
+    setGapPx(newGap);
+  }, []);
+
+  useLayoutEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    updateGap();
+    if (typeof ResizeObserver === 'undefined') return;
+
+    const observer = new ResizeObserver(() => updateGap());
+    observer.observe(el);
+    if (el.parentElement) observer.observe(el.parentElement);
+    return () => observer.disconnect();
+  }, [updateGap]);
+
+  return (
+    <div className="mon-ivs" ref={ref} style={{ gap: `${gapPx}px` }}>
+      <span className="iv-item"><span className="iv-label">HP </span><span className="iv-value" data-good={ivs.hp > 24} data-bad={ivs.hp < 7}>{ivs.hp}</span></span>
+      <span className="iv-item"><span className="iv-label">ATK </span><span className="iv-value" data-good={ivs.atk > 24} data-bad={ivs.atk < 7}>{ivs.atk}</span></span>
+      <span className="iv-item"><span className="iv-label">DEF </span><span className="iv-value" data-good={ivs.def > 24} data-bad={ivs.def < 7}>{ivs.def}</span></span>
+      <span className="iv-item"><span className="iv-label">SPA </span><span className="iv-value" data-good={ivs.spa > 24} data-bad={ivs.spa < 7}>{ivs.spa}</span></span>
+      <span className="iv-item"><span className="iv-label">SPD </span><span className="iv-value" data-good={ivs.spd > 24} data-bad={ivs.spd < 7}>{ivs.spd}</span></span>
+      <span className="iv-item"><span className="iv-label">SPE </span><span className="iv-value" data-good={ivs.spe > 24} data-bad={ivs.spe < 7}>{ivs.spe}</span></span>
+    </div>
+  );
+};
+
 function readBpsVli(patch: Uint8Array, offset: number): { value: number; nextOffset: number } {
   let value = 0;
   let shift = 1;
@@ -318,6 +361,21 @@ async function setStoredSave(key: string, data: Uint8Array): Promise<void> {
   }
 }
 
+async function deleteStoredSave(key: string): Promise<void> {
+  try {
+    const db = await openSavesDb();
+    return new Promise((resolve, reject) => {
+      const transaction = db.transaction(STORE_NAME, 'readwrite');
+      const store = transaction.objectStore(STORE_NAME);
+      const request = store.delete(key);
+      request.onsuccess = () => resolve();
+      request.onerror = () => reject(request.error);
+    });
+  } catch (err) {
+    console.error('Failed to delete stored save:', err);
+  }
+}
+
 // Map of user_id → latest parsed save for other draft players
 type OtherPlayerSaves = Record<string, { displayName: string; save: SaveData | null }>;
 
@@ -361,8 +419,8 @@ const EmulatorPage: React.FC = () => {
   const [saveLastSynced, setSaveLastSynced] = useState<Date | null>(null);
   const [isPanelMinimized, setIsPanelMinimized] = useState(false);
 
-  const [hasAutosave, setHasAutosave] = useState(false);
-  const [autosaveTime, setAutosaveTime] = useState<string | null>(null);
+  const [autosaveHistory, setAutosaveHistory] = useState<{ id: string; ts: number }[]>([]);
+  const [isAutosaveModalOpen, setIsAutosaveModalOpen] = useState(false);
 
   // Current logged-in user (to exclude self from sidebar)
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
@@ -1115,13 +1173,45 @@ const EmulatorPage: React.FC = () => {
           try {
             const stateData = window.EJS_emulator?.gameManager?.getState();
             if (stateData && stateData.length > 0) {
-              const key = `state_${draftId || 'standalone'}`;
-              const timeKey = `state_time_${draftId || 'standalone'}`;
+              const metaKey = `autosaves_meta_${draftId || 'standalone'}`;
+              const storedMeta = localStorage.getItem(metaKey);
+              let history: any[] = [];
+              if (storedMeta) {
+                try {
+                  history = JSON.parse(storedMeta);
+                } catch { }
+              }
+
+              const newId = Date.now().toString();
+              const key = `state_${draftId || 'standalone'}_${newId}`;
+              
               void setStoredSave(key, stateData);
               const now = new Date();
-              localStorage.setItem(timeKey, now.toISOString());
-              setHasAutosave(true);
-              setAutosaveTime(now.toLocaleTimeString());
+              const newEntry = { id: newId, ts: now.getTime() };
+              
+              history.push(newEntry);
+              // Keep only the most recent 60 autosaves
+              while (history.length > 60) {
+                const oldest = history.shift();
+                if (oldest) {
+                  void deleteStoredSave(`state_${draftId || 'standalone'}_${oldest.id}`);
+                }
+              }
+              
+              localStorage.setItem(metaKey, JSON.stringify(history));
+              // Normalize before updating state
+              const norm = history.map((e: any) => {
+                const id = String(e.id ?? '');
+                let ts = typeof e.ts === 'number' ? e.ts : NaN;
+                if (!Number.isFinite(ts)) {
+                  const n = Number(id);
+                  if (Number.isFinite(n) && n > 1_000_000_000_000) ts = n;
+                  else ts = Date.now();
+                }
+                return { id, ts };
+              });
+              setAutosaveHistory(norm);
+              
               console.log('Autosaved emulator state successfully.');
             }
           } catch (e) {
@@ -1204,13 +1294,14 @@ const EmulatorPage: React.FC = () => {
     URL.revokeObjectURL(url);
   };
 
-  const handleLoadAutosave = () => {
-    const key = `state_${draftId || 'standalone'}`;
+  const handleLoadAutosave = (id: string) => {
+    const key = `state_${draftId || 'standalone'}_${id}`;
     getStoredSave(key).then((bytes) => {
       if (bytes && bytes.length > 0) {
         try {
           window.EJS_emulator?.gameManager?.loadState(bytes);
           window.EJS_emulator?.displayMessage('Loaded autosave state!');
+          setIsAutosaveModalOpen(false);
           // Notify other players in the race that we loaded a previous state
           postStateLoadRef.current?.();
         } catch (e) {
@@ -1297,25 +1388,33 @@ const EmulatorPage: React.FC = () => {
 
   useEffect(() => {
     if (!romUrl) {
-      setHasAutosave(false);
-      setAutosaveTime(null);
+      setAutosaveHistory([]);
       return;
     }
-    const timeKey = `state_time_${draftId || 'standalone'}`;
-    const storedTime = localStorage.getItem(timeKey);
-    if (storedTime) {
-      const key = `state_${draftId || 'standalone'}`;
-      getStoredSave(key).then((bytes) => {
-        if (bytes && bytes.length > 0) {
-          setHasAutosave(true);
-          try {
-            const date = new Date(storedTime);
-            setAutosaveTime(date.toLocaleTimeString());
-          } catch {
-            setAutosaveTime(storedTime);
-          }
+    const metaKey = `autosaves_meta_${draftId || 'standalone'}`;
+    const storedMeta = localStorage.getItem(metaKey);
+    if (storedMeta) {
+      try {
+        const parsed = JSON.parse(storedMeta);
+        if (Array.isArray(parsed)) {
+          // Normalize entries: prefer `ts`, fall back to numeric `id` where possible
+          const norm = parsed.map((e: any) => {
+            const id = String(e.id ?? '');
+            let ts = typeof e.ts === 'number' ? e.ts : NaN;
+            if (!Number.isFinite(ts)) {
+              // Try to derive timestamp from numeric id (legacy ids were Date.now().toString())
+              const n = Number(id);
+              if (Number.isFinite(n) && n > 1_000_000_000_000) ts = n;
+              else ts = Date.now();
+            }
+            return { id, ts };
+          });
+          // Only keep the most recent 120 entries when loading
+          setAutosaveHistory(norm.slice(-120));
         }
-      }).catch(() => { });
+      } catch (e) {
+        console.error('Failed to parse autosave history', e);
+      }
     }
   }, [romUrl, draftId]);
 
@@ -1431,6 +1530,31 @@ const EmulatorPage: React.FC = () => {
                   </span>
                 </div>
               )}
+              {/* Autosave Manager Modal */}
+              {isAutosaveModalOpen && (
+                <div className="autosave-modal-overlay" onClick={() => setIsAutosaveModalOpen(false)}>
+                  <div className="autosave-modal-content" onClick={e => e.stopPropagation()}>
+                    <div className="autosave-modal-header">
+                      <h3>Autosave Manager</h3>
+                      <button className="close-btn" onClick={() => setIsAutosaveModalOpen(false)}>×</button>
+                    </div>
+                    <div className="autosave-list">
+                      {(() => {
+                        const rev = [...autosaveHistory].slice().reverse();
+                        return rev.map((entry, idx) => {
+                          const minutes = idx + 1;
+                          const label = `${minutes} minute${minutes === 1 ? '' : 's'} ago`;
+                          return (
+                            <div key={entry.id} className="autosave-list-item" onClick={() => handleLoadAutosave(entry.id)}>
+                              {label}
+                            </div>
+                          );
+                        });
+                      })()}
+                    </div>
+                  </div>
+                </div>
+              )}
               {/* Tab key overlay for race standings */}
               {showOverlay && hasSidebar && (
                 <div className="race-standings-overlay">
@@ -1471,19 +1595,21 @@ const EmulatorPage: React.FC = () => {
                               {sortPokemon(uid, [
                                 ...(saveData.party ?? []).map((m: any) => ({ ...m, _isParty: true })),
                                 ...(saveData.box ?? []).map((m: any) => ({ ...m, _isParty: false })),
-                              ]).map((mon: any, i: number) => {
+                              ]).map((mon: any, i: number, arr: any[]) => {
                                 const speciesId = mon.species_id ?? mon.speciesId;
                                 const speciesData = resolveMetadata(speciesId, mon.nickname);
                                 const realName = (speciesId === 412 && mon.nickname?.toLowerCase() === 'egg') ? "Egg" : (speciesData?.name || `ID ${speciesId}`);
                                 const iconName = getIconName(realName, speciesId);
                                 const fainted = isMonFainted(uid, mon);
+                                const prevFainted = i > 0 ? isMonFainted(uid, arr[i - 1]) : false;
+                                const isFirstFainted = fainted && !prevFainted;
 
                                 return (
                                   <img
                                     key={`overlay-icon-${i}`}
                                     src={`/MiniIcons/${iconName}.png`}
                                     alt={mon.nickname || realName}
-                                    className={`overlay-mini-icon ${fainted ? 'fainted' : ''}`}
+                                    className={`overlay-mini-icon ${fainted ? 'fainted' : ''} ${isFirstFainted ? 'first-fainted' : ''}`}
                                     style={fainted ? { filter: 'grayscale(100%)', opacity: 0.6 } : {}}
                                     title={`${realName}`}
                                     onError={(e) => { (e.target as HTMLImageElement).src = '/MiniIcons/question.png'; }}
@@ -1529,12 +1655,12 @@ const EmulatorPage: React.FC = () => {
                         .sav
                       </button>
                     )}
-                    {hasAutosave && (
+                    {autosaveHistory.length > 0 && (
                       <button
                         className="autosave-btn"
-                        onClick={handleLoadAutosave}
+                        onClick={() => setIsAutosaveModalOpen(true)}
                       >
-                        Load Autosave {autosaveTime ? `(${autosaveTime.replace(/\s*[aApP][mM]\s*$/, '')})` : ''}
+                        Load Autosave
                       </button>
                     )}
                     {draftId && draftData && (
@@ -1618,14 +1744,7 @@ const EmulatorPage: React.FC = () => {
                             </div>
                             {mon.nature && <div className="mon-nature">{mon.nature}{NATURE_EFFECTS[mon.nature]}</div>}
                             {mon.ivs && (
-                              <div className="mon-ivs">
-                                <span className="iv-item"><span className="iv-label">HP </span><span className="iv-value" data-good={mon.ivs.hp > 24} data-bad={mon.ivs.hp < 7}>{mon.ivs.hp}</span></span>
-                                <span className="iv-item"><span className="iv-label">ATK </span><span className="iv-value" data-good={mon.ivs.atk > 24} data-bad={mon.ivs.atk < 7}>{mon.ivs.atk}</span></span>
-                                <span className="iv-item"><span className="iv-label">DEF </span><span className="iv-value" data-good={mon.ivs.def > 24} data-bad={mon.ivs.def < 7}>{mon.ivs.def}</span></span>
-                                <span className="iv-item"><span className="iv-label">SPA </span><span className="iv-value" data-good={mon.ivs.spa > 24} data-bad={mon.ivs.spa < 7}>{mon.ivs.spa}</span></span>
-                                <span className="iv-item"><span className="iv-label">SPD </span><span className="iv-value" data-good={mon.ivs.spd > 24} data-bad={mon.ivs.spd < 7}>{mon.ivs.spd}</span></span>
-                                <span className="iv-item"><span className="iv-label">SPE </span><span className="iv-value" data-good={mon.ivs.spe > 24} data-bad={mon.ivs.spe < 7}>{mon.ivs.spe}</span></span>
-                              </div>
+                              <IVRow ivs={mon.ivs} />
                             )}
                           </div>
                         );
@@ -1672,13 +1791,15 @@ const EmulatorPage: React.FC = () => {
                           {sortPokemon(uid, [
                             ...(saveData.party ?? []).map((m: any) => ({ ...m, _isParty: true })),
                             ...(saveData.box ?? []).map((m: any) => ({ ...m, _isParty: false })),
-                          ]).map((mon: any, i: number) => {
+                          ]).map((mon: any, i: number, arr: any[]) => {
                             const speciesId = mon.species_id ?? mon.speciesId;
                             const speciesData = resolveMetadata(speciesId, mon.nickname);
                             const realName = (speciesId === 412 && mon.nickname?.toLowerCase() === 'egg') ? "Egg" : (speciesData?.name || `ID ${speciesId}`);
                             const iconName = getIconName(realName, speciesId);
                             const abilityName = speciesData?.abilities?.[mon.ability_num] || 'Unknown';
                             const fainted = isMonFainted(uid, mon);
+                            const prevFainted = i > 0 ? isMonFainted(uid, arr[i - 1]) : false;
+                            const isFirstFainted = fainted && !prevFainted;
                             const hasNickname = isActuallyNicknamed(mon.nickname, speciesId, realName);
 
                             return (
@@ -1686,7 +1807,7 @@ const EmulatorPage: React.FC = () => {
                                 key={`icon-${i}`}
                                 src={`/MiniIcons/${iconName}.png`}
                                 alt={mon.nickname || realName}
-                                className={`sidebar-mini-icon ${fainted ? 'fainted' : ''}`}
+                                className={`sidebar-mini-icon ${fainted ? 'fainted' : ''} ${isFirstFainted ? 'first-fainted' : ''}`}
                                 style={fainted ? { filter: 'grayscale(100%)', opacity: 0.6 } : {}}
                                 title={`${hasNickname ? `${mon.nickname} (${realName})` : realName} (${abilityName}) - (${mon.nature || 'Unknown'} Nature${mon.nature ? NATURE_EFFECTS[mon.nature] : ''})${mon.ivs ? `\nIVs: ${mon.ivs.hp}/${mon.ivs.atk}/${mon.ivs.def}/${mon.ivs.spa}/${mon.ivs.spd}/${mon.ivs.spe}` : ''}`}
                                 onError={(e) => { (e.target as HTMLImageElement).src = '/MiniIcons/question.png'; }}

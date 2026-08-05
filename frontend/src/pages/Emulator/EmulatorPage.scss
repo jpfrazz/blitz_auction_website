@@ -298,13 +298,12 @@
 .mon-ivs {
   display: flex;
   flex-wrap: nowrap;
-  gap: 0.4rem 0.8rem;
+  gap: 0.4rem;
   font-size: 1.05rem;
   color: $eb-text-muted;
   opacity: 0.8;
-  overflow-x: auto;
+  overflow: hidden;
   white-space: nowrap;
-  // Prevent any wrapping
   > * { flex-shrink: 0; }
 }
 
@@ -433,6 +432,11 @@
   width: 26px;
   height: 26px;
   image-rendering: pixelated;
+
+  &.first-fainted {
+    box-shadow: -4px 0 0 0 #ef4444;
+    margin-left: 6px;
+  }
 }
 
 .sidebar-mon-name {
@@ -499,6 +503,86 @@
   overflow: hidden;
   pointer-events: none; // Allow clicks to pass through to emulator
   max-width: 100%; // Ensure it doesn't overflow the emulator column
+}
+
+/* Autosave Manager Modal */
+.autosave-modal-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.55);
+  z-index: 1200;
+  display: flex;
+  align-items: flex-start; /* start higher on screen */
+  justify-content: center;
+  pointer-events: auto;
+  padding-top: 5rem; /* ensure the modal starts at least 5rem from top */
+}
+
+.autosave-modal-content {
+  background: $eb-surface;
+  border: 1px solid $eb-border;
+  border-radius: 10px;
+  padding: 1rem;
+  width: min(1100px, 96%);
+  max-height: 50vh; /* cap at half the screen height */
+  overflow: hidden; /* contain header and list; list scrolls separately */
+  box-shadow: 0 8px 36px rgba(0,0,0,0.6);
+}
+
+.autosave-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.8rem;
+  margin-bottom: 0.6rem;
+}
+
+.autosave-modal-header h3 {
+  margin: 0;
+  font-size: 1.2rem;
+  color: $eb-text;
+}
+
+.autosave-modal-header .close-btn {
+  background: transparent;
+  border: 1px solid $eb-border;
+  color: $eb-text-muted;
+  width: 32px;
+  height: 32px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 1.1rem;
+}
+
+.autosave-list {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-auto-rows: auto;
+  gap: 0.6rem;
+  max-height: calc(50vh - 6rem);
+  overflow-y: auto;
+  padding-right: 0.25rem; /* space for scrollbar */
+}
+
+.autosave-list-item {
+  padding: 0.6rem 0.8rem;
+  border-radius: 8px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: transparent;
+  border: 1px solid transparent;
+  color: $eb-text;
+  min-width: 0; /* allow items to shrink within grid columns */
+}
+
+.autosave-list-item:hover {
+  background: color-mix(in srgb, $eb-surface, $eb-primary 6%);
+  border-color: $eb-border;
 }
 
 .overlay-header {
@@ -630,6 +714,11 @@
 
   &:hover {
     transform: scale(1.2);
+  }
+
+  &.first-fainted {
+    box-shadow: -5px 0 0 0 #ef4444;
+    margin-left: 7px;
   }
 }
 
