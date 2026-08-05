@@ -4167,3 +4167,23 @@ pub async fn post_pokemon_key_moves_data(
 
     Err((StatusCode::BAD_REQUEST, format!("missing csv file")))
 }
+
+#[debug_handler]
+pub async fn get_admin_metrics(
+    auth_session: AuthSession<AuthBackend>,
+    State(state): State<ServerState>,
+) -> Result<Json<Vec<crate::metrics::AggregateMetricSummary>>, AppError> {
+    let Some(user) = auth_session.user else {
+        return Err((StatusCode::UNAUTHORIZED, "user must be logged in".to_string()));
+    };
+    if !user.has_role_name("Website Dev") {
+        return Err((StatusCode::UNAUTHORIZED, "user must be a dev".to_string()));
+    }
+
+    let metrics = crate::metrics::get_aggregate_metrics(&state.db_pool)
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, format!("failed to fetch metrics: {}", e)))?;
+
+    Ok(Json(metrics))
+}
+
