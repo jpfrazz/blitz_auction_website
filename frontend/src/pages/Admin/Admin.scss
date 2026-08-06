@@ -65,6 +65,21 @@
   padding: 0.35rem 0.5rem;
 }
 
+.admin-history-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+  align-items: start;
+}
+
+.admin-history-column {
+  min-width: 0;
+}
+
+.admin-history-column h3 {
+  margin: 0 0 0.6rem;
+}
+
 .admin-table-wrap {
   overflow-x: auto;
 }
@@ -90,10 +105,33 @@
   margin: 0.5rem 0;
 }
 
+.admin-hof-team-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
+.admin-hof-pill {
+  display: inline-flex;
+  align-items: center;
+  background: #1d374b;
+  border: 1px solid #3b5c78;
+  border-radius: 999px;
+  padding: 0.2rem 0.55rem;
+  font-size: 0.85rem;
+  white-space: nowrap;
+}
+
 .admin-error {
   color: #ff8f8f;
 }
 
 .admin-success {
   color: #73e89e;
+}
+
+@media (max-width: 1100px) {
+  .admin-history-grid {
+    grid-template-columns: 1fr;
+  }
 }

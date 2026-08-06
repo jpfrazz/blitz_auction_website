@@ -947,6 +947,15 @@ pub async fn get_boss_battle_history(
     Ok(Json(history))
 }
 
+#[derive(serde::Serialize)]
+pub struct AdminHallOfFameTeamEntry {
+    pub team_id: i64,
+    pub draft_id: String,
+    pub draft_name: String,
+    pub user_name: Option<String>,
+    pub hall_of_fame_team: Vec<HallOfFamePokemon>,
+}
+
 #[derive(serde::Serialize, serde::Deserialize, sqlx::FromRow)]
 pub struct AdminBossBattleHistoryEntry {
     pub id: i64,
@@ -984,6 +993,66 @@ pub async fn get_admin_boss_battle_history(
     .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, format!("db error: {}", e)))?;
 
     Ok(Json(history))
+}
+
+#[debug_handler]
+pub async fn get_admin_hall_of_fame_teams(
+    State(state): State<ServerState>,
+    auth_session: AuthSession<AuthBackend>,
+) -> Result<Json<Vec<AdminHallOfFameTeamEntry>>, AppError> {
+    let _ = require_referee_user(auth_session.user)?;
+
+    let rows = sqlx::query(
+        "SELECT t.team_id, t.draft_id, d.draft_name,
+                COALESCE(u.user_name, g.user_name) AS user_name,
+                t.hall_of_fame_team
+         FROM teams t
+         JOIN drafts d ON d.draft_id = t.draft_id
+         LEFT JOIN users u ON u.user_id = t.user_id
+         LEFT JOIN guests g ON g.user_id = t.guest_id
+         WHERE d.state = 'COMPLETED'
+           AND d.ranked = TRUE
+           AND t.hall_of_fame_team IS NOT NULL
+           AND jsonb_array_length(COALESCE(t.hall_of_fame_team::jsonb, '[]'::jsonb)) > 0
+         ORDER BY d.created_at DESC, COALESCE(u.user_name, g.user_name) ASC, t.team_id ASC",
+    )
+    .fetch_all(&state.db_pool)
+    .await
+    .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    let mut entries = Vec::with_capacity(rows.len());
+    for row in rows {
+        let draft_uuid: Uuid = row
+            .try_get("draft_id")
+            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+        let hall_of_fame_value: Option<serde_json::Value> = row
+            .try_get("hall_of_fame_team")
+            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+        let hall_of_fame_team = hall_of_fame_value
+            .and_then(|value| serde_json::from_value::<Vec<HallOfFamePokemon>>(value).ok())
+            .filter(|team| !team.is_empty())
+            .unwrap_or_default();
+
+        if hall_of_fame_team.is_empty() {
+            continue;
+        }
+
+        entries.push(AdminHallOfFameTeamEntry {
+            team_id: row
+                .try_get("team_id")
+                .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?,
+            draft_id: draft_uuid.to_string(),
+            draft_name: row
+                .try_get("draft_name")
+                .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?,
+            user_name: row
+                .try_get("user_name")
+                .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?,
+            hall_of_fame_team,
+        });
+    }
+
+    Ok(Json(entries))
 }
 
 #[debug_handler]

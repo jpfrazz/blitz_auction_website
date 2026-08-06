@@ -3,6 +3,7 @@ import {
   AdminDiscordUser,
   AdminDraftSummary,
   AdminDraftTeamPlacement,
+  AdminHallOfFameTeamEntry,
   AdminTeamPlacementUpdate,
   Pokemon,
 } from "../../types";
@@ -215,6 +216,11 @@ export async function fetchAdminCompletedDrafts(): Promise<AdminDraftSummary[]> 
 
 export async function fetchAdminDraftTeamPlacements(draft_id: string): Promise<AdminDraftTeamPlacement[]> {
   const response = await axios.get(`/api/admin/drafts/${draft_id}/teams`);
+  return response.data;
+}
+
+export async function fetchAdminHallOfFameTeams(): Promise<AdminHallOfFameTeamEntry[]> {
+  const response = await axios.get('/api/admin/hall-of-fame-teams');
   return response.data;
 }
 

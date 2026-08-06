@@ -5,6 +5,7 @@ import {
   fetchAdminCompletedDrafts,
   fetchAdminDiscordUsers,
   fetchAdminDraftTeamPlacements,
+  fetchAdminHallOfFameTeams,
   removeAdminDraftTeam,
   updateAdminDiscordUser,
   updateAdminDraftPlacements,
@@ -13,6 +14,7 @@ import {
   AdminDiscordUser,
   AdminDraftSummary,
   AdminDraftTeamPlacement,
+  AdminHallOfFameTeamEntry,
 } from '../../types';
 import './Admin.scss';
 import { fetchCurrentUser } from '../../shared/api/draftData';
@@ -44,6 +46,9 @@ const Admin: React.FC = () => {
   const [bossBattleHistory, setBossBattleHistory] = useState<any[]>([]);
   const [bossBattleHistoryLoading, setBossBattleHistoryLoading] = useState(false);
   const [bossBattleHistoryError, setBossBattleHistoryError] = useState<string | null>(null);
+  const [hallOfFameTeams, setHallOfFameTeams] = useState<AdminHallOfFameTeamEntry[]>([]);
+  const [hallOfFameTeamsLoading, setHallOfFameTeamsLoading] = useState(false);
+  const [hallOfFameTeamsError, setHallOfFameTeamsError] = useState<string | null>(null);
 
   useEffect(() => {
     fetchCurrentUser()
@@ -98,17 +103,40 @@ const Admin: React.FC = () => {
 
     setBossBattleHistoryLoading(true);
     setBossBattleHistoryError(null);
-    fetch('/api/admin/boss-battle-history')
-      .then(async (res) => {
+    setHallOfFameTeamsLoading(true);
+    setHallOfFameTeamsError(null);
+
+    Promise.allSettled([
+      fetch('/api/admin/boss-battle-history').then(async (res) => {
         if (!res.ok) {
           const text = await res.text();
           throw new Error(text || res.statusText);
         }
         return res.json();
+      }),
+      fetchAdminHallOfFameTeams(),
+    ])
+      .then(([bossResult, hallOfFameResult]) => {
+        if (bossResult.status === 'fulfilled') {
+          setBossBattleHistory(bossResult.value);
+        } else {
+          setBossBattleHistoryError(
+            bossResult.reason instanceof Error ? bossResult.reason.message : 'Failed to load boss battle history.'
+          );
+        }
+
+        if (hallOfFameResult.status === 'fulfilled') {
+          setHallOfFameTeams(hallOfFameResult.value);
+        } else {
+          setHallOfFameTeamsError(
+            hallOfFameResult.reason instanceof Error ? hallOfFameResult.reason.message : 'Failed to load hall of fame teams.'
+          );
+        }
       })
-      .then((data) => setBossBattleHistory(data))
-      .catch((err: any) => setBossBattleHistoryError(err?.message ?? 'Failed to load boss battle history.'))
-      .finally(() => setBossBattleHistoryLoading(false));
+      .finally(() => {
+        setBossBattleHistoryLoading(false);
+        setHallOfFameTeamsLoading(false);
+      });
   }, [hasRefereeRole, tab]);
 
   const sortedTeams = useMemo(
@@ -504,45 +532,91 @@ const Admin: React.FC = () => {
               )}
               {tab === 'boss-battle-history' && (
                 <div className="admin-tab-content">
-                  <h2>Boss Battle History</h2>
+                  <h2>Boss Battle History & Hall of Fame Teams</h2>
                   {bossBattleHistoryError && <div className="admin-message admin-error">{bossBattleHistoryError}</div>}
 
-                  {bossBattleHistoryLoading ? (
-                    <div className="admin-message">Loading boss battle history...</div>
-                  ) : (
-                    <div className="admin-table-wrap">
-                      <table>
-                        <thead>
-                          <tr>
-                            <th>ID</th>
-                            <th>Draft ID</th>
-                            <th>Team ID</th>
-                            <th>User</th>
-                            <th>Trainer ID</th>
-                            <th>Version</th>
-                            <th>Time</th>
-                            <th>Loss</th>
-                            <th>Created At</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {bossBattleHistory.map((battle) => (
-                            <tr key={battle.id}>
-                              <td>{battle.id}</td>
-                              <td>{battle.draft_id.slice(0, 8)}</td>
-                              <td>{battle.team_id}</td>
-                              <td>{battle.user_name ?? battle.user_id ?? battle.guest_id ?? '-'}</td>
-                              <td>{battle.trainer_id}</td>
-                              <td>{battle.version ?? '-'}</td>
-                              <td>{battle.hours}h {battle.minutes}m {battle.seconds}s</td>
-                              <td>{battle.is_loss ? 'Yes' : 'No'}</td>
-                              <td>{new Date(battle.created_at).toLocaleString()}</td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
+                  <div className="admin-history-grid">
+                    <div className="admin-history-column">
+                      <h3>Boss Battle History</h3>
+                      {bossBattleHistoryLoading ? (
+                        <div className="admin-message">Loading boss battle history...</div>
+                      ) : (
+                        <div className="admin-table-wrap">
+                          <table>
+                            <thead>
+                              <tr>
+                                <th>ID</th>
+                                <th>Draft ID</th>
+                                <th>Team ID</th>
+                                <th>User</th>
+                                <th>Trainer ID</th>
+                                <th>Version</th>
+                                <th>Time</th>
+                                <th>Loss</th>
+                                <th>Created At</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {bossBattleHistory.map((battle) => (
+                                <tr key={battle.id}>
+                                  <td>{battle.id}</td>
+                                  <td>{battle.draft_id.slice(0, 8)}</td>
+                                  <td>{battle.team_id}</td>
+                                  <td>{battle.user_name ?? battle.user_id ?? battle.guest_id ?? '-'}</td>
+                                  <td>{battle.trainer_id}</td>
+                                  <td>{battle.version ?? '-'}</td>
+                                  <td>{battle.hours}h {battle.minutes}m {battle.seconds}s</td>
+                                  <td>{battle.is_loss ? 'Yes' : 'No'}</td>
+                                  <td>{new Date(battle.created_at).toLocaleString()}</td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      )}
                     </div>
-                  )}
+
+                    <div className="admin-history-column">
+                      <h3>Hall of Fame Teams</h3>
+                      {hallOfFameTeamsError && <div className="admin-message admin-error">{hallOfFameTeamsError}</div>}
+                      {hallOfFameTeamsLoading ? (
+                        <div className="admin-message">Loading hall of fame teams...</div>
+                      ) : hallOfFameTeams.length === 0 ? (
+                        <div className="admin-message">No Hall of Fame teams recorded yet.</div>
+                      ) : (
+                        <div className="admin-table-wrap">
+                          <table>
+                            <thead>
+                              <tr>
+                                <th>Team ID</th>
+                                <th>Player</th>
+                                <th>Run</th>
+                                <th>Hall of Fame Team</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {hallOfFameTeams.map((entry) => (
+                                <tr key={`${entry.team_id}-${entry.draft_id}`}>
+                                  <td>{entry.team_id}</td>
+                                  <td>{entry.user_name ?? '-'}</td>
+                                  <td>{entry.draft_name} ({entry.draft_id.slice(0, 8)})</td>
+                                  <td>
+                                    <div className="admin-hof-team-list">
+                                      {entry.hall_of_fame_team.map((pokemon) => (
+                                        <span key={`${entry.team_id}-${pokemon.name}`} className="admin-hof-pill">
+                                          {pokemon.name}
+                                        </span>
+                                      ))}
+                                    </div>
+                                  </td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      )}
+                    </div>
+                  </div>
                 </div>
               )}
             </>

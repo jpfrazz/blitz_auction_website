@@ -184,6 +184,14 @@ export interface StatsPageResponse {
   legacy: StatsLegacyPick[];
 }
 
+export interface AdminHallOfFameTeamEntry {
+  team_id: number;
+  draft_id: string;
+  draft_name: string;
+  user_name: string | null;
+  hall_of_fame_team: HallOfFamePokemon[];
+}
+
 export interface AdminDraftSummary {
   draft_id: string;
   draft_name: string;

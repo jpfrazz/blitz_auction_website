@@ -204,6 +204,10 @@ impl Server {
             )
             .route("/admin/boss-battle-history", get(handlers::get_admin_boss_battle_history))
             .route(
+                "/admin/hall-of-fame-teams",
+                get(handlers::get_admin_hall_of_fame_teams),
+            )
+            .route(
                 "/drafts/{draft_id}/pending-settings",
                 post(handlers::update_pending_draft_settings),
             )
