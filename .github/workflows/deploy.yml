@@ -38,7 +38,7 @@ jobs:
 
       - name: Deploy via SSH
         run: |
-          ssh server << 'EOF'
+          ssh server  << EOF
             set -e
             cd /home/$SSH_USER/blitz_auction_website
             git fetch origin main
@@ -49,4 +49,3 @@ jobs:
           EOF
         env:
           SSH_USER: ${{ secrets.SSH_USER }}
-          
