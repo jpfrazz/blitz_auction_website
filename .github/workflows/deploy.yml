@@ -4,14 +4,7 @@ on:
   push:
     branches:
       - main
-  workflow_dispatch: # <--- Allows manual triggering from the GitHub UI
-
-permissions:
-  contents: read
-  packages: write
-
-jobs:
-  deploy:
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -45,7 +38,7 @@ jobs:
 
       - name: Deploy via SSH
         run: |
-          ssh server  << EOF
+          ssh server << 'EOF'
             set -e
             cd /home/$SSH_USER/blitz_auction_website
             git fetch origin main
@@ -56,3 +49,4 @@ jobs:
           EOF
         env:
           SSH_USER: ${{ secrets.SSH_USER }}
+          
