@@ -511,6 +511,9 @@ const PlayerSearchStatsTab: React.FC<PlayerSearchStatsTabProps> = ({
     }));
   };
 
+  const renderSortArrow = (key: TableSortKey) =>
+    tableSortConfig.key === key ? (tableSortConfig.direction === 'asc' ? '\u00A0↑' : '\u00A0↓') : '';
+
   const sortedPokemonList = useMemo(() => {
     const sorted = [...allPokemonList];
     const { key, direction } = tableSortConfig;
@@ -779,25 +782,25 @@ const PlayerSearchStatsTab: React.FC<PlayerSearchStatsTabProps> = ({
                     <div className="player-draft-overview-table">
                       <div className="player-draft-overview-table-header">
                         <span className="sortable" onClick={() => handleTableSort('name')}>
-                          Pokemon {tableSortConfig.key === 'name' ? (tableSortConfig.direction === 'asc' ? '↑' : '↓') : ''}
+                          Pokemon{renderSortArrow('name')}
                         </span>
                         <span className="sortable" onClick={() => handleTableSort('playerGames')}>
-                          Times Drafted {tableSortConfig.key === 'playerGames' ? (tableSortConfig.direction === 'asc' ? '↑' : '↓') : ''}
+                          Times Drafted{renderSortArrow('playerGames')}
                         </span>
                         <span className="sortable" onClick={() => handleTableSort('appearances')}>
-                          Appearances {tableSortConfig.key === 'appearances' ? (tableSortConfig.direction === 'asc' ? '↑' : '↓') : ''}
+                          Appearances{renderSortArrow('appearances')}
                         </span>
                         <span className="sortable" onClick={() => handleTableSort('pctDrafted')}>
-                          % Drafted {tableSortConfig.key === 'pctDrafted' ? (tableSortConfig.direction === 'asc' ? '↑' : '↓') : ''}
+                          % Drafted{renderSortArrow('pctDrafted')}
                         </span>
                         <span className="sortable" onClick={() => handleTableSort('avgPaid')}>
-                          Avg Paid {tableSortConfig.key === 'avgPaid' ? (tableSortConfig.direction === 'asc' ? '↑' : '↓') : ''}
+                          Avg Paid{renderSortArrow('avgPaid')}
                         </span>
                         <span className="sortable" onClick={() => handleTableSort('avgPrice')}>
-                          Avg Price {tableSortConfig.key === 'avgPrice' ? (tableSortConfig.direction === 'asc' ? '↑' : '↓') : ''}
+                          Avg Price{renderSortArrow('avgPrice')}
                         </span>
                         <span className="sortable" onClick={() => handleTableSort('diff')}>
-                          Diff {tableSortConfig.key === 'diff' ? (tableSortConfig.direction === 'asc' ? '↑' : '↓') : ''}
+                          Diff{renderSortArrow('diff')}
                         </span>
                       </div>
 
