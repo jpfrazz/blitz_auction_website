@@ -805,9 +805,10 @@ const EmulatorPage: React.FC = () => {
     }
 
     // Build the Hall of Fame team from the party saved at the museum (the first
-    // time the game is beaten). The backend only keeps the first one it receives.
+    // time the game is beaten). A party is at most 6 Pokemon, so cap it there
+    // defensively. The backend only keeps the first one it receives.
     const hallOfFameTeam = isWinner
-      ? (parsed.party ?? []).map((mon: any) => {
+      ? (parsed.party ?? []).slice(0, 6).map((mon: any) => {
           const speciesId = mon.species_id ?? mon.speciesId;
           const speciesData = resolveMetadata(speciesId, mon.nickname);
           const realName = (speciesId === 412 && mon.nickname?.toLowerCase() === 'egg') ? "Egg" : (speciesData?.name || `ID ${speciesId}`);

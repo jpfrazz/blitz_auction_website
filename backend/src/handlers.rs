@@ -1159,8 +1159,10 @@ pub async fn post_player_save(
     // Record the Hall of Fame team on the first save made at the museum
     // (LilycoveCity_LilycoveMuseum_1F marks the player as having beaten the
     // game). Only the first museum save is kept per team, so a later wipe can
-    // never clear or replace it.
+    // never clear or replace it. A party is at most 6 Pokemon, so cap it there.
     if let Some(hall_of_fame_team) = hall_of_fame_team {
+        let hall_of_fame_team: Vec<HallOfFamePokemon> =
+            hall_of_fame_team.into_iter().take(6).collect();
         if !hall_of_fame_team.is_empty()
             && save_data.map_name == "LilycoveCity_LilycoveMuseum_1F"
         {

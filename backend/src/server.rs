@@ -15,7 +15,8 @@ use dashmap::DashMap;
 use oauth2::{AuthUrl, ClientId, ClientSecret, TokenUrl, basic::BasicClient};
 use std::{env, sync::Arc};
 use tower_http::cors::{Any, CorsLayer};
-use tower_sessions::{Expiry, MemoryStore, SessionManagerLayer};
+use tower_sessions::{Expiry, SessionManagerLayer};
+use tower_sessions_sqlx_store_chrono::PostgresStore;
 use uuid::Uuid;
 
 type DraftCache = Arc<DashMap<Uuid, Arc<Draft>>>;
@@ -73,23 +74,27 @@ impl Server {
         Ok(server)
     }
 
-    fn create_session_layer(&self) -> SessionManagerLayer<MemoryStore> {
+    async fn create_session_layer(&self) -> Result<SessionManagerLayer<PostgresStore>, Error> {
         let secure = match env::var("ENV").expect("ENV should be provided").as_str() {
             "PROD" => true,
             "DEV" => false,
             _ => true,
         };
-        let session_store = MemoryStore::default();
-        SessionManagerLayer::new(session_store)
+        let session_store = PostgresStore::new(self.server_state.db_pool.clone());
+        session_store
+            .migrate()
+            .await
+            .map_err(|e| ServerError::PgConnection(e.to_string()))?;
+        Ok(SessionManagerLayer::new(session_store)
             .with_secure(secure)
-            .with_expiry(Expiry::OnSessionEnd)
-            .with_same_site(tower_sessions::cookie::SameSite::Lax)
+            .with_expiry(Expiry::OnInactivity(time::Duration::days(90)))
+            .with_same_site(tower_sessions::cookie::SameSite::Lax))
     }
 
     async fn create_auth_layer(
         &self,
-        session_layer: SessionManagerLayer<MemoryStore>,
-    ) -> AuthManagerLayer<AuthBackend, MemoryStore> {
+        session_layer: SessionManagerLayer<PostgresStore>,
+    ) -> AuthManagerLayer<AuthBackend, PostgresStore> {
         let auth_url = AuthUrl::new("https://discord.com/oauth2/authorize".to_string())
             .expect("auth_url should be created");
         let token_url = TokenUrl::new("https://discord.com/api/oauth2/token".to_string())
@@ -118,7 +123,7 @@ impl Server {
 
     fn create_router(
         self,
-        auth_layer: AuthManagerLayer<AuthBackend, MemoryStore>,
+        auth_layer: AuthManagerLayer<AuthBackend, PostgresStore>,
         cors_layer: CorsLayer,
     ) -> Router {
         let public_routes = Router::new()
@@ -232,7 +237,7 @@ impl Server {
     }
 
     pub async fn serve(self) -> Result<(), Error> {
-        let session_layer = self.create_session_layer();
+        let session_layer = self.create_session_layer().await?;
         let auth_layer = self.create_auth_layer(session_layer).await;
         let cors_layer = CorsLayer::new()
             .allow_methods([Method::GET, Method::POST])
