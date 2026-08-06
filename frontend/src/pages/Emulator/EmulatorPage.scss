@@ -428,15 +428,22 @@
   flex-wrap: wrap;
 }
 
+.mini-icon-wrapper {
+  display: inline-flex;
+  align-items: center;
+  position: relative;
+}
+
+.mini-icon-wrapper.first-fainted {
+  margin-left: calc(2px - 0.4rem);
+  padding-left: 2px;
+  border-left: 2px solid rgba(148, 163, 184, 0.7);
+}
+
 .sidebar-mini-icon {
   width: 26px;
   height: 26px;
   image-rendering: pixelated;
-
-  &.first-fainted {
-    box-shadow: -4px 0 0 0 #ef4444;
-    margin-left: 6px;
-  }
 }
 
 .sidebar-mon-name {
@@ -711,15 +718,10 @@
   height: 32px;
   image-rendering: pixelated;
   transition: transform 0.15s ease;
+}
 
-  &:hover {
-    transform: scale(1.2);
-  }
-
-  &.first-fainted {
-    box-shadow: -5px 0 0 0 #ef4444;
-    margin-left: 7px;
-  }
+.overlay-mini-icon:hover {
+  transform: scale(1.2);
 }
 
 .overlay-no-save {

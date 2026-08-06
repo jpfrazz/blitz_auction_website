@@ -19,6 +19,7 @@ import Admin from './pages/Admin/Admin';
 import SourceCodePage from './pages/SourceCodePage';
 import SaveChecker from './pages/Auction/SaveChecker';
 import EmulatorPage from './pages/Emulator/EmulatorPage';
+import SpectatePage from './pages/Spectate/SpectatePage';
 import SaveUploaderPage from './pages/SaveUploader/SaveUploaderPage';
 import ScrollToTop from './shared/components/ScrollToTop';
 
@@ -48,6 +49,8 @@ if (container) {
           <Route path="/Admin" element={<Admin />} />
           <Route path="/Emulator" element={<EmulatorPage />} />
           <Route path="/Emulator/:draftId" element={<EmulatorPage />} />
+          <Route path="/Spectate" element={<SpectatePage />} />
+          <Route path="/Spectate/:draftId" element={<SpectatePage />} />
           <Route path="/SaveReader" element={<SaveUploaderPage />} />
         </Routes>
       </Router>

@@ -1605,15 +1605,16 @@ const EmulatorPage: React.FC = () => {
                                 const isFirstFainted = fainted && !prevFainted;
 
                                 return (
-                                  <img
-                                    key={`overlay-icon-${i}`}
-                                    src={`/MiniIcons/${iconName}.png`}
-                                    alt={mon.nickname || realName}
-                                    className={`overlay-mini-icon ${fainted ? 'fainted' : ''} ${isFirstFainted ? 'first-fainted' : ''}`}
-                                    style={fainted ? { filter: 'grayscale(100%)', opacity: 0.6 } : {}}
-                                    title={`${realName}`}
-                                    onError={(e) => { (e.target as HTMLImageElement).src = '/MiniIcons/question.png'; }}
-                                  />
+                                  <span key={`overlay-icon-${i}`} className={`mini-icon-wrapper overlay ${isFirstFainted ? 'first-fainted' : ''}`}>
+                                    <img
+                                      src={`/MiniIcons/${iconName}.png`}
+                                      alt={mon.nickname || realName}
+                                      className={`overlay-mini-icon ${fainted ? 'fainted' : ''}`}
+                                      style={fainted ? { filter: 'grayscale(100%)', opacity: 0.6 } : {}}
+                                      title={`${realName}`}
+                                      onError={(e) => { (e.target as HTMLImageElement).src = '/MiniIcons/question.png'; }}
+                                    />
+                                  </span>
                                 );
                               })}
                             </div>
@@ -1803,15 +1804,16 @@ const EmulatorPage: React.FC = () => {
                             const hasNickname = isActuallyNicknamed(mon.nickname, speciesId, realName);
 
                             return (
-                              <img
-                                key={`icon-${i}`}
-                                src={`/MiniIcons/${iconName}.png`}
+                              <span key={`icon-${i}`} className={`mini-icon-wrapper sidebar ${isFirstFainted ? 'first-fainted' : ''}`}>
+                                <img
+                                  src={`/MiniIcons/${iconName}.png`}
                                 alt={mon.nickname || realName}
-                                className={`sidebar-mini-icon ${fainted ? 'fainted' : ''} ${isFirstFainted ? 'first-fainted' : ''}`}
+                                className={`sidebar-mini-icon ${fainted ? 'fainted' : ''}`}
                                 style={fainted ? { filter: 'grayscale(100%)', opacity: 0.6 } : {}}
                                 title={`${hasNickname ? `${mon.nickname} (${realName})` : realName} (${abilityName}) - (${mon.nature || 'Unknown'} Nature${mon.nature ? NATURE_EFFECTS[mon.nature] : ''})${mon.ivs ? `\nIVs: ${mon.ivs.hp}/${mon.ivs.atk}/${mon.ivs.def}/${mon.ivs.spa}/${mon.ivs.spd}/${mon.ivs.spe}` : ''}`}
                                 onError={(e) => { (e.target as HTMLImageElement).src = '/MiniIcons/question.png'; }}
                               />
+                            </span>
                             );
                           })}
                         </div>

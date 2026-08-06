@@ -48,7 +48,7 @@ function getTimeAgo(dateString?: string): string {
 const LobbyViewer: React.FC = () => {
   const [drafts, setDrafts] = useState<DraftLobby[]>([]);
   const [loading, setLoading] = useState(true);
-  const [sorting, setSorting] = useState<SortingState>([{ id: 'draft_name', desc: false }]);
+  const [sorting, setSorting] = useState<SortingState>([{ id: 'created_at', desc: true }]);
   const [columnFilters, setColumnFilters] = useState<any[]>([]);
   const [isGuest, setIsGuest] = useState<boolean | null>(null);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);

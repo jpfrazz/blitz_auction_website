@@ -768,26 +768,35 @@ const AuctionPage: React.FC = () => {
                   <div className="draft-completed-panel">
                     <h3 className="draft-completed-title">Draft Completed!</h3>
                     <div className="draft-completed-buttons">
-                      <button
-                        className="button"
-                        onClick={() => setShowEeveelutionModal(true)}
-                      >
-                        Claim Eeveelution
-                      </button>
+                      {currentUserTeam ? (
+                        <>
+                          <button
+                            className="button"
+                            onClick={() => setShowEeveelutionModal(true)}
+                          >
+                            Claim Eeveelution
+                          </button>
+                          <button
+                            className="button"
+                            onClick={() => window.open(`/Emulator/${draft.draft_id}`, '_blank')}
+                          >
+                            Play Emulator
+                          </button>
+                        </>
+                      ) : (
+                        <button
+                          className="button"
+                          onClick={() => window.open(`/Spectate/${draft.draft_id}`, '_blank')}
+                        >
+                          Spectate Race
+                        </button>
+                      )}
                       {hasRefereeRole && draft.ranked && (
                         <button
                           className="button"
                           onClick={() => setShowResultsSubmissionModal(true)}
                         >
                           Submit Results
-                        </button>
-                      )}
-                      {(
-                        <button
-                          className="button"
-                          onClick={() => window.open(`/Emulator/${draft.draft_id}`, '_blank')}
-                        >
-                          Play Emulator
                         </button>
                       )}
                     </div>
