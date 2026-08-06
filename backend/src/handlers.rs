@@ -4,8 +4,9 @@ use crate::{
     auction::AuctionResponse,
     draft::{Draft, DraftLobbyResponse, DraftResponse, DraftSettings, DraftState, AutoBidResponse},
     messages::{
-        ChatMessage, ClientBidRequest, ClientBidResponse, ClientJoinResponse, HallOfFamePokemon,
-        PostSaveRequest, ServerMessage,
+        ChatMessage, ClientBidRequest, ClientBidResponse, ClientJoinResponse, ForfeitRequest,
+        HallOfFamePokemon, PostSaveRequest, SaveData, ServerMessage, TrainerCardWin,
+        get_trainer_name_by_id,
     },
     pokemon::{self, Pokemon},
     pokemon_data_updater::{self, KeyMoveCsvRecord, PokemonCsvRecord},
@@ -1288,6 +1289,123 @@ pub async fn post_player_save(
     };
 
     // Broadcast to all WebSocket subscribers so other players update live
+    if let Some(draft) = state.drafts.get(&draft_uuid) {
+        let _ = draft.broadcast_tx.send(crate::messages::ServerMessage::SaveUpdate {
+            user_id: user_id.clone(),
+            save_data: save_data.clone(),
+        });
+    }
+
+    Ok(())
+}
+
+#[debug_handler]
+pub async fn post_player_forfeit(
+    auth_session: AuthSession<AuthBackend>,
+    Path(draft_id): Path<String>,
+    State(state): State<ServerState>,
+    Json(request): Json<ForfeitRequest>,
+) -> Result<(), AppError> {
+    let Some(user) = auth_session.user else {
+        return Err((StatusCode::FORBIDDEN, "user is not logged in".to_string()));
+    };
+    let Ok(draft_uuid) = Uuid::from_str(&draft_id) else {
+        return Err((StatusCode::BAD_REQUEST, "invalid draft id".to_string()));
+    };
+
+    let user_id = user.get_user_id_string();
+    let (user_db_id, guest_db_id) = user.get_user_and_guest_id();
+
+    // Look up the team and its current stored save data
+    let row = sqlx::query(
+        "SELECT team_id, save_data FROM teams WHERE draft_id = $1 AND (user_id = $2 OR guest_id = $3)",
+    )
+    .bind(draft_uuid)
+    .bind(&user_db_id)
+    .bind(&guest_db_id)
+    .fetch_optional(&state.db_pool)
+    .await
+    .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, format!("db error: {}", e)))?;
+
+    let Some(row) = row else {
+        return Err((
+            StatusCode::NOT_FOUND,
+            "team not found in draft".to_string(),
+        ));
+    };
+    let team_id: i64 = row.get("team_id");
+    let save_json: Option<serde_json::Value> = row.get("save_data");
+
+    let mut save_data: SaveData = match save_json {
+        Some(value) => serde_json::from_value(value).map_err(|e| {
+            (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                format!("failed to parse save data: {}", e),
+            )
+        })?,
+        None => SaveData {
+            trainer_name: String::new(),
+            money: 0,
+            badge_count: 0,
+            party: Vec::new(),
+            r#box: Vec::new(),
+            map_name: String::new(),
+            trainer_card_wins: Vec::new(),
+            most_recent_loss: None,
+            most_recent_loss_name: None,
+        },
+    };
+
+    let loss = TrainerCardWin {
+        trainer_id: request.trainer_id,
+        hours: request.hours,
+        minutes: request.minutes,
+        seconds: request.seconds,
+        is_loss: true,
+        version: None,
+    };
+    save_data.trainer_card_wins.push(loss.clone());
+    save_data.most_recent_loss = Some(loss.clone());
+    save_data.most_recent_loss_name = Some(get_trainer_name_by_id(request.trainer_id));
+
+    // Persist the forfeit loss into the team's save data
+    let json_value = serde_json::to_value(&save_data).map_err(|e| {
+        (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            format!("failed to serialize save data: {}", e),
+        )
+    })?;
+    sqlx::query(
+        "UPDATE teams SET save_data = $1, updated_at = now()
+         WHERE draft_id = $2
+           AND (user_id = $3 OR guest_id = $4)",
+    )
+    .bind(&json_value)
+    .bind(draft_uuid)
+    .bind(&user_db_id)
+    .bind(&guest_db_id)
+    .execute(&state.db_pool)
+    .await
+    .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, format!("db error: {}", e)))?;
+
+    // Record the forfeit loss in boss battle history
+    sqlx::query(
+        "INSERT INTO boss_battle_history (team_id, draft_id, trainer_id, version, hours, minutes, seconds, is_loss)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8)",
+    )
+    .bind(team_id)
+    .bind(draft_uuid)
+    .bind(request.trainer_id as i32)
+    .bind(Option::<i32>::None)
+    .bind(request.hours as i32)
+    .bind(request.minutes as i32)
+    .bind(request.seconds as i32)
+    .bind(true)
+    .execute(&state.db_pool)
+    .await
+    .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, format!("db error: {}", e)))?;
+
+    // Broadcast the updated save so other players see the forfeit live
     if let Some(draft) = state.drafts.get(&draft_uuid) {
         let _ = draft.broadcast_tx.send(crate::messages::ServerMessage::SaveUpdate {
             user_id: user_id.clone(),

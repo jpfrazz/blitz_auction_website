@@ -162,7 +162,9 @@ const AuctionInfoPanel: React.FC<AuctionInfoPanelProps> = ({
   const handleAutoBidValueChange = (value: string) => {
     setAutoBidValue(value);
     const bidValue = parseInt(value, 10);
-    if (bidValue && bidValue > userBudgetRemaining) {
+    if (bidValue && bidValue > 5000) {
+      setAutoBidError('that value is too high for an auto bid!');
+    } else if (bidValue && bidValue > userBudgetRemaining) {
       setAutoBidError("You don't have enough money for that bid.");
     } else {
       setAutoBidError(null);
@@ -194,6 +196,10 @@ const AuctionInfoPanel: React.FC<AuctionInfoPanelProps> = ({
     }
     if (bidValue % 100 !== 0) {
       setAutoBidError('Auto bid must be a multiple of 100.');
+      return;
+    }
+    if (bidValue > 5000) {
+      setAutoBidError('that value is too high for an auto bid!');
       return;
     }
     if (bidValue > userBudgetRemaining) {

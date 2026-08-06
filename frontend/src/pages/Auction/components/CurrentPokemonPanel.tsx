@@ -352,7 +352,7 @@ const CurrentPokemonPanel: React.FC<CurrentPokemonPanelProps> = ({ current_aucti
             borderRadius: '4px',
             cursor: 'pointer',
             padding: '4px 8px',
-            fontSize: '0.85rem',
+            fontSize: '0.95rem',
             outline: 'none'
           }}
         >

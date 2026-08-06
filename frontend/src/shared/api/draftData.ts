@@ -198,6 +198,22 @@ export async function unclaimEeveelution(draft_id: string, pokedex_id: number, f
   return response.data;
 }
 
+// Record an early forfeit as a loss against the given boss trainer
+export async function forfeitDraft(
+  draft_id: string,
+  trainer_id: number,
+  hours: number,
+  minutes: number,
+  seconds: number,
+): Promise<void> {
+  await axios.post(`/api/drafts/${draft_id}/forfeit`, {
+    trainer_id,
+    hours,
+    minutes,
+    seconds,
+  });
+}
+
 // Fetch chat messages for a draft
 export async function fetchDraftChats(draft_id: string): Promise<ChatMessage[]> {
   const response = await axios.get(`/api/drafts/${draft_id}/chats`);

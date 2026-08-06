@@ -3,7 +3,7 @@ import { useParams, useSearchParams } from 'react-router-dom';
 import Header from '../../shared/components/Header';
 import { parseSaveFile, SaveData, getTrainerNameById } from '../../utils/parseSaveFile';
 import { getIconName, createResolveMetadata, isActuallyNicknamed } from '../../utils/speciesUtils';
-import { fetchCurrentUser, fetchDraftById, claimEeveelution, unclaimEeveelution, fetchControlBindings, saveControlBindings } from '../../shared/api/draftData';
+import { fetchCurrentUser, fetchDraftById, claimEeveelution, unclaimEeveelution, fetchControlBindings, saveControlBindings, forfeitDraft } from '../../shared/api/draftData';
 import { fetchPokemonList } from '../../shared/api/pokemon';
 import EeveelutionClaimButton from './EeveelutionClaimButton';
 import NotebookWithdrawButton from './NotebookWithdrawButton';
@@ -115,6 +115,7 @@ declare global {
     EJS_onGameStart: (() => void) | undefined;
     EJS_emulator: {
       on(event: string, callback: (data?: unknown) => void): void;
+      callEvent(event: string, data?: unknown): void;
       gameManager?: {
         simulateInput(player: number, index: number, value: number): void;
         saveSaveFiles(): void;
@@ -379,6 +380,43 @@ async function deleteStoredSave(key: string): Promise<void> {
 // Map of user_id → latest parsed save for other draft players
 type OtherPlayerSaves = Record<string, { displayName: string; save: SaveData | null }>;
 
+// Returns "Wally" or "Steven" when the player has a champion win on their
+// trainer card (Wally = 656, Steven = 804), otherwise null. Used to display
+// "(Beat Wally!)" / "(Beat Steven!)" once the save reaches the museum.
+function getChampionName(saveData: SaveData | null | undefined): string | null {
+  const wins = saveData?.trainer_card_wins;
+  if (!wins || wins.length === 0) return null;
+  const championWins = wins.filter(w => !w.is_loss && (w.trainer_id === 656 || w.trainer_id === 804));
+  if (championWins.length === 0) return null;
+  return championWins[championWins.length - 1].trainer_id === 804 ? 'Steven' : 'Wally';
+}
+
+// Boss trainers a player can forfeit to. Ids match TRAINER_ID_TO_NAME in
+// parseSaveFile.ts so the recorded loss shows the same name everywhere.
+const FORFEIT_TRAINERS: { id: number; name: string }[] = [
+  { id: 265, name: 'Roxanne' },
+  { id: 855, name: 'Viola' },
+  { id: 266, name: 'Brawly' },
+  { id: 267, name: 'Wattson' },
+  { id: 268, name: 'Flannery' },
+  { id: 269, name: 'Norman' },
+  { id: 270, name: 'Winona' },
+  { id: 271, name: 'Tate & Liza' },
+  { id: 272, name: 'Juan & Wallace' },
+  { id: 601, name: 'Maxie' },
+  { id: 34, name: 'Archie' },
+  { id: 261, name: 'Sidney' },
+  { id: 262, name: 'Phoebe' },
+  { id: 263, name: 'Glacia' },
+  { id: 264, name: 'Drake' },
+  { id: 806, name: 'Tucker' },
+  { id: 807, name: 'Spenser' },
+  { id: 810, name: 'Lucy' },
+  { id: 811, name: 'Brandon' },
+  { id: 656, name: 'Wally' },
+  { id: 804, name: 'Steven' },
+];
+
 interface ToastNotification {
   id: number;
   text: string;
@@ -450,6 +488,13 @@ const EmulatorPage: React.FC = () => {
   // Tab key overlay for race standings
   const [showOverlay, setShowOverlay] = useState(false);
 
+  // Forfeit flow: confirm modal -> trainer dropdown -> stop emulator
+  const [isForfeitConfirmOpen, setIsForfeitConfirmOpen] = useState(false);
+  const [isForfeitTrainerOpen, setIsForfeitTrainerOpen] = useState(false);
+  const [forfeitTrainerId, setForfeitTrainerId] = useState<number | null>(null);
+  const [isForfeiting, setIsForfeiting] = useState(false);
+  const [forfeitedTrainer, setForfeitedTrainer] = useState<string | null>(null);
+
   const addNotification = useCallback((text: string) => {
     const id = ++toastIdRef.current;
     setNotifications(prev => [...prev, { id, text }]);
@@ -479,6 +524,11 @@ const EmulatorPage: React.FC = () => {
   // Latest raw .sav bytes for the download button
   const latestSaveBytesRef = useRef<Uint8Array | null>(null);
   const [hasSaveBytes, setHasSaveBytes] = useState(false);
+
+  // Once a player forfeits, ignore any further save bytes — the final save the
+  // emulator triggers while shutting down must not overwrite the forfeit loss
+  // that was just recorded on the backend.
+  const forfeitedRef = useRef(false);
 
   // Stable ref for the notification fetch so EJS_ready closure always gets the current draftId
   const postStateLoadRef = useRef<(() => void) | null>(null);
@@ -759,6 +809,9 @@ const EmulatorPage: React.FC = () => {
 
   // ── Save bytes handler: parse + POST to backend ──────────────────────────
   onRawSaveBytesRef.current = (bytes: Uint8Array) => {
+    // Ignore saves that arrive after a forfeit (e.g. the one the emulator
+    // writes while exiting) so they can't overwrite the recorded loss.
+    if (forfeitedRef.current) return;
     latestSaveBytesRef.current = bytes;
     setHasSaveBytes(true);
     let parsed: SaveData;
@@ -1306,6 +1359,58 @@ const EmulatorPage: React.FC = () => {
     URL.revokeObjectURL(url);
   };
 
+  // ── Forfeit ──────────────────────────────────────────────────────────────
+  const openForfeitConfirm = () => {
+    if (!draftId) return;
+    setIsForfeitConfirmOpen(true);
+  };
+
+  const confirmForfeit = () => {
+    setIsForfeitConfirmOpen(false);
+    setForfeitTrainerId(null);
+    setIsForfeitTrainerOpen(true);
+  };
+
+  const handleForfeitSubmit = async () => {
+    if (!draftId || forfeitTrainerId === null) return;
+    const trainer = FORFEIT_TRAINERS.find((t) => t.id === forfeitTrainerId);
+    if (!trainer) return;
+
+    setIsForfeiting(true);
+    try {
+      // Record the loss. No real in-game time exists for a forfeit, so use a
+      // fixed placeholder (5:00:00) instead of a fake ranking time.
+      await forfeitDraft(draftId, trainer.id, 5, 0, 0);
+
+      // Notify other players in the race that the run was forfeited
+      if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN && currentUsername) {
+        wsRef.current.send(JSON.stringify({
+          type: 'WipeNotification',
+          data: { username: currentUsername, trainer: trainer.name },
+        }));
+      }
+
+      setForfeitedTrainer(trainer.name);
+      setIsForfeitTrainerOpen(false);
+
+      // Stop the emulator so the run can't continue. callEvent('exit') shuts
+      // down the core; the final save it triggers is ignored via forfeitedRef.
+      forfeitedRef.current = true;
+      try {
+        window.EJS_emulator?.callEvent('exit');
+      } catch (e) {
+        console.error('Failed to stop emulator after forfeit:', e);
+      }
+      // Unmount the emulator DOM entirely and show the forfeit screen
+      setRomUrl(null);
+    } catch (e) {
+      console.error('Failed to forfeit run:', e);
+      window.EJS_emulator?.displayMessage('Forfeit failed. Please try again.');
+    } finally {
+      setIsForfeiting(false);
+    }
+  };
+
   const handleLoadAutosave = (id: string) => {
     const key = `state_${draftId || 'standalone'}_${id}`;
     getStoredSave(key).then((bytes) => {
@@ -1442,6 +1547,12 @@ const EmulatorPage: React.FC = () => {
   const sidebarEntries = allPlayerEntries.slice(0, 9);
   const hasSidebar = draftId !== undefined;
 
+  // Once any player has earned at least 1 badge, the race has effectively
+  // started and the "Ready to Race" button is no longer needed.
+  const anyPlayerHasBadge =
+    (mySaveData?.badge_count ?? 0) >= 1 ||
+    allPlayerEntries.some(([, { save }]) => (save?.badge_count ?? 0) >= 1);
+
   // Start countdown when all players are ready
   useEffect(() => {
     if (countdown !== null) return;
@@ -1478,7 +1589,14 @@ const EmulatorPage: React.FC = () => {
         </div>
       )}
       <main className="emulator-main">
-        {!romUrl ? (
+        {forfeitedTrainer ? (
+          <div className="emulator-forfeited">
+            <h1 className="emulator-forfeited-title">Run Forfeited</h1>
+            <p className="emulator-forfeited-text">
+              You forfeited to <strong>{forfeitedTrainer}</strong>. Better luck next race!
+            </p>
+          </div>
+        ) : !romUrl ? (
           <div className="emulator-picker">
             <h1 className="emulator-title">GBA Emulator</h1>
             <p className="emulator-subtitle">
@@ -1567,6 +1685,59 @@ const EmulatorPage: React.FC = () => {
                   </div>
                 </div>
               )}
+              {/* Forfeit confirmation modal */}
+              {isForfeitConfirmOpen && (
+                <div className="forfeit-modal-overlay" onClick={() => setIsForfeitConfirmOpen(false)}>
+                  <div className="forfeit-modal-content" onClick={e => e.stopPropagation()}>
+                    <h3 className="forfeit-modal-title">Are you sure you'd like to forfeit your run?</h3>
+                    <p className="forfeit-modal-text">
+                      This records a loss and stops the emulator. This cannot be undone.
+                    </p>
+                    <div className="forfeit-modal-actions">
+                      <button className="forfeit-modal-btn danger" onClick={confirmForfeit}>Yes</button>
+                      <button className="forfeit-modal-btn" onClick={() => setIsForfeitConfirmOpen(false)}>No</button>
+                    </div>
+                  </div>
+                </div>
+              )}
+              {/* Forfeit trainer selection modal */}
+              {isForfeitTrainerOpen && (
+                <div className="forfeit-modal-overlay" onClick={() => !isForfeiting && setIsForfeitTrainerOpen(false)}>
+                  <div className="forfeit-modal-content" onClick={e => e.stopPropagation()}>
+                    <h3 className="forfeit-modal-title">Who did you wipe to?</h3>
+                    <p className="forfeit-modal-text">
+                      Select the trainer you're forfeiting to.
+                    </p>
+                    <select
+                      className="forfeit-trainer-select"
+                      value={forfeitTrainerId ?? ''}
+                      onChange={(e) => setForfeitTrainerId(Number(e.target.value))}
+                      disabled={isForfeiting}
+                    >
+                      <option value="" disabled>Select a trainer…</option>
+                      {FORFEIT_TRAINERS.map((t) => (
+                        <option key={t.id} value={t.id}>{t.name}</option>
+                      ))}
+                    </select>
+                    <div className="forfeit-modal-actions">
+                      <button
+                        className="forfeit-modal-btn danger"
+                        onClick={handleForfeitSubmit}
+                        disabled={isForfeiting || forfeitTrainerId === null}
+                      >
+                        {isForfeiting ? 'Forfeiting…' : 'Forfeit'}
+                      </button>
+                      <button
+                        className="forfeit-modal-btn"
+                        onClick={() => setIsForfeitTrainerOpen(false)}
+                        disabled={isForfeiting}
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
               {/* Tab key overlay for race standings */}
               {showOverlay && hasSidebar && (
                 <div className="race-standings-overlay">
@@ -1594,10 +1765,22 @@ const EmulatorPage: React.FC = () => {
                       const saveData = isCurrentUser ? mySaveData : save;
                       const displayDisplayName = isCurrentUser ? (currentUsername || 'You') : displayName;
 
+                      // Detect wipe (InsideOfTruck) or win (LilycoveCity_LilycoveMuseum_1F)
+                      const isWiped = saveData?.map_name === 'InsideOfTruck';
+                      const isWinner = saveData?.map_name === 'LilycoveCity_LilycoveMuseum_1F';
+                      const mostRecentLossName = saveData?.most_recent_loss_name;
+                      const championName = getChampionName(saveData);
+
                       return (
                         <div key={uid} className="overlay-player-card">
                           <div className="overlay-player-header">
                             <span className="overlay-username">{displayDisplayName}</span>
+                            {isWiped && mostRecentLossName && (
+                              <span className="wipe-text">(Wiped to {mostRecentLossName})</span>
+                            )}
+                            {isWinner && championName && (
+                              <span className="win-text">(Beat {championName}!)</span>
+                            )}
                             <span className="overlay-badges">
                               {saveData ? `${saveData.badge_count} ${saveData.badge_count === 1 ? 'badge' : 'badges'}` : '— badges'}
                             </span>
@@ -1654,6 +1837,15 @@ const EmulatorPage: React.FC = () => {
                     ) : (
                       <span className="save-panel-trainer" style={{ opacity: 0.5 }}>Save the game to display game data</span>
                     )}
+                    {draftId && (
+                      <button
+                        className="forfeit-btn"
+                        onClick={openForfeitConfirm}
+                        title="Forfeit your run and record a loss"
+                      >
+                        Forfeit
+                      </button>
+                    )}
                     {mySaveData && (
                       <button
                         className="autosave-btn"
@@ -1706,7 +1898,7 @@ const EmulatorPage: React.FC = () => {
                     {!draftId && urlPokemon.length > 0 && !mySaveData && (
                       <NotebookWithdrawButton pokemon={urlPokemon} />
                     )}
-                    {draftId && draftData && countdown === null && !raceStarted && (
+                    {draftId && draftData && countdown === null && !raceStarted && !anyPlayerHasBadge && (
                       <button
                         className={`ready-race-button ${readyPlayers.has(currentUserId ?? '') ? 'ready' : ''}`}
                         onClick={handleToggleReady}
@@ -1780,8 +1972,8 @@ const EmulatorPage: React.FC = () => {
                   // Detect wipe (InsideOfTruck) or win (LilycoveCity_LilycoveMuseum_1F)
                   const isWiped = saveData?.map_name === 'InsideOfTruck';
                   const isWinner = saveData?.map_name === 'LilycoveCity_LilycoveMuseum_1F';
-                  const mostRecentLoss = saveData?.most_recent_loss;
                   const mostRecentLossName = saveData?.most_recent_loss_name;
+                  const championName = getChampionName(saveData);
 
                   return (
                     <div key={uid} className={`sidebar-player-card ${readyPlayers.has(uid) ? 'race-ready' : ''}`}>
@@ -1791,8 +1983,8 @@ const EmulatorPage: React.FC = () => {
                           {isWiped && mostRecentLossName && (
                             <span className="wipe-text"> (Wiped to {mostRecentLossName})</span>
                           )}
-                          {isWinner && mostRecentLossName && (
-                            <span className="win-text"> (Beat {mostRecentLossName})</span>
+                          {isWinner && championName && (
+                            <span className="win-text"> (Beat {championName}!)</span>
                           )}
                         </span>
                         <span className="sidebar-badges">

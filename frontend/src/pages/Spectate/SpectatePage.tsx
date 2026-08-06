@@ -38,6 +38,17 @@ const NATURE_EFFECTS: Record<string, string> = {
 
 type PlayerSave = { displayName: string; save: SaveData | null };
 
+// Returns "Wally" or "Steven" when the player has a champion win on their
+// trainer card (Wally = 656, Steven = 804), otherwise null. Used to display
+// "(Beat Wally!)" / "(Beat Steven!)" once the save reaches the museum.
+function getChampionName(saveData: SaveData | null | undefined): string | null {
+  const wins = saveData?.trainer_card_wins;
+  if (!wins || wins.length === 0) return null;
+  const championWins = wins.filter(w => !w.is_loss && (w.trainer_id === 656 || w.trainer_id === 804));
+  if (championWins.length === 0) return null;
+  return championWins[championWins.length - 1].trainer_id === 804 ? 'Steven' : 'Wally';
+}
+
 const SpectatePage: React.FC = () => {
   const { draftId } = useParams<{ draftId?: string }>();
   const [draft, setDraft] = useState<any>(null);
@@ -263,7 +274,7 @@ const SpectatePage: React.FC = () => {
         {!loading && !loadError && draft && (
           <>
             <div className="spectate-header">
-              <h1 className="spectate-title">Spectate Race</h1>
+              <h1 className="spectate-title">Spectating</h1>
               <p className="spectate-subtitle">{draft.draft_name}</p>
             </div>
 
@@ -276,19 +287,20 @@ const SpectatePage: React.FC = () => {
                 const isWiped = save?.map_name === 'InsideOfTruck';
                 const isWinner = save?.map_name === 'LilycoveCity_LilycoveMuseum_1F';
                 const mostRecentLossName = save?.most_recent_loss_name;
+                const championName = getChampionName(save);
 
                 return (
                   <div key={uid} className="spectate-player-card">
                     <div className="spectate-player-header">
                       <span className={`spectate-username ${isWiped ? 'wiped' : ''} ${isWinner ? 'winner' : ''}`}>
                         {displayName}
-                        {isWiped && mostRecentLossName && (
-                          <span className="wipe-text"> (Wiped to {mostRecentLossName})</span>
-                        )}
-                        {isWinner && mostRecentLossName && (
-                          <span className="win-text"> (Beat {mostRecentLossName})</span>
-                        )}
                       </span>
+                      {isWiped && mostRecentLossName && (
+                        <span className="wipe-text">(Wiped to {mostRecentLossName})</span>
+                      )}
+                      {isWinner && championName && (
+                        <span className="win-text">(Beat {championName}!)</span>
+                      )}
                       <span className="spectate-badges">
                         {save ? `${save.badge_count} ${save.badge_count === 1 ? 'badge' : 'badges'}` : '— badges'}
                       </span>

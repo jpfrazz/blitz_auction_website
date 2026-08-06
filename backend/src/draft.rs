@@ -1223,6 +1223,12 @@ impl DraftActor {
                     format!("auto bid must be a positive multiple of 100"),
                 ));
             }
+            if value > 5000 {
+                return Err((
+                    StatusCode::BAD_REQUEST,
+                    format!("that value is too high for an auto bid!"),
+                ));
+            }
             if value > team.budget_remaining {
                 return Err((
                     StatusCode::BAD_REQUEST,
