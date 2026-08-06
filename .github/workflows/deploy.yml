@@ -4,6 +4,14 @@ on:
   push:
     branches:
       - main
+  workflow_dispatch: # <--- Allows manual triggering from the GitHub UI
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  deploy:
 
 permissions:
   contents: read
