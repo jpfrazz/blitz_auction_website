@@ -528,6 +528,52 @@
         padding-top: 0.25rem;
     }
 
+    .match-hall-of-fame {
+        border-top: 1px solid #202931;
+        padding-top: 0.55rem;
+    }
+
+    .match-hall-of-fame-header {
+        padding-bottom: 0.45rem;
+        color: #8ea1ac;
+        font-size: 0.9rem;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+    }
+
+    .match-hall-of-fame-icons {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.4rem;
+    }
+
+    .match-hall-of-fame-icon {
+        width: 42px;
+        height: 42px;
+        border-radius: 8px;
+        overflow: hidden;
+        border: 1px solid #2a353f;
+        background: #0a0e12;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition: 80ms ease;
+
+        &:hover {
+            transform: scale(1.08);
+            border-color: #40c9a2;
+        }
+
+        img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            padding: 2px;
+        }
+    }
+
     .match-draft-details-pokemon {
         .win {
             color: #53df62;

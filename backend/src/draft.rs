@@ -105,6 +105,14 @@ struct Team {
     pub ready: bool,
     budget_remaining: u32,
     pub auctions_won: Vec<Arc<Pokemon>>,
+    #[serde(skip)]
+    auto_bid: Option<u32>,
+}
+
+#[derive(Clone, Debug, Serialize)]
+pub struct AutoBidResponse {
+    pub enabled: bool,
+    pub value: Option<u32>,
 }
 
 impl Draft {
@@ -431,6 +439,55 @@ impl Draft {
         })?
     }
 
+    pub async fn get_auto_bid(&self, user_id: String) -> Result<AutoBidResponse, AppError> {
+        let (response_sender, response_receiver) = oneshot::channel();
+        let cmd = DraftCommand::GetAutoBid {
+            response_sender,
+            user_id,
+        };
+        self.actor_sender.send(cmd).await.map_err(|e| {
+            (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                format!("failed to send get auto bid cmd to actor, {}", e),
+            )
+        })?;
+
+        response_receiver.await.map_err(|e| {
+            (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                format!("failed to wait for actor response, {}", e),
+            )
+        })?
+    }
+
+    pub async fn set_auto_bid(
+        &self,
+        user_id: String,
+        value: u32,
+        enabled: bool,
+    ) -> Result<AutoBidResponse, AppError> {
+        let (response_sender, response_receiver) = oneshot::channel();
+        let cmd = DraftCommand::SetAutoBid {
+            response_sender,
+            user_id,
+            value,
+            enabled,
+        };
+        self.actor_sender.send(cmd).await.map_err(|e| {
+            (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                format!("failed to send set auto bid cmd to actor, {}", e),
+            )
+        })?;
+
+        response_receiver.await.map_err(|e| {
+            (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                format!("failed to wait for actor response, {}", e),
+            )
+        })?
+    }
+
     pub async fn claim_eeveelution(
         &self,
         user: User,
@@ -541,6 +598,7 @@ struct DraftActor {
     completed_auctions: Vec<AuctionResponse>,
     db_writer: DbWriter,
     teams: HashMap<String, Team>,
+    team_users: HashMap<String, User>,
     spectators: Vec<User>,
     receiver: mpsc::Receiver<DraftCommand>,
     broadcast_tx: broadcast::Sender<ServerMessage>,
@@ -585,6 +643,16 @@ enum DraftCommand {
         user_id: String,
     },
     GetCurrentAuction(oneshot::Sender<Result<Option<AuctionResponse>, AppError>>),
+    GetAutoBid {
+        response_sender: oneshot::Sender<Result<AutoBidResponse, AppError>>,
+        user_id: String,
+    },
+    SetAutoBid {
+        response_sender: oneshot::Sender<Result<AutoBidResponse, AppError>>,
+        user_id: String,
+        value: u32,
+        enabled: bool,
+    },
     ClaimEeveelution {
         response_sender: oneshot::Sender<Result<serde_json::Value, AppError>>,
         user: User,
@@ -625,6 +693,7 @@ impl DraftActor {
     ) -> Self {
         let host_id = host.get_user_id_string();
         let mut teams = HashMap::new();
+        let mut team_users = HashMap::new();
         if !settings.ranked {
             teams.insert(
                 host_id.clone(),
@@ -635,8 +704,10 @@ impl DraftActor {
                     ready: true,
                     budget_remaining: settings.starting_money,
                     auctions_won: vec![],
+                    auto_bid: None,
                 },
             );
+            team_users.insert(host_id.clone(), host);
         }
         Self {
             draft,
@@ -645,6 +716,7 @@ impl DraftActor {
             settings,
             current_auction: 0,
             teams,
+            team_users,
             auctions,
             db_writer,
             completed_auctions: vec![],
@@ -751,6 +823,26 @@ impl DraftActor {
                     DraftCommand::GetCurrentAuction(response_sender) => {
                         let res = self.get_current_auction().await;
                         let _ = response_sender.send(res);
+                    }
+                    DraftCommand::GetAutoBid {
+                        response_sender,
+                        user_id,
+                    } => {
+                        let res = self.get_auto_bid(user_id);
+                        let _ = response_sender.send(res);
+                    }
+                    DraftCommand::SetAutoBid {
+                        response_sender,
+                        user_id,
+                        value,
+                        enabled,
+                    } => {
+                        let res = self.set_auto_bid(user_id, value, enabled);
+                        let ok = res.is_ok();
+                        let _ = response_sender.send(res);
+                        if ok {
+                            self.broadcast();
+                        };
                     }
                     DraftCommand::ClaimEeveelution {
                         response_sender,
@@ -888,7 +980,47 @@ impl DraftActor {
 
         self.draft_state = DraftState::BIDDING;
 
+        self.place_auto_bids().await;
+
         Ok(())
+    }
+
+    async fn place_auto_bids(&self) {
+        let auction = &self.auctions[self.current_auction];
+
+        let mut candidates: Vec<(String, u32)> = self
+            .teams
+            .values()
+            .filter_map(|team| {
+                let value = team.auto_bid?;
+                if team.budget_remaining >= value {
+                    Some((team.user_id.clone(), value))
+                } else {
+                    None
+                }
+            })
+            .collect();
+
+        if candidates.is_empty() {
+            return;
+        }
+
+        let max_bid = candidates.iter().map(|(_, value)| *value).max().unwrap();
+        candidates.retain(|(_, value)| *value == max_bid);
+        candidates.shuffle(&mut rand::rng());
+
+        let Some((winner_id, _)) = candidates.first() else {
+            return;
+        };
+        let Some(user) = self.team_users.get(winner_id).cloned() else {
+            return;
+        };
+
+        println!(
+            "auto bid {} placed for {} on auction {}",
+            max_bid, winner_id, auction.auction_id
+        );
+        let _ = self.bid(auction.auction_id, max_bid, user).await;
     }
 
     async fn resume(&self, user_id: String) -> Result<(), AppError> {
@@ -963,8 +1095,10 @@ impl DraftActor {
             ready: user_id == self.host,
             budget_remaining: self.settings.starting_money,
             auctions_won: vec![],
+            auto_bid: None,
         };
         self.teams.insert(user_id.clone(), team);
+        self.team_users.insert(user_id, user.clone());
 
         self.db_writer.join_draft(user).await
     }
@@ -989,6 +1123,7 @@ impl DraftActor {
 
         self.db_writer.kick_draft(user).await?;
         self.teams.remove(&user_id);
+        self.team_users.remove(&user_id);
         Ok(())
     }
 
@@ -1022,6 +1157,7 @@ impl DraftActor {
                 team.budget_remaining = team
                     .budget_remaining
                     .saturating_sub(completed_auction.highest_bid);
+                team.auto_bid = None;
             }
         }
         self.current_auction += 1;
@@ -1030,6 +1166,7 @@ impl DraftActor {
             let _ = auction
                 .start(self.draft.clone(), self.settings.auction_length)
                 .await;
+            self.place_auto_bids().await;
         } else {
             if let Ok(_) = self.db_writer.finish_draft().await {
                 self.draft_state = DraftState::COMPLETED;
@@ -1050,6 +1187,57 @@ impl DraftActor {
 
         team.ready = true;
         Ok(())
+    }
+
+    fn get_auto_bid(&self, user_id: String) -> Result<AutoBidResponse, AppError> {
+        let Some(team) = self.teams.get(&user_id) else {
+            return Ok(AutoBidResponse {
+                enabled: false,
+                value: None,
+            });
+        };
+
+        Ok(AutoBidResponse {
+            enabled: team.auto_bid.is_some(),
+            value: team.auto_bid,
+        })
+    }
+
+    fn set_auto_bid(
+        &mut self,
+        user_id: String,
+        value: u32,
+        enabled: bool,
+    ) -> Result<AutoBidResponse, AppError> {
+        let Some(team) = self.teams.get_mut(&user_id) else {
+            return Err((
+                StatusCode::BAD_REQUEST,
+                format!("user is not a participant in this draft"),
+            ));
+        };
+
+        if enabled {
+            if value == 0 || value % 100 != 0 {
+                return Err((
+                    StatusCode::BAD_REQUEST,
+                    format!("auto bid must be a positive multiple of 100"),
+                ));
+            }
+            if value > team.budget_remaining {
+                return Err((
+                    StatusCode::BAD_REQUEST,
+                    format!("auto bid exceeds remaining funds"),
+                ));
+            }
+            team.auto_bid = Some(value);
+        } else {
+            team.auto_bid = None;
+        }
+
+        Ok(AutoBidResponse {
+            enabled: team.auto_bid.is_some(),
+            value: team.auto_bid,
+        })
     }
 
     async fn claim_eeveelution(
@@ -1366,6 +1554,7 @@ impl DraftActor {
         // Update state
         for team_id in unique_remove_ids {
             self.teams.remove(&team_id);
+            self.team_users.remove(&team_id);
         }
         self.settings.num_teams = num_teams;
         self.settings.num_auctions = num_auctions;

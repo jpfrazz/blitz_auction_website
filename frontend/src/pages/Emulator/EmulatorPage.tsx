@@ -804,12 +804,23 @@ const EmulatorPage: React.FC = () => {
       }
     }
 
+    // Build the Hall of Fame team from the party saved at the museum (the first
+    // time the game is beaten). The backend only keeps the first one it receives.
+    const hallOfFameTeam = isWinner
+      ? (parsed.party ?? []).map((mon: any) => {
+          const speciesId = mon.species_id ?? mon.speciesId;
+          const speciesData = resolveMetadata(speciesId, mon.nickname);
+          const realName = (speciesId === 412 && mon.nickname?.toLowerCase() === 'egg') ? "Egg" : (speciesData?.name || `ID ${speciesId}`);
+          return { name: realName, icon: getIconName(realName, speciesId) };
+        })
+      : undefined;
+
     if (draftId) {
       console.log('[EmulatorPage] Sending save data with trainer_card_wins:', parsed.trainer_card_wins);
       fetch(`/api/drafts/${draftId}/save`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(parsed),
+        body: JSON.stringify(hallOfFameTeam ? { ...parsed, hall_of_fame_team: hallOfFameTeam } : parsed),
         credentials: 'include',
       }).catch(() => { });
     }

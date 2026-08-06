@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Auction } from '../../../types';
-import { placeBid } from '../../../shared/api/draftData';
+import { fetchAutoBid, placeBid, setAutoBid } from '../../../shared/api/draftData';
 import { getUserLabel, getUserId } from '../../../shared/utils/user';
-import { TbPlayerPauseFilled , TbPlayerPlayFilled } from 'react-icons/tb';
+import { TbPlayerPauseFilled , TbPlayerPlayFilled, TbSettings, TbInfoCircle } from 'react-icons/tb';
 import './AuctionInfoPanel.scss';
 
 interface AuctionInfoPanelProps {
@@ -47,6 +47,12 @@ const AuctionInfoPanel: React.FC<AuctionInfoPanelProps> = ({
   const [bidNotification, setBidNotification] = useState<string | null>(null);
   const isInitialBid = useRef(true);
   const bidNotificationTimerRef = useRef<number | null>(null);
+  const [showAutoBidModal, setShowAutoBidModal] = useState(false);
+  const [autoBidValue, setAutoBidValue] = useState('');
+  const [autoBidEnabled, setAutoBidEnabled] = useState(false);
+  const [autoBidError, setAutoBidError] = useState<string | null>(null);
+  const [autoBidSaving, setAutoBidSaving] = useState(false);
+  const prevCompletedCountRef = useRef(completed_auctions.length);
 
   const showBidNotification = (message: string) => {
     setBidNotification(message);
@@ -120,6 +126,93 @@ const AuctionInfoPanel: React.FC<AuctionInfoPanelProps> = ({
   }, [currentAuctionExpiresAt, currentServerTime, isPaused, current_auction]);
 
   const progress = auctionLength > 0 ? secondsRemaining / auctionLength : 0;
+
+  useEffect(() => {
+    if (completed_auctions.length > prevCompletedCountRef.current) {
+      const newAuctions = completed_auctions.slice(prevCompletedCountRef.current);
+      const userWon = newAuctions.some(
+        auction => getUserId(auction.highest_bidder) === currentUserId && currentUserId !== null
+      );
+      if (userWon) {
+        setAutoBidEnabled(false);
+        setAutoBidValue('');
+        setAutoBidError(null);
+      }
+    }
+    prevCompletedCountRef.current = completed_auctions.length;
+  }, [completed_auctions, currentUserId]);
+
+  const getAutoBidError = (error: any) => {
+    const data = error?.response?.data;
+    return (typeof data === 'string' && data.trim() !== '') ? data : (error?.message || 'Failed to update auto bid.');
+  };
+
+  const handleOpenAutoBid = async () => {
+    setShowAutoBidModal(true);
+    setAutoBidError(null);
+    try {
+      const state = await fetchAutoBid(draft_id);
+      setAutoBidEnabled(state.enabled);
+      setAutoBidValue(state.value != null ? String(state.value) : '');
+    } catch (error) {
+      console.error('Error fetching auto bid:', error);
+    }
+  };
+
+  const handleAutoBidValueChange = (value: string) => {
+    setAutoBidValue(value);
+    const bidValue = parseInt(value, 10);
+    if (bidValue && bidValue > userBudgetRemaining) {
+      setAutoBidError("You don't have enough money for that bid.");
+    } else {
+      setAutoBidError(null);
+    }
+  };
+
+  const handleToggleAutoBid = async () => {
+    if (autoBidSaving) return;
+
+    if (autoBidEnabled) {
+      setAutoBidSaving(true);
+      setAutoBidError(null);
+      try {
+        const state = await setAutoBid(draft_id, 0, false);
+        setAutoBidEnabled(state.enabled);
+        setAutoBidValue(state.value != null ? String(state.value) : '');
+      } catch (error) {
+        setAutoBidError(getAutoBidError(error));
+      } finally {
+        setAutoBidSaving(false);
+      }
+      return;
+    }
+
+    const bidValue = parseInt(autoBidValue, 10);
+    if (!bidValue || bidValue <= 0) {
+      setAutoBidError('Please enter an auto bid amount.');
+      return;
+    }
+    if (bidValue % 100 !== 0) {
+      setAutoBidError('Auto bid must be a multiple of 100.');
+      return;
+    }
+    if (bidValue > userBudgetRemaining) {
+      setAutoBidError("You don't have enough money for that bid.");
+      return;
+    }
+
+    setAutoBidSaving(true);
+    setAutoBidError(null);
+    try {
+      const state = await setAutoBid(draft_id, bidValue, true);
+      setAutoBidEnabled(state.enabled);
+      setAutoBidValue(state.value != null ? String(state.value) : autoBidValue);
+    } catch (error) {
+      setAutoBidError(getAutoBidError(error));
+    } finally {
+      setAutoBidSaving(false);
+    }
+  };
 
   const showBidNow = !currentAuctionExpiresAt;
 
@@ -310,6 +403,17 @@ const AuctionInfoPanel: React.FC<AuctionInfoPanelProps> = ({
           Custom Bid
         </button>
       </div>
+      {canBid && (
+        <button
+          type="button"
+          className="auto-bid-gear-button"
+          onClick={() => void handleOpenAutoBid()}
+          aria-label="Auto-Bid settings"
+          title="Auto-Bid"
+        >
+          <TbSettings />
+        </button>
+      )}
     {/* Bid Warning Modal */}
     {showBidWarning && (
       <div className="auction-modal-overlay">
@@ -337,6 +441,55 @@ const AuctionInfoPanel: React.FC<AuctionInfoPanelProps> = ({
               Cancel
             </button>
           </div>
+        </div>
+      </div>
+    )}
+    {/* Auto-Bid Modal */}
+    {showAutoBidModal && (
+      <div className="auction-modal-overlay" onClick={() => setShowAutoBidModal(false)}>
+        <div className="auction-modal-content auto-bid-modal" onClick={e => e.stopPropagation()}>
+          <h3 className="auto-bid-modal-title">Auto-Bid</h3>
+          <p className="auto-bid-modal-message">
+            Automatically bid this value at the start of each sale
+            <span className="auto-bid-info-tip" tabIndex={0}>
+              <TbInfoCircle />
+              <span className="auto-bid-info-tip-text">
+                If two users enter the same auto-bid amount, the website randomly decides between them who gets the first bid
+              </span>
+            </span>
+          </p>
+          <input
+            type="number"
+            className="custom-bid-input auto-bid-input"
+            placeholder=""
+            value={autoBidValue}
+            onChange={e => handleAutoBidValueChange(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                e.preventDefault();
+                void handleToggleAutoBid();
+              }
+            }}
+            step={100}
+            min={100}
+            autoComplete="off"
+            disabled={autoBidSaving}
+          />
+          {autoBidError && <div className="auto-bid-error">{autoBidError}</div>}
+          <div className="auction-modal-actions">
+            <button
+              className={`auction-modal-confirm auto-bid-toggle${autoBidEnabled ? '' : ' auto-bid-toggle-off'}`}
+              onClick={() => void handleToggleAutoBid()}
+              disabled={autoBidSaving}
+            >
+              {autoBidSaving ? 'Saving...' : (autoBidEnabled ? 'Auto Bid: On' : 'Auto Bid: Off')}
+            </button>
+          </div>
+          {autoBidEnabled && (
+            <p className="auto-bid-modal-note">
+              Auto-Bid turns off automatically the next time you win an auction
+            </p>
+          )}
         </div>
       </div>
     )}

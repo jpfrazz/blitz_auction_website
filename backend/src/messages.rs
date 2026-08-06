@@ -64,6 +64,25 @@ pub struct TrainerCardWin {
     pub version: Option<u8>,
 }
 
+/// A single Pokemon on a player's Hall of Fame team (the party saved at the
+/// Lilycove Museum after beating the game). `name` is the display name and
+/// `icon` is the exact MiniIcons file name (e.g. "mime-jr", "farfetch'd").
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct HallOfFamePokemon {
+    pub name: String,
+    pub icon: String,
+}
+
+/// Body of the `POST /api/drafts/{draft_id}/save` endpoint. The emulator sends
+/// the parsed save data plus the Hall of Fame team on the first museum save.
+#[derive(Clone, Debug, Deserialize)]
+pub struct PostSaveRequest {
+    #[serde(flatten)]
+    pub save_data: SaveData,
+    #[serde(default)]
+    pub hall_of_fame_team: Option<Vec<HallOfFamePokemon>>,
+}
+
 #[derive(Clone, Debug, Serialize)]
 #[serde(tag = "type", content = "data")]
 pub enum ServerMessage {

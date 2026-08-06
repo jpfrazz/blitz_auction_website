@@ -2,9 +2,10 @@ use crate::{
     AppError, CSRF_STATE_KEY,
     contains_profanity,
     auction::AuctionResponse,
-    draft::{Draft, DraftLobbyResponse, DraftResponse, DraftSettings, DraftState},
+    draft::{Draft, DraftLobbyResponse, DraftResponse, DraftSettings, DraftState, AutoBidResponse},
     messages::{
-        ChatMessage, ClientBidRequest, ClientBidResponse, ClientJoinResponse, ServerMessage,
+        ChatMessage, ClientBidRequest, ClientBidResponse, ClientJoinResponse, HallOfFamePokemon,
+        PostSaveRequest, ServerMessage,
     },
     pokemon::{self, Pokemon},
     pokemon_data_updater::{self, KeyMoveCsvRecord, PokemonCsvRecord},
@@ -71,6 +72,12 @@ pub struct UpdatePendingDraftSettingsRequest {
     pub remove_team_ids: Vec<String>,
 }
 
+#[derive(Clone, Debug, Deserialize)]
+pub struct SetAutoBidRequest {
+    pub value: u32,
+    pub enabled: bool,
+}
+
 fn default_ready_true() -> bool {
     true
 }
@@ -131,6 +138,7 @@ pub struct MatchHistoryTeam {
     pub pokemon_drafted: Vec<MatchHistoryAuction>,
     pub placement: Option<i32>,
     pub pre_match_mmr: Option<i32>,
+    pub hall_of_fame_team: Option<Vec<HallOfFamePokemon>>,
     pub updated_at: chrono::DateTime<chrono::Utc>,
     pub created_at: chrono::DateTime<chrono::Utc>,
 }
@@ -762,7 +770,7 @@ pub async fn get_match_history_by_user_id(
         "SELECT t.team_id, t.user_id, t.guest_id, t.draft_id,
                 d.ranked, (SELECT COUNT(*)::INT FROM teams team_counts WHERE team_counts.draft_id = t.draft_id) AS team_count,
                 t.money_remaining, t.placement,
-                t.pre_match_mmr, t.updated_at, d.created_at
+                t.pre_match_mmr, t.hall_of_fame_team, t.updated_at, d.created_at
          FROM teams t
           JOIN drafts d ON d.draft_id = t.draft_id
                  WHERE (t.user_id = $1 OR t.guest_id = $1)
@@ -781,6 +789,11 @@ pub async fn get_match_history_by_user_id(
             .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
         let auctions_won = get_user_won_auctions_for_draft(&state, draft_uuid, &user_id).await?;
 
+        let hall_of_fame_value: Option<serde_json::Value> = row
+            .try_get("hall_of_fame_team")
+            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+        let hall_of_fame_team = hall_of_fame_value
+            .and_then(|v| serde_json::from_value::<Vec<HallOfFamePokemon>>(v).ok());
         history.push(MatchHistoryTeam {
             team_id: row
                 .try_get("team_id")
@@ -808,6 +821,7 @@ pub async fn get_match_history_by_user_id(
             pre_match_mmr: row
                 .try_get("pre_match_mmr")
                 .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?,
+            hall_of_fame_team,
             updated_at: row
                 .try_get("updated_at")
                 .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?,
@@ -1019,6 +1033,65 @@ pub async fn ready_up(
 }
 
 #[debug_handler]
+pub async fn get_auto_bid(
+    State(state): State<ServerState>,
+    Path(draft_id): Path<String>,
+    auth_session: AuthSession<AuthBackend>,
+) -> Result<Json<AutoBidResponse>, AppError> {
+    let user = auth_session
+        .user
+        .ok_or((StatusCode::UNAUTHORIZED, "user not authenticated".to_string()))?;
+
+    let draft_uuid = Uuid::from_str(&draft_id).map_err(|_e| {
+        (
+            StatusCode::BAD_REQUEST,
+            format!("requested draft does not exist"),
+        )
+    })?;
+    let Some(draft) = state.drafts.get(&draft_uuid) else {
+        return Err((
+            StatusCode::BAD_REQUEST,
+            format!("requested draft does not exist"),
+        ));
+    };
+
+    let res = draft.get_auto_bid(user.get_user_id_string()).await?;
+
+    Ok(Json(res))
+}
+
+#[debug_handler]
+pub async fn set_auto_bid(
+    State(state): State<ServerState>,
+    Path(draft_id): Path<String>,
+    auth_session: AuthSession<AuthBackend>,
+    Json(request): Json<SetAutoBidRequest>,
+) -> Result<Json<AutoBidResponse>, AppError> {
+    let user = auth_session
+        .user
+        .ok_or((StatusCode::UNAUTHORIZED, "user not authenticated".to_string()))?;
+
+    let draft_uuid = Uuid::from_str(&draft_id).map_err(|_e| {
+        (
+            StatusCode::BAD_REQUEST,
+            format!("requested draft does not exist"),
+        )
+    })?;
+    let Some(draft) = state.drafts.get(&draft_uuid) else {
+        return Err((
+            StatusCode::BAD_REQUEST,
+            format!("requested draft does not exist"),
+        ));
+    };
+
+    let res = draft
+        .set_auto_bid(user.get_user_id_string(), request.value, request.enabled)
+        .await?;
+
+    Ok(Json(res))
+}
+
+#[debug_handler]
 pub async fn bid(
     State(state): State<ServerState>,
     Path(draft_id): Path<String>,
@@ -1047,8 +1120,12 @@ pub async fn post_player_save(
     auth_session: AuthSession<AuthBackend>,
     Path(draft_id): Path<String>,
     State(state): State<ServerState>,
-    Json(save_data): Json<crate::messages::SaveData>,
+    Json(request): Json<PostSaveRequest>,
 ) -> Result<(), AppError> {
+    let PostSaveRequest {
+        save_data,
+        hall_of_fame_team,
+    } = request;
     let Some(user) = auth_session.user else {
         return Err((StatusCode::FORBIDDEN, "user is not logged in".to_string()));
     };
@@ -1078,6 +1155,36 @@ pub async fn post_player_save(
     .execute(&state.db_pool)
     .await
     .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, format!("db error: {}", e)))?;
+
+    // Record the Hall of Fame team on the first save made at the museum
+    // (LilycoveCity_LilycoveMuseum_1F marks the player as having beaten the
+    // game). Only the first museum save is kept per team, so a later wipe can
+    // never clear or replace it.
+    if let Some(hall_of_fame_team) = hall_of_fame_team {
+        if !hall_of_fame_team.is_empty()
+            && save_data.map_name == "LilycoveCity_LilycoveMuseum_1F"
+        {
+            let hall_of_fame_value = serde_json::to_value(&hall_of_fame_team).map_err(|e| {
+                (
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    format!("failed to serialize hall of fame team: {}", e),
+                )
+            })?;
+            sqlx::query(
+                "UPDATE teams SET hall_of_fame_team = $1
+                 WHERE draft_id = $2
+                   AND (user_id = $3 OR guest_id = $4)
+                   AND hall_of_fame_team IS NULL"
+            )
+            .bind(&hall_of_fame_value)
+            .bind(draft_uuid)
+            .bind(&user_db_id)
+            .bind(&guest_db_id)
+            .execute(&state.db_pool)
+            .await
+            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, format!("db error: {}", e)))?;
+        }
+    }
 
     // Store boss battle history
     // Get the team ID

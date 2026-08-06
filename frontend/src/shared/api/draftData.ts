@@ -147,6 +147,30 @@ export async function placeBid(draft_id: string, auction_id: string, value: numb
   });
   return response;
 }
+
+export interface AutoBidState {
+  enabled: boolean;
+  value: number | null;
+}
+
+// Fetch the current user's auto-bid setting for a draft
+export async function fetchAutoBid(draft_id: string): Promise<AutoBidState> {
+  const response = await axios.get(`/api/drafts/${draft_id}/auto-bid`);
+  return response.data;
+}
+
+// Set the current user's auto-bid setting for a draft
+export async function setAutoBid(
+  draft_id: string,
+  value: number,
+  enabled: boolean,
+): Promise<AutoBidState> {
+  const response = await axios.post(`/api/drafts/${draft_id}/auto-bid`, {
+    value,
+    enabled,
+  });
+  return response.data;
+}
 // Claim an eeveelution after draft completes
 export async function claimEeveelution(draft_id: string, pokedex_id: number, form: string | null, target_user_id?: string | null): Promise<any> {
   const response = await axios.post(`/api/drafts/${draft_id}/claim-eeveelution`, {

@@ -130,6 +130,11 @@ export interface StatsAuction {
   created_at: string;
 }
 
+export interface HallOfFamePokemon {
+  name: string;
+  icon: string;
+}
+
 export interface MatchHistoryTeam {
   team_id: number;
   user_id: string | null;
@@ -141,6 +146,7 @@ export interface MatchHistoryTeam {
   pokemon_drafted: StatsAuction[];
   placement: number | null;
   pre_match_mmr: number | null;
+  hall_of_fame_team?: HallOfFamePokemon[] | null;
   updated_at: string;
   created_at: string;
 }

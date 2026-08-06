@@ -857,6 +857,7 @@ const PlayerSearchStatsTab: React.FC<PlayerSearchStatsTabProps> = ({
                   const isExpanded = expandedTeamId === team.team_id;
                   const battles = bossBattleHistory.get(team.team_id);
                   const bossVictory = getBossBattleVictory(battles);
+                  const hallOfFameTeam = team.hall_of_fame_team;
 
                   return (
                     <div className="match-timeline-entry" key={team.team_id}>
@@ -908,30 +909,51 @@ const PlayerSearchStatsTab: React.FC<PlayerSearchStatsTabProps> = ({
 
                       {isExpanded && (
                         <div className="match-draft-details" style={{ display: 'flex', gap: '1rem' }}>
-                          {/* Pokemon Section */}
-                          <div style={{ flex: 1 }}>
-                            <div className="match-draft-details-header">
-                              <span>Pokemon</span>
-                              <span>Paid</span>
-                            </div>
-                            {auctions.length === 0 && (
-                              <div className="match-draft-details-empty">No Pokemon won in this draft.</div>
-                            )}
-                            {auctions.map((auction) => (
-                              <div className="match-draft-details-row" key={auction.auction_id}>
-                                <div className="match-draft-details-pokemon">
-                                  <img
-                                    src={`/MiniIcons/${formatPokemonName(auction.name)}.png`}
-                                    alt={auction.name}
-                                    onError={(ev) => {
-                                      (ev.currentTarget as HTMLImageElement).style.display = 'none';
-                                    }}
-                                  />
-                                  <span>{getPokemonLabel(auction.name, auction.form)}</span>
-                                </div>
-                                <span className="match-draft-details-cost">${(auction.winning_bid ?? 0).toLocaleString()}</span>
+                          {/* Pokemon Section + Hall of Fame Team */}
+                          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                            <div>
+                              <div className="match-draft-details-header">
+                                <span>Pokemon</span>
+                                <span>Paid</span>
                               </div>
-                            ))}
+                              {auctions.length === 0 && (
+                                <div className="match-draft-details-empty">No Pokemon won in this draft.</div>
+                              )}
+                              {auctions.map((auction) => (
+                                <div className="match-draft-details-row" key={auction.auction_id}>
+                                  <div className="match-draft-details-pokemon">
+                                    <img
+                                      src={`/MiniIcons/${formatPokemonName(auction.name)}.png`}
+                                      alt={auction.name}
+                                      onError={(ev) => {
+                                        (ev.currentTarget as HTMLImageElement).style.display = 'none';
+                                      }}
+                                    />
+                                    <span>{getPokemonLabel(auction.name, auction.form)}</span>
+                                  </div>
+                                  <span className="match-draft-details-cost">${(auction.winning_bid ?? 0).toLocaleString()}</span>
+                                </div>
+                              ))}
+                            </div>
+
+                            {bossVictory && hallOfFameTeam && hallOfFameTeam.length > 0 && (
+                              <div className="match-hall-of-fame">
+                                <div className="match-hall-of-fame-header">Hall of Fame Team</div>
+                                <div className="match-hall-of-fame-icons">
+                                  {hallOfFameTeam.map((mon, idx) => (
+                                    <div className="match-hall-of-fame-icon" key={idx} title={mon.name}>
+                                      <img
+                                        src={`/MiniIcons/${mon.icon}.png`}
+                                        alt={mon.name}
+                                        onError={(ev) => {
+                                          (ev.currentTarget as HTMLImageElement).src = '/MiniIcons/question.png';
+                                        }}
+                                      />
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
                           </div>
 
                           {/* Boss Battle History Section */}
