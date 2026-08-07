@@ -868,10 +868,19 @@ const EmulatorPage: React.FC = () => {
       }
     }
 
-    // Build the Hall of Fame team from the party saved at the museum (the first
-    // time the game is beaten). A party is at most 6 Pokemon, so cap it there
-    // defensively. The backend only keeps the first one it receives.
-    const hallOfFameTeam = isWinner
+    // Build the Hall of Fame team from the party at the moment a win is first
+    // recorded (the save carrying the new trainer-card win can arrive before
+    // the game warps the player to the museum, or after they have left it).
+    // Standing at the museum is kept as a fallback. A party is at most 6
+    // Pokemon, so cap it defensively. The backend only keeps the first one.
+    const prevWinKeys = new Set(
+      (mySaveData?.trainer_card_wins ?? []).map(w => `${w.trainer_id}:${w.hours}:${w.minutes}:${w.seconds}`)
+    );
+    const hasNewWin = mySaveData !== undefined &&
+      (parsed.trainer_card_wins ?? []).some(w =>
+        !prevWinKeys.has(`${w.trainer_id}:${w.hours}:${w.minutes}:${w.seconds}`)
+      );
+    const hallOfFameTeam = (isWinner || hasNewWin)
       ? (parsed.party ?? []).slice(0, 6).map((mon: any) => {
           const speciesId = mon.species_id ?? mon.speciesId;
           const speciesData = resolveMetadata(speciesId, mon.nickname);

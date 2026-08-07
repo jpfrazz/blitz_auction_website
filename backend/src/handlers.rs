@@ -1248,15 +1248,21 @@ pub async fn post_player_save(
     .await
     .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, format!("db error: {}", e)))?;
 
-    // Record the Hall of Fame team on the first save made at the museum
-    // (LilycoveCity_LilycoveMuseum_1F marks the player as having beaten the
-    // game). Only the first museum save is kept per team, so a later wipe can
-    // never clear or replace it. A party is at most 6 Pokemon, so cap it there.
+    // Record the Hall of Fame team on the first save that carries a recorded
+    // win (LilycoveCity_LilycoveMuseum_1F marks the player as having beaten
+    // the game, but the save with the new win can arrive before the warp to
+    // the museum or after the player has left it). Only the first team is kept
+    // per team, so a later save can never clear or replace it. A party is at
+    // most 6 Pokemon, so cap it there.
     if let Some(hall_of_fame_team) = hall_of_fame_team {
         let hall_of_fame_team: Vec<HallOfFamePokemon> =
             hall_of_fame_team.into_iter().take(6).collect();
+        let has_win = save_data
+            .trainer_card_wins
+            .iter()
+            .any(|win| !win.is_loss);
         if !hall_of_fame_team.is_empty()
-            && save_data.map_name == "LilycoveCity_LilycoveMuseum_1F"
+            && (save_data.map_name == "LilycoveCity_LilycoveMuseum_1F" || has_win)
         {
             let hall_of_fame_value = serde_json::to_value(&hall_of_fame_team).map_err(|e| {
                 (
