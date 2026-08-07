@@ -1011,7 +1011,6 @@ pub async fn get_admin_hall_of_fame_teams(
          LEFT JOIN users u ON u.user_id = t.user_id
          LEFT JOIN guests g ON g.user_id = t.guest_id
          WHERE d.state = 'COMPLETED'
-           AND d.ranked = TRUE
            AND t.hall_of_fame_team IS NOT NULL
            AND jsonb_array_length(COALESCE(t.hall_of_fame_team::jsonb, '[]'::jsonb)) > 0
          ORDER BY d.created_at DESC, COALESCE(u.user_name, g.user_name) ASC, t.team_id ASC",
