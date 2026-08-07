@@ -1077,6 +1077,202 @@ pub async fn get_admin_hall_of_fame_teams(
     Ok(Json(entries))
 }
 
+/// A user/race combination that qualifies for a Hall of Fame team because the
+/// player beat Steven (804) or Wally (656), i.e. their run ended with a win.
+/// `hours`/`minutes`/`seconds` are the in-game timestamp of the beat.
+#[derive(Clone, Debug, Serialize)]
+pub struct AdminHallOfFameEligibleEntry {
+    pub team_id: i64,
+    pub draft_id: String,
+    pub draft_name: String,
+    pub user_name: Option<String>,
+    pub trainer_id: i32,
+    pub beat_name: String,
+    pub hours: i32,
+    pub minutes: i32,
+    pub seconds: i32,
+    pub hall_of_fame_team: Vec<HallOfFamePokemon>,
+}
+
+fn hall_of_fame_beat_name(trainer_id: i32) -> String {
+    match trainer_id {
+        804 => "Steven".to_string(),
+        656 => "Wally".to_string(),
+        _ => get_trainer_name_by_id(trainer_id as u16),
+    }
+}
+
+/// Lists every user/race combination where the run ended with a win over
+/// Steven (804) or Wally (656). When a team has more than one such win, only
+/// the latest one (the run it actually ended with) is kept.
+#[debug_handler]
+pub async fn get_admin_hall_of_fame_eligible(
+    State(state): State<ServerState>,
+    auth_session: AuthSession<AuthBackend>,
+) -> Result<Json<Vec<AdminHallOfFameEligibleEntry>>, AppError> {
+    let _ = require_referee_user(auth_session.user)?;
+
+    let rows = sqlx::query(
+        "SELECT team_id, draft_id, draft_name, user_name, trainer_id, hours, minutes, seconds, hall_of_fame_team
+         FROM (
+             SELECT DISTINCT ON (bbh.team_id)
+                    bbh.team_id, bbh.draft_id, bbh.trainer_id,
+                    bbh.hours, bbh.minutes, bbh.seconds,
+                    d.draft_name, d.created_at,
+                    COALESCE(u.user_name, g.user_name) AS user_name,
+                    t.hall_of_fame_team
+             FROM boss_battle_history bbh
+             JOIN drafts d ON d.draft_id = bbh.draft_id
+             JOIN teams t ON t.team_id = bbh.team_id
+             LEFT JOIN users u ON u.user_id = t.user_id
+             LEFT JOIN guests g ON g.user_id = t.guest_id
+             WHERE bbh.trainer_id IN (804, 656)
+               AND NOT bbh.is_loss
+             ORDER BY bbh.team_id, bbh.hours DESC, bbh.minutes DESC, bbh.seconds DESC
+         ) wins
+         ORDER BY created_at DESC, user_name ASC, team_id ASC",
+    )
+    .fetch_all(&state.db_pool)
+    .await
+    .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    let mut entries = Vec::with_capacity(rows.len());
+    for row in rows {
+        let draft_uuid: Uuid = row
+            .try_get("draft_id")
+            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+        let trainer_id: i32 = row
+            .try_get("trainer_id")
+            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+        let hall_of_fame_value: Option<serde_json::Value> = row
+            .try_get("hall_of_fame_team")
+            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+        let hall_of_fame_team = hall_of_fame_value
+            .and_then(|value| serde_json::from_value::<Vec<HallOfFamePokemon>>(value).ok())
+            .unwrap_or_default();
+
+        entries.push(AdminHallOfFameEligibleEntry {
+            team_id: row
+                .try_get("team_id")
+                .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?,
+            draft_id: draft_uuid.to_string(),
+            draft_name: row
+                .try_get("draft_name")
+                .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?,
+            user_name: row
+                .try_get("user_name")
+                .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?,
+            trainer_id,
+            beat_name: hall_of_fame_beat_name(trainer_id),
+            hours: row
+                .try_get("hours")
+                .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?,
+            minutes: row
+                .try_get("minutes")
+                .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?,
+            seconds: row
+                .try_get("seconds")
+                .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?,
+            hall_of_fame_team,
+        });
+    }
+
+    Ok(Json(entries))
+}
+
+#[derive(Debug, Deserialize)]
+pub struct AdminHallOfFameTeamUpdate {
+    pub hall_of_fame_team: Vec<HallOfFamePokemon>,
+}
+
+/// Manually sets (or clears) the Hall of Fame team for a user/race
+/// combination. Only teams with a recorded win over Steven (804) or Wally
+/// (656) may have a Hall of Fame team.
+#[debug_handler]
+pub async fn update_admin_hall_of_fame_team(
+    State(state): State<ServerState>,
+    Path(team_id): Path<i64>,
+    auth_session: AuthSession<AuthBackend>,
+    Json(payload): Json<AdminHallOfFameTeamUpdate>,
+) -> Result<(), AppError> {
+    let _ = require_referee_user(auth_session.user)?;
+
+    let team_exists = sqlx::query("SELECT 1 FROM teams WHERE team_id = $1")
+        .bind(team_id)
+        .fetch_optional(&state.db_pool)
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    if team_exists.is_none() {
+        return Err((
+            StatusCode::NOT_FOUND,
+            format!("team {} does not exist", team_id),
+        ));
+    }
+
+    // Only user/race combinations where the player beat the game (Steven or
+    // Wally) can have a Hall of Fame team.
+    let beat_win = sqlx::query(
+        "SELECT 1 FROM boss_battle_history
+         WHERE team_id = $1
+           AND trainer_id IN (804, 656)
+           AND NOT is_loss
+         LIMIT 1",
+    )
+    .bind(team_id)
+    .fetch_optional(&state.db_pool)
+    .await
+    .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    if beat_win.is_none() {
+        return Err((
+            StatusCode::BAD_REQUEST,
+            "only teams that beat Steven or Wally can have a Hall of Fame team".to_string(),
+        ));
+    }
+
+    let mut hall_of_fame_team: Vec<HallOfFamePokemon> = payload
+        .hall_of_fame_team
+        .into_iter()
+        .take(6)
+        .collect();
+    for mon in &mut hall_of_fame_team {
+        mon.name = mon.name.trim().to_string();
+        if mon.name.is_empty() {
+            return Err((
+                StatusCode::BAD_REQUEST,
+                "Hall of Fame pokemon names cannot be empty".to_string(),
+            ));
+        }
+        mon.icon = mon.icon.trim().to_string();
+        if mon.icon.is_empty() {
+            mon.icon = mon.name.to_lowercase().replace('\'', "");
+        }
+    }
+
+    if hall_of_fame_team.is_empty() {
+        sqlx::query("UPDATE teams SET hall_of_fame_team = NULL WHERE team_id = $1")
+            .bind(team_id)
+            .execute(&state.db_pool)
+            .await
+            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+        return Ok(());
+    }
+
+    let hall_of_fame_value = serde_json::to_value(&hall_of_fame_team).map_err(|e| {
+        (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            format!("failed to serialize hall of fame team: {}", e),
+        )
+    })?;
+    sqlx::query("UPDATE teams SET hall_of_fame_team = $1 WHERE team_id = $2")
+        .bind(&hall_of_fame_value)
+        .bind(team_id)
+        .execute(&state.db_pool)
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    Ok(())
+}
+
 #[derive(Clone, Debug, Serialize)]
 pub struct AdminRaceResultTeam {
     pub team_id: i64,
@@ -1106,7 +1302,7 @@ struct AdminRaceTeamRow {
     user_name: Option<String>,
 }
 
-#[derive(Debug, sqlx::FromRow)]
+#[derive(Clone, Debug, sqlx::FromRow)]
 struct AdminRaceHistoryRow {
     team_id: i64,
     trainer_id: i32,
@@ -1246,6 +1442,353 @@ pub async fn get_admin_race_results(
     }
 
     Ok(Json(results))
+}
+
+#[derive(Clone, Debug, Serialize)]
+pub struct RaceResultTeam {
+    pub team_id: i64,
+    pub user_id: Option<String>,
+    pub guest_id: Option<String>,
+    pub user_name: Option<String>,
+    pub placement: Option<i32>,
+    pub wipe_trainer: Option<String>,
+    pub result: String,
+    pub detail: Option<String>,
+}
+
+#[derive(Clone, Debug, Serialize)]
+pub struct DraftRaceResults {
+    pub draft_id: String,
+    pub draft_name: String,
+    pub ranked: bool,
+    pub can_edit: bool,
+    pub teams: Vec<RaceResultTeam>,
+}
+
+#[derive(Debug, sqlx::FromRow)]
+struct RaceResultTeamRow {
+    team_id: i64,
+    user_id: Option<String>,
+    guest_id: Option<String>,
+    user_name: Option<String>,
+    race_placement: Option<i32>,
+    race_wipe_trainer: Option<String>,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct RaceResultsUpdate {
+    pub teams: Vec<RaceResultUpdateTeam>,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct RaceResultUpdateTeam {
+    pub team_id: i64,
+    pub placement: Option<i32>,
+    pub wipe_trainer: Option<String>,
+}
+
+fn format_battle_time_colon(hours: i32, minutes: i32, seconds: i32) -> String {
+    format!("{}:{:02}:{:02}", hours, minutes, seconds)
+}
+
+/// Computes the human-readable result summary for a team in a race.
+/// Wins on Steven (804) or Wally (656) become "Beat Steven!" / "Beat Wally!",
+/// otherwise the most recent wipe (auto-recorded or manually entered) is used.
+fn race_result_summary(
+    battles: &[AdminRaceHistoryRow],
+    wipe_trainer: &Option<String>,
+) -> (String, Option<String>) {
+    if let Some(win) = battles
+        .iter()
+        .find(|b| (b.trainer_id == 804 || b.trainer_id == 656) && !b.is_loss)
+    {
+        return (
+            format!("Beat {}!", boss_trainer_name(win.trainer_id, win.version)),
+            Some(format_battle_time_colon(win.hours, win.minutes, win.seconds)),
+        );
+    }
+
+    if let Some(trainer) = wipe_trainer {
+        let trainer = trainer.trim();
+        if !trainer.is_empty() {
+            return (format!("Wiped to {}", trainer), None);
+        }
+    }
+
+    if let Some(loss) = battles.iter().filter(|b| b.is_loss).last() {
+        return (
+            format!("Wiped to {}", boss_trainer_name(loss.trainer_id, loss.version)),
+            None,
+        );
+    }
+
+    (String::new(), None)
+}
+
+fn user_is_draft_host(user: &User, host_user_id: &Option<String>, host_guest_id: &Option<String>) -> bool {
+    let (user_id, guest_id) = user.get_user_and_guest_id();
+    match host_user_id {
+        Some(host) if Some(host) == user_id.as_ref() => true,
+        _ => match host_guest_id {
+            Some(host) if Some(host) == guest_id.as_ref() => true,
+            _ => false,
+        },
+    }
+}
+
+#[debug_handler]
+pub async fn get_draft_race_results(
+    State(state): State<ServerState>,
+    Path(draft_id): Path<String>,
+    auth_session: AuthSession<AuthBackend>,
+) -> Result<Json<DraftRaceResults>, AppError> {
+    let draft_uuid = Uuid::from_str(&draft_id).map_err(|_| {
+        (
+            StatusCode::BAD_REQUEST,
+            "requested draft does not exist".to_string(),
+        )
+    })?;
+
+    let draft_row = sqlx::query(
+        "SELECT d.draft_name, d.ranked, d.host_user_id, d.host_guest_id
+         FROM drafts d
+         WHERE d.draft_id = $1",
+    )
+    .bind(draft_uuid)
+    .fetch_optional(&state.db_pool)
+    .await
+    .map_err(|e: sqlx::Error| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?
+    .ok_or((StatusCode::NOT_FOUND, "draft does not exist".to_string()))?;
+
+    let draft_name: String = draft_row
+        .try_get("draft_name")
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let ranked: bool = draft_row
+        .try_get("ranked")
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let host_user_id: Option<String> = draft_row
+        .try_get("host_user_id")
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let host_guest_id: Option<String> = draft_row
+        .try_get("host_guest_id")
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    let teams = sqlx::query_as::<_, RaceResultTeamRow>(
+        "SELECT t.team_id, t.user_id, t.guest_id, t.race_placement, t.race_wipe_trainer,
+                COALESCE(u.user_name, g.user_name) AS user_name
+         FROM teams t
+         LEFT JOIN users u ON u.user_id = t.user_id
+         LEFT JOIN guests g ON g.user_id = t.guest_id
+         WHERE t.draft_id = $1
+         ORDER BY t.race_placement ASC NULLS LAST, COALESCE(u.user_name, g.user_name) ASC",
+    )
+    .bind(draft_uuid)
+    .fetch_all(&state.db_pool)
+    .await
+    .map_err(|e: sqlx::Error| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    let history_rows = sqlx::query_as::<_, AdminRaceHistoryRow>(
+        "SELECT team_id, trainer_id, version, hours, minutes, seconds, is_loss
+         FROM boss_battle_history
+         WHERE draft_id = $1
+         ORDER BY hours ASC, minutes ASC, seconds ASC",
+    )
+    .bind(draft_uuid)
+    .fetch_all(&state.db_pool)
+    .await
+    .map_err(|e: sqlx::Error| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    let mut history_by_team: HashMap<i64, Vec<AdminRaceHistoryRow>> = HashMap::new();
+    for row in history_rows {
+        history_by_team.entry(row.team_id).or_default().push(row);
+    }
+
+    let user = auth_session
+        .user
+        .ok_or((StatusCode::UNAUTHORIZED, "user not authenticated".to_string()))?;
+    let can_edit = user.has_role_name("Website Dev")
+        || user.is_race_results_editor()
+        || user_is_draft_host(&user, &host_user_id, &host_guest_id);
+
+    let result_teams = teams
+        .into_iter()
+        .map(|team| {
+            let battles = history_by_team.get(&team.team_id).cloned().unwrap_or_default();
+            let (result, detail) = race_result_summary(&battles, &team.race_wipe_trainer);
+            RaceResultTeam {
+                team_id: team.team_id,
+                user_id: team.user_id,
+                guest_id: team.guest_id,
+                user_name: team.user_name,
+                placement: team.race_placement,
+                wipe_trainer: team.race_wipe_trainer,
+                result,
+                detail,
+            }
+        })
+        .collect();
+
+    Ok(Json(DraftRaceResults {
+        draft_id: draft_uuid.to_string(),
+        draft_name,
+        ranked,
+        can_edit,
+        teams: result_teams,
+    }))
+}
+
+#[debug_handler]
+pub async fn update_draft_race_results(
+    State(state): State<ServerState>,
+    Path(draft_id): Path<String>,
+    auth_session: AuthSession<AuthBackend>,
+    Json(payload): Json<RaceResultsUpdate>,
+) -> Result<(), AppError> {
+    let Some(user) = auth_session.user else {
+        return Err((StatusCode::UNAUTHORIZED, "user not authenticated".to_string()));
+    };
+
+    let draft_uuid = Uuid::from_str(&draft_id).map_err(|_| {
+        (
+            StatusCode::BAD_REQUEST,
+            "requested draft does not exist".to_string(),
+        )
+    })?;
+
+    let draft_row = sqlx::query(
+        "SELECT host_user_id, host_guest_id
+         FROM drafts
+         WHERE draft_id = $1",
+    )
+    .bind(draft_uuid)
+    .fetch_optional(&state.db_pool)
+    .await
+    .map_err(|e: sqlx::Error| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?
+    .ok_or((StatusCode::NOT_FOUND, "draft does not exist".to_string()))?;
+
+    let host_user_id: Option<String> = draft_row
+        .try_get("host_user_id")
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let host_guest_id: Option<String> = draft_row
+        .try_get("host_guest_id")
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    if !user.has_role_name("Website Dev")
+        && !user.is_race_results_editor()
+        && !user_is_draft_host(&user, &host_user_id, &host_guest_id)
+    {
+        return Err((
+            StatusCode::FORBIDDEN,
+            "only the host of the race or an admin can edit race results".to_string(),
+        ));
+    }
+
+    let team_rows = sqlx::query("SELECT team_id FROM teams WHERE draft_id = $1")
+        .bind(draft_uuid)
+        .fetch_all(&state.db_pool)
+        .await
+        .map_err(|e: sqlx::Error| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    let mut valid_team_ids: HashSet<i64> = HashSet::new();
+    for row in &team_rows {
+        valid_team_ids.insert(
+            row.try_get("team_id")
+                .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?,
+        );
+    }
+    let team_count = valid_team_ids.len();
+    if team_count == 0 {
+        return Err((StatusCode::BAD_REQUEST, "draft has no teams".to_string()));
+    }
+
+    let submitted = payload.teams;
+    if submitted.len() != team_count {
+        return Err((
+            StatusCode::BAD_REQUEST,
+            "placements must be provided for every team".to_string(),
+        ));
+    }
+
+    let mut seen_team_ids: HashSet<i64> = HashSet::with_capacity(team_count);
+    let mut seen_places: HashSet<i32> = HashSet::with_capacity(team_count);
+    for team in &submitted {
+        if !valid_team_ids.contains(&team.team_id) {
+            return Err((
+                StatusCode::BAD_REQUEST,
+                format!("submitted results for team not in this draft: {}", team.team_id),
+            ));
+        }
+        if !seen_team_ids.insert(team.team_id) {
+            return Err((
+                StatusCode::BAD_REQUEST,
+                format!("duplicate team in results: {}", team.team_id),
+            ));
+        }
+        if let Some(place) = team.placement {
+            if place < 1 || place > team_count as i32 {
+                return Err((
+                    StatusCode::BAD_REQUEST,
+                    "placements must be between 1 and number of teams".to_string(),
+                ));
+            }
+            if !seen_places.insert(place) {
+                return Err((
+                    StatusCode::BAD_REQUEST,
+                    "placements must be unique".to_string(),
+                ));
+            }
+        }
+        if let Some(wipe) = &team.wipe_trainer {
+            if wipe.trim().len() > 100 {
+                return Err((
+                    StatusCode::BAD_REQUEST,
+                    "wipe trainer name is too long".to_string(),
+                ));
+            }
+        }
+    }
+
+    if seen_team_ids.len() != team_count {
+        return Err((
+            StatusCode::BAD_REQUEST,
+            "results must be provided for every team".to_string(),
+        ));
+    }
+
+    let mut tx = state
+        .db_pool
+        .begin()
+        .await
+        .map_err(|e: sqlx::Error| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    for team in &submitted {
+        let wipe = team
+            .wipe_trainer
+            .as_ref()
+            .map(|w| w.trim().to_string())
+            .filter(|w| !w.is_empty());
+
+        sqlx::query(
+            "UPDATE teams
+             SET race_placement = $1,
+                 race_wipe_trainer = $2
+             WHERE team_id = $3
+               AND draft_id = $4",
+        )
+        .bind(team.placement)
+        .bind(wipe)
+        .bind(team.team_id)
+        .bind(draft_uuid)
+        .execute(&mut *tx)
+        .await
+        .map_err(|e: sqlx::Error| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    }
+
+    tx.commit()
+        .await
+        .map_err(|e: sqlx::Error| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    Ok(())
 }
 
 #[debug_handler]
@@ -1419,21 +1962,23 @@ pub async fn post_player_save(
     .await
     .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, format!("db error: {}", e)))?;
 
-    // Record the Hall of Fame team on the first save that carries a recorded
-    // win (LilycoveCity_LilycoveMuseum_1F marks the player as having beaten
-    // the game, but the save with the new win can arrive before the warp to
-    // the museum or after the player has left it). Only the first team is kept
-    // per team, so a later save can never clear or replace it. A party is at
-    // most 6 Pokemon, so cap it there.
+    // Record the Hall of Fame team on the first save taken in the Lilycove
+    // Museum after beating the game. Standing in the museum means the player
+    // just cleared the Hall of Fame, and the trainer card on that save carries
+    // the "Beat Steven" (804) or "Beat Wally" (656) win, so the party saved
+    // there is the Hall of Fame party. Only the first team is kept per team,
+    // so a later save can never clear or replace it. A party is at most 6
+    // Pokemon, so cap it there.
     if let Some(hall_of_fame_team) = hall_of_fame_team {
         let hall_of_fame_team: Vec<HallOfFamePokemon> =
             hall_of_fame_team.into_iter().take(6).collect();
-        let has_win = save_data
+        let beat_champion = save_data
             .trainer_card_wins
             .iter()
-            .any(|win| !win.is_loss);
+            .any(|win| !win.is_loss && (win.trainer_id == 804 || win.trainer_id == 656));
         if !hall_of_fame_team.is_empty()
-            && (save_data.map_name == "LilycoveCity_LilycoveMuseum_1F" || has_win)
+            && save_data.map_name == "LilycoveCity_LilycoveMuseum_1F"
+            && beat_champion
         {
             let hall_of_fame_value = serde_json::to_value(&hall_of_fame_team).map_err(|e| {
                 (

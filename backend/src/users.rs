@@ -76,6 +76,16 @@ impl User {
         }
     }
 
+    /// Users who may edit race results in the stats page even when they are
+    /// not the host of the race. This does NOT grant access to the admin panel.
+    /// Matched against the immutable Discord user id (snowflake).
+    pub fn is_race_results_editor(&self) -> bool {
+        matches!(
+            self.get_user_id_string().as_str(),
+            "310963227234402304" | "262338924892913665"
+        )
+    }
+
     pub fn get_user_and_guest_id(&self) -> (Option<String>, Option<String>) {
         match self {
             Self::DiscordUser(user) => (Some(user.user_id.clone()), None),

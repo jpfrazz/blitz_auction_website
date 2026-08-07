@@ -6,6 +6,7 @@ import PokemonStatsTab from './components/PokemonStatsTab';
 import PokemonPriceHistoryChart from './PokemonPriceHistoryChart';
 import PlayerSearchStatsTab from './components/PlayerSearchStatsTab';
 import TierListTab from './components/TierListTab';
+import RaceResultsTab from './components/RaceResultsTab';
 import './Stats.scss';
 
 type StatsTab = 'pokemon' | 'drafts' | 'player-search' | 'tier-list';
@@ -102,7 +103,7 @@ const Stats: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<StatsTab>('pokemon');
   const [expandedDraftId, setExpandedDraftId] = useState<string | null>(null);
-  const [draftSortMode, setDraftSortMode] = useState<'order' | 'price' | 'user'>('order');
+  const [draftSortMode, setDraftSortMode] = useState<'order' | 'price' | 'user' | 'race'>('order');
   const [selectedPokemonForChart, setSelectedPokemonForChart] = useState<{ key: string; name: string } | null>(null);
   const [competitiveOnly, setCompetitiveOnly] = useState(true);
   const [gridColumns, setGridColumns] = useState<number>(0);
@@ -708,8 +709,20 @@ const Stats: React.FC = () => {
                                 >
                                   Sort by User
                                 </button>
+                                <button
+                                  className={`tab-chip ${draftSortMode === 'race' ? 'active' : ''}`}
+                                  type="button"
+                                  style={{ padding: '2px 8px', fontSize: '0.85rem', minWidth: 'auto', margin: 0 }}
+                                  onClick={() => setDraftSortMode('race')}
+                                >
+                                  Race Results
+                                </button>
                               </div>
                               {(() => {
+                                if (draftSortMode === 'race') {
+                                  return <RaceResultsTab draftId={draft.draftId} />;
+                                }
+
                                 const renderCard = (auction: any) => {
                                   const winnerKey = auction.winning_user_id || auction.winning_guest_id || '';
                                   const winnerName = playersById.get(winnerKey)?.user_name || winnerKey || '-';

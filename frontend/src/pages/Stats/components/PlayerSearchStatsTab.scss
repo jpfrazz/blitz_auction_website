@@ -521,6 +521,10 @@
     .match-draft-details-cost {
         text-align: right;
         font-weight: 700;
+
+        &.forfeit {
+            color: #f85149;
+        }
     }
 
     .match-draft-details-empty {

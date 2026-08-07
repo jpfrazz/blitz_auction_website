@@ -1,6 +1,8 @@
 import axios, {AxiosError} from 'axios';
 import {
+  DraftRaceResults,
   MatchHistoryTeam,
+  RaceResultTeamUpdate,
   StatsPageResponse,
 } from "../../types";
 
@@ -12,6 +14,18 @@ export async function fetchMatchHistoryByUserId(userId: string): Promise<MatchHi
 export async function fetchStatsPageData(): Promise<StatsPageResponse> {
   const response = await axios.get('/api/stats');
   return response.data;
+}
+
+export async function fetchDraftRaceResults(draftId: string): Promise<DraftRaceResults> {
+  const response = await axios.get(`/api/drafts/${draftId}/race-results`);
+  return response.data;
+}
+
+export async function updateDraftRaceResults(
+  draftId: string,
+  teams: RaceResultTeamUpdate[],
+): Promise<void> {
+  await axios.post(`/api/drafts/${draftId}/race-results`, { teams });
 }
 
 export interface BossBattleHistoryEntry {

@@ -5,21 +5,24 @@ import {
   fetchAdminCompletedDrafts,
   fetchAdminDiscordUsers,
   fetchAdminDraftTeamPlacements,
-  fetchAdminHallOfFameTeams,
+  fetchAdminHallOfFameEligible,
   fetchAdminRaceResults,
   removeAdminDraftTeam,
   updateAdminDiscordUser,
   updateAdminDraftPlacements,
+  updateAdminHallOfFameTeam,
 } from '../../shared/api/users';
 import {
   AdminDiscordUser,
   AdminDraftSummary,
   AdminDraftTeamPlacement,
-  AdminHallOfFameTeamEntry,
+  AdminHallOfFameEligibleEntry,
   AdminRaceResult,
+  HallOfFamePokemon,
 } from '../../types';
 import './Admin.scss';
 import { fetchCurrentUser } from '../../shared/api/draftData';
+import HallOfFameTeamEditorModal from './HallOfFameTeamEditorModal';
 
 type AdminTab = 'draft-results' | 'discord-users' | 'upload-pokemon-data' | 'boss-battle-history' | 'hall-of-fame' | 'race-results';
 
@@ -48,9 +51,12 @@ const Admin: React.FC = () => {
   const [bossBattleHistory, setBossBattleHistory] = useState<any[]>([]);
   const [bossBattleHistoryLoading, setBossBattleHistoryLoading] = useState(false);
   const [bossBattleHistoryError, setBossBattleHistoryError] = useState<string | null>(null);
-  const [hallOfFameTeams, setHallOfFameTeams] = useState<AdminHallOfFameTeamEntry[]>([]);
+  const [hallOfFameEntries, setHallOfFameEntries] = useState<AdminHallOfFameEligibleEntry[]>([]);
   const [hallOfFameTeamsLoading, setHallOfFameTeamsLoading] = useState(false);
   const [hallOfFameTeamsError, setHallOfFameTeamsError] = useState<string | null>(null);
+  const [hallOfFameTeamsSuccess, setHallOfFameTeamsSuccess] = useState<string | null>(null);
+  const [hallOfFameSaving, setHallOfFameSaving] = useState(false);
+  const [editingHallOfFameEntry, setEditingHallOfFameEntry] = useState<AdminHallOfFameEligibleEntry | null>(null);
   const [raceResults, setRaceResults] = useState<AdminRaceResult[]>([]);
   const [raceResultsLoading, setRaceResultsLoading] = useState(false);
   const [raceResultsError, setRaceResultsError] = useState<string | null>(null);
@@ -128,8 +134,8 @@ const Admin: React.FC = () => {
 
     setHallOfFameTeamsLoading(true);
     setHallOfFameTeamsError(null);
-    fetchAdminHallOfFameTeams()
-      .then((rows) => setHallOfFameTeams(rows))
+    fetchAdminHallOfFameEligible()
+      .then((rows) => setHallOfFameEntries(rows))
       .catch((err: any) =>
         setHallOfFameTeamsError(err?.message ?? 'Failed to load hall of fame teams.')
       )
@@ -257,6 +263,34 @@ const Admin: React.FC = () => {
       setUsersSuccess(`Saved ${user.user_name}.`);
     } catch (err: any) {
       setUsersError(err?.message ?? 'Failed to update user.');
+    }
+  };
+
+  const reloadHallOfFame = () => {
+    fetchAdminHallOfFameEligible()
+      .then(setHallOfFameEntries)
+      .catch((err: any) =>
+        setHallOfFameTeamsError(err?.message ?? 'Failed to reload hall of fame teams.')
+      );
+  };
+
+  const handleSaveHallOfFameTeam = async (team: HallOfFamePokemon[]) => {
+    if (!editingHallOfFameEntry) return;
+
+    setHallOfFameSaving(true);
+    setHallOfFameTeamsError(null);
+    setHallOfFameTeamsSuccess(null);
+    try {
+      await updateAdminHallOfFameTeam(editingHallOfFameEntry.team_id, team);
+      setHallOfFameTeamsSuccess('Hall of Fame team saved.');
+      setEditingHallOfFameEntry(null);
+      reloadHallOfFame();
+    } catch (err: any) {
+      setHallOfFameTeamsError(
+        err?.response?.data ?? err?.message ?? 'Failed to save Hall of Fame team.'
+      );
+    } finally {
+      setHallOfFameSaving(false);
     }
   };
 
@@ -602,41 +636,61 @@ const Admin: React.FC = () => {
                 <div className="admin-tab-content">
                   <h2>Hall of Fame Teams</h2>
                   {hallOfFameTeamsError && <div className="admin-message admin-error">{hallOfFameTeamsError}</div>}
+                  {hallOfFameTeamsSuccess && <div className="admin-message admin-success">{hallOfFameTeamsSuccess}</div>}
                   {hallOfFameTeamsLoading ? (
                     <div className="admin-message">Loading hall of fame teams...</div>
-                  ) : hallOfFameTeams.length === 0 ? (
-                    <div className="admin-message">No Hall of Fame teams recorded yet.</div>
+                  ) : hallOfFameEntries.length === 0 ? (
+                    <div className="admin-message">No Hall of Fame qualifiers (runs that beat Steven or Wally) recorded yet.</div>
                   ) : (
-                    <div className="admin-table-wrap">
-                      <table>
-                        <thead>
-                          <tr>
-                            <th>Team ID</th>
-                            <th>Player</th>
-                            <th>Run</th>
-                            <th>Hall of Fame Team</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {hallOfFameTeams.map((entry) => (
-                            <tr key={`${entry.team_id}-${entry.draft_id}`}>
-                              <td>{entry.team_id}</td>
-                              <td>{entry.user_name ?? '-'}</td>
-                              <td>{entry.draft_name} ({entry.draft_id.slice(0, 8)})</td>
-                              <td>
-                                <div className="admin-hof-team-list">
-                                  {entry.hall_of_fame_team.map((pokemon) => (
-                                    <span key={`${entry.team_id}-${pokemon.name}`} className="admin-hof-pill">
-                                      {pokemon.name}
-                                    </span>
-                                  ))}
-                                </div>
-                              </td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
+                    <div className="admin-hof-entries">
+                      {hallOfFameEntries.map((entry) => (
+                        <div className="admin-hof-entry" key={entry.team_id}>
+                          <div className="admin-hof-entry-head">
+                            <div className="admin-hof-entry-player">{entry.user_name ?? '-'}</div>
+                            <div className="admin-hof-entry-race">{entry.draft_name}</div>
+                            <div className="admin-hof-entry-beat">
+                              Beat {entry.beat_name}
+                              <span className="admin-hof-entry-time"> at {entry.hours}h {entry.minutes}m {entry.seconds}s</span>
+                            </div>
+                          </div>
+                          <div className="admin-hof-entry-body">
+                            {entry.hall_of_fame_team.length > 0 ? (
+                              <div className="admin-hof-team-icons">
+                                {entry.hall_of_fame_team.map((mon, idx) => (
+                                  <div className="admin-hof-team-icon" key={idx} title={mon.name}>
+                                    <img
+                                      src={`/MiniIcons/${mon.icon}.png`}
+                                      alt={mon.name}
+                                      onError={(e) => {
+                                        (e.currentTarget as HTMLImageElement).src = '/MiniIcons/question.png';
+                                      }}
+                                    />
+                                    <span>{mon.name}</span>
+                                  </div>
+                                ))}
+                              </div>
+                            ) : (
+                              <span className="admin-hof-empty">No team entered yet.</span>
+                            )}
+                            <button
+                              type="button"
+                              className="button"
+                              onClick={() => setEditingHallOfFameEntry(entry)}
+                            >
+                              {entry.hall_of_fame_team.length > 0 ? 'Edit Team' : 'Enter Team'}
+                            </button>
+                          </div>
+                        </div>
+                      ))}
                     </div>
+                  )}
+                  {editingHallOfFameEntry && (
+                    <HallOfFameTeamEditorModal
+                      entry={editingHallOfFameEntry}
+                      saving={hallOfFameSaving}
+                      onSave={handleSaveHallOfFameTeam}
+                      onClose={() => setEditingHallOfFameEntry(null)}
+                    />
                   )}
                 </div>
               )}

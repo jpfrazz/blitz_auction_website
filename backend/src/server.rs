@@ -178,6 +178,11 @@ impl Server {
                 post(handlers::submit_race_results),
             )
             .route(
+                "/drafts/{draft_id}/race-results",
+                get(handlers::get_draft_race_results)
+                    .post(handlers::update_draft_race_results),
+            )
+            .route(
                 "/admin/drafts/completed",
                 get(handlers::get_admin_completed_drafts),
             )
@@ -206,6 +211,14 @@ impl Server {
             .route(
                 "/admin/hall-of-fame-teams",
                 get(handlers::get_admin_hall_of_fame_teams),
+            )
+            .route(
+                "/admin/hall-of-fame-teams/eligible",
+                get(handlers::get_admin_hall_of_fame_eligible),
+            )
+            .route(
+                "/admin/hall-of-fame-teams/{team_id}",
+                post(handlers::update_admin_hall_of_fame_team),
             )
             .route(
                 "/admin/race-results",

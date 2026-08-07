@@ -193,11 +193,49 @@ export interface AdminHallOfFameTeamEntry {
   hall_of_fame_team: HallOfFamePokemon[];
 }
 
+export interface AdminHallOfFameEligibleEntry {
+  team_id: number;
+  draft_id: string;
+  draft_name: string;
+  user_name: string | null;
+  trainer_id: number;
+  beat_name: string;
+  hours: number;
+  minutes: number;
+  seconds: number;
+  hall_of_fame_team: HallOfFamePokemon[];
+}
+
 export interface AdminRaceResultTeam {
   team_id: number;
   user_name: string | null;
   result: string;
   detail: string | null;
+}
+
+export interface RaceResultTeam {
+  team_id: number;
+  user_id: string | null;
+  guest_id: string | null;
+  user_name: string | null;
+  placement: number | null;
+  wipe_trainer: string | null;
+  result: string;
+  detail: string | null;
+}
+
+export interface DraftRaceResults {
+  draft_id: string;
+  draft_name: string;
+  ranked: boolean;
+  can_edit: boolean;
+  teams: RaceResultTeam[];
+}
+
+export interface RaceResultTeamUpdate {
+  team_id: number;
+  placement: number | null;
+  wipe_trainer: string | null;
 }
 
 export interface AdminRaceResult {

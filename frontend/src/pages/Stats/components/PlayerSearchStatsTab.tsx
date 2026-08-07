@@ -980,8 +980,12 @@ const PlayerSearchStatsTab: React.FC<PlayerSearchStatsTabProps> = ({
                                         {getTrainerNameById(battle.trainer_id, battle.version)}
                                       </span>
                                     </div>
-                                    <span className="match-draft-details-cost">
-                                      {battle.hours > 0 ? `${battle.hours}h ` : ''}{battle.minutes}m {battle.seconds}s
+                                    <span
+                                      className={`match-draft-details-cost ${battle.hours === 5 && battle.minutes === 0 && battle.seconds === 0 ? 'forfeit' : ''}`}
+                                    >
+                                      {battle.hours === 5 && battle.minutes === 0 && battle.seconds === 0
+                                        ? 'Forfeit'
+                                        : `${battle.hours > 0 ? `${battle.hours}h ` : ''}${battle.minutes}m ${battle.seconds}s`}
                                     </span>
                                   </div>
                                 ))}

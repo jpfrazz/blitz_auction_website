@@ -122,6 +122,149 @@
   white-space: nowrap;
 }
 
+.admin-hof-entries {
+  display: flex;
+  flex-direction: column;
+  gap: 0.8rem;
+}
+
+.admin-hof-entry {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  background: #162636;
+  border: 1px solid #2b3e52;
+  border-radius: 10px;
+  padding: 0.8rem 1rem;
+}
+
+.admin-hof-entry-head {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 0.5rem 1rem;
+}
+
+.admin-hof-entry-player {
+  font-weight: 700;
+  font-size: 1.05rem;
+}
+
+.admin-hof-entry-race {
+  color: #a9c3dc;
+}
+
+.admin-hof-entry-beat {
+  font-weight: 600;
+  color: #90ee90;
+}
+
+.admin-hof-entry-time {
+  color: #c8d6e4;
+  font-weight: 400;
+  font-size: 0.9rem;
+}
+
+.admin-hof-entry-body {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.admin-hof-team-icons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+}
+
+.admin-hof-team-icon {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.15rem;
+  background: #1d374b;
+  border: 1px solid #3b5c78;
+  border-radius: 8px;
+  padding: 0.3rem 0.5rem;
+}
+
+.admin-hof-team-icon img {
+  width: 40px;
+  height: 40px;
+  object-fit: contain;
+  image-rendering: pixelated;
+}
+
+.admin-hof-team-icon span {
+  font-size: 0.8rem;
+  max-width: 90px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.admin-hof-empty {
+  color: #7d93ab;
+  font-style: italic;
+}
+
+.hof-team-editor-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.7rem;
+  margin-bottom: 1.4rem;
+}
+
+.hof-team-editor-slot {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  background: #162636;
+  border: 1px solid #2b3e52;
+  border-radius: 8px;
+  padding: 0.4rem 0.6rem;
+}
+
+.hof-team-editor-icon {
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  background: #0d1620;
+  border-radius: 6px;
+}
+
+.hof-team-editor-icon img {
+  width: 36px;
+  height: 36px;
+  object-fit: contain;
+  image-rendering: pixelated;
+}
+
+.hof-team-editor-slot-num {
+  color: #7d93ab;
+  font-size: 0.85rem;
+}
+
+.hof-team-editor-slot input {
+  flex: 1;
+  min-width: 0;
+  background: #0d1620;
+  color: #eef4fb;
+  border: 1px solid #32485f;
+  border-radius: 6px;
+  padding: 0.35rem 0.5rem;
+}
+
+@media (max-width: 640px) {
+  .hof-team-editor-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
 .admin-error {
   color: #ff8f8f;
 }
