@@ -1129,6 +1129,10 @@ fn format_battle_time(hours: i32, minutes: i32, seconds: i32) -> String {
 
 fn boss_trainer_name(trainer_id: i32, version: Option<i32>) -> String {
     let base = get_trainer_name_by_id(trainer_id as u16);
+    // If the name already encodes the version (e.g. "Brawly 3"), don't append it again.
+    if base.chars().last().is_some_and(|c| c.is_ascii_digit()) {
+        return base;
+    }
     match version {
         Some(v) if v > 0 => format!("{} {}", base, v),
         _ => base,
