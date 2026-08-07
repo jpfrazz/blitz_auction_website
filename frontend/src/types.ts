@@ -76,6 +76,7 @@ export interface Team {
   budget_remaining: number;
   pokemon?: Pokemon[];
   auctions_won?: Pokemon[];
+  save_data?: any;
 }
 
 export interface Draft {

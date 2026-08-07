@@ -426,7 +426,30 @@ pub async fn get_draft(
         ));
     };
 
-    let res = draft.get().await?;
+    let mut res = draft.get().await?;
+
+    // Attach the last persisted save for every team so a freshly loaded page
+    // (spectator or emulator after refresh) sees each player's latest save even
+    // when that player has stopped broadcasting live SaveUpdate messages.
+    let save_rows = sqlx::query(
+        "SELECT COALESCE(user_id, guest_id) AS user_key, save_data
+         FROM teams
+         WHERE draft_id = $1",
+    )
+    .bind(draft_uuid)
+    .fetch_all(&state.db_pool)
+    .await
+    .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, format!("db error: {}", e)))?;
+
+    let mut saves: HashMap<String, Option<serde_json::Value>> = HashMap::new();
+    for row in save_rows {
+        let user_key: Option<String> = row.get("user_key");
+        let save_data: Option<serde_json::Value> = row.get("save_data");
+        if let Some(key) = user_key {
+            saves.insert(key, save_data);
+        }
+    }
+    res.attach_saves(saves);
 
     Ok(Json(res))
 }
@@ -1421,6 +1444,7 @@ pub async fn post_player_forfeit(
             trainer_card_wins: Vec::new(),
             most_recent_loss: None,
             most_recent_loss_name: None,
+            fainted_pids: Vec::new(),
         },
     };
 

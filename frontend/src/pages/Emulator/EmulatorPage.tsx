@@ -565,7 +565,9 @@ const EmulatorPage: React.FC = () => {
           for (const team of draft.teams) {
             next[team.user_id] = {
               displayName: team.global_name?.trim() || team.username,
-              save: prev[team.user_id]?.save ?? null,
+              // Prefer the latest save the backend persisted so a player who has
+              // stopped broadcasting live saves still shows up after a reload.
+              save: team.save_data ?? prev[team.user_id]?.save ?? null,
             };
           }
           return next;
@@ -784,9 +786,18 @@ const EmulatorPage: React.FC = () => {
     let changed = false;
 
     const processSave = (uid: string, data: SaveData | null) => {
-      if (!data?.party) return;
+      if (!data) return;
       if (!newFainted[uid]) newFainted[uid] = new Set();
-      data.party.forEach(mon => {
+      // Restore fainted personalities persisted by the backend (survives reload)
+      if (Array.isArray(data.fainted_pids)) {
+        data.fainted_pids.forEach(pid => {
+          if (!newFainted[uid].has(pid)) {
+            newFainted[uid].add(pid);
+            changed = true;
+          }
+        });
+      }
+      data.party?.forEach(mon => {
         if (mon.hp === 0 && !newFainted[uid].has(mon.personality)) {
           newFainted[uid].add(mon.personality);
           changed = true;
@@ -871,10 +882,17 @@ const EmulatorPage: React.FC = () => {
 
     if (draftId) {
       console.log('[EmulatorPage] Sending save data with trainer_card_wins:', parsed.trainer_card_wins);
+      const body: Record<string, unknown> = {
+        ...parsed,
+        // Persist which Pokemon have been seen fainted so a reload doesn't
+        // forget boxed fainted Pokemon and reset their grayed-out look.
+        fainted_pids: currentUserId ? Array.from(faintedPids[currentUserId] ?? []) : [],
+      };
+      if (hallOfFameTeam) body.hall_of_fame_team = hallOfFameTeam;
       fetch(`/api/drafts/${draftId}/save`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(hallOfFameTeam ? { ...parsed, hall_of_fame_team: hallOfFameTeam } : parsed),
+        body: JSON.stringify(body),
         credentials: 'include',
       }).catch(() => { });
     }
@@ -1543,8 +1561,8 @@ const EmulatorPage: React.FC = () => {
       const badgesB = b.save?.badge_count ?? 0;
       return badgesB - badgesA;
     });
-  // Display list capped at 9
-  const sidebarEntries = allPlayerEntries.slice(0, 9);
+  // Show every player in the sidebar (the sidebar scrolls if they don't fit)
+  const sidebarEntries = allPlayerEntries;
   const hasSidebar = draftId !== undefined;
 
   // Once any player has earned at least 1 badge, the race has effectively
@@ -1552,6 +1570,14 @@ const EmulatorPage: React.FC = () => {
   const anyPlayerHasBadge =
     (mySaveData?.badge_count ?? 0) >= 1 ||
     allPlayerEntries.some(([, { save }]) => (save?.badge_count ?? 0) >= 1);
+
+  // Once the race has started (any player has a badge), clear every "ready"
+  // state so nobody stays highlighted green in the sidebar for the whole run.
+  useEffect(() => {
+    if (anyPlayerHasBadge && readyPlayers.size > 0) {
+      setReadyPlayers(new Set());
+    }
+  }, [anyPlayerHasBadge, readyPlayers]);
 
   // Start countdown when all players are ready
   useEffect(() => {

@@ -80,7 +80,9 @@ const SpectatePage: React.FC = () => {
           for (const team of draft.teams) {
             next[team.user_id] = {
               displayName: team.global_name?.trim() || team.username,
-              save: prev[team.user_id]?.save ?? null,
+              // Prefer the latest save the backend persisted for this team so a
+              // finished player's data still shows after a page reload.
+              save: team.save_data ?? prev[team.user_id]?.save ?? null,
             };
           }
           return next;
@@ -216,9 +218,18 @@ const SpectatePage: React.FC = () => {
     let changed = false;
 
     const processSave = (uid: string, data: SaveData | null) => {
-      if (!data?.party) return;
+      if (!data) return;
       if (!newFainted[uid]) newFainted[uid] = new Set();
-      data.party.forEach(mon => {
+      // Restore fainted personalities persisted by the backend (survives reload)
+      if (Array.isArray(data.fainted_pids)) {
+        data.fainted_pids.forEach(pid => {
+          if (!newFainted[uid].has(pid)) {
+            newFainted[uid].add(pid);
+            changed = true;
+          }
+        });
+      }
+      data.party?.forEach(mon => {
         if (mon.hp === 0 && !newFainted[uid].has(mon.personality)) {
           newFainted[uid].add(mon.personality);
           changed = true;

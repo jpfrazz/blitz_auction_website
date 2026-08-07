@@ -51,6 +51,10 @@ pub struct SaveData {
     pub most_recent_loss: Option<TrainerCardWin>,
     #[serde(default)]
     pub most_recent_loss_name: Option<String>,
+    /// Personalities of Pokemon that have been seen fainted. Persisted with each
+    /// save so boxed fainted Pokemon keep their grayed-out look after a reload.
+    #[serde(default)]
+    pub fainted_pids: Vec<u32>,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]

@@ -198,6 +198,8 @@ export interface SaveData {
   most_recent_loss: TrainerCardWin | null;
   most_recent_loss_name: string | null;
   player_faint_counter: number | null;
+  /** Personalities previously seen fainted, persisted by the backend. */
+  fainted_pids?: number[];
 }
 
 function decodeString(bytes: Uint8Array): string {

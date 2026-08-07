@@ -105,8 +105,23 @@ struct Team {
     pub ready: bool,
     budget_remaining: u32,
     pub auctions_won: Vec<Arc<Pokemon>>,
+    /// Last save persisted for this team (from the teams table). Filled in for
+    /// `GET /drafts/{id}` so a freshly loaded page sees every player's latest
+    /// save even after that player stops broadcasting live `SaveUpdate`s.
+    pub save_data: Option<serde_json::Value>,
     #[serde(skip)]
     auto_bid: Option<u32>,
+}
+
+impl DraftResponse {
+    /// Replaces each team's `save_data` with the value persisted in the DB, if
+    /// any. The in-memory actor never holds saves, so this is only used when
+    /// serving a fresh HTTP response rather than a live broadcast.
+    pub fn attach_saves(&mut self, saves: HashMap<String, Option<serde_json::Value>>) {
+        for team in &mut self.teams {
+            team.save_data = saves.get(&team.user_id).cloned().flatten();
+        }
+    }
 }
 
 #[derive(Clone, Debug, Serialize)]
@@ -704,6 +719,7 @@ impl DraftActor {
                     ready: true,
                     budget_remaining: settings.starting_money,
                     auctions_won: vec![],
+                    save_data: None,
                     auto_bid: None,
                 },
             );
@@ -1095,6 +1111,7 @@ impl DraftActor {
             ready: user_id == self.host,
             budget_remaining: self.settings.starting_money,
             auctions_won: vec![],
+            save_data: None,
             auto_bid: None,
         };
         self.teams.insert(user_id.clone(), team);
