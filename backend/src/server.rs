@@ -208,6 +208,10 @@ impl Server {
                 get(handlers::get_admin_hall_of_fame_teams),
             )
             .route(
+                "/admin/race-results",
+                get(handlers::get_admin_race_results),
+            )
+            .route(
                 "/drafts/{draft_id}/pending-settings",
                 post(handlers::update_pending_draft_settings),
             )

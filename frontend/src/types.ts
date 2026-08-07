@@ -193,6 +193,19 @@ export interface AdminHallOfFameTeamEntry {
   hall_of_fame_team: HallOfFamePokemon[];
 }
 
+export interface AdminRaceResultTeam {
+  team_id: number;
+  user_name: string | null;
+  result: string;
+  detail: string | null;
+}
+
+export interface AdminRaceResult {
+  draft_id: string;
+  draft_name: string;
+  teams: AdminRaceResultTeam[];
+}
+
 export interface AdminDraftSummary {
   draft_id: string;
   draft_name: string;

@@ -1077,6 +1077,173 @@ pub async fn get_admin_hall_of_fame_teams(
     Ok(Json(entries))
 }
 
+#[derive(Clone, Debug, Serialize)]
+pub struct AdminRaceResultTeam {
+    pub team_id: i64,
+    pub user_name: Option<String>,
+    pub result: String,
+    pub detail: Option<String>,
+}
+
+#[derive(Clone, Debug, Serialize)]
+pub struct AdminRaceResult {
+    pub draft_id: String,
+    pub draft_name: String,
+    pub teams: Vec<AdminRaceResultTeam>,
+}
+
+#[derive(Debug, sqlx::FromRow)]
+struct AdminRaceDraftRow {
+    draft_id: Uuid,
+    draft_name: String,
+}
+
+#[derive(Debug, sqlx::FromRow)]
+struct AdminRaceTeamRow {
+    team_id: i64,
+    map_name: Option<String>,
+    updated_at: chrono::DateTime<chrono::Utc>,
+    user_name: Option<String>,
+}
+
+#[derive(Debug, sqlx::FromRow)]
+struct AdminRaceHistoryRow {
+    team_id: i64,
+    trainer_id: i32,
+    version: Option<i32>,
+    hours: i32,
+    minutes: i32,
+    seconds: i32,
+    is_loss: bool,
+}
+
+fn format_battle_time(hours: i32, minutes: i32, seconds: i32) -> String {
+    if hours > 0 {
+        format!("{}h {}m {}s", hours, minutes, seconds)
+    } else if minutes > 0 {
+        format!("{}m {}s", minutes, seconds)
+    } else {
+        format!("{}s", seconds)
+    }
+}
+
+fn boss_trainer_name(trainer_id: i32, version: Option<i32>) -> String {
+    let base = get_trainer_name_by_id(trainer_id as u16);
+    match version {
+        Some(v) if v > 0 => format!("{} {}", base, v),
+        _ => base,
+    }
+}
+
+fn most_recent_save_result(
+    map_name: Option<String>,
+    updated_at: chrono::DateTime<chrono::Utc>,
+) -> (String, Option<String>) {
+    match map_name {
+        Some(map) if !map.trim().is_empty() => (
+            "In Progress".to_string(),
+            Some(format!(
+                "Last save: {} ({})",
+                map.replace('_', " "),
+                updated_at.format("%Y-%m-%d %H:%M:%S UTC")
+            )),
+        ),
+        _ => ("No Save".to_string(), None),
+    }
+}
+
+#[debug_handler]
+pub async fn get_admin_race_results(
+    State(state): State<ServerState>,
+    auth_session: AuthSession<AuthBackend>,
+) -> Result<Json<Vec<AdminRaceResult>>, AppError> {
+    let _ = require_referee_user(auth_session.user)?;
+
+    let drafts = sqlx::query_as::<_, AdminRaceDraftRow>(
+        "SELECT d.draft_id, d.draft_name
+         FROM drafts d
+         WHERE EXISTS (SELECT 1 FROM teams t WHERE t.draft_id = d.draft_id)
+         ORDER BY d.created_at DESC",
+    )
+    .fetch_all(&state.db_pool)
+    .await
+    .map_err(|e: sqlx::Error| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    let mut results = Vec::with_capacity(drafts.len());
+
+    for draft in drafts {
+        let teams = sqlx::query_as::<_, AdminRaceTeamRow>(
+            "SELECT t.team_id, t.save_data->>'map_name' AS map_name, t.updated_at,
+                    COALESCE(u.user_name, g.user_name) AS user_name
+             FROM teams t
+             LEFT JOIN users u ON u.user_id = t.user_id
+             LEFT JOIN guests g ON g.user_id = t.guest_id
+             WHERE t.draft_id = $1
+             ORDER BY COALESCE(u.user_name, g.user_name) ASC",
+        )
+        .bind(draft.draft_id)
+        .fetch_all(&state.db_pool)
+        .await
+        .map_err(|e: sqlx::Error| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+        let history_rows = sqlx::query_as::<_, AdminRaceHistoryRow>(
+            "SELECT team_id, trainer_id, version, hours, minutes, seconds, is_loss
+             FROM boss_battle_history
+             WHERE draft_id = $1
+             ORDER BY hours ASC, minutes ASC, seconds ASC",
+        )
+        .bind(draft.draft_id)
+        .fetch_all(&state.db_pool)
+        .await
+        .map_err(|e: sqlx::Error| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+        let mut history_by_team: HashMap<i64, Vec<AdminRaceHistoryRow>> = HashMap::new();
+        for row in history_rows {
+            history_by_team.entry(row.team_id).or_default().push(row);
+        }
+
+        let mut result_teams = Vec::with_capacity(teams.len());
+        for team in teams {
+            let (result, detail) = match history_by_team.get(&team.team_id) {
+                Some(battles) => {
+                    if let Some(win) = battles
+                        .iter()
+                        .find(|b| (b.trainer_id == 804 || b.trainer_id == 656) && !b.is_loss)
+                    {
+                        (
+                            format!("Beat {}", boss_trainer_name(win.trainer_id, win.version)),
+                            Some(format_battle_time(win.hours, win.minutes, win.seconds)),
+                        )
+                    } else if let Some(loss) = battles.iter().filter(|b| b.is_loss).last() {
+                        (
+                            format!("Wiped to {}", boss_trainer_name(loss.trainer_id, loss.version)),
+                            Some(format_battle_time(loss.hours, loss.minutes, loss.seconds)),
+                        )
+                    } else {
+                        most_recent_save_result(team.map_name.clone(), team.updated_at)
+                    }
+                }
+                None => most_recent_save_result(team.map_name.clone(), team.updated_at),
+            };
+
+            result_teams.push(AdminRaceResultTeam {
+                team_id: team.team_id,
+                user_name: team.user_name,
+                result,
+                detail,
+            });
+        }
+
+        results.push(AdminRaceResult {
+            draft_id: draft.draft_id.to_string(),
+            draft_name: draft.draft_name,
+            teams: result_teams,
+        });
+    }
+
+    Ok(Json(results))
+}
+
 #[debug_handler]
 pub async fn get_current_auction(
     State(state): State<ServerState>,
@@ -1312,7 +1479,7 @@ pub async fn post_player_save(
         let gym_leader_ids: std::collections::HashSet<i32> = [265, 855, 266, 267, 268, 269, 270, 271, 272].iter().copied().collect();
         let mut gym_leader_version = 0u32;
         for win in &mut sorted_wins {
-            if gym_leader_ids.contains(&(win.trainer_id as i32)) && !win.is_loss {
+            if gym_leader_ids.contains(&(win.trainer_id as i32)) {
                 gym_leader_version += 1;
                 win.version = Some(gym_leader_version as u8);
             } else {
@@ -1454,13 +1621,24 @@ pub async fn post_player_forfeit(
         },
     };
 
+    let gym_leader_ids: std::collections::HashSet<i32> = [265, 855, 266, 267, 268, 269, 270, 271, 272].iter().copied().collect();
+    let gym_leader_wins = save_data
+        .trainer_card_wins
+        .iter()
+        .filter(|w| gym_leader_ids.contains(&(w.trainer_id as i32)) && !w.is_loss)
+        .count();
+
     let loss = TrainerCardWin {
         trainer_id: request.trainer_id,
         hours: request.hours,
         minutes: request.minutes,
         seconds: request.seconds,
         is_loss: true,
-        version: None,
+        version: if gym_leader_ids.contains(&(request.trainer_id as i32)) {
+            Some((gym_leader_wins + 1) as u8)
+        } else {
+            None
+        },
     };
     save_data.trainer_card_wins.push(loss.clone());
     save_data.most_recent_loss = Some(loss.clone());
@@ -1494,7 +1672,7 @@ pub async fn post_player_forfeit(
     .bind(team_id)
     .bind(draft_uuid)
     .bind(request.trainer_id as i32)
-    .bind(Option::<i32>::None)
+    .bind(loss.version.map(|v| v as i32))
     .bind(request.hours as i32)
     .bind(request.minutes as i32)
     .bind(request.seconds as i32)

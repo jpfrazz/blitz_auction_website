@@ -4,6 +4,7 @@ import {
   AdminDraftSummary,
   AdminDraftTeamPlacement,
   AdminHallOfFameTeamEntry,
+  AdminRaceResult,
   AdminTeamPlacementUpdate,
   Pokemon,
 } from "../../types";
@@ -221,6 +222,11 @@ export async function fetchAdminDraftTeamPlacements(draft_id: string): Promise<A
 
 export async function fetchAdminHallOfFameTeams(): Promise<AdminHallOfFameTeamEntry[]> {
   const response = await axios.get('/api/admin/hall-of-fame-teams');
+  return response.data;
+}
+
+export async function fetchAdminRaceResults(): Promise<AdminRaceResult[]> {
+  const response = await axios.get('/api/admin/race-results');
   return response.data;
 }
 

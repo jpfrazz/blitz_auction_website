@@ -6,6 +6,7 @@ import {
   fetchAdminDiscordUsers,
   fetchAdminDraftTeamPlacements,
   fetchAdminHallOfFameTeams,
+  fetchAdminRaceResults,
   removeAdminDraftTeam,
   updateAdminDiscordUser,
   updateAdminDraftPlacements,
@@ -15,11 +16,12 @@ import {
   AdminDraftSummary,
   AdminDraftTeamPlacement,
   AdminHallOfFameTeamEntry,
+  AdminRaceResult,
 } from '../../types';
 import './Admin.scss';
 import { fetchCurrentUser } from '../../shared/api/draftData';
 
-type AdminTab = 'draft-results' | 'discord-users' | 'upload-pokemon-data' | 'boss-battle-history';
+type AdminTab = 'draft-results' | 'discord-users' | 'upload-pokemon-data' | 'boss-battle-history' | 'hall-of-fame' | 'race-results';
 
 const Admin: React.FC = () => {
   const [hasRefereeRole, setHasRefereeRole] = useState<boolean | null>(null);
@@ -49,6 +51,9 @@ const Admin: React.FC = () => {
   const [hallOfFameTeams, setHallOfFameTeams] = useState<AdminHallOfFameTeamEntry[]>([]);
   const [hallOfFameTeamsLoading, setHallOfFameTeamsLoading] = useState(false);
   const [hallOfFameTeamsError, setHallOfFameTeamsError] = useState<string | null>(null);
+  const [raceResults, setRaceResults] = useState<AdminRaceResult[]>([]);
+  const [raceResultsLoading, setRaceResultsLoading] = useState(false);
+  const [raceResultsError, setRaceResultsError] = useState<string | null>(null);
 
   useEffect(() => {
     fetchCurrentUser()
@@ -103,40 +108,45 @@ const Admin: React.FC = () => {
 
     setBossBattleHistoryLoading(true);
     setBossBattleHistoryError(null);
-    setHallOfFameTeamsLoading(true);
-    setHallOfFameTeamsError(null);
-
-    Promise.allSettled([
-      fetch('/api/admin/boss-battle-history').then(async (res) => {
+    fetch('/api/admin/boss-battle-history')
+      .then(async (res) => {
         if (!res.ok) {
           const text = await res.text();
           throw new Error(text || res.statusText);
         }
         return res.json();
-      }),
-      fetchAdminHallOfFameTeams(),
-    ])
-      .then(([bossResult, hallOfFameResult]) => {
-        if (bossResult.status === 'fulfilled') {
-          setBossBattleHistory(bossResult.value);
-        } else {
-          setBossBattleHistoryError(
-            bossResult.reason instanceof Error ? bossResult.reason.message : 'Failed to load boss battle history.'
-          );
-        }
-
-        if (hallOfFameResult.status === 'fulfilled') {
-          setHallOfFameTeams(hallOfFameResult.value);
-        } else {
-          setHallOfFameTeamsError(
-            hallOfFameResult.reason instanceof Error ? hallOfFameResult.reason.message : 'Failed to load hall of fame teams.'
-          );
-        }
       })
-      .finally(() => {
-        setBossBattleHistoryLoading(false);
-        setHallOfFameTeamsLoading(false);
-      });
+      .then((rows) => setBossBattleHistory(rows))
+      .catch((err: any) =>
+        setBossBattleHistoryError(err?.message ?? 'Failed to load boss battle history.')
+      )
+      .finally(() => setBossBattleHistoryLoading(false));
+  }, [hasRefereeRole, tab]);
+
+  useEffect(() => {
+    if (!hasRefereeRole || tab !== 'hall-of-fame') return;
+
+    setHallOfFameTeamsLoading(true);
+    setHallOfFameTeamsError(null);
+    fetchAdminHallOfFameTeams()
+      .then((rows) => setHallOfFameTeams(rows))
+      .catch((err: any) =>
+        setHallOfFameTeamsError(err?.message ?? 'Failed to load hall of fame teams.')
+      )
+      .finally(() => setHallOfFameTeamsLoading(false));
+  }, [hasRefereeRole, tab]);
+
+  useEffect(() => {
+    if (!hasRefereeRole || tab !== 'race-results') return;
+
+    setRaceResultsLoading(true);
+    setRaceResultsError(null);
+    fetchAdminRaceResults()
+      .then((rows) => setRaceResults(rows))
+      .catch((err: any) =>
+        setRaceResultsError(err?.message ?? 'Failed to load race results.')
+      )
+      .finally(() => setRaceResultsLoading(false));
   }, [hasRefereeRole, tab]);
 
   const sortedTeams = useMemo(
@@ -322,6 +332,20 @@ const Admin: React.FC = () => {
                   type="button"
                 >
                   Boss Battle History
+                </button>
+                <button
+                  className={`admin-tab ${tab === 'hall-of-fame' ? 'active' : ''}`}
+                  onClick={() => setTab('hall-of-fame')}
+                  type="button"
+                >
+                  Hall of Fame Teams
+                </button>
+                <button
+                  className={`admin-tab ${tab === 'race-results' ? 'active' : ''}`}
+                  onClick={() => setTab('race-results')}
+                  type="button"
+                >
+                  Race Results
                 </button>
               </div>
 
@@ -532,91 +556,142 @@ const Admin: React.FC = () => {
               )}
               {tab === 'boss-battle-history' && (
                 <div className="admin-tab-content">
-                  <h2>Boss Battle History & Hall of Fame Teams</h2>
+                  <h2>Boss Battle History</h2>
                   {bossBattleHistoryError && <div className="admin-message admin-error">{bossBattleHistoryError}</div>}
-
-                  <div className="admin-history-grid">
-                    <div className="admin-history-column">
-                      <h3>Boss Battle History</h3>
-                      {bossBattleHistoryLoading ? (
-                        <div className="admin-message">Loading boss battle history...</div>
-                      ) : (
-                        <div className="admin-table-wrap">
-                          <table>
-                            <thead>
-                              <tr>
-                                <th>ID</th>
-                                <th>Draft ID</th>
-                                <th>Team ID</th>
-                                <th>User</th>
-                                <th>Trainer ID</th>
-                                <th>Version</th>
-                                <th>Time</th>
-                                <th>Loss</th>
-                                <th>Created At</th>
-                              </tr>
-                            </thead>
-                            <tbody>
-                              {bossBattleHistory.map((battle) => (
-                                <tr key={battle.id}>
-                                  <td>{battle.id}</td>
-                                  <td>{battle.draft_id.slice(0, 8)}</td>
-                                  <td>{battle.team_id}</td>
-                                  <td>{battle.user_name ?? battle.user_id ?? battle.guest_id ?? '-'}</td>
-                                  <td>{battle.trainer_id}</td>
-                                  <td>{battle.version ?? '-'}</td>
-                                  <td>{battle.hours}h {battle.minutes}m {battle.seconds}s</td>
-                                  <td>{battle.is_loss ? 'Yes' : 'No'}</td>
-                                  <td>{new Date(battle.created_at).toLocaleString()}</td>
-                                </tr>
-                              ))}
-                            </tbody>
-                          </table>
-                        </div>
-                      )}
+                  {bossBattleHistoryLoading ? (
+                    <div className="admin-message">Loading boss battle history...</div>
+                  ) : bossBattleHistory.length === 0 ? (
+                    <div className="admin-message">No boss battle history recorded yet.</div>
+                  ) : (
+                    <div className="admin-table-wrap">
+                      <table>
+                        <thead>
+                          <tr>
+                            <th>ID</th>
+                            <th>Draft ID</th>
+                            <th>Team ID</th>
+                            <th>User</th>
+                            <th>Trainer ID</th>
+                            <th>Version</th>
+                            <th>Time</th>
+                            <th>Loss</th>
+                            <th>Created At</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {bossBattleHistory.map((battle) => (
+                            <tr key={battle.id}>
+                              <td>{battle.id}</td>
+                              <td>{battle.draft_id.slice(0, 8)}</td>
+                              <td>{battle.team_id}</td>
+                              <td>{battle.user_name ?? battle.user_id ?? battle.guest_id ?? '-'}</td>
+                              <td>{battle.trainer_id}</td>
+                              <td>{battle.version ?? '-'}</td>
+                              <td>{battle.hours}h {battle.minutes}m {battle.seconds}s</td>
+                              <td>{battle.is_loss ? 'Yes' : 'No'}</td>
+                              <td>{new Date(battle.created_at).toLocaleString()}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
                     </div>
-
-                    <div className="admin-history-column">
-                      <h3>Hall of Fame Teams</h3>
-                      {hallOfFameTeamsError && <div className="admin-message admin-error">{hallOfFameTeamsError}</div>}
-                      {hallOfFameTeamsLoading ? (
-                        <div className="admin-message">Loading hall of fame teams...</div>
-                      ) : hallOfFameTeams.length === 0 ? (
-                        <div className="admin-message">No Hall of Fame teams recorded yet.</div>
-                      ) : (
-                        <div className="admin-table-wrap">
-                          <table>
-                            <thead>
-                              <tr>
-                                <th>Team ID</th>
-                                <th>Player</th>
-                                <th>Run</th>
-                                <th>Hall of Fame Team</th>
-                              </tr>
-                            </thead>
-                            <tbody>
-                              {hallOfFameTeams.map((entry) => (
-                                <tr key={`${entry.team_id}-${entry.draft_id}`}>
-                                  <td>{entry.team_id}</td>
-                                  <td>{entry.user_name ?? '-'}</td>
-                                  <td>{entry.draft_name} ({entry.draft_id.slice(0, 8)})</td>
-                                  <td>
-                                    <div className="admin-hof-team-list">
-                                      {entry.hall_of_fame_team.map((pokemon) => (
-                                        <span key={`${entry.team_id}-${pokemon.name}`} className="admin-hof-pill">
-                                          {pokemon.name}
+                  )}
+                </div>
+              )}
+              {tab === 'hall-of-fame' && (
+                <div className="admin-tab-content">
+                  <h2>Hall of Fame Teams</h2>
+                  {hallOfFameTeamsError && <div className="admin-message admin-error">{hallOfFameTeamsError}</div>}
+                  {hallOfFameTeamsLoading ? (
+                    <div className="admin-message">Loading hall of fame teams...</div>
+                  ) : hallOfFameTeams.length === 0 ? (
+                    <div className="admin-message">No Hall of Fame teams recorded yet.</div>
+                  ) : (
+                    <div className="admin-table-wrap">
+                      <table>
+                        <thead>
+                          <tr>
+                            <th>Team ID</th>
+                            <th>Player</th>
+                            <th>Run</th>
+                            <th>Hall of Fame Team</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {hallOfFameTeams.map((entry) => (
+                            <tr key={`${entry.team_id}-${entry.draft_id}`}>
+                              <td>{entry.team_id}</td>
+                              <td>{entry.user_name ?? '-'}</td>
+                              <td>{entry.draft_name} ({entry.draft_id.slice(0, 8)})</td>
+                              <td>
+                                <div className="admin-hof-team-list">
+                                  {entry.hall_of_fame_team.map((pokemon) => (
+                                    <span key={`${entry.team_id}-${pokemon.name}`} className="admin-hof-pill">
+                                      {pokemon.name}
+                                    </span>
+                                  ))}
+                                </div>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+                </div>
+              )}
+              {tab === 'race-results' && (
+                <div className="admin-tab-content">
+                  <h2>Race Results</h2>
+                  {raceResultsError && <div className="admin-message admin-error">{raceResultsError}</div>}
+                  {raceResultsLoading ? (
+                    <div className="admin-message">Loading race results...</div>
+                  ) : raceResults.length === 0 ? (
+                    <div className="admin-message">No races found.</div>
+                  ) : (
+                    <div className="admin-table-wrap">
+                      <table className="admin-race-results-table">
+                        <thead>
+                          <tr>
+                            <th>Race ID</th>
+                            <th>Draft Name</th>
+                            <th>Participants</th>
+                            <th>Results</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {raceResults.map((race) => (
+                            <tr key={race.draft_id}>
+                              <td>{race.draft_id.slice(0, 8)}</td>
+                              <td>{race.draft_name}</td>
+                              <td>
+                                {race.teams.length > 0
+                                  ? race.teams.map((team) => team.user_name ?? '-').join(', ')
+                                  : '-'}
+                              </td>
+                              <td>
+                                {race.teams.length === 0 ? (
+                                  '-'
+                                ) : (
+                                  <div className="admin-race-results-list">
+                                    {race.teams.map((team) => (
+                                      <div key={team.team_id} className="admin-race-result-row">
+                                        <span className="admin-race-result-user">{team.user_name ?? '-'}:</span>
+                                        <span className="admin-race-result-text">
+                                          {team.result}
+                                          {team.detail ? ` (${team.detail})` : ''}
                                         </span>
-                                      ))}
-                                    </div>
-                                  </td>
-                                </tr>
-                              ))}
-                            </tbody>
-                          </table>
-                        </div>
-                      )}
+                                      </div>
+                                    ))}
+                                  </div>
+                                )}
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
                     </div>
-                  </div>
+                  )}
                 </div>
               )}
             </>

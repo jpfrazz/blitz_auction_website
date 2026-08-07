@@ -130,6 +130,31 @@
   color: #73e89e;
 }
 
+.admin-race-results-table {
+  min-width: 760px;
+}
+
+.admin-race-results-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.admin-race-result-row {
+  display: flex;
+  align-items: baseline;
+  gap: 0.4rem;
+}
+
+.admin-race-result-user {
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.admin-race-result-text {
+  color: #a9c3dc;
+}
+
 @media (max-width: 1100px) {
   .admin-history-grid {
     grid-template-columns: 1fr;
