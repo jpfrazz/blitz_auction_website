@@ -657,7 +657,7 @@ const Stats: React.FC = () => {
                 </div>
               </div>
               <div className="table-wrap">
-                <table>
+                <table className="draft-summary-table">
                   <thead>
                     <tr>
                       <th>Date</th>
