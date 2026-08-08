@@ -1106,13 +1106,9 @@ fn hall_of_fame_beat_name(trainer_id: i32) -> String {
 /// Lists every user/race combination where the run ended with a win over
 /// Steven (804) or Wally (656). When a team has more than one such win, only
 /// the latest one (the run it actually ended with) is kept.
-#[debug_handler]
-pub async fn get_admin_hall_of_fame_eligible(
-    State(state): State<ServerState>,
-    auth_session: AuthSession<AuthBackend>,
-) -> Result<Json<Vec<AdminHallOfFameEligibleEntry>>, AppError> {
-    let _ = require_referee_user(auth_session.user)?;
-
+async fn fetch_hall_of_fame_eligible(
+    state: &ServerState,
+) -> Result<Vec<AdminHallOfFameEligibleEntry>, (StatusCode, String)> {
     let rows = sqlx::query(
         "SELECT team_id, draft_id, draft_name, user_name, trainer_id, hours, minutes, seconds, beat_date, hall_of_fame_team
          FROM (
@@ -1182,6 +1178,25 @@ pub async fn get_admin_hall_of_fame_eligible(
         });
     }
 
+    Ok(entries)
+}
+
+#[debug_handler]
+pub async fn get_admin_hall_of_fame_eligible(
+    State(state): State<ServerState>,
+    auth_session: AuthSession<AuthBackend>,
+) -> Result<Json<Vec<AdminHallOfFameEligibleEntry>>, AppError> {
+    let _ = require_referee_user(auth_session.user)?;
+
+    let entries = fetch_hall_of_fame_eligible(&state).await?;
+    Ok(Json(entries))
+}
+
+#[debug_handler]
+pub async fn get_hall_of_fame(
+    State(state): State<ServerState>,
+) -> Result<Json<Vec<AdminHallOfFameEligibleEntry>>, AppError> {
+    let entries = fetch_hall_of_fame_eligible(&state).await?;
     Ok(Json(entries))
 }
 

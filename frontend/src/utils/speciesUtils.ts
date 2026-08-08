@@ -20,8 +20,41 @@ const ICON_BY_NAME: Record<string, string> = {};
     if (!info || info.name === 'Egg') continue;
     const key = info.name.toLowerCase();
     if (!(key in ICON_BY_NAME)) ICON_BY_NAME[key] = info.icon;
+
+    // Index mega forms under their database-style names too ("Mega Ampharos",
+    // "Mega Charizard X", "Charizard-Mega_X") so they resolve to the same ROM
+    // icon file ("ampharos-mega", "charizard-mega-x").
+    const megaMatch = key.match(/^(.+)-mega(?:-(x|y|z))?$/);
+    if (megaMatch) {
+      const core = megaMatch[1].replace(/-/g, ' ');
+      const variant = megaMatch[2];
+      if (variant) {
+        const alt = `mega ${core} ${variant}`;
+        if (!(alt in ICON_BY_NAME)) ICON_BY_NAME[alt] = info.icon;
+      }
+      const alt = `mega ${core}`;
+      if (!(alt in ICON_BY_NAME)) ICON_BY_NAME[alt] = info.icon;
+    }
   }
 }
+
+/**
+ * Normalize a mega display name to the alternate name indexed in ICON_BY_NAME.
+ * Handles the database naming ("Mega Ampharos", "Mega Charizard X",
+ * "Charizard-Mega_X") that differs from the ROM naming ("Ampharos-Mega").
+ */
+const megaNameKey = (n: string): string | null => {
+  if (n.startsWith('mega ')) {
+    const parts = n.slice(5).trim().replace(/[^a-z0-9]/g, ' ').trim().split(/\s+/);
+    if (!parts.length || !parts[0]) return null;
+    return `mega ${parts.slice(0, 2).join(' ')}`;
+  }
+  const m = n.match(/^([a-z0-9]+)-mega(?:[ _-]?(x|y|z))?$/);
+  if (m) {
+    return m[2] ? `mega ${m[1]} ${m[2]}` : `mega ${m[1]}`;
+  }
+  return null;
+};
 
 /**
  * Resolve the MiniIcons file base name for a species id.
@@ -39,6 +72,15 @@ export const getIconName = (name: string, speciesId?: number) => {
 
   const byName = ICON_BY_NAME[n];
   if (byName) return byName;
+
+  // Mega forms are stored under database-style names ("Mega Ampharos",
+  // "Charizard-Mega_X") while their icon files use the ROM naming
+  // ("ampharos-mega"), so resolve via the alternate index above.
+  const megaKey = megaNameKey(n);
+  if (megaKey) {
+    const byMega = ICON_BY_NAME[megaKey];
+    if (byMega) return byMega;
+  }
 
   // Special handling for specific Pokemon with non-standard names
   if (n.includes('plusle')) return 'plusle';

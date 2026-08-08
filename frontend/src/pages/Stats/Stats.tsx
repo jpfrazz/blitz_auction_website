@@ -7,9 +7,10 @@ import PokemonPriceHistoryChart from './PokemonPriceHistoryChart';
 import PlayerSearchStatsTab from './components/PlayerSearchStatsTab';
 import TierListTab from './components/TierListTab';
 import RaceResultsTab from './components/RaceResultsTab';
+import HallOfFameStatsTab from './components/HallOfFameStatsTab';
 import './Stats.scss';
 
-type StatsTab = 'pokemon' | 'drafts' | 'player-search' | 'tier-list';
+type StatsTab = 'pokemon' | 'drafts' | 'player-search' | 'hall-of-fame' | 'tier-list';
 
 interface PlayerAggregate {
   key: string;
@@ -577,6 +578,13 @@ const Stats: React.FC = () => {
             Player Search
           </button>
           <button
+            className={`tab-chip ${activeTab === 'hall-of-fame' ? 'active' : ''}`}
+            type="button"
+            onClick={() => setActiveTab('hall-of-fame')}
+          >
+            Hall of Fame
+          </button>
+          <button
             className={`tab-chip ${activeTab === 'tier-list' ? 'active' : ''}`}
             type="button"
             onClick={() => setActiveTab('tier-list')}
@@ -860,6 +868,10 @@ const Stats: React.FC = () => {
             error={error}
             validDraftIds={validDraftIds}
           />
+        )}
+
+        {activeTab === 'hall-of-fame' && (
+          <HallOfFameStatsTab />
         )}
 
         {activeTab === 'tier-list' && (

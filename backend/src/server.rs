@@ -149,6 +149,7 @@ impl Server {
             .route("/me", get(handlers::me))
             .route("/leaderboard", get(stats::get_leaderboard))
             .route("/stats", get(stats::get_stats_page_data))
+            .route("/hall-of-fame-teams", get(handlers::get_hall_of_fame))
             .route(
                 "/match-history/{user_id}",
                 get(handlers::get_match_history_by_user_id),

@@ -1,5 +1,6 @@
 import axios, {AxiosError} from 'axios';
 import {
+  AdminHallOfFameEligibleEntry,
   DraftRaceResults,
   MatchHistoryTeam,
   RaceResultTeamUpdate,
@@ -13,6 +14,11 @@ export async function fetchMatchHistoryByUserId(userId: string): Promise<MatchHi
 
 export async function fetchStatsPageData(): Promise<StatsPageResponse> {
   const response = await axios.get('/api/stats');
+  return response.data;
+}
+
+export async function fetchHallOfFameEligible(): Promise<AdminHallOfFameEligibleEntry[]> {
+  const response = await axios.get('/api/hall-of-fame-teams');
   return response.data;
 }
 
