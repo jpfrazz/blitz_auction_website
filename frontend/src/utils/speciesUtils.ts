@@ -82,6 +82,15 @@ export const getIconName = (name: string, speciesId?: number) => {
     if (byMega) return byMega;
   }
 
+  // Database-style "Mega <Name>" display names the ROM index above doesn't
+  // cover (e.g. "Mega Meowstic" for ROM "Meowstic-M-Mega") resolve to the
+  // "<name>-mega" icon file ("meowstic-mega"), matching how the other mega
+  // icons are named.
+  const megaDisplay = n.match(/^mega ([a-z0-9]+(?: [a-z0-9]+)*)$/);
+  if (megaDisplay) {
+    return `${megaDisplay[1].replace(/\s+/g, '-')}-mega`;
+  }
+
   // Special handling for specific Pokemon with non-standard names
   if (n.includes('plusle')) return 'plusle';
   if (n.includes('minun')) return 'minun';

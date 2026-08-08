@@ -209,7 +209,7 @@ const TeamPlanner = () => {
                   background: '#26282b',
                   color: '#f1f1f1',
                   border: '1px solid #2a2d31',
-                  fontSize: '1.05rem',
+                  fontSize: '1.15rem',
                 }),
                 multiValue: (base) => ({
                   ...base,
@@ -244,7 +244,7 @@ const TeamPlanner = () => {
                 placeholder: (base) => ({
                   ...base,
                   color: '#b0b0b0',
-                  fontSize: '1.05rem',
+                  fontSize: '1.15rem',
                 }),
               }}
             />
