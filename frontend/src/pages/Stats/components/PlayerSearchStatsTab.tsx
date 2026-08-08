@@ -3,6 +3,7 @@ import { fetchMatchHistoryByUserId, fetchBossBattleHistory, BossBattleHistoryEnt
 import { MatchHistoryTeam, StatsAuction, StatsPagePlayer, StatsPageResponse } from '../../../types';
 import type { PlayerStatPill } from './playerStatPills';
 import { getPlayerStatPills } from './playerStatPills';
+import { getIconName } from '../../../utils/speciesUtils';
 import '../Stats.scss';
 import './PlayerSearchStatsTab.scss';
 
@@ -946,7 +947,7 @@ const PlayerSearchStatsTab: React.FC<PlayerSearchStatsTabProps> = ({
                                   {hallOfFameTeam.map((mon, idx) => (
                                     <div className="match-hall-of-fame-icon" key={idx} title={mon.name}>
                                       <img
-                                        src={`/MiniIcons/${mon.icon}.png`}
+                                        src={`/MiniIcons/${getIconName(mon.name)}.png`}
                                         alt={mon.name}
                                         onError={(ev) => {
                                           (ev.currentTarget as HTMLImageElement).src = '/MiniIcons/question.png';

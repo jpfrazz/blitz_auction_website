@@ -78,7 +78,8 @@ pub struct HallOfFamePokemon {
 }
 
 /// Body of the `POST /api/drafts/{draft_id}/save` endpoint. The emulator sends
-/// the parsed save data plus the Hall of Fame team on the first museum save.
+/// the parsed save data plus the Hall of Fame team on the first save that
+/// carries a "Beat Steven" (804) or "Beat Wally" (656) trainer-card win.
 #[derive(Clone, Debug, Deserialize)]
 pub struct PostSaveRequest {
     #[serde(flatten)]

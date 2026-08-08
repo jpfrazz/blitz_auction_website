@@ -868,16 +868,17 @@ const EmulatorPage: React.FC = () => {
       }
     }
 
-    // Build the Hall of Fame team from the party on the museum save after
-    // beating the game. Standing in the museum means the player just cleared
-    // the Hall of Fame, and the trainer card on that save carries the "Beat
-    // Steven" (804) / "Beat Wally" (656) win, so the party saved there is the
-    // Hall of Fame party. A party is at most 6 Pokemon, so cap it defensively.
-    // The backend only keeps the first one.
+    // Build the Hall of Fame team from the party on the first save that
+    // carries a "Beat Steven" (804) / "Beat Wally" (656) trainer-card win,
+    // i.e. the save right after the player actually beats the game. The win
+    // save can arrive before the warp to the museum or after the player has
+    // left it, and the Lilycove Museum is reachable before beating the game,
+    // so the map is not a reliable signal. A party is at most 6 Pokemon, so
+    // cap it defensively. The backend only keeps the first one.
     const beatChampion = (parsed.trainer_card_wins ?? []).some(w =>
       !w.is_loss && (w.trainer_id === 656 || w.trainer_id === 804)
     );
-    const hallOfFameTeam = (isWinner && beatChampion)
+    const hallOfFameTeam = beatChampion
       ? (parsed.party ?? []).slice(0, 6).map((mon: any) => {
           const speciesId = mon.species_id ?? mon.speciesId;
           const speciesData = resolveMetadata(speciesId, mon.nickname);

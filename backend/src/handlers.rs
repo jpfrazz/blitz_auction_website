@@ -1091,6 +1091,7 @@ pub struct AdminHallOfFameEligibleEntry {
     pub hours: i32,
     pub minutes: i32,
     pub seconds: i32,
+    pub beat_date: chrono::DateTime<chrono::Utc>,
     pub hall_of_fame_team: Vec<HallOfFamePokemon>,
 }
 
@@ -1113,11 +1114,12 @@ pub async fn get_admin_hall_of_fame_eligible(
     let _ = require_referee_user(auth_session.user)?;
 
     let rows = sqlx::query(
-        "SELECT team_id, draft_id, draft_name, user_name, trainer_id, hours, minutes, seconds, hall_of_fame_team
+        "SELECT team_id, draft_id, draft_name, user_name, trainer_id, hours, minutes, seconds, beat_date, hall_of_fame_team
          FROM (
              SELECT DISTINCT ON (bbh.team_id)
                     bbh.team_id, bbh.draft_id, bbh.trainer_id,
                     bbh.hours, bbh.minutes, bbh.seconds,
+                    bbh.created_at AS beat_date,
                     d.draft_name, d.created_at,
                     COALESCE(u.user_name, g.user_name) AS user_name,
                     t.hall_of_fame_team
@@ -1172,6 +1174,9 @@ pub async fn get_admin_hall_of_fame_eligible(
                 .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?,
             seconds: row
                 .try_get("seconds")
+                .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?,
+            beat_date: row
+                .try_get("beat_date")
                 .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?,
             hall_of_fame_team,
         });
@@ -1962,13 +1967,15 @@ pub async fn post_player_save(
     .await
     .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, format!("db error: {}", e)))?;
 
-    // Record the Hall of Fame team on the first save taken in the Lilycove
-    // Museum after beating the game. Standing in the museum means the player
-    // just cleared the Hall of Fame, and the trainer card on that save carries
-    // the "Beat Steven" (804) or "Beat Wally" (656) win, so the party saved
-    // there is the Hall of Fame party. Only the first team is kept per team,
-    // so a later save can never clear or replace it. A party is at most 6
-    // Pokemon, so cap it there.
+    // Record the Hall of Fame team on the first save that carries a
+    // "Beat Steven" (804) or "Beat Wally" (656) trainer-card win, i.e. the
+    // first save after the player has actually beaten the game. A champion
+    // win only appears on the trainer card after beating the game, so gym
+    // leader wins and early museum visits can never trigger it. The save
+    // with the new win can arrive before the warp to the museum or after the
+    // player has left it, so the map is not a reliable signal. Only the
+    // first team is kept per team, so a later save can never clear or
+    // replace it. A party is at most 6 Pokemon, so cap it there.
     if let Some(hall_of_fame_team) = hall_of_fame_team {
         let hall_of_fame_team: Vec<HallOfFamePokemon> =
             hall_of_fame_team.into_iter().take(6).collect();
@@ -1976,9 +1983,7 @@ pub async fn post_player_save(
             .trainer_card_wins
             .iter()
             .any(|win| !win.is_loss && (win.trainer_id == 804 || win.trainer_id == 656));
-        if !hall_of_fame_team.is_empty()
-            && save_data.map_name == "LilycoveCity_LilycoveMuseum_1F"
-            && beat_champion
+        if !hall_of_fame_team.is_empty() && beat_champion
         {
             let hall_of_fame_value = serde_json::to_value(&hall_of_fame_team).map_err(|e| {
                 (

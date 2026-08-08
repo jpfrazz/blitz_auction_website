@@ -688,7 +688,7 @@ const Stats: React.FC = () => {
                                 <button
                                   className={`tab-chip ${draftSortMode === 'order' ? 'active' : ''}`}
                                   type="button"
-                                  style={{ padding: '2px 8px', fontSize: '0.85rem', minWidth: 'auto', margin: 0 }}
+                                  style={{ padding: '2px 8px', fontSize: '0.95rem', minWidth: 'auto', margin: 0 }}
                                   onClick={() => setDraftSortMode('order')}
                                 >
                                   Sort by Sale Order
@@ -696,7 +696,7 @@ const Stats: React.FC = () => {
                                 <button
                                   className={`tab-chip ${draftSortMode === 'price' ? 'active' : ''}`}
                                   type="button"
-                                  style={{ padding: '2px 8px', fontSize: '0.85rem', minWidth: 'auto', margin: 0 }}
+                                  style={{ padding: '2px 8px', fontSize: '0.95rem', minWidth: 'auto', margin: 0 }}
                                   onClick={() => setDraftSortMode('price')}
                                 >
                                   Sort by Price
@@ -704,7 +704,7 @@ const Stats: React.FC = () => {
                                 <button
                                   className={`tab-chip ${draftSortMode === 'user' ? 'active' : ''}`}
                                   type="button"
-                                  style={{ padding: '2px 8px', fontSize: '0.85rem', minWidth: 'auto', margin: 0 }}
+                                  style={{ padding: '2px 8px', fontSize: '0.95rem', minWidth: 'auto', margin: 0 }}
                                   onClick={() => setDraftSortMode('user')}
                                 >
                                   Sort by User
@@ -712,7 +712,7 @@ const Stats: React.FC = () => {
                                 <button
                                   className={`tab-chip ${draftSortMode === 'race' ? 'active' : ''}`}
                                   type="button"
-                                  style={{ padding: '2px 8px', fontSize: '0.85rem', minWidth: 'auto', margin: 0 }}
+                                  style={{ padding: '2px 8px', fontSize: '0.95rem', minWidth: 'auto', margin: 0 }}
                                   onClick={() => setDraftSortMode('race')}
                                 >
                                   Race Results

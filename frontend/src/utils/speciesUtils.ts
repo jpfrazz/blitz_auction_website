@@ -7,6 +7,22 @@ import { SPECIES_BY_ID } from './speciesIdMap';
 // regional forms, megas, etc.), so lookups here are reliable even for nicknamed
 // Pokemon and for species the database doesn't cover.
 
+// Reverse index of species display name -> icon, built from SPECIES_BY_ID.
+// Name-based lookups (which only have a name, e.g. stored Hall of Fame teams)
+// resolve to the same icon the ROM species id would, including regional forms
+// that reuse a base species icon (e.g. Vulpix-Alola -> vulpix), without the
+// risk of a national dex number colliding with a ROM form/mega id.
+const ICON_BY_NAME: Record<string, string> = {};
+{
+  const ids = Object.keys(SPECIES_BY_ID).map(Number).sort((a, b) => a - b);
+  for (const id of ids) {
+    const info = SPECIES_BY_ID[id];
+    if (!info || info.name === 'Egg') continue;
+    const key = info.name.toLowerCase();
+    if (!(key in ICON_BY_NAME)) ICON_BY_NAME[key] = info.icon;
+  }
+}
+
 /**
  * Resolve the MiniIcons file base name for a species id.
  * Falls back to the legacy name-based resolution when no id is provided.
@@ -20,6 +36,9 @@ export const getIconName = (name: string, speciesId?: number) => {
     const info = SPECIES_BY_ID[speciesId];
     if (info?.icon) return info.icon;
   }
+
+  const byName = ICON_BY_NAME[n];
+  if (byName) return byName;
 
   // Special handling for specific Pokemon with non-standard names
   if (n.includes('plusle')) return 'plusle';

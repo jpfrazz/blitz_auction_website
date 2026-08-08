@@ -203,6 +203,7 @@ export interface AdminHallOfFameEligibleEntry {
   hours: number;
   minutes: number;
   seconds: number;
+  beat_date: string;
   hall_of_fame_team: HallOfFamePokemon[];
 }
 

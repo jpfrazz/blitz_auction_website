@@ -59,7 +59,7 @@ const HallOfFameTeamEditorModal: React.FC<HallOfFameTeamEditorModalProps> = ({
     const text = texts[idx].trim().toLowerCase();
     if (!text) return null;
     const pokemon = pokemonByName.get(text);
-    return getIconName(pokemon?.name ?? text, pokemon?.pokedex_id ?? pokemon?.id);
+    return getIconName(pokemon?.name ?? text);
   };
 
   const buildTeam = (): HallOfFamePokemon[] => {
@@ -69,7 +69,7 @@ const HallOfFameTeamEditorModal: React.FC<HallOfFameTeamEditorModalProps> = ({
       if (!text) continue;
       const pokemon = pokemonByName.get(text.toLowerCase());
       const name = pokemon?.name ?? text;
-      team.push({ name, icon: getIconName(name, pokemon?.pokedex_id ?? pokemon?.id) });
+      team.push({ name, icon: getIconName(name) });
     }
     return team;
   };
