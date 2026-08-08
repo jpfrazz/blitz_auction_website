@@ -377,9 +377,10 @@ const Stats: React.FC = () => {
       const pDisplayName = isGuest ? 'Guest User' : (pInfo?.user_name || team.user_id || 'Guest User'); // Still gather for CSV
       console.log(`[DraftSummary] Processing team for draft ${team.draft_id}: draftName from team is ${existing.draftName}`);
       
-      if (team.placement === 1) {
+      const racePlacement = team.race_placement ?? team.placement;
+      if (racePlacement === 1) {
         existing.winner = pDisplayName;
-      } else if (team.placement === 2) {
+      } else if (racePlacement === 2) {
         existing.runnerUp = pDisplayName;
       }
       

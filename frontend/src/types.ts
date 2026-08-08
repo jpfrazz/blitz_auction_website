@@ -160,6 +160,7 @@ export interface StatsPageTeamRow {
   money_remaining: number;
   pokemon_drafted: number;
   placement: number | null;
+  race_placement?: number | null;
   pre_match_mmr: number | null;
   updated_at: string;
   created_at: string;
