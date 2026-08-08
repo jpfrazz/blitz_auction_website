@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import Header from '../../shared/components/Header';
 import { fetchStatsPageData } from '../../shared/api/stats';
 import { StatsPagePlayer, StatsPageResponse, StatsPageTeamRow } from '../../types';
@@ -99,10 +100,14 @@ function parseLegacyCost(cost: string): number | null {
 }
 
 const Stats: React.FC = () => {
+  const [searchParams] = useSearchParams();
   const [stats, setStats] = useState<StatsPageResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<StatsTab>('pokemon');
+  const [activeTab, setActiveTab] = useState<StatsTab>(
+    searchParams.get('tab') === 'player-search' ? 'player-search' : 'pokemon',
+  );
+  const initialUserId = searchParams.get('userId') ?? undefined;
   const [expandedDraftId, setExpandedDraftId] = useState<string | null>(null);
   const [draftSortMode, setDraftSortMode] = useState<'order' | 'price' | 'user' | 'race'>('order');
   const [selectedPokemonForChart, setSelectedPokemonForChart] = useState<{ key: string; name: string } | null>(null);
@@ -342,6 +347,8 @@ const Stats: React.FC = () => {
       highestBid: number;
       date: string | null;
       participants: string[];
+      winner: string | null;
+      runnerUp: string | null;
     }>();
 
     (stats?.teams ?? []).forEach((team) => {
@@ -359,6 +366,8 @@ const Stats: React.FC = () => {
         highestBid: 0,
         date: null,
         participants: [] as string[],
+        winner: null,
+        runnerUp: null,
       };
       existing.teamCount += 1;
 
@@ -367,6 +376,12 @@ const Stats: React.FC = () => {
       const isGuest = !team.user_id || pInfo?.is_guest;
       const pDisplayName = isGuest ? 'Guest User' : (pInfo?.user_name || team.user_id || 'Guest User'); // Still gather for CSV
       console.log(`[DraftSummary] Processing team for draft ${team.draft_id}: draftName from team is ${existing.draftName}`);
+      
+      if (team.placement === 1) {
+        existing.winner = pDisplayName;
+      } else if (team.placement === 2) {
+        existing.runnerUp = pDisplayName;
+      }
       
       // Only push if not already present to avoid duplicates in CSV
       existing.participants.push(pDisplayName);
@@ -390,6 +405,8 @@ const Stats: React.FC = () => {
         highestBid: 0,
         date: null,
         participants: [] as string[],
+        winner: null,
+        runnerUp: null,
       };
 
       const winningBid = auction.winning_bid ?? 0;
@@ -642,10 +659,10 @@ const Stats: React.FC = () => {
                 <table>
                   <thead>
                     <tr>
-                      <th>Draft ID</th>
-                      <th>Ranked</th>
-                      <th>Host</th>
                       <th>Date</th>
+                      <th>Winner</th>
+                      <th>Runner Up</th>
+                      <th>Host</th>
                       <th>Players</th>
                       <th>Pokemon Sold</th>
                       <th style={{ width: '60px' }}></th>
@@ -669,10 +686,10 @@ const Stats: React.FC = () => {
                             }
                           }}
                         >
-                          <td>{draft.draftId}</td>
-                          <td style={{ textAlign: 'center' }}>{draft.ranked ? '\u2713' : ''}</td>
-                          <td>{playersById.get(draft.hostId || '')?.user_name || '-'}</td>
                           <td>{draft.formattedDate}</td>
+                          <td>{draft.winner || '-'}</td>
+                          <td>{draft.runnerUp || '-'}</td>
+                          <td>{playersById.get(draft.hostId || '')?.user_name || '-'}</td>
                           <td>{draft.teamCount}</td>
                           <td>{draft.auctionCount}</td>
                           <td style={{ textAlign: 'center' }}>
@@ -879,6 +896,7 @@ const Stats: React.FC = () => {
             loading={loading}
             error={error}
             validDraftIds={validDraftIds}
+            initialUserId={initialUserId}
           />
         )}
 

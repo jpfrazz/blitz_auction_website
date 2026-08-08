@@ -33,7 +33,19 @@ const HallOfFameStatsTab: React.FC = () => {
             {entries.map((entry) => (
               <div className="admin-hof-entry" key={entry.team_id}>
                 <div className="admin-hof-entry-head">
-                  <div className="admin-hof-entry-player">{entry.user_name ?? '-'}</div>
+                  {entry.user_id ? (
+                    <a
+                      className="admin-hof-entry-player"
+                      href={`/Stats?tab=player-search&userId=${encodeURIComponent(entry.user_id)}`}
+                      target="_blank"
+                      rel="noreferrer"
+                      title="View match history"
+                    >
+                      {entry.user_name ?? '-'}
+                    </a>
+                  ) : (
+                    <div className="admin-hof-entry-player">{entry.user_name ?? '-'}</div>
+                  )}
                   <div className="admin-hof-entry-race">
                     on{' '}
                     {entry.beat_date

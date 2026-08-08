@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { fetchMatchHistoryByUserId, fetchBossBattleHistory, BossBattleHistoryEntry } from '../../../shared/api/stats';
 import { MatchHistoryTeam, StatsAuction, StatsPagePlayer, StatsPageResponse } from '../../../types';
 import type { PlayerStatPill } from './playerStatPills';
@@ -12,6 +12,7 @@ interface PlayerSearchStatsTabProps {
   loading?: boolean;
   error?: string | null;
   validDraftIds: Set<string>;
+  initialUserId?: string;
 }
 
 interface PokemonDraftSummary {
@@ -260,6 +261,7 @@ const PlayerSearchStatsTab: React.FC<PlayerSearchStatsTabProps> = ({
   loading = false,
   error = null,
   validDraftIds,
+  initialUserId,
 }) => {
   const [searchInput, setSearchInput] = useState('');
   const [isAutocompleteOpen, setIsAutocompleteOpen] = useState(false);
@@ -586,6 +588,17 @@ const PlayerSearchStatsTab: React.FC<PlayerSearchStatsTabProps> = ({
       setPlayerMatchHistoryLoading(false);
     }
   };
+
+  const initialSelectionHandled = useRef(false);
+
+  useEffect(() => {
+    if (!initialUserId || !stats || initialSelectionHandled.current) return;
+    const player = stats.players.find((p) => p.user_id === initialUserId);
+    if (player) {
+      initialSelectionHandled.current = true;
+      handleSelectPlayer(player);
+    }
+  }, [initialUserId, stats, handleSelectPlayer]);
 
   const handleSubmitSearch = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();

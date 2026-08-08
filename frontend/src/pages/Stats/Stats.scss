@@ -639,6 +639,19 @@
   font-size: 1.4rem;
 }
 
+.admin-hof-entry-player.admin-hof-entry-player {
+  color: #6db3f2;
+  text-decoration: underline;
+  text-decoration-color: rgba(109, 179, 242, 0.5);
+  text-underline-offset: 3px;
+  transition: color 0.15s ease, text-decoration-color 0.15s ease;
+}
+
+.admin-hof-entry-player.admin-hof-entry-player:hover {
+  color: #9ed0ff;
+  text-decoration-color: #9ed0ff;
+}
+
 .admin-hof-entry-race {
   color: #a9c3dc;
 }
