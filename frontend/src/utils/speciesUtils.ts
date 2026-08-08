@@ -190,6 +190,20 @@ export const createResolveMetadata = (
       }
     }
 
+    // Gen 9+ species (ROM baseId > 905) have ROM ids that are NOT national dex
+    // numbers (e.g. Fuecoco is ROM 1292 / dex 909), so the id lookup above can't
+    // reach the database. Fall back to the authoritative ROM species name, which
+    // matches the database name for base forms ("Fuecoco"). Form species are
+    // stored under the base name with a form column ("Oinkologne" + "M") rather
+    // than the ROM name ("Oinkologne-M"), so match on that prefix.
+    if (!data && info && info.baseId > 905) {
+      const searchName = info.name.toLowerCase().replace(/-/g, ' ');
+      data = pokemonMetadata[searchName]
+        ?? Object.values(pokemonMetadata).find(
+          (p) => (p.name || '').toLowerCase() && searchName.startsWith((p.name || '').toLowerCase())
+        );
+    }
+
     // No database metadata -> synthesize from the ROM species map so the name
     // and icon stay correct even when abilities are unknown.
     if (!data && info) {

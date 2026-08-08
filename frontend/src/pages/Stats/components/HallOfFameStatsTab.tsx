@@ -12,7 +12,7 @@ const HallOfFameStatsTab: React.FC = () => {
     setLoading(true);
     setError(null);
     fetchHallOfFameEligible()
-      .then(setEntries)
+      .then((data) => setEntries(data.filter((entry) => entry.hall_of_fame_team.length > 0)))
       .catch((err: any) => setError(err?.message ?? 'Failed to load hall of fame teams.'))
       .finally(() => setLoading(false));
   }, []);

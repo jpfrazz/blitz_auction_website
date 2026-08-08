@@ -266,8 +266,13 @@ const SaveChecker: React.FC = () => {
           {party.length > 0 && (
             <div className="party-section">
               <h2>Current Party</h2>
-              <div className="party-grid">
-                {party.map((mon, i) => {
+              <div className="save-party-grid">
+                {[...party].sort((a, b) => {
+                  const aFainted = a.hp === 0;
+                  const bFainted = b.hp === 0;
+                  if (aFainted !== bFainted) return aFainted ? 1 : -1;
+                  return 0;
+                }).map((mon, i) => {
                   const speciesData = resolveMetadata(mon.species_id, mon.nickname);                  
                   const realName = (mon.species_id === 412 && mon.nickname?.toLowerCase() === 'egg') ? "Egg" : (speciesData?.name || `ID ${mon.species_id}`);
                   const abilityName = speciesData?.abilities ? speciesData.abilities[mon.ability_num] : 'Unknown';
@@ -275,8 +280,8 @@ const SaveChecker: React.FC = () => {
                   const hasNickname = isActuallyNicknamed(mon.nickname, mon.species_id, realName);
 
                   return (
-                    <div key={i} className={`pokemon-card ${mon.hp === 0 ? 'fainted' : ''}`} data-testid={`party-mon-${i}`}>
-                    <div className="mon-info">
+                    <div key={i} className={`save-mon-card${mon.hp === 0 ? ' fainted' : ''}`} data-testid={`party-mon-${i}`}>
+                    <div className="mon-name-row">
                       <span className="mon-name">
                         {hasNickname ? (
                           <>{mon.nickname} <span style={{ opacity: 0.6, fontSize: '0.9em' }}>({realName})</span></>
@@ -288,10 +293,10 @@ const SaveChecker: React.FC = () => {
                       <span className="mon-level">Lv. {mon.level}</span>
                     </div>
                     <div className="mon-nature">{mon.nature} Nature{NATURE_EFFECTS[mon.nature]}</div>
-                    <div className="hp-bar-container">
-                      <div className="hp-bar-fill" style={{ width: `${(mon.hp / mon.max_hp) * 100}%` }}></div>
+                    <div className="mon-hp-bar">
+                      <div className="mon-hp-fill" style={{ width: `${(mon.hp / mon.max_hp) * 100}%` }}></div>
                     </div>
-                    <div className="hp-text">{mon.hp} / {mon.max_hp} HP</div>
+                    <div className="mon-hp-text">{mon.hp} / {mon.max_hp} HP</div>
                     {mon.ivs && (
                       <div className="iv-grid" style={{ display: 'flex', justifyContent: 'space-around', width: '100%', marginTop: '8px', opacity: 0.9 }}>
                         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', lineHeight: 1.1 }}>
@@ -330,7 +335,7 @@ const SaveChecker: React.FC = () => {
           {box1.length > 0 && (
             <div className="party-section">
               <h2>Box 1</h2>
-              <div className="party-grid">
+              <div className="save-party-grid">
                 {box1.map((mon, i) => {
                   const speciesData = resolveMetadata(mon.species_id, mon.nickname);                  
                   const realName = (mon.species_id === 412 && mon.nickname?.toLowerCase() === 'egg') ? "Egg" : (speciesData?.name || `ID ${mon.species_id}`);
@@ -339,8 +344,8 @@ const SaveChecker: React.FC = () => {
                   const hasNickname = isActuallyNicknamed(mon.nickname, mon.species_id, realName);
 
                   return (
-                    <div key={i} className="pokemon-card">
-                    <div className="mon-info">
+                    <div key={i} className="save-mon-card">
+                    <div className="mon-name-row">
                       <span className="mon-name">
                         {hasNickname ? (
                           <>{mon.nickname} <span style={{ opacity: 0.6, fontSize: '0.9em' }}>({realName})</span></>
