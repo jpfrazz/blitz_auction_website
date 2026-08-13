@@ -17,6 +17,7 @@ export const NOTEBOOK_POKEMON_LIST: string[] = [
   'Blitzle',
   'Bonsly',
   'Bounsweet',
+  'Bronzor',
   'Budew',
   'Buizel',
   'Bulbasaur',
