@@ -1,0 +1,93 @@
+8/12/2026
+
+-----------------------------------------------
+Boss Battle Tweaks
+-----------------------------------------------
+
+Wattson 3-8 Magneton/Magnezone
+Supersonic > Reflect
+
+Winona 1-3 Wingull
+Supersonic > Twister
+
+Winona 5 Swellow
+Double Team > Steel Wing
+
+//Making these two gym leaders a bit less confusing
+
+
+-----------------------------------------------
+QoL
+-----------------------------------------------
+
+PC Pokémon added to Party Menu
+//The lower left of the Party Menu now displays the first six Pokémon in box 1 of your PC
+//Allows you to quickly switch these Pokémon into the party without needing to open the Portable PC
+//Teaching TMs uses this new Party Menu, allowing you to teach them to the first 6 Pokémon in your PC
+//Depositing Pokémon at the Daycare or Evolving them at the Energy Guru/Oracle also uses this new menu
+//Expect additional integration (evolution stones, Move Tutor, etc.) in future patches
+
+Pressing Select on a Pokémon while in the Party Menu now applies a Rare Candy to it
+//A faster way of leveling that no longer requires you open the bag
+//Hold "L" while leveling up to delay evolution. Previously, you could hold Select to delay evolution while using the Rare Candy. This functionality has been swapped to the L button.
+
+If a Pokémon learns a move via level up while it has an empty move slot, the game now notifies you via text
+//Previously, Pokémon learning moves while they had empty slots learned them silently
+
+Trainer Card now records losses to Steven and Wally
+//Will help improve the website at recording results
+
+Swapped "Give All" and "Give" with "Check Tag" and "Use" on the bag's Berry Menu
+//Switches the default option on berries from the useless "Check Tag" option to "Give All"
+
+Added a mini icon for Mega Staraptor
+//The final missing mega icon
+
+
+-----------------------------------------------
+Bug Fixes
+-----------------------------------------------
+
+Fixed a bug where Scott could offer you multiple TMs of the same type after gym 8
+
+Added Fury Cutter to Araquanid, Centiskorch, Ceruledge, Grafaiai, Hawlucha, Leavanny, Pangoro, Scolipede and Vikavolt Tutor learnsets
+//These used to be in the game but got dropped when I updated learnsets. Thanks to Kch42 for noticing.
+
+Added...
+-Hone Claws to Lyranoc Day
+-Pounce to Beedrill
+-Pounce to Electrike/Manectric
+//All oversights
+
+//This is a large patch under the hood and has probably created some bugs. Please ping me with them if you uncover any weirdness.
+
+
+-----------------------------------------------
+New Setting: Shuppet Guides
+-----------------------------------------------
+
+Hundreds of invisible Shuppet now populate the overworld, blocking off irrelevant locations
+//Shuppet do not appear visible unless you stand within 3 tiles of them, at which point they fade into existence
+//This is a togglable feature enabled by default that can be turned off in Settings
+
+//Extended Commentary Start
+For the purposes of players who read patch notes, this change doesn't matter. You already know the fastest routes through Blitz and don't wander into random Pokemarts. That said, I'm really excited about this feature. One recurring experience in races with new players is somebody asking, "Uh, where do I go next?," and when you pull up their stream, they're deep in Granite Cave, or talking to Capt. Stern, or ascending Mt. Chimney. These friendly Shuppet will stop players from wandering off course.
+
+This gets at the core of a weird design conundrum. In games, you want simplicity. Having massive swathes of the overworld not only accomplish nothing but actively waste the player's time should they choose to explore them is inelegant. That said, Blitz exists in a bizarre genre where we actually need that "fluff" in order to feel like we're speedrunning through a world. Sure, I could empty Rustboro City of all buildings besides the gym, or simply allow the player to warp straight from boss to boss and cut out the overworld navigation entirely, but doing so loses the feel of inhabiting the world of Pokemon. It makes the game feel empty and sterile.
+
+That said, there are problems with preserving so many optional locations. You can *technically* go fight Team Magma in the Mossdeep City Space Center and trigger all sorts of weird behavior, but there's no reason to go out of your way to enter that location in the first place... so it's just kind of there, shoved under the bed. Had a lots of deaths this run? You can *technically* head to the Safari Zone to catch yourself a brand new team, but the rules say you can't... so we just kind of ignore that building. The Battle Tent challenge? Reviving the Mirage Tower fossil? Winning the Master Ball Lottery in Lilycove? Fighting Rayquaza? You get the idea--Blitz is overflowing with vanilla Emerald content that's there but that we have to handshake to ignore.
+
+This goes back to the origin of Blitz. At its inception, there was no concept of it ever having a public release--it was just a way for my friends and I to speedrun Emerald without having to set aside 10 full hours. The fact that you had to ignore the broken plot content went without saying. But as a standalone release where people download the game off of Hackdex and reach out to let me know that they can't obtain Relicanth to access the Regi puzzle (oh, are you sure!?), it's not at all obvious that these artifacts of vanilla Emerald are meant to be decoration. They're novelties that fly by as you dash through Hoenn, but nothing that you'd ever *actually* interact with... until you do.
+
+Which is why the overworld is now full of invisible Shuppet. As you play through Blitz as intended (that is, as a race), it doesn't change the game's feel. You can't even see these invisible friends. But for new players wandering, or sleuths poking around, the Shuppet will provide direction and guard against weird bugs in areas that were never meant to be entered in the first place. And what's more, they'll save me the headache of trying to manually disable dozens of superfluous locations (a task I've been procrastinating for months), which was all the more frustrating because it had no benefit for players already familiar with the game.
+//Extended Commentary End
+
+//Some Banette also appear. They're doing important work and are not to be trifled with. They can't be toggled off.
+
+
+-----------------------------------------------
+Pool Additions
+-----------------------------------------------
+
++Bronzor
+//Hello Bronzor!

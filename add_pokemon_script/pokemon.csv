@@ -33,6 +33,8 @@ dex_number,name,form,evolves_from_id,evolves_from_form,type1,type2,stage,ability
 761,Bounsweet,,,,Grass,,base,Leaf Guard,Oblivious,Sweet Veil,42,30,38,30,38,32,,,,
 762,Steenee,,761,,Grass,,evo,Leaf Guard,Oblivious,Sweet Veil,52,40,48,40,48,62,"Level 18",,,
 763,Tsareena,,762,,Grass,,evo,Leaf Guard,Queenly Majesty,Sweet Veil,72,120,98,50,98,72,"Level 29 (Stomp)",,,
+436,Bronzor,,,,Steel,Psychic,base,Levitate,Heatproof,Heavy Metal,57,24,86,24,86,23,,,,
+437,Bronzong,,436,,Steel,Psychic,evo,Levitate,Heatproof,Heavy Metal,67,89,116,79,116,33,"Level 33",,,
 406,Budew,,,,Grass,Poison,base,Natural Cure,Poison Point,Leaf Guard,40,30,35,50,70,55,,,,
 315,Roselia,,406,,Grass,Poison,evo,Natural Cure,Poison Point,Leaf Guard,50,60,45,100,80,65,"Level 20",,,
 407,Roserade,,315,,Grass,Poison,evo,Natural Cure,Poison Point,Technician,60,70,65,125,105,90,"Shiny Stone",,,

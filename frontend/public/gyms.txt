@@ -1383,7 +1383,7 @@ Level: 22
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
 Ability: Magnet Pull
-- Supersonic
+- Reflect
 - Shock Wave
 - Thunder Wave
 - Magnet Bomb
@@ -1433,7 +1433,7 @@ Level: 26
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
 Ability: Magnet Pull
-- Supersonic
+- Reflect
 - Shock Wave
 - Thunder Wave
 - Mirror Shot
@@ -1483,7 +1483,7 @@ Level: 30
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
 Ability: Magnet Pull
-- Supersonic
+- Reflect
 - Shock Wave
 - Tri Attack
 - Mirror Shot
@@ -1533,7 +1533,7 @@ Level: 33
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
 Ability: Magnet Pull
-- Supersonic
+- Reflect
 - Shock Wave
 - Tri Attack
 - Flash Cannon
@@ -1593,7 +1593,7 @@ Level: 40
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
 Ability: Magnet Pull
-- Supersonic
+- Reflect
 - Shock Wave
 - Tri Attack
 - Flash Cannon
@@ -1653,7 +1653,7 @@ Level: 46
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
 Ability: Magnet Pull
-- Supersonic
+- Reflect
 - Shock Wave
 - Tri Attack
 - Flash Cannon
@@ -2544,7 +2544,7 @@ IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
 Ability: Keen Eye
 - Water Gun
-- Supersonic
+- Twister
 - Quick Attack
 - Aerial Ace
 
@@ -2584,7 +2584,7 @@ IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
 Ability: Keen Eye
 - Water Pulse
-- Supersonic
+- Twister
 - Quick Attack
 - Aerial Ace
 
@@ -2634,7 +2634,7 @@ IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
 Ability: Keen Eye
 - Water Pulse
-- Supersonic
+- Twister
 - Quick Attack
 - Aerial Ace
 
@@ -2746,7 +2746,7 @@ Ability: Guts
 - Quick Attack
 - Aerial Ace
 - Pluck
-- Double Team
+- Steel Wing
 
 Tropius (F) @ Sitrus Berry
 Level: 32
