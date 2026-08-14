@@ -111,10 +111,14 @@ const FAQ = () => (
         <ol className="faq-answer">
           <li>Fewer than 40 Pokémon sold</li>
           <li>More than 3 Pokémon sold for $100</li>
+          <li>A Pokémon sold for $12,000 or more</li>
           <li>Total Pokémon sold is not equal to 8 times the total number of players</li>
         </ol>
         <p className="faq-answer" style={{ marginTop: '1rem' }}>
           That said, all drafts are still preserved in the draft tab for you and your friends to look at! They just don't contribute to Pokémon-price calculations.
+        </p>
+        <p className="faq-answer" style={{ marginTop: '1rem' }}>
+          Drafts that don't meet these four criteria are marked as "Casual Drafts" in the stats tab.
         </p>
       </section>
 
