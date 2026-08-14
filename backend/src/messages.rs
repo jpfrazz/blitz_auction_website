@@ -248,6 +248,18 @@ pub enum ServerMessage {
     ReadyToRaceCancelled {
         user_id: String,
     },
+    /// Snapshot of the player emulator connections currently online for this
+    /// draft, sent once when a WebSocket first connects so a freshly loaded
+    /// spectator/emulator page knows who is connected before any events fire.
+    PresenceSnapshot {
+        user_ids: Vec<String>,
+    },
+    PlayerConnected {
+        user_id: String,
+    },
+    PlayerDisconnected {
+        user_id: String,
+    },
 }
 
 #[derive(Clone, Debug, Deserialize)]

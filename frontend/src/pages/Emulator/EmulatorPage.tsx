@@ -467,6 +467,17 @@ const EmulatorPage: React.FC = () => {
 
   // Other players in the draft (populated via WebSocket)
   const [otherSaves, setOtherSaves] = useState<OtherPlayerSaves>({});
+
+  // Which players currently have a live emulator WebSocket open (populated via
+  // the server's presence snapshot + PlayerConnected/PlayerDisconnected events).
+  const [connectedUsers, setConnectedUsers] = useState<Set<string>>(new Set());
+  // Users we've ever seen connected this session, so a player who joins the
+  // lobby and then closes their tab (before ever saving) still shows as gone.
+  const [everConnectedUsers, setEverConnectedUsers] = useState<Set<string>>(new Set());
+  // Set once the server's presence snapshot has been received so players don't
+  // flash as disconnected for the instant before we know who's online.
+  const [presenceLoaded, setPresenceLoaded] = useState(false);
+
   const [pokemonMetadata, setPokemonMetadata] = useState<Record<string, any>>({});
   const [pokemonById, setPokemonById] = useState<Map<number, any[]>>(new Map());
 
@@ -511,6 +522,9 @@ const EmulatorPage: React.FC = () => {
   const wsRef = useRef<WebSocket | null>(null);
   const reconnectCountRef = useRef(0);
   const reconnectTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // Latest currentUserId so the WebSocket onopen handler (a closure created
+  // before the user fetch resolves) can still register presence correctly.
+  const currentUserIdRef = useRef<string | null>(null);
   const controlBindingsIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const lastKnownBindingsRef = useRef<string | null>(null);
   const blockShortcutsRef = useRef<((e: KeyboardEvent) => void) | null>(null);
@@ -544,7 +558,10 @@ const EmulatorPage: React.FC = () => {
   // ── Fetch current user to filter self from sidebar ───────────────────────
   useEffect(() => {
     fetchCurrentUser().then((u) => {
-      if (u.user_id) setCurrentUserId(u.user_id);
+      if (u.user_id) {
+        currentUserIdRef.current = u.user_id;
+        setCurrentUserId(u.user_id);
+      }
       setCurrentUsername(u.username);
       setHasRefereeRole(
         (u.roles ?? []).some((role) => role.role_name === 'Referee' || role.role_name === 'Admin') ||
@@ -635,11 +652,38 @@ const EmulatorPage: React.FC = () => {
 
       ws.onopen = () => {
         reconnectCountRef.current = 0;
+        // Tell the server this socket is a live player so the lobby knows we're
+        // here. Re-sent on every reconnect so a drop-and-rejoin registers again.
+        const uid = currentUserIdRef.current;
+        if (uid) {
+          ws.send(JSON.stringify({ type: 'PresenceRegister', data: { user_id: uid } }));
+        }
       }
 
       ws.onmessage = (event) => {
         try {
           const msg = JSON.parse(event.data as string);
+          if (msg.type === 'PresenceSnapshot') {
+            const ids = (msg.data?.user_ids ?? []) as string[];
+            setConnectedUsers(new Set(ids));
+            setEverConnectedUsers((prev) => new Set([...Array.from(prev), ...ids]));
+            setPresenceLoaded(true);
+          }
+          if (msg.type === 'PlayerConnected') {
+            const { user_id } = msg.data as { user_id: string };
+            setConnectedUsers((prev) => new Set(prev).add(user_id));
+            setEverConnectedUsers((prev) => new Set(prev).add(user_id));
+            setPresenceLoaded(true);
+          }
+          if (msg.type === 'PlayerDisconnected') {
+            const { user_id } = msg.data as { user_id: string };
+            setConnectedUsers((prev) => {
+              const next = new Set(prev);
+              next.delete(user_id);
+              return next;
+            });
+            setPresenceLoaded(true);
+          }
           if (msg.type === 'SaveUpdate') {
             const { user_id, save_data } = msg.data as { user_id: string; save_data: any };
             console.log('[EmulatorPage] SaveUpdate received for', user_id, save_data);
@@ -779,6 +823,16 @@ const EmulatorPage: React.FC = () => {
       }
     };
   }, [draftId, addNotification]);
+
+  // If the WebSocket opened before fetchCurrentUser resolved, register presence
+  // as soon as we learn our user_id.
+  useEffect(() => {
+    if (!currentUserId) return;
+    const ws = wsRef.current;
+    if (ws && ws.readyState === WebSocket.OPEN) {
+      ws.send(JSON.stringify({ type: 'PresenceRegister', data: { user_id: currentUserId } }));
+    }
+  }, [currentUserId]);
 
   // Track which Personalities have hit 0 HP to keep them fainted in the box
   useEffect(() => {
@@ -1608,6 +1662,16 @@ const EmulatorPage: React.FC = () => {
     });
   };
 
+  // True when a player had joined the race (has a save or we've seen them
+  // connected) but no longer has a live emulator WebSocket — i.e. they closed
+  // their tab or left. Never applies to our own entry, and only once we know
+  // who's online so nothing flashes before the presence snapshot arrives.
+  const isPlayerDisconnected = (uid: string, saveData: SaveData | null) =>
+    presenceLoaded &&
+    uid !== currentUserId &&
+    !connectedUsers.has(uid) &&
+    (saveData !== null || everConnectedUsers.has(uid));
+
   return (
     <div className="emulator-page">
       <Header />
@@ -1803,16 +1867,21 @@ const EmulatorPage: React.FC = () => {
                       const isWinner = saveData?.map_name === 'LilycoveCity_LilycoveMuseum_1F';
                       const mostRecentLossName = saveData?.most_recent_loss_name;
                       const championName = getChampionName(saveData);
+                      const showDisconnected =
+                        isPlayerDisconnected(uid, saveData) && !isWiped && !isWinner;
 
                       return (
                         <div key={uid} className="overlay-player-card">
                           <div className="overlay-player-header">
-                            <span className="overlay-username">{displayDisplayName}</span>
+                            <span className={`overlay-username ${showDisconnected ? 'disconnected' : ''}`}>{displayDisplayName}</span>
                             {isWiped && mostRecentLossName && (
                               <span className="wipe-text">(Wiped to {mostRecentLossName})</span>
                             )}
                             {isWinner && championName && (
                               <span className="win-text">(Beat {championName}!)</span>
+                            )}
+                            {showDisconnected && (
+                              <span className="disconnect-text">(Disconnected)</span>
                             )}
                             <span className="overlay-badges">
                               {saveData ? `${saveData.badge_count} ${saveData.badge_count === 1 ? 'badge' : 'badges'}` : '— badges'}
@@ -2007,17 +2076,22 @@ const EmulatorPage: React.FC = () => {
                   const isWinner = saveData?.map_name === 'LilycoveCity_LilycoveMuseum_1F';
                   const mostRecentLossName = saveData?.most_recent_loss_name;
                   const championName = getChampionName(saveData);
+                  const showDisconnected =
+                    isPlayerDisconnected(uid, saveData) && !isWiped && !isWinner;
 
                   return (
                     <div key={uid} className={`sidebar-player-card ${readyPlayers.has(uid) ? 'race-ready' : ''}`}>
                       <div className="sidebar-player-header">
-                        <span className={`sidebar-username ${isWiped ? 'wiped' : ''} ${isWinner ? 'winner' : ''}`}>
+                        <span className={`sidebar-username ${showDisconnected ? 'disconnected' : ''} ${isWiped ? 'wiped' : ''} ${isWinner ? 'winner' : ''}`}>
                           {displayDisplayName}
                           {isWiped && mostRecentLossName && (
                             <span className="wipe-text"> (Wiped to {mostRecentLossName})</span>
                           )}
                           {isWinner && championName && (
                             <span className="win-text"> (Beat {championName}!)</span>
+                          )}
+                          {showDisconnected && (
+                            <span className="disconnect-text"> (Disconnected)</span>
                           )}
                         </span>
                         <span className="sidebar-badges">

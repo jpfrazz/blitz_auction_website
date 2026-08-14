@@ -98,6 +98,10 @@
   &.winner {
     color: #4ade80;
   }
+
+  &.disconnected {
+    color: #f87171;
+  }
 }
 
 .spectate-badges {
@@ -141,6 +145,12 @@
 }
 
 .wipe-text {
+  font-size: 1rem;
+  color: #f87171;
+  font-weight: 500;
+}
+
+.disconnect-text {
   font-size: 1rem;
   color: #f87171;
   font-weight: 500;

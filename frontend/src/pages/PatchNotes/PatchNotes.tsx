@@ -4,7 +4,7 @@ import Footer from '../../shared/components/Footer';
 import './PatchNotes.scss';
 
 const patches = [
-  'v1.0.5 Patch Notes.txt','v1.0.4 Patch Notes.txt','v1.0.3 Patch Notes.txt','v1.0.2 Patch Notes.txt','v1.0.1 Patch Notes.txt','v1.0.0 Patch Notes.txt',
+  'v1.0.6 Patch Notes.txt','v1.0.5 Patch Notes.txt','v1.0.4 Patch Notes.txt','v1.0.3 Patch Notes.txt','v1.0.2 Patch Notes.txt','v1.0.1 Patch Notes.txt','v1.0.0 Patch Notes.txt',
   'v0.9.2 Patch Notes.txt','v0.9.1 Patch Notes.txt','v0.9.0 Patch Notes.txt',
   'v0.8.9 Patch Notes.txt','v0.8.8 Patch Notes.txt','v0.8.7 Patch Notes.txt','v0.8.6 Patch Notes.txt','v0.8.5 Patch Notes.txt','v0.8.4 Patch Notes.txt','v0.8.32 Patch Notes.txt','v0.8.3 Patch Notes.txt','v0.8.2 Patch Notes.txt','v0.8.1 Patch Notes.txt','v0.8.0 Patch Notes.txt',
   'v0.7.9 Patch Notes.txt','v0.7.8 Patch Notes.txt','v0.7.7 Patch Notes.txt','v0.7.6 Patch Notes.txt','v0.7.5 Patch Notes.txt','v0.7.4 Patch Notes.txt','v0.7.3 Patch Notes.txt','v0.7.2 Patch Notes.txt','v0.7.1 Patch Notes.txt','v0.7.0 Patch Notes.txt',
@@ -97,6 +97,7 @@ const PatchItem = ({ filename }: { filename: string }) => {
   };
 
   const shortName = filename.replace(' Patch Notes.txt', '').replace(/^v/, '');
+  const bugfixVersions = ['1.0.1', '1.0.2', '1.0.3', '1.0.6'];
   const isCurrentMajor = (() => {
     const parts = shortName.split('.').map(Number);
     return parts.length >= 2 && parts[0] >= 1;
@@ -113,7 +114,7 @@ const PatchItem = ({ filename }: { filename: string }) => {
         tabIndex={0}
         onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggle(); } }}
       >
-        <div className="patch-meta">Version {shortName} Patch Notes</div>
+        <div className="patch-meta">Version {shortName} Patch Notes{bugfixVersions.includes(shortName) && <span> (Bugfix)</span>}</div>
         <div className="patch-date">{date}</div>
       </div>
       {expanded && (

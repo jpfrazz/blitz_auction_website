@@ -61,6 +61,15 @@ const SpectatePage: React.FC = () => {
   // Persist fainted state via Personality ID (User ID -> Set of PIDs)
   const [faintedPids, setFaintedPids] = useState<Record<string, Set<number>>>({});
 
+  // Which players currently have a live emulator WebSocket open, plus anyone
+  // we've ever seen connected, so a player who closes their tab shows up as
+  // disconnected even if they never sent a save.
+  const [connectedUsers, setConnectedUsers] = useState<Set<string>>(new Set());
+  const [everConnectedUsers, setEverConnectedUsers] = useState<Set<string>>(new Set());
+  // Set once the server's presence snapshot has been received so players don't
+  // flash as disconnected for the instant before we know who's online.
+  const [presenceLoaded, setPresenceLoaded] = useState(false);
+
   const wsRef = useRef<WebSocket | null>(null);
   const reconnectCountRef = useRef(0);
   const reconnectTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -158,6 +167,27 @@ const SpectatePage: React.FC = () => {
       ws.onmessage = (event) => {
         try {
           const msg = JSON.parse(event.data as string);
+          if (msg.type === 'PresenceSnapshot') {
+            const ids = (msg.data?.user_ids ?? []) as string[];
+            setConnectedUsers(new Set(ids));
+            setEverConnectedUsers((prev) => new Set([...Array.from(prev), ...ids]));
+            setPresenceLoaded(true);
+          }
+          if (msg.type === 'PlayerConnected') {
+            const { user_id } = msg.data as { user_id: string };
+            setConnectedUsers((prev) => new Set(prev).add(user_id));
+            setEverConnectedUsers((prev) => new Set(prev).add(user_id));
+            setPresenceLoaded(true);
+          }
+          if (msg.type === 'PlayerDisconnected') {
+            const { user_id } = msg.data as { user_id: string };
+            setConnectedUsers((prev) => {
+              const next = new Set(prev);
+              next.delete(user_id);
+              return next;
+            });
+            setPresenceLoaded(true);
+          }
           if (msg.type === 'SaveUpdate') {
             const { user_id, save_data } = msg.data as { user_id: string; save_data: any };
             setPlayerSaves((prev) => ({
@@ -299,11 +329,20 @@ const SpectatePage: React.FC = () => {
                 const isWinner = save?.map_name === 'LilycoveCity_LilycoveMuseum_1F';
                 const mostRecentLossName = save?.most_recent_loss_name;
                 const championName = getChampionName(save);
+                // A player has "left the lobby" when they had joined the race
+                // (saved a file, or we've seen them connect) but their emulator
+                // WebSocket is no longer live. Only evaluated once the presence
+                // snapshot arrives so nobody flashes at page load.
+                const isDisconnected =
+                  presenceLoaded &&
+                  !connectedUsers.has(uid) &&
+                  (save !== null || everConnectedUsers.has(uid));
+                const showDisconnected = isDisconnected && !isWiped && !isWinner;
 
                 return (
                   <div key={uid} className="spectate-player-card">
                     <div className="spectate-player-header">
-                      <span className={`spectate-username ${isWiped ? 'wiped' : ''} ${isWinner ? 'winner' : ''}`}>
+                      <span className={`spectate-username ${showDisconnected ? 'disconnected' : ''} ${isWiped ? 'wiped' : ''} ${isWinner ? 'winner' : ''}`}>
                         {displayName}
                       </span>
                       {isWiped && mostRecentLossName && (
@@ -311,6 +350,9 @@ const SpectatePage: React.FC = () => {
                       )}
                       {isWinner && championName && (
                         <span className="win-text">(Beat {championName}!)</span>
+                      )}
+                      {showDisconnected && (
+                        <span className="disconnect-text">(Disconnected)</span>
                       )}
                       <span className="spectate-badges">
                         {save ? `${save.badge_count} ${save.badge_count === 1 ? 'badge' : 'badges'}` : '— badges'}

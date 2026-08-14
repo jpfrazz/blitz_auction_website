@@ -1,0 +1,28 @@
+8/14/2026
+
+-----------------------------------------------
+Bug Fixes
+-----------------------------------------------
+
+Energy Guru and Oracle can no longer evolve fainted Pokémon
+
+Evolution items (like Fire Stones, Dragon Scales, etc.) can no longer evolve fainted Pokémon
+
+Fixed a bug where the PC was accessible in certain Elite Four chambers
+
+
+Zoroark Illusion Improved:
+If a player's Zoroark is disguised as a different Pokémon, and that Pokémon has only one ability, the enemy now assumes you have that ability
+//For example, if you have a Zoroark disguised as Rotom (whose only ability is Levitate), the enemy AI will now no longer use Ground-type attacks because it assumes your disuguised Zoroark has Levitate
+
+If a player's Zoroark is disguised as a different Pokémon, and the enemy doesn't yet know it's a Zoroark, it decides which Pokémon to send in next based on the disguised Pokémon
+//For example, if you have a Zoroark disguised as Simisear, then knock the opponent's Pokémon out with Flamethrower, the AI will decide which Pokémon to send in next based on their matchup with Simisear, not with Zoroark
+//Thanks to Cheapd for reporting these Illusion bugs
+
+
+-----------------------------------------------
+QoL
+-----------------------------------------------
+
+Removed two Shuppet at the southern end of Route 104
+Added Shuppet to the Lavaridge, Fortree, and Mossdeep Gyms

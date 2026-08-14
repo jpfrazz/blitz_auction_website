@@ -3847,11 +3847,38 @@ pub async fn websocket_handler(
         ));
     };
     let tx = draft.broadcast_tx.clone();
-    Ok(ws.on_upgrade(move |socket| handle_websocket(socket, tx)))
+    let presence = draft.presence.clone();
+    Ok(ws.on_upgrade(move |socket| handle_websocket(socket, tx, presence)))
 }
 
-async fn handle_websocket(mut socket: WebSocket, tx: broadcast::Sender<ServerMessage>) {
+async fn handle_websocket(
+    mut socket: WebSocket,
+    tx: broadcast::Sender<ServerMessage>,
+    presence: Arc<dashmap::DashMap<String, usize>>,
+) {
     let mut rx = tx.subscribe();
+    // The player user_id this socket registered itself as (via PresenceRegister).
+    // Only the emulator page sends that message, so spectators stay anonymous.
+    let mut registered_user: Option<String> = None;
+
+    // Tell a freshly connected client who is already online so it can render
+    // connected/disconnected state immediately instead of waiting for events.
+    let connected: Vec<String> = presence
+        .iter()
+        .filter(|e| *e.value() > 0)
+        .map(|e| e.key().clone())
+        .collect();
+    if let Ok(json_text) = serde_json::to_string(&ServerMessage::PresenceSnapshot {
+        user_ids: connected,
+    }) {
+        if socket
+            .send(Message::Text(json_text.into()))
+            .await
+            .is_err()
+        {
+            return;
+        }
+    }
 
     loop {
         tokio::select! {
@@ -3873,6 +3900,29 @@ async fn handle_websocket(mut socket: WebSocket, tx: broadcast::Sender<ServerMes
                     // Handle incoming messages from clients
                     if let Ok(client_msg) = serde_json::from_str::<serde_json::Value>(&text) {
                         if let Some(msg_type) = client_msg.get("type").and_then(|v| v.as_str()) {
+                            if msg_type == "PresenceRegister" {
+                                if let Some(user_id) = client_msg
+                                    .get("data")
+                                    .and_then(|d| d.get("user_id"))
+                                    .and_then(|v| v.as_str())
+                                {
+                                    let user_id = user_id.to_string();
+                                    // Multiple emulator tabs for the same player
+                                    // are fine: only the 0 -> 1 transition means
+                                    // they were offline and are now online.
+                                    let was_offline = {
+                                        let mut count = presence
+                                            .entry(user_id.clone())
+                                            .or_insert(0);
+                                        *count += 1;
+                                        *count == 1
+                                    };
+                                    registered_user = Some(user_id.clone());
+                                    if was_offline {
+                                        let _ = tx.send(ServerMessage::PlayerConnected { user_id });
+                                    }
+                                }
+                            }
                             if msg_type == "WipeNotification" {
                                 if let Some(data) = client_msg.get("data") {
                                     if let (Some(username), Some(trainer)) = (
@@ -3925,6 +3975,26 @@ async fn handle_websocket(mut socket: WebSocket, tx: broadcast::Sender<ServerMes
                     }
                 }
             }
+        }
+    }
+
+    // The socket dropped (tab closed, page navigated away, network blip that
+    // didn't recover). Release this socket's presence registration and tell the
+    // lobby the player left once their last connection is gone.
+    if let Some(user_id) = registered_user {
+        let remaining = match presence.entry(user_id.clone()) {
+            entry::Entry::Occupied(mut e) => {
+                *e.get_mut() = e.get().saturating_sub(1);
+                let remaining = *e.get();
+                if remaining == 0 {
+                    e.remove();
+                }
+                remaining
+            }
+            entry::Entry::Vacant(_) => 0,
+        };
+        if remaining == 0 {
+            let _ = tx.send(ServerMessage::PlayerDisconnected { user_id });
         }
     }
 }

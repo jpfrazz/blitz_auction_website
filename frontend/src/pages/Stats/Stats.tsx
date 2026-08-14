@@ -902,7 +902,7 @@ const Stats: React.FC = () => {
         )}
 
         {activeTab === 'hall-of-fame' && (
-          <HallOfFameStatsTab />
+          <HallOfFameStatsTab validDraftIds={validDraftIds} />
         )}
 
         {activeTab === 'tier-list' && (

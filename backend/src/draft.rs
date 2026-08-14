@@ -1,5 +1,6 @@
 use axum::http::StatusCode;
 use chrono::Utc;
+use dashmap::DashMap;
 use petname::petname;
 use rand::seq::SliceRandom;
 use serde::{Deserialize, Serialize};
@@ -28,6 +29,12 @@ pub struct Draft {
     pub host: User,
     pub broadcast_tx: broadcast::Sender<ServerMessage>,
     pub pokemon: Vec<Arc<Pokemon>>,
+    /// Number of live player-emulator WebSocket connections per user_id.
+    /// Used to tell spectators/sidebars when a player has closed their tab or
+    /// otherwise left the lobby. The emulator page registers itself on connect
+    /// and the count is decremented when its socket drops; the Spectate page
+    /// never registers, so it doesn't count as a player connection.
+    pub presence: Arc<DashMap<String, usize>>,
     pub created_at: chrono::DateTime<Utc>,
     actor_sender: mpsc::Sender<DraftCommand>,
 }
@@ -147,6 +154,7 @@ impl Draft {
             pokemon,
             broadcast_tx,
             actor_sender,
+            presence: Arc::new(DashMap::new()),
             created_at,
         }
     }
