@@ -724,7 +724,7 @@ const Info = () => (
         <h2 className="info-question">Gym Benchmarks</h2>
         <hr />
         <p className="info-answer">
-          The Rare Candy stops leveling up your Pokémon at these thresholds. Defeating each gym leader also rewards you with a set amount of money.
+          The Rare Candy stops leveling up your Pokémon at these thresholds. Defeating each gym leader also rewards you with the following amounts of money.
         </p>
         <div className="info-table-wrapper">
           <table className="info-table">
@@ -768,7 +768,7 @@ const Info = () => (
           <strong>Pokémon Renting</strong>
         </p>
         <p className="info-answer">
-          For the price of ¥6000, Talk to the shady man in the top left of the Slateport Market to rent a Pokémon. Once rented, you can use it for the next gym before returning it.<br />
+          For the price of ¥8000, Talk to the shady man in the top left of the Slateport Market to rent a Pokémon. Once rented, you can use it for the next gym before returning it.<br />
           <br />
           After renting, when you re-enter the market with a new badge, the salesman teleports to you and reclaims your rented Pokemon. If the rented Pokémon is fainted, he scolds you thoroughly and charges you an additional ¥6000 for being so careless.<br />
           <br />
@@ -822,7 +822,8 @@ const Info = () => (
           <li>Holding "B" on your Gameboy while riding Flygon urges him to move at 1.5x speed</li>
           <li>Pressing "L" while riding Flygon instantly opens the Fly map</li>
           <li>Pressing "Select" while viewing the overworld map instantly snaps the cursor to Slateport City</li>
-          <li>Holding "Select" while in the party menu prevents Pokemon from evolving (useful for delaying evolutions)</li>
+          <li>Pressing "Select" while in the party menu uses the Rare Candy on the hovered Pokémon</li>
+          <li>Holding "L" while in the party menu prevents Pokemon from evolving (useful for delaying evolutions)</li>
         </ul>
       </section>
 

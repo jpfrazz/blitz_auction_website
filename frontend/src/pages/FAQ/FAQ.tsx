@@ -142,6 +142,9 @@ const FAQ = () => (
         <p className="faq-answer">
           Yes! The notebook includes a "Random" option at the bottom of its list. Choose this option eight times to generate yourself a random team of Pokémon, then get racing!
         </p>
+        <p className="faq-answer">
+          Additionally, KCH42 creates a Weekly Box every Friday composed of eight Pokemon designed to offer a unique experience. Join the Discord server to stay up to date on each week's box!
+        </p>
       </section>
 
       <section id="whats-changed" className="faq-section" style={{ scrollMarginTop: '120px' }}>
@@ -159,7 +162,9 @@ const FAQ = () => (
               <li>
                 <b>Rental Pokemon:</b> For ¥8000, a shady salesman will allow you to rent a random Pokémon from his powerful collection. You'd better not try to steal it!
               </li>
-
+              <li>
+                <b>Scott's TMs:</b> Starting at the fourth gym, each time you earn a badge, Scott offers you a random set of five TMs for sale from a pool of 36 potential options. May Scott be ever in your favor!
+              </li>
           </ul>
 
           <h3 style={{ textAlign: 'left' }}>Quality of Life Improvements</h3>
@@ -212,7 +217,7 @@ const FAQ = () => (
               <b>Updated Teams:</b> Gym leaders use more well-rounded teams, having bolstered their rosters with new Alolan, Hisuian, and Galarian members.
             </li>
             <li>
-              <b>New Boss Fights:</b> The Elite Four champion is now Steven Stone wielding a Mega Metagross. Wallace, meanwhile, now joins Juan to make the 8th gym a double battle. Additionally, Viola is vacationing from Kalos to give Hoenn some bug representation.
+              <b>New Boss Fights:</b> The Elite Four champion is now either Steven Stone wielding a Mega Metagross or Wally and his Mega Gallade. Wallace, meanwhile, now joins Juan to make the 8th gym a double battle. Battle Factory Brains join the Elite Four to make each fight a flip between two possibilities. Additionally, Viola is vacationing from Kalos to give Hoenn some bug representation.
             </li>
             <li>
               <b>Buffed Battles:</b> All enemy trainers use perfect 31-IV Pokémon.
@@ -225,7 +230,7 @@ const FAQ = () => (
               <b>Fixed Money Supply:</b> Players are no longer able to sell items, and non-boss battles no longer award money. The player has 62,000 to spend, and every purchase has an opportunity cost.
             </li>
             <li>
-              <b>Slateport Outdoor Market:</b> Most relevant items, including evolution stones, mega stones, power TMs, and ability-changing items are available for purchase in the Slateport outdoor market.
+              <b>Slateport Outdoor Market:</b> Most relevant items, including evolution stones, mega stones, TMs, and ability-changing items are available for purchase in the Slateport outdoor market.
             </li>
             <li>
               <b>Purchasable Berries:</b> All easily accessible berries are available for sale in the Pretty Petal Flower Shop.
