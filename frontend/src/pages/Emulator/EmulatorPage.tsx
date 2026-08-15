@@ -2650,7 +2650,7 @@ const EmulatorPage: React.FC = () => {
                         onClick={() => setIsPanelMinimized(!isPanelMinimized)}
                         title={isPanelMinimized ? "Expand" : "Minimize"}
                       >
-                        {isPanelMinimized ? '▼' : '▲'}
+                        {isPanelMinimized ? '▲' : '▼'}
                       </button>
                       {hasSidebar && (
                         <button
@@ -2658,7 +2658,7 @@ const EmulatorPage: React.FC = () => {
                           onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
                           title={isSidebarCollapsed ? "Show sidebar" : "Hide sidebar"}
                         >
-                          {isSidebarCollapsed ? '▶' : '◀'}
+                          {isSidebarCollapsed ? '◀' : '▶'}
                         </button>
                       )}
                     </div>
