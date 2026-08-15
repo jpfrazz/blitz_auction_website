@@ -3,6 +3,7 @@ import { useParams, Link } from 'react-router-dom';
 import Header from '../../shared/components/Header';
 import Footer from '../../shared/components/Footer';
 import { getIconName, createResolveMetadata, isActuallyNicknamed } from '../../utils/speciesUtils';
+import { MOVES } from '../../utils/movesData';
 import { SaveData } from '../../utils/parseSaveFile';
 import { fetchDraftById } from '../../shared/api/draftData';
 import { fetchPokemonList, fetchRentalPokemonList } from '../../shared/api/pokemon';
@@ -324,9 +325,8 @@ const SpectatePage: React.FC = () => {
                 <p className="spectate-empty">No players have joined this draft yet.</p>
               )}
               {playerEntries.map(([uid, { displayName, save }]) => {
-                // Detect wipe (InsideOfTruck) or win (LilycoveCity_LilycoveMuseum_1F)
+                // Detect wipe (InsideOfTruck) or win (champion trainer-card win)
                 const isWiped = save?.map_name === 'InsideOfTruck';
-                const isWinner = save?.map_name === 'LilycoveCity_LilycoveMuseum_1F';
                 const mostRecentLossName = save?.most_recent_loss_name;
                 const championName = getChampionName(save);
                 // A player has "left the lobby" when they had joined the race
@@ -337,18 +337,18 @@ const SpectatePage: React.FC = () => {
                   presenceLoaded &&
                   !connectedUsers.has(uid) &&
                   (save !== null || everConnectedUsers.has(uid));
-                const showDisconnected = isDisconnected && !isWiped && !isWinner;
+                const showDisconnected = isDisconnected && !isWiped && !championName;
 
                 return (
                   <div key={uid} className="spectate-player-card">
                     <div className="spectate-player-header">
-                      <span className={`spectate-username ${showDisconnected ? 'disconnected' : ''} ${isWiped ? 'wiped' : ''} ${isWinner ? 'winner' : ''}`}>
+                      <span className={`spectate-username ${showDisconnected ? 'disconnected' : ''} ${isWiped ? 'wiped' : ''} ${championName ? 'winner' : ''}`}>
                         {displayName}
                       </span>
                       {isWiped && mostRecentLossName && (
                         <span className="wipe-text">(Wiped to {mostRecentLossName})</span>
                       )}
-                      {isWinner && championName && (
+                      {championName && (
                         <span className="win-text">(Beat {championName}!)</span>
                       )}
                       {showDisconnected && (
@@ -381,7 +381,7 @@ const SpectatePage: React.FC = () => {
                                 alt={mon.nickname || realName}
                                 className={`spectate-mini-icon ${fainted ? 'fainted' : ''}`}
                                 style={fainted ? { filter: 'grayscale(100%)', opacity: 0.6 } : {}}
-                                title={`${hasNickname ? `${mon.nickname} (${realName})` : realName} (${abilityName}) - (${mon.nature || 'Unknown'} Nature${mon.nature ? NATURE_EFFECTS[mon.nature] : ''})${mon.ivs ? `\nIVs: ${mon.ivs.hp}/${mon.ivs.atk}/${mon.ivs.def}/${mon.ivs.spa}/${mon.ivs.spd}/${mon.ivs.spe}` : ''}`}
+                                title={`${hasNickname ? `${mon.nickname} (${realName})` : realName} (${abilityName}) - (${mon.nature || 'Unknown'} Nature${mon.nature ? NATURE_EFFECTS[mon.nature] : ''})${mon.ivs ? `\nIVs: ${mon.ivs.hp}/${mon.ivs.atk}/${mon.ivs.def}/${mon.ivs.spa}/${mon.ivs.spd}/${mon.ivs.spe}` : ''}${mon.moves && mon.moves.some((id: number) => id > 0) ? `\nMoves: ${mon.moves.filter((id: number) => id > 0).map((id: number) => MOVES[id]?.name).filter(Boolean).join(', ')}` : ''}`}
                                 onError={(e) => { (e.target as HTMLImageElement).src = '/MiniIcons/question.png'; }}
                               />
                             </span>

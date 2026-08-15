@@ -167,6 +167,7 @@ export interface SavePokemon {
   nature: string;
   ability_num: number;
   ivs: SaveIvs;
+  moves: number[];
 }
 
 export interface SaveBoxPokemon {
@@ -176,6 +177,7 @@ export interface SaveBoxPokemon {
   ability_num: number;
   nature: string;
   ivs: SaveIvs;
+  moves: number[];
 }
 
 export interface TrainerCardWin {
@@ -200,6 +202,282 @@ export interface SaveData {
   player_faint_counter: number | null;
   /** Personalities previously seen fainted, persisted by the backend. */
   fainted_pids?: number[];
+}
+
+// ── Live RAM party parsing ──────────────────────────────────────────────────
+// Blitz is a pokeemerald-expansion fork, so the in-RAM `struct Pokemon` is the
+// SAME 116-byte layout as the `.sav` party section (96-byte BoxPokemon header +
+// substructs, then status/level/mail/hp/maxHP + 5 stat words). Offsets mirror
+// the save parser above: substructures @+32 with a 16-byte stride, checksum u16
+// @+28 (computed by the game over the DECRYPTED 16 substruct words — see
+// CalculateBoxMonChecksumReencrypt in src/pokemon.c), level @+100, current HP
+// @+102, max HP @+104, IVs in the misc substructure @+4, ability bits 29-30 of
+// the misc word @+8. Party entries are stored encrypted in EWRAM; every secure
+// word is XORed with key = personality ^ otId before use. Empty slots are fully
+// zeroed by the game.
+const RAM_POKEMON_SIZE = 116;
+const RAM_SUBSTRUCTURE_SIZE = 16;
+const RAM_PARTY_SLOTS = 6;
+const RAM_SUBSTRUCT_START = 32;
+export const RAM_PARTY_BYTES = RAM_POKEMON_SIZE * RAM_PARTY_SLOTS;
+const RAM_CHKSUM_WORDS = 16;
+
+function readU32(bytes: Uint8Array, off: number): number {
+  return (
+    (bytes[off] |
+      (bytes[off + 1] << 8) |
+      (bytes[off + 2] << 16) |
+      (bytes[off + 3] << 24)) >>>
+    0
+  );
+}
+
+function readU16(bytes: Uint8Array, off: number): number {
+  return bytes[off] | (bytes[off + 1] << 8);
+}
+
+// Reads a Pokemon's 4 known moves from the encrypted "attacks" substructure.
+// Works for both the 116-byte party `struct Pokemon` and the 96-byte box
+// `struct BoxPokemon` (same substructure region @+32, 16-byte stride).
+// Each move is an 11-bit field (move:11), so values are masked with 0x7FF.
+function readMoves(bytes: Uint8Array, pStart: number, key: number, order: string): number[] {
+  const attackIdx = order.indexOf('A');
+  const attackOff = pStart + 32 + attackIdx * RAM_SUBSTRUCTURE_SIZE;
+  const moves: number[] = [];
+  for (let m = 0; m < 4; m++) {
+    const raw = readU16(bytes, attackOff + m * 2);
+    moves.push((raw ^ (m % 2 === 0 ? key & 0xffff : key >>> 16)) & 0x7ff);
+  }
+  return moves;
+}
+
+// Blitz checksum: sum of the 32 u16s covering the 64-byte substructure region
+// (decrypted), compared against the stored u16 at +28. Matches the game's
+// CalculateBoxMonChecksum which iterates ARRAY_COUNT(secure.raw) = 16 words.
+function ramChecksumMatches(bytes: Uint8Array, slotOff: number, key: number): boolean {
+  const expected = readU16(bytes, slotOff + 28);
+  let sum = 0;
+  for (let w = 0; w < RAM_CHKSUM_WORDS; w++) {
+    const word = (readU32(bytes, slotOff + RAM_SUBSTRUCT_START + w * 4) ^ key) >>> 0;
+    sum += (word & 0xffff) + (word >>> 16);
+  }
+  return (sum & 0xffff) === expected;
+}
+
+function ramSlotSpecies(bytes: Uint8Array, slotOff: number): number {
+  const personality = readU32(bytes, slotOff);
+  const key = (personality ^ readU32(bytes, slotOff + 4)) >>> 0;
+  const growthIdx = SUBSTRUCTURE_ORDERS[personality % 24].indexOf('G');
+  const growthOff = slotOff + RAM_SUBSTRUCT_START + growthIdx * RAM_SUBSTRUCTURE_SIZE;
+  return (readU32(bytes, growthOff) ^ key) & 0x7ff;
+}
+
+// "Shape" check: personality non-zero, decrypts to a non-zero species, level
+// 1-100, positive max HP. Every real Pokemon passes these; random heap data
+// fails them. This deliberately does NOT include the checksum, because Blitz
+// (a race fork with a notebook/claim system that writes party mons directly)
+// does not always maintain each mon's checksum in RAM — only the shape is
+// reliable on a live party once its offset is known.
+function isRamSlotShape(bytes: Uint8Array, slotOff: number): boolean {
+  const personality = readU32(bytes, slotOff);
+  if (personality === 0) return false;
+  if (ramSlotSpecies(bytes, slotOff) === 0) return false;
+  const level = bytes[slotOff + 100];
+  if (level < 1 || level > 100) return false;
+  if (readU16(bytes, slotOff + 104) === 0) return false; // max_hp must be positive
+  return true;
+}
+
+// A slot is "occupied" when its shape checks pass AND the checksum matches.
+// The checksum is the primary gate for the scan (random heap data has a
+// 1-in-65536 chance of passing it); shape alone is not enough to distinguish
+// a 6-slot region from coincidence there.
+function isRamSlotOccupied(bytes: Uint8Array, slotOff: number): boolean {
+  if (!isRamSlotShape(bytes, slotOff)) return false;
+  const personality = readU32(bytes, slotOff);
+  const key = (personality ^ readU32(bytes, slotOff + 4)) >>> 0;
+  return ramChecksumMatches(bytes, slotOff, key);
+}
+
+// An empty party slot is fully zeroed by the game (ZeroMonData), so checking
+// the personality word alone is a safe, cheap emptiness test.
+function isRamSlotZeroed(bytes: Uint8Array, slotOff: number): boolean {
+  return readU32(bytes, slotOff) === 0;
+}
+
+/**
+ * Returns the number of leading occupied slots if `partyOff` points at a live
+ * party (6 × 116-byte slots) in emulator RAM, or null when it does not.
+ *
+ * Validation is purely slot-based: every leading slot must be a formed Pokemon
+ * (personality non-zero, decrypts to a real species, level 1-100, positive max
+ * HP) followed by zeroed empty slots. `requireChecksum` additionally demands
+ * each slot's stored checksum match; the scan needs it to reject random heap
+ * data, but the fast path (which already knows where the party lives) should
+ * pass `false` since Blitz does not always keep party checksums current. There
+ * is NO count-byte check — Blitz's globals just before `gPlayerParty` don't
+ * match vanilla, and enemy-count-like bytes there made the old "both bytes
+ * look like counts" rejection throw away the real party during battles.
+ */
+export function getRamPartyCount(
+  bytes: Uint8Array,
+  partyOff: number,
+  requireChecksum = true
+): number | null {
+  if (partyOff < 4 || partyOff + RAM_PARTY_BYTES > bytes.length) return null;
+  const valid = requireChecksum ? isRamSlotOccupied : isRamSlotShape;
+  let count = 0;
+  for (let i = 0; i < RAM_PARTY_SLOTS; i++) {
+    const slotOff = partyOff + i * RAM_POKEMON_SIZE;
+    if (valid(bytes, slotOff)) count++;
+    else if (isRamSlotZeroed(bytes, slotOff)) break;
+    else return null;
+  }
+  if (count === 0) return null;
+  return count;
+}
+
+/**
+ * Decodes a live party from emulator RAM starting at `partyOff`. Returns the
+ * same SavePokemon[] shape as `parseSaveFile` so live data can replace the
+ * `.sav`-parsed party field. `requireChecksum` is forwarded to
+ * `getRamPartyCount` — the fast path passes false (see its docs).
+ */
+export function parseRamParty(
+  bytes: Uint8Array,
+  partyOff: number,
+  requireChecksum = true
+): SavePokemon[] {
+  const count = getRamPartyCount(bytes, partyOff, requireChecksum) ?? 0;
+  const party: SavePokemon[] = [];
+  for (let i = 0; i < count; i++) {
+    const slotOff = partyOff + i * RAM_POKEMON_SIZE;
+    const personality = readU32(bytes, slotOff);
+    const key = (personality ^ readU32(bytes, slotOff + 4)) >>> 0;
+    const order = SUBSTRUCTURE_ORDERS[personality % 24];
+    const growthIdx = order.indexOf('G');
+    const miscIdx = order.indexOf('M');
+    const growthOff = slotOff + RAM_SUBSTRUCT_START + growthIdx * RAM_SUBSTRUCTURE_SIZE;
+    const miscOff = slotOff + RAM_SUBSTRUCT_START + miscIdx * RAM_SUBSTRUCTURE_SIZE;
+
+    const species_id = (readU32(bytes, growthOff) ^ key) & 0x7ff;
+    const packedIvs = (readU32(bytes, miscOff + 4) ^ key) >>> 0;
+    const miscWord2 = (readU32(bytes, miscOff + 8) ^ key) >>> 0;
+
+    const ivs: SaveIvs = {
+      hp: packedIvs & 0x1f,
+      atk: (packedIvs >> 5) & 0x1f,
+      def: (packedIvs >> 10) & 0x1f,
+      spe: (packedIvs >> 15) & 0x1f,
+      spa: (packedIvs >> 20) & 0x1f,
+      spd: (packedIvs >> 25) & 0x1f,
+    };
+
+    party.push({
+      personality,
+      nickname: decodeString(bytes.slice(slotOff + 8, slotOff + 20)),
+      level: bytes[slotOff + 100],
+      hp: readU16(bytes, slotOff + 102),
+      max_hp: readU16(bytes, slotOff + 104),
+      species_id,
+      ability_num: (miscWord2 >> 29) & 3,
+      nature: NATURES[personality % 25],
+      ivs,
+      moves: readMoves(bytes, slotOff, key, order),
+    });
+  }
+  return party;
+}
+
+// Scores a candidate party offset for the scan. The count is the dominant
+// signal: a real party has count 2-6 (every occupied slot passing the checksum
+// + species/level/maxHP gates), while random heap data passing a 16-bit
+// checksum is almost always a lone count-1 slot. A count byte that happens to
+// agree (at partyOff-3 or -4) is only a tiebreaker — it never rejects, because
+// during battles the bytes just before the party legitimately hold counts.
+export function ramPartyScore(
+  bytes: Uint8Array,
+  partyOff: number
+): { count: number; score: number } | null {
+  const count = getRamPartyCount(bytes, partyOff);
+  if (count === null) return null;
+  if (count === 1) {
+    // A lone slot is as likely to be a false positive as a real starter-only
+    // party, so only trust it when a count byte agrees.
+    if (bytes[partyOff - 3] !== 1 && bytes[partyOff - 4] !== 1) return null;
+    return { count: 1, score: 6 };
+  }
+  const byteAgree = bytes[partyOff - 3] === count || bytes[partyOff - 4] === count;
+  return { count, score: count * 4 + (byteAgree ? 2 : 0) };
+}
+
+/**
+ * Scans the emulator's WASM heap for a valid live party and returns the
+ * highest-scoring candidate (never just the first match, which can be a lone
+ * checksum false positive). The party struct is 116-byte aligned, so candidates
+ * are only checked on 4-byte boundaries. Empty heaps or ones that have not
+ * started a game return null.
+ */
+export function findRamPartyOffset(bytes: Uint8Array, startOff = 0, endOff = bytes.length - RAM_PARTY_BYTES): number | null {
+  const end = Math.min(endOff, bytes.length - RAM_PARTY_BYTES);
+  let best: { off: number; score: number } | null = null;
+  for (let off = startOff; off <= end; off += 4) {
+    const r = ramPartyScore(bytes, off);
+    if (r && (!best || r.score > best.score || (r.score === best.score && off < best.off))) {
+      best = { off, score: r.score };
+    }
+  }
+  return best ? best.off : null;
+}
+
+/**
+ * Locates every distinct copy of a party in RAM whose mon personalities match
+ * the given set. The checksum-gated scan only finds the party when its
+ * checksums happen to be current (right after a save load); Blitz then writes
+ * party mons directly and the stored checksums go stale, so the live
+ * `gPlayerParty` becomes invisible to that scan while static copies of it
+ * (save-slot buffers) keep passing forever — which makes the site pin the wrong
+ * region and "freeze". Personalities are stored PLAINTEXT at each slot's start,
+ * so an identity match finds every copy (gPlayerParty included) regardless of
+ * checksum state. Matching 6 specific u32s is collision-free in practice.
+ *
+ * Slot 0 is prefixed so random data costs only two u32 reads per offset.
+ */
+export function findRamPartyCopies(bytes: Uint8Array, personalities: number[], startOff = 0, endOff = bytes.length - RAM_PARTY_BYTES): number[] {
+  const ids = new Set<number>();
+  for (const p of personalities) ids.add(p >>> 0);
+  const start = Math.max(0, startOff);
+  const end = Math.max(start, Math.min(endOff, bytes.length - RAM_PARTY_BYTES));
+  const out: number[] = [];
+  let last = -1;
+  const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
+  for (let off = start; off <= end; off += 4) {
+    if (!ids.has(view.getUint32(off, true))) continue;
+    let count = 1;
+    for (let s = 1; s < RAM_PARTY_SLOTS; s++) {
+      const so = off + s * RAM_POKEMON_SIZE;
+      const p = view.getUint32(so, true);
+      if (p === 0) break; // empty tail slot
+      if (!ids.has(p)) { count = -1; break; }
+      count++;
+    }
+    if (count >= 2 && off - last >= RAM_PARTY_BYTES) {
+      out.push(off);
+      last = off;
+    }
+  }
+  return out;
+}
+
+// Cheap stable hash of the raw party region; used to detect "has anything
+// changed" without decoding + re-rendering on every poll.
+export function hashRamParty(bytes: Uint8Array, partyOff: number): string {
+  let h = 0x811c9dc5;
+  for (let i = 0; i < RAM_PARTY_BYTES; i++) {
+    h ^= bytes[partyOff + i];
+    h = Math.imul(h, 0x01000193);
+  }
+  return (h >>> 0).toString(16);
 }
 
 function decodeString(bytes: Uint8Array): string {
@@ -328,6 +606,7 @@ export function parseSaveFile(
         ability_num,
         nature: NATURES[personality % 25],
         ivs,
+        moves: readMoves(data, pStart, key, order),
       });
     }
   }
@@ -394,6 +673,7 @@ export function parseSaveFile(
           species_id,
           ability_num,
           nature: NATURES[personality % 25], ivs,
+          moves: readMoves(storageData, pStart, key, order),
         });
       }
     }

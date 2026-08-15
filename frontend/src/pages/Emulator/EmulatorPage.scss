@@ -168,15 +168,56 @@
   }
 }
 
+.emulator-stage {
+  position: relative;
+  flex-shrink: 0;
+}
+
 #game {
   width: 100%;
-  flex-shrink: 0;
   // Base height when panel is open
   height: calc(100vh - 18rem);
   background: #000;
   display: block;
   overflow: hidden;
   transition: height 0.2s ease-out;
+}
+
+// ── Emulator resize handles ────────────────────────────────────────────────
+// Thin strips on the emulator's bottom / right / corner edges, i.e. the
+// boundaries against the save panel below and the sidebar to the right.
+.resize-handle {
+  position: absolute;
+  z-index: 300;
+  touch-action: none;
+
+  &.bottom {
+    left: 0;
+    right: 0;
+    height: 10px;
+    bottom: -5px;
+    cursor: ns-resize;
+  }
+
+  &.right {
+    top: 0;
+    bottom: 0;
+    width: 10px;
+    right: -5px;
+    cursor: ew-resize;
+  }
+
+  &.corner {
+    width: 16px;
+    height: 16px;
+    right: -7px;
+    bottom: -7px;
+    cursor: nwse-resize;
+  }
+
+  &:hover {
+    background: rgba(74, 222, 128, 0.18);
+  }
 }
 
 // Applying the expansion logic via the container parent
@@ -242,26 +283,18 @@
   margin-left: auto;
 }
 
-.panel-minimize-btn {
-  background: transparent;
-  border: 1px solid $eb-border;
-  color: $eb-text-muted;
-  border-radius: 4px;
-  width: 24px;
-  height: 24px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  font-size: 1.2rem;
-  margin-left: 0.5rem;
-  transition: all 0.2s;
-
-  &:hover {
-    border-color: $eb-primary;
-    color: $eb-primary;
-    background: color-mix(in srgb, $eb-surface, $eb-primary 10%);
+// When the right sidebar is collapsed, the emulator column takes the full width
+.emulator-layout.sidebar-collapsed {
+  .emulator-col {
+    flex: 1 1 100%;
+    max-width: 100%;
   }
+}
+
+// The two panel toggles sit together with half the header's gap
+.panel-toggle-group {
+  display: flex;
+  gap: 0.7rem;
 }
 
 .save-party-grid {
@@ -284,12 +317,52 @@
     opacity: 0.45;
     border-color: $eb-danger;
   }
+
+  &.marked {
+    border-color: $eb-accent;
+    box-shadow: 0 0 0 2px rgba(79, 195, 247, 0.7), 0 0 12px rgba(79, 195, 247, 0.55);
+  }
 }
 
 .mon-name-row {
   display: flex;
   justify-content: space-between;
   align-items: baseline;
+}
+
+.mon-mark {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  align-self: center;
+  flex-shrink: 0;
+
+  input[type="checkbox"] {
+    appearance: none;
+    -webkit-appearance: none;
+    width: 14px;
+    height: 14px;
+    margin: 0;
+    padding: 0;
+    cursor: pointer;
+    background: #202329;
+    border: 1px solid #3a4048;
+    border-radius: 3px;
+    transition: background 0.15s, border-color 0.15s;
+
+    &:hover {
+      border-color: $eb-accent;
+    }
+
+    &:checked {
+      background: $eb-accent;
+      border-color: $eb-accent;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23131314' stroke-width='4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='20 6 9 17 4 12'/%3E%3C/svg%3E");
+      background-size: 11px 11px;
+      background-repeat: no-repeat;
+      background-position: center;
+    }
+  }
 }
 
 .mon-name {
@@ -341,6 +414,33 @@
   white-space: nowrap;
   > * { flex-shrink: 0; }
 }
+
+.mon-moves {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.3rem 0.5rem;
+}
+
+.mon-move {
+  font-size: 1.1rem;
+  font-weight: 600;
+  text-align: center;
+  padding: 0.15rem 0.4rem;
+  border-radius: 6px;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.mon-name-link {
+  color: inherit;
+  text-decoration: none;
+
+  &:hover {
+    text-decoration: underline;
+  }
+}
+
 
 .iv-item {
   display: inline-flex;

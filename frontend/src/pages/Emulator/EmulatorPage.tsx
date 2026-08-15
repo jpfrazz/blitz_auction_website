@@ -1,8 +1,9 @@
 import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { useParams, useSearchParams } from 'react-router-dom';
 import Header from '../../shared/components/Header';
-import { parseSaveFile, SaveData, getTrainerNameById } from '../../utils/parseSaveFile';
+import { parseSaveFile, SaveData, SavePokemon, SaveBoxPokemon, getTrainerNameById, parseRamParty, getRamPartyCount, ramPartyScore, findRamPartyOffset, findRamPartyCopies, hashRamParty, RAM_PARTY_BYTES } from '../../utils/parseSaveFile';
 import { getIconName, createResolveMetadata, isActuallyNicknamed } from '../../utils/speciesUtils';
+import { MOVES, MOVE_TYPE_COLORS } from '../../utils/movesData';
 import { fetchCurrentUser, fetchDraftById, claimEeveelution, unclaimEeveelution, fetchControlBindings, saveControlBindings, forfeitDraft } from '../../shared/api/draftData';
 import { fetchPokemonList } from '../../shared/api/pokemon';
 import EeveelutionClaimButton from './EeveelutionClaimButton';
@@ -124,6 +125,13 @@ declare global {
         quickLoad(slot?: number): void;
         FS?: {
           syncfs(populate: boolean, callback: (err: any) => void): void;
+        };
+        // Emscripten module. `HEAPU8` is a live view of the WASM heap the
+        // libretro core runs in, which is where the GBA's EWRAM (and the live
+        // party) lives.
+        Module?: {
+          HEAPU8: Uint8Array;
+          [key: string]: unknown;
         };
       };
       displayMessage(message: string, time?: number): void;
@@ -456,6 +464,14 @@ const EmulatorPage: React.FC = () => {
   const [mySaveData, setMySaveData] = useState<SaveData | null>(null);
   const [saveLastSynced, setSaveLastSynced] = useState<Date | null>(null);
   const [isPanelMinimized, setIsPanelMinimized] = useState(false);
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+
+  // Emulator resize: drag the bottom / right / corner edges. Null means "use
+  // the CSS default" (75% width, calc height) so nothing changes until the
+  // player drags a handle.
+  const [emulatorHeightPx, setEmulatorHeightPx] = useState<number | null>(null);
+  const [emulatorWidthPx, setEmulatorWidthPx] = useState<number | null>(null);
+  const [isResizing, setIsResizing] = useState(false);
 
   const [autosaveHistory, setAutosaveHistory] = useState<{ id: string; ts: number }[]>([]);
   const [isAutosaveModalOpen, setIsAutosaveModalOpen] = useState(false);
@@ -491,6 +507,9 @@ const EmulatorPage: React.FC = () => {
 
   // Persist fainted state via Personality ID (User ID -> Set of PIDs)
   const [faintedPids, setFaintedPids] = useState<Record<string, Set<number>>>({});
+  // Pokémon the player has marked (checked) so they remember to buy items for
+  // them. Keyed by personality ID, same as faintedPids.
+  const [markedPids, setMarkedPids] = useState<Set<number>>(new Set());
 
   // Toast notifications for state load events from other players
   const [notifications, setNotifications] = useState<ToastNotification[]>([]);
@@ -532,6 +551,19 @@ const EmulatorPage: React.FC = () => {
   const handleBeforeUnloadRef = useRef<((e: BeforeUnloadEvent) => void) | null>(null);
   const originalSetItemRef = useRef<((key: string, value: string) => void) | null>(null);
 
+  // ── Emulator resize drag ─────────────────────────────────────────────────
+  const gameStageRef = useRef<HTMLDivElement>(null);
+  const layoutRef = useRef<HTMLDivElement>(null);
+  const resizeDragRef = useRef<{
+    mode: 'bottom' | 'right' | 'corner';
+    startX: number;
+    startY: number;
+    startHeight: number;
+    startWidth: number;
+    maxHeight: number;
+    maxWidth: number;
+  } | null>(null);
+
   // Stable ref so window callbacks always see the latest handler
   const onRawSaveBytesRef = useRef<((bytes: Uint8Array) => void) | null>(null);
 
@@ -543,6 +575,97 @@ const EmulatorPage: React.FC = () => {
   // emulator triggers while shutting down must not overwrite the forfeit loss
   // that was just recorded on the backend.
   const forfeitedRef = useRef(false);
+
+  // ── Live party reads from the WASM heap ──────────────────────────────────
+  // The libretro mGBA core keeps the GBA's EWRAM (and with it the live party)
+  // in the WASM heap, reachable via gameManager.Module.HEAPU8. We scan once to
+  // find the party offset (it stays fixed for a session since EWRAM is a
+  // stable core allocation), then poll the RAM_PARTY_BYTES (696-byte) region
+  // and merge changes into mySaveData so the site updates live instead of
+  // waiting for .sav flushes.
+  const liveSyncIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const livePartyOffsetRef = useRef<number | null>(null);
+  const livePartyHashRef = useRef<string>('');
+  // Scan progress so a full-heap search can be spread across poll ticks. `best`
+  // tracks the strongest candidate (highest count) seen so far; a lone checksum
+  // false positive at a low offset must not shadow the real party, so we adopt
+  // the best of the whole heap instead of the first match. A full pass is only
+  // restarted once per `LIVE_SCAN_MIN_INTERVAL_MS`, and that backoff is the
+  // cost saver before a party exists (brand-new file, still in the bedroom):
+  // while a party is absent every pass finds nothing, so running the scan more
+  // often just starves the emulator's main thread with no benefit. When a party
+  // actually exists the very first pass finds it, so a long backoff never
+  // delays a real detection.
+  const liveScanStateRef = useRef({
+    running: false,
+    next: 0,
+    lastAttempt: 0,
+    best: null as { off: number; score: number } | null,
+  });
+  // Mirror of mySaveData so the live poll can read the latest base save
+  // (trainer/money/badges/box from the .sav parse) without a stale closure.
+  const mySaveDataRef = useRef<SaveData | null>(null);
+  // Inferred PC box. Blitz only writes the flash on manual saves, so the .sav
+  // box goes stale the moment the player moves mons around in storage. Since a
+  // mon that leaves the live party must have gone to the box, we carry
+  // departures forward at their most recent seen stats and let each new .sav
+  // box snapshot (ground truth) erase mons that are genuinely gone (released,
+  // traded, rented). `departedSinceSave` tracks departures that happened after
+  // the last .sav snapshot was written so a stale snapshot can't resurrect or
+  // erase them.
+  const inferredBoxRef = useRef<Map<number, SavePokemon>>(new Map());
+  const departedSinceSaveRef = useRef<Map<number, SavePokemon>>(new Map());
+  const lastSeenPartyRef = useRef<Map<number, SavePokemon>>(new Map());
+  const lastPartyPidsRef = useRef<Set<number>>(new Set());
+  const LIVE_POLL_MS = 750;
+  const LIVE_SCAN_BUDGET_MS = 120;
+  // A full pass is only restarted once per LIVE_SCAN_MIN_INTERVAL_MS — the
+  // backoff is the cost saver while no party exists (brand-new file, still in
+  // the bedroom): every pass over the whole heap eats up to the budget per
+  // tick, so running it constantly starved the emulator's main thread. When a
+  // party actually exists the very first pass finds it, so a long backoff
+  // never delays a real detection.
+  const LIVE_SCAN_MIN_INTERVAL_MS = 10000;
+  // The party lives in EWRAM, a small buffer that in EmulatorJS/mGBA sits in
+  // the low megabytes of the (up to 128MB) WASM heap, so there's no need to
+  // scan the whole heap. Capping the region makes each pass take a couple of
+  // seconds instead of minutes.
+  const LIVE_SCAN_MAX_BYTES = 32 * 1024 * 1024;
+  // When the known party offset fails to validate, we search this many bytes
+  // on each side of it in a single tick (~256KB @ 4-byte stride ≈ 5ms). The
+  // party never moves far, so this relocates it without a full heap scan.
+  const LIVE_PARTY_LOCAL_SCAN_RADIUS = 256 * 1024;
+  // Consecutive fast-path misses before a persisted (not yet validated) offset
+  // is given up and a fresh scan starts. An offset validated THIS session is
+  // never dropped on misses: EWRAM addresses are fixed per session, so the
+  // party reappears there after a reset or battle.
+  const LIVE_PARTY_MISS_LIMIT = 10;
+  const LIVE_PARTY_OFFSETS_KEY = 'blitz_live_party_offsets';
+  // Consecutive fast-path misses at the current offset (transient battle
+  // states recover within a tick or two, so a miss is never fatal).
+  const livePartyMissesRef = useRef(0);
+  // True once this session's RAM scan has validated an offset. A persisted
+  // offset from a previous session could belong to a different ROM build, so
+  // it is only trusted after it validates; once validated it is never dropped.
+  const livePartySessionValidatedRef = useRef(false);
+  // Identity of the currently loaded ROM (name:size), used to persist and
+  // restore the party offset so reloads skip the heap scan.
+  const livePartyRomKeyRef = useRef<string | null>(null);
+  // Every location in RAM that holds a copy of the party's mon identities
+  // (gPlayerParty plus save-slot buffers). The checksum-gated scan finds the
+  // party only when its checksums happen to be current, so it can pin a static
+  // copy while the live gPlayerParty (stale checksums) sits elsewhere — that
+  // made swaps "not update". We find ALL copies by plaintext personality
+  // signature and watch which one actually changes to identify the live one.
+  const livePartyCandidatesRef = useRef<number[]>([]);
+  const livePartyCandHashesRef = useRef<string[]>([]);
+  // Once a candidate has been observed to change (proving it is gPlayerParty),
+  // only that offset is polled; the others are no longer watched, so a battle
+  // populating gEnemyParty mid-session can never be mistaken for the player's.
+  const livePartyProvenLiveRef = useRef(false);
+  // Pending identity-signature scan (personalities to match, next offset).
+  const livePartySigScanRef = useRef<{ ids: number[]; next: number }>({ ids: [], next: 0 });
+  const LIVE_SIG_SCAN_CHUNK = 512 * 1024;
 
   // Stable ref for the notification fetch so EJS_ready closure always gets the current draftId
   const postStateLoadRef = useRef<(() => void) | null>(null);
@@ -865,6 +988,11 @@ const EmulatorPage: React.FC = () => {
     if (changed) setFaintedPids(newFainted);
   }, [mySaveData, otherSaves, currentUserId]);
 
+  // Keep the live poll in sync with the latest parsed save.
+  useEffect(() => {
+    mySaveDataRef.current = mySaveData;
+  }, [mySaveData]);
+
   const isMonFainted = (uid: string, mon: any) => {
     if (mon.hp === 0) return true;
     const deadSet = faintedPids[uid];
@@ -872,7 +1000,341 @@ const EmulatorPage: React.FC = () => {
     return false;
   };
 
+  const toggleMarked = useCallback((pid: number) => {
+    setMarkedPids(prev => {
+      const next = new Set(prev);
+      if (next.has(pid)) next.delete(pid);
+      else next.add(pid);
+      return next;
+    });
+  }, []);
+
   // ── Save bytes handler: parse + POST to backend ──────────────────────────
+  // Shared POST helper used by both the .sav flush path and the live heap path.
+  const postSaveToBackend = (parsed: SaveData, extra?: Record<string, unknown>) => {
+    if (!draftId) return;
+    const body: Record<string, unknown> = {
+      ...parsed,
+      // Persist which Pokemon have been seen fainted so a reload doesn't
+      // forget boxed fainted Pokemon and reset their grayed-out look.
+      fainted_pids: currentUserId ? Array.from(faintedPids[currentUserId] ?? []) : [],
+      ...extra,
+    };
+    fetch(`/api/drafts/${draftId}/save`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+      credentials: 'include',
+    }).catch(() => { });
+  };
+
+  // Stable ref so the poll interval always calls the freshest handler.
+  const livePollRef = useRef<(() => void) | null>(null);
+
+  // Tracks party ↔ box movements from live party reads. Withdrawals (a mon
+  // arriving in the live party) leave the box; departures (a mon that was in
+  // the party but no longer is) enter it at their most recent seen stats.
+  const applyPartyInference = (party: SavePokemon[]) => {
+    const box = inferredBoxRef.current;
+    const departed = departedSinceSaveRef.current;
+    const newPids = new Set<number>();
+    for (const mon of party) {
+      newPids.add(mon.personality);
+      lastSeenPartyRef.current.set(mon.personality, mon);
+      box.delete(mon.personality);
+      departed.delete(mon.personality);
+    }
+    for (const pid of Array.from(lastPartyPidsRef.current)) {
+      if (!newPids.has(pid) && !box.has(pid)) {
+        const data = lastSeenPartyRef.current.get(pid);
+        if (data) {
+          box.set(pid, data);
+          departed.set(pid, data);
+        }
+      }
+    }
+    lastPartyPidsRef.current = newPids;
+  };
+
+  // Rebuilds the box whenever a .sav is parsed. The .sav box snapshot is the
+  // authoritative possession list at save time: mons it no longer contains are
+  // erased — except departures that happened after it was written, which the
+  // live party proves were still possessed. Mons the snapshot still had in the
+  // party but that have since left it are boxed (they had to go somewhere).
+  const reconcileBoxFromSave = (
+    saveBox: SaveBoxPokemon[],
+    saveParty: SavePokemon[],
+    liveParty: SavePokemon[] | null
+  ) => {
+    const saveBoxPids = new Set(saveBox.map((m) => m.personality));
+    const savePartyPids = new Set(saveParty.map((m) => m.personality));
+    const livePids = liveParty ? new Set(liveParty.map((m) => m.personality)) : savePartyPids;
+
+    // Anything the snapshot accounts for is no longer an unconfirmed departure.
+    for (const pid of Array.from(departedSinceSaveRef.current.keys())) {
+      if (saveBoxPids.has(pid) || savePartyPids.has(pid)) departedSinceSaveRef.current.delete(pid);
+    }
+
+    const rebuilt = new Map<number, SavePokemon>();
+    for (const m of saveBox) rebuilt.set(m.personality, m as unknown as SavePokemon);
+    for (const [pid, data] of Array.from(departedSinceSaveRef.current)) rebuilt.set(pid, data);
+    // Mons the snapshot still listed in the party that have since left it.
+    for (const m of saveParty) {
+      if (!livePids.has(m.personality)) rebuilt.set(m.personality, m);
+    }
+    // Whatever is in the party right now is not in the box.
+    for (const pid of Array.from(livePids)) rebuilt.delete(pid);
+
+    inferredBoxRef.current = rebuilt;
+    lastPartyPidsRef.current = livePids;
+  };
+
+  // Reads the live party out of the emulator's WASM heap and merges it into
+  // mySaveData whenever it changes. Falls back to scanning the heap (spread
+  // across poll ticks) until a valid party is located, e.g. right after the
+  // game boots or after a hard reset.
+  livePollRef.current = () => {
+    if (forfeitedRef.current) return;
+    // No .sav parsed yet → there is nothing to merge into, so skip the heap
+    // scan entirely. Before the player makes the initial in-game save there is
+    // also no party in RAM, so scanning would burn main-thread time and starve
+    // the emulator for zero benefit (this was the stutter at new-game boot).
+    if (!mySaveDataRef.current) return;
+    const gm = window.EJS_emulator?.gameManager;
+    const heap = gm?.Module?.HEAPU8;
+    if (!heap || heap.length < RAM_PARTY_BYTES + 3) return;
+
+    // Applies a freshly read live party on top of the latest parsed save,
+    // keeping trainer/money/badges and the inferred box intact.
+    const applyLiveParty = (party: SavePokemon[]) => {
+      const base = mySaveDataRef.current;
+      if (!base) return; // wait for the first .sav parse to arrive
+      applyPartyInference(party);
+      const merged: SaveData = { ...base, party, box: Array.from(inferredBoxRef.current.values()) };
+      mySaveDataRef.current = merged;
+      setMySaveData(merged);
+      postSaveToBackend(merged);
+    };
+
+    // Identity-signature scan: locate every copy of the party (the pinned one
+    // may be a stale save-slot buffer while gPlayerParty, checksums too old to
+    // be found by the checksum scan, sits elsewhere). Runs in small chunks.
+    if (!livePartyProvenLiveRef.current && livePartySigScanRef.current.ids.length > 0) {
+      const ss = livePartySigScanRef.current;
+      const endLimit = Math.min(heap.length - RAM_PARTY_BYTES, LIVE_SCAN_MAX_BYTES);
+      const deadline = performance.now() + 20;
+      while (ss.next <= endLimit && performance.now() < deadline) {
+        const copies = findRamPartyCopies(heap, ss.ids, ss.next, ss.next + LIVE_SIG_SCAN_CHUNK);
+        for (const c of copies) {
+          if (!livePartyCandidatesRef.current.includes(c)) livePartyCandidatesRef.current.push(c);
+        }
+        ss.next += LIVE_SIG_SCAN_CHUNK;
+      }
+      if (ss.next > endLimit) {
+        ss.ids = [];
+        ss.next = 0;
+        livePartyCandidatesRef.current.sort((a, b) => a - b);
+        livePartyCandHashesRef.current = livePartyCandidatesRef.current.map(() => '');
+        console.debug('[liveParty] party copies located', { candidates: livePartyCandidatesRef.current });
+        // A single copy leaves nothing to disambiguate — pin it directly.
+        if (livePartyCandidatesRef.current.length === 1) {
+          const c = livePartyCandidatesRef.current[0];
+          if (c >= 4 && c + RAM_PARTY_BYTES <= heap.length && getRamPartyCount(heap, c, false) !== null) {
+            livePartyOffsetRef.current = c;
+            livePartyHashRef.current = hashRamParty(heap, c);
+            livePartyMissesRef.current = 0;
+            livePartySessionValidatedRef.current = true;
+            livePartyProvenLiveRef.current = true;
+            livePartySigScanRef.current = { ids: [], next: 0 };
+            console.debug('[liveParty] single party copy, pinned', { off: c });
+            applyLiveParty(parseRamParty(heap, c, false));
+            return;
+          }
+        }
+      }
+    }
+
+    // Hot-detection: while the live region is unproven, watch every copy. The
+    // first one whose bytes change is gPlayerParty (gameplay writes to it, the
+    // buffers don't) — unless it merely converged to another copy (a manual
+    // save copying the live party into the slot buffer), in which case the
+    // other copy is the source of truth. Multiple simultaneous changes are left
+    // for the fast path and resolve on the next interaction.
+    const cands = livePartyCandidatesRef.current;
+    if (!livePartyProvenLiveRef.current && cands.length >= 2) {
+      const prev = livePartyCandHashesRef.current;
+      const cur: string[] = [];
+      const hot: number[] = [];
+      for (let i = 0; i < cands.length; i++) {
+        const c = cands[i];
+        if (c >= 4 && c + RAM_PARTY_BYTES <= heap.length && getRamPartyCount(heap, c, false) !== null) {
+          cur.push(hashRamParty(heap, c));
+          if (prev[i] && prev[i] !== cur[i]) hot.push(i);
+        } else {
+          cur.push(prev[i] ?? '');
+        }
+      }
+      livePartyCandHashesRef.current = cur;
+      if (hot.length === 1) {
+        const i = hot[0];
+        const converged = cands.findIndex((_, j) => j !== i && cur[j] === cur[i]);
+        const target = cands[converged >= 0 ? converged : i];
+        livePartyOffsetRef.current = target;
+        livePartyHashRef.current = hashRamParty(heap, target);
+        livePartyMissesRef.current = 0;
+        livePartySessionValidatedRef.current = true;
+        livePartyProvenLiveRef.current = true;
+        livePartySigScanRef.current = { ids: [], next: 0 };
+        console.debug('[liveParty] live party confirmed', {
+          off: target,
+          via: converged >= 0 ? 'converged-copy' : 'changed',
+          candidates: cands,
+        });
+        applyLiveParty(parseRamParty(heap, target, false));
+        return;
+      }
+    }
+
+    // Fast path: we already know where the party lives in the heap. EWRAM
+    // addresses are fixed for the whole session, so a failed validation is
+    // almost always transient (a mid-battle slot update, the party being
+    // absent in the bedroom, or a temporarily wrong/stale offset) and the
+    // party reappears at (or within a hair of) the same offset. When the known
+    // offset fails we run a cheap neighborhood rescan instead of throwing the
+    // offset away — that used to trigger a full-heap rescan on every battle
+    // (stutter + dead updates).
+    const off = livePartyOffsetRef.current;
+    if (off !== null) {
+      // Until the offset has been proven real this session (a checksum-valid
+      // find), validate strictly — a random wrong offset can pass the loose
+      // shape check by luck (~6%), and we must not pin garbage. Once proven,
+      // relax to shape-only: Blitz's race/notebook/claim systems write party
+      // mons directly and don't always keep each mon's checksum current in
+      // RAM, so requiring it there would silently drop a good party right
+      // after it was found.
+      const strict = !livePartySessionValidatedRef.current;
+      if (
+        off >= 4 &&
+        off + RAM_PARTY_BYTES <= heap.length &&
+        getRamPartyCount(heap, off, strict) !== null
+      ) {
+        livePartyMissesRef.current = 0;
+        if (strict) livePartySessionValidatedRef.current = true;
+        const hash = hashRamParty(heap, off);
+        if (hash !== livePartyHashRef.current) {
+          livePartyHashRef.current = hash;
+          console.debug('[liveParty] party updated', {
+            off,
+            species: parseRamParty(heap, off, false).map((m) => m.species_id),
+          });
+          applyLiveParty(parseRamParty(heap, off, strict));
+        }
+        return;
+      }
+      // The known offset is not valid right now. Search a tight window around
+      // it in a single tick (a few hundred KB at 4-byte stride is ~5ms) — the
+      // party never wanders far, so this recovers from relocated data, stale
+      // offsets, and battle churn without a full heap scan.
+      const local = findRamPartyOffset(
+        heap,
+        Math.max(4, off - LIVE_PARTY_LOCAL_SCAN_RADIUS),
+        off + LIVE_PARTY_LOCAL_SCAN_RADIUS
+      );
+      if (local !== null) {
+        livePartyMissesRef.current = 0;
+        livePartySessionValidatedRef.current = true;
+        livePartyOffsetRef.current = local;
+        livePartyHashRef.current = hashRamParty(heap, local);
+        if (!livePartyProvenLiveRef.current) {
+          const localParty = parseRamParty(heap, local, false);
+          if ((localParty.length ?? 0) >= 2) {
+            livePartySigScanRef.current = { ids: localParty.map((m) => m.personality), next: 0 };
+          }
+        }
+        applyLiveParty(parseRamParty(heap, local, false));
+        return;
+      }
+      livePartyMissesRef.current += 1;
+      // A persisted offset from a previous session that never validates THIS
+      // session (different ROM build → different EWRAM layout) must give way to
+      // a fresh scan. An offset validated this session is kept forever.
+      if (!livePartySessionValidatedRef.current && livePartyMissesRef.current >= LIVE_PARTY_MISS_LIMIT) {
+        console.debug('[liveParty] persisted offset never validated, rescanning', { off });
+        livePartyOffsetRef.current = null;
+        livePartyHashRef.current = '';
+        livePartyMissesRef.current = 0;
+        livePartySessionValidatedRef.current = false;
+        livePartyCandidatesRef.current = [];
+        livePartyCandHashesRef.current = [];
+        livePartyProvenLiveRef.current = false;
+        livePartySigScanRef.current = { ids: [], next: 0 };
+        const st2 = liveScanStateRef.current;
+        st2.best = null;
+        st2.next = 0;
+        st2.lastAttempt = 0;
+      } else if (livePartyMissesRef.current === 1 || livePartyMissesRef.current % 40 === 0) {
+        console.debug('[liveParty] party region not valid this tick (transient)', { off, misses: livePartyMissesRef.current });
+      }
+      return;
+    }
+
+    // Locate the party in the heap, in bounded chunks so the scan can't freeze
+    // the tab. Only the first LIVE_SCAN_MAX_BYTES are searched (EWRAM sits in
+    // the low megabytes) and a fresh pass is only started every
+    // LIVE_SCAN_MIN_INTERVAL_MS.
+    const st = liveScanStateRef.current;
+    const now = Date.now();
+    if (st.running) return;
+    if (st.next === 0 && now - st.lastAttempt < LIVE_SCAN_MIN_INTERVAL_MS) return;
+    st.running = true;
+    const deadline = performance.now() + LIVE_SCAN_BUDGET_MS;
+    const endLimit = Math.min(heap.length - RAM_PARTY_BYTES, LIVE_SCAN_MAX_BYTES);
+    while (st.next <= endLimit && performance.now() < deadline) {
+      const r = ramPartyScore(heap, st.next);
+      if (r && (!st.best || r.score > st.best.score || (r.score === st.best.score && st.next < st.best.off))) {
+        // Ties prefer the lower address so the player's party (declared before
+        // gEnemyParty in EWRAM) wins over the enemy's during a battle.
+        st.best = { off: st.next, score: r.score };
+      }
+      st.next += 4;
+    }
+    if (st.next > endLimit) {
+      const found = st.best?.off ?? null;
+      st.best = null;
+      st.next = 0;
+      st.lastAttempt = now;
+      if (found !== null && getRamPartyCount(heap, found, false) !== null) {
+        const party = parseRamParty(heap, found, false);
+        const count = getRamPartyCount(heap, found, false);
+        console.debug('[liveParty] found live party', { heapSize: heap.length, off: found, count, party });
+        livePartyOffsetRef.current = found;
+        livePartyHashRef.current = hashRamParty(heap, found);
+        livePartyMissesRef.current = 0;
+        livePartySessionValidatedRef.current = true;
+        // Remember the offset for this ROM so reloads can probe it directly
+        // and skip the scan. Only stable multi-slot parties are persisted; a
+        // lone count-1 slot could be a checksum false positive.
+        if (livePartyRomKeyRef.current && (party.length ?? 0) >= 2) {
+          try {
+            const map = JSON.parse(localStorage.getItem(LIVE_PARTY_OFFSETS_KEY) ?? '{}');
+            map[livePartyRomKeyRef.current] = found;
+            localStorage.setItem(LIVE_PARTY_OFFSETS_KEY, JSON.stringify(map));
+          } catch { /* ignore storage errors */ }
+        }
+        st.running = false;
+        // Locate all copies of this party so the live one (which may sit
+        // outside the checksum-valid region) can be identified by change.
+        if (!livePartyProvenLiveRef.current && (party.length ?? 0) >= 2) {
+          livePartySigScanRef.current = { ids: party.map((m) => m.personality), next: 0 };
+        }
+        applyLiveParty(party);
+        return;
+      }
+      // scanned the search region without a trustworthy party — retry later
+      console.debug('[liveParty] full heap scan found no party', { heapSize: heap.length, scannedTo: endLimit });
+    }
+    st.running = false;
+  };
   onRawSaveBytesRef.current = (bytes: Uint8Array) => {
     // Ignore saves that arrive after a forfeit (e.g. the one the emulator
     // writes while exiting) so they can't overwrite the recorded loss.
@@ -885,7 +1347,36 @@ const EmulatorPage: React.FC = () => {
     } catch {
       return;
     }
-    setMySaveData(parsed);
+    // The flash save lags live RAM: the game only writes the flash on manual
+    // saves (there's no autosave in Blitz), while the party in EWRAM updates
+    // the instant the player catches/trades/swaps. If we have a valid live
+    // party region, keep it instead of letting a stale flash party from the
+    // 10-second auto-sync revert the display. The box likewise only persists
+    // when the player opens the PC, so we reconcile the .sav box against live
+    // party movements instead of trusting it blindly.
+    const liveOff = livePartyOffsetRef.current;
+    const liveHeap = window.EJS_emulator?.gameManager?.Module?.HEAPU8;
+    let liveParty: SavePokemon[] | null = null;
+    // Shape-tolerant read: the live gPlayerParty's stored checksums go stale
+    // under Blitz's direct writes, so requiring them here would drop the live
+    // party and let the stale flash party revert the display every 10s.
+    if (liveOff !== null && liveHeap && liveOff >= 4 && liveOff + RAM_PARTY_BYTES <= liveHeap.length && getRamPartyCount(liveHeap, liveOff, false) !== null) {
+      liveParty = parseRamParty(liveHeap, liveOff, false);
+    }
+    // The .sav carries the party's plaintext personalities at save time — use
+    // them to locate every copy in RAM (the live gPlayerParty included) when
+    // the live region is not yet proven. Self-heals once the player saves.
+    const savParty = parsed.party ?? [];
+    if (!livePartyProvenLiveRef.current && (savParty.length ?? 0) >= 2 && !livePartySigScanRef.current.ids.length) {
+      livePartySigScanRef.current = { ids: savParty.map((m) => m.personality), next: 0 };
+    }
+    reconcileBoxFromSave(parsed.box ?? [], parsed.party ?? [], liveParty);
+    const syncedSave: SaveData = {
+      ...parsed,
+      ...(liveParty ? { party: liveParty } : {}),
+      box: Array.from(inferredBoxRef.current.values()),
+    };
+    setMySaveData(syncedSave);
     const now = new Date();
     setSaveLastSynced(now);
     console.log(`Synced save at ${now.toLocaleTimeString()}`);
@@ -933,7 +1424,7 @@ const EmulatorPage: React.FC = () => {
       !w.is_loss && (w.trainer_id === 656 || w.trainer_id === 804)
     );
     const hallOfFameTeam = beatChampion
-      ? (parsed.party ?? []).slice(0, 6).map((mon: any) => {
+      ? (syncedSave.party ?? []).slice(0, 6).map((mon: any) => {
           const speciesId = mon.species_id ?? mon.speciesId;
           const speciesData = resolveMetadata(speciesId, mon.nickname);
           const realName = (speciesId === 412 && mon.nickname?.toLowerCase() === 'egg') ? "Egg" : (speciesData?.name || `ID ${speciesId}`);
@@ -942,20 +1433,8 @@ const EmulatorPage: React.FC = () => {
       : undefined;
 
     if (draftId) {
-      console.log('[EmulatorPage] Sending save data with trainer_card_wins:', parsed.trainer_card_wins);
-      const body: Record<string, unknown> = {
-        ...parsed,
-        // Persist which Pokemon have been seen fainted so a reload doesn't
-        // forget boxed fainted Pokemon and reset their grayed-out look.
-        fainted_pids: currentUserId ? Array.from(faintedPids[currentUserId] ?? []) : [],
-      };
-      if (hallOfFameTeam) body.hall_of_fame_team = hallOfFameTeam;
-      fetch(`/api/drafts/${draftId}/save`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(body),
-        credentials: 'include',
-      }).catch(() => { });
+      console.log('[EmulatorPage] Sending save data with trainer_card_wins:', syncedSave.trainer_card_wins);
+      postSaveToBackend(syncedSave, hallOfFameTeam ? { hall_of_fame_team: hallOfFameTeam } : undefined);
     }
   };
 
@@ -997,6 +1476,30 @@ const EmulatorPage: React.FC = () => {
       // Revoke any previous object URL to avoid memory leaks
       if (objectUrlRef.current) {
         URL.revokeObjectURL(objectUrlRef.current);
+      }
+
+      // A new (possibly different) ROM may have a different EWRAM layout, so
+      // drop any live-party state from the previous ROM. Remember this ROM's
+      // identity (name + size + head hash) so a previously found party offset
+      // can be probed directly on the next reload instead of re-scanning.
+      livePartyOffsetRef.current = null;
+      livePartyHashRef.current = '';
+      livePartyMissesRef.current = 0;
+      livePartySessionValidatedRef.current = false;
+      livePartyCandidatesRef.current = [];
+      livePartyCandHashesRef.current = [];
+      livePartyProvenLiveRef.current = false;
+      livePartySigScanRef.current = { ids: [], next: 0 };
+      try {
+        const head = new Uint8Array(await finalBlob.slice(0, 262144).arrayBuffer());
+        let h = 0x811c9dc5;
+        for (let i = 0; i < head.length; i++) {
+          h ^= head[i];
+          h = Math.imul(h, 0x01000193);
+        }
+        livePartyRomKeyRef.current = `${file.name}:${finalBlob.size}:${(h >>> 0).toString(16)}`;
+      } catch {
+        livePartyRomKeyRef.current = `${file.name}:${finalBlob.size}`;
       }
 
       const url = URL.createObjectURL(finalBlob);
@@ -1312,6 +1815,44 @@ const EmulatorPage: React.FC = () => {
           }, 200);
         }, 10_000);
 
+        // If a party offset was found for this exact ROM in a previous session,
+        // probe it directly instead of scanning the heap — the EWRAM layout is
+        // deterministic per ROM, so the offset carries over across reloads. It
+        // is only trusted once it validates this session (see poll fast path).
+        if (livePartyRomKeyRef.current) {
+          try {
+            const map = JSON.parse(localStorage.getItem(LIVE_PARTY_OFFSETS_KEY) ?? '{}');
+            const savedOff = map[livePartyRomKeyRef.current];
+            if (typeof savedOff === 'number' && savedOff > 0) {
+              livePartyOffsetRef.current = savedOff;
+              livePartyHashRef.current = '';
+              livePartyMissesRef.current = 0;
+              livePartySessionValidatedRef.current = false;
+              livePartyCandidatesRef.current = [];
+              livePartyCandHashesRef.current = [];
+              livePartyProvenLiveRef.current = false;
+              livePartySigScanRef.current = { ids: [], next: 0 };
+              console.debug('[liveParty] restoring persisted party offset', { savedOff });
+            }
+          } catch { /* ignore storage errors */ }
+        }
+
+        // Live party reads: merge changes straight from the WASM heap so the
+        // site updates without waiting for the 10-second .sav flush.
+        if (liveSyncIntervalRef.current !== null) {
+          clearInterval(liveSyncIntervalRef.current);
+        }
+        const gm0 = window.EJS_emulator?.gameManager;
+        console.debug('[liveParty] starting live poll', {
+          heapPresent: !!gm0?.Module?.HEAPU8,
+          heapSize: gm0?.Module?.HEAPU8?.length,
+          partyBytes: RAM_PARTY_BYTES,
+        });
+        liveSyncIntervalRef.current = setInterval(() => {
+          livePollRef.current?.();
+        }, LIVE_POLL_MS);
+        livePollRef.current?.();
+
         // Autosave state every 60 seconds
         stateIntervalRef.current = setInterval(() => {
           try {
@@ -1399,6 +1940,10 @@ const EmulatorPage: React.FC = () => {
       if (syncIntervalRef.current !== null) {
         clearInterval(syncIntervalRef.current);
         syncIntervalRef.current = null;
+      }
+      if (liveSyncIntervalRef.current !== null) {
+        clearInterval(liveSyncIntervalRef.current);
+        liveSyncIntervalRef.current = null;
       }
       if (stateIntervalRef.current !== null) {
         clearInterval(stateIntervalRef.current);
@@ -1672,6 +2217,67 @@ const EmulatorPage: React.FC = () => {
     !connectedUsers.has(uid) &&
     (saveData !== null || everConnectedUsers.has(uid));
 
+  // ── Emulator resize handlers ─────────────────────────────────────────────
+  // The handles sit on the emulator's bottom / right edges (the boundaries
+  // against the save panel below and the sidebar to the right), the standard
+  // approach for a resizable 3-pane layout. Drag updates #game's height and
+  // the left column's width; the save panel / sidebar flex to fill the rest.
+  const startResize = (e: React.MouseEvent<HTMLDivElement>, mode: 'bottom' | 'right' | 'corner') => {
+    e.preventDefault();
+    e.stopPropagation();
+    const layoutEl = layoutRef.current;
+    const stageEl = gameStageRef.current;
+    if (!layoutEl || !stageEl) return;
+    const layoutRect = layoutEl.getBoundingClientRect();
+    const stageRect = stageEl.getBoundingClientRect();
+    resizeDragRef.current = {
+      mode,
+      startX: e.clientX,
+      startY: e.clientY,
+      startHeight: stageRect.height,
+      startWidth: stageRect.width,
+      maxHeight: layoutRect.height - 100,
+      maxWidth: layoutRect.width - 280,
+    };
+    setIsResizing(true);
+    document.body.style.cursor =
+      mode === 'bottom' ? 'ns-resize' : mode === 'right' ? 'ew-resize' : 'nwse-resize';
+    document.body.style.userSelect = 'none';
+  };
+
+  const onResizeMove = useCallback((e: MouseEvent) => {
+    const drag = resizeDragRef.current;
+    if (!drag) return;
+    const deltaX = e.clientX - drag.startX;
+    const deltaY = e.clientY - drag.startY;
+    if (drag.mode === 'bottom' || drag.mode === 'corner') {
+      setEmulatorHeightPx(Math.min(drag.maxHeight, Math.max(360, drag.startHeight + deltaY)));
+    }
+    if (drag.mode === 'right' || drag.mode === 'corner') {
+      setEmulatorWidthPx(Math.min(drag.maxWidth, Math.max(320, drag.startWidth + deltaX)));
+    }
+  }, []);
+
+  const onResizeEnd = useCallback(() => {
+    resizeDragRef.current = null;
+    setIsResizing(false);
+    document.body.style.cursor = '';
+    document.body.style.userSelect = '';
+  }, []);
+
+  useEffect(() => {
+    if (!isResizing) return;
+    const onBlur = () => onResizeEnd();
+    window.addEventListener('mousemove', onResizeMove);
+    window.addEventListener('mouseup', onResizeEnd);
+    window.addEventListener('blur', onBlur);
+    return () => {
+      window.removeEventListener('mousemove', onResizeMove);
+      window.removeEventListener('mouseup', onResizeEnd);
+      window.removeEventListener('blur', onBlur);
+    };
+  }, [isResizing, onResizeMove, onResizeEnd]);
+
   return (
     <div className="emulator-page">
       <Header />
@@ -1746,10 +2352,40 @@ const EmulatorPage: React.FC = () => {
             </p>
           </div>
         ) : (
-          <div className={`emulator-layout${hasSidebar ? ' has-sidebar' : ''}`}>
+          <div
+            ref={layoutRef}
+            className={`emulator-layout${hasSidebar ? ' has-sidebar' : ''}${hasSidebar && isSidebarCollapsed ? ' sidebar-collapsed' : ''}`}
+          >
             {/* ── Left column: emulator + own save panel ── */}
-            <div className="emulator-col" style={{ flexGrow: 1 }}>
-              <div id="game" />
+            <div
+              className="emulator-col"
+              style={{
+                flexGrow: 1,
+                ...(emulatorWidthPx !== null && hasSidebar && !isSidebarCollapsed
+                  ? { flex: `0 0 ${emulatorWidthPx}px`, maxWidth: `${emulatorWidthPx}px`, width: `${emulatorWidthPx}px` }
+                  : {}),
+              }}
+            >
+              <div className="emulator-stage" ref={gameStageRef}>
+                <div
+                  id="game"
+                  style={{
+                    ...(emulatorHeightPx !== null && !isPanelMinimized ? { height: `${emulatorHeightPx}px` } : {}),
+                    ...(isResizing ? { transition: 'none' } : {}),
+                  }}
+                />
+                {!isPanelMinimized && (
+                  <>
+                    <div className="resize-handle bottom" onMouseDown={(e) => startResize(e, 'bottom')} />
+                    {hasSidebar && !isSidebarCollapsed && (
+                      <>
+                        <div className="resize-handle right" onMouseDown={(e) => startResize(e, 'right')} />
+                        <div className="resize-handle corner" onMouseDown={(e) => startResize(e, 'corner')} />
+                      </>
+                    )}
+                  </>
+                )}
+              </div>
               {countdown !== null && (
                 <div className="countdown-overlay">
                   <span className="countdown-text">
@@ -1862,13 +2498,12 @@ const EmulatorPage: React.FC = () => {
                       const saveData = isCurrentUser ? mySaveData : save;
                       const displayDisplayName = isCurrentUser ? (currentUsername || 'You') : displayName;
 
-                      // Detect wipe (InsideOfTruck) or win (LilycoveCity_LilycoveMuseum_1F)
+                      // Detect wipe (InsideOfTruck) or win (champion trainer-card win)
                       const isWiped = saveData?.map_name === 'InsideOfTruck';
-                      const isWinner = saveData?.map_name === 'LilycoveCity_LilycoveMuseum_1F';
                       const mostRecentLossName = saveData?.most_recent_loss_name;
                       const championName = getChampionName(saveData);
                       const showDisconnected =
-                        isPlayerDisconnected(uid, saveData) && !isWiped && !isWinner;
+                        isPlayerDisconnected(uid, saveData) && !isWiped && !championName;
 
                       return (
                         <div key={uid} className="overlay-player-card">
@@ -1877,7 +2512,7 @@ const EmulatorPage: React.FC = () => {
                             {isWiped && mostRecentLossName && (
                               <span className="wipe-text">(Wiped to {mostRecentLossName})</span>
                             )}
-                            {isWinner && championName && (
+                            {championName && (
                               <span className="win-text">(Beat {championName}!)</span>
                             )}
                             {showDisconnected && (
@@ -1939,7 +2574,7 @@ const EmulatorPage: React.FC = () => {
                     ) : (
                       <span className="save-panel-trainer" style={{ opacity: 0.5 }}>Save the game to display game data</span>
                     )}
-                    {draftId && (
+                    {draftId && mySaveData && (
                       <button
                         className="forfeit-btn"
                         onClick={openForfeitConfirm}
@@ -1970,7 +2605,7 @@ const EmulatorPage: React.FC = () => {
                         Load Autosave
                       </button>
                     )}
-                    {draftId && draftData && (
+                    {draftId && draftData && mySaveData && (
                       <EeveelutionClaimButton
                         eeveelutions={[
                           { pokedex_id: 134, name: 'Vaporeon', form: null },
@@ -2009,13 +2644,24 @@ const EmulatorPage: React.FC = () => {
                       </button>
                     )}
 
-                    <button
-                      className="panel-minimize-btn"
-                      onClick={() => setIsPanelMinimized(!isPanelMinimized)}
-                      title={isPanelMinimized ? "Expand" : "Minimize"}
-                    >
-                      {isPanelMinimized ? '＋' : '－'}
-                    </button>
+                    <div className="panel-toggle-group">
+                      <button
+                        className="autosave-btn"
+                        onClick={() => setIsPanelMinimized(!isPanelMinimized)}
+                        title={isPanelMinimized ? "Expand" : "Minimize"}
+                      >
+                        {isPanelMinimized ? '▼' : '▲'}
+                      </button>
+                      {hasSidebar && (
+                        <button
+                          className="autosave-btn"
+                          onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
+                          title={isSidebarCollapsed ? "Show sidebar" : "Hide sidebar"}
+                        >
+                          {isSidebarCollapsed ? '▶' : '◀'}
+                        </button>
+                      )}
+                    </div>
                   </div>
                   {!isPanelMinimized && mySaveData && (
                     <div className="save-party-grid">
@@ -2032,12 +2678,20 @@ const EmulatorPage: React.FC = () => {
                         const hasNickname = isActuallyNicknamed(mon.nickname, speciesId, realName);
 
                         return (
-                          <div key={`combined-${i}`} className={`save-mon-card${fainted ? ' fainted' : ''}`}>
+                          <div key={`combined-${i}`} className={`save-mon-card${fainted ? ' fainted' : ''}${markedPids.has(mon.personality) ? ' marked' : ''}`}>
                             <div className="mon-name-row">
                               <span className="mon-name" style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                                {hasNickname ? (
-                                  <>{mon.nickname} <span style={{ opacity: 0.6, fontSize: '0.9em' }}>({realName})</span></>
-                                ) : realName}
+                                <a
+                                  className="mon-name-link"
+                                  href={`https://emeraldblitz.com/pokemon/${realName}`}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  title="Open on emeraldblitz.com"
+                                >
+                                  {hasNickname ? (
+                                    <>{mon.nickname} <span style={{ opacity: 0.6, fontSize: '0.9em' }}>({realName})</span></>
+                                  ) : realName}
+                                </a>
                                 <img
                                   src={`/MiniIcons/${iconName}.png`}
                                   alt=""
@@ -2048,10 +2702,34 @@ const EmulatorPage: React.FC = () => {
                                   {abilityName}
                                 </span>
                               </span>
+                              <label
+                                className="mon-mark"
+                                title="Mark this Pokémon so you remember to buy items for it"
+                              >
+                                <input
+                                  type="checkbox"
+                                  checked={markedPids.has(mon.personality)}
+                                  onChange={() => toggleMarked(mon.personality)}
+                                />
+                              </label>
                             </div>
                             {mon.nature && <div className="mon-nature">{mon.nature}{NATURE_EFFECTS[mon.nature]}</div>}
                             {mon.ivs && (
                               <IVRow ivs={mon.ivs} />
+                            )}
+                            {mon.moves && mon.moves.some((id: number) => id > 0) && (
+                              <div className="mon-moves">
+                                {mon.moves.map((moveId: number, idx: number) => {
+                                  const move = MOVES[moveId];
+                                  if (!move) return null;
+                                  const color = MOVE_TYPE_COLORS[move.type] || '#9ca3af';
+                                  return (
+                                    <span key={idx} className="mon-move" style={{ backgroundColor: `${color}2e`, color }}>
+                                      {move.name}
+                                    </span>
+                                  );
+                                })}
+                              </div>
                             )}
                           </div>
                         );
@@ -2064,30 +2742,32 @@ const EmulatorPage: React.FC = () => {
 
 
             {/* ── Right sidebar: other players ── */}
-            {hasSidebar && (
-              <aside className="emulator-sidebar">
+            {hasSidebar && !isSidebarCollapsed && (
+              <aside
+                className="emulator-sidebar"
+                style={emulatorWidthPx !== null ? { flex: '1 1 0', maxWidth: 'none' } : undefined}
+              >
                 {sidebarEntries.map(([uid, { displayName, save }]) => {
                   const isCurrentUser = uid === currentUserId;
                   const saveData = isCurrentUser ? mySaveData : save;
                   const displayDisplayName = isCurrentUser ? (currentUsername || 'You') : displayName;
 
-                  // Detect wipe (InsideOfTruck) or win (LilycoveCity_LilycoveMuseum_1F)
+                  // Detect wipe (InsideOfTruck) or win (champion trainer-card win)
                   const isWiped = saveData?.map_name === 'InsideOfTruck';
-                  const isWinner = saveData?.map_name === 'LilycoveCity_LilycoveMuseum_1F';
                   const mostRecentLossName = saveData?.most_recent_loss_name;
                   const championName = getChampionName(saveData);
                   const showDisconnected =
-                    isPlayerDisconnected(uid, saveData) && !isWiped && !isWinner;
+                    isPlayerDisconnected(uid, saveData) && !isWiped && !championName;
 
                   return (
                     <div key={uid} className={`sidebar-player-card ${readyPlayers.has(uid) ? 'race-ready' : ''}`}>
                       <div className="sidebar-player-header">
-                        <span className={`sidebar-username ${showDisconnected ? 'disconnected' : ''} ${isWiped ? 'wiped' : ''} ${isWinner ? 'winner' : ''}`}>
+                        <span className={`sidebar-username ${showDisconnected ? 'disconnected' : ''} ${isWiped ? 'wiped' : ''} ${championName ? 'winner' : ''}`}>
                           {displayDisplayName}
                           {isWiped && mostRecentLossName && (
                             <span className="wipe-text"> (Wiped to {mostRecentLossName})</span>
                           )}
-                          {isWinner && championName && (
+                          {championName && (
                             <span className="win-text"> (Beat {championName}!)</span>
                           )}
                           {showDisconnected && (
@@ -2121,7 +2801,7 @@ const EmulatorPage: React.FC = () => {
                                 alt={mon.nickname || realName}
                                 className={`sidebar-mini-icon ${fainted ? 'fainted' : ''}`}
                                 style={fainted ? { filter: 'grayscale(100%)', opacity: 0.6 } : {}}
-                                title={`${hasNickname ? `${mon.nickname} (${realName})` : realName} (${abilityName}) - (${mon.nature || 'Unknown'} Nature${mon.nature ? NATURE_EFFECTS[mon.nature] : ''})${mon.ivs ? `\nIVs: ${mon.ivs.hp}/${mon.ivs.atk}/${mon.ivs.def}/${mon.ivs.spa}/${mon.ivs.spd}/${mon.ivs.spe}` : ''}`}
+                                title={`${hasNickname ? `${mon.nickname} (${realName})` : realName} (${abilityName}) - (${mon.nature || 'Unknown'} Nature${mon.nature ? NATURE_EFFECTS[mon.nature] : ''})${mon.ivs ? `\nIVs: ${mon.ivs.hp}/${mon.ivs.atk}/${mon.ivs.def}/${mon.ivs.spa}/${mon.ivs.spd}/${mon.ivs.spe}` : ''}${mon.moves && mon.moves.some((id: number) => id > 0) ? `\nMoves: ${mon.moves.filter((id: number) => id > 0).map((id: number) => MOVES[id]?.name).filter(Boolean).join(', ')}` : ''}`}
                                 onError={(e) => { (e.target as HTMLImageElement).src = '/MiniIcons/question.png'; }}
                               />
                             </span>
