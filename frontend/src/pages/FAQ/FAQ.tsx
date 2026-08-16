@@ -75,7 +75,7 @@ const FAQ = () => (
             The race begins when players leave their rooms. Any actions you take in your starting room, like withdrawing your party and hatching eggs, can be done before the race begins.
           </li>
           <li>
-            Only one player per each race can use any given Eeveelution. In other words, once a player evolves their Eevee into Umbreon, no other players can use Umbreon.
+            Only one player per race can use any given Eeveelution. In other words, once a player evolves their Eevee into Umbreon, no other players can use Umbreon.
           </li>
         </ul>
       </section>
@@ -126,7 +126,7 @@ const FAQ = () => (
         <h2 className="faq-question">Can you add a skip button to the draft?</h2>
         <hr />
         <p className="faq-answer">
-          If you're wondering this, you're probably misunderstanding how to draft! You're allowed to use as many Pokémon as you draft in your race; getting Pokémon for cheap puts you at a huge advantage! Even the weakest Pokémon in Blitz are worth a few 100; nothing is worthless. There's never a situation where you'd want to skip a Pokémon.
+          If you're wondering this, you're probably misunderstanding how to draft! You're allowed to use as many Pokémon as you draft in your race. Getting Pokémon for cheap puts you at a huge advantage, because now you have a better chance to play with more Pokemon than your opponents! Even the weakest Pokémon in Blitz are worth a few 100; nothing is worthless. There's never a situation where you'd want to skip a Pokémon.
         </p>
         <p className="faq-answer" style={{ marginTop: '1rem' }}>
           For example, if you're drafting with five players (and 40 Pokémon are for sale), and you win 10 Pokémon, not only do you have more Pokemon to use than your opponents, but some of your opponents will be stuck playing with fewer than eight!
@@ -142,8 +142,8 @@ const FAQ = () => (
         <p className="faq-answer">
           Yes! The notebook includes a "Random" option at the bottom of its list. Choose this option eight times to generate yourself a random team of Pokémon, then get racing!
         </p>
-        <p className="faq-answer">
-          Additionally, KCH42 creates a Weekly Box every Friday composed of eight Pokemon designed to offer a unique experience. Join the Discord server to stay up to date on each week's box!
+        <p className="faq-answer" style={{ marginTop: '1rem' }}>
+          Also, KCH42 creates a Weekly Box every Friday composed of eight Pokemon designed to offer a unique experience. Join the Discord server to stay up to date on each week's box!
         </p>
       </section>
 
