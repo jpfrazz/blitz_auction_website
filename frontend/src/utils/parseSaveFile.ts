@@ -1,12 +1,13 @@
 // Parses a raw GBA Emerald save file (Uint8Array) and returns structured data.
 // Logic extracted from SaveChecker.tsx by FranklyNathan.
 import { MAP_NAMES } from '../pages/Auction/mapNames';
+import { SPECIES_BY_ID } from './speciesIdMap';
 
-const SECTION_SIZE = 4096;
-const NUM_SECTIONS = 14;
-const SLOT_SIZE = SECTION_SIZE * NUM_SECTIONS;
-const FOOTER_OFFSET = 0xff4;
-const SIGNATURE = 0x08012025;
+export const SECTION_SIZE = 4096;
+export const NUM_SECTIONS = 14;
+export const SLOT_SIZE = SECTION_SIZE * NUM_SECTIONS;
+export const FOOTER_OFFSET = 0xff4;
+export const SIGNATURE = 0x08012025;
 const SECTOR_DATA_SIZE = 3968;
 
 const ENCRYPTION_KEY_OFFSET = 0xac;
@@ -272,16 +273,42 @@ function ramSlotSpecies(bytes: Uint8Array, slotOff: number): number {
   return (readU32(bytes, growthOff) ^ key) & 0x7ff;
 }
 
-// "Shape" check: personality non-zero, decrypts to a non-zero species, level
-// 1-100, positive max HP. Every real Pokemon passes these; random heap data
-// fails them. This deliberately does NOT include the checksum, because Blitz
-// (a race fork with a notebook/claim system that writes party mons directly)
-// does not always maintain each mon's checksum in RAM — only the shape is
-// reliable on a live party once its offset is known.
+// Maximum possible HP for any Pokémon at level 100 in the standard formula
+// (Blissey: 255 base, 31 IV, 252 EV -> 714). Real data can never exceed it.
+const MAX_STAT_LEVEL_100_HP = 714;
+
+// Confirms a decoded slot is a real, formed Pokémon — not just bytes that
+// happen to satisfy the raw shape fields. Reads of the WRONG region (the PC box
+// in RAM or the save image, read with a party-slot stride) produce slots that
+// pass the personality/level/HP shape checks but decode to species ids that do
+// not exist in the ROM (e.g. the "Inari (Katana)", "Inari (Cobalion)" and
+// "Inari (ID 1612)" garbage observed). SPECIES_BY_ID is auto-generated from the
+// ROM's species list, so it is the ground truth for what a real Pokémon can be
+// (including every later-gen species Blitz adds and the egg). The HP invariants
+// are guaranteed by the HP formula; Shedinja is the one exception (max HP is
+// forced to 1 regardless of level).
+function isRamSlotDecodedPokemon(bytes: Uint8Array, slotOff: number): boolean {
+  const species = ramSlotSpecies(bytes, slotOff);
+  if (!(species in SPECIES_BY_ID)) return false;
+  const level = bytes[slotOff + 100];
+  const maxHp = readU16(bytes, slotOff + 104);
+  if (maxHp < 1 || maxHp > MAX_STAT_LEVEL_100_HP) return false;
+  // Shedinja's max HP is always 1, so it is the only species that may be below
+  // its level.
+  if (species !== 292 && maxHp < level) return false;
+  return true;
+}
+
+// "Shape" check: personality non-zero, decrypts to a real Pokémon (see
+// isRamSlotDecodedPokemon), level 1-100, positive max HP. Every real Pokémon
+// passes these; random heap data fails them. This deliberately does NOT include
+// the checksum, because Blitz (a race fork with a notebook/claim system that
+// writes party mons directly) does not always maintain each mon's checksum in
+// RAM — only the shape is reliable on a live party once its offset is known.
 function isRamSlotShape(bytes: Uint8Array, slotOff: number): boolean {
   const personality = readU32(bytes, slotOff);
   if (personality === 0) return false;
-  if (ramSlotSpecies(bytes, slotOff) === 0) return false;
+  if (!isRamSlotDecodedPokemon(bytes, slotOff)) return false;
   const level = bytes[slotOff + 100];
   if (level < 1 || level > 100) return false;
   if (readU16(bytes, slotOff + 104) === 0) return false; // max_hp must be positive
@@ -418,10 +445,11 @@ export function ramPartyScore(
  * are only checked on 4-byte boundaries. Empty heaps or ones that have not
  * started a game return null.
  */
-export function findRamPartyOffset(bytes: Uint8Array, startOff = 0, endOff = bytes.length - RAM_PARTY_BYTES): number | null {
+export function findRamPartyOffset(bytes: Uint8Array, startOff = 0, endOff = bytes.length - RAM_PARTY_BYTES, exclude?: { start: number; end: number } | null): number | null {
   const end = Math.min(endOff, bytes.length - RAM_PARTY_BYTES);
   let best: { off: number; score: number } | null = null;
   for (let off = startOff; off <= end; off += 4) {
+    if (exclude && off >= exclude.start && off < exclude.end) continue;
     const r = ramPartyScore(bytes, off);
     if (r && (!best || r.score > best.score || (r.score === best.score && off < best.off))) {
       best = { off, score: r.score };
@@ -443,7 +471,7 @@ export function findRamPartyOffset(bytes: Uint8Array, startOff = 0, endOff = byt
  *
  * Slot 0 is prefixed so random data costs only two u32 reads per offset.
  */
-export function findRamPartyCopies(bytes: Uint8Array, personalities: number[], startOff = 0, endOff = bytes.length - RAM_PARTY_BYTES): number[] {
+export function findRamPartyCopies(bytes: Uint8Array, personalities: number[], startOff = 0, endOff = bytes.length - RAM_PARTY_BYTES, exclude?: { start: number; end: number } | null): number[] {
   const ids = new Set<number>();
   for (const p of personalities) ids.add(p >>> 0);
   const start = Math.max(0, startOff);
@@ -452,6 +480,7 @@ export function findRamPartyCopies(bytes: Uint8Array, personalities: number[], s
   let last = -1;
   const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
   for (let off = start; off <= end; off += 4) {
+    if (exclude && off >= exclude.start && off < exclude.end) continue;
     if (!ids.has(view.getUint32(off, true))) continue;
     let count = 1;
     for (let s = 1; s < RAM_PARTY_SLOTS; s++) {

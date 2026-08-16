@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { useParams, useSearchParams } from 'react-router-dom';
 import Header from '../../shared/components/Header';
-import { parseSaveFile, SaveData, SavePokemon, SaveBoxPokemon, getTrainerNameById, parseRamParty, getRamPartyCount, ramPartyScore, findRamPartyOffset, findRamPartyCopies, hashRamParty, RAM_PARTY_BYTES } from '../../utils/parseSaveFile';
+import { parseSaveFile, SaveData, SavePokemon, SaveBoxPokemon, getTrainerNameById, parseRamParty, getRamPartyCount, ramPartyScore, findRamPartyOffset, findRamPartyCopies, hashRamParty, RAM_PARTY_BYTES, SECTION_SIZE, SLOT_SIZE, NUM_SECTIONS, FOOTER_OFFSET, SIGNATURE } from '../../utils/parseSaveFile';
 import { getIconName, createResolveMetadata, isActuallyNicknamed } from '../../utils/speciesUtils';
 import { MOVES, MOVE_TYPE_COLORS } from '../../utils/movesData';
 import { fetchCurrentUser, fetchDraftById, claimEeveelution, unclaimEeveelution, fetchControlBindings, saveControlBindings, forfeitDraft } from '../../shared/api/draftData';
@@ -429,6 +429,32 @@ interface ToastNotification {
   id: number;
   text: string;
 }
+
+// A live read of the WRONG region (the player's own party/box data read at a
+// shifted stride) decodes slots whose nickname field lands on the trainer's OT
+// name — so every garbage mon ends up "nicknamed" the player's name exactly
+// (e.g. the trainer "PHONY." shows as a "phony." nickname on every garbage
+// slot). Real mons keep their species name or a custom nickname, so a nickname
+// that matches the trainer name marks the slot as a garbage read regardless of
+// how plausible the decoded species id looks (a garbage species like 1160 is
+// still Kartana in the metadata, but it's not a real catch). Comparison strips
+// case and non-alphanumerics so "PHONY", "Phony", and "phony." all normalize to
+// the same key.
+const isTrainerNameNickname = (nickname: string | undefined, trainerName: string | undefined): boolean => {
+  if (!nickname || !trainerName) return false;
+  const clean = (s: string) => s.toLowerCase().replace(/[^a-z0-9]/g, '');
+  const n = clean(nickname);
+  const t = clean(trainerName);
+  return n.length > 0 && n === t;
+};
+
+// Drops slots that decoded from a garbage live read (see isTrainerNameNickname).
+// Returns null when the ENTIRE read is garbage so the caller can fall back to
+// the .sav party instead of clobbering the display with nonsense.
+const filterLiveParty = (party: SavePokemon[], trainerName: string | undefined): SavePokemon[] | null => {
+  const clean = trainerName ? party.filter((m) => !isTrainerNameNickname(m.nickname, trainerName)) : party;
+  return clean.length > 0 ? clean : null;
+};
 
 const EmulatorPage: React.FC = () => {
   const { draftId } = useParams<{ draftId?: string }>();
@@ -1031,6 +1057,78 @@ const EmulatorPage: React.FC = () => {
   // Stable ref so the poll interval always calls the freshest handler.
   const livePollRef = useRef<(() => void) | null>(null);
 
+  // ── Locate the flash save image inside the WASM heap ──────────────────────
+  // The .sav bytes mGBA exposes are exactly the emulated flash contents, so the
+  // flash save-slot buffer in HEAPU8 is a copy of `latestSaveBytes`. That buffer
+  // is the ROTATING save image (sections move on every manual save), so it must
+  // never be treated as the live party — a shape-only read of a rotated-in
+  // section decodes garbage mons that poison the box inference. Every
+  // live-party decision (scan, identity candidates, hot-detection, fast path)
+  // therefore excludes this region. The flash image base is a fixed allocation,
+  // so this runs at most once per session.
+  const saveBufferRegionRef = useRef<{ start: number; end: number } | null>(null);
+  const locateSaveBufferRegion = (heap: Uint8Array) => {
+    const save = latestSaveBytesRef.current;
+    if (!save || save.length < SLOT_SIZE) return;
+    if (saveBufferRegionRef.current) return;
+    const saveView = new DataView(save.buffer, save.byteOffset, save.byteLength);
+    const heapView = new DataView(heap.buffer, heap.byteOffset, heap.byteLength);
+    const slotOffsets = [0, SLOT_SIZE, 0x1000, 0x2000, 0x3000, 0x4000];
+    // Fast prefilter: the save-section footer signature is a 32-bit constant
+    // that appears nowhere in random RAM, so any heap hit is a real footer.
+    let hit = -1;
+    if (heap.byteOffset % 4 === 0 && heap.byteLength % 4 === 0) {
+      const u32 = new Uint32Array(heap.buffer, heap.byteOffset, heap.byteLength >>> 2);
+      for (let i = 0; i < u32.length; i++) {
+        if (u32[i] === SIGNATURE) { hit = i * 4; break; }
+      }
+    } else {
+      for (let h = 0; h + 4 <= heap.length; h += 4) {
+        if ((heap[h] | (heap[h + 1] << 8) | (heap[h + 2] << 16) | (heap[h + 3] << 24)) === SIGNATURE) { hit = h; break; }
+      }
+    }
+    if (hit < 0) return;
+    // Reconstruct the image base from the footer at `hit`, verifying every
+    // known footer of the save image lines up in the heap before trusting it.
+    for (const o of slotOffsets) {
+      for (let j = 0; j < NUM_SECTIONS; j++) {
+        const f = o + j * SECTION_SIZE + FOOTER_OFFSET;
+        if (f + 8 > save.length) continue;
+        const start = hit - f;
+        if (start < 0 || start + save.length > heap.length) continue;
+        let ok = true;
+        for (const o2 of slotOffsets) {
+          for (let j2 = 0; j2 < NUM_SECTIONS; j2++) {
+            const f2 = o2 + j2 * SECTION_SIZE + FOOTER_OFFSET;
+            if (f2 + 8 > save.length) continue;
+            const sid = save[f2] | (save[f2 + 1] << 8);
+            const ssig = saveView.getUint32(f2 + 2, true);
+            const hid = heap[start + f2] | (heap[start + f2 + 1] << 8);
+            const hsig = heapView.getUint32(start + f2 + 2, true);
+            if (hid !== sid || hsig !== ssig) { ok = false; break; }
+          }
+          if (!ok) break;
+        }
+        if (ok) {
+          const region = { start, end: start + save.length };
+          saveBufferRegionRef.current = region;
+          console.debug('[liveParty] flash save region located in heap', {
+            region,
+            saveLen: save.length,
+            heapLen: heap.length,
+          });
+          return;
+        }
+      }
+    }
+    console.debug('[liveParty] flash save region not located', { hit, saveLen: save.length, heapLen: heap.length });
+  };
+  const isInSaveBuffer = (off: number | null): boolean => {
+    const r = saveBufferRegionRef.current;
+    if (off === null || !r) return false;
+    return off >= r.start && off < r.end;
+  };
+
   // Tracks party ↔ box movements from live party reads. Withdrawals (a mon
   // arriving in the live party) leave the box; departures (a mon that was in
   // the party but no longer is) enter it at their most recent seen stats.
@@ -1109,8 +1207,13 @@ const EmulatorPage: React.FC = () => {
     const applyLiveParty = (party: SavePokemon[]) => {
       const base = mySaveDataRef.current;
       if (!base) return; // wait for the first .sav parse to arrive
-      applyPartyInference(party);
-      const merged: SaveData = { ...base, party, box: Array.from(inferredBoxRef.current.values()) };
+      // A read from the wrong region decodes slots "nicknamed" with the
+      // trainer's OT name — drop them, and skip the merge entirely if the
+      // whole read was garbage so the last good save stays on screen.
+      const clean = filterLiveParty(party, base.trainer_name);
+      if (!clean) return;
+      applyPartyInference(clean);
+      const merged: SaveData = { ...base, party: clean, box: Array.from(inferredBoxRef.current.values()) };
       mySaveDataRef.current = merged;
       setMySaveData(merged);
       postSaveToBackend(merged);
@@ -1124,7 +1227,7 @@ const EmulatorPage: React.FC = () => {
       const endLimit = Math.min(heap.length - RAM_PARTY_BYTES, LIVE_SCAN_MAX_BYTES);
       const deadline = performance.now() + 20;
       while (ss.next <= endLimit && performance.now() < deadline) {
-        const copies = findRamPartyCopies(heap, ss.ids, ss.next, ss.next + LIVE_SIG_SCAN_CHUNK);
+        const copies = findRamPartyCopies(heap, ss.ids, ss.next, ss.next + LIVE_SIG_SCAN_CHUNK, saveBufferRegionRef.current);
         for (const c of copies) {
           if (!livePartyCandidatesRef.current.includes(c)) livePartyCandidatesRef.current.push(c);
         }
@@ -1133,6 +1236,16 @@ const EmulatorPage: React.FC = () => {
       if (ss.next > endLimit) {
         ss.ids = [];
         ss.next = 0;
+        // The flash save-slot buffer is the rotating save image, never live
+        // RAM — drop any copies that landed inside it so they can't be pinned.
+        // Done in place (not by filtering reads) so the candidates array and
+        // its per-copy hash array stay index-aligned.
+        for (let i = livePartyCandidatesRef.current.length - 1; i >= 0; i--) {
+          if (isInSaveBuffer(livePartyCandidatesRef.current[i])) {
+            livePartyCandidatesRef.current.splice(i, 1);
+            livePartyCandHashesRef.current.splice(i, 1);
+          }
+        }
         livePartyCandidatesRef.current.sort((a, b) => a - b);
         livePartyCandHashesRef.current = livePartyCandidatesRef.current.map(() => '');
         console.debug('[liveParty] party copies located', { candidates: livePartyCandidatesRef.current });
@@ -1159,7 +1272,18 @@ const EmulatorPage: React.FC = () => {
     // buffers don't) — unless it merely converged to another copy (a manual
     // save copying the live party into the slot buffer), in which case the
     // other copy is the source of truth. Multiple simultaneous changes are left
-    // for the fast path and resolve on the next interaction.
+    // for the fast path and resolve on the next interaction. Copies living in
+    // the flash save-slot buffer are the ROTATING save image, not live RAM —
+    // they must never be pinned or watched, or a mid-battle save rotation reads
+    // garbage shapes as the party. Re-splice in place: the region can be
+    // located after the candidates list was finalized, and this keeps the
+    // per-copy hash array aligned.
+    for (let i = livePartyCandidatesRef.current.length - 1; i >= 0; i--) {
+      if (isInSaveBuffer(livePartyCandidatesRef.current[i])) {
+        livePartyCandidatesRef.current.splice(i, 1);
+        livePartyCandHashesRef.current.splice(i, 1);
+      }
+    }
     const cands = livePartyCandidatesRef.current;
     if (!livePartyProvenLiveRef.current && cands.length >= 2) {
       const prev = livePartyCandHashesRef.current;
@@ -1187,6 +1311,8 @@ const EmulatorPage: React.FC = () => {
         livePartySigScanRef.current = { ids: [], next: 0 };
         console.debug('[liveParty] live party confirmed', {
           off: target,
+          inFlash: isInSaveBuffer(target),
+          flashRegion: saveBufferRegionRef.current,
           via: converged >= 0 ? 'converged-copy' : 'changed',
           candidates: cands,
         });
@@ -1216,6 +1342,7 @@ const EmulatorPage: React.FC = () => {
       if (
         off >= 4 &&
         off + RAM_PARTY_BYTES <= heap.length &&
+        !isInSaveBuffer(off) &&
         getRamPartyCount(heap, off, strict) !== null
       ) {
         livePartyMissesRef.current = 0;
@@ -1238,7 +1365,8 @@ const EmulatorPage: React.FC = () => {
       const local = findRamPartyOffset(
         heap,
         Math.max(4, off - LIVE_PARTY_LOCAL_SCAN_RADIUS),
-        off + LIVE_PARTY_LOCAL_SCAN_RADIUS
+        off + LIVE_PARTY_LOCAL_SCAN_RADIUS,
+        saveBufferRegionRef.current
       );
       if (local !== null) {
         livePartyMissesRef.current = 0;
@@ -1290,6 +1418,10 @@ const EmulatorPage: React.FC = () => {
     const deadline = performance.now() + LIVE_SCAN_BUDGET_MS;
     const endLimit = Math.min(heap.length - RAM_PARTY_BYTES, LIVE_SCAN_MAX_BYTES);
     while (st.next <= endLimit && performance.now() < deadline) {
+      // Skip the flash save-slot buffer wholesale — it is a rotating copy of
+      // the save image, not live RAM, and its shapes can outscore the real
+      // party's on a stale read.
+      if (isInSaveBuffer(st.next)) { st.next += 4; continue; }
       const r = ramPartyScore(heap, st.next);
       if (r && (!st.best || r.score > st.best.score || (r.score === st.best.score && st.next < st.best.off))) {
         // Ties prefer the lower address so the player's party (declared before
@@ -1356,13 +1488,39 @@ const EmulatorPage: React.FC = () => {
     // party movements instead of trusting it blindly.
     const liveOff = livePartyOffsetRef.current;
     const liveHeap = window.EJS_emulator?.gameManager?.Module?.HEAPU8;
+    // Locate the flash save-slot buffer FIRST so the read below (and any
+    // subsequent scan) knows to exclude the rotating save image from live-RAM
+    // decisions.
+    if (liveHeap) locateSaveBufferRegion(liveHeap);
     let liveParty: SavePokemon[] | null = null;
     // Shape-tolerant read: the live gPlayerParty's stored checksums go stale
     // under Blitz's direct writes, so requiring them here would drop the live
     // party and let the stale flash party revert the display every 10s.
-    if (liveOff !== null && liveHeap && liveOff >= 4 && liveOff + RAM_PARTY_BYTES <= liveHeap.length && getRamPartyCount(liveHeap, liveOff, false) !== null) {
+    if (liveOff !== null && liveHeap && liveOff >= 4 && liveOff + RAM_PARTY_BYTES <= liveHeap.length && !isInSaveBuffer(liveOff) && getRamPartyCount(liveHeap, liveOff, false) !== null) {
       liveParty = parseRamParty(liveHeap, liveOff, false);
     }
+    // A live read from the wrong region decodes slots "nicknamed" with the
+    // trainer's OT name. Drop those slots; if the whole read was garbage,
+    // keep the .sav party (which is a properly aligned save image).
+    const livePartyClean = liveParty ? filterLiveParty(liveParty, parsed.trainer_name) : null;
+    if (liveParty && !livePartyClean) {
+      console.warn('[liveParty] dropped garbage live read (trainer-name nicknames)', {
+        off: liveOff,
+        count: liveParty.length,
+      });
+    }
+    // Tag whether the pinned offset is the rotating flash save-slot buffer
+    // (the .sav image) vs. real EWRAM, then log the party being merged.
+    console.debug('[debug.sav] handler', {
+      liveOff,
+      inFlash: isInSaveBuffer(liveOff),
+      flashRegion: saveBufferRegionRef.current,
+      savPartySpecies: (parsed.party ?? []).map((m) => m.species_id),
+      livePartySpecies: liveParty?.map((m) => m.species_id) ?? null,
+      savPartyPids: (parsed.party ?? []).map((m) => m.personality),
+      livePartyPids: liveParty?.map((m) => m.personality) ?? null,
+      boxBefore: inferredBoxRef.current.size,
+    });
     // The .sav carries the party's plaintext personalities at save time — use
     // them to locate every copy in RAM (the live gPlayerParty included) when
     // the live region is not yet proven. Self-heals once the player saves.
@@ -1370,10 +1528,15 @@ const EmulatorPage: React.FC = () => {
     if (!livePartyProvenLiveRef.current && (savParty.length ?? 0) >= 2 && !livePartySigScanRef.current.ids.length) {
       livePartySigScanRef.current = { ids: savParty.map((m) => m.personality), next: 0 };
     }
-    reconcileBoxFromSave(parsed.box ?? [], parsed.party ?? [], liveParty);
+    reconcileBoxFromSave(parsed.box ?? [], parsed.party ?? [], livePartyClean);
+    console.debug('[debug.sav] afterReconcile', {
+      boxAfter: inferredBoxRef.current.size,
+      boxSpecies: Array.from(inferredBoxRef.current.values()).map((m) => m.species_id),
+      lastPartyPids: Array.from(lastPartyPidsRef.current),
+    });
     const syncedSave: SaveData = {
       ...parsed,
-      ...(liveParty ? { party: liveParty } : {}),
+      ...(livePartyClean ? { party: livePartyClean } : {}),
       box: Array.from(inferredBoxRef.current.values()),
     };
     setMySaveData(syncedSave);
