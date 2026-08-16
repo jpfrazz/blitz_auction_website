@@ -16,14 +16,14 @@ Human
 Jari
 DJ
 //If you'd like to be added to this list, shoot me a message on Discord in the following format:
-  Name: (Player Name)
+  Name: (Your in-game name)
   Shuppets: (On/Off)
   Flygon Dust: (On/Off)
   Frame: (1-40)
-  Player Palette: Blue/Pink/Silver/Sky/etc.
+  Player Palette: (Blue/Pink/Silver/Sky/etc.)
 
 
-You can now use evolution items on Pokémon in the bottom left PC portion of the party menu
+You can now use evolution items (Fire Stone, Metal Coat, etc.) on Pokémon in the bottom left PC portion of the party menu
 
 Rearranged Shuppet in the Lilycove Department Store to no longer block stairs
 
@@ -39,8 +39,3 @@ In the party menu, "Evolution" no longer appears as a menu option for fainted Po
 Fainted Pokémon in the bottom left PC portion of the party menu now always have red (not green) pokeball backgrounds
 
 Pokémon in the bottom left PC portion of the party menu who evolve before the first gym now have green pokeball backgrounds
-
-
-
-
-
