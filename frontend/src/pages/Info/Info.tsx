@@ -813,6 +813,29 @@ const Info = () => (
           <li>The exploding Pokemon has been on the field for at least five turns</li>
           <li>Your Pokemon can be affected by Explosion (it isn't a ghost-type)</li>
         </ul>
+        <p className="info-answer">
+          <strong>The enemy AI will use an HP-healing item if ALL of the following are true. Its Pokémon...</strong>
+        </p>
+        <ul>
+          <li>Hasn't already been healed (only one heal per Pokémon)</li>
+          <li>Can't move first and KO yours this turn</li>
+          <li>Can't be KO'd this turn after healing</li>
+          <li>At least one of the following is true. Its Pokémon...
+            <ul>
+              <li>Is below 25% of its maximum HP, OR</li>
+              <li>Has missing HP that exceeds the heal amount of the item, OR</li>
+              <li>Can faint this turn and has missing HP equal to more than double the damage dealt by your best attack, OR</li>
+              <li>Can faint this turn and is the final Pokémon remaining</li>
+            </ul>
+          </li>
+        </ul>
+        <p className="info-answer">
+          <strong>The enemy AI will use a Full Heal if ALL of the following are true. Its Pokémon...</strong>
+        </p>
+        <ul>
+          <li>Has a status condition</li>
+          <li>Can't move first and KO yours this turn</li>
+        </ul>
       </section>
 
       <section id="key-binds" className="info-section">

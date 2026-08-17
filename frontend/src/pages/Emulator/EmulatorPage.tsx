@@ -386,7 +386,7 @@ async function deleteStoredSave(key: string): Promise<void> {
 }
 
 // Map of user_id → latest parsed save for other draft players
-type OtherPlayerSaves = Record<string, { displayName: string; save: SaveData | null }>;
+type OtherPlayerSaves = Record<string, { displayName: string; save: SaveData | null; lastBadgeTime?: number }>;
 
 // Returns "Wally" or "Steven" when the player has a champion win on their
 // trainer card (Wally = 656, Steven = 804), otherwise null. Used to display
@@ -448,11 +448,23 @@ const isTrainerNameNickname = (nickname: string | undefined, trainerName: string
   return n.length > 0 && n === t;
 };
 
-// Drops slots that decoded from a garbage live read (see isTrainerNameNickname).
+// Boss trainers' Pokémon all have 31/31/31/31/31/31 IVs, which is impossible
+// for a player to obtain. During battles the live party read can accidentally
+// pick up gEnemyParty, so this catches that case.
+const isBossIvs = (ivs: { hp: number; atk: number; def: number; spa: number; spd: number; spe: number }): boolean => {
+  return ivs.hp === 31 && ivs.atk === 31 && ivs.def === 31 && ivs.spa === 31 && ivs.spd === 31 && ivs.spe === 31;
+};
+
+// Drops slots that decoded from a garbage live read (see isTrainerNameNickname)
+// or that belong to a boss trainer (all-31 IVs, see isBossIvs).
 // Returns null when the ENTIRE read is garbage so the caller can fall back to
 // the .sav party instead of clobbering the display with nonsense.
 const filterLiveParty = (party: SavePokemon[], trainerName: string | undefined): SavePokemon[] | null => {
-  const clean = trainerName ? party.filter((m) => !isTrainerNameNickname(m.nickname, trainerName)) : party;
+  const clean = party.filter((m) => {
+    if (isTrainerNameNickname(m.nickname, trainerName)) return false;
+    if (isBossIvs(m.ivs)) return false;
+    return true;
+  });
   return clean.length > 0 ? clean : null;
 };
 
@@ -573,6 +585,7 @@ const EmulatorPage: React.FC = () => {
   const controlBindingsIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const lastKnownBindingsRef = useRef<string | null>(null);
   const blockShortcutsRef = useRef<((e: KeyboardEvent) => void) | null>(null);
+  const isWithdrawingRef = useRef(false);
   const blockContextMenuRef = useRef<((e: MouseEvent) => void) | null>(null);
   const handleBeforeUnloadRef = useRef<((e: BeforeUnloadEvent) => void) | null>(null);
   const originalSetItemRef = useRef<((key: string, value: string) => void) | null>(null);
@@ -836,10 +849,19 @@ const EmulatorPage: React.FC = () => {
           if (msg.type === 'SaveUpdate') {
             const { user_id, save_data } = msg.data as { user_id: string; save_data: any };
             console.log('[EmulatorPage] SaveUpdate received for', user_id, save_data);
-            setOtherSaves((prev) => ({
-              ...prev,
-              [user_id]: { displayName: prev[user_id]?.displayName ?? user_id, save: save_data },
-            }));
+            setOtherSaves((prev) => {
+              const prevBadges = prev[user_id]?.save?.badge_count ?? 0;
+              const newBadges = save_data?.badge_count ?? 0;
+              const badgeChanged = newBadges !== prevBadges;
+              return {
+                ...prev,
+                [user_id]: {
+                  displayName: prev[user_id]?.displayName ?? user_id,
+                  save: save_data,
+                  lastBadgeTime: badgeChanged ? Date.now() : prev[user_id]?.lastBadgeTime,
+                },
+              };
+            });
           }
           // DraftUpdate gives us the username list for the sidebar
           if (msg.type === 'DraftUpdate') {
@@ -1809,6 +1831,13 @@ const EmulatorPage: React.FC = () => {
       // Intercept keyboard shortcuts (1,2,3) and prevent arrow keys from scrolling the page.
       // When users map game controls to arrow keys, the browser scrolls the page by default.
       blockShortcutsRef.current = (e: KeyboardEvent) => {
+        // Block all keyboard input while auto-withdraw is running so that
+        // stray key presses don't interfere with the automated sequence.
+        if (isWithdrawingRef.current) {
+          e.stopImmediatePropagation();
+          e.preventDefault();
+          return;
+        }
         if (['1', '2', '3', 'Fn', 'Function'].includes(e.key)) {
           e.stopImmediatePropagation();
         }
@@ -2328,7 +2357,9 @@ const EmulatorPage: React.FC = () => {
     .sort(([, a], [, b]) => {
       const badgesA = a.save?.badge_count ?? 0;
       const badgesB = b.save?.badge_count ?? 0;
-      return badgesB - badgesA;
+      if (badgesA !== badgesB) return badgesB - badgesA;
+      // Tiebreaker: earliest badge change on top (first to obtain the badge)
+      return (a.lastBadgeTime ?? Infinity) - (b.lastBadgeTime ?? Infinity);
     });
   // Show every player in the sidebar (the sidebar scrolls if they don't fit)
   const sidebarEntries = allPlayerEntries;
@@ -2793,10 +2824,14 @@ const EmulatorPage: React.FC = () => {
                           draftData.teams.find((t: any) => t.user_id === currentUserId)
                             ?.auctions_won ?? []
                         }
+                        onWithdrawingChange={(val) => { isWithdrawingRef.current = val; }}
                       />
                     )}
                     {!draftId && urlPokemon.length > 0 && !mySaveData && (
-                      <NotebookWithdrawButton pokemon={urlPokemon} />
+                      <NotebookWithdrawButton
+                        pokemon={urlPokemon}
+                        onWithdrawingChange={(val) => { isWithdrawingRef.current = val; }}
+                      />
                     )}
                     {draftId && draftData && countdown === null && !raceStarted && !anyPlayerHasBadge && (
                       <button

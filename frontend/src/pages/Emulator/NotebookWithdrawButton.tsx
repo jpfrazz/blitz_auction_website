@@ -4,6 +4,7 @@ import './NotebookWithdrawButton.scss';
 
 interface NotebookWithdrawButtonProps {
   pokemon: { name: string; pokedex_id?: number; form?: string | null }[];
+  onWithdrawingChange?: (withdrawing: boolean) => void;
 }
 
 function sleep(ms: number): Promise<void> {
@@ -12,6 +13,7 @@ function sleep(ms: number): Promise<void> {
 
 const NotebookWithdrawButton: React.FC<NotebookWithdrawButtonProps> = ({
   pokemon,
+  onWithdrawingChange,
 }) => {
   const [isRunning, setIsRunning] = useState(false);
   const [status, setStatus] = useState<string | null>(null);
@@ -44,6 +46,7 @@ const NotebookWithdrawButton: React.FC<NotebookWithdrawButtonProps> = ({
 
     setIsRunning(true);
     setStatus('Withdrawing...');
+    onWithdrawingChange?.(true);
 
     try {
       if (emulator) {
@@ -71,13 +74,14 @@ const NotebookWithdrawButton: React.FC<NotebookWithdrawButtonProps> = ({
       if (emulator && originalKeyChange) {
         emulator.keyChange = originalKeyChange;
       }
+      onWithdrawingChange?.(false);
     }
 
     setTimeout(() => {
       setIsRunning(false);
       setStatus(null);
     }, 2000);
-  }, [isRunning, pokemon]);
+  }, [isRunning, pokemon, onWithdrawingChange]);
 
   return (
     <div className="notebook-withdraw-container">

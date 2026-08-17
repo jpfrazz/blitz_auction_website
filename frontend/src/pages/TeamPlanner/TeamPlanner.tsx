@@ -218,7 +218,7 @@ const TeamPlanner = () => {
                 multiValueLabel: (base) => ({
                   ...base,
                   color: '#f1f1f1',
-                  fontSize: '1rem',
+                  fontSize: '1.2rem',
                 }),
                 multiValueRemove: (base) => ({
                   ...base,

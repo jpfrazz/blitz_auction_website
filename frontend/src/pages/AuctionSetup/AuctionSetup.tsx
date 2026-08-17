@@ -108,6 +108,7 @@ const AuctionSetupForm: React.FC = () => {
   };
 
   return (
+    <>
     <div className="auction-setup-card">
       <h2 className="auction-setup-title">Auction Setup</h2>
       <form className="auction-setup-form" onSubmit={handleSubmit} autoComplete="off">
@@ -269,6 +270,20 @@ const AuctionSetupForm: React.FC = () => {
         )}
       </form>
     </div>
+    <div className="auction-setup-tip" style={{
+      marginTop: '20px',
+      padding: '16px 20px',
+      borderRadius: '8px',
+      background: 'rgba(255, 255, 255, 0.05)',
+      border: '1px solid rgba(255, 255, 255, 0.1)',
+      fontSize: '1.2rem',
+      lineHeight: '1.5',
+      color: 'var(--sl-color-neutral-300)',
+      maxWidth: '70%',
+    }}>
+      <strong>TIP:</strong> Don't cap how many Pokemon a player can win in the auction! Some players will finish the auction with more Pokémon than others, and that's essential to the auction being fun. If one player drafts lots of weak, cheap Pokémon, they're able to play with more than a player who drafts powerful, expensive ones!
+    </div>
+    </>
   );
 };
 
