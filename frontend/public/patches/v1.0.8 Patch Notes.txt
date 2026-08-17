@@ -1,0 +1,9 @@
+8/17/2026
+
+-----------------------------------------------
+Bug Fixes
+-----------------------------------------------
+
+Fixed a bug where exiting the summary screen in the party menu always erroneously reset the cursor to the first Pokémon in the party
+
+Fixed a bug where preset settings loadouts had Shuppets inverted
