@@ -139,7 +139,7 @@
     padding: 0.58rem 0.62rem;
     text-align: left;
     border-bottom: 1px solid #273138;
-    font-size: 1.2rem;
+    font-size: 1.25rem;
     white-space: nowrap; // Prevents data from wrapping and breaking table alignment
   }
 
@@ -169,7 +169,7 @@
 
 .stats-panel h2 {
   margin: 0 0 0.7rem;
-  font-size: 1.25rem;
+  font-size: 1.35rem;
 }
 
 .panel-list {
@@ -641,7 +641,7 @@
   right: 1rem;
   padding: 0.1rem 0.55rem;
   border-radius: 999px;
-  font-size: 0.7rem;
+  font-size: 0.9rem;
   font-weight: 700;
   letter-spacing: 0.02em;
   white-space: nowrap;
@@ -669,7 +669,7 @@
 
 .admin-hof-entry-player {
   font-weight: 700;
-  font-size: 1.4rem;
+  font-size: 1.3rem;
 }
 
 .admin-hof-entry-player.admin-hof-entry-player {
@@ -687,17 +687,19 @@
 
 .admin-hof-entry-race {
   color: #a9c3dc;
+  font-size: 1.3rem;
 }
 
 .admin-hof-entry-beat {
   font-weight: 600;
   color: #90ee90;
+  font-size: 1.3rem;
 }
 
 .admin-hof-entry-time {
   color: #c8d6e4;
   font-weight: 400;
-  font-size: 0.9rem;
+  font-size: 1.3rem;
 }
 
 .admin-hof-entry-body {
