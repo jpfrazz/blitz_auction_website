@@ -281,7 +281,7 @@ const AuctionSetupForm: React.FC = () => {
       color: 'var(--sl-color-neutral-300)',
       maxWidth: '70%',
     }}>
-      <strong>TIP:</strong> Don't cap how many Pokemon a player can win in the auction! Some players will finish the auction with more Pokémon than others, and that's essential to the auction being fun. If one player drafts lots of weak, cheap Pokémon, they're able to play with more than a player who drafts powerful, expensive ones!
+      <strong>TIP:</strong> Don't cap how many Pokemon a player can win in the auction! Some players will finish the auction with more Pokémon than others, and that's essential to the strategy. If one player drafts lots of weak, cheap Pokémon, they're able to play with more than a player who drafts powerful, expensive ones!
     </div>
     </>
   );
