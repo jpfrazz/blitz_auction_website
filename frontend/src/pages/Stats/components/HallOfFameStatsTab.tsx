@@ -79,7 +79,7 @@ const HallOfFameStatsTab: React.FC<HallOfFameStatsTabProps> = ({ validDraftIds }
                       {entry.hall_of_fame_team.map((mon, idx) => (
                         <div className="admin-hof-team-icon" key={idx} title={mon.name}>
                           <img
-                            src={`/MiniIcons/${getIconName(mon.name)}.png`}
+                            src={`/MiniIcons/${mon.icon || getIconName(mon.name)}.png`}
                             alt={mon.name}
                             onError={(e) => {
                               (e.currentTarget as HTMLImageElement).src =
