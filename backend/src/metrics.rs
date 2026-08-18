@@ -12,7 +12,7 @@ use std::time::Instant;
 use tokio::sync::mpsc;
 use tokio::time::{self, Duration};
 
-const MAX_BYTE_BUFFER: usize = 64 * 1024; // 64 KB buffer limit for metrics
+const MAX_BYTE_BUFFER: usize = 512 * 1024; // 512 KB buffer limit for metrics
 const MAX_STORED_CHARS: usize = 2000; // 2,000 max stored characters
 
 #[derive(Debug, Clone)]
@@ -134,36 +134,30 @@ async fn extract_body_string(
     max_bytes: usize,
     max_chars: usize,
 ) -> (String, Body) {
-    if let Some(cl) = headers.get(header::CONTENT_LENGTH).and_then(|v| v.to_str().ok()) {
-        if cl == "0" {
-            return ("".to_string(), body);
-        }
-    }
+    let cl_option = headers.get(header::CONTENT_LENGTH)
+        .and_then(|v|
+            v
+            .to_str()
+            .unwrap_or_default()
+            .parse::<usize>()
+            .ok()
+        );
 
-    if is_text_or_json(headers) {
+    if is_text_or_json(headers) && cl_option.is_some_and(|cl| cl < MAX_BYTE_BUFFER){
         let bytes = to_bytes(body, max_bytes).await.unwrap_or_default();
         let s = truncate_str(&String::from_utf8_lossy(&bytes), max_chars);
         (s, Body::from(bytes))
-    } else if headers.contains_key(header::CONTENT_TYPE) || headers.contains_key(header::CONTENT_LENGTH) {
+    }
+    else {
         let content_type = headers
             .get(header::CONTENT_TYPE)
             .and_then(|v| v.to_str().ok())
             .unwrap_or("unknown type");
-        let content_length = headers
-            .get(header::CONTENT_LENGTH)
-            .and_then(|v| v.to_str().ok())
-            .map(|len| format!("{} bytes", len))
+        let content_length = cl_option
+            .map(|cl| format!("{} bytes", cl))
             .unwrap_or_else(|| "unknown length".to_string());
 
         (format!("<Content Type: {}, Length: {}>", content_type, content_length), body)
-    } else {
-        let bytes = to_bytes(body, max_bytes).await.unwrap_or_default();
-        if bytes.is_empty() {
-            ("".to_string(), Body::from(bytes))
-        } else {
-            let s = truncate_str(&String::from_utf8_lossy(&bytes), max_chars);
-            (s, Body::from(bytes))
-        }
     }
 }
 
