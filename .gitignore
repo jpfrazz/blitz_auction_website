@@ -8,3 +8,6 @@ backend/**/*.rs.bk
 add_pokemon_script/__pycache__/
 create_pokedex_script/porydex_src/porydex/__pycache__/
 create_pokedex_script/porydex_src/porydex/parse/__pycache__/
+nginx/certs
+nginx/logs
+db_init/

@@ -67,6 +67,7 @@ impl User {
             || username == "jage04"
             || username == "mfrazz"
             || username == "Jason"
+            || username == "jpfrazz"
         {
             return true;
         }

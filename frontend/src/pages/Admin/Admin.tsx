@@ -19,13 +19,14 @@ import {
   AdminHallOfFameEligibleEntry,
   AdminRaceResult,
   HallOfFamePokemon,
+  AdminMetricSummary,
 } from '../../types';
 import './Admin.scss';
 import { fetchCurrentUser } from '../../shared/api/draftData';
 import { getIconName } from '../../utils/speciesUtils';
 import HallOfFameTeamEditorModal from './HallOfFameTeamEditorModal';
 
-type AdminTab = 'draft-results' | 'discord-users' | 'upload-pokemon-data' | 'boss-battle-history' | 'hall-of-fame' | 'race-results';
+type AdminTab = 'draft-results' | 'discord-users' | 'upload-pokemon-data' | 'boss-battle-history' | 'hall-of-fame' | 'race-results' | 'metrics';
 
 const Admin: React.FC = () => {
   const [hasRefereeRole, setHasRefereeRole] = useState<boolean | null>(null);
@@ -62,11 +63,91 @@ const Admin: React.FC = () => {
   const [raceResultsLoading, setRaceResultsLoading] = useState(false);
   const [raceResultsError, setRaceResultsError] = useState<string | null>(null);
 
+  const [metrics, setMetrics] = useState<AdminMetricSummary[]>([]);
+  const [metricsLoading, setMetricsLoading] = useState(false);
+  const [metricsError, setMetricsError] = useState<string | null>(null);
+  const [metricsSearch, setMetricsSearch] = useState('');
+  const [metricsAutoRefresh, setMetricsAutoRefresh] = useState(false);
+  const [metricsSortCol, setMetricsSortCol] = useState<keyof AdminMetricSummary>('request_count');
+  const [metricsSortDir, setMetricsSortDir] = useState<'asc' | 'desc'>('desc');
+
+  const loadMetrics = () => {
+    setMetricsLoading(true);
+    setMetricsError(null);
+    fetch('/api/admin/metrics')
+      .then(async (res) => {
+        if (!res.ok) {
+          const text = await res.text();
+          throw new Error(text || res.statusText);
+        }
+        return res.json();
+      })
+      .then((data) => setMetrics(data))
+      .catch((err: any) => setMetricsError(err?.message ?? 'Failed to load metrics.'))
+      .finally(() => setMetricsLoading(false));
+  };
+
+  useEffect(() => {
+    if (!hasRefereeRole || tab !== 'metrics') return;
+    loadMetrics();
+
+    if (!metricsAutoRefresh) return;
+    const interval = setInterval(loadMetrics, 10000);
+    return () => clearInterval(interval);
+  }, [hasRefereeRole, tab, metricsAutoRefresh]);
+
+  const metricsSummary = useMemo(() => {
+    const totalEndpoints = metrics.length;
+    const totalRequests = metrics.reduce((sum, item) => sum + (item.request_count || 0), 0);
+    const totalErrors = metrics.reduce((sum, item) => sum + (item.error_count || 0), 0);
+    const overallAvgMs = totalRequests > 0
+      ? metrics.reduce((sum, item) => sum + (item.avg_duration_ms * item.request_count), 0) / totalRequests
+      : 0;
+
+    return { totalEndpoints, totalRequests, totalErrors, overallAvgMs };
+  }, [metrics]);
+
+  const filteredAndSortedMetrics = useMemo(() => {
+    const searchLower = metricsSearch.toLowerCase().trim();
+    let result = metrics;
+    if (searchLower) {
+      result = result.filter(
+        (m) => m.path.toLowerCase().includes(searchLower) || m.method.toLowerCase().includes(searchLower),
+      );
+    }
+
+    return [...result].sort((a, b) => {
+      const valA = a[metricsSortCol];
+      const valB = b[metricsSortCol];
+      if (typeof valA === 'string' && typeof valB === 'string') {
+        return metricsSortDir === 'asc' ? valA.localeCompare(valB) : valB.localeCompare(valA);
+      }
+      const numA = Number(valA) || 0;
+      const numB = Number(valB) || 0;
+      return metricsSortDir === 'asc' ? numA - numB : numB - numA;
+    });
+  }, [metrics, metricsSearch, metricsSortCol, metricsSortDir]);
+
+  const handleSort = (col: keyof AdminMetricSummary) => {
+    if (metricsSortCol === col) {
+      setMetricsSortDir((dir) => (dir === 'asc' ? 'desc' : 'asc'));
+    } else {
+      setMetricsSortCol(col);
+      setMetricsSortDir('desc');
+    }
+  };
+
+  const getSortIcon = (col: keyof AdminMetricSummary) => {
+    if (metricsSortCol !== col) return '↕';
+    return metricsSortDir === 'asc' ? '↑' : '↓';
+  };
+
+
   useEffect(() => {
     fetchCurrentUser()
       .then((user) => {
         const roles = user.roles ?? [];
-        setHasRefereeRole(roles.some((role) => role.role_name === 'Referee') || user.username === 'franklynathan' || user.username === 'jage04' || user.username === 'Jason' || user.username === 'mfrazz');
+        setHasRefereeRole(roles.some((role) => role.role_name === 'Referee') || user.username === 'franklynathan' || user.username === 'jage04' || user.username === 'Jason' || user.username === 'mfrazz' || user.username === 'jpfrazz');
       })
       .catch(() => setHasRefereeRole(false));
   }, []);
@@ -382,6 +463,13 @@ const Admin: React.FC = () => {
                 >
                   Race Results
                 </button>
+                <button
+                  className={`admin-tab ${tab === 'metrics' ? 'active' : ''}`}
+                  onClick={() => setTab('metrics')}
+                  type="button"
+                >
+                  Metrics
+                </button>
               </div>
 
               {tab === 'draft-results' && (
@@ -527,6 +615,7 @@ const Admin: React.FC = () => {
                   )}
                 </div>
               )}
+
               {tab === 'upload-pokemon-data' && (
                 <div className="admin-tab-content">
                     <h2>Upload Pokemon Data</h2>
@@ -589,6 +678,7 @@ const Admin: React.FC = () => {
                   </div>
                 </div>
               )}
+
               {tab === 'boss-battle-history' && (
                 <div className="admin-tab-content">
                   <h2>Boss Battle History</h2>
@@ -633,6 +723,7 @@ const Admin: React.FC = () => {
                   )}
                 </div>
               )}
+
               {tab === 'hall-of-fame' && (
                 <div className="admin-tab-content">
                   <h2>Hall of Fame Teams</h2>
@@ -704,6 +795,7 @@ const Admin: React.FC = () => {
                   )}
                 </div>
               )}
+
               {tab === 'race-results' && (
                 <div className="admin-tab-content">
                   <h2>Race Results</h2>
@@ -752,6 +844,131 @@ const Admin: React.FC = () => {
                               </td>
                             </tr>
                           ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+                </div>
+              )}
+
+
+              {tab === 'metrics' && (
+                <div className="admin-tab-content">
+                  <h2>Endpoint Metrics</h2>
+                  {metricsError && <div className="admin-message admin-error">{metricsError}</div>}
+
+                  <div className="admin-controls-row" style={{ flexWrap: 'wrap', marginBottom: '1.2rem' }}>
+                    <div style={{ display: 'flex', gap: '1rem', flex: 1, minWidth: '280px' }}>
+                      <div style={{ background: '#172637', padding: '0.6rem 1rem', borderRadius: '8px', border: '1px solid #2b3e52', flex: 1 }}>
+                        <div style={{ fontSize: '0.75rem', color: '#94a3b8', textTransform: 'uppercase' }}>Endpoints</div>
+                        <div style={{ fontSize: '1.4rem', fontWeight: 'bold' }}>{metricsSummary.totalEndpoints}</div>
+                      </div>
+                      <div style={{ background: '#172637', padding: '0.6rem 1rem', borderRadius: '8px', border: '1px solid #2b3e52', flex: 1 }}>
+                        <div style={{ fontSize: '0.75rem', color: '#94a3b8', textTransform: 'uppercase' }}>Total Requests</div>
+                        <div style={{ fontSize: '1.4rem', fontWeight: 'bold' }}>{metricsSummary.totalRequests.toLocaleString()}</div>
+                      </div>
+                      <div style={{ background: '#172637', padding: '0.6rem 1rem', borderRadius: '8px', border: '1px solid #2b3e52', flex: 1 }}>
+                        <div style={{ fontSize: '0.75rem', color: '#94a3b8', textTransform: 'uppercase' }}>Avg Latency</div>
+                        <div style={{ fontSize: '1.4rem', fontWeight: 'bold' }}>{metricsSummary.overallAvgMs.toFixed(1)} ms</div>
+                      </div>
+                      <div style={{ background: metricsSummary.totalErrors > 0 ? '#241417' : '#172637', padding: '0.6rem 1rem', borderRadius: '8px', border: metricsSummary.totalErrors > 0 ? '1px solid #7f2d2d' : '1px solid #2b3e52', flex: 1 }}>
+                        <div style={{ fontSize: '0.75rem', color: metricsSummary.totalErrors > 0 ? '#ff8f8f' : '#94a3b8', textTransform: 'uppercase' }}>Total Errors</div>
+                        <div style={{ fontSize: '1.4rem', fontWeight: 'bold', color: metricsSummary.totalErrors > 0 ? '#ff8f8f' : 'inherit' }}>{metricsSummary.totalErrors.toLocaleString()}</div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="admin-controls-row">
+                    <input
+                      type="text"
+                      placeholder="Filter by path or method..."
+                      value={metricsSearch}
+                      onChange={(e) => setMetricsSearch(e.target.value)}
+                      style={{ minWidth: '240px' }}
+                    />
+                    <label style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', cursor: 'pointer' }}>
+                      <input
+                        type="checkbox"
+                        checked={metricsAutoRefresh}
+                        onChange={(e) => setMetricsAutoRefresh(e.target.checked)}
+                      />
+                      Auto-refresh (10s)
+                    </label>
+                    <button type="button" className="button" onClick={loadMetrics} disabled={metricsLoading}>
+                      {metricsLoading ? 'Refreshing...' : 'Refresh'}
+                    </button>
+                  </div>
+
+                  {metricsLoading && metrics.length === 0 ? (
+                    <div className="admin-message">Loading metrics...</div>
+                  ) : (
+                    <div className="admin-table-wrap">
+                      <table>
+                        <thead>
+                          <tr>
+                            <th onClick={() => handleSort('method')} style={{ cursor: 'pointer', userSelect: 'none' }}>
+                              Method {getSortIcon('method')}
+                            </th>
+                            <th onClick={() => handleSort('path')} style={{ cursor: 'pointer', userSelect: 'none' }}>
+                              Path {getSortIcon('path')}
+                            </th>
+                            <th onClick={() => handleSort('request_count')} style={{ cursor: 'pointer', userSelect: 'none' }}>
+                              Requests {getSortIcon('request_count')}
+                            </th>
+                            <th onClick={() => handleSort('avg_duration_ms')} style={{ cursor: 'pointer', userSelect: 'none' }}>
+                              Avg (ms) {getSortIcon('avg_duration_ms')}
+                            </th>
+                            <th onClick={() => handleSort('min_duration_ms')} style={{ cursor: 'pointer', userSelect: 'none' }}>
+                              Min (ms) {getSortIcon('min_duration_ms')}
+                            </th>
+                            <th onClick={() => handleSort('max_duration_ms')} style={{ cursor: 'pointer', userSelect: 'none' }}>
+                              Max (ms) {getSortIcon('max_duration_ms')}
+                            </th>
+                            <th onClick={() => handleSort('p95_duration_ms')} style={{ cursor: 'pointer', userSelect: 'none' }}>
+                              P95 (ms) {getSortIcon('p95_duration_ms')}
+                            </th>
+                            <th onClick={() => handleSort('p99_duration_ms')} style={{ cursor: 'pointer', userSelect: 'none' }}>
+                              P99 (ms) {getSortIcon('p99_duration_ms')}
+                            </th>
+                            <th onClick={() => handleSort('error_count')} style={{ cursor: 'pointer', userSelect: 'none' }}>
+                              Errors {getSortIcon('error_count')}
+                            </th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {filteredAndSortedMetrics.length === 0 ? (
+                            <tr>
+                              <td colSpan={9} style={{ textAlign: 'center', padding: '1rem' }}>
+                                No metrics found matching criteria.
+                              </td>
+                            </tr>
+                          ) : (
+                            filteredAndSortedMetrics.map((item, idx) => (
+                              <tr key={`${item.method}-${item.path}-${idx}`}>
+                                <td>
+                                  <strong style={{
+                                    color: item.method === 'GET' ? '#4ade80' : item.method === 'POST' ? '#60a5fa' : item.method === 'PUT' ? '#fbbf24' : '#f87171'
+                                  }}>
+                                    {item.method}
+                                  </strong>
+                                </td>
+                                <td><code>{item.path}</code></td>
+                                <td>{item.request_count.toLocaleString()}</td>
+                                <td>{item.avg_duration_ms.toFixed(1)}</td>
+                                <td>{item.min_duration_ms.toFixed(1)}</td>
+                                <td>{item.max_duration_ms.toFixed(1)}</td>
+                                <td style={{ color: item.p95_duration_ms > 1000 ? '#f87171' : item.p95_duration_ms > 500 ? '#fbbf24' : 'inherit' }}>
+                                  {item.p95_duration_ms.toFixed(1)}
+                                </td>
+                                <td style={{ color: item.p99_duration_ms > 1000 ? '#f87171' : item.p99_duration_ms > 500 ? '#fbbf24' : 'inherit' }}>
+                                  {item.p99_duration_ms.toFixed(1)}
+                                </td>
+                                <td style={{ color: item.error_count > 0 ? '#ff8f8f' : 'inherit', fontWeight: item.error_count > 0 ? 'bold' : 'normal' }}>
+                                  {item.error_count}
+                                </td>
+                              </tr>
+                            ))
+                          )}
                         </tbody>
                       </table>
                     </div>
