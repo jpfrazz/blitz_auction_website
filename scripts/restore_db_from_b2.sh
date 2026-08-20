@@ -23,11 +23,10 @@ B2_APPLICATION_KEY="${B2_APPLICATION_KEY:-}"
 B2_BUCKET_NAME="${B2_BUCKET_NAME:-}"
 BACKUP_PREFIX="${BACKUP_PREFIX:-}" # e.g. "backups/"
 
-TEMP_DIR="${PROJECT_DIR}/scratch"
+TEMP_DIR="${PROJECT_DIR}/temp"
 INIT_DIR="${PROJECT_DIR}/db_init"
 
 mkdir -p "${TEMP_DIR}" "${INIT_DIR}"
-rm -rf "${INIT_DIR:?}"/* # Clear previous initialization files
 
 # 2. Verify requirements
 if ! command -v rclone &> /dev/null; then
@@ -106,8 +105,7 @@ done
 
 # 7. Cleanup unpacked init files after container startup
 echo "[+] Cleaning up local temporary backup files..."
-rm -f "${DOWNLOAD_PATH}"
-rm -rf "${INIT_DIR:?}"/*
+rm -rf "${INIT_DIR}" "${TEMP_DIR}"
 
 echo "=================================================="
 echo " Restore completed! Database populated and services running."
