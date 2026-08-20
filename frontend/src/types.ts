@@ -283,3 +283,16 @@ export interface AdminDiscordUser {
   updated_at: string;
   created_at: string;
 }
+
+export interface AdminMetricSummary {
+  path: string;
+  method: string;
+  request_count: number;
+  avg_duration_ms: number;
+  min_duration_ms: number;
+  max_duration_ms: number;
+  p95_duration_ms: number;
+  p99_duration_ms: number;
+  error_count: number;
+}
+

@@ -1,5 +1,5 @@
 use crate::{
-    Draft, PgPool, handlers, pokemon, stats,
+    Draft, PgPool, handlers, metrics::{self, MetricsCollector}, pokemon, stats,
     users::{AuthBackend, Credentials},
 };
 use axum::{
@@ -25,6 +25,7 @@ type DraftCache = Arc<DashMap<Uuid, Arc<Draft>>>;
 pub struct ServerState {
     pub db_pool: PgPool,
     pub drafts: DraftCache,
+    pub metrics_collector: MetricsCollector,
 }
 
 #[derive(Clone, Debug, strum::Display)]
@@ -67,8 +68,13 @@ impl Server {
             )));
         };
 
+        let metrics_collector = metrics::init_metrics_collector(db_pool.clone());
         let drafts = DraftCache::new(DashMap::new());
-        let server_state = ServerState { db_pool, drafts };
+        let server_state = ServerState {
+            db_pool,
+            drafts,
+            metrics_collector,
+        };
         let server = Self::new(server_state);
 
         Ok(server)
@@ -209,6 +215,7 @@ impl Server {
                 post(handlers::update_admin_discord_user),
             )
             .route("/admin/boss-battle-history", get(handlers::get_admin_boss_battle_history))
+            .route("/admin/metrics", get(handlers::get_admin_metrics))
             .route(
                 "/admin/hall-of-fame-teams",
                 get(handlers::get_admin_hall_of_fame_teams),
@@ -251,11 +258,21 @@ impl Server {
             .route("/logout", get(handlers::logout))
             .route("/guests/change-name", post(handlers::change_guest_name));
 
-        Router::new()
+        let metrics_collector = self.server_state.metrics_collector.clone();
+
+        let api_routes = Router::new()
             .merge(public_routes)
             .merge(private_routes)
+            .route_layer(middleware::from_fn_with_state(
+                metrics_collector,
+                metrics::track_metrics_middleware,
+            ))
             .with_state(self.server_state)
-            .layer(auth_layer)
+            .layer(auth_layer);
+
+        Router::new()
+            .merge(api_routes)
+            .fallback(|| async { (StatusCode::NOT_FOUND, "") })
             .layer(cors_layer)
     }
 
