@@ -1,0 +1,23 @@
+v1.0.9 Patch Notes
+
+
+-----------------------------------------------
+QoL
+-----------------------------------------------
+
+Improved the Party Menu cursor system
+//The cursor now behaves more logically when moving the cursor between PC Pokémon and Party Pokémon
+
+Elite Four Members no longer print "Player received $0!" after the battle
+//Now that's what I call time save
+
+
+-----------------------------------------------
+Bug Fixes
+-----------------------------------------------
+
+Fixed a bug where Leech Seed wasn't doing damage during Heal Block
+//If Mega Metagross uses Psychic Noise while seeded, it'll still take damage at the end of turn, but you won't heal
+
+Fixed a bug where hitting a Pokémon whose ability is Solid Rock with a super effective move made the enemy think your Pokémon's ability was Solid Rock
+//This is why Rhyperior was sometimes spamming Earthquake into Levitate Bronzong
