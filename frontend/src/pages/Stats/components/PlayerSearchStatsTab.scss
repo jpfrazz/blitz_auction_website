@@ -173,6 +173,75 @@
         }
     }
 
+    .player-draft-overview-rmv-bubble {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+        flex-shrink: 0;
+        align-self: flex-start;
+        border: 1px solid #32424c;
+        border-radius: 999px;
+        padding: 0.4rem 1rem;
+
+        h3 {
+            margin: 0.2rem 0 0;
+            font-size: 1.45rem;
+            color: $eb-text;
+        }
+    }
+
+    .rmv-info-icon {
+        position: relative;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 16px;
+        height: 16px;
+        margin-left: 6px;
+        border: 1px solid #7ed9c0;
+        border-radius: 50%;
+        color: #7ed9c0;
+        font-size: 0.72rem;
+        font-style: italic;
+        font-weight: 700;
+        line-height: 1;
+        cursor: help;
+        user-select: none;
+
+        .rmv-tooltip {
+            position: absolute;
+            top: calc(100% + 8px);
+            right: -8px;
+            width: min(300px, 78vw);
+            box-sizing: border-box;
+            padding: 0.6rem 0.75rem;
+            background: #0f1418;
+            border: 1px solid #32424c;
+            border-radius: 8px;
+            color: $eb-text;
+            font-size: 0.92rem;
+            font-style: normal;
+            font-weight: 400;
+            letter-spacing: normal;
+            line-height: 1.45;
+            text-transform: none;
+            text-align: left;
+            white-space: normal;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.45);
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.12s ease;
+            pointer-events: none;
+            z-index: 20;
+        }
+
+        &:hover .rmv-tooltip,
+        &:focus .rmv-tooltip {
+            opacity: 1;
+            visibility: visible;
+        }
+    }
+
     .player-draft-overview-profile-name {
         margin-bottom: 0.2rem;
         color: #f5fdfd;
@@ -644,6 +713,11 @@
             .mmr,
             .team-count {
                 color: $eb-text-muted;
+            }
+
+            .match-rmv {
+                color: #7ed9c0;
+                font-weight: 700;
             }
         }
 

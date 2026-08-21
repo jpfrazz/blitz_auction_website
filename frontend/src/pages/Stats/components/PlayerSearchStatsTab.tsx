@@ -427,6 +427,28 @@ const PlayerSearchStatsTab: React.FC<PlayerSearchStatsTabProps> = ({
     return map;
   }, [stats?.auctions, stats?.legacy, validDraftIds]);
 
+  const draftRmvMap = useMemo(() => {
+    const map = new Map<number, number>();
+    filteredMatchHistory?.forEach((team) => {
+      if (!team.ranked) return;
+      const rmv = (team.pokemon_drafted ?? []).reduce((sum, auction) => {
+        const { key } = resolveIdentity(auction.name, auction.form || '');
+        return sum + (globalPokemonPrices.get(key) ?? 0);
+      }, 0);
+      map.set(team.team_id, rmv);
+    });
+    return map;
+  }, [filteredMatchHistory, globalPokemonPrices]);
+
+  const averageRmv = useMemo(() => {
+    if (draftRmvMap.size === 0) return null;
+    let total = 0;
+    draftRmvMap.forEach((value) => {
+      total += value;
+    });
+    return Math.round(total / draftRmvMap.size);
+  }, [draftRmvMap]);
+
   interface AllPokemonRow {
     key: string;
     name: string;
@@ -783,6 +805,18 @@ const PlayerSearchStatsTab: React.FC<PlayerSearchStatsTabProps> = ({
                           </div>
                         </div>
                       </div>
+                      <div className="player-draft-overview-rmv-bubble">
+                        <span className="player-draft-overview-kicker">
+                          Average RMV
+                          <span className="rmv-info-icon" tabIndex={0}>
+                            i
+                            <span className="rmv-tooltip">
+                              Roster Market Value is the sum of the average price of every Pokemon you won in a given draft. For example, if you purchase 10 Pokemon, and each of them have an average sale price of 2,500, your RMV for that draft is $25,000.
+                            </span>
+                          </span>
+                        </span>
+                        <h3>{averageRmv !== null ? `$${averageRmv.toLocaleString()}` : '---'}</h3>
+                      </div>
                     </div>
 
                     <div className="player-draft-overview-table-wrapper">
@@ -899,6 +933,12 @@ const PlayerSearchStatsTab: React.FC<PlayerSearchStatsTabProps> = ({
                             )}
                             {!bossVictory && <span className="separator">•</span>}
                             <span className="team-count">{team.team_count} players</span>
+                            {team.ranked && (
+                              <>
+                                <span className="separator">•</span>
+                                <span className="match-rmv">${(draftRmvMap.get(team.team_id) ?? 0).toLocaleString()} RMV</span>
+                              </>
+                            )}
                           </div>
                         </div>
 
