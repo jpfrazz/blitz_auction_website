@@ -202,7 +202,7 @@
             border: 1px solid #32424c;
             border-radius: 8px;
             color: $eb-text;
-            font-size: 0.92rem;
+            font-size: 1.22rem;
             font-style: normal;
             font-weight: 400;
             letter-spacing: normal;
@@ -699,7 +699,7 @@
             }
 
             .match-rmv {
-                color: #7ed9c0;
+                color: $eb-text;
                 font-weight: 700;
             }
         }
