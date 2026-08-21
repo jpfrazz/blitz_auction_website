@@ -924,17 +924,16 @@ const PlayerSearchStatsTab: React.FC<PlayerSearchStatsTabProps> = ({
                         <div className="match-info">
                           <div className="match-row-details">
                             <span className="draft-id">{draftDateMap.get(team.draft_id) || 'Unknown Date'}</span>
+                            <span className="separator">•</span>
+                            <span className="team-count">{team.team_count} players</span>
+                            <span className="separator">•</span>
+                            <span className="match-rmv">${(draftRmvMap.get(team.team_id) ?? 0).toLocaleString()} RMV</span>
                             {bossVictory && (
                               <>
                                 <span className="separator">•</span>
                                 <span className="placement" style={{ color: '#90EE90' }}>{bossVictory}</span>
-                                <span className="separator">•</span>
                               </>
                             )}
-                            {!bossVictory && <span className="separator">•</span>}
-                            <span className="team-count">{team.team_count} players</span>
-                            <span className="separator">•</span>
-                            <span className="match-rmv">${(draftRmvMap.get(team.team_id) ?? 0).toLocaleString()} RMV</span>
                           </div>
                         </div>
 
