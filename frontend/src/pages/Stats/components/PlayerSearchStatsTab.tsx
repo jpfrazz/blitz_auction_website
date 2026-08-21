@@ -655,6 +655,14 @@ const PlayerSearchStatsTab: React.FC<PlayerSearchStatsTabProps> = ({
     }
   };
 
+  const handleClearSelectedPlayer = () => {
+    setSearchInput('');
+    setSelectedPlayer(null);
+    setPlayerMatchHistory(null);
+    setBossBattleHistory(new Map());
+    setIsAutocompleteOpen(false);
+  };
+
   if (loading) {
     return <section className="player-search-stats-tab stats-content-grid">Loading stats...</section>;
   }
@@ -672,7 +680,19 @@ const PlayerSearchStatsTab: React.FC<PlayerSearchStatsTabProps> = ({
       <article className="stats-panel player-search-panel">
         <h2>Player Match History</h2>
         <div className="player-search-wrapper">
-          <form className="player-search-form" onSubmit={handleSubmitSearch}>
+          <div className="player-search-controls">
+            {selectedPlayer && (
+              <button
+                type="button"
+                className="player-search-back"
+                onClick={handleClearSelectedPlayer}
+                aria-label="Back to player list"
+                title="Back to player list"
+              >
+                &#8592;
+              </button>
+            )}
+            <form className="player-search-form" onSubmit={handleSubmitSearch}>
             <div className="player-search-input-wrapper">
               <input
                 type="text"
@@ -705,6 +725,7 @@ const PlayerSearchStatsTab: React.FC<PlayerSearchStatsTabProps> = ({
               )}
             </div>
           </form>
+          </div>
 
           {playerMatchHistoryLoading && (
             <div className="match-history-message">Loading match history...</div>
