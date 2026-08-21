@@ -30,7 +30,7 @@
         border-radius: 10px;
         background: #0f1418;
         color: $eb-text;
-        font-size: 1.6rem;
+        font-size: 1.8rem;
         line-height: 1;
         cursor: pointer;
         transition: background-color 0.15s ease, border-color 0.15s ease;
@@ -216,6 +216,7 @@
         font-size: 0.72rem;
         font-style: italic;
         font-weight: 700;
+        text-transform: lowercase;
         line-height: 1;
         cursor: help;
         user-select: none;
@@ -231,7 +232,7 @@
             border: 1px solid #32424c;
             border-radius: 8px;
             color: $eb-text;
-            font-size: 1.22rem;
+            font-size: 1.15rem;
             font-style: normal;
             font-weight: 400;
             letter-spacing: normal;

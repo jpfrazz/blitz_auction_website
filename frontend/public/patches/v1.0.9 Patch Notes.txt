@@ -1,12 +1,18 @@
-v1.0.9 Patch Notes
+Berry Beta Patch Notes
 
 
 -----------------------------------------------
 QoL
 -----------------------------------------------
 
-Improved the Party Menu cursor system
+Berries in Party Menu
+//Press L in the party menu to swap PC access with berry access
+
+Improved Party Menu cursor system
 //The cursor now behaves more logically when moving the cursor between PC Pokémon and Party Pokémon
+
+Adjusted Party Menu textbox heights to no longer overlap with PC Pokémon
+//Shortened several boxes that fit in one-line-high boxes
 
 Elite Four Members no longer print "Player received $0!" after the battle
 //Now that's what I call time save
@@ -21,3 +27,5 @@ Fixed a bug where Leech Seed wasn't doing damage during Heal Block
 
 Fixed a bug where hitting a Pokémon whose ability is Solid Rock with a super effective move made the enemy think your Pokémon's ability was Solid Rock
 //This is why Rhyperior was sometimes spamming Earthquake into Levitate Bronzong
+
+//Fixed a bug where tossing a the final Berry of a kind from your bag fully emptied the bag of all berries
