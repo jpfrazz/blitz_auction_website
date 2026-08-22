@@ -1,4 +1,29 @@
-Berry Beta Patch Notes
+12/21/2026
+
+-----------------------------------------------
+Balance Changes
+-----------------------------------------------
+
+The following Pokémon who previously had the move "forgotten" by level 15 now start with Growl:
+Buizel
+Spoink
+Wingull
+//I realized that there are a few Pokémon who, if they started with Growl, would be able to outspeed Dondozo and, in combination with Eevee's Baby-Doll Eyes, drop it to -2 attack before it's able to move. 
+
+
+Gluttony Bonus Berries Consumed 3-5 > 2-3
+//It's funny when they ransack for 5, but it feels a bit silly. I want to keep these reworked abilities feeling "authentic" and not sticking out as over the top. An additional 2-3 feels more in line with what the mainline games might do.
+
+
+-----------------------------------------------
+Boss Battle Tweaks
+-----------------------------------------------
+
+Tate & Liza 5 Solrock Confusion > Psychic
+//This is one of the easiest fights in the game, and Solrock only has 55 SpAtk. Confusion was too weak for a psychic-type gym's ace.
+
+Brandon Swampert Rock Slide > Poison Jab
+//Giving it a way to at least threaten slow Grass types. Hitting Sylveon harder doesn't hurt either.
 
 
 -----------------------------------------------
@@ -9,10 +34,12 @@ Berries in Party Menu
 //Press L in the party menu to swap PC access with berry access
 
 Improved Party Menu cursor system
-//The cursor now behaves more logically when moving the cursor between PC Pokémon and Party Pokémon
+//The cursor now behaves more logically when moving between PC Pokémon and Party Pokémon
 
 Adjusted Party Menu textbox heights to no longer overlap with PC Pokémon
-//Shortened several boxes that fit in one-line-high boxes
+//Shortened several boxes that fit their text in one-line-high windows
+
+"Give All" no longer gives berries to fainted Pokemon
 
 Elite Four Members no longer print "Player received $0!" after the battle
 //Now that's what I call time save
@@ -22,10 +49,37 @@ Elite Four Members no longer print "Player received $0!" after the battle
 Bug Fixes
 -----------------------------------------------
 
+Fixed a bug where Thief-ing a berry while below the HP threshold to consume it wasn't instantly proccing the berry
+//It now works similarly to Pluck or Bug Bite when your Thief Pokémon is below 50% HP
+
 Fixed a bug where Leech Seed wasn't doing damage during Heal Block
-//If Mega Metagross uses Psychic Noise while seeded, it'll still take damage at the end of turn, but you won't heal
+//If Mega Metagross uses Psychic Noise while seeded, it'll still take damage at the end of turn, but your Pokemon won't heal
+//Thanks Freez for the report
 
 Fixed a bug where hitting a Pokémon whose ability is Solid Rock with a super effective move made the enemy think your Pokémon's ability was Solid Rock
 //This is why Rhyperior was sometimes spamming Earthquake into Levitate Bronzong
+//Thanks KCH for the report
 
-//Fixed a bug where tossing a the final Berry of a kind from your bag fully emptied the bag of all berries
+Fixed a bug where Arboliva Seed Sower was preventing secondary effects of moves like Knock Off from proccing on hit
+//Thanks Jason for the report
+
+Fixed a bug where Future Sight wasn't allowing berries to proc
+//Thanks KCH for the report
+
+Fixed a Frisk visual bug where the item appeared to be stolen from the wrong Pokémon in double battles
+//Thanks KCH Weekly Box 22 video for the report
+
+Fixed a bug where tossing a the final Berry of a kind from your bag fully emptied the bag of all berries
+
+Fixed a bug where the Mega evolution icon on the Pokémon info display sometimes used a corrupted palette
+//I think this is fixed? This one is tough to say with full confidence because I could never consistently reproduce it in the first place, but there's now a guard in place that should prevent it from happening.
+
+Fixed a bug where repeatedly loading and de-loading the square type icons beside the Pokémon info display eventually caused them to graphically corrupt
+
+
+-----------------------------------------------
+Pool Additions
+-----------------------------------------------
+
++Cherubi
+//Sweet!

@@ -861,7 +861,7 @@ const Info = () => (
           <li><strong>Ball Fetch:</strong> Finds a held Sitrus Berry at the end of a boss battle.</li>
           <li><strong>Forecast:</strong> Sets weather on entry based on the first move in the Pokémon's learnset (sun for fire, rain for water, hail for ice).</li>
           <li><strong>Frisk:</strong> Steals the opponent's held item on switch in.</li>
-          <li><strong>Gluttony:</strong> Consuming a berry causes the pokemon to ransack the bag, eating 3-5 additional Oran Berries.</li>
+          <li><strong>Gluttony:</strong> Consuming a berry causes the pokemon to ransack the bag, eating 2-3 additional Oran Berries.</li>
           <li><strong>Grassy Pelt:</strong> Boosts 1.5x defense in Sun, not in Grassy Terrain.</li>
           <li><strong>Honey Gather:</strong> Finds a held Sitrus Berry at the end of a boss battle.</li>
           <li><strong>Pickup:</strong> Finds a held Sitrus Berry at the end of a boss battle.</li>

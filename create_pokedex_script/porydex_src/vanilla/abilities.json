@@ -842,8 +842,8 @@
     "name": "Gluttony",
     "rating": 1.5,
     "num": 82,
-    "desc": "Consuming a berry causes the pokemon to ransack the bag, eating 3-5 additional Oran Berries.",
-    "shortDesc": "Consuming a berry causes the pokemon to ransack the bag, eating 3-5 additional Oran Berries."
+    "desc": "Consuming a berry causes the pokemon to ransack the bag, eating 2-3 additional Oran Berries.",
+    "shortDesc": "Consuming a berry causes the pokemon to ransack the bag, eating 2-3 additional Oran Berries."
   },
   "goodasgold": {
     "flags": {
