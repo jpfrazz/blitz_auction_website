@@ -4,7 +4,7 @@
 Balance Changes
 -----------------------------------------------
 
-The following Pokémon who previously had the move "forgotten" by level 15 now start with Growl:
+The following Pokémon who had previously "forgotten" Growl by level 15 now start with it:
 Buizel
 Spoink
 Wingull
@@ -50,7 +50,7 @@ Bug Fixes
 -----------------------------------------------
 
 Fixed a bug where Thief-ing a berry while below the HP threshold to consume it wasn't instantly proccing the berry
-//It now works similarly to Pluck or Bug Bite when your Thief Pokémon is below 50% HP
+//It now works similarly to Pluck or Bug Bite when your thieving Pokémon is below 50% HP
 
 Fixed a bug where Leech Seed wasn't doing damage during Heal Block
 //If Mega Metagross uses Psychic Noise while seeded, it'll still take damage at the end of turn, but your Pokemon won't heal
