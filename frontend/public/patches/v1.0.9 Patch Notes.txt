@@ -12,7 +12,7 @@ Wingull
 
 
 Gluttony Bonus Berries Consumed 3-5 > 2-3
-//It's funny when they ransack for 5, but it feels a bit silly. I want to keep these reworked abilities feeling "authentic" and not sticking out as over the top. An additional 2-3 feels more in line with what the mainline games might do.
+//It's funny when they ransack for 5, but it feels a bit silly. I want to keep these reworked abilities feeling "authentic" and not sticking out as over the top. An additional 2-3 feels more in line with what the mainline games might do. Keep in mind that this is in addition to the first Oran Berry, so you're healing 30-40HP, which is often still enough to go all the way back to full in the early game.
 
 
 -----------------------------------------------
