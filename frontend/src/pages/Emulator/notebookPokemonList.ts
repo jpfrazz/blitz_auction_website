@@ -30,6 +30,7 @@ export const NOTEBOOK_POKEMON_LIST: string[] = [
   'Cetoddle',
   'Charcadet',
   'Charmander',
+  'Cherubi',
   'Chespin',
   'Chewtle',
   'Chimchar',
