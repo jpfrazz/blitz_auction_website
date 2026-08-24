@@ -23,7 +23,12 @@ pub struct SavePokemon {
     pub max_hp: u16,
     pub species_id: u16,
     pub nature: String,
+    #[serde(default)]
+    pub ability_num: u8,
     pub ivs: SaveIvs,
+    /// Move IDs (0 = empty slot). Defaults keep old stored saves deserializable.
+    #[serde(default)]
+    pub moves: Vec<u16>,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -31,8 +36,13 @@ pub struct SaveBoxPokemon {
     pub personality: u32,
     pub nickname: String,
     pub species_id: u16,
+    #[serde(default)]
+    pub ability_num: u8,
     pub nature: String,
     pub ivs: SaveIvs,
+    /// Move IDs (0 = empty slot). Defaults keep old stored saves deserializable.
+    #[serde(default)]
+    pub moves: Vec<u16>,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]

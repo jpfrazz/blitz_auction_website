@@ -343,7 +343,13 @@ const SpectatePage: React.FC = () => {
                   <div key={uid} className="spectate-player-card">
                     <div className="spectate-player-header">
                       <span className={`spectate-username ${showDisconnected ? 'disconnected' : ''} ${isWiped ? 'wiped' : ''} ${championName ? 'winner' : ''}`}>
-                        {displayName}
+                        <a
+                          href={`/Stats?tab=player-search&userId=${encodeURIComponent(uid)}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                        >
+                          {displayName}
+                        </a>
                       </span>
                       {isWiped && mostRecentLossName && (
                         <span className="wipe-text">(Wiped to {mostRecentLossName})</span>
@@ -363,25 +369,23 @@ const SpectatePage: React.FC = () => {
                         {sortPokemon(uid, [
                           ...(save.party ?? []).map((m: any) => ({ ...m, _isParty: true })),
                           ...(save.box ?? []).map((m: any) => ({ ...m, _isParty: false })),
-                        ]).map((mon: any, i: number, arr: any[]) => {
+                        ]).map((mon: any, i: number) => {
                           const speciesId = mon.species_id ?? mon.speciesId;
                           const speciesData = resolveMetadata(speciesId, mon.nickname);
                           const realName = (speciesId === 412 && mon.nickname?.toLowerCase() === 'egg') ? "Egg" : (speciesData?.name || `ID ${speciesId}`);
                           const iconName = getIconName(realName, speciesId);
                           const abilityName = speciesData?.abilities?.[mon.ability_num] || 'Unknown';
                           const fainted = isMonFainted(uid, mon);
-                          const prevFainted = i > 0 ? isMonFainted(uid, arr[i - 1]) : false;
-                          const isFirstFainted = fainted && !prevFainted;
                           const hasNickname = isActuallyNicknamed(mon.nickname, speciesId, realName);
 
                           return (
-                            <span key={`icon-${i}`} className={`mini-icon-wrapper spectate ${isFirstFainted ? 'first-fainted' : ''}`}>
+                            <span key={`icon-${i}`} className="mini-icon-wrapper spectate">
                               <img
                                 src={`/MiniIcons/${iconName}.png`}
                                 alt={mon.nickname || realName}
                                 className={`spectate-mini-icon ${fainted ? 'fainted' : ''}`}
                                 style={fainted ? { filter: 'grayscale(100%)', opacity: 0.6 } : {}}
-                                title={`${hasNickname ? `${mon.nickname} (${realName})` : realName} (${abilityName}) - (${mon.nature || 'Unknown'} Nature${mon.nature ? NATURE_EFFECTS[mon.nature] : ''})${mon.ivs ? `\nIVs: ${mon.ivs.hp}/${mon.ivs.atk}/${mon.ivs.def}/${mon.ivs.spa}/${mon.ivs.spd}/${mon.ivs.spe}` : ''}${mon.moves && mon.moves.some((id: number) => id > 0) ? `\nMoves: ${mon.moves.filter((id: number) => id > 0).map((id: number) => MOVES[id]?.name).filter(Boolean).join(', ')}` : ''}`}
+                                title={`${hasNickname ? `${mon.nickname} (${realName})` : realName} (${abilityName}) - ${mon.nature || 'Unknown'} Nature${mon.nature ? NATURE_EFFECTS[mon.nature] : ''}${mon.ivs ? `\nIVs: ${mon.ivs.hp}/${mon.ivs.atk}/${mon.ivs.def}/${mon.ivs.spa}/${mon.ivs.spd}/${mon.ivs.spe}` : ''}${mon.moves && mon.moves.some((id: number) => id > 0) ? `\nMoves: ${mon.moves.filter((id: number) => id > 0).map((id: number) => MOVES[id]?.name).filter(Boolean).join(', ')}` : ''}`}
                                 onError={(e) => { (e.target as HTMLImageElement).src = '/MiniIcons/question.png'; }}
                               />
                             </span>
