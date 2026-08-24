@@ -4,7 +4,7 @@
 Hi! Thank you to everybody who played on Saturday. I was very tired from work and from winning so hard, so I’m sorry that I was low energy, but it really was so cool to have everybody playing.
 
 
-I’ve made some new changes.They’re getting much more fine tuned than earlier patches, so I decided I’d type them out like this to explain my thought processes. Enjoy!
+I’ve made some new changes. They’re getting much more fine tuned than earlier patches, so I decided I’d type them out like this to explain my thought processes. Enjoy!
 
 
 Trainers in gyms 4 and 7 no longer spin.

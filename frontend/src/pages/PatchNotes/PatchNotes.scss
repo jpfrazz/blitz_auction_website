@@ -42,7 +42,7 @@
 }
 
 .current-major .patch-bar {
-  background: #1e3328;
+  background: #284033;
 }
 
 .patch-date {
@@ -51,6 +51,14 @@
 }
 
 .current-major .patch-date {
+  color: #c0ea9c;
+}
+
+.bugfix .patch-bar {
+  background: #1e3328;
+}
+
+.bugfix .patch-date {
   color: #a8d68a;
 }
 

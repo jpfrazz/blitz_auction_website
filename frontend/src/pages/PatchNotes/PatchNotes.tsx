@@ -98,6 +98,7 @@ const PatchItem = ({ filename }: { filename: string }) => {
 
   const shortName = filename.replace(' Patch Notes.txt', '').replace(/^v/, '');
   const bugfixVersions = ['1.0.1', '1.0.2', '1.0.3', '1.0.6', '1.0.7', '1.0.8'];
+  const isBugfix = bugfixVersions.includes(shortName);
   const isCurrentMajor = (() => {
     const parts = shortName.split('.').map(Number);
     return parts.length >= 2 && parts[0] >= 1;
@@ -106,7 +107,7 @@ const PatchItem = ({ filename }: { filename: string }) => {
   const commentaryCount = segments ? segments.filter(s => s.type === 'commentary').length : 0;
 
   return (
-    <div className={`patch-item${isCurrentMajor ? ' current-major' : ''}`}>
+    <div className={`patch-item${isCurrentMajor ? ' current-major' : ''}${isBugfix ? ' bugfix' : ''}`}>
       <div 
         className="patch-bar" 
         onClick={toggle}
@@ -114,7 +115,7 @@ const PatchItem = ({ filename }: { filename: string }) => {
         tabIndex={0}
         onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggle(); } }}
       >
-        <div className="patch-meta">Version {shortName} Patch Notes{bugfixVersions.includes(shortName) && <span> (Bugfix)</span>}</div>
+        <div className="patch-meta">Version {shortName} Patch Notes{isBugfix && <span> (Bugfix)</span>}</div>
         <div className="patch-date">{date}</div>
       </div>
       {expanded && (
