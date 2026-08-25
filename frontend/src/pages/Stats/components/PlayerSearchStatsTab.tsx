@@ -385,6 +385,18 @@ const PlayerSearchStatsTab: React.FC<PlayerSearchStatsTabProps> = ({
 
   const totalGames = filteredMatchHistory?.length ?? 0;
 
+  const hallOfFameCount = useMemo(() => {
+    if (!filteredMatchHistory) return 0;
+    let count = 0;
+    for (const team of filteredMatchHistory) {
+      const battles = bossBattleHistory.get(team.team_id);
+      if (!battles) continue;
+      const runResult = getRunResult(battles);
+      if (runResult?.isWin) count++;
+    }
+    return count;
+  }, [filteredMatchHistory, bossBattleHistory]);
+
   const globalPokemonPrices = useMemo(() => {
     const map = new Map<string, number>();
     if (!stats?.auctions) return map;
@@ -823,6 +835,10 @@ const PlayerSearchStatsTab: React.FC<PlayerSearchStatsTabProps> = ({
                           <div className="player-draft-overview-kicker-group">
                             <span className="player-draft-overview-kicker">Total Races Played</span>
                             <h3>{totalGames}</h3>
+                          </div>
+                          <div className="player-draft-overview-kicker-group">
+                            <span className="player-draft-overview-kicker">Hall of Fames</span>
+                            <h3>{hallOfFameCount}</h3>
                           </div>
                           <div className="player-draft-overview-kicker-group">
                             <span className="player-draft-overview-kicker">
