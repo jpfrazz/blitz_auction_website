@@ -236,10 +236,10 @@ function getRunResult(battles: BossBattleHistoryEntry[]): { result: string; trai
   const lastBattle = battles[battles.length - 1];
 
   // Check if it's a win (Steven/Wally are the final bosses)
-  if (lastBattle.trainer_id === 816 || lastBattle.trainer_id === 817) {
+  if (lastBattle.trainer_id === 804 || lastBattle.trainer_id === 656) {
     return {
       result: 'Beat',
-      trainer: lastBattle.trainer_id === 816 ? 'Steven' : 'Wally',
+      trainer: lastBattle.trainer_id === 804 ? 'Steven' : 'Wally',
       isWin: true,
     };
   }
