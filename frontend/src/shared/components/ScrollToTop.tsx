@@ -5,8 +5,8 @@ const ScrollToTop = () => {
   const location = useLocation();
 
   useLayoutEffect(() => {
-    if ('scrollRestoration' in history) {
-      history.scrollRestoration = 'manual';
+    if ('scrollRestoration' in window.history) {
+      window.history.scrollRestoration = 'manual';
     }
     window.scrollTo(0, 0);
   }, [location.pathname, location.hash, location.search]);
