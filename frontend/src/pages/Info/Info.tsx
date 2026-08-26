@@ -817,11 +817,11 @@ const Info = () => (
         <ul>
           <li>Mega Evolution lasts three turns</li>
           <li>At the end of the three turns, a mega-evolved Pokemon reverts to its base form</li>
-          <li>When a Pokemon reverts to its base form, any entrance ability (like Intimidate, Protean) does "reset" and trigger again</li>
+          <li>When a Pokemon reverts to its base form, any entrance ability (like Intimidate, Protean) resets and triggers again</li>
         </ul>
         <h3 className="info-subheading"><strong>Weather</strong></h3>
         <ul>
-          <li>Weather effects last for five turns</li>
+          <li>Weather lasts for five turns</li>
           <li>Hail exists and Snow does not. Effects that would set or benefit from Snow do the same but with Hail</li>
         </ul>
         <h3 className="info-subheading"><strong>Terrain Disabled</strong></h3>
@@ -830,11 +830,11 @@ const Info = () => (
         </ul>
         <h3 className="info-subheading"><strong>Modern Abilities</strong></h3>
         <ul>
-          <li>Abilities that were nerfed after their debuts, like Gale Wings and Protean, use Generation 9 mechanics</li>
+          <li>Abilities nerfed after their debuts, like Gale Wings and Protean, use Generation 9 mechanics</li>
         </ul>
         <h3 className="info-subheading"><strong>Invisible Stat Changes</strong></h3>
         <ul>
-          <li>Badge Boost is disabled. Your Pokemon do not become more powerful depending on your badge count</li>
+          <li>Badge Boost is disabled. Your Pokemon don't become more powerful as you gain badges</li>
           <li>All EVs are set to 0</li>
         </ul>
         <h3 className="info-subheading"><strong>Item Preservation</strong></h3>
