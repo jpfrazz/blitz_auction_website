@@ -817,7 +817,7 @@ const Info = () => (
         <ul>
           <li>Mega Evolution lasts three turns</li>
           <li>At the end of the three turns, a mega-evolved Pokemon reverts to its base form</li>
-          <li>When a Pokemon reverts to its base form, any entrance ability (like Intimidate, Protean) does reset and trigger again</li>
+          <li>When a Pokemon reverts to its base form, any entrance ability (like Intimidate, Protean) does "reset" and trigger again</li>
         </ul>
         <h3 className="info-subheading"><strong>Weather</strong></h3>
         <ul>
