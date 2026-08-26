@@ -22,6 +22,7 @@ const Info = () => (
           <li><a href="#scotts-tms">Scott's TMs</a></li>
           <li><a href="#gym-benchmarks">Gym Benchmarks</a></li>
           <li><a href="#inter-gym-mechanics">Inter-Gym Mechanics</a></li>
+          <li><a href="#battle-mechanics">Battle Mechanics</a></li>
           <li><a href="#ai-logic">AI Logic</a></li>
           <li><a href="#key-binds">Input Tips</a></li>
           <li><a href="#ability-reworks">Reworked Abilities</a></li>
@@ -780,6 +781,65 @@ const Info = () => (
           <li>Once renter NPC chooses a Pokémon to offer to you, he'll continue to offer that same Pokémon until you rent it (it doesn't randomize each time you speak to him).</li>
           <li>Mega Stones for the eight Pokémon in the pool who can mega evolve are available for purchase in Slateport's outdoor market after you obtain the 6th gym badge.</li>
           <li>Stealing a Pokémon effectively locks you out of the Slateport outdoor market, as renter NPC will reclaim his Pokémon on entrance. Because of this, doing so by renting at the latest possible point costs ¥30,250 (the cost of the rental plus the prize money you're no longer able to spend).</li>
+        </ul>
+      </section>
+
+      <section id="battle-mechanics" className="info-section">
+        <h2 className="info-question">Battle Mechanics</h2>
+        <hr />
+        <p className="info-answer">
+          Apart from a few exceptions to keep the games true to Hoenn or to improve game balance, Emerald Blitz uses modern battle mechanics. These include...
+        </p>
+        <h3 className="info-answer"><strong>Stat Boost Cap</strong></h3>
+        <ul>
+          <li>A Pokemon's stat stage can never be raised beyond +1</li>
+          <li>A Pokemon's stat stage can still be debuffed to -6</li>
+          <li>If a Pokemon at +0 Attack uses Swords Dance, it will raise its Attack stage to +1</li>
+          <li>If a Pokemon at -1 Attack uses Swords Dance, it will raise its Attack stage to +1</li>
+        </ul>
+        <h3 className="info-answer"><strong>Pokemon Champions Status Mechanics</strong></h3>
+        <ul>
+          <li>Paralyzed Pokemon have a 12.5% chance to be fully paralyzed</li>
+          <li>Frozen Pokemon have a 25% chance of thawing each turn with a three-turn cap</li>
+          <li>Sleeping Pokemon always sleep for 2-3 turns</li>
+        </ul>
+        <h3 className="info-answer"><strong>Sleep Clause</strong></h3>
+        <ul>
+          <li>During a battle, you can't put more than one of your opponent's Pokemon to sleep at a time</li>
+          <li>Similarly, the opponent can't put more than one of your Pokemon to sleep at a time, and they avoid trying to</li>
+        </ul>
+        <h3 className="info-answer"><strong>Modern Critical Hit Mechanics</strong></h3>
+        <ul>
+          <li>Critical hits inflict 1.5x damage</li>
+          <li>The baseline odds for a critical hit are 1/24</li>
+        </ul>
+        <h3 className="info-answer"><strong>Mega Evolution</strong></h3>
+        <ul>
+          <li>Mega Evolution lasts three turns</li>
+          <li>At the end of the three turns, a mega-evolved Pokemon reverts to its base form</li>
+          <li>When a Pokemon reverts to its base form, any entrance ability (like Intimidate, Protean) does reset and trigger again</li>
+        </ul>
+        <h3 className="info-answer"><strong>Weather</strong></h3>
+        <ul>
+          <li>Weather effects last for five turns</li>
+          <li>Hail exists and Snow does not. Effects that would set or benefit from Snow do the same but with Hail</li>
+        </ul>
+        <h3 className="info-answer"><strong>Terrain Disabled</strong></h3>
+        <ul>
+          <li>Effects that would set or benefit from Terrain have been modified or removed</li>
+        </ul>
+        <h3 className="info-answer"><strong>Modern Abilities</strong></h3>
+        <ul>
+          <li>Abilities that were nerfed after their debuts, like Gale Wings and Protean, use Generation 9 mechanics</li>
+        </ul>
+        <h3 className="info-answer"><strong>Invisible Stat Changes</strong></h3>
+        <ul>
+          <li>Badge Boost is disabled. Your Pokemon do not become more powerful depending on your badge count</li>
+          <li>All EVs are set to 0</li>
+        </ul>
+        <h3 className="info-answer"><strong>Item Preservation</strong></h3>
+        <ul>
+          <li>Non-berry held items are returned at the end of the battle if they're removed by effects like Knock Off or Fling</li>
         </ul>
       </section>
 
