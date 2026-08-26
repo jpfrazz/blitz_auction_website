@@ -115,6 +115,10 @@
   text-align: left;
 }
 
+.info-subheading + ul {
+  margin-top: 0;
+}
+
 // Add to frontend/src/pages/Info/Info.scss
 
 .location-scale-grid {

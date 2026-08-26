@@ -810,7 +810,7 @@ const Info = () => (
         </ul>
         <h3 className="info-subheading"><strong>Modern Critical Hit Mechanics</strong></h3>
         <ul>
-          <li>Critical hits inflict 1.5x damage</li>
+          <li>Critical hits deal 1.5x damage</li>
           <li>The baseline odds for a critical hit are 1/24</li>
         </ul>
         <h3 className="info-subheading"><strong>Mega Evolution</strong></h3>
