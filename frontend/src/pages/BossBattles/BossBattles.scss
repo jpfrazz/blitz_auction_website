@@ -98,7 +98,81 @@
   margin-bottom: 1rem;
   font-size: 1.1rem;
   line-height: 1.4;
-  max-width: 874px;
+
+  &.has-toggles {
+    padding: 0.8rem 1rem;
+  }
+}
+
+.trainer-info-top-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.info-box {
+  font-size: 1.1rem;
+  line-height: 1.4;
+
+  .trainer-info-top-row & {
+    flex: 1;
+    min-width: 200px;
+  }
+
+  &.blitz-mechanic-section,
+  &.boss-tip-section {
+    background: rgba(255, 255, 255, 0.05);
+    padding: 1rem;
+    border-radius: 8px;
+  }
+}
+
+.toggle-btn {
+  padding: 0 0.75rem;
+  height: 1.9rem;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: 2px solid;
+  white-space: nowrap;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  &.blitz-mechanic-btn {
+    border-color: #4CAF50;
+
+    &.off {
+      background: #4CAF50;
+      color: #000;
+    }
+    &.on {
+      background: transparent;
+      color: #4CAF50;
+    }
+  }
+
+  &.boss-tip-btn {
+    border-color: #FFC107;
+
+    &.off {
+      background: #FFC107;
+      color: #1a1a1a;
+    }
+    &.on {
+      background: transparent;
+      color: #FFC107;
+    }
+  }
+}
+
+.blitz-mechanic-section,
+.boss-tip-section {
+  margin-top: 0.75rem;
 }
 
 @media (max-width: 640px) {
@@ -110,8 +184,17 @@
   }
 
   .pokemon-card {
-    min-width: 0; // Allows cards to shrink for the 2-column layout
+    min-width: 0;
     padding: 8px;
     font-size: 1.1rem;
+  }
+
+  .trainer-info-top-row {
+    flex-direction: row;
+    align-items: center;
+
+    .info-box {
+      min-width: 0;
+    }
   }
 }

@@ -23,6 +23,10 @@ import SpectatePage from './pages/Spectate/SpectatePage';
 import SaveUploaderPage from './pages/SaveUploader/SaveUploaderPage';
 import ScrollToTop from './shared/components/ScrollToTop';
 
+if ('scrollRestoration' in window.history) {
+  window.history.scrollRestoration = 'manual';
+}
+
 const container = document.getElementById('root');
 if (container) {
   const root = ReactDOM.createRoot(container);

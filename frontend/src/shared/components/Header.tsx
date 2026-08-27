@@ -219,13 +219,7 @@ function Header() {
     setIsMobileMenuOpen(prev => !prev);
   };
 
-  // Close mobile menu when a link is clicked
   const handleNavLinkClick = () => {
-    scrollToTop();
-    // Clear hash from URL to prevent scrolling to a section
-    if (window.location.hash) {
-      window.history.replaceState(null, '', window.location.pathname + window.location.search);
-    }
     setIsMobileMenuOpen(false);
   };
 

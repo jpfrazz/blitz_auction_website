@@ -43,13 +43,20 @@ interface PokemonData {
   details: React.ReactNode[];
 }
 
+interface InfoSection {
+  type: 'blitzMechanic' | 'bossTip';
+  content: React.ReactNode[];
+}
+
 interface TrainerData {
   id: string;
   displayName: string;
   trainerKey: string;
   stage: string;
   color?: string;
-  infoLines: (string | React.ReactNode)[];
+  items: string;
+  infoSections: InfoSection[];
+  generalInfo: React.ReactNode[];
   pokemon: PokemonData[];
 }
 
@@ -59,6 +66,17 @@ const BossBattles = () => {
   const [selectedTrainer, setSelectedTrainer] = useState<string>('');
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
+  const [infoToggles, setInfoToggles] = useState<Record<string, Record<string, boolean>>>({});
+
+  const toggleInfo = (trainerId: string, type: string) => {
+    setInfoToggles(prev => ({
+      ...prev,
+      [trainerId]: {
+        ...prev[trainerId],
+        [type]: !(prev[trainerId]?.[type] || false)
+      }
+    }));
+  };
 
   useEffect(() => {
     fetch('/gyms.txt')
@@ -105,42 +123,46 @@ const BossBattles = () => {
       let stage = '';
       let color = undefined;
 
+      const trainerIdUpper = lines[0].trim().replace(/_/g, ' ').replace(/===/g, '').trim().toUpperCase();
+      const idMatch = trainerIdUpper.match(/^(.*?)(?:\s+(\d+))?$/);
+      const rawBaseName = idMatch ? idMatch[1] : '';
+      const gymNum = idMatch?.[2] || '';
+
       if (nameLine) {
         const rawName = nameLine.split(':')[1].trim();
         trainerKey = rawName.replace(/ & /g, '&').toUpperCase();
         
-        // Color logic
         if (trainerTypeColors[trainerKey]) {
           color = trainerTypeColors[trainerKey];
         }
 
-        // Stage logic
-        const trainerIdUpper = lines[0].trim().replace(/_/g, ' ').replace(/===/g, '').trim().toUpperCase();
-        const match = trainerIdUpper.match(/^(.*?)(?:\s+(\d+))?$/);
-        
-        if (match) {
-          let baseName = match[1];
-          if (baseName === 'JUAN') baseName = 'JUAN AND WALLACE';
-          if (gymLeaders.includes(baseName)) {
-             stage = match[2] ? `gym-${match[2]}` : 'gym';
-          } else if (e4Members.includes(trainerKey)) {
-            stage = 'e4';
-          } else if (['ARCHIE', 'MAXIE'].includes(trainerKey)) {
-            stage = 'gym-8';
-          } else if (trainerKey === 'STEVEN' || trainerKey === 'WALLY') {
-            stage = 'champion';
-          }
+        let stageBaseName = rawBaseName;
+        if (stageBaseName === 'JUAN') stageBaseName = 'JUAN AND WALLACE';
+        if (gymLeaders.includes(stageBaseName)) {
+           stage = gymNum ? `gym-${gymNum}` : 'gym';
+        } else if (e4Members.includes(trainerKey)) {
+          stage = 'e4';
+        } else if (['ARCHIE', 'MAXIE'].includes(trainerKey)) {
+          stage = 'gym-8';
+        } else if (trainerKey === 'STEVEN' || trainerKey === 'WALLY') {
+          stage = 'champion';
         }
       }
 
       const pokemonList: PokemonData[] = [];
-      const infoLines: (string | React.ReactNode)[] = [];
+      let trainerItems = '';
       let currentPokemon: Partial<PokemonData> | null = null;
       const prefixesToIgnore = ['Class:', 'Pic:', 'Gender:', 'Music:', 'Double Battle:', 'IVs:', 'Nature:', 'AI:', 'Mugshot:'];
       const nonPokemonPrefixes = ['Name:', 'Items:', 'Level:', 'Ability:', '-'];
 
       for (const line of lines.slice(1)) {
         const trimmedLine = line.trim();
+
+        if (trimmedLine.startsWith('Items:')) {
+          trainerItems = trimmedLine.substring(6).trim();
+          continue;
+        }
+
         if (trimmedLine === '' || trimmedLine.startsWith('Name:') || prefixesToIgnore.some(p => trimmedLine.startsWith(p))) {
           if (trimmedLine === '' && currentPokemon) {
             pokemonList.push(currentPokemon as PokemonData);
@@ -166,7 +188,7 @@ const BossBattles = () => {
 
           const imageName = pokemonName.toLowerCase()
             .replace(/ /g, '-')
-            .replace(/[.'’]/g, '')
+            .replace(/[.'']/g, '')
             .replace(/♀/g, '-f')
             .replace(/♂/g, '-m')
             .replace(/-hisui$/, '-hisuian')
@@ -206,36 +228,84 @@ const BossBattles = () => {
             }
             currentPokemon.details?.push(<div key={trimmedLine}>{trimmedLine}</div>);
           }
-        } else {
-          infoLines.push(trimmedLine);
         }
       }
       if (currentPokemon) pokemonList.push(currentPokemon as PokemonData);
 
-      const trainerIdUpper = lines[0].trim().replace(/_/g, ' ').replace(/===/g, '').trim().toUpperCase();
-      const match = trainerIdUpper.match(/^(.*?)(?:\s+(\d+))?$/);
-      if (match) {
-        const baseName = match[1];
-        const gymNum = match[2];
-        if (baseName.includes('JUAN')) {
-          infoLines.push(
-            <span>In Blitz, when Tatsugiri becomes a Commander, he disappears inside the mouth of his ally, raising their Attack, SpAtk, and Speed, but preventing them from landing critical hits.</span>
+      const infoSections: InfoSection[] = [];
+      const generalInfo: React.ReactNode[] = [];
+
+      if (rawBaseName.includes('JUAN')) {
+        const blitzContent: React.ReactNode[] = [
+          <div key="blitz-text"><b>Blitz Mechanic:</b> When Tatsugiri becomes a Commander, he disappears inside the mouth of his ally, raising their Attack, SpAtk, and Speed, but preventing them from landing critical hits.</div>
+        ];
+        if (['6', '7', '8'].includes(gymNum)) {
+          blitzContent.push(
+            <div key="heads-up"><b>Heads Up! Tatsugiri can command Dondozo <i>and</i> Whiscash!</b></div>
           );
-          if (['6', '7', '8'].includes(gymNum)) {
-            infoLines.push(
-              <span style={{ fontWeight: 'bold' }}>Heads Up! Tatsugiri can command Dondozo <i>and</i> Whiscash!</span>
-            );
-          }
+        }
+        infoSections.push({ type: 'blitzMechanic', content: blitzContent });
+
+        if (['1', '2'].includes(gymNum)) {
+          infoSections.push({
+            type: 'bossTip',
+            content: [
+              <div key="tip"><b>Boss Tip:</b> Eevee&apos;s Baby-Doll Eyes is a surefire way to outspeed the Dondozo and lower its attack stat. Because Dondozo can&apos;t swap out, lowering its stats is key to making this fight managable!</div>
+            ]
+          });
         }
       }
 
+      if (rawBaseName === 'TATE AND LIZA' && ['3', '4'].includes(gymNum)) {
+        infoSections.push({
+          type: 'bossTip',
+          content: [
+            <div key="tip"><b>Boss Tip:</b> Solrock and Lunatone are much easier to take on one at a time than together. It&apos;s often best to intentionally leave the Natu or Baltoy alive to prevent both big threats from coming out at once!</div>
+          ]
+        });
+      }
+
+      if (rawBaseName === 'BRAWLY') {
+        if (['5', '6'].includes(gymNum)) {
+          infoSections.push({
+            type: 'bossTip',
+            content: [
+              <div key="tip"><b>Boss Tip:</b> Sirfetch&apos;d deals big damage! Sirfetch&apos;d&apos;s Leek raises its odds of landing a critical hit by 2 stages. This means each of its moves have a 50% critical hit chance!</div>
+            ]
+          });
+        } else if (gymNum === '7') {
+          infoSections.push({
+            type: 'bossTip',
+            content: [
+              <div key="tip"><b>Boss Tip:</b> Sirfetch&apos;d and Blaziken deal big damage! Sirfetch&apos;d&apos;s Leek and Blaziken&apos;s Focus Energy each raise their odds of landing a critical hit by 2 stages. This means that increased crit-chance moves like Blaze Kick have a 100% critical hit rate!</div>
+            ]
+          });
+        } else if (gymNum === '8') {
+          infoSections.push({
+            type: 'bossTip',
+            content: [
+              <div key="tip"><b>Boss Tip:</b> Sirfetch&apos;d and Blaziken deal big damage! Sirfetch&apos;d&apos;s Leek and Blaziken&apos;s Focus Energy each raise their odds of landing a critical hit by 2 stages. This means that increased crit-chance moves like Blaze Kick and Leaf Blade have a 100% critical hit rate!</div>
+            ]
+          });
+        }
+      }
+
+      if (rawBaseName === 'VIOLA') {
+        infoSections.push({
+          type: 'bossTip',
+          content: [
+            <div key="tip"><b>Boss Tip:</b> Viola&apos;s Pokemon can see if your Pokemon are holding berries, which increases her odds of using Bug Bite. You can take advantage of this by equipping your Pokemon with useless Persim or Chesto Berries to &quot;trick&quot; her into using Bug Bite instead of higher damage options.</div>
+          ]
+        });
+      }
+
       if (trainerKey === 'ARCHIE') {
-        infoLines.push(
+        generalInfo.push(
           <span>How villainous! Archie has a 50% chance of appearing instead of Juan and Wallace 8.</span>
         );
       }
       if (trainerKey === 'MAXIE') {
-        infoLines.push(
+        generalInfo.push(
           <span>How villainous! Maxie has a 50% chance of appearing instead of Flannery 8.</span>
         );
       }
@@ -246,7 +316,9 @@ const BossBattles = () => {
         trainerKey,
         stage,
         color,
-        infoLines,
+        items: trainerItems,
+        infoSections,
+        generalInfo,
         pokemon: pokemonList
       });
     });
@@ -363,33 +435,73 @@ const BossBattles = () => {
         )}
 
         <div className="trainers-list">
-          {filteredTrainers.map(trainer => (
-            <div 
-              key={trainer.id} 
-              className="trainer-section"
-              style={{ borderBottomColor: trainer.color || '#444' }}
-            >
-              <h2>{trainer.displayName}</h2>
-              {trainer.infoLines.length > 0 && (
-                <div className="trainer-info-container">
-                  {trainer.infoLines.map((line, i) => (
-                    <div key={i} style={{ marginBottom: i < trainer.infoLines.length - 1 ? '0.5rem' : 0 }}>{line}</div>
+          {filteredTrainers.map(trainer => {
+            const hasBlitzMechanic = trainer.infoSections.some(s => s.type === 'blitzMechanic');
+            const hasBossTip = trainer.infoSections.some(s => s.type === 'bossTip');
+            const isBlitzOn = infoToggles[trainer.id]?.blitzMechanic || false;
+            const isBossTipOn = infoToggles[trainer.id]?.bossTip || false;
+
+            return (
+              <div 
+                key={trainer.id} 
+                className="trainer-section"
+                style={{ borderBottomColor: trainer.color || '#444' }}
+              >
+                <h2>{trainer.displayName}</h2>
+                
+                <div className={`trainer-info-container${(hasBlitzMechanic || hasBossTip) ? ' has-toggles' : ''}`}>
+                  <div className="trainer-info-top-row">
+                    {trainer.items && (
+                      <div className="info-box">Items: {trainer.items}</div>
+                    )}
+                    {hasBlitzMechanic && (
+                      <button
+                        className={`toggle-btn blitz-mechanic-btn ${isBlitzOn ? 'on' : 'off'}`}
+                        onClick={() => toggleInfo(trainer.id, 'blitzMechanic')}
+                      >
+                        Blitz Mechanic
+                      </button>
+                    )}
+                    {hasBossTip && (
+                      <button
+                        className={`toggle-btn boss-tip-btn ${isBossTipOn ? 'on' : 'off'}`}
+                        onClick={() => toggleInfo(trainer.id, 'bossTip')}
+                      >
+                        Boss Tip
+                      </button>
+                    )}
+                  </div>
+
+                  {isBlitzOn && trainer.infoSections.filter(s => s.type === 'blitzMechanic').map((section, i) => (
+                    <div key={`blitz-${i}`} className="info-box blitz-mechanic-section">
+                      {section.content}
+                    </div>
+                  ))}
+
+                  {isBossTipOn && trainer.infoSections.filter(s => s.type === 'bossTip').map((section, i) => (
+                    <div key={`boss-tip-${i}`} className="info-box boss-tip-section">
+                      {section.content}
+                    </div>
+                  ))}
+
+                  {trainer.generalInfo.map((info, i) => (
+                    <div key={`general-${i}`} style={{ marginTop: '0.5rem' }}>{info}</div>
                   ))}
                 </div>
-              )}
-              
-              <div className="pokemon-row">
-                {trainer.pokemon.map((poke, i) => (
-                  <div key={i} className="pokemon-card">
-                    <img src={poke.imageUrl} alt={poke.name} title={poke.name} style={{ width: '90px', height: '90px' }} />
-                    <span>{poke.item || '\u00A0'}</span>
-                    <div className="pokemon-name">{poke.name}</div>
-                    {poke.details}
-                  </div>
-                ))}
+                
+                <div className="pokemon-row">
+                  {trainer.pokemon.map((poke, i) => (
+                    <div key={i} className="pokemon-card">
+                      <img src={poke.imageUrl} alt={poke.name} title={poke.name} style={{ width: '90px', height: '90px' }} />
+                      <span>{poke.item || '\u00A0'}</span>
+                      <div className="pokemon-name">{poke.name}</div>
+                      {poke.details}
+                    </div>
+                  ))}
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </main>
       <Footer />
