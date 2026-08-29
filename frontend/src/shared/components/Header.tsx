@@ -4,6 +4,7 @@ import { Link, useLocation } from 'react-router-dom';
 import { fetchCurrentUser, changeGuestName } from '../api/draftData';
 import { UserRole } from '../../types';
 import SettingsModal from './SettingsModal';
+import { scrollToTop } from '../utils/scroll';
 
 const navButtons = [
   { label: "Leaderboard", link: "/Leaderboard" },
@@ -22,8 +23,8 @@ function Header() {
   const AUCTION_ALERT_SOUND_MUTED_EVENT = 'auction-alert-muted-changed';
   const HEADER_PINNED_KEY = 'header_pinned';
 
-  const scrollToTop = () => {
-    window.scrollTo(0, 0);
+  const handleLogoClick = () => {
+    scrollToTop();
   };
 
   useEffect(() => {
@@ -248,7 +249,7 @@ function Header() {
   return (
     <header className={`header${isAuctionPage && isHeaderPinned ? ' header-pinned' : ''}`}>
       <div className="headerInner">
-        <Link to="/" className="logoLink" onClick={scrollToTop} target={linkTarget} rel={linkRel}>
+        <Link to="/" className="logoLink" onClick={handleLogoClick} target={linkTarget} rel={linkRel}>
           <img
             src="/blitzlogo.png"
             alt="Emerald Blitz Logo"
