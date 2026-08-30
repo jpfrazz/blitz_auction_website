@@ -29,6 +29,7 @@ import TierListTab from '../Auction/components/PokemonTablePanel/TierListTab';
 import PlayerSearchTab from '../Auction/components/PokemonTablePanel/PlayerSearchTab';
 import OneVOnePool from './components/OneVOnePool';
 import OneVOneInfoPanel from './components/OneVOneInfoPanel';
+import PickOrderTab from './components/PickOrderTab';
 import '../Auction/AuctionPage.scss';
 import './Draft1v1Page.scss';
 
@@ -50,6 +51,7 @@ const TAB_TEAM = 'team';
 const TAB_HISTORY = 'history';
 const TAB_STATS = 'stats';
 const TAB_PLAYER = 'player-search';
+const TAB_PICK_ORDER = 'pick-order';
 const TAB_HOVER = 'hover';
 
 const Draft1v1Page: React.FC = () => {
@@ -136,22 +138,23 @@ const Draft1v1Page: React.FC = () => {
   const oneVOne = draft?.one_v_one;
   const isPaused = !!oneVOne?.paused_time_remaining;
 
+  const isHost = !!draft && currentUserId === draft.host;
+
+  const currentUserTeam = draft?.teams.find((t) => teamMatchesId(t, currentUserId));
+
   // Show the Eeveelution ban popup once the phase flips to true.
+  // Only players in the race see it; spectators never do.
   useEffect(() => {
-    if (oneVOne?.eeveelution_phase && !eeveePopUpShownRef.current) {
+    if (currentUserTeam && oneVOne?.eeveelution_phase && !eeveePopUpShownRef.current) {
       eeveePopUpShownRef.current = true;
       setShowEeveePopUp(true);
     }
-  }, [oneVOne?.eeveelution_phase]);
+  }, [oneVOne?.eeveelution_phase, currentUserTeam]);
 
   // Clear any selected pokemon when the turn or phase changes.
   useEffect(() => {
     setSelectedSlot(null);
   }, [oneVOne?.current_player, oneVOne?.current_action, oneVOne?.eeveelution_phase]);
-
-  const isHost = !!draft && currentUserId === draft.host;
-
-  const currentUserTeam = draft?.teams.find((t) => teamMatchesId(t, currentUserId));
 
   const requiredTeams = 2;
   const joinedTeams = draft?.teams.length ?? 0;
@@ -448,6 +451,7 @@ const Draft1v1Page: React.FC = () => {
                 <button className={tab === TAB_HISTORY ? 'active' : ''} onClick={() => setTab(TAB_HISTORY)}>Draft History</button>
                 <button className={tab === TAB_STATS ? 'active' : ''} onClick={() => setTab(TAB_STATS)}>Stats</button>
                 <button className={tab === TAB_PLAYER ? 'active' : ''} onClick={() => setTab(TAB_PLAYER)}>Player Search</button>
+                <button className={tab === TAB_PICK_ORDER ? 'active' : ''} onClick={() => setTab(TAB_PICK_ORDER)}>Pick Order</button>
               </div>
               <div className="auction-pokemon-table-box">
                 <div className="pokemon-table-tab-content">
@@ -502,6 +506,12 @@ const Draft1v1Page: React.FC = () => {
                   )}
                   {tab === TAB_STATS && <TierListTab />}
                   {tab === TAB_PLAYER && <PlayerSearchTab />}
+                  {tab === TAB_PICK_ORDER && (
+                    <PickOrderTab
+                      player1Name={oneVOne ? orderedTeams[0]?.global_name || orderedTeams[0]?.username || null : null}
+                      player2Name={oneVOne ? orderedTeams[1]?.global_name || orderedTeams[1]?.username || null : null}
+                    />
+                  )}
                 </div>
               </div>
             </div>

@@ -174,21 +174,32 @@ pub struct OneVOneState {
 }
 
 /// The full 1v1 pick/ban order. Each tuple is (player, action).
-/// 16 picks + 14 bans = 30 actions. After this, 2 pool pokemon are left over.
+/// P1 opens with a lone pick, P2 takes a double pick with no ban, then P1
+/// picks and bans once. After that the players alternate Pick+Ban turns
+/// (starting with P2) until each player has 8 picks and 6 bans.
+/// 16 picks + 12 bans = 28 actions. After this, 4 pool pokemon are left over.
 fn one_v_one_action_sequence() -> Vec<(OneVOnePlayer, OneVOneAction)> {
     use OneVOneAction::*;
     use OneVOnePlayer::*;
-    let mut seq = vec![(P1, Pick)];
-    // Players alternate "Pick then Ban" turns; P1 already took its first pick.
-    // P2 picks+bans, then P1 picks+bans, etc. until P2's 8th pick (no ban).
-    for turn in 0..15 {
-        let player = if turn % 2 == 0 { P2 } else { P1 };
-        seq.push((player, Pick));
-        // Skip the ban after the final pick (P2's 8th pick = overall pick 16).
-        if turn != 14 {
-            seq.push((player, Ban));
-        }
+    let mut seq = vec![
+        (P1, Pick), // pick 1: P1
+        (P2, Pick), // pick 2: P2
+        (P2, Pick), // pick 3: P2
+        (P1, Pick), // pick 4: P1
+        (P1, Ban),  // ban 1: P1
+    ];
+    // P1 burned its opening ban, so its ban count runs one ahead of P2's.
+    // After 5 alternating rounds P1 has all 6 bans but only 7 picks, so a
+    // 6th round finishes P2 (8 picks, 6 bans) and P1 closes with pick 8.
+    for _ in 0..5 {
+        seq.push((P2, Pick));
+        seq.push((P2, Ban));
+        seq.push((P1, Pick));
+        seq.push((P1, Ban));
     }
+    seq.push((P2, Pick));
+    seq.push((P2, Ban));
+    seq.push((P1, Pick));
     seq
 }
 
@@ -221,9 +232,9 @@ impl OneVOneEngine {
         }
         if self.eeveelution_phase {
             let player = if self.eeveelution_bans % 2 == 0 {
-                OneVOnePlayer::P2
-            } else {
                 OneVOnePlayer::P1
+            } else {
+                OneVOnePlayer::P2
             };
             return (Some(player), Some(OneVOneAction::Ban));
         }
@@ -907,7 +918,7 @@ struct OneVOneEngine {
     eeveelutions: Vec<OneVOnePoolSlot>,
     banned_eeveelutions: Vec<u32>,
     eeveelution_phase: bool,
-    /// Number of eeveelution bans made so far (P2 first, then P1).
+    /// Number of eeveelution bans made so far (P1 first, then P2).
     eeveelution_bans: u32,
     /// When the current 30s turn expires.
     turn_expires_at: Option<Instant>,
@@ -1807,7 +1818,7 @@ impl DraftActor {
 
         engine.action_index += 1;
         if engine.action_index >= engine.sequence.len() {
-            // Main phase done: persist the two leftover pokemon.
+            // Main phase done: persist the four leftover pokemon.
             engine.eeveelution_phase = true;
             let leftovers: Vec<OneVOnePoolSlot> = engine
                 .pool
@@ -1816,7 +1827,7 @@ impl DraftActor {
                 .cloned()
                 .collect();
             let mut leftover_order = engine.history.len() as i32 + 1;
-            for leftover in leftovers.iter().take(2) {
+            for leftover in leftovers.iter().take(4) {
                 self.db_writer
                     .write_one_v_one_action(
                         leftover.pokemon.pokedex_id,
@@ -1828,9 +1839,9 @@ impl DraftActor {
                     .await;
                 leftover_order += 1;
             }
-            // Insert placeholder history entries for the two leftovers so stats ordering matches.
+            // Insert placeholder history entries for the leftovers so stats ordering matches.
             let engine = self.one_v_one.as_mut().expect("1v1 engine");
-            for leftover in leftovers.into_iter().take(2) {
+            for leftover in leftovers.into_iter().take(4) {
                 engine.history.push(OneVOneHistoryEntry {
                     order: engine.history.len() as u32 + 1,
                     action: OneVOneAction::Pick, // unused visually
