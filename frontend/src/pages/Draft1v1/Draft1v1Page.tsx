@@ -85,6 +85,7 @@ const Draft1v1Page: React.FC = () => {
   const [hasRefereeRole, setHasRefereeRole] = useState(false);
   const [selectedSlot, setSelectedSlot] = useState<OneVOnePoolSlot | null>(null);
   const [hoveredSlot, setHoveredSlot] = useState<OneVOnePoolSlot | null>(null);
+  const [poolCollapsed, setPoolCollapsed] = useState(false);
   const wsRef = useRef<WebSocket | null>(null);
 
   useEffect(() => {
@@ -302,7 +303,7 @@ const Draft1v1Page: React.FC = () => {
   };
 
   const handleRacerClick = async () => {
-    if (!isLoggedIn) {
+    if (!isLoggedIn || isGuest) {
       setShowGuestConfirmModal(true);
       setShowJoinModal(false);
     } else {
@@ -412,7 +413,7 @@ const Draft1v1Page: React.FC = () => {
         <div className="auction-content-grid">
           {/* Left: 1v1 Pool Container + tabs */}
           <div className="auction-left-panel">
-            <div className="one-v-one-pool-container">
+            <div className={`one-v-one-pool-container ${poolCollapsed ? 'collapsed' : ''}`}>
               {oneVOne && (
                 <OneVOnePool
                   pool={oneVOne.pool}
@@ -426,7 +427,7 @@ const Draft1v1Page: React.FC = () => {
                   onHover={setHoveredSlot}
                 />
               )}
-              {oneVOne?.eeveelution_phase && oneVOne.eeveelutions.length > 0 && (
+              {!poolCollapsed && oneVOne?.eeveelution_phase && oneVOne.eeveelutions.length > 0 && (
                 <div className="one-v-one-pool-container-sub">
                   <OneVOnePool
                     pool={oneVOne.eeveelutions}
@@ -440,6 +441,23 @@ const Draft1v1Page: React.FC = () => {
                     onHover={setHoveredSlot}
                   />
                 </div>
+              )}
+              {draft.draft_state === 'COMPLETED' && (
+                <button
+                  className="one-v-one-pool-collapse-toggle"
+                  onClick={() => setPoolCollapsed((c) => !c)}
+                  title={poolCollapsed ? 'Expand pool' : 'Collapse pool'}
+                >
+                  {poolCollapsed ? (
+                    <svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true">
+                      <polyline points="6 9 12 15 18 9" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                  ) : (
+                    <svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true">
+                      <polyline points="6 15 12 9 18 15" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                  )}
+                </button>
               )}
             </div>
 
@@ -459,7 +477,7 @@ const Draft1v1Page: React.FC = () => {
                     <div className="one-v-one-hover-panel">
                       {(() => {
                         const p = hoveredSlot?.pokemon ?? selectedSlot?.pokemon;
-                        if (!p) return <div className="one-v-one-info-prompt">Hover over a Pokémon to inspect it.</div>;
+                        if (!p) return <div className="one-v-one-info-prompt">Hover over a Pokémon to learn about it.</div>;
                         const fakeAuction = {
                           auction_id: 'preview',
                           auction_state: 'PENDING',
