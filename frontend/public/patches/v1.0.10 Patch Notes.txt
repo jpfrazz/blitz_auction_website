@@ -29,6 +29,8 @@ Bug Fixes
 
 Fixed a bug where flinching a Steadfast Pokémon caused a glitched message to display
 
+Cleaned up the script that prevented you from exiting gyms to be less aggressive and harder to trigger accidentally
+
 
 -----------------------------------------------
 Pool Addition

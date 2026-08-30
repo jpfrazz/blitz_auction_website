@@ -112,7 +112,7 @@ const Stats: React.FC = () => {
   const [draftSortMode, setDraftSortMode] = useState<'order' | 'price' | 'user' | 'race'>('order');
   const [selectedPokemonForChart, setSelectedPokemonForChart] = useState<{ key: string; name: string } | null>(null);
   const [competitiveOnly, setCompetitiveOnly] = useState(true);
-  const [draftTypeFilter, setDraftTypeFilter] = useState<'all' | 'auction' | '1v1'>('all');
+  const [draftTypeFilter, setDraftTypeFilter] = useState<'all' | 'auction' | '1v1'>('auction');
   const [gridColumns, setGridColumns] = useState<number>(0);
 
   useEffect(() => {
@@ -673,19 +673,6 @@ const Stats: React.FC = () => {
                         transition: 'left 0.3s ease' 
                       }} />
                     </div>
-                  </div>
-                  <div style={{ display: 'flex', gap: '4px' }}>
-                    {(['all', 'auction', '1v1'] as const).map((type) => (
-                      <button
-                        key={type}
-                        type="button"
-                        className={`tab-chip ${draftTypeFilter === type ? 'active' : ''}`}
-                        style={{ padding: '2px 8px', fontSize: '0.85rem', minWidth: 'auto', margin: 0 }}
-                        onClick={() => setDraftTypeFilter(type)}
-                      >
-                        {type === 'all' ? 'All' : type === '1v1' ? '1v1' : 'Auction'}
-                      </button>
-                    ))}
                   </div>
                 </div>
               </div>
