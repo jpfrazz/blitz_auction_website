@@ -181,6 +181,18 @@ impl Server {
             .route("/drafts/{draft_id}/pause", post(handlers::pause_draft))
             .route("/drafts/{draft_id}/unpause", post(handlers::unpause_draft))
             .route(
+                "/drafts/{draft_id}/one-v-one/pick",
+                post(handlers::one_v_one_pick),
+            )
+            .route(
+                "/drafts/{draft_id}/one-v-one/ban",
+                post(handlers::one_v_one_ban),
+            )
+            .route(
+                "/drafts/{draft_id}/one-v-one/toggle-timer",
+                post(handlers::one_v_one_toggle_timer),
+            )
+            .route(
                 "/drafts/{draft_id}/submit-results",
                 post(handlers::submit_race_results),
             )

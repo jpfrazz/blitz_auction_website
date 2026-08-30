@@ -14,7 +14,7 @@ const navButtons = [
 
 function Header() {
   const location = useLocation();
-  const isAuctionPage = location.pathname === '/Auction';
+  const isAuctionPage = location.pathname === '/Auction' || location.pathname === '/Draft1v1';
   const isEmulatorPage = location.pathname.startsWith('/Emulator');
   const linkTarget = (isAuctionPage || isEmulatorPage) ? '_blank' : undefined;
   const linkRel = (isAuctionPage || isEmulatorPage) ? 'noopener noreferrer' : undefined;
@@ -284,6 +284,9 @@ function Header() {
               <Link to="/AuctionSetup" className="navButton navDropdownItem" onClick={handleNavLinkClick} target={linkTarget} rel={linkRel}>
                 Auction Setup
               </Link>
+                <Link to="/Draft1v1Setup" className="navButton navDropdownItem" onClick={handleNavLinkClick} target={linkTarget} rel={linkRel}>
+                  1v1 Setup (New!)
+                </Link>
               <Link to="/LobbyViewer" className="navButton navDropdownItem" onClick={handleNavLinkClick} target={linkTarget} rel={linkRel}>
                 Lobby Viewer
               </Link>

@@ -148,6 +148,19 @@ export async function placeBid(draft_id: string, auction_id: string, value: numb
   return response;
 }
 
+// 1v1 draft: pick or ban a pokemon from the shared pool
+export async function oneVOnePick(draft_id: string, pokedex_id: number, form: string | null): Promise<void> {
+  await axios.post(`/api/drafts/${draft_id}/one-v-one/pick`, { pokedex_id, form });
+}
+
+export async function oneVOneBan(draft_id: string, pokedex_id: number, form: string | null): Promise<void> {
+  await axios.post(`/api/drafts/${draft_id}/one-v-one/ban`, { pokedex_id, form });
+}
+
+export async function oneVOneToggleTimer(draft_id: string): Promise<void> {
+  await axios.post(`/api/drafts/${draft_id}/one-v-one/toggle-timer`);
+}
+
 export interface AutoBidState {
   enabled: boolean;
   value: number | null;

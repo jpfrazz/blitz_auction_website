@@ -121,6 +121,12 @@
     background-color: $eb-bg;
     box-shadow: $eb-shadow;
   }
+
+  &.banned {
+    opacity: 0.6;
+    filter: grayscale(100%);
+    cursor: not-allowed;
+  }
 }
 
 .eeveelution-card-image {
@@ -183,6 +189,12 @@
       background: $eb-primary-hover;
       color: $eb-text-black;
     }
+  }
+
+  &.banned {
+    background-color: #4d4d4d;
+    color: $eb-text-muted;
+    cursor: not-allowed;
   }
 }
 

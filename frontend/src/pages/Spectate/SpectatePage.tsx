@@ -88,11 +88,12 @@ const SpectatePage: React.FC = () => {
         setPlayerSaves((prev) => {
           const next = { ...prev };
           for (const team of draft.teams) {
-            next[team.user_id] = {
-              displayName: team.global_name?.trim() || team.username,
+            const teamKey = team.user_id ?? team.guest_id ?? '';
+            next[teamKey] = {
+              displayName: team.global_name?.trim() || team.username || '',
               // Prefer the latest save the backend persisted for this team so a
               // finished player's data still shows after a page reload.
-              save: team.save_data ?? prev[team.user_id]?.save ?? null,
+              save: team.save_data ?? prev[teamKey]?.save ?? null,
             };
           }
           return next;

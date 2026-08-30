@@ -18,7 +18,7 @@ import './LobbyViewer.scss';
 
 function formatDraftState(draftState: DraftState): string {
   if (typeof draftState === 'string') {
-    return draftState;
+    return draftState === 'BIDDING' ? 'DRAFTING' : draftState;
   }
 
   if ('PAUSED' in draftState) {
@@ -26,7 +26,7 @@ function formatDraftState(draftState: DraftState): string {
   }
 
   if ('BIDDING' in draftState) {
-    return 'BIDDING';
+    return 'DRAFTING';
   }
 
   return 'UNKNOWN';
@@ -116,6 +116,14 @@ const LobbyViewer: React.FC = () => {
       enableColumnFilter: false,
     },
     {
+      header: 'Format',
+      id: 'format',
+      cell: info => {
+        const type = info.row.original.draft_type || 'auction';
+        return type === '1v1' ? '1v1' : 'Auction';
+      },
+    },
+    {
       header: 'Teams',
       id: 'teams',
       cell: info => `${info.row.original.teams_joined}/${info.row.original.total_teams}`,
@@ -133,11 +141,14 @@ const LobbyViewer: React.FC = () => {
         const disableJoin = ranked && isGuest;
         const isCreator = info.row.original.host === currentUserId;
 
+        const is1v1 = info.row.original.draft_type === '1v1';
+        const joinTarget = is1v1 ? `/Draft1v1?${info.row.original.draft_id}` : `/Auction?${info.row.original.draft_id}`;
+
         return (
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             <Link
               className={`button lobby-viewer-join-button${disableJoin ? ' disabled' : ''}`}
-              to={disableJoin ? '#' : `/Auction?${info.row.original.draft_id}`}
+              to={disableJoin ? '#' : joinTarget}
               tabIndex={disableJoin ? -1 : 0}
               aria-disabled={disableJoin ? 'true' : undefined}
               onClick={e => {

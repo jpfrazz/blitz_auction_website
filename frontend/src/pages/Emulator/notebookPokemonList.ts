@@ -168,6 +168,7 @@ export const NOTEBOOK_POKEMON_LIST: string[] = [
   'Shroodle',
   'Shroomish',
   'Shuppet',
+  'Silicobra',
   'Sizzlipede',
   'Skiddo',
   'Skorupi',

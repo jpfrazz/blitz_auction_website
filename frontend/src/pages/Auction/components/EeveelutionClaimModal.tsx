@@ -16,6 +16,7 @@ interface EeveelutionClaimModalProps {
   isReferee?: boolean;
   onClaim: (pokedexId: number, form: string | null, targetUserId?: string | null) => Promise<void>;
   onUnclaim: (pokedexId: number, form: string | null, targetUserId?: string | null) => Promise<void>;
+  bannedPokedexIds?: number[];
   onClose: () => void;
 }
 
@@ -26,6 +27,7 @@ const EeveelutionClaimModal: React.FC<EeveelutionClaimModalProps> = ({
   isReferee = false,
   onClaim,
   onUnclaim,
+  bannedPokedexIds = [],
   onClose,
 }) => {
   const [claiming, setClaiming] = useState<string | null>(null);
@@ -44,7 +46,7 @@ const EeveelutionClaimModal: React.FC<EeveelutionClaimModalProps> = ({
           p => p.pokedex_id === pokedexId && p.form === form
         );
         if (claimed) {
-          return { username: team.username, userId: team.user_id };
+          return { username: team.username ?? '', userId: team.user_id ?? team.guest_id ?? '' };
         }
       }
     }
@@ -104,8 +106,8 @@ const EeveelutionClaimModal: React.FC<EeveelutionClaimModalProps> = ({
               onChange={(e) => setTargetUserId(e.target.value || null)}
             >
               <option value="">-- Select Team --</option>
-              {teams.map(team => (
-                <option key={team.user_id} value={team.user_id}>{team.username}</option>
+              {teams.map((team, idx) => (
+                <option key={team.user_id ?? team.guest_id ?? idx} value={team.user_id ?? team.guest_id ?? ''}>{team.username}</option>
               ))}
             </select>
           </div>
@@ -123,11 +125,12 @@ const EeveelutionClaimModal: React.FC<EeveelutionClaimModalProps> = ({
             const isClaimed = !!claimedInfo;
             const isCurrentUserClaim = claimedInfo?.userId === currentUserId;
             const canUnclaim = isCurrentUserClaim || (isReferee && isClaimed);
+            const isBanned = bannedPokedexIds.includes(eeveelution.pokedex_id);
             const key = `${eeveelution.pokedex_id}-${eeveelution.form}`;
             const isClaiming = claiming === key;
 
             return (
-              <div key={key} className="eeveelution-card">
+              <div key={key} className={`eeveelution-card${isBanned ? ' banned' : ''}`}>
                 <div className="eeveelution-card-image">
                   <img 
                     src={`/evolutions/${eeveelution.name}.png`}
@@ -139,7 +142,11 @@ const EeveelutionClaimModal: React.FC<EeveelutionClaimModalProps> = ({
                 </div>
                 <div className="eeveelution-card-name">{eeveelution.name}</div>
 
-                {isClaimed ? (
+                {isBanned ? (
+                  <button className="eeveelution-button banned" disabled>
+                    Banned in 1v1 draft
+                  </button>
+                ) : isClaimed ? (
                   canUnclaim ? (
                     <button
                       className="eeveelution-button claimed current-user-unclaim"

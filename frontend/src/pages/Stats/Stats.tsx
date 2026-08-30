@@ -112,6 +112,7 @@ const Stats: React.FC = () => {
   const [draftSortMode, setDraftSortMode] = useState<'order' | 'price' | 'user' | 'race'>('order');
   const [selectedPokemonForChart, setSelectedPokemonForChart] = useState<{ key: string; name: string } | null>(null);
   const [competitiveOnly, setCompetitiveOnly] = useState(true);
+  const [draftTypeFilter, setDraftTypeFilter] = useState<'all' | 'auction' | '1v1'>('all');
   const [gridColumns, setGridColumns] = useState<number>(0);
 
   useEffect(() => {
@@ -353,14 +354,18 @@ const Stats: React.FC = () => {
 
     (stats?.teams ?? []).forEach((team) => {
       const dStat = draftStats.get(team.draft_id);
-      if (!dStat) return;
-      if (!dStat || dStat.total < 1) return;
-      if (!dStat || dStat.total < 16) return;
+      const is1v1 = team.draft_type === '1v1';
+      if (!is1v1) {
+        if (!dStat) return;
+        if (dStat.total < 1) return;
+        if (dStat.total < 16) return;
+      }
       const existing = drafts.get(team.draft_id) || {
         draftId: team.draft_id,
-        draftName: (team as any).draft_name || null,
-        hostId: (team as any).host || null,
-        ranked: !!(team as any).ranked,
+        draftName: team.draft_name || null,
+        hostId: team.host || null,
+        ranked: !!team.ranked,
+        draftType: team.draft_type || 'auction',
         teamCount: 0,
         auctionCount: 0,
         highestBid: 0,
@@ -376,31 +381,36 @@ const Stats: React.FC = () => {
       const isGuest = !team.user_id || pInfo?.is_guest;
       const pDisplayName = isGuest ? 'Guest User' : (pInfo?.user_name || team.user_id || 'Guest User'); // Still gather for CSV
       console.log(`[DraftSummary] Processing team for draft ${team.draft_id}: draftName from team is ${existing.draftName}`);
-      
+
       const racePlacement = team.race_placement ?? team.placement;
       if (racePlacement === 1) {
         existing.winner = pDisplayName;
       } else if (racePlacement === 2) {
         existing.runnerUp = pDisplayName;
       }
-      
-      // Only push if not already present to avoid duplicates in CSV
-      existing.participants.push(pDisplayName);
 
+      // Only push if not already present to avoid duplicates in CSV
+      if (!existing.participants.includes(pDisplayName)) {
+        existing.participants.push(pDisplayName);
+      }
       drafts.set(team.draft_id, existing);
     });
 
     (stats?.auctions ?? []).forEach((auction: any) => {
-      if (auction.winning_bid === null) return;
+      const is1v1 = auction.draft_type === '1v1';
+      if (!is1v1 && auction.winning_bid === null) return;
       const dStat = draftStats.get(auction.draft_id);
-      if (!dStat || dStat.total < 1) return;
-      if (!dStat || dStat.total < 16) return;
+      if (!is1v1) {
+        if (!dStat || dStat.total < 1) return;
+        if (dStat.total < 16) return;
+      }
 
       const existing = drafts.get(auction.draft_id) || {
         draftId: auction.draft_id,
         draftName: auction.draft_name || null,
-        hostId: (auction as any).host || null,
+        hostId: auction.host || null,
         ranked: !!auction.ranked,
+        draftType: auction.draft_type || 'auction',
         teamCount: 0,
         auctionCount: 0,
         highestBid: 0,
@@ -433,10 +443,12 @@ const Stats: React.FC = () => {
     });
 
     const result = Array.from(drafts.values())
-      .map((draft) => {
+      .map((draft: any) => {
         const dStat = draftStats.get(draft.draftId);
         const errors = [];
-        if (dStat) {
+        if (draft.draftType === '1v1') {
+          if (draft.auctionCount < 30) errors.push("Incomplete 1v1 draft");
+        } else if (dStat) {
           if (dStat.total < 40) errors.push("Fewer than 40 Pokemon sold");
           if (dStat.minBidCount > 3) errors.push("More than 3 Pokemon sold for $100");
           if (dStat.total !== 8 * dStat.teamCount) errors.push(`Total Pokemon sold (${dStat.total}) is not 8 * players (${dStat.teamCount})`);
@@ -444,7 +456,7 @@ const Stats: React.FC = () => {
         }
         return {
           ...draft,
-          participants: draft.participants.sort((a, b) => a.localeCompare(b)),
+          participants: (draft.participants as string[]).sort((a, b) => a.localeCompare(b)),
           formattedDate: draft.date ? new Date(draft.date).toLocaleDateString() : '-',
           validationError: errors.join('. '),
         };
@@ -495,20 +507,26 @@ const Stats: React.FC = () => {
   }, [playerSummary.length, sortedAuctions, stats?.legacy, stats?.teams, validDraftIds]);
 
   const handleDownloadCSV = (draft: any) => {
+    const is1v1 = draft.draftType === '1v1';
     const auctions = (stats?.auctions ?? [])
-      .filter((a) => a.draft_id === draft.draftId && a.winning_bid !== null)
+      .filter((a) => a.draft_id === draft.draftId && (is1v1 || a.winning_bid !== null))
       .sort((a, b) => a.draft_order - b.draft_order);
 
     let csvContent = `Draft ID: ${draft.draftId}\n`;
     csvContent += `Date: ${draft.formattedDate}\n`;
-    csvContent += `Total Pokemon Sold: ${draft.auctionCount}\n\n`;
-    csvContent += `Order,Pokemon,Drafted By,Cost\n`;
+    csvContent += `Draft Type: ${is1v1 ? '1v1' : 'Auction'}\n`;
+    csvContent += `${is1v1 ? 'Total Actions' : 'Total Pokemon Sold'}: ${draft.auctionCount}\n\n`;
+    csvContent += is1v1 ? `Order,Pokemon,Drafted By,Action\n` : `Order,Pokemon,Drafted By,Cost\n`;
 
     auctions.forEach((a, index) => {
       const winnerKey = a.winning_user_id || a.winning_guest_id || '';
       const winnerName = playersById.get(winnerKey)?.user_name || winnerKey || '-';
       const safeWinnerName = winnerName.includes(',') ? `"${winnerName.replace(/"/g, '""')}"` : winnerName;
-      csvContent += `${index + 1},${a.name},${safeWinnerName},${a.winning_bid}\n`;
+      if (is1v1) {
+        csvContent += `${index + 1},${a.name},${safeWinnerName},${a.action || ''}\n`;
+      } else {
+        csvContent += `${index + 1},${a.name},${safeWinnerName},${a.winning_bid}\n`;
+      }
     });
 
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
@@ -624,35 +642,50 @@ const Stats: React.FC = () => {
             <article className="stats-panel">
               <div className="stats-panel-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
                 <h2 style={{ margin: 0 }}>Draft Breakdown</h2>
-                <div className="competitive-toggle-wrapper" style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '1.1rem' }}>
-                  <span 
-                    style={{ cursor: 'pointer', fontWeight: 500 }} 
-                    onClick={() => setCompetitiveOnly(!competitiveOnly)}
-                  >
-                    Competitive Drafts only
-                  </span>
-                  <div
-                    onClick={() => setCompetitiveOnly(!competitiveOnly)}
-                    style={{ 
-                      position: 'relative', 
-                      width: '40px', 
-                      height: '20px', 
-                      backgroundColor: competitiveOnly ? '#4caf50' : '#333', 
-                      borderRadius: '20px', 
-                      cursor: 'pointer', 
-                      transition: 'background-color 0.3s ease' 
-                    }}
-                  >
-                    <div style={{ 
-                      position: 'absolute', 
-                      top: '2px', 
-                      left: competitiveOnly ? '22px' : '2px', 
-                      width: '16px', 
-                      height: '16px', 
-                      backgroundColor: 'white', 
-                      borderRadius: '50%', 
-                      transition: 'left 0.3s ease' 
-                    }} />
+                <div className="competitive-toggle-wrapper" style={{ display: 'flex', alignItems: 'center', gap: '12px', fontSize: '1.1rem' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <span 
+                      style={{ cursor: 'pointer', fontWeight: 500 }} 
+                      onClick={() => setCompetitiveOnly(!competitiveOnly)}
+                    >
+                      Competitive Drafts only
+                    </span>
+                    <div
+                      onClick={() => setCompetitiveOnly(!competitiveOnly)}
+                      style={{ 
+                        position: 'relative', 
+                        width: '40px', 
+                        height: '20px', 
+                        backgroundColor: competitiveOnly ? '#4caf50' : '#333', 
+                        borderRadius: '20px', 
+                        cursor: 'pointer', 
+                        transition: 'background-color 0.3s ease' 
+                      }}
+                    >
+                      <div style={{ 
+                        position: 'absolute', 
+                        top: '2px', 
+                        left: competitiveOnly ? '22px' : '2px', 
+                        width: '16px', 
+                        height: '16px', 
+                        backgroundColor: 'white', 
+                        borderRadius: '50%', 
+                        transition: 'left 0.3s ease' 
+                      }} />
+                    </div>
+                  </div>
+                  <div style={{ display: 'flex', gap: '4px' }}>
+                    {(['all', 'auction', '1v1'] as const).map((type) => (
+                      <button
+                        key={type}
+                        type="button"
+                        className={`tab-chip ${draftTypeFilter === type ? 'active' : ''}`}
+                        style={{ padding: '2px 8px', fontSize: '0.85rem', minWidth: 'auto', margin: 0 }}
+                        onClick={() => setDraftTypeFilter(type)}
+                      >
+                        {type === 'all' ? 'All' : type === '1v1' ? '1v1' : 'Auction'}
+                      </button>
+                    ))}
                   </div>
                 </div>
               </div>
@@ -671,7 +704,10 @@ const Stats: React.FC = () => {
                   </thead>
                   <tbody>
                     {draftSummary
-                      .filter((draft) => !competitiveOnly || validDraftIds.has(draft.draftId))
+                      .filter((draft) => {
+                        if (draftTypeFilter !== 'all' && draft.draftType !== draftTypeFilter) return false;
+                        return !competitiveOnly || validDraftIds.has(draft.draftId) || draft.draftType === '1v1';
+                      })
                       .map((draft, index) => (
                       <React.Fragment key={draft.draftId}>
                         <tr
@@ -738,14 +774,16 @@ const Stats: React.FC = () => {
                                   >
                                     Sort by Sale Order
                                   </button>
-                                  <button
-                                    className={`tab-chip ${draftSortMode === 'price' ? 'active' : ''}`}
-                                    type="button"
-                                    style={{ padding: '2px 8px', fontSize: '0.85rem', minWidth: 'auto', margin: 0 }}
-                                    onClick={() => setDraftSortMode('price')}
-                                  >
-                                    Sort by Price
-                                  </button>
+                                  {draft.draftType !== '1v1' && (
+                                    <button
+                                      className={`tab-chip ${draftSortMode === 'price' ? 'active' : ''}`}
+                                      type="button"
+                                      style={{ padding: '2px 8px', fontSize: '0.85rem', minWidth: 'auto', margin: 0 }}
+                                      onClick={() => setDraftSortMode('price')}
+                                    >
+                                      Sort by Price
+                                    </button>
+                                  )}
                                   <button
                                     className={`tab-chip ${draftSortMode === 'user' ? 'active' : ''}`}
                                     type="button"
@@ -762,23 +800,31 @@ const Stats: React.FC = () => {
                                 }
 
                                 const renderCard = (auction: any) => {
+                                  const is1v1 = auction.draft_type === '1v1';
                                   const winnerKey = auction.winning_user_id || auction.winning_guest_id || '';
                                   const winnerName = playersById.get(winnerKey)?.user_name || winnerKey || '-';
                                   const identity = resolveIdentity(auction.name, auction.form || '');
                                   const displayName = `${identity.name}${identity.form && identity.form !== 'base' ? ` (${toLabel(identity.form)})` : ''}`;
                                   const isSelected = selectedPokemonForChart?.key === identity.key;
-                                  
+                                  const actionLabel = is1v1 ? (auction.action || 'PICK') : undefined;
+
                                   return (
                                     <div
                                       key={auction.auction_id}
                                       className={`draft-detail-card ${isSelected ? 'selected' : ''}`}
-                                      title={`${displayName} - $${(auction.winning_bid ?? 0).toLocaleString()} (Click to view price history)`}
-                                      style={{ 
-                                        cursor: 'pointer', 
+                                      title={
+                                        is1v1
+                                          ? `${displayName} - ${actionLabel}${winnerName && winnerName !== '-' ? ` · ${winnerName}` : ''}`
+                                          : `${displayName} - $${(auction.winning_bid ?? 0).toLocaleString()} (Click to view price history)`
+                                      }
+                                      style={{
+                                        cursor: is1v1 ? 'default' : 'pointer',
                                         border: isSelected ? '2px solid #4caf50' : undefined,
-                                        backgroundColor: getUserColor(winnerKey)
+                                        backgroundColor: getUserColor(winnerKey),
+                                        opacity: is1v1 && auction.action === 'BAN' ? 0.6 : 1,
                                       }}
                                       onClick={() => {
+                                        if (is1v1) return;
                                         if (isSelected) {
                                           setSelectedPokemonForChart(null);
                                         } else {
@@ -794,8 +840,17 @@ const Stats: React.FC = () => {
                                         }}
                                       />
                                       <div className="pokemon-name">{auction.name}</div>
-                                      <div className="pokemon-price">${(auction.winning_bid ?? 0).toLocaleString()}</div>
-                                      <div className="pokemon-winner">{winnerName}</div>
+                                      {is1v1 ? (
+                                        <>
+                                          <div className="pokemon-price" style={{ fontSize: '0.75rem' }}>{actionLabel}</div>
+                                          {winnerName !== '-' && <div className="pokemon-winner">{winnerName}</div>}
+                                        </>
+                                      ) : (
+                                        <>
+                                          <div className="pokemon-price">${(auction.winning_bid ?? 0).toLocaleString()}</div>
+                                          <div className="pokemon-winner">{winnerName}</div>
+                                        </>
+                                      )}
                                     </div>
                                   );
                                 };
@@ -814,7 +869,7 @@ const Stats: React.FC = () => {
                                 };
 
                                 const draftAuctions = (stats?.auctions ?? [])
-                                  .filter((a) => a.draft_id === draft.draftId && a.winning_bid !== null);
+                                  .filter((a) => a.draft_id === draft.draftId && (a.draft_type === '1v1' || a.winning_bid !== null));
 
                                 const renderListWithChart = (auctions: any[]) => {
                                   const selectedAuctionIndex = auctions.findIndex(a => resolveIdentity(a.name, a.form || '').key === selectedPokemonForChart?.key);
@@ -853,7 +908,10 @@ const Stats: React.FC = () => {
                                       {userIds.map(uid => {
                                         const userAuctions = draftAuctions
                                           .filter(a => (a.winning_user_id || a.winning_guest_id || '') === uid)
-                                          .sort((a, b) => (b.winning_bid ?? 0) - (a.winning_bid ?? 0));
+                                          .sort((a, b) => {
+                                            if (a.draft_type === '1v1') return a.draft_order - b.draft_order;
+                                            return (b.winning_bid ?? 0) - (a.winning_bid ?? 0);
+                                          });
                                         return (
                                           <div key={uid} className="user-draft-group" style={{ marginBottom: '0.75rem' }}>
                                             {renderListWithChart(userAuctions)}
@@ -866,10 +924,10 @@ const Stats: React.FC = () => {
 
                                 const finalAuctions = draftAuctions
                                   .sort((a, b) => {
-                                    if (draftSortMode === 'price') {
-                                          return (b.winning_bid ?? 0) - (a.winning_bid ?? 0);
-                                        }
-                                        return a.draft_order - b.draft_order;
+                                    if (draftSortMode === 'price' && a.draft_type !== '1v1') {
+                                      return (b.winning_bid ?? 0) - (a.winning_bid ?? 0);
+                                    }
+                                    return a.draft_order - b.draft_order;
                                   });
 
                                 return renderListWithChart(finalAuctions);

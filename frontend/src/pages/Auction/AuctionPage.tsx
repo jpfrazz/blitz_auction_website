@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useRef, useMemo, useCallback } from 'react';
 import { connectDraftWebSocket } from '../../shared/api/draftWebSocket';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import Header from '../../shared/components/Header';
 import { fetchDraftById, fetchDraftPokemon, fetchDraftCurrentAuction, readyUpDraft, joinDraft, fetchCurrentUser, claimEeveelution, unclaimEeveelution, startDraft, pauseDraft, unpauseDraft, submitRaceResults, updatePendingDraftSettings } from '../../shared/api/draftData';
 import { fetchPokemonList } from '../../shared/api/pokemon';
@@ -30,6 +30,7 @@ function useAuctionId() {
 
 const AuctionPage: React.FC = () => {
   const auctionId = useAuctionId();
+  const navigate = useNavigate();
   const [draft, setDraft] = useState<Draft | null>(null);
   const [currentAuction, setCurrentAuction] = useState<Auction | null>(null);
   const [pokemon, setPokemon] = useState<Pokemon[]>([]);
@@ -386,6 +387,10 @@ const AuctionPage: React.FC = () => {
         ]).then(([draftData, pokemonData, current_auction, allPkmn]) => ({ user, draftData, pokemonData, current_auction, allPkmn }));
       })
       .then(({ user, draftData, pokemonData, current_auction, allPkmn }) => {
+        if (draftData.draft_type === '1v1') {
+          navigate(`/Draft1v1?${auctionId}`, { replace: true });
+          return;
+        }
         setDraft(draftData);
         setCurrentAuction(current_auction);
         setPokemon(pokemonData);
@@ -692,12 +697,12 @@ const AuctionPage: React.FC = () => {
                       <div className="auction-settings-remove-teams-list">
                         {draft.teams
                           .filter((team) => team.user_id !== draft.host)
-                          .map((team) => (
-                            <label key={team.user_id} className="auction-settings-remove-teams-item">
+                          .map((team, idx) => (
+                            <label key={team.user_id ?? team.guest_id ?? idx} className="auction-settings-remove-teams-item">
                               <input
                                 type="checkbox"
-                                checked={selectedTeamIdsToRemove.includes(team.user_id)}
-                                onChange={() => toggleTeamRemoval(team.user_id)}
+                                checked={selectedTeamIdsToRemove.includes(team.user_id ?? '')}
+                                onChange={() => toggleTeamRemoval(team.user_id ?? '')}
                                 disabled={savingDraftSettings}
                               />
                               <span>{team.username}</span>
@@ -898,7 +903,7 @@ const AuctionPage: React.FC = () => {
             )}
             {showResultsSubmissionModal && draft && (
               <ResultsSubmissionModal
-                teams={draft.teams}
+                teams={draft.teams as any}
                 currentUserId={currentUserId}
                 onSubmit={handleSubmitResults}
                 onClose={() => setShowResultsSubmissionModal(false)}

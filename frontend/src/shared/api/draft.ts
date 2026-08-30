@@ -16,6 +16,7 @@ export interface CreateDraftRequest {
     secs: number;
     nanos: number;
   };
+  draft_type?: string;
 }
 
 // Create a draft via POST /drafts (proxied to backend)

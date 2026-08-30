@@ -12,6 +12,8 @@ import SpeedTest from './pages/SpeedTest/SpeedTest';
 import './shared/style/theme.scss';
 import PatchNotes from './pages/PatchNotes/PatchNotes';
 import AuctionPage from './pages/Auction/AuctionPage';
+import Draft1v1Setup from './pages/Draft1v1Setup/Draft1v1Setup';
+import Draft1v1Page from './pages/Draft1v1/Draft1v1Page';
 import LobbyViewer from './pages/LobbyViewer/LobbyViewer';
 import LeaderboardPage from './pages/LeaderboardPage';
 import Stats from './pages/Stats/Stats';
@@ -37,6 +39,8 @@ if (container) {
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/AuctionSetup" element={<AuctionSetup />} />
+          <Route path="/Draft1v1Setup" element={<Draft1v1Setup />} />
+          <Route path="/Draft1v1" element={<Draft1v1Page />} />
           <Route path="/Auction" element={<AuctionPage />} />
           <Route path="/SaveChecker" element={<SaveChecker />} />
           <Route path="/LobbyViewer" element={<LobbyViewer />} />

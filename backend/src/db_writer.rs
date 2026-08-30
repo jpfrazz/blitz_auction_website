@@ -17,6 +17,7 @@ use crate::{
 
 pub struct DbWriter {
     actor_sender: mpsc::Sender<DbCommand>,
+    pool: PgPool,
 }
 
 struct Actor {
@@ -69,16 +70,35 @@ enum DbCommand {
         new_auctions: Vec<(Arc<Pokemon>, i32)>,
         truncate_auctions: Option<u32>,
     },
+    /// 1v1 drafts: insert a single result row (pick/ban/leftover).
+    WriteOneVOneAction {
+        pokedex_id: u32,
+        form: Option<String>,
+        draft_order: i32,
+        action: String,
+        user: Option<User>,
+    },
+    /// 1v1 drafts: increment a player's picked-pokemon count.
+    IncrementOneVOnePick {
+        user: User,
+    },
 }
 
 impl DbWriter {
     pub fn new(pool: PgPool, draft_id: Uuid, starting_money: u32) -> Self {
         let (actor_sender, actor_receiver) = mpsc::channel(1_000);
+        let actor_pool = pool.clone();
         tokio::spawn(async move {
-            let actor = Actor::new(pool, draft_id, actor_receiver, starting_money);
+            let actor = Actor::new(actor_pool, draft_id, actor_receiver, starting_money);
             actor.run().await;
         });
-        Self { actor_sender }
+        Self { actor_sender, pool }
+    }
+
+    /// Exposes the underlying pool for read-only queries that don't go through
+    /// the write actor (e.g. computing average prices for a 1v1 pool).
+    pub fn pool(&self) -> &PgPool {
+        &self.pool
     }
     pub async fn create_draft(
         &self,
@@ -288,6 +308,31 @@ impl DbWriter {
             )
         })?
     }
+
+    /// 1v1 drafts: persist a single pick/ban/leftover row.
+    pub async fn write_one_v_one_action(
+        &self,
+        pokedex_id: u32,
+        form: Option<String>,
+        draft_order: i32,
+        action: &str,
+        user: Option<User>,
+    ) {
+        let cmd = DbCommand::WriteOneVOneAction {
+            pokedex_id,
+            form,
+            draft_order,
+            action: action.to_string(),
+            user,
+        };
+        let _ = self.actor_sender.send(cmd).await;
+    }
+
+    /// 1v1 drafts: increment a team's pokemon_drafted counter after a pick.
+    pub async fn increment_one_v_one_pick(&self, user: User) {
+        let cmd = DbCommand::IncrementOneVOnePick { user };
+        let _ = self.actor_sender.send(cmd).await;
+    }
 }
 
 impl Actor {
@@ -388,6 +433,19 @@ impl Actor {
                             .await;
                         let _ = response_sender.send(res);
                     }
+                    DbCommand::WriteOneVOneAction {
+                        pokedex_id,
+                        form,
+                        draft_order,
+                        action,
+                        user,
+                    } => {
+                        self.write_one_v_one_action(pokedex_id, form, draft_order, &action, user)
+                            .await;
+                    }
+                    DbCommand::IncrementOneVOnePick { user } => {
+                        self.increment_one_v_one_pick(user).await;
+                    }
                 }
             } else {
                 break;
@@ -418,7 +476,7 @@ impl Actor {
             )
         })?;
 
-        let _res = sqlx::query!(
+        let _res = sqlx::query(
             r#"
             INSERT INTO drafts (
                 draft_id,
@@ -428,18 +486,20 @@ impl Actor {
                 starting_money,
                 ranked,
                 host_user_id,
-                host_guest_id
-            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+                host_guest_id,
+                draft_type
+            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
             "#,
-            self.draft_id,
-            settings.draft_name,
-            settings.password,
-            settings.num_teams as i32,
-            settings.starting_money as i32,
-            settings.ranked,
-            user_id,
-            guest_id
         )
+        .bind(self.draft_id)
+        .bind(&settings.draft_name)
+        .bind(&settings.password)
+        .bind(settings.num_teams as i32)
+        .bind(settings.starting_money as i32)
+        .bind(settings.ranked)
+        .bind(user_id)
+        .bind(guest_id)
+        .bind(&settings.draft_type)
         .execute(&mut *tx)
         .await
         .map_err(|e| {
@@ -448,6 +508,17 @@ impl Actor {
                 format!("failed to create draft in db, {}", e),
             )
         })?;
+
+        // 1v1 drafts create their auction rows at start/finish time, not now.
+        if settings.draft_type == "1v1" {
+            tx.commit().await.map_err(|e| {
+                (
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    format!("failed to commit 1v1 draft to db, {}", e),
+                )
+            })?;
+            return Ok(vec![]);
+        }
 
         for (i, p) in pokemon
             .iter()
@@ -853,5 +924,40 @@ impl Actor {
             )
         })?;
         Ok(new_ids)
+    }
+
+    async fn write_one_v_one_action(
+        &self,
+        pokedex_id: u32,
+        form: Option<String>,
+        draft_order: i32,
+        action: &str,
+        user: Option<User>,
+    ) {
+        let (user_id, guest_id) = user.map(|u| u.get_user_and_guest_id()).unwrap_or((None, None));
+        let _ = sqlx::query(
+            "INSERT INTO auctions (pokedex_id, form, draft_order, draft_id, winning_user_id, winning_guest_id, state, action) VALUES ($1, $2, $3, $4, $5, $6, 'CLOSED', $7)"
+        )
+        .bind(pokedex_id as i32)
+        .bind(form.unwrap_or_default())
+        .bind(draft_order)
+        .bind(self.draft_id)
+        .bind(user_id)
+        .bind(guest_id)
+        .bind(action)
+        .execute(&self.pool)
+        .await;
+    }
+
+    async fn increment_one_v_one_pick(&self, user: User) {
+        let (user_id, guest_id) = user.get_user_and_guest_id();
+        let _ = sqlx::query(
+            "UPDATE teams SET pokemon_drafted = pokemon_drafted + 1 WHERE user_id IS NOT DISTINCT FROM $1 AND guest_id IS NOT DISTINCT FROM $2 AND draft_id = $3"
+        )
+        .bind(user_id)
+        .bind(guest_id)
+        .bind(self.draft_id)
+        .execute(&self.pool)
+        .await;
     }
 }

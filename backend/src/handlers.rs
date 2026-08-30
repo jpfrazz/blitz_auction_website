@@ -79,6 +79,12 @@ pub struct SetAutoBidRequest {
     pub enabled: bool,
 }
 
+#[derive(Clone, Debug, Deserialize)]
+pub struct OneVOnePickBanRequest {
+    pub pokedex_id: u32,
+    pub form: Option<String>,
+}
+
 fn default_ready_true() -> bool {
     true
 }
@@ -1944,6 +1950,78 @@ pub async fn bid(
         ));
     };
     draft.bid(auction_id, bid_request.value, user).await
+}
+
+#[debug_handler]
+pub async fn one_v_one_pick(
+    State(state): State<ServerState>,
+    Path(draft_id): Path<String>,
+    auth_session: AuthSession<AuthBackend>,
+    Json(request): Json<OneVOnePickBanRequest>,
+) -> Result<(), AppError> {
+    let user = auth_session.user.expect("user should exist");
+    let draft_uuid = Uuid::from_str(&draft_id).map_err(|_| {
+        (
+            StatusCode::BAD_REQUEST,
+            format!("requested draft does not exist"),
+        )
+    })?;
+    let Some(draft) = state.drafts.get(&draft_uuid) else {
+        return Err((
+            StatusCode::BAD_REQUEST,
+            format!("requested draft does not exist"),
+        ));
+    };
+    draft
+        .one_v_one_pick(user, request.pokedex_id, request.form)
+        .await
+}
+
+#[debug_handler]
+pub async fn one_v_one_ban(
+    State(state): State<ServerState>,
+    Path(draft_id): Path<String>,
+    auth_session: AuthSession<AuthBackend>,
+    Json(request): Json<OneVOnePickBanRequest>,
+) -> Result<(), AppError> {
+    let user = auth_session.user.expect("user should exist");
+    let draft_uuid = Uuid::from_str(&draft_id).map_err(|_| {
+        (
+            StatusCode::BAD_REQUEST,
+            format!("requested draft does not exist"),
+        )
+    })?;
+    let Some(draft) = state.drafts.get(&draft_uuid) else {
+        return Err((
+            StatusCode::BAD_REQUEST,
+            format!("requested draft does not exist"),
+        ));
+    };
+    draft
+        .one_v_one_ban(user, request.pokedex_id, request.form)
+        .await
+}
+
+#[debug_handler]
+pub async fn one_v_one_toggle_timer(
+    State(state): State<ServerState>,
+    Path(draft_id): Path<String>,
+    auth_session: AuthSession<AuthBackend>,
+) -> Result<(), AppError> {
+    let user = auth_session.user.expect("user should exist");
+    let draft_uuid = Uuid::from_str(&draft_id).map_err(|_| {
+        (
+            StatusCode::BAD_REQUEST,
+            format!("requested draft does not exist"),
+        )
+    })?;
+    let Some(draft) = state.drafts.get(&draft_uuid) else {
+        return Err((
+            StatusCode::BAD_REQUEST,
+            format!("requested draft does not exist"),
+        ));
+    };
+    draft.one_v_one_toggle_timer(user.get_user_id_string()).await
 }
 
 #[debug_handler]

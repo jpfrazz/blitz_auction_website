@@ -16,6 +16,7 @@ interface EeveelutionClaimButtonProps {
   currentUsername: string | null;
   onClaim: (pokedexId: number, form: string | null) => Promise<void>;
   onUnclaim: (pokedexId: number, form: string | null) => Promise<void>;
+  bannedPokedexIds?: number[];
 }
 
 const EeveelutionClaimButton: React.FC<EeveelutionClaimButtonProps> = ({
@@ -25,6 +26,7 @@ const EeveelutionClaimButton: React.FC<EeveelutionClaimButtonProps> = ({
   currentUsername,
   onClaim,
   onUnclaim,
+  bannedPokedexIds = [],
 }) => {
   const [isExpanded, setIsExpanded] = useState(false);
   const [claiming, setClaiming] = useState<string | null>(null);
@@ -39,7 +41,7 @@ const EeveelutionClaimButton: React.FC<EeveelutionClaimButtonProps> = ({
           p => p.pokedex_id === pokedexId && p.form === form
         );
         if (claimed) {
-          return { username: team.username, userId: team.user_id };
+          return { username: team.username ?? '', userId: team.user_id ?? team.guest_id ?? '' };
         }
       }
     }
@@ -130,21 +132,28 @@ const EeveelutionClaimButton: React.FC<EeveelutionClaimButtonProps> = ({
             const claimedInfo = getClaimedInfo(eeveelution.pokedex_id, eeveelution.form);
             const isClaimed = !!claimedInfo;
             const isCurrentUserClaim = claimedInfo?.userId === currentUserId;
+            const isBanned = bannedPokedexIds.includes(eeveelution.pokedex_id);
             const key = `${eeveelution.pokedex_id}-${eeveelution.form}`;
             const isClaiming = claiming === key;
 
             return (
               <button
                 key={key}
-                className={`eeveelution-individual-button ${isClaimed ? 'claimed' : ''} ${isCurrentUserClaim ? 'current-user' : ''}`}
+                className={`eeveelution-individual-button ${isClaimed ? 'claimed' : ''} ${isCurrentUserClaim ? 'current-user' : ''} ${isBanned ? 'banned' : ''}`}
                 onClick={() => handleClaim(eeveelution)}
-                disabled={isClaiming}
-                title={isClaimed ? `Claimed by ${claimedInfo?.username}` : `Claim ${eeveelution.name}`}
+                disabled={isClaiming || isBanned}
+                title={
+                  isBanned
+                    ? `${eeveelution.name} was banned in this 1v1 draft`
+                    : isClaimed
+                    ? `Claimed by ${claimedInfo?.username}`
+                    : `Claim ${eeveelution.name}`
+                }
               >
                 <img
                   src={`/MiniIcons/${eeveelution.name.toLowerCase()}.png`}
                   alt={eeveelution.name}
-                  className={`eeveelution-icon ${isClaimed && !isCurrentUserClaim ? 'greyed-out' : ''}`}
+                  className={`eeveelution-icon ${(isClaimed && !isCurrentUserClaim) || isBanned ? 'greyed-out' : ''}`}
                   onError={(e) => {
                     (e.target as HTMLImageElement).style.display = 'none';
                   }}

@@ -56,7 +56,7 @@ export type SerializedUser =
     } };
 
 // Types for draft data
-export type DraftState = 'PENDING' | 'BIDDING' | 'COMPLETED';
+export type DraftState = 'PENDING' | 'BIDDING' | 'COMPLETED' | 'Pending' | 'Active' | 'Paused' | 'Completed';
 
 export interface Auction {
   auction_id: string;
@@ -69,14 +69,51 @@ export interface Auction {
 }
 
 export interface Team {
-  user_id: string;
-  username: string;
+  team_id?: number;
+  user_id: string | null;
+  guest_id?: string | null;
+  username?: string | null;
+  team_name?: string;
   global_name?: string | null;
   ready?: boolean;
+  is_host?: boolean;
   budget_remaining: number;
   pokemon?: Pokemon[];
   auctions_won?: Pokemon[];
   save_data?: any;
+}
+
+export type OneVOnePlayer = 'P1' | 'P2';
+export type OneVOneAction = 'Pick' | 'Ban';
+
+export interface OneVOnePoolSlot {
+  pokemon: Pokemon;
+  status: 'Available' | { Picked: OneVOnePlayer } | { Banned: OneVOnePlayer };
+  avg_price: number;
+}
+
+export interface OneVOneHistoryEntry {
+  order: number;
+  action: OneVOneAction;
+  player: OneVOnePlayer;
+  pokemon: Pokemon;
+}
+
+export interface OneVOneState {
+  pool: OneVOnePoolSlot[];
+  player1: string;
+  player2: string;
+  current_player?: OneVOnePlayer | null;
+  current_action?: OneVOneAction | null;
+  p1_picks: number;
+  p2_picks: number;
+  turn_expires_at?: string | null;
+  paused_time_remaining?: number | null;
+  timer_enabled: boolean;
+  eeveelution_phase: boolean;
+  history: OneVOneHistoryEntry[];
+  eeveelutions: OneVOnePoolSlot[];
+  banned_eeveelutions: number[];
 }
 
 export interface Draft {
@@ -86,12 +123,16 @@ export interface Draft {
   total_auctions: number;
   host: string;
   ranked: boolean;
+  draft_type: string;
+  format: string;
   total_teams: number;
   teams: Team[];
   draft_state: DraftState;
+  current_auction: number;
   completed_auctions: Auction[];
   current_server_time?: string;
   auction_length: number;
+  one_v_one?: OneVOneState | null;
 }
 
 export interface ChatMessage {
@@ -109,6 +150,8 @@ export interface DraftLobby {
   has_password: boolean;
   host: string;
   ranked: boolean;
+  draft_type: string;
+  format: string;
   teams_joined: number;
   total_teams: number;
   draft_state: DraftState;
@@ -129,6 +172,8 @@ export interface StatsAuction {
   winning_guest_id: string | null;
   updated_at: string;
   created_at: string;
+  draft_type: string;
+  action: 'PICK' | 'BAN' | 'LEFTOVER' | null;
 }
 
 export interface HallOfFamePokemon {
@@ -157,6 +202,9 @@ export interface StatsPageTeamRow {
   user_id: string | null;
   guest_id: string | null;
   draft_id: string;
+  draft_name?: string | null;
+  host?: string | null;
+  ranked?: boolean;
   money_remaining: number;
   pokemon_drafted: number;
   placement: number | null;
@@ -164,6 +212,7 @@ export interface StatsPageTeamRow {
   pre_match_mmr: number | null;
   updated_at: string;
   created_at: string;
+  draft_type?: string;
 }
 
 export interface StatsPagePlayer {

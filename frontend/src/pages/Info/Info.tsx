@@ -393,7 +393,9 @@ const Info = () => (
                 <img src="/MiniIcons/corsola-galar.png" alt="Corsola-Galar" />
                 <img src="/MiniIcons/croagunk.png" alt="Croagunk" />
                 <img src="/MiniIcons/elgyem.png" alt="Elgyem" />
+                <img src="/MiniIcons/feebas.png" alt="Feebas" />
                 <img src="/MiniIcons/frillish.png" alt="Frillish" />
+                <img src="/MiniIcons/noibat.png" alt="Noibat" />
                 <img src="/MiniIcons/meditite.png" alt="Meditite" />
                 <img src="/MiniIcons/ponyta.png" alt="Ponyta" />
                 <img src="/MiniIcons/rufflet.png" alt="Rufflet" />
@@ -401,6 +403,7 @@ const Info = () => (
                 <img src="/MiniIcons/scraggy.png" alt="Scraggy" />
                 <img src="/MiniIcons/shuppet.png" alt="Shuppet" />
                 <img src="/MiniIcons/skorupi.png" alt="Skorupi" />
+                <img src="/MiniIcons/skrelp.png" alt="Skrelp" />
                 <img src="/MiniIcons/slowpoke.png" alt="Slowpoke" />
                 <img src="/MiniIcons/snorunt.png" alt="Snorunt" />
                 <img src="/MiniIcons/snover.png" alt="Snover" />
@@ -418,14 +421,17 @@ const Info = () => (
                 <li>Corsola-Galar &gt; Cursola</li>
                 <li>Croagunk &gt; Toxicroak</li>
                 <li>Elgyem &gt; Beheeyem</li>
+                <li>Feebas &gt; Milotic</li>
                 <li>Frillish &gt; Jellicent</li>
                 <li>Meditite &gt; Medicham</li>
+                <li>Noibat &gt; Noivern</li>
                 <li>Ponyta &gt; Rapidash</li>
                 <li>Rufflet &gt; Braviary</li>
                 <li>Sandygast &gt; Palossand</li>
                 <li>Scraggy &gt; Scrafty</li>
                 <li>Shuppet &gt; Banette</li>
                 <li>Skorupi &gt; Drapion</li>
+                <li>Skrelp &gt; Dragalge</li>
                 <li>Slowpoke &gt; Slowbro-Galar</li>
                 <li>Snorunt &gt; Glalie</li>
                 <li>Snover &gt; Abomasnow</li>

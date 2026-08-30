@@ -16,6 +16,16 @@
     scrollbar-color: #444 #222;
     scrollbar-width: thin;
 
+    &.equal-width {
+        justify-content: stretch;
+
+        .auction-player-box {
+            flex: 1 1 0;
+            max-width: none;
+            min-width: 8rem;
+        }
+    }
+
     &.two-row-mode {
         flex-wrap: wrap;
         overflow-x: hidden;
@@ -65,6 +75,18 @@
     background: $eb-primary;
 }
 
+.player-slot-p1 {
+    background: #4a86d8 !important;
+    color: #fff !important;
+    border-color: #2f5f9e !important;
+}
+
+.player-slot-p2 {
+    background: #d05555 !important;
+    color: #fff !important;
+    border-color: #993030 !important;
+}
+
 .player-not-ready {
     background: $eb-primary-hover;
 }
@@ -79,7 +101,27 @@
     background: #b71c1c !important;
     color: #fff !important;
     border-color: #b71c1c !important;
-    opacity: 0.85;
+}
+
+.player-turn {
+    animation: player-turn-pop 0.6s ease;
+    transform-origin: center;
+}
+
+.players-turn-highlight {
+    overflow: hidden !important;
+}
+
+@keyframes player-turn-pop {
+    0% {
+        transform: scale(1);
+    }
+    40% {
+        transform: scale(1.08);
+    }
+    100% {
+        transform: scale(1);
+    }
 }
 
 .highest-bidder {

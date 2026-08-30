@@ -4,7 +4,7 @@ use dashmap::DashMap;
 use petname::petname;
 use rand::seq::SliceRandom;
 use serde::{Deserialize, Serialize};
-use sqlx::PgPool;
+use sqlx::{PgPool, Row};
 use std::{collections::HashMap, sync::Arc};
 use strum::Display;
 use tokio::{
@@ -47,6 +47,8 @@ pub struct DraftResponse {
     total_auctions: u32,
     host: String,
     ranked: bool,
+    draft_type: String,
+    format: String,
     total_teams: u32,
     teams: Vec<Team>,
     draft_state: DraftState,
@@ -54,6 +56,9 @@ pub struct DraftResponse {
     completed_auctions: Vec<AuctionResponse>,
     current_server_time: chrono::DateTime<Utc>,
     auction_length: u32,
+    /// 1v1 drafts only: the shared pick/ban pool and current turn state.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    one_v_one: Option<OneVOneState>,
 }
 
 #[derive(Clone, Debug, Serialize)]
@@ -63,6 +68,8 @@ pub struct DraftLobbyResponse {
     has_password: bool,
     host: String,
     ranked: bool,
+    draft_type: String,
+    format: String,
     teams_joined: u32,
     total_teams: u32,
     total_auctions: u32,
@@ -89,6 +96,164 @@ pub struct ExcludedPokemon {
     pub form: Option<String>,
 }
 
+/// 1v1 draft: which player slot (1 = first pick / blue, 2 = second pick / red).
+#[derive(Clone, Copy, Debug, Serialize, Deserialize, PartialEq, Eq)]
+pub enum OneVOnePlayer {
+    P1,
+    P2,
+}
+
+impl OneVOnePlayer {
+    pub fn other(&self) -> Self {
+        match self {
+            OneVOnePlayer::P1 => OneVOnePlayer::P2,
+            OneVOnePlayer::P2 => OneVOnePlayer::P1,
+        }
+    }
+}
+
+/// The action a player is currently taking in a 1v1 draft.
+#[derive(Clone, Copy, Debug, Serialize, Deserialize, PartialEq, Eq)]
+pub enum OneVOneAction {
+    Pick,
+    Ban,
+}
+
+/// One recorded entry in a 1v1 draft's history (a pick or a ban).
+#[derive(Clone, Debug, Serialize)]
+pub struct OneVOneHistoryEntry {
+    pub order: u32,
+    pub action: OneVOneAction,
+    pub player: OneVOnePlayer,
+    pub pokemon: Pokemon,
+}
+
+/// A single pokemon in the 1v1 shared pool with its current status.
+#[derive(Clone, Debug, Serialize)]
+pub struct OneVOnePoolSlot {
+    pub pokemon: Pokemon,
+    /// None = available, Some(player) = picked by that player, or banned.
+    pub status: OneVOneSlotStatus,
+    /// Average auction price used for display ordering / auto-pick tiebreaks.
+    pub avg_price: u32,
+}
+
+#[derive(Clone, Copy, Debug, Serialize, Deserialize, PartialEq, Eq)]
+pub enum OneVOneSlotStatus {
+    Available,
+    Picked(OneVOnePlayer),
+    Banned(OneVOnePlayer),
+}
+
+/// Public 1v1 draft state included in `DraftResponse` for 1v1 lobbies.
+#[derive(Clone, Debug, Serialize)]
+pub struct OneVOneState {
+    pub pool: Vec<OneVOnePoolSlot>,
+    /// user_id of player 1 (blue / first pick) and player 2 (red / second pick).
+    pub player1: String,
+    pub player2: String,
+    /// Whose turn it is and what they are doing, while the draft is running.
+    pub current_player: Option<OneVOnePlayer>,
+    pub current_action: Option<OneVOneAction>,
+    /// Number of picks each player has made so far.
+    pub p1_picks: u32,
+    pub p2_picks: u32,
+    /// When the current 30s turn expires (server time), for the countdown.
+    pub turn_expires_at: Option<chrono::DateTime<Utc>>,
+    pub paused_time_remaining: Option<u32>,
+    /// Whether the pick/ban countdown timer is currently enabled.
+    pub timer_enabled: bool,
+    /// True once the main 16-pick phase is done and eeveelution bans begin.
+    pub eeveelution_phase: bool,
+    /// Ordered pick/ban history for the Draft History tab.
+    pub history: Vec<OneVOneHistoryEntry>,
+    /// The 8 eeveelutions available to ban/claim once the main phase ends.
+    pub eeveelutions: Vec<OneVOnePoolSlot>,
+    /// pokedex_ids of eeveelutions that were banned (greyed out in the emulator).
+    pub banned_eeveelutions: Vec<u32>,
+}
+
+/// The full 1v1 pick/ban order. Each tuple is (player, action).
+/// 16 picks + 14 bans = 30 actions. After this, 2 pool pokemon are left over.
+fn one_v_one_action_sequence() -> Vec<(OneVOnePlayer, OneVOneAction)> {
+    use OneVOneAction::*;
+    use OneVOnePlayer::*;
+    let mut seq = vec![(P1, Pick)];
+    // Players alternate "Pick then Ban" turns; P1 already took its first pick.
+    // P2 picks+bans, then P1 picks+bans, etc. until P2's 8th pick (no ban).
+    for turn in 0..15 {
+        let player = if turn % 2 == 0 { P2 } else { P1 };
+        seq.push((player, Pick));
+        // Skip the ban after the final pick (P2's 8th pick = overall pick 16).
+        if turn != 14 {
+            seq.push((player, Ban));
+        }
+    }
+    seq
+}
+
+impl OneVOneEngine {
+    /// Build the public state snapshot sent to clients.
+    fn to_state(&self, actor: &DraftActor) -> OneVOneState {
+        let (current_player, current_action) = self.current_turn(&actor.draft_state);
+        OneVOneState {
+            pool: self.pool.clone(),
+            player1: self.player1.clone(),
+            player2: self.player2.clone(),
+            current_player,
+            current_action,
+            p1_picks: self.p1_picks,
+            p2_picks: self.p2_picks,
+            turn_expires_at: self.turn_expires_at.map(crate::get_expiry_time_from_instant),
+            paused_time_remaining: self.paused_time_remaining,
+            timer_enabled: self.timer_enabled,
+            eeveelution_phase: self.eeveelution_phase,
+            history: self.history.clone(),
+            eeveelutions: self.eeveelutions.clone(),
+            banned_eeveelutions: self.banned_eeveelutions.clone(),
+        }
+    }
+
+    /// Returns the current turn's (player, action), if the draft is running.
+    fn current_turn(&self, draft_state: &DraftState) -> (Option<OneVOnePlayer>, Option<OneVOneAction>) {
+        if *draft_state != DraftState::BIDDING {
+            return (None, None);
+        }
+        if self.eeveelution_phase {
+            let player = if self.eeveelution_bans % 2 == 0 {
+                OneVOnePlayer::P2
+            } else {
+                OneVOnePlayer::P1
+            };
+            return (Some(player), Some(OneVOneAction::Ban));
+        }
+        self.sequence
+            .get(self.action_index)
+            .map(|(p, a)| (Some(*p), Some(*a)))
+            .unwrap_or((None, None))
+    }
+
+    fn player_id(&self, player: OneVOnePlayer) -> &str {
+        match player {
+            OneVOnePlayer::P1 => &self.player1,
+            OneVOnePlayer::P2 => &self.player2,
+        }
+    }
+
+    /// Highest avg-price pokemon still available for the given action.
+    fn highest_avg_price_available(&self, action: OneVOneAction) -> Option<&OneVOnePoolSlot> {
+        let source: &Vec<OneVOnePoolSlot> = if self.eeveelution_phase {
+            &self.eeveelutions
+        } else {
+            &self.pool
+        };
+        source
+            .iter()
+            .filter(|s| s.status == OneVOneSlotStatus::Available)
+            .max_by_key(|s| s.avg_price)
+    }
+}
+
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct DraftSettings {
     pub num_teams: u32,
@@ -102,6 +267,19 @@ pub struct DraftSettings {
     pub excluded_pokemon: Vec<ExcludedPokemon>,
     pub num_auctions: u32,
     pub auction_length: u32,
+    /// 'auction' (default) or '1v1'. Determines the lobby format.
+    #[serde(default = "default_draft_type")]
+    pub draft_type: String,
+}
+
+fn default_draft_type() -> String {
+    "auction".to_string()
+}
+
+pub const DRAFT_TYPE_1V1: &str = "1v1";
+
+fn clone_arc_pokemon(p: &Arc<Pokemon>) -> Pokemon {
+    (**p).clone()
 }
 
 #[derive(Clone, Debug, Serialize)]
@@ -118,6 +296,9 @@ struct Team {
     pub save_data: Option<serde_json::Value>,
     #[serde(skip)]
     auto_bid: Option<u32>,
+    /// 1v1 drafts: number of pokemon picked (mirrors DB column).
+    #[serde(skip)]
+    pokemon_drafted: u32,
 }
 
 impl DraftResponse {
@@ -161,9 +342,18 @@ impl Draft {
 
     pub async fn build(
         host: User,
-        settings: DraftSettings,
+        mut settings: DraftSettings,
         pool: PgPool,
     ) -> Result<Arc<Draft>, AppError> {
+        // Normalize settings for 1v1 drafts.
+        if settings.draft_type == DRAFT_TYPE_1V1 {
+            settings.num_teams = 2;
+            settings.num_auctions = 0;
+            settings.starting_money = 0;
+            settings.ranked = false;
+            settings.excluded_pokemon.clear();
+        }
+
         let draft_id = uuid::Uuid::now_v7();
         let draft_name = if settings.draft_name.trim().is_empty() {
             let Some(name) = petname(2, "-") else {
@@ -606,6 +796,80 @@ impl Draft {
         let _ = self.actor_sender.send(cmd).await;
     }
 
+    pub async fn one_v_one_pick(
+        &self,
+        user: User,
+        pokedex_id: u32,
+        form: Option<String>,
+    ) -> Result<(), AppError> {
+        let (response_sender, response_receiver) = oneshot::channel();
+        let cmd = DraftCommand::OneVOnePick {
+            response_sender,
+            user,
+            pokedex_id,
+            form,
+        };
+        self.actor_sender.send(cmd).await.map_err(|e| {
+            (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                format!("failed to send 1v1 pick cmd to actor, {}", e),
+            )
+        })?;
+        response_receiver.await.map_err(|e| {
+            (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                format!("failed to wait for actor response, {}", e),
+            )
+        })?
+    }
+
+    pub async fn one_v_one_ban(
+        &self,
+        user: User,
+        pokedex_id: u32,
+        form: Option<String>,
+    ) -> Result<(), AppError> {
+        let (response_sender, response_receiver) = oneshot::channel();
+        let cmd = DraftCommand::OneVOneBan {
+            response_sender,
+            user,
+            pokedex_id,
+            form,
+        };
+        self.actor_sender.send(cmd).await.map_err(|e| {
+            (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                format!("failed to send 1v1 ban cmd to actor, {}", e),
+            )
+        })?;
+        response_receiver.await.map_err(|e| {
+            (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                format!("failed to wait for actor response, {}", e),
+            )
+        })?
+    }
+
+    pub async fn one_v_one_toggle_timer(&self, user_id: String) -> Result<(), AppError> {
+        let (response_sender, response_receiver) = oneshot::channel();
+        let cmd = DraftCommand::OneVOneToggleTimer {
+            response_sender,
+            user_id,
+        };
+        self.actor_sender.send(cmd).await.map_err(|e| {
+            (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                format!("failed to send 1v1 toggle-timer cmd to actor, {}", e),
+            )
+        })?;
+        response_receiver.await.map_err(|e| {
+            (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                format!("failed to wait for actor response, {}", e),
+            )
+        })?
+    }
+
     pub async fn shutdown(&self) {
         let _ = self.actor_sender.send(DraftCommand::Shutdown).await;
     }
@@ -625,6 +889,33 @@ struct DraftActor {
     spectators: Vec<User>,
     receiver: mpsc::Receiver<DraftCommand>,
     broadcast_tx: broadcast::Sender<ServerMessage>,
+    /// 1v1 drafts only: the pick/ban engine state.
+    one_v_one: Option<OneVOneEngine>,
+}
+
+/// Internal (non-serialized) 1v1 engine state for the actor.
+struct OneVOneEngine {
+    pool: Vec<OneVOnePoolSlot>,
+    player1: String,
+    player2: String,
+    /// Index into the pick/ban action sequence.
+    action_index: usize,
+    sequence: Vec<(OneVOnePlayer, OneVOneAction)>,
+    p1_picks: u32,
+    p2_picks: u32,
+    history: Vec<OneVOneHistoryEntry>,
+    eeveelutions: Vec<OneVOnePoolSlot>,
+    banned_eeveelutions: Vec<u32>,
+    eeveelution_phase: bool,
+    /// Number of eeveelution bans made so far (P2 first, then P1).
+    eeveelution_bans: u32,
+    /// When the current 30s turn expires.
+    turn_expires_at: Option<Instant>,
+    paused_time_remaining: Option<u32>,
+    /// Whether the countdown timer is enabled.
+    timer_enabled: bool,
+    /// Monotonic counter guarding against stale turn-timeout tasks.
+    turn_generation: u64,
 }
 
 enum DraftCommand {
@@ -701,6 +992,27 @@ enum DraftCommand {
         user_id: String,
         new_name: String,
     },
+    /// 1v1 drafts: a player picks a pokemon from the shared pool.
+    OneVOnePick {
+        response_sender: oneshot::Sender<Result<(), AppError>>,
+        user: User,
+        pokedex_id: u32,
+        form: Option<String>,
+    },
+    /// 1v1 drafts: a player bans a pokemon from the shared pool.
+    OneVOneBan {
+        response_sender: oneshot::Sender<Result<(), AppError>>,
+        user: User,
+        pokedex_id: u32,
+        form: Option<String>,
+    },
+    /// 1v1 drafts: the current turn's 30s timer fired (auto pick/ban).
+    OneVOneTurnTimeout { generation: u64 },
+    /// 1v1 drafts: enable/disable the pick/ban countdown timer.
+    OneVOneToggleTimer {
+        response_sender: oneshot::Sender<Result<(), AppError>>,
+        user_id: String,
+    },
     Shutdown,
 }
 
@@ -729,6 +1041,7 @@ impl DraftActor {
                     auctions_won: vec![],
                     save_data: None,
                     auto_bid: None,
+                    pokemon_drafted: 0,
                 },
             );
             team_users.insert(host_id.clone(), host);
@@ -747,6 +1060,7 @@ impl DraftActor {
             receiver,
             broadcast_tx,
             spectators: vec![],
+            one_v_one: None,
         }
     }
 
@@ -784,14 +1098,22 @@ impl DraftActor {
                         user_id,
                     } => {
                         let res = self.pause(user_id).await;
+                        let ok = res.is_ok();
                         let _ = response_sender.send(res);
+                        if ok {
+                            self.broadcast();
+                        };
                     }
                     DraftCommand::Resume {
                         response_sender,
                         user_id,
                     } => {
                         let res = self.resume(user_id).await;
+                        let ok = res.is_ok();
                         let _ = response_sender.send(res);
+                        if ok {
+                            self.broadcast();
+                        };
                     }
                     DraftCommand::Join {
                         response_sender,
@@ -911,6 +1233,49 @@ impl DraftActor {
                             self.broadcast();
                         }
                     }
+                    DraftCommand::OneVOnePick {
+                        response_sender,
+                        user,
+                        pokedex_id,
+                        form,
+                    } => {
+                        let res = self.one_v_one_pick(user, pokedex_id, form).await;
+                        let ok = res.is_ok();
+                        let _ = response_sender.send(res);
+                        if ok {
+                            self.broadcast();
+                        };
+                    }
+                    DraftCommand::OneVOneBan {
+                        response_sender,
+                        user,
+                        pokedex_id,
+                        form,
+                    } => {
+                        let res = self.one_v_one_ban(user, pokedex_id, form).await;
+                        let ok = res.is_ok();
+                        let _ = response_sender.send(res);
+                        if ok {
+                            self.broadcast();
+                        };
+                    }
+                    DraftCommand::OneVOneTurnTimeout { generation } => {
+                        let advanced = self.one_v_one_turn_timeout(generation).await;
+                        if advanced {
+                            self.broadcast();
+                        }
+                    }
+                    DraftCommand::OneVOneToggleTimer {
+                        response_sender,
+                        user_id,
+                    } => {
+                        let res = self.one_v_one_toggle_timer(user_id).await;
+                        let ok = res.is_ok();
+                        let _ = response_sender.send(res);
+                        if ok {
+                            self.broadcast();
+                        };
+                    }
                     DraftCommand::Shutdown => break,
                 }
             }
@@ -918,7 +1283,10 @@ impl DraftActor {
     }
 
     async fn get_current_auction(&self) -> Result<Option<AuctionResponse>, AppError> {
-        if self.draft_state == DraftState::PENDING || self.draft_state == DraftState::COMPLETED {
+        if self.draft_state == DraftState::PENDING
+            || self.draft_state == DraftState::COMPLETED
+            || self.settings.draft_type == DRAFT_TYPE_1V1
+        {
             return Ok(None);
         }
         let auction = &self.auctions[self.current_auction];
@@ -926,6 +1294,12 @@ impl DraftActor {
     }
 
     async fn bid(&self, auction_id: i64, bid_value: u32, user: User) -> Result<(), AppError> {
+        if self.settings.draft_type == DRAFT_TYPE_1V1 {
+            return Err((
+                StatusCode::PRECONDITION_FAILED,
+                format!("1v1 drafts do not use bidding"),
+            ));
+        }
         if self.draft_state != DraftState::BIDDING {
             return Err((
                 StatusCode::PRECONDITION_FAILED,
@@ -995,6 +1369,10 @@ impl DraftActor {
             ));
         }
 
+        if self.settings.draft_type == DRAFT_TYPE_1V1 {
+            return self.start_one_v_one().await;
+        }
+
         self.db_writer.start_draft().await?;
 
         let auction = &self.auctions[self.current_auction];
@@ -1006,6 +1384,505 @@ impl DraftActor {
 
         self.place_auto_bids().await;
 
+        Ok(())
+    }
+
+    /// Initializes the 1v1 pick/ban engine and starts the first turn.
+    async fn start_one_v_one(&mut self) -> Result<(), AppError> {
+        // Exactly two teams required.
+        if self.teams.len() != 2 {
+            return Err((
+                StatusCode::PRECONDITION_FAILED,
+                format!("1v1 drafts require exactly 2 players"),
+            ));
+        }
+
+        // Randomly assign first pick (P1 / blue) and second pick (P2 / red).
+        let mut player_ids: Vec<String> = self.teams.keys().cloned().collect();
+        player_ids.shuffle(&mut rand::rng());
+        let player1 = player_ids[0].clone();
+        let player2 = player_ids[1].clone();
+
+        // Choose 32 base, non-rental pokemon at random from the draft pool.
+        let mut candidates: Vec<Arc<Pokemon>> = self
+            .draft
+            .pokemon
+            .iter()
+            .filter(|p| p.stage == pokemon::PokemonStage::base && p.obtain_method.is_none())
+            .cloned()
+            .collect();
+        candidates.shuffle(&mut rand::rng());
+        if candidates.len() < 32 {
+            return Err((
+                StatusCode::INTERNAL_SERVER_ERROR,
+                format!("not enough pokemon to build a 1v1 pool"),
+            ));
+        }
+        let chosen: Vec<Arc<Pokemon>> = candidates.into_iter().take(32).collect();
+
+        // Attach avg prices (from auction stats) for ordering + auto-pick.
+        let avg_prices = self.load_avg_prices().await;
+        let mut pool: Vec<OneVOnePoolSlot> = chosen
+            .into_iter()
+            .map(|p| {
+                let avg_price = avg_prices
+                    .get(&(p.pokedex_id, p.form.clone()))
+                    .copied()
+                    .unwrap_or(0);
+                OneVOnePoolSlot {
+                    pokemon: clone_arc_pokemon(&p),
+                    status: OneVOneSlotStatus::Available,
+                    avg_price,
+                }
+            })
+            .collect();
+        // Sort most expensive -> least expensive (top-left to bottom-right).
+        pool.sort_by(|a, b| b.avg_price.cmp(&a.avg_price));
+
+        let eeveelutions = self.one_v_one_eeveelutions(&avg_prices);
+
+        self.one_v_one = Some(OneVOneEngine {
+            pool,
+            player1,
+            player2,
+            action_index: 0,
+            sequence: one_v_one_action_sequence(),
+            p1_picks: 0,
+            p2_picks: 0,
+            history: vec![],
+            eeveelutions,
+            banned_eeveelutions: vec![],
+            eeveelution_phase: false,
+            eeveelution_bans: 0,
+            turn_expires_at: None,
+            paused_time_remaining: None,
+            timer_enabled: false,
+            turn_generation: 0,
+        });
+
+        self.db_writer.start_draft().await?;
+        self.draft_state = DraftState::BIDDING;
+
+        // Start the first turn's 30s timer.
+        self.one_v_one_begin_turn();
+
+        Ok(())
+    }
+
+    /// Builds the 8 eeveelution slots used for the post-pick ban phase.
+    fn one_v_one_eeveelutions(
+        &self,
+        avg_prices: &HashMap<(u32, Option<String>), u32>,
+    ) -> Vec<OneVOnePoolSlot> {
+        const EEVEELUTION_IDS: [u32; 8] = [134, 135, 136, 196, 197, 470, 471, 700];
+        EEVEELUTION_IDS
+            .iter()
+            .filter_map(|id| {
+                self.draft
+                    .pokemon
+                    .iter()
+                    .find(|p| p.pokedex_id == *id && p.form.is_none())
+                    .map(|p| {
+                        let avg_price = avg_prices
+                            .get(&(p.pokedex_id, p.form.clone()))
+                            .copied()
+                            .unwrap_or(0);
+                        OneVOnePoolSlot {
+                            pokemon: clone_arc_pokemon(p),
+                            status: OneVOneSlotStatus::Available,
+                            avg_price,
+                        }
+                    })
+            })
+            .collect()
+    }
+
+    /// Loads average winning bid per pokemon from historical auction stats.
+    async fn load_avg_prices(&self) -> HashMap<(u32, Option<String>), u32> {
+        let rows = sqlx::query(
+            "SELECT a.pokedex_id, a.form, AVG(a.winning_bid)::INT AS avg_bid
+             FROM auctions a
+             JOIN drafts d ON d.draft_id = a.draft_id
+             WHERE a.winning_bid IS NOT NULL
+               AND a.winning_bid > 100
+               AND d.draft_type != '1v1'
+             GROUP BY a.pokedex_id, a.form",
+        )
+        .fetch_all(self.db_writer.pool())
+        .await;
+
+        let mut map = HashMap::new();
+        if let Ok(rows) = rows {
+            for row in rows {
+                let pokedex_id: i32 = row.try_get("pokedex_id").unwrap_or(0);
+                let form: String = row.try_get("form").unwrap_or_default();
+                let avg_bid: i32 = row.try_get("avg_bid").unwrap_or(0);
+                let form_opt = if form.trim().is_empty() { None } else { Some(form) };
+                map.insert((pokedex_id as u32, form_opt), avg_bid.max(0) as u32);
+            }
+        }
+        map
+    }
+
+    // ------------------------------------------------------------------
+    // 1v1 Draft Engine
+    // ------------------------------------------------------------------
+
+    fn one_v_one_begin_turn(&mut self) {
+        let Some(engine) = self.one_v_one.as_mut() else {
+            return;
+        };
+        engine.turn_generation += 1;
+        let generation = engine.turn_generation;
+        if !engine.timer_enabled {
+            engine.paused_time_remaining = None;
+            engine.turn_expires_at = None;
+            return;
+        }
+        let remaining = engine.paused_time_remaining.take().unwrap_or(60).max(1);
+        let expires_at = Instant::now() + Duration::from_secs(remaining as u64);
+        engine.turn_expires_at = Some(expires_at);
+        let sender = self.draft.actor_sender.clone();
+        tokio::spawn(async move {
+            tokio::time::sleep_until(expires_at).await;
+            let _ = sender.send(DraftCommand::OneVOneTurnTimeout { generation }).await;
+        });
+    }
+
+    async fn one_v_one_pick(
+        &mut self,
+        user: User,
+        pokedex_id: u32,
+        form: Option<String>,
+    ) -> Result<(), AppError> {
+        if self.draft_state != DraftState::BIDDING {
+            return Err((StatusCode::PRECONDITION_FAILED, "draft is not running".to_string()));
+        }
+        let engine = self.one_v_one.as_mut().ok_or((
+            StatusCode::PRECONDITION_FAILED,
+            "not a 1v1 draft".to_string(),
+        ))?;
+        if engine.eeveelution_phase {
+            return Err((
+                StatusCode::PRECONDITION_FAILED,
+                "main pick phase is over".to_string(),
+            ));
+        }
+        let (Some(current_player), Some(current_action)) = engine.current_turn(&self.draft_state)
+        else {
+            return Err((StatusCode::PRECONDITION_FAILED, "no active turn".to_string()));
+        };
+        if current_action != OneVOneAction::Pick {
+            return Err((StatusCode::PRECONDITION_FAILED, "it is not time to pick".to_string()));
+        }
+        let current_player_id = engine.player_id(current_player);
+        if user.get_user_id_string() != current_player_id {
+            return Err((StatusCode::PRECONDITION_FAILED, "not your turn".to_string()));
+        }
+        self.one_v_one_apply_pick(current_player, pokedex_id, form).await;
+        Ok(())
+    }
+
+    async fn one_v_one_ban(
+        &mut self,
+        user: User,
+        pokedex_id: u32,
+        form: Option<String>,
+    ) -> Result<(), AppError> {
+        if self.draft_state != DraftState::BIDDING {
+            return Err((StatusCode::PRECONDITION_FAILED, "draft is not running".to_string()));
+        }
+        let engine = self.one_v_one.as_mut().ok_or((
+            StatusCode::PRECONDITION_FAILED,
+            "not a 1v1 draft".to_string(),
+        ))?;
+        let (Some(current_player), Some(current_action)) = engine.current_turn(&self.draft_state)
+        else {
+            return Err((StatusCode::PRECONDITION_FAILED, "no active turn".to_string()));
+        };
+        if current_action != OneVOneAction::Ban {
+            return Err((StatusCode::PRECONDITION_FAILED, "it is not time to ban".to_string()));
+        }
+        let current_player_id = engine.player_id(current_player);
+        if user.get_user_id_string() != current_player_id {
+            return Err((StatusCode::PRECONDITION_FAILED, "not your turn".to_string()));
+        }
+        let is_eevee = engine.eeveelution_phase;
+        self.one_v_one_apply_ban(current_player, pokedex_id, form, is_eevee).await;
+        Ok(())
+    }
+
+    async fn one_v_one_turn_timeout(&mut self, generation: u64) -> bool {
+        let Some(engine) = self.one_v_one.as_mut() else {
+            return false;
+        };
+        if engine.turn_generation != generation {
+            return false;
+        }
+        let (Some(current_player), Some(current_action)) = engine.current_turn(&self.draft_state)
+        else {
+            return false;
+        };
+        let target = engine.highest_avg_price_available(current_action);
+        if let Some(slot) = target {
+            let pokedex_id = slot.pokemon.pokedex_id;
+            let form = slot.pokemon.form.clone();
+            match current_action {
+                OneVOneAction::Pick => {
+                    self.one_v_one_apply_pick(current_player, pokedex_id, form).await;
+                }
+                OneVOneAction::Ban => {
+                    let is_eevee = engine.eeveelution_phase;
+                    self.one_v_one_apply_ban(current_player, pokedex_id, form, is_eevee).await;
+                }
+            }
+            true
+        } else {
+            // Nothing left to pick/ban; advance manually.
+            self.one_v_one_advance().await;
+            true
+        }
+    }
+
+    async fn one_v_one_apply_pick(
+        &mut self,
+        player: OneVOnePlayer,
+        pokedex_id: u32,
+        form: Option<String>,
+    ) {
+        // Find and mark the slot in the main pool.
+        let slot = {
+            let engine = self.one_v_one.as_mut().expect("1v1 engine");
+            let slot = engine
+                .pool
+                .iter_mut()
+                .find(|s| s.pokemon.pokedex_id == pokedex_id && s.pokemon.form == form)
+                .expect("pokemon not in pool");
+            slot.status = OneVOneSlotStatus::Picked(player);
+            slot.clone()
+        };
+
+        let order = {
+            let engine = self.one_v_one.as_mut().expect("1v1 engine");
+            engine.history.len() as u32 + 1
+        };
+
+        // Persist the pick row.
+        let user_id = self
+            .one_v_one
+            .as_ref()
+            .map(|e| e.player_id(player).to_string());
+        let user = user_id.as_ref().and_then(|id| self.team_users.get(id).cloned());
+        self.db_writer
+            .write_one_v_one_action(pokedex_id, form.clone(), order as i32, "PICK", user.clone())
+            .await;
+        if let Some(user) = user {
+            self.db_writer.increment_one_v_one_pick(user.clone()).await;
+            if let Some(team) = self.teams.get_mut(&user.get_user_id_string()) {
+                team.auctions_won.push(Arc::new(slot.pokemon.clone()));
+                team.pokemon_drafted += 1;
+            }
+        }
+
+        {
+            let engine = self.one_v_one.as_mut().expect("1v1 engine");
+            engine.history.push(OneVOneHistoryEntry {
+                order,
+                action: OneVOneAction::Pick,
+                player,
+                pokemon: slot.pokemon.clone(),
+            });
+            match player {
+                OneVOnePlayer::P1 => engine.p1_picks += 1,
+                OneVOnePlayer::P2 => engine.p2_picks += 1,
+            }
+        }
+
+        self.one_v_one_advance().await;
+    }
+
+    async fn one_v_one_apply_ban(
+        &mut self,
+        player: OneVOnePlayer,
+        pokedex_id: u32,
+        form: Option<String>,
+        is_eeveelution: bool,
+    ) {
+        let slot = if is_eeveelution {
+            let engine = self.one_v_one.as_mut().expect("1v1 engine");
+            let slot = engine
+                .eeveelutions
+                .iter_mut()
+                .find(|s| s.pokemon.pokedex_id == pokedex_id && s.pokemon.form == form)
+                .expect("eeveelution not found");
+            slot.status = OneVOneSlotStatus::Banned(player);
+            engine.banned_eeveelutions.push(pokedex_id);
+            slot.clone()
+        } else {
+            let engine = self.one_v_one.as_mut().expect("1v1 engine");
+            let slot = engine
+                .pool
+                .iter_mut()
+                .find(|s| s.pokemon.pokedex_id == pokedex_id && s.pokemon.form == form)
+                .expect("pokemon not in pool");
+            slot.status = OneVOneSlotStatus::Banned(player);
+            slot.clone()
+        };
+
+        let order = {
+            let engine = self.one_v_one.as_mut().expect("1v1 engine");
+            engine.history.len() as u32 + 1
+        };
+
+        let user = if is_eeveelution {
+            None
+        } else {
+            let user_id = self
+                .one_v_one
+                .as_ref()
+                .map(|e| e.player_id(player).to_string());
+            user_id.as_ref().and_then(|id| self.team_users.get(id).cloned())
+        };
+        let action_str = if is_eeveelution { "BAN" } else { "BAN" };
+        self.db_writer
+            .write_one_v_one_action(pokedex_id, form, order as i32, action_str, user)
+            .await;
+
+        if !is_eeveelution {
+            let engine = self.one_v_one.as_mut().expect("1v1 engine");
+            engine.history.push(OneVOneHistoryEntry {
+                order,
+                action: OneVOneAction::Ban,
+                player,
+                pokemon: slot.pokemon.clone(),
+            });
+        }
+
+        if is_eeveelution {
+            let engine = self.one_v_one.as_mut().expect("1v1 engine");
+            engine.eeveelution_bans += 1;
+        }
+
+        self.one_v_one_advance().await;
+    }
+
+    async fn one_v_one_toggle_timer(&mut self, user_id: String) -> Result<(), AppError> {
+        if self.draft_state != DraftState::BIDDING {
+            return Err((StatusCode::PRECONDITION_FAILED, "draft is not running".to_string()));
+        }
+        if !self.is_one_v_one_player(&user_id) {
+            return Err((StatusCode::UNAUTHORIZED, "not a participant".to_string()));
+        }
+        let enabled = {
+            let engine = self.one_v_one.as_mut().ok_or((
+                StatusCode::PRECONDITION_FAILED,
+                "not a 1v1 draft".to_string(),
+            ))?;
+            engine.timer_enabled = !engine.timer_enabled;
+            engine.timer_enabled
+        };
+        if enabled {
+            self.one_v_one_begin_turn();
+        } else {
+            let engine = self.one_v_one.as_mut().expect("1v1 engine");
+            engine.turn_expires_at = None;
+            engine.paused_time_remaining = None;
+            engine.turn_generation += 1;
+        }
+        Ok(())
+    }
+
+    async fn one_v_one_advance(&mut self) {
+        let engine = self.one_v_one.as_mut().expect("1v1 engine");
+
+        if engine.eeveelution_phase {
+            if engine.eeveelution_bans >= 2 {
+                self.one_v_one_finish().await;
+                return;
+            }
+            let _ = engine;
+            self.one_v_one_begin_turn();
+            return;
+        }
+
+        engine.action_index += 1;
+        if engine.action_index >= engine.sequence.len() {
+            // Main phase done: persist the two leftover pokemon.
+            engine.eeveelution_phase = true;
+            let leftovers: Vec<OneVOnePoolSlot> = engine
+                .pool
+                .iter()
+                .filter(|s| s.status == OneVOneSlotStatus::Available)
+                .cloned()
+                .collect();
+            let mut leftover_order = engine.history.len() as i32 + 1;
+            for leftover in leftovers.iter().take(2) {
+                self.db_writer
+                    .write_one_v_one_action(
+                        leftover.pokemon.pokedex_id,
+                        leftover.pokemon.form.clone(),
+                        leftover_order,
+                        "LEFTOVER",
+                        None,
+                    )
+                    .await;
+                leftover_order += 1;
+            }
+            // Insert placeholder history entries for the two leftovers so stats ordering matches.
+            let engine = self.one_v_one.as_mut().expect("1v1 engine");
+            for leftover in leftovers.into_iter().take(2) {
+                engine.history.push(OneVOneHistoryEntry {
+                    order: engine.history.len() as u32 + 1,
+                    action: OneVOneAction::Pick, // unused visually
+                    player: OneVOnePlayer::P1,   // unused visually
+                    pokemon: leftover.pokemon,
+                });
+            }
+            let _ = engine;
+            self.one_v_one_begin_turn();
+            return;
+        }
+
+        let _ = engine;
+        self.one_v_one_begin_turn();
+    }
+
+    async fn one_v_one_finish(&mut self) {
+        let Some(engine) = self.one_v_one.as_mut() else {
+            return;
+        };
+        engine.turn_expires_at = None;
+        engine.paused_time_remaining = None;
+        engine.turn_generation += 1; // cancel any running timer
+        let _ = engine;
+        if self.db_writer.finish_draft().await.is_ok() {
+            self.draft_state = DraftState::COMPLETED;
+        }
+    }
+
+    async fn one_v_one_pause(&mut self) -> Result<(), AppError> {
+        let Some(engine) = self.one_v_one.as_mut() else {
+            return Err((StatusCode::PRECONDITION_FAILED, "not a 1v1 draft".to_string()));
+        };
+        let Some(expires_at) = engine.turn_expires_at else {
+            return Err((StatusCode::PRECONDITION_FAILED, "turn is already paused".to_string()));
+        };
+        let remaining = expires_at.saturating_duration_since(Instant::now()).as_secs() as u32;
+        engine.paused_time_remaining = Some(remaining.max(1));
+        engine.turn_expires_at = None;
+        engine.turn_generation += 1;
+        Ok(())
+    }
+
+    async fn one_v_one_resume(&mut self) -> Result<(), AppError> {
+        let Some(engine) = self.one_v_one.as_mut() else {
+            return Err((StatusCode::PRECONDITION_FAILED, "not a 1v1 draft".to_string()));
+        };
+        if engine.paused_time_remaining.is_none() {
+            return Err((StatusCode::PRECONDITION_FAILED, "turn is not paused".to_string()));
+        }
+        let _ = engine;
+        self.one_v_one_begin_turn();
         Ok(())
     }
 
@@ -1047,7 +1924,13 @@ impl DraftActor {
         let _ = self.bid(auction.auction_id, max_bid, user).await;
     }
 
-    async fn resume(&self, user_id: String) -> Result<(), AppError> {
+    async fn resume(&mut self, user_id: String) -> Result<(), AppError> {
+        if self.settings.draft_type == DRAFT_TYPE_1V1 {
+            if !self.is_one_v_one_player(&user_id) {
+                return Err((StatusCode::UNAUTHORIZED, "not a participant".to_string()));
+            }
+            return self.one_v_one_resume().await;
+        }
         if user_id != self.host {
             return Err((StatusCode::UNAUTHORIZED, format!("user is not the host")));
         }
@@ -1063,7 +1946,13 @@ impl DraftActor {
         auction.resume().await
     }
 
-    async fn pause(&self, user_id: String) -> Result<(), AppError> {
+    async fn pause(&mut self, user_id: String) -> Result<(), AppError> {
+        if self.settings.draft_type == DRAFT_TYPE_1V1 {
+            if !self.is_one_v_one_player(&user_id) {
+                return Err((StatusCode::UNAUTHORIZED, "not a participant".to_string()));
+            }
+            return self.one_v_one_pause().await;
+        }
         if user_id != self.host {
             return Err((StatusCode::UNAUTHORIZED, format!("user is not the host")));
         }
@@ -1079,6 +1968,13 @@ impl DraftActor {
         self.db_writer
             .pause_auction(auction.auction_id, time_remaining)
             .await
+    }
+
+    fn is_one_v_one_player(&self, user_id: &str) -> bool {
+        self.one_v_one
+            .as_ref()
+            .map(|e| e.player1 == user_id || e.player2 == user_id)
+            .unwrap_or(false)
     }
 
     async fn join(&mut self, user: User, password: Option<String>) -> Result<(), AppError> {
@@ -1121,6 +2017,7 @@ impl DraftActor {
             auctions_won: vec![],
             save_data: None,
             auto_bid: None,
+            pokemon_drafted: 0,
         };
         self.teams.insert(user_id.clone(), team);
         self.team_users.insert(user_id, user.clone());
@@ -1291,6 +2188,18 @@ impl DraftActor {
                 StatusCode::BAD_REQUEST,
                 "Only Eeveelutions can be claimed through this method".to_string(),
             ));
+        }
+
+        // 1v1 drafts: banned eeveelutions are unpickable.
+        if self.settings.draft_type == DRAFT_TYPE_1V1 {
+            if let Some(engine) = self.one_v_one.as_ref() {
+                if engine.banned_eeveelutions.contains(&(pokedex_id as u32)) {
+                    return Ok(serde_json::json!({
+                        "success": false,
+                        "error": "This Eeveelution was banned in the 1v1 draft"
+                    }));
+                }
+            }
         }
 
         let is_ref = user.has_role_name("Developer") || user.has_role_name("Developer");
@@ -1506,6 +2415,12 @@ impl DraftActor {
         if user_id != self.host {
             return Err((StatusCode::FORBIDDEN, "user is not host".to_string()));
         }
+
+        // 1v1 drafts only support kicking joined players; ignore num_teams/num_auctions.
+        if self.settings.draft_type == DRAFT_TYPE_1V1 {
+            return self.update_one_v_one_pending_settings(remove_team_ids).await;
+        }
+
         if num_teams == 0 || num_auctions == 0 {
             return Err((StatusCode::BAD_REQUEST, "invalid settings".to_string()));
         }
@@ -1600,16 +2515,60 @@ impl DraftActor {
         self.broadcast();
         Ok(DraftResponse::from(&*self))
     }
+
+    async fn update_one_v_one_pending_settings(
+        &mut self,
+        remove_team_ids: Vec<String>,
+    ) -> Result<DraftResponse, AppError> {
+        let mut unique_remove_ids = Vec::new();
+        for team_id in remove_team_ids {
+            if unique_remove_ids.contains(&team_id) {
+                continue;
+            }
+            if team_id == self.host {
+                return Err((
+                    StatusCode::BAD_REQUEST,
+                    "host cannot be removed".to_string(),
+                ));
+            }
+            if !self.teams.contains_key(&team_id) {
+                return Err((
+                    StatusCode::BAD_REQUEST,
+                    format!("team {} not in draft", team_id),
+                ));
+            }
+            unique_remove_ids.push(team_id);
+        }
+
+        if !unique_remove_ids.is_empty() {
+            for team_id in &unique_remove_ids {
+                if let Some(user) = self.team_users.get(team_id).cloned() {
+                    let _ = self.db_writer.kick_draft(user).await;
+                }
+            }
+            for team_id in unique_remove_ids {
+                self.teams.remove(&team_id);
+                self.team_users.remove(&team_id);
+            }
+        }
+
+        self.broadcast();
+        Ok(DraftResponse::from(&*self))
+    }
 }
 
 impl From<&DraftActor> for DraftResponse {
     fn from(value: &DraftActor) -> Self {
+        let draft_type = value.settings.draft_type.clone();
+        let format = format_label(&draft_type, value.settings.ranked);
         DraftResponse {
             draft_id: value.draft.draft_id.to_string(),
             draft_name: value.draft.draft_name.clone(),
             has_password: value.settings.password.is_some(),
             host: value.host.clone(),
             ranked: value.settings.ranked,
+            draft_type,
+            format,
             total_teams: value.settings.num_teams,
             total_auctions: value.settings.num_auctions,
             teams: value.teams.values().cloned().collect(),
@@ -1618,23 +2577,38 @@ impl From<&DraftActor> for DraftResponse {
             completed_auctions: value.completed_auctions.clone(),
             current_server_time: Utc::now(),
             auction_length: value.settings.auction_length,
+            one_v_one: value.one_v_one.as_ref().map(|e| e.to_state(value)),
         }
     }
 }
 
 impl From<&DraftActor> for DraftLobbyResponse {
     fn from(value: &DraftActor) -> Self {
+        let draft_type = value.settings.draft_type.clone();
+        let format = format_label(&draft_type, value.settings.ranked);
         DraftLobbyResponse {
             draft_id: value.draft.draft_id,
             draft_name: value.draft.draft_name.clone(),
             has_password: value.settings.password.is_some(),
             host: value.host.clone(),
             ranked: value.settings.ranked,
+            draft_type,
+            format,
             total_teams: value.settings.num_teams,
             total_auctions: value.settings.num_auctions,
             draft_state: value.draft_state.clone(),
             teams_joined: value.teams.len() as u32,
             created_at: value.draft.created_at,
         }
+    }
+}
+
+fn format_label(draft_type: &str, ranked: bool) -> String {
+    if draft_type == DRAFT_TYPE_1V1 {
+        "1v1".to_string()
+    } else if ranked {
+        "Ranked".to_string()
+    } else {
+        "Auction".to_string()
     }
 }

@@ -742,11 +742,12 @@ const EmulatorPage: React.FC = () => {
         setOtherSaves((prev) => {
           const next = { ...prev };
           for (const team of draft.teams) {
-            next[team.user_id] = {
-              displayName: team.global_name?.trim() || team.username,
+            const teamKey = team.user_id ?? team.guest_id ?? '';
+            next[teamKey] = {
+              displayName: team.global_name?.trim() || team.username || '',
               // Prefer the latest save the backend persisted so a player who has
               // stopped broadcasting live saves still shows up after a reload.
-              save: team.save_data ?? prev[team.user_id]?.save ?? null,
+              save: team.save_data ?? prev[teamKey]?.save ?? null,
             };
           }
           return next;
@@ -2816,6 +2817,7 @@ const EmulatorPage: React.FC = () => {
                         currentUsername={currentUsername}
                         onClaim={handleClaimEeveelution}
                         onUnclaim={handleUnclaimEeveelution}
+                        bannedPokedexIds={draftData.one_v_one?.banned_eeveelutions ?? []}
                       />
                     )}
                     {draftId && draftData && !mySaveData && (

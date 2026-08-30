@@ -30,6 +30,10 @@ interface PlayerRowProps {
   currentUserId?: string | null;
   highestBid?: number;
   auctionCompleted?: boolean;
+  hideMoney?: boolean;
+  positionColors?: boolean;
+  highlightId?: string | null;
+  equalWidth?: boolean;
 }
 
 interface SortableItemProps {
@@ -40,9 +44,12 @@ interface SortableItemProps {
   autoSortByFunds: boolean;
   getIconName: (name: string) => string;
   auctionCompleted?: boolean;
+  hideMoney?: boolean;
+  positionColorClass?: string;
+  highlighted?: boolean;
 }
 
-const SortableItem: React.FC<SortableItemProps> = ({ team, highestBidderId, wsConnected, animatingId, autoSortByFunds, getIconName, auctionCompleted }) => {
+const SortableItem: React.FC<SortableItemProps> = ({ team, highestBidderId, wsConnected, animatingId, autoSortByFunds, getIconName, auctionCompleted, hideMoney, positionColorClass, highlighted }) => {
   const {
     attributes,
     listeners,
@@ -65,7 +72,7 @@ const SortableItem: React.FC<SortableItemProps> = ({ team, highestBidderId, wsCo
   const isFilled = !team.isPlaceholder;
   const readinessClass = isFilled && team.ready ? 'player-ready' : 'player-not-ready';
   const teamMoney = team.budget_remaining ?? 0;
-  const zeroMoneyClass = isFilled && teamMoney === 0 ? 'player-zero-money' : '';
+  const zeroMoneyClass = isFilled && !hideMoney && teamMoney === 0 ? 'player-zero-money' : '';
   const playerStateClass = isFilled
     ? (zeroMoneyClass || readinessClass)
     : 'player-open';
@@ -77,7 +84,9 @@ const SortableItem: React.FC<SortableItemProps> = ({ team, highestBidderId, wsCo
       <div className="auction-player-name">
         {playerName || 'Open Slot'}
       </div>
-      <div className="auction-player-money">${teamMoney.toLocaleString()}</div>
+      {!hideMoney && (
+        <div className="auction-player-money">${teamMoney.toLocaleString()}</div>
+      )}
       <div className="auction-player-icons">
         {wonPokemon.map((pokemon: Pokemon) => (
           <img
@@ -92,12 +101,15 @@ const SortableItem: React.FC<SortableItemProps> = ({ team, highestBidderId, wsCo
     </>
   );
 
+  const colorClass = positionColorClass ? ` ${positionColorClass}` : '';
+  const baseClasses = `auction-player-box ${playerStateClass} ${team.user_id === highestBidderId && !auctionCompleted ? 'highest-bidder' : ''} ${disconnectedClass} ${team.user_id === animatingId ? 'player-bidding' : ''}${colorClass}${highlighted ? ' player-turn' : ''}`;
+
   if (autoSortByFunds) {
     return (
       <motion.div
         ref={setNodeRef}
         {...attributes}
-        className={`auction-player-box ${playerStateClass} ${team.user_id === highestBidderId && !auctionCompleted ? 'highest-bidder' : ''} ${disconnectedClass} ${team.user_id === animatingId ? 'player-bidding' : ''}`}
+        className={baseClasses}
         layout
         layoutId={team.dragId}
         transition={{ duration: 0.4, ease: [0.25, 0.1, 0.25, 1] }}
@@ -113,14 +125,14 @@ const SortableItem: React.FC<SortableItemProps> = ({ team, highestBidderId, wsCo
       style={style}
       {...attributes}
       {...listeners}
-      className={`auction-player-box ${playerStateClass} ${team.user_id === highestBidderId ? 'highest-bidder' : ''} ${disconnectedClass} ${team.user_id === animatingId ? 'player-bidding' : ''}`}
+      className={baseClasses}
     >
       {cardContent}
     </div>
   );
 };
 
-const PlayerRow: React.FC<PlayerRowProps> = ({ teams, numPlayers, highestBidderId, wsConnected = true, currentUserId, highestBid, auctionCompleted }) => {
+const PlayerRow: React.FC<PlayerRowProps> = ({ teams, numPlayers, highestBidderId, wsConnected = true, currentUserId, highestBid, auctionCompleted, hideMoney, positionColors, highlightId, equalWidth }) => {
   const [animatingId, setAnimatingId] = React.useState<string | null>(null);
   const isInitial = React.useRef(true);
 
@@ -264,7 +276,7 @@ const PlayerRow: React.FC<PlayerRowProps> = ({ teams, numPlayers, highestBidderI
     return name.toLowerCase();
   };
 
-  const containerClassName = `auction-players-row ${twoRowMode ? 'two-row-mode' : ''}`;
+  const containerClassName = `auction-players-row ${twoRowMode ? 'two-row-mode' : ''} ${equalWidth ? 'equal-width' : ''}${highlightId ? ' players-turn-highlight' : ''}`;
 
   return (
     <DndContext
@@ -278,7 +290,7 @@ const PlayerRow: React.FC<PlayerRowProps> = ({ teams, numPlayers, highestBidderI
         strategy={horizontalListSortingStrategy}
       >
         <div className={containerClassName}>
-          {items.map((team) => (
+          {items.map((team, idx) => (
             <SortableItem
               key={team.dragId}
               team={team}
@@ -288,6 +300,9 @@ const PlayerRow: React.FC<PlayerRowProps> = ({ teams, numPlayers, highestBidderI
               autoSortByFunds={autoSortByFunds}
               getIconName={getIconName}
               auctionCompleted={auctionCompleted}
+              hideMoney={hideMoney}
+              positionColorClass={positionColors && !team.isPlaceholder ? (idx === 0 ? 'player-slot-p1' : idx === 1 ? 'player-slot-p2' : '') : ''}
+              highlighted={!!highlightId && (team.user_id === highlightId || team.guest_id === highlightId)}
             />
           ))}
         </div>

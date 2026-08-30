@@ -1,0 +1,54 @@
+.one-v-one-pool-container {
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 8px;
+  margin-bottom: 16px;
+  padding: 0;
+}
+
+.one-v-one-pool-container-sub {
+  padding: 0 6px 6px;
+}
+
+.one-v-one-pool-title {
+  margin: 0 0 8px 0;
+  color: #fff;
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+
+.one-v-one-hover-panel {
+  padding: 12px;
+}
+
+.one-v-one-draft-history ul {
+  list-style: none;
+  margin: 0;
+  padding: 0 16px;
+}
+
+.one-v-one-draft-history li {
+  padding: 4px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.one-v-one-history-row.row-p1 {
+  background: rgba(60, 130, 230, 0.22);
+}
+
+.one-v-one-history-row.row-p2 {
+  background: rgba(230, 80, 80, 0.22);
+}
+
+.one-v-one-history-row.row-p1,
+.one-v-one-history-row.row-p2 {
+  border-radius: 4px;
+  margin-bottom: 2px;
+}
+
+.eevee-bans-modal {
+  max-width: 520px;
+}
+
+.eevee-bans-got-it {
+  font-size: 1.3rem;
+}

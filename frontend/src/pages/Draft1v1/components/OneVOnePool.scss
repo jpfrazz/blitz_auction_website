@@ -1,0 +1,124 @@
+.one-v-one-pool {
+  width: 100%;
+}
+
+.one-v-one-pool-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+  gap: 6px;
+  padding: 6px;
+}
+
+.one-v-one-pool-cell {
+  position: relative;
+}
+
+.one-v-one-pool-square {
+  aspect-ratio: 1 / 1;
+  width: 100%;
+  height: auto;
+  border: 4px solid;
+  border-radius: 6px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  position: relative;
+  padding: 2px;
+  box-sizing: border-box;
+  transition: transform 0.1s ease, box-shadow 0.1s ease, border-color 0.3s ease, background-color 0.3s ease;
+
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    image-rendering: auto;
+    box-sizing: border-box;
+  }
+}
+
+.one-v-one-pool-square.available {
+  background: #93c47c;
+  border-color: #3f6f2f;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.4), 0 1px 2px rgba(0, 0, 0, 0.28);
+}
+
+.one-v-one-pool-square.p1 {
+  background: #c4def6;
+  border-color: #2f5f8f;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.5), 0 1px 2px rgba(0, 0, 0, 0.28);
+  animation: pool-pop 0.35s ease;
+}
+
+.one-v-one-pool-square.p2 {
+  background: #f6c4c4;
+  border-color: #8f2f2f;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.5), 0 1px 2px rgba(0, 0, 0, 0.28);
+  animation: pool-pop 0.35s ease;
+}
+
+.one-v-one-pool-square.banned {
+  background: #6e6e6e;
+  border-color: #4d4d4d;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.25), 0 1px 2px rgba(0, 0, 0, 0.3);
+  animation: pool-pop 0.35s ease;
+
+  img {
+    filter: grayscale(100%);
+    opacity: 0.55;
+  }
+}
+
+.one-v-one-pool-square.banned.banned-p1 {
+  border-color: #2f5f8f;
+}
+
+.one-v-one-pool-square.banned.banned-p2 {
+  border-color: #8f2f2f;
+}
+
+@keyframes pool-pop {
+  0% {
+    transform: scale(0.86);
+  }
+  55% {
+    transform: scale(1.06);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+.one-v-one-pool-square.clickable {
+  cursor: pointer;
+
+  &:hover {
+    transform: scale(1.04);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+  }
+}
+
+.one-v-one-pool-square.selected {
+  border-width: 6px;
+  box-shadow: 0 0 8px rgba(0, 0, 0, 0.4);
+}
+
+.one-v-one-pool-badge {
+  position: absolute;
+  top: -5px;
+  right: -5px;
+  width: 14%;
+  min-width: 18px;
+  aspect-ratio: 1 / 1;
+  background: #000;
+  color: #fff;
+  font-size: 0.6rem;
+  font-weight: 700;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-bottom-left-radius: 4px;
+  border-top-right-radius: 6px;
+}
