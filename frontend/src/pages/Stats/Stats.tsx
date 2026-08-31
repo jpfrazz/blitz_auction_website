@@ -500,7 +500,9 @@ const Stats: React.FC = () => {
   const kpis = useMemo(() => {
     // Adding 152 to account for legacy drafts
     const uniqueDrafts = new Set((stats?.teams ?? []).filter((t) => validDraftIds.has(t.draft_id)).map((team) => team.draft_id)).size + 152;
-    const uniquePlayers = playerSummary.length;
+    const uniquePlayers = new Set(
+      (stats?.teams ?? []).map((t) => t.user_id || t.guest_id).filter(Boolean)
+    ).size;
 
     const allSales = [
       ...sortedAuctions
@@ -528,7 +530,7 @@ const Stats: React.FC = () => {
     });
 
     return result;
-  }, [playerSummary.length, sortedAuctions, stats?.legacy, stats?.teams, validDraftIds]);
+  }, [stats?.teams, sortedAuctions, stats?.legacy]);
 
   const handleDownloadCSV = (draft: any) => {
     const is1v1 = draft.draftType === '1v1';

@@ -5,7 +5,7 @@ use petname::petname;
 use rand::seq::SliceRandom;
 use serde::{Deserialize, Serialize};
 use sqlx::{PgPool, Row};
-use std::{collections::HashMap, sync::Arc};
+use std::{collections::{HashMap, HashSet}, sync::Arc};
 use strum::Display;
 use tokio::{
     sync::{broadcast, mpsc, oneshot},
@@ -201,6 +201,18 @@ fn one_v_one_action_sequence() -> Vec<(OneVOnePlayer, OneVOneAction)> {
     seq.push((P2, Ban));
     seq.push((P1, Pick));
     seq
+}
+
+/// Linear-interpolation quantile over a sorted slice, matching the stats page.
+fn calc_quantile(sorted: &[i32], q: f64) -> f64 {
+    let pos = (sorted.len() as f64 - 1.0) * q;
+    let base = pos.floor() as usize;
+    let rest = pos - base as f64;
+    if sorted.get(base + 1).is_some() {
+        sorted[base] as f64 + rest * (sorted[base + 1] as f64 - sorted[base] as f64)
+    } else {
+        sorted[base] as f64
+    }
 }
 
 impl OneVOneEngine {
@@ -1522,28 +1534,182 @@ impl DraftActor {
             .collect()
     }
 
-    /// Loads average winning bid per pokemon from historical auction stats.
+    /// Loads average winning bid per pokemon from historical auction stats,
+    /// matching the stats page "AVG PRICE" computation exactly: only
+    /// "competitive" drafts pass a validity check (>= 40 sales, <= 3 min-bids,
+    /// exactly 8 * teammates sold, no single sale > $12,000), a hardcoded list
+    /// of pokemon is excluded, $100 minimum-bids are dropped, IQR outlier
+    /// trimming is applied, and legacy (pre-website) sale data is included.
     async fn load_avg_prices(&self) -> HashMap<(u32, Option<String>), u32> {
-        let rows = sqlx::query(
-            "SELECT a.pokedex_id, a.form, AVG(a.winning_bid)::INT AS avg_bid
+        const EXCLUDED: [&str; 9] = [
+            "Bombirdier", "Larvesta", "Hawlucha", "Falinks", "Absol", "Miltank",
+            "Stonjourner", "Klawf", "Turtonator",
+        ];
+        let is_excluded = |name: &str| EXCLUDED.contains(&name);
+
+        // --- 1. Team count per non-1v1 draft ---------------------------------
+        let mut team_counts: HashMap<Uuid, i32> = HashMap::new();
+        if let Ok(rows) = sqlx::query(
+            "SELECT d.draft_id, COUNT(*)::INT AS team_count
+             FROM teams t
+             JOIN drafts d ON d.draft_id = t.draft_id
+             WHERE d.draft_type != '1v1'
+             GROUP BY d.draft_id",
+        )
+        .fetch_all(self.db_writer.pool())
+        .await
+        {
+            for row in rows {
+                if let (Ok(id), Ok(count)) =
+                    (row.try_get::<Uuid, _>("draft_id"), row.try_get::<i32, _>("team_count"))
+                {
+                    team_counts.insert(id, count);
+                }
+            }
+        }
+
+        // --- 2. Auction aggregate stats per non-1v1 draft ---------------------
+        let mut valid_drafts: HashSet<Uuid> = HashSet::new();
+        if let Ok(rows) = sqlx::query(
+            "SELECT a.draft_id,
+                    COUNT(*)::INT AS total,
+                    COUNT(*) FILTER (WHERE a.winning_bid = 100)::INT AS min_bid_count,
+                    MAX(a.winning_bid)::INT AS max_bid
              FROM auctions a
              JOIN drafts d ON d.draft_id = a.draft_id
              WHERE a.winning_bid IS NOT NULL
-               AND a.winning_bid > 100
                AND d.draft_type != '1v1'
-             GROUP BY a.pokedex_id, a.form",
+             GROUP BY a.draft_id",
         )
         .fetch_all(self.db_writer.pool())
-        .await;
-
-        let mut map = HashMap::new();
-        if let Ok(rows) = rows {
+        .await
+        {
             for row in rows {
-                let pokedex_id: i32 = row.try_get("pokedex_id").unwrap_or(0);
+                let (Ok(id), Ok(total), Ok(min_bid_count), Ok(max_bid)) = (
+                    row.try_get::<Uuid, _>("draft_id"),
+                    row.try_get::<i32, _>("total"),
+                    row.try_get::<i32, _>("min_bid_count"),
+                    row.try_get::<i32, _>("max_bid"),
+                ) else {
+                    continue;
+                };
+                let team_count = team_counts.get(&id).copied().unwrap_or(0);
+                if total >= 40 && min_bid_count <= 3 && total == 8 * team_count && max_bid <= 12000
+                {
+                    valid_drafts.insert(id);
+                }
+            }
+        }
+
+        // --- 3. Pokemon base name -> pokedex_id lookup (for legacy rows) ------
+        let mut base_id_by_name: HashMap<String, i32> = HashMap::new();
+        if let Ok(rows) = sqlx::query("SELECT pokedex_id, name FROM pokemon WHERE form = ''")
+            .fetch_all(self.db_writer.pool())
+            .await
+        {
+            for row in rows {
+                if let (Ok(id), Ok(name)) =
+                    (row.try_get::<i32, _>("pokedex_id"), row.try_get::<String, _>("name"))
+                {
+                    base_id_by_name.entry(name).or_insert(id);
+                }
+            }
+        }
+
+        // --- 4. Collect bids per (pokedex_id, form) ---------------------------
+        let mut bids_by_key: HashMap<(u32, Option<String>), Vec<i32>> = HashMap::new();
+
+        // Modern competitive auctions.
+        if let Ok(rows) = sqlx::query(
+            "SELECT a.draft_id, a.pokedex_id, a.form, p.name, a.winning_bid
+             FROM auctions a
+             JOIN drafts d ON d.draft_id = a.draft_id
+             JOIN pokemon p ON p.pokedex_id = a.pokedex_id AND p.form = a.form
+             WHERE d.draft_type != '1v1'
+               AND a.winning_bid IS NOT NULL",
+        )
+        .fetch_all(self.db_writer.pool())
+        .await
+        {
+            for row in rows {
+                let (Ok(draft_id), Ok(pokedex_id), Ok(name), Ok(bid)) = (
+                    row.try_get::<Uuid, _>("draft_id"),
+                    row.try_get::<i32, _>("pokedex_id"),
+                    row.try_get::<String, _>("name"),
+                    row.try_get::<i32, _>("winning_bid"),
+                ) else {
+                    continue;
+                };
+                if !valid_drafts.contains(&draft_id) || is_excluded(&name) {
+                    continue;
+                }
                 let form: String = row.try_get("form").unwrap_or_default();
-                let avg_bid: i32 = row.try_get("avg_bid").unwrap_or(0);
                 let form_opt = if form.trim().is_empty() { None } else { Some(form) };
-                map.insert((pokedex_id as u32, form_opt), avg_bid.max(0) as u32);
+                bids_by_key
+                    .entry((pokedex_id as u32, form_opt))
+                    .or_default()
+                    .push(bid);
+            }
+        }
+
+        // Legacy (pre-website) sale data, merged by base pokemon identity.
+        if let Ok(rows) = sqlx::query("SELECT pokemon, cost FROM legacy_pokemon_costs")
+            .fetch_all(self.db_writer.pool())
+            .await
+        {
+            let mut legacy_by_name: HashMap<String, Vec<i32>> = HashMap::new();
+            for row in rows {
+                let (Ok(name), Ok(cost)) = (
+                    row.try_get::<String, _>("pokemon"),
+                    row.try_get::<String, _>("cost"),
+                ) else {
+                    continue;
+                };
+                let trimmed = cost.trim().replace(',', "");
+                if !trimmed.chars().all(|c| c.is_ascii_digit()) {
+                    continue;
+                }
+                let Ok(bid) = trimmed.parse::<i32>() else {
+                    continue;
+                };
+                if is_excluded(&name) {
+                    continue;
+                }
+                legacy_by_name.entry(name).or_default().push(bid);
+            }
+            for (name, bids) in legacy_by_name {
+                if let Some(&id) = base_id_by_name.get(&name) {
+                    bids_by_key
+                        .entry((id as u32, None))
+                        .or_default()
+                        .extend(bids);
+                }
+            }
+        }
+
+        // --- 5. IQR-trimmed rounded mean, keeping only prices above $100 ------
+        let mut map: HashMap<(u32, Option<String>), u32> = HashMap::new();
+        for (key, mut bids) in bids_by_key {
+            bids.retain(|b| *b != 100);
+            if bids.is_empty() {
+                continue;
+            }
+            if bids.len() > 1 {
+                bids.sort_unstable();
+                let q1 = calc_quantile(&bids, 0.25);
+                let q3 = calc_quantile(&bids, 0.75);
+                let iqr = q3 - q1;
+                let lower = q1 - 1.5 * iqr;
+                let upper = q3 + 2.0 * iqr;
+                bids.retain(|b| (*b as f64) >= lower && (*b as f64) <= upper);
+            }
+            if bids.is_empty() {
+                continue;
+            }
+            let sum: i64 = bids.iter().map(|b| *b as i64).sum();
+            let avg = (sum as f64 / bids.len() as f64).round() as i32;
+            if avg > 100 {
+                map.insert(key, avg.max(0) as u32);
             }
         }
         map
