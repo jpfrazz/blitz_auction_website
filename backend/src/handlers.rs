@@ -125,6 +125,7 @@ pub struct MatchHistoryAuction {
     pub draft_id: String,
     pub draft_order: i32,
     pub state: String,
+    pub action: Option<String>,
     pub paused_time_remaining: Option<i32>,
     pub winning_bid: Option<i32>,
     pub winning_user_id: Option<String>,
@@ -140,6 +141,7 @@ pub struct MatchHistoryTeam {
     pub guest_id: Option<String>,
     pub draft_id: String,
     pub ranked: bool,
+    pub draft_type: String,
     pub team_count: i32,
     pub money_remaining: i32,
     pub pokemon_drafted: Vec<MatchHistoryAuction>,
@@ -291,7 +293,7 @@ async fn get_user_won_auctions_for_draft(
 ) -> Result<Vec<MatchHistoryAuction>, AppError> {
     let auction_rows = sqlx::query(
         "SELECT a.auction_id, a.pokedex_id, p.name, a.form, a.draft_id, a.draft_order, a.state,
-                a.paused_time_remaining, a.winning_bid, a.winning_user_id, a.winning_guest_id,
+                a.action, a.paused_time_remaining, a.winning_bid, a.winning_user_id, a.winning_guest_id,
                 a.updated_at, a.created_at
          FROM auctions a
          JOIN pokemon p ON p.pokedex_id = a.pokedex_id AND p.form = a.form
@@ -330,6 +332,9 @@ async fn get_user_won_auctions_for_draft(
                 .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?,
             state: row
                 .try_get("state")
+                .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?,
+            action: row
+                .try_get("action")
                 .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?,
             paused_time_remaining: row
                 .try_get("paused_time_remaining")
@@ -730,7 +735,7 @@ pub async fn get_stats_page_data(
 
     let auction_rows = sqlx::query(
         "SELECT a.auction_id, a.pokedex_id, p.name, a.form, a.draft_id, a.draft_order, a.state,
-                a.paused_time_remaining, a.winning_bid, a.winning_user_id, a.winning_guest_id,
+                a.action, a.paused_time_remaining, a.winning_bid, a.winning_user_id, a.winning_guest_id,
                 a.updated_at, d.created_at
          FROM auctions a
          JOIN drafts d ON d.draft_id = a.draft_id
@@ -769,6 +774,9 @@ pub async fn get_stats_page_data(
             state: row
                 .try_get("state")
                 .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?,
+            action: row
+                .try_get("action")
+                .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?,
             paused_time_remaining: row
                 .try_get("paused_time_remaining")
                 .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?,
@@ -804,7 +812,7 @@ pub async fn get_match_history_by_user_id(
 ) -> Result<Json<Vec<MatchHistoryTeam>>, AppError> {
     let team_rows = sqlx::query(
         "SELECT t.team_id, t.user_id, t.guest_id, t.draft_id,
-                d.ranked, (SELECT COUNT(*)::INT FROM teams team_counts WHERE team_counts.draft_id = t.draft_id) AS team_count,
+                d.ranked, d.draft_type, (SELECT COUNT(*)::INT FROM teams team_counts WHERE team_counts.draft_id = t.draft_id) AS team_count,
                 t.money_remaining, t.placement,
                 t.pre_match_mmr, t.hall_of_fame_team, t.updated_at, d.created_at
          FROM teams t
@@ -843,6 +851,9 @@ pub async fn get_match_history_by_user_id(
             draft_id: draft_uuid.to_string(),
             ranked: row
                 .try_get("ranked")
+                .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?,
+            draft_type: row
+                .try_get("draft_type")
                 .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?,
             team_count: row
                 .try_get("team_count")

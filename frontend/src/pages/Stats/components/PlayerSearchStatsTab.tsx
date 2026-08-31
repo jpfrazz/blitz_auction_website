@@ -285,10 +285,15 @@ const PlayerSearchStatsTab: React.FC<PlayerSearchStatsTabProps> = ({
       .slice(0, 10);
   }, [searchInput, stats?.players]);
 
-  const filteredMatchHistory = useMemo(() => {
+  const displayMatchHistory = useMemo(() => {
     if (!playerMatchHistory) return null;
-    return playerMatchHistory.filter(team => validDraftIds.has(team.draft_id));
+    return playerMatchHistory.filter(team => validDraftIds.has(team.draft_id) || team.draft_type === '1v1');
   }, [playerMatchHistory, validDraftIds]);
+
+  const auctionMatchHistory = useMemo(() => {
+    if (!displayMatchHistory) return null;
+    return displayMatchHistory.filter(team => team.draft_type !== '1v1');
+  }, [displayMatchHistory]);
 
   const playerGamesMap = useMemo(() => {
     const map = new Map<string, number>();
@@ -324,13 +329,13 @@ const PlayerSearchStatsTab: React.FC<PlayerSearchStatsTabProps> = ({
   }, [stats?.players, playerGamesMap]);
 
   const pokemonDraftSummary = useMemo<PokemonDraftSummary[]>(() => {
-    if (!filteredMatchHistory?.length) {
+    if (!auctionMatchHistory?.length) {
       return [];
     }
 
     const summary = new Map<string, PokemonDraftSummary>();
 
-    filteredMatchHistory.forEach((team) => {
+    auctionMatchHistory.forEach((team) => {
       // Count pokemon from any valid draft
 
       (team.pokemon_drafted ?? []).forEach((auction) => {
@@ -362,7 +367,7 @@ const PlayerSearchStatsTab: React.FC<PlayerSearchStatsTabProps> = ({
 
       return getPokemonLabel(left.name, left.form).localeCompare(getPokemonLabel(right.name, right.form));
     });
-  }, [filteredMatchHistory]);
+  }, [auctionMatchHistory]);
 
   const featuredPokemon = pokemonDraftSummary[0] ?? null;
 
@@ -383,19 +388,19 @@ const PlayerSearchStatsTab: React.FC<PlayerSearchStatsTabProps> = ({
     return `${h > 0 ? `${h}h ` : ''}${m}m ${s}s`;
   }, [bossBattleHistory]);
 
-  const totalGames = filteredMatchHistory?.length ?? 0;
+  const totalGames = displayMatchHistory?.length ?? 0;
 
   const hallOfFameCount = useMemo(() => {
-    if (!filteredMatchHistory) return 0;
+    if (!displayMatchHistory) return 0;
     let count = 0;
-    for (const team of filteredMatchHistory) {
+    for (const team of displayMatchHistory) {
       const battles = bossBattleHistory.get(team.team_id);
       if (!battles) continue;
       const runResult = getRunResult(battles);
       if (runResult?.isWin) count++;
     }
     return count;
-  }, [filteredMatchHistory, bossBattleHistory]);
+  }, [displayMatchHistory, bossBattleHistory]);
 
   const globalPokemonPrices = useMemo(() => {
     const map = new Map<string, number>();
@@ -441,25 +446,26 @@ const PlayerSearchStatsTab: React.FC<PlayerSearchStatsTabProps> = ({
 
   const draftRmvMap = useMemo(() => {
     const map = new Map<number, number>();
-    // filteredMatchHistory only contains competitive drafts (validDraftIds)
-    filteredMatchHistory?.forEach((team) => {
+    displayMatchHistory?.forEach((team) => {
+      const is1v1 = team.draft_type === '1v1';
       const rmv = (team.pokemon_drafted ?? []).reduce((sum, auction) => {
+        if (is1v1 && auction.action !== 'PICK') return sum;
         const { key } = resolveIdentity(auction.name, auction.form || '');
         return sum + (globalPokemonPrices.get(key) ?? 0);
       }, 0);
       map.set(team.team_id, rmv);
     });
     return map;
-  }, [filteredMatchHistory, globalPokemonPrices]);
+  }, [displayMatchHistory, globalPokemonPrices]);
 
   const averageRmv = useMemo(() => {
-    if (draftRmvMap.size === 0) return null;
+    if (!auctionMatchHistory || auctionMatchHistory.length === 0) return null;
     let total = 0;
-    draftRmvMap.forEach((value) => {
-      total += value;
+    auctionMatchHistory.forEach((team) => {
+      total += draftRmvMap.get(team.team_id) ?? 0;
     });
-    return Math.round(total / draftRmvMap.size);
-  }, [draftRmvMap]);
+    return Math.round(total / auctionMatchHistory.length);
+  }, [draftRmvMap, auctionMatchHistory]);
 
   interface AllPokemonRow {
     key: string;
@@ -489,8 +495,8 @@ const PlayerSearchStatsTab: React.FC<PlayerSearchStatsTabProps> = ({
       pokemonDraftAppearances.get(key)!.add(auction.draft_id);
     });
 
-    // Set of draft_ids the player participated in
-    const playerDraftIds = new Set(filteredMatchHistory?.map((t) => t.draft_id) ?? []);
+    // Set of draft_ids the player participated in (auction drafts only)
+    const playerDraftIds = new Set(auctionMatchHistory?.map((t) => t.draft_id) ?? []);
 
     const globalPokemonKeys = new Map<string, { name: string; form: string }>();
     stats?.auctions.forEach((auction) => {
@@ -530,7 +536,7 @@ const PlayerSearchStatsTab: React.FC<PlayerSearchStatsTabProps> = ({
     });
 
     return rows;
-  }, [pokemonDraftSummary, stats?.auctions, validDraftIds, globalPokemonPrices, filteredMatchHistory]);
+  }, [pokemonDraftSummary, stats?.auctions, validDraftIds, globalPokemonPrices, auctionMatchHistory]);
 
   const signaturePokemon = useMemo(() => {
     const candidates = allPokemonList.filter((p) => p.pctDrafted !== null && p.pctDrafted > 0 && p.playerGames >= 3);
@@ -780,9 +786,9 @@ const PlayerSearchStatsTab: React.FC<PlayerSearchStatsTabProps> = ({
             </div>
           )}
 
-          {selectedPlayer && !playerMatchHistoryLoading && filteredMatchHistory && (
+          {selectedPlayer && !playerMatchHistoryLoading && displayMatchHistory && (
             <>
-              {pokemonDraftSummary.length > 0 && (
+              {displayMatchHistory.length > 0 && (
                 <div className="player-draft-overview">
                  {featuredPokemon && (
                     <div
@@ -847,6 +853,8 @@ const PlayerSearchStatsTab: React.FC<PlayerSearchStatsTabProps> = ({
                                 i
                                 <span className="rmv-tooltip">
                                   Roster Market Value is the sum of the average price of every Pokemon you won in a given draft. For example, if you purchase 10 Pokemon, and each of them have an average sale price of 2,500, your RMV for that draft is $25,000.
+                                  <br /><br />
+                                  Average RMV is calculated using exclusive auction data. 1v1 Draft data isn't considered.
                                 </span>
                               </span>
                             </span>
@@ -856,6 +864,7 @@ const PlayerSearchStatsTab: React.FC<PlayerSearchStatsTabProps> = ({
                       </div>
                     </div>
 
+                    {pokemonDraftSummary.length > 0 && (
                     <div className="player-draft-overview-table-wrapper">
                     <input
                       type="text"
@@ -928,19 +937,22 @@ const PlayerSearchStatsTab: React.FC<PlayerSearchStatsTabProps> = ({
                       ))}
                     </div>
                     </div>
+                    )}
                   </div>
                 </div>
               )}
 
               <div className="match-timeline">
-                {filteredMatchHistory.length === 0 && (
+                {displayMatchHistory.length === 0 && (
                   <div className="match-history-message">No match history found.</div>
                 )}
 
-                {filteredMatchHistory.map((team) => {
+                {displayMatchHistory.map((team) => {
                   const auctions = team.pokemon_drafted || [];
+                  const is1v1 = team.draft_type === '1v1';
+                  const listAuctions = is1v1 ? auctions.filter(a => a.action === 'PICK') : auctions;
                   const isRanked = team.pre_match_mmr !== null || team.placement !== null;
-                  const result = getPlacementLabel(team.placement, isRanked);
+                  const result = is1v1 ? '1v1' : getPlacementLabel(team.placement, isRanked);
                   const resultClass = getPlacementClass(team.placement, isRanked);
                   const isExpanded = expandedTeamId === team.team_id;
                   const battles = bossBattleHistory.get(team.team_id);
@@ -975,14 +987,14 @@ const PlayerSearchStatsTab: React.FC<PlayerSearchStatsTabProps> = ({
                         </div>
 
                         <div className="match-pokemon-picks">
-                          {auctions.length === 0 && (
-                            <span className="no-picks-label">No wins</span>
+                          {listAuctions.length === 0 && (
+                            <span className="no-picks-label">{is1v1 ? 'No picks' : 'No wins'}</span>
                           )}
-                          {auctions.map((auction: StatsAuction) => (
+                          {listAuctions.map((auction: StatsAuction, pickIdx) => (
                             <div
                               className="match-pick"
                               key={auction.auction_id}
-                              title={`#${auction.pokedex_id} - $${auction.winning_bid ?? 0}`}
+                              title={is1v1 ? `#${auction.pokedex_id} - Pick ${pickIdx + 1}` : `#${auction.pokedex_id} - $${auction.winning_bid ?? 0}`}
                             >
                               <img
                                 src={`/MiniIcons/${formatPokemonName(auction.name)}.png`}
@@ -1003,12 +1015,12 @@ const PlayerSearchStatsTab: React.FC<PlayerSearchStatsTabProps> = ({
                             <div>
                               <div className="match-draft-details-header">
                                 <span>Pokemon</span>
-                                <span>Paid</span>
+                                <span>{is1v1 ? 'Pick' : 'Paid'}</span>
                               </div>
-                              {auctions.length === 0 && (
-                                <div className="match-draft-details-empty">No Pokemon won in this draft.</div>
+                              {listAuctions.length === 0 && (
+                                <div className="match-draft-details-empty">{is1v1 ? 'No Pokemon picked in this draft.' : 'No Pokemon won in this draft.'}</div>
                               )}
-                              {auctions.map((auction) => (
+                              {listAuctions.map((auction, pickIdx) => (
                                 <div className="match-draft-details-row" key={auction.auction_id}>
                                   <div className="match-draft-details-pokemon">
                                     <img
@@ -1020,7 +1032,9 @@ const PlayerSearchStatsTab: React.FC<PlayerSearchStatsTabProps> = ({
                                     />
                                     <span>{getPokemonLabel(auction.name, auction.form)}</span>
                                   </div>
-                                  <span className="match-draft-details-cost">${(auction.winning_bid ?? 0).toLocaleString()}</span>
+                                  <span className="match-draft-details-cost">
+                                    {is1v1 ? `#${pickIdx + 1}` : `$${(auction.winning_bid ?? 0).toLocaleString()}`}
+                                  </span>
                                 </div>
                               ))}
                             </div>

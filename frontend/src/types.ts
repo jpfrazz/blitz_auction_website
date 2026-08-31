@@ -187,6 +187,7 @@ export interface MatchHistoryTeam {
   guest_id: string | null;
   draft_id: string;
   ranked: boolean;
+  draft_type: string;
   team_count: number;
   money_remaining: number;
   pokemon_drafted: StatsAuction[];
