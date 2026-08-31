@@ -36,11 +36,15 @@ const HallOfFameStatsTab: React.FC<HallOfFameStatsTabProps> = ({ validDraftIds }
           <div className="admin-hof-entries">
             {entries.map((entry) => (
               <div className="admin-hof-entry" key={entry.team_id}>
-                <div
-                  className={`admin-hof-draft-type ${validDraftIds.has(entry.draft_id) ? 'competitive' : 'casual'}`}
-                >
-                  {validDraftIds.has(entry.draft_id) ? 'Competitive Draft' : 'Casual Draft'}
-                </div>
+                {entry.draft_type === '1v1' ? (
+                  <div className="admin-hof-draft-type one-v-one">1v1 Draft</div>
+                ) : (
+                  <div
+                    className={`admin-hof-draft-type ${validDraftIds.has(entry.draft_id) ? 'competitive' : 'casual'}`}
+                  >
+                    {validDraftIds.has(entry.draft_id) ? 'Competitive Draft' : 'Casual Draft'}
+                  </div>
+                )}
                 <div className="admin-hof-entry-head">
                   {entry.user_id ? (
                     <a

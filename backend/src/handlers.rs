@@ -1097,6 +1097,7 @@ pub struct AdminHallOfFameEligibleEntry {
     pub team_id: i64,
     pub draft_id: String,
     pub draft_name: String,
+    pub draft_type: String,
     pub user_id: Option<String>,
     pub user_name: Option<String>,
     pub trainer_id: i32,
@@ -1123,13 +1124,13 @@ async fn fetch_hall_of_fame_eligible(
     state: &ServerState,
 ) -> Result<Vec<AdminHallOfFameEligibleEntry>, (StatusCode, String)> {
     let rows = sqlx::query(
-        "SELECT team_id, draft_id, draft_name, user_id, user_name, trainer_id, hours, minutes, seconds, beat_date, hall_of_fame_team
+        "SELECT team_id, draft_id, draft_name, draft_type, user_id, user_name, trainer_id, hours, minutes, seconds, beat_date, hall_of_fame_team
          FROM (
              SELECT DISTINCT ON (bbh.team_id)
                     bbh.team_id, bbh.draft_id, bbh.trainer_id,
                     bbh.hours, bbh.minutes, bbh.seconds,
                     bbh.created_at AS beat_date,
-                    d.draft_name, d.created_at,
+                    d.draft_name, d.draft_type, d.created_at,
                     COALESCE(u.user_id, g.user_id) AS user_id,
                     COALESCE(u.user_name, g.user_name) AS user_name,
                     t.hall_of_fame_team
@@ -1170,6 +1171,9 @@ async fn fetch_hall_of_fame_eligible(
             draft_id: draft_uuid.to_string(),
             draft_name: row
                 .try_get("draft_name")
+                .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?,
+            draft_type: row
+                .try_get("draft_type")
                 .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?,
             user_id: row
                 .try_get("user_id")

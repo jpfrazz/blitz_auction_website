@@ -247,6 +247,7 @@ export interface AdminHallOfFameEligibleEntry {
   team_id: number;
   draft_id: string;
   draft_name: string;
+  draft_type: string;
   user_id: string | null;
   user_name: string | null;
   trainer_id: number;
