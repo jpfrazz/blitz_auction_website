@@ -291,6 +291,21 @@ const Draft1v1Page: React.FC = () => {
     setJoinError(null);
     try {
       const updatedDraft = await joinDraft(draftId, password);
+      if (!isLoggedIn) {
+        // Joining as a first-time guest auto-creates a guest account on the
+        // backend. Re-fetch the user so currentUserId matches the new team's
+        // guest_id (otherwise the "Ready Up" button won't show until refresh).
+        const user = await fetchCurrentUser();
+        if (user.user_id) {
+          setCurrentUserId(user.user_id);
+          setIsGuest(user.is_guest);
+          setIsLoggedIn(true);
+          setHasRefereeRole(
+            (user.roles ?? []).some((r) => r.role_name === 'Referee' || r.role_name === 'Admin') ||
+            user.username === 'franklynathan' || user.username === 'jage04' || user.username === 'Jason' || user.username === 'mfrazz'
+          );
+        }
+      }
       setDraft(updatedDraft);
       setShowJoinModal(false);
       setShowGuestConfirmModal(false);

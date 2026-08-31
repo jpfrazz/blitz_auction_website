@@ -244,6 +244,16 @@ impl OneVOneEngine {
             .unwrap_or((None, None))
     }
 
+    /// Reserve the next monotonic draft_order for a row being persisted to
+    /// `auctions`. Draft orders must be unique per (draft_id, draft_order),
+    /// and eeveelution bans don't append to `history`, so a separate counter
+    /// (rather than `history.len()`) is what keeps every INSERT unique.
+    fn take_next_order(&mut self) -> u32 {
+        let order = self.next_order;
+        self.next_order += 1;
+        order
+    }
+
     fn player_id(&self, player: OneVOnePlayer) -> &str {
         match player {
             OneVOnePlayer::P1 => &self.player1,
@@ -920,6 +930,9 @@ struct OneVOneEngine {
     eeveelution_phase: bool,
     /// Number of eeveelution bans made so far (P1 first, then P2).
     eeveelution_bans: u32,
+    /// Monotonic draft_order handed out for every persisted `auctions` row
+    /// (picks, bans, leftovers, and eeveelution bans).
+    next_order: u32,
     /// When the current 30s turn expires.
     turn_expires_at: Option<Instant>,
     paused_time_remaining: Option<u32>,
@@ -1465,6 +1478,7 @@ impl DraftActor {
             banned_eeveelutions: vec![],
             eeveelution_phase: false,
             eeveelution_bans: 0,
+            next_order: 1,
             turn_expires_at: None,
             paused_time_remaining: None,
             timer_enabled: false,
@@ -1675,7 +1689,7 @@ impl DraftActor {
 
         let order = {
             let engine = self.one_v_one.as_mut().expect("1v1 engine");
-            engine.history.len() as u32 + 1
+            engine.take_next_order()
         };
 
         // Persist the pick row.
@@ -1742,7 +1756,7 @@ impl DraftActor {
 
         let order = {
             let engine = self.one_v_one.as_mut().expect("1v1 engine");
-            engine.history.len() as u32 + 1
+            engine.take_next_order()
         };
 
         let user = if is_eeveelution {
@@ -1826,18 +1840,21 @@ impl DraftActor {
                 .filter(|s| s.status == OneVOneSlotStatus::Available)
                 .cloned()
                 .collect();
-            let mut leftover_order = engine.history.len() as i32 + 1;
             for leftover in leftovers.iter().take(4) {
+                let leftover_order = self
+                    .one_v_one
+                    .as_mut()
+                    .expect("1v1 engine")
+                    .take_next_order();
                 self.db_writer
                     .write_one_v_one_action(
                         leftover.pokemon.pokedex_id,
                         leftover.pokemon.form.clone(),
-                        leftover_order,
+                        leftover_order as i32,
                         "LEFTOVER",
                         None,
                     )
                     .await;
-                leftover_order += 1;
             }
             // Insert placeholder history entries for the leftovers so stats ordering matches.
             let engine = self.one_v_one.as_mut().expect("1v1 engine");
