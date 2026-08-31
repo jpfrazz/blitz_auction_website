@@ -281,19 +281,28 @@ const PlayerSearchStatsTab: React.FC<PlayerSearchStatsTabProps> = ({
     const query = searchInput.toLowerCase();
     return stats.players
       .filter((player) => !player.is_guest)
-      .filter((player) => player.user_name.toLowerCase().includes(query))
+      .filter((player) =>
+        player.user_name.toLowerCase().includes(query) ||
+        (player.global_name ?? '').toLowerCase().includes(query)
+      )
       .slice(0, 10);
   }, [searchInput, stats?.players]);
 
   const displayMatchHistory = useMemo(() => {
     if (!playerMatchHistory) return null;
-    return playerMatchHistory.filter(team => validDraftIds.has(team.draft_id) || team.draft_type === '1v1');
-  }, [playerMatchHistory, validDraftIds]);
+    // Show every completed draft the player took part in: competitive auction
+    // drafts, casual (non-competitive) drafts, and 1v1 drafts alike.
+    return playerMatchHistory;
+  }, [playerMatchHistory]);
+
+  const isCasualTeam = (team: MatchHistoryTeam) =>
+    team.draft_type !== '1v1' && !validDraftIds.has(team.draft_id);
 
   const auctionMatchHistory = useMemo(() => {
     if (!displayMatchHistory) return null;
-    return displayMatchHistory.filter(team => team.draft_type !== '1v1');
-  }, [displayMatchHistory]);
+    // Only competitive auction drafts count toward per-pokemon stats and RMV.
+    return displayMatchHistory.filter(team => team.draft_type !== '1v1' && validDraftIds.has(team.draft_id));
+  }, [displayMatchHistory, validDraftIds]);
 
   const playerGamesMap = useMemo(() => {
     const map = new Map<string, number>();
@@ -373,7 +382,9 @@ const PlayerSearchStatsTab: React.FC<PlayerSearchStatsTabProps> = ({
 
   const personalBestTime = useMemo(() => {
     let bestSeconds = Infinity;
-    bossBattleHistory.forEach((battles) => {
+    (displayMatchHistory ?? []).forEach((team) => {
+      if (isCasualTeam(team)) return;
+      const battles = bossBattleHistory.get(team.team_id) ?? [];
       battles.forEach((b) => {
         if (b.is_loss) return;
         if (b.trainer_id !== 804 && b.trainer_id !== 656) return;
@@ -386,7 +397,7 @@ const PlayerSearchStatsTab: React.FC<PlayerSearchStatsTabProps> = ({
     const m = Math.floor((bestSeconds % 3600) / 60);
     const s = bestSeconds % 60;
     return `${h > 0 ? `${h}h ` : ''}${m}m ${s}s`;
-  }, [bossBattleHistory]);
+  }, [displayMatchHistory, bossBattleHistory]);
 
   const totalGames = displayMatchHistory?.length ?? 0;
 
@@ -394,6 +405,7 @@ const PlayerSearchStatsTab: React.FC<PlayerSearchStatsTabProps> = ({
     if (!displayMatchHistory) return 0;
     let count = 0;
     for (const team of displayMatchHistory) {
+      if (isCasualTeam(team)) continue;
       const battles = bossBattleHistory.get(team.team_id);
       if (!battles) continue;
       const runResult = getRunResult(battles);
@@ -854,7 +866,7 @@ const PlayerSearchStatsTab: React.FC<PlayerSearchStatsTabProps> = ({
                                 <span className="rmv-tooltip">
                                   Roster Market Value is the sum of the average price of every Pokemon you won in a given draft. For example, if you purchase 10 Pokemon, and each of them have an average sale price of 2,500, your RMV for that draft is $25,000.
                                   <br /><br />
-                                  Average RMV is calculated using exclusive auction data. 1v1 Draft data isn't considered.
+                                  Average RMV is calculated using exclusive competitive auction data. 1v1 and casual draft data isn't considered.
                                 </span>
                               </span>
                             </span>
@@ -950,9 +962,10 @@ const PlayerSearchStatsTab: React.FC<PlayerSearchStatsTabProps> = ({
                 {displayMatchHistory.map((team) => {
                   const auctions = team.pokemon_drafted || [];
                   const is1v1 = team.draft_type === '1v1';
+                  const isCasual = isCasualTeam(team);
                   const listAuctions = is1v1 ? auctions.filter(a => a.action === 'PICK') : auctions;
                   const isRanked = team.pre_match_mmr !== null || team.placement !== null;
-                  const result = is1v1 ? '1v1' : getPlacementLabel(team.placement, isRanked);
+                  const result = is1v1 ? '1v1' : isCasual ? 'Casual' : getPlacementLabel(team.placement, isRanked);
                   const resultClass = getPlacementClass(team.placement, isRanked);
                   const isExpanded = expandedTeamId === team.team_id;
                   const battles = bossBattleHistory.get(team.team_id);
@@ -968,6 +981,14 @@ const PlayerSearchStatsTab: React.FC<PlayerSearchStatsTabProps> = ({
                       >
                         <div className="match-result-badge">
                           <span className="result-text">{result}</span>
+                          {isCasual && (
+                            <span className="rmv-info-icon casual-info-icon" tabIndex={0}>
+                              i
+                              <span className="rmv-tooltip">
+                                Casual drafts aren't used when calculating stats.
+                              </span>
+                            </span>
+                          )}
                         </div>
 
                         <div className="match-info">
