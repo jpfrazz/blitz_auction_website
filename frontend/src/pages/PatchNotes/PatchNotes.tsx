@@ -97,7 +97,7 @@ const PatchItem = ({ filename }: { filename: string }) => {
   };
 
   const shortName = filename.replace(' Patch Notes.txt', '').replace(/^v/, '');
-  const bugfixVersions = ['1.0.1', '1.0.2', '1.0.3', '1.0.6', '1.0.7', '1.0.8', 'v1.0.11'];
+  const bugfixVersions = ['1.0.1', '1.0.2', '1.0.3', '1.0.6', '1.0.7', '1.0.8', '1.0.11'];
   const isBugfix = bugfixVersions.includes(shortName);
   const isCurrentMajor = (() => {
     const parts = shortName.split('.').map(Number);

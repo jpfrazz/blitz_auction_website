@@ -99,6 +99,8 @@ function parseLegacyCost(cost: string): number | null {
   return /^\d+$/.test(normalized) ? Number(normalized) : null;
 }
 
+const EEVEELUTION_IDS = new Set([133, 134, 135, 136, 196, 197, 470, 471, 700]);
+
 const Stats: React.FC = () => {
   const [searchParams] = useSearchParams();
   const [stats, setStats] = useState<StatsPageResponse | null>(null);
@@ -473,23 +475,15 @@ const Stats: React.FC = () => {
     return result;
   }, [stats?.auctions, stats?.teams, draftStats, playersById]);
 
-  // A 1v1 draft is "finished" once both players land their Eeveelution bans at the very end.
-  // Those rows are BAN actions with no winner (the user column is left null for Eeveelution bans).
+  // A 1v1 draft is "finished" once its end-of-draft Eeveelution phase runs.
+  // That phase is the last thing to happen, so if any Eeveelution row is
+  // recorded for a 1v1 draft, the draft reached the end and is complete.
   const finished1v1DraftIds = useMemo(() => {
-    const eeveeBanCounts = new Map<string, number>();
-    (stats?.auctions ?? []).forEach((a) => {
-      if (
-        a.draft_type === '1v1' &&
-        a.action === 'BAN' &&
-        !a.winning_user_id &&
-        !a.winning_guest_id
-      ) {
-        eeveeBanCounts.set(a.draft_id, (eeveeBanCounts.get(a.draft_id) || 0) + 1);
-      }
-    });
     const finished = new Set<string>();
-    eeveeBanCounts.forEach((count, id) => {
-      if (count >= 2) finished.add(id);
+    (stats?.auctions ?? []).forEach((a) => {
+      if (a.draft_type === '1v1' && EEVEELUTION_IDS.has(a.pokedex_id)) {
+        finished.add(a.draft_id);
+      }
     });
     return finished;
   }, [stats?.auctions]);
