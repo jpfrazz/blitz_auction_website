@@ -242,6 +242,11 @@ pub struct AdminUpdateDiscordUserRequest {
     pub losses: i32,
 }
 
+#[derive(serde::Serialize, serde::Deserialize)]
+pub struct AdminUpdateBossBattleTrainerRequest {
+    pub trainer_id: i32,
+}
+
 fn expected_score(player_rating: i32, opponent_rating: i32) -> f64 {
     1.0 / (1.0 + 10f64.powf((opponent_rating - player_rating) as f64 / 400.0))
 }
@@ -3541,6 +3546,29 @@ pub async fn update_admin_discord_user(
     .bind(request.wins)
     .bind(request.losses)
     .bind(&user_id)
+    .execute(&state.db_pool)
+    .await
+    .map_err(|e: sqlx::Error| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    Ok(())
+}
+
+#[debug_handler]
+pub async fn update_admin_boss_battle_trainer(
+    State(state): State<ServerState>,
+    Path(id): Path<i64>,
+    auth_session: AuthSession<AuthBackend>,
+    Json(request): Json<AdminUpdateBossBattleTrainerRequest>,
+) -> Result<(), AppError> {
+    let _ = require_referee_user(auth_session.user)?;
+
+    sqlx::query(
+        "UPDATE boss_battle_history
+         SET trainer_id = $1
+         WHERE id = $2",
+    )
+    .bind(request.trainer_id)
+    .bind(id)
     .execute(&state.db_pool)
     .await
     .map_err(|e: sqlx::Error| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;

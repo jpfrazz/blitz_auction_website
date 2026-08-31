@@ -1,0 +1,9 @@
+8/31/2026
+
+-----------------------------------------------
+Bug Fix
+-----------------------------------------------
+
+Adding new trainers to the postgame museum in the previous patch shifted the internal trainer layout in a way that broke the website's ability to read save data. This patch fixes it.
+
+//Thanks Flippy, Manthief and Swag for the reports

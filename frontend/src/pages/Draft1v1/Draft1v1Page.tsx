@@ -528,6 +528,11 @@ const Draft1v1Page: React.FC = () => {
                     <PickOrderTab
                       player1Name={oneVOne ? orderedTeams[0]?.global_name || orderedTeams[0]?.username || null : null}
                       player2Name={oneVOne ? orderedTeams[1]?.global_name || orderedTeams[1]?.username || null : null}
+                      currentPickNumber={
+                        oneVOne && draft.draft_state === 'BIDDING' && !oneVOne.eeveelution_phase
+                          ? oneVOne.history.length + 1
+                          : null
+                      }
                     />
                   )}
                 </div>

@@ -10,6 +10,7 @@ interface PickOrderCell {
 interface PickOrderTabProps {
   player1Name?: string | null;
   player2Name?: string | null;
+  currentPickNumber?: number | null;
 }
 
 // Chronological 1v1 pick/ban order (mirrors the backend engine):
@@ -39,7 +40,7 @@ function buildPickOrder(): PickOrderCell[] {
 
 const SEQUENCE: PickOrderCell[] = buildPickOrder();
 
-const PickOrderTab: React.FC<PickOrderTabProps> = ({ player1Name, player2Name }) => (
+const PickOrderTab: React.FC<PickOrderTabProps> = ({ player1Name, player2Name, currentPickNumber }) => (
   <div className="pick-order-tab">
     <div className="pick-order-legend">
       <span className="pick-order-legend-item">
@@ -63,7 +64,7 @@ const PickOrderTab: React.FC<PickOrderTabProps> = ({ player1Name, player2Name })
       {SEQUENCE.map((cell) => (
         <div
           key={cell.num}
-          className={`pick-order-cell ${cell.player.toLowerCase()} ${cell.action === 'Ban' ? 'ban' : ''}`}
+          className={`pick-order-cell ${cell.player.toLowerCase()} ${cell.action === 'Ban' ? 'ban' : ''} ${cell.num === currentPickNumber ? 'current' : ''}`}
           title={`${cell.player} ${cell.action} #${cell.num}`}
         >
           {cell.num}

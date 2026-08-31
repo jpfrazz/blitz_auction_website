@@ -4,8 +4,8 @@ dex_number,name,form,evolves_from_id,evolves_from_form,type1,type2,stage,ability
 840,Applin,,,,Grass,Dragon,base,Ripen,Gluttony,Bulletproof,40,40,80,40,40,20,,,,"Unique Mechanic: Gym-Based Evolution\nApplin evolves into different Pokemon depending on which gym you're in. Gyms are randomized in Emerald Blitz, so cross your fingers to get Fortree, Lavaridge, or Rustboro early,"
 841,Flapple,,840,,Grass,Dragon,evo,Ripen,Gluttony,Hustle,70,110,80,95,60,70,"Level up in Fortree Gym",,,
 842,Appletun,,840,,Grass,Dragon,evo,Ripen,Gluttony,Thick Fat,110,85,80,100,80,30,"Level up in Lavaridge Gym",,,
-843,Dipplin,,840,,Grass,Dragon,evo,Supersweet Syrup,Gluttony,Sticky Hold,80,80,110,95,80,40,"Level up in Rustboro Gym",,,
-844,Hydrapple,,843,,Grass,Dragon,evo,Supersweet Syrup,Regenerator,Sticky Hold,106,80,110,120,80,44,"Level 42",,,
+1011,Dipplin,,840,,Grass,Dragon,evo,Supersweet Syrup,Gluttony,Sticky Hold,80,80,110,95,80,40,"Level up in Rustboro Gym",,,
+1019,Hydrapple,,1011,,Grass,Dragon,evo,Supersweet Syrup,Regenerator,Sticky Hold,106,80,110,120,80,44,"Level 42",,,
 566,Archen,,,,Rock,Flying,base,Defeatist,,,55,112,45,74,45,70,,,,
 567,Archeops,,566,,Rock,Flying,evo,Defeatist,,,75,140,65,112,65,110,"Level 37 (Oracle)",,,
 304,Aron,,,,Steel,Rock,base,Sturdy,Rock Head,Heavy Metal,50,70,100,40,40,30,,"Stage 2",,

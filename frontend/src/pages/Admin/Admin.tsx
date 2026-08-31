@@ -53,6 +53,8 @@ const Admin: React.FC = () => {
   const [bossBattleHistory, setBossBattleHistory] = useState<any[]>([]);
   const [bossBattleHistoryLoading, setBossBattleHistoryLoading] = useState(false);
   const [bossBattleHistoryError, setBossBattleHistoryError] = useState<string | null>(null);
+  const [bossBattleHistorySuccess, setBossBattleHistorySuccess] = useState<string | null>(null);
+  const [bossBattleSavingId, setBossBattleSavingId] = useState<number | null>(null);
   const [hallOfFameEntries, setHallOfFameEntries] = useState<AdminHallOfFameEligibleEntry[]>([]);
   const [hallOfFameTeamsLoading, setHallOfFameTeamsLoading] = useState(false);
   const [hallOfFameTeamsError, setHallOfFameTeamsError] = useState<string | null>(null);
@@ -345,6 +347,39 @@ const Admin: React.FC = () => {
       setUsersSuccess(`Saved ${user.user_name}.`);
     } catch (err: any) {
       setUsersError(err?.message ?? 'Failed to update user.');
+    }
+  };
+
+  const handleBossTrainerIdChange = (battleId: number, value: string) => {
+    const asNumber = Number(value);
+    setBossBattleHistory((current) =>
+      current.map((battle) =>
+        battle.id === battleId
+          ? { ...battle, trainer_id: Number.isFinite(asNumber) ? asNumber : battle.trainer_id }
+          : battle,
+      ),
+    );
+  };
+
+  const handleSaveBossTrainer = async (battle: any) => {
+    setBossBattleHistoryError(null);
+    setBossBattleHistorySuccess(null);
+    setBossBattleSavingId(battle.id);
+    try {
+      const res = await fetch(`/api/admin/boss-battle-history/${battle.id}/trainer`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ trainer_id: battle.trainer_id }),
+      });
+      if (!res.ok) {
+        const text = await res.text();
+        throw new Error(text || res.statusText);
+      }
+      setBossBattleHistorySuccess(`Trainer ID updated for battle #${battle.id}.`);
+    } catch (err: any) {
+      setBossBattleHistoryError(err?.message ?? 'Failed to update trainer ID.');
+    } finally {
+      setBossBattleSavingId(null);
     }
   };
 
@@ -683,6 +718,7 @@ const Admin: React.FC = () => {
                 <div className="admin-tab-content">
                   <h2>Boss Battle History</h2>
                   {bossBattleHistoryError && <div className="admin-message admin-error">{bossBattleHistoryError}</div>}
+                  {bossBattleHistorySuccess && <div className="admin-message admin-success">{bossBattleHistorySuccess}</div>}
                   {bossBattleHistoryLoading ? (
                     <div className="admin-message">Loading boss battle history...</div>
                   ) : bossBattleHistory.length === 0 ? (
@@ -701,6 +737,7 @@ const Admin: React.FC = () => {
                             <th>Time</th>
                             <th>Loss</th>
                             <th>Created At</th>
+                            <th></th>
                           </tr>
                         </thead>
                         <tbody>
@@ -710,11 +747,28 @@ const Admin: React.FC = () => {
                               <td>{battle.draft_id.slice(0, 8)}</td>
                               <td>{battle.team_id}</td>
                               <td>{battle.user_name ?? battle.user_id ?? battle.guest_id ?? '-'}</td>
-                              <td>{battle.trainer_id}</td>
+                              <td>
+                                <input
+                                  type="number"
+                                  value={battle.trainer_id}
+                                  onChange={(e) => handleBossTrainerIdChange(battle.id, e.target.value)}
+                                />
+                              </td>
                               <td>{battle.version ?? '-'}</td>
                               <td>{battle.hours}h {battle.minutes}m {battle.seconds}s</td>
                               <td>{battle.is_loss ? 'Yes' : 'No'}</td>
                               <td>{new Date(battle.created_at).toLocaleString()}</td>
+                              <td>
+                                <button
+                                  type="button"
+                                  className="button"
+                                  onClick={() => handleSaveBossTrainer(battle)}
+                                  disabled={bossBattleSavingId === battle.id}
+                                  style={{ padding: '0.25rem 0.5rem', fontSize: '0.8rem' }}
+                                >
+                                  {bossBattleSavingId === battle.id ? 'Saving...' : 'Save'}
+                                </button>
+                              </td>
                             </tr>
                           ))}
                         </tbody>
