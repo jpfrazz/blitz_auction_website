@@ -361,6 +361,17 @@ const Admin: React.FC = () => {
     );
   };
 
+  const handleBossVersionChange = (battleId: number, value: string) => {
+    const trimmed = value.trim();
+    setBossBattleHistory((current) =>
+      current.map((battle) =>
+        battle.id === battleId
+          ? { ...battle, version: trimmed === '' ? null : Number(trimmed) }
+          : battle,
+      ),
+    );
+  };
+
   const handleSaveBossTrainer = async (battle: any) => {
     setBossBattleHistoryError(null);
     setBossBattleHistorySuccess(null);
@@ -369,7 +380,7 @@ const Admin: React.FC = () => {
       const res = await fetch(`/api/admin/boss-battle-history/${battle.id}/trainer`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ trainer_id: battle.trainer_id }),
+        body: JSON.stringify({ trainer_id: battle.trainer_id, version: battle.version ?? null }),
       });
       if (!res.ok) {
         const text = await res.text();
@@ -754,7 +765,13 @@ const Admin: React.FC = () => {
                                   onChange={(e) => handleBossTrainerIdChange(battle.id, e.target.value)}
                                 />
                               </td>
-                              <td>{battle.version ?? '-'}</td>
+                              <td>
+                                <input
+                                  type="number"
+                                  value={battle.version ?? ''}
+                                  onChange={(e) => handleBossVersionChange(battle.id, e.target.value)}
+                                />
+                              </td>
                               <td>{battle.hours}h {battle.minutes}m {battle.seconds}s</td>
                               <td>{battle.is_loss ? 'Yes' : 'No'}</td>
                               <td>{new Date(battle.created_at).toLocaleString()}</td>

@@ -245,6 +245,7 @@ pub struct AdminUpdateDiscordUserRequest {
 #[derive(serde::Serialize, serde::Deserialize)]
 pub struct AdminUpdateBossBattleTrainerRequest {
     pub trainer_id: i32,
+    pub version: Option<i32>,
 }
 
 fn expected_score(player_rating: i32, opponent_rating: i32) -> f64 {
@@ -3564,10 +3565,12 @@ pub async fn update_admin_boss_battle_trainer(
 
     sqlx::query(
         "UPDATE boss_battle_history
-         SET trainer_id = $1
-         WHERE id = $2",
+         SET trainer_id = $1,
+             version = $2
+         WHERE id = $3",
     )
     .bind(request.trainer_id)
+    .bind(request.version)
     .bind(id)
     .execute(&state.db_pool)
     .await
