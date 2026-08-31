@@ -988,6 +988,59 @@ const Stats: React.FC = () => {
                                   );
                                 }
 
+                                if (draft.draftType === '1v1') {
+                                  // 1v1 pick-order view: group each player's picks
+                                  // into one row and their bans into the next row.
+                                  const orderByDraft = (list: any[]) => [...list].sort((a, b) => a.draft_order - b.draft_order);
+                                  const hasWinner = (a: any) => !!(a.winning_user_id || a.winning_guest_id);
+
+                                  const playerAuctions = draftAuctions.filter(hasWinner);
+                                  const unassigned = orderByDraft(draftAuctions.filter((a) => !hasWinner(a)));
+                                  const leftovers = unassigned.filter((a) => (a.action || '') === 'LEFTOVER');
+                                  const eeveeBans = unassigned.filter((a) => (a.action || '') === 'BAN');
+
+                                  const playerIds = Array.from(new Set(playerAuctions.map((a) => a.winning_user_id || a.winning_guest_id || '')));
+                                  playerIds.sort((x, y) => {
+                                    const firstX = playerAuctions.find((a) => (a.winning_user_id || a.winning_guest_id) === x)?.draft_order ?? Number.MAX_SAFE_INTEGER;
+                                    const firstY = playerAuctions.find((a) => (a.winning_user_id || a.winning_guest_id) === y)?.draft_order ?? Number.MAX_SAFE_INTEGER;
+                                    return firstX - firstY;
+                                  });
+
+                                  return (
+                                    <div className="draft-user-groups">
+                                      {playerIds.map((uid) => {
+                                        const userAuctions = orderByDraft(playerAuctions.filter((a) => (a.winning_user_id || a.winning_guest_id) === uid));
+                                        const picks = userAuctions.filter((a) => (a.action || 'PICK') === 'PICK');
+                                        const bans = userAuctions.filter((a) => (a.action || '') === 'BAN');
+                                        return (
+                                          <div key={uid} className="user-draft-group" style={{ marginBottom: '0.75rem' }}>
+                                            <div className="draft-details-grid">
+                                              {picks.map((a) => renderCard(a))}
+                                            </div>
+                                            <div className="draft-details-grid" style={{ marginTop: '1rem' }}>
+                                              {bans.map((a) => renderCard(a))}
+                                            </div>
+                                          </div>
+                                        );
+                                      })}
+                                      {eeveeBans.length > 0 && (
+                                        <div className="user-draft-group" style={{ marginBottom: '0.75rem' }}>
+                                          <div className="draft-details-grid">
+                                            {eeveeBans.map((a) => renderCard(a))}
+                                          </div>
+                                        </div>
+                                      )}
+                                      {leftovers.length > 0 && (
+                                        <div className="user-draft-group" style={{ marginBottom: '0.75rem' }}>
+                                          <div className="draft-details-grid">
+                                            {leftovers.map((a) => renderCard(a))}
+                                          </div>
+                                        </div>
+                                      )}
+                                    </div>
+                                  );
+                                }
+
                                 const finalAuctions = draftAuctions
                                   .sort((a, b) => {
                                     if (draftSortMode === 'price' && a.draft_type !== '1v1') {
