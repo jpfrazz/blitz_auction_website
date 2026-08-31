@@ -985,9 +985,27 @@ const Stats: React.FC = () => {
                                             }
                                             return (b.winning_bid ?? 0) - (a.winning_bid ?? 0);
                                           });
+                                        const is1v1Group = userAuctions[0]?.draft_type === '1v1';
+                                        const picks = userAuctions.filter(a => a.action !== 'BAN');
+                                        const bans = userAuctions.filter(a => a.action === 'BAN');
                                         return (
                                           <div key={uid} className="user-draft-group" style={{ marginBottom: '0.75rem' }}>
-                                            {renderListWithChart(userAuctions)}
+                                            {is1v1Group ? (
+                                              <>
+                                                {picks.length > 0 && (
+                                                  <div className="draft-details-grid">
+                                                    {picks.map(a => renderCard(a))}
+                                                  </div>
+                                                )}
+                                                {bans.length > 0 && (
+                                                  <div className="draft-details-grid" style={{ marginTop: '0.75rem' }}>
+                                                    {bans.map(a => renderCard(a))}
+                                                  </div>
+                                                )}
+                                              </>
+                                            ) : (
+                                              renderListWithChart(userAuctions)
+                                            )}
                                           </div>
                                         );
                                       })}
