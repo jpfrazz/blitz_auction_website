@@ -296,7 +296,7 @@ const PlayerSearchStatsTab: React.FC<PlayerSearchStatsTabProps> = ({
     });
     const junk = new Set<string>();
     soldCount.forEach((count, draftId) => {
-      if (count < 16) junk.add(draftId);
+      if (count < 16 || count > 150) junk.add(draftId);
     });
     return junk;
   }, [stats?.auctions]);
@@ -348,7 +348,7 @@ const PlayerSearchStatsTab: React.FC<PlayerSearchStatsTabProps> = ({
       .map((p) => ({ ...p, gamesPlayed: playerGamesMap.get(p.user_id) || 0 }))
       .filter((p) => p.gamesPlayed > 0)
       .sort((a, b) => b.gamesPlayed - a.gamesPlayed)
-      .slice(0, 40);
+      .slice(0, 50);
   }, [stats?.players, playerGamesMap]);
 
   const pokemonDraftSummary = useMemo<PokemonDraftSummary[]>(() => {

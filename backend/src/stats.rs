@@ -119,7 +119,8 @@ pub async fn get_stats_page_data(
         sqlx::query_as::<_, StatsTeam>(
             "SELECT t.user_id, t.guest_id, t.draft_id, t.placement, t.race_placement, d.draft_name, COALESCE(d.host_user_id, d.host_guest_id) AS host, d.ranked, d.draft_type
              FROM teams t
-             JOIN drafts d ON t.draft_id = d.draft_id"
+             JOIN drafts d ON t.draft_id = d.draft_id
+             WHERE d.state = 'COMPLETED'"
         )
             .fetch_all(&state.db_pool)
             .await
@@ -149,8 +150,9 @@ pub async fn get_stats_page_data(
         FROM auctions AS a
         JOIN pokemon AS p ON a.pokedex_id = p.pokedex_id AND COALESCE(a.form, '') = p.form
         JOIN drafts AS d ON a.draft_id = d.draft_id
-        WHERE a.winning_bid IS NOT NULL
-           OR d.draft_type = '1v1'
+        WHERE d.state = 'COMPLETED'
+          AND (a.winning_bid IS NOT NULL
+               OR d.draft_type = '1v1')
         ORDER BY a.draft_id, a.draft_order ASC
         "#,
     )
