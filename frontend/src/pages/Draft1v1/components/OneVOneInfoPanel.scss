@@ -54,7 +54,11 @@
 }
 
 .one-v-one-info-box {
-  padding-bottom: 1.5rem;
+  padding-bottom: 0.5rem;
+
+  .auction-pokemon-section {
+    margin-bottom: 1rem;
+  }
 }
 
 .timer-toggle-button {

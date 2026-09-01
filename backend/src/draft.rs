@@ -67,6 +67,8 @@ pub struct DraftLobbyResponse {
     draft_name: String,
     has_password: bool,
     host: String,
+    host_username: String,
+    players: Vec<String>,
     ranked: bool,
     draft_type: String,
     format: String,
@@ -117,6 +119,9 @@ impl OneVOnePlayer {
 pub enum OneVOneAction {
     Pick,
     Ban,
+    /// A pokemon left unclaimed at the end of the main phase. Present in
+    /// `history` so pool ordering stays consistent, but never picked by anyone.
+    Leftover,
 }
 
 /// One recorded entry in a 1v1 draft's history (a pick or a ban).
@@ -1826,6 +1831,7 @@ impl DraftActor {
                     let is_eevee = engine.eeveelution_phase;
                     self.one_v_one_apply_ban(current_player, pokedex_id, form, is_eevee).await;
                 }
+                OneVOneAction::Leftover => {}
             }
             true
         } else {
@@ -2027,8 +2033,8 @@ impl DraftActor {
             for leftover in leftovers.into_iter().take(4) {
                 engine.history.push(OneVOneHistoryEntry {
                     order: engine.history.len() as u32 + 1,
-                    action: OneVOneAction::Pick, // unused visually
-                    player: OneVOnePlayer::P1,   // unused visually
+                    action: OneVOneAction::Leftover,
+                    player: OneVOnePlayer::P1, // unused for leftovers
                     pokemon: leftover.pokemon,
                 });
             }
@@ -2780,11 +2786,30 @@ impl From<&DraftActor> for DraftLobbyResponse {
     fn from(value: &DraftActor) -> Self {
         let draft_type = value.settings.draft_type.clone();
         let format = format_label(&draft_type, value.settings.ranked);
+        let mut players: Vec<String> = value
+            .team_users
+            .values()
+            .map(|user| user.get_user_name_string())
+            .collect();
+        players.sort();
+        let host_username = value
+            .team_users
+            .get(&value.host)
+            .map(|user| user.get_user_name_string())
+            .or_else(|| {
+                value
+                    .teams
+                    .get(&value.host)
+                    .map(|team| team.username.clone())
+            })
+            .unwrap_or_default();
         DraftLobbyResponse {
             draft_id: value.draft.draft_id,
             draft_name: value.draft.draft_name.clone(),
             has_password: value.settings.password.is_some(),
             host: value.host.clone(),
+            host_username,
+            players,
             ranked: value.settings.ranked,
             draft_type,
             format,

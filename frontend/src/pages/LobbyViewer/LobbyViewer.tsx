@@ -98,21 +98,26 @@ const LobbyViewer: React.FC = () => {
       accessorKey: 'draft_name',
     },
     {
+      header: 'Host',
+      id: 'host',
+      accessorKey: 'host_username',
+      cell: info => info.getValue<string>() || '-',
+      enableColumnFilter: false,
+    },
+    {
+      header: 'Players',
+      id: 'players',
+      accessorKey: 'players',
+      cell: info => {
+        const players = info.getValue<string[]>();
+        return players && players.length > 0 ? players.join(', ') : '-';
+      },
+      enableColumnFilter: false,
+    },
+    {
       header: 'Created',
       accessorKey: 'created_at',
       cell: info => getTimeAgo(info.getValue<string>()),
-      enableColumnFilter: false,
-    },
-    {
-      header: 'Password',
-      accessorKey: 'has_password',
-      cell: info => (info.getValue<boolean>() ? '🔒' : '🔓'),
-      enableColumnFilter: false,
-    },
-    {
-      header: 'Ranked',
-      accessorKey: 'ranked',
-      cell: info => (info.getValue<boolean>() ? '✓' : '✗'),
       enableColumnFilter: false,
     },
     {
@@ -255,7 +260,7 @@ const LobbyViewer: React.FC = () => {
               <tbody>
                 {table.getRowModel().rows.length === 0 && (
                   <tr>
-                    <td colSpan={7} className="lobby-viewer-empty">
+                    <td colSpan={8} className="lobby-viewer-empty">
                       No active drafts found.
                     </td>
                   </tr>

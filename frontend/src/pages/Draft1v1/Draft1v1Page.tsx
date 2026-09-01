@@ -200,6 +200,9 @@ const Draft1v1Page: React.FC = () => {
     let ban = 0;
     for (const h of oneVOne.history) {
       const key = `${h.pokemon.pokedex_id}-${h.pokemon.form ?? ''}`;
+      if (h.action === 'Leftover') {
+        continue;
+      }
       if (h.action === 'Pick') {
         pick += 1;
         map.set(key, `P${pick}`);
@@ -528,7 +531,8 @@ const Draft1v1Page: React.FC = () => {
                                 />
                               </div>
                               <div>
-                                <strong>{entry.pokemon.name}</strong>: {entry.player} {entry.action}
+                                <strong>{entry.pokemon.name}</strong>
+                                {entry.action === 'Leftover' ? ': Leftover' : `: ${entry.player} ${entry.action}`}
                               </div>
                             </div>
                           </li>

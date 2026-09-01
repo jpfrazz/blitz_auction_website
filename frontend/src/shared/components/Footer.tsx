@@ -1,4 +1,5 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
+import { useLocation } from 'react-router-dom';
 import './Footer.scss';
 
 const footerButtons = [
@@ -10,6 +11,18 @@ const footerButtons = [
 ];
 
 function Footer() {
+  const { pathname } = useLocation();
+  const [showDiscordHint, setShowDiscordHint] = useState(false);
+
+  useEffect(() => {
+    if (pathname !== '/') {
+      setShowDiscordHint(false);
+      return;
+    }
+    const timer = setTimeout(() => setShowDiscordHint(true), 3000);
+    return () => clearTimeout(timer);
+  }, [pathname]);
+
   return (
     <footer className="footer">
       <div className="footerInner">
@@ -24,6 +37,18 @@ function Footer() {
             <img src={btn.icon} alt={btn.alt} className="footerIcon" />
           </a>
         ))}
+        {showDiscordHint && (
+          <div className="discord-hint">
+            <button
+              className="discord-hint-close"
+              onClick={() => setShowDiscordHint(false)}
+              aria-label="Close"
+            >
+              -
+            </button>
+            Join the discord for daily races!
+          </div>
+        )}
       </div>
     </footer>
   );

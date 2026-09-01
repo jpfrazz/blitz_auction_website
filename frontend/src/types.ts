@@ -84,7 +84,7 @@ export interface Team {
 }
 
 export type OneVOnePlayer = 'P1' | 'P2';
-export type OneVOneAction = 'Pick' | 'Ban';
+export type OneVOneAction = 'Pick' | 'Ban' | 'Leftover';
 
 export interface OneVOnePoolSlot {
   pokemon: Pokemon;
@@ -149,6 +149,8 @@ export interface DraftLobby {
   draft_name: string;
   has_password: boolean;
   host: string;
+  host_username: string;
+  players: string[];
   ranked: boolean;
   draft_type: string;
   format: string;

@@ -288,12 +288,24 @@ const PlayerSearchStatsTab: React.FC<PlayerSearchStatsTabProps> = ({
       .slice(0, 10);
   }, [searchInput, stats?.players]);
 
+  const junkDraftIds = useMemo(() => {
+    const soldCount = new Map<string, number>();
+    (stats?.auctions ?? []).forEach((a) => {
+      if (a.winning_bid === null) return;
+      soldCount.set(a.draft_id, (soldCount.get(a.draft_id) || 0) + 1);
+    });
+    const junk = new Set<string>();
+    soldCount.forEach((count, draftId) => {
+      if (count < 16) junk.add(draftId);
+    });
+    return junk;
+  }, [stats?.auctions]);
+
   const displayMatchHistory = useMemo(() => {
     if (!playerMatchHistory) return null;
-    // Show every completed draft the player took part in: competitive auction
-    // drafts, casual (non-competitive) drafts, and 1v1 drafts alike.
-    return playerMatchHistory;
-  }, [playerMatchHistory]);
+    // Junk drafts (fewer than 16 pokemon sold) are dropped entirely.
+    return playerMatchHistory.filter(team => !junkDraftIds.has(team.draft_id));
+  }, [playerMatchHistory, junkDraftIds]);
 
   const isCasualTeam = (team: MatchHistoryTeam) =>
     team.draft_type !== '1v1' && !validDraftIds.has(team.draft_id);
@@ -307,14 +319,16 @@ const PlayerSearchStatsTab: React.FC<PlayerSearchStatsTabProps> = ({
   const playerGamesMap = useMemo(() => {
     const map = new Map<string, number>();
     if (!stats) return map;
+    // Match "Total Races Played": count every race (competitive, casual, and
+    // 1v1) a player took part in, excluding junk drafts.
     stats.teams.forEach((team) => {
       const id = team.user_id || team.guest_id;
-      if (id && validDraftIds.has(team.draft_id)) {
+      if (id && !junkDraftIds.has(team.draft_id)) {
         map.set(id, (map.get(id) || 0) + 1);
       }
     });
     return map;
-  }, [stats, validDraftIds]);
+  }, [stats, junkDraftIds]);
 
   const draftDateMap = useMemo(() => {
     const map = new Map<string, string>();
