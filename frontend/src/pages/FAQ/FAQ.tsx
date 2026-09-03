@@ -5,8 +5,9 @@ import './FAQ.scss';
 import '../Info/Info.scss';
 
 const FAQ = () => (
-  <>
+  <div className="faq-page">
     <Header />
+    <div className="faq-scroll">
     <main className="faq-main">
       <h1 className="faq-title">
         Frequently Asked Questions
@@ -360,7 +361,8 @@ const FAQ = () => (
       </section>
     </main>
     <Footer />
-  </>
+    </div>
+  </div>
 );
 
 export default FAQ;
