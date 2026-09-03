@@ -138,7 +138,10 @@ const FAQ = () => (
         <h2 className="faq-question">How can the website track my stats?</h2>
         <hr />
         <p className="faq-answer">
-          By playing via the site's embedded emulator! After you finish a draft, click the "Play Emulator" button. The emulator page provides all players real-time updates on everybody's progress, including their badges, location, Eeveelution, and more. If you're logged into the site via discord, the site also saves all of this information (like which Pokémon you drafted, your splits, and your Hall of Fame team) to your player profile!
+          By playing via the site's embedded emulator!
+        </p>
+        <p className="faq-answer">
+          After you finish a draft, click the "Play Emulator" button. The emulator page provides all players real-time updates on everybody's progress, including their badges, location, Eeveelution, and more. If you're logged into the site via discord, the site also saves all of this information (like which Pokémon you drafted, your splits, and your Hall of Fame team) to your player profile!
         </p>
       </section>
 
