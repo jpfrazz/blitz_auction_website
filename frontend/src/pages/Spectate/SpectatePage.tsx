@@ -4,7 +4,7 @@ import Header from '../../shared/components/Header';
 import Footer from '../../shared/components/Footer';
 import { getIconName, createResolveMetadata, isActuallyNicknamed } from '../../utils/speciesUtils';
 import { MOVES } from '../../utils/movesData';
-import { SaveData } from '../../utils/parseSaveFile';
+import { SaveData, formatMapName } from '../../utils/parseSaveFile';
 import { fetchDraftById } from '../../shared/api/draftData';
 import { fetchPokemonList, fetchRentalPokemonList } from '../../shared/api/pokemon';
 import './SpectatePage.scss';
@@ -54,6 +54,13 @@ const SpectatePage: React.FC = () => {
   const { draftId } = useParams<{ draftId?: string }>();
   const [draft, setDraft] = useState<any>(null);
   const [playerSaves, setPlayerSaves] = useState<Record<string, PlayerSave>>({});
+  // Live current-map names received via LocationUpdate broadcasts, keyed by
+  // user id. Kept separate from the save so a player who closes their tab (and
+  // whose last SaveUpdate we still hold) doesn't pin a frozen location.
+  const [liveMaps, setLiveMaps] = useState<Record<string, string>>({});
+  // Mirror of LocationUpdate's in_battle flag, keyed by user id, so spectators
+  // can append "(In battle)" to a player's location.
+  const [liveBattles, setLiveBattles] = useState<Record<string, boolean>>({});
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [pokemonMetadata, setPokemonMetadata] = useState<Record<string, any>>({});
@@ -197,6 +204,12 @@ const SpectatePage: React.FC = () => {
               [user_id]: { displayName: prev[user_id]?.displayName ?? user_id, save: save_data },
             }));
           }
+          // Lightweight live location ping from an emulator's heap read.
+          if (msg.type === 'LocationUpdate') {
+            const { user_id, map_name, in_battle } = msg.data as { user_id: string; map_name: string; in_battle?: boolean };
+            setLiveMaps((prev) => ({ ...prev, [user_id]: map_name }));
+            setLiveBattles((prev) => ({ ...prev, [user_id]: !!in_battle }));
+          }
           if (msg.type === 'DraftUpdate') {
             const teams = (msg.data?.teams ?? []) as Array<{
               user_id: string;
@@ -326,6 +339,8 @@ const SpectatePage: React.FC = () => {
                 <p className="spectate-empty">No players have joined this draft yet.</p>
               )}
               {playerEntries.map(([uid, { displayName, save }]) => {
+                // Live map from LocationUpdate beats the last flushed save's map.
+                const currentMap = liveMaps[uid] ?? save?.map_name;
                 // Detect wipe (InsideOfTruck) or win (champion trainer-card win)
                 const isWiped = save?.map_name === 'InsideOfTruck';
                 const mostRecentLossName = save?.most_recent_loss_name;
@@ -365,6 +380,12 @@ const SpectatePage: React.FC = () => {
                         {save ? `${save.badge_count} ${save.badge_count === 1 ? 'badge' : 'badges'}` : '— badges'}
                       </span>
                     </div>
+                    {currentMap && (
+                      <div className="spectate-map" title={`${currentMap} (map)`}>
+                        {formatMapName(currentMap)}
+                        {liveBattles[uid] && <span className="in-battle-suffix"> (In battle)</span>}
+                      </div>
+                    )}
                     {save ? (
                       <div className="spectate-mon-icons">
                         {sortPokemon(uid, [

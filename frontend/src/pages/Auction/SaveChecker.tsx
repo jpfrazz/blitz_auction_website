@@ -60,9 +60,6 @@ const SaveChecker: React.FC = () => {
   const [mostRecentLossName, setMostRecentLossName] = useState<string | null>(null);
   const [trainerCardWins, setTrainerCardWins] = useState<{ trainer_id: number; hours: number; minutes: number; seconds: number; is_loss: boolean; version?: number }[]>([]);
   const [playerFaintCounter, setPlayerFaintCounter] = useState<number | null>(null);
-  const [debugOffsets15, setDebugOffsets15] = useState<string[]>([]);
-  const [debugOffsets17, setDebugOffsets17] = useState<string[]>([]);
-  const [areaDebugOffsets, setAreaDebugOffsets] = useState<string[]>([]);
 
   useEffect(() => {
     fetchPokemonList().then((list) => {
@@ -109,23 +106,6 @@ const SaveChecker: React.FC = () => {
         const buffer = e.target?.result as ArrayBuffer;
         const saveDataBytes = new Uint8Array(buffer);
         const parsedData = parseSaveFile(saveDataBytes, pokemonMetadata, pokemonById);
-
-        // Debug: Scan for value 15 and 17 to find the changing offset
-        const offsets15: string[] = [];
-        const offsets17: string[] = [];
-        for (let i = 0; i < saveDataBytes.length - 1; i++) {
-          // Check as u8 only (playerFaintCounter is u8)
-          if (saveDataBytes[i] === 15) {
-            offsets15.push(`0x${i.toString(16).padStart(5, '0')}`);
-          }
-          if (saveDataBytes[i] === 17) {
-            offsets17.push(`0x${i.toString(16).padStart(5, '0')}`);
-          }
-        }
-        setDebugOffsets15(offsets15);
-        setDebugOffsets17(offsets17);
-        console.log('[Debug] Value 15 offsets:', offsets15.join(', '));
-        console.log('[Debug] Value 17 offsets:', offsets17.join(', '));
 
         setTrainerName(parsedData.trainer_name);
         setMoney(parsedData.money);
@@ -203,37 +183,6 @@ const SaveChecker: React.FC = () => {
                 <span className="stat-value">{playerFaintCounter !== null ? playerFaintCounter : 'Not found'}</span>
               </div>
             </div>
-            {areaDebugOffsets.length > 0 && (
-              <div className="debug-section" style={{ marginTop: '20px', padding: '15px', background: '#1a1a2e', borderRadius: '8px', fontSize: '12px' }}>
-                <h4 style={{ margin: '0 0 10px 0', color: '#ffd700' }}>Debug: Value 15 in area 0xB000-0xC000</h4>
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '5px' }}>
-                  {areaDebugOffsets.map((offset, i) => (
-                    <span key={i} style={{ background: '#16213e', padding: '2px 6px', borderRadius: '3px', fontFamily: 'monospace' }}>{offset}</span>
-                  ))}
-                </div>
-                {areaDebugOffsets.length === 0 && <div style={{ marginTop: '10px', color: '#888' }}>No value 15 found in this area</div>}
-              </div>
-            )}
-            {debugOffsets15.length > 0 && (
-              <div className="debug-section" style={{ marginTop: '20px', padding: '15px', background: '#1a1a2e', borderRadius: '8px', fontSize: '12px' }}>
-                <h4 style={{ margin: '0 0 10px 0', color: '#ffd700' }}>Debug: Value 15 found at offsets ({debugOffsets15.length} total)</h4>
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '5px' }}>
-                  {debugOffsets15.map((offset, i) => (
-                    <span key={i} style={{ background: '#16213e', padding: '2px 6px', borderRadius: '3px', fontFamily: 'monospace' }}>{offset}</span>
-                  ))}
-                </div>
-              </div>
-            )}
-            {debugOffsets17.length > 0 && (
-              <div className="debug-section" style={{ marginTop: '20px', padding: '15px', background: '#1a1a2e', borderRadius: '8px', fontSize: '12px' }}>
-                <h4 style={{ margin: '0 0 10px 0', color: '#ffd700' }}>Debug: Value 17 found at offsets ({debugOffsets17.length} total)</h4>
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '5px' }}>
-                  {debugOffsets17.map((offset, i) => (
-                    <span key={i} style={{ background: '#16213e', padding: '2px 6px', borderRadius: '3px', fontFamily: 'monospace' }}>{offset}</span>
-                  ))}
-                </div>
-              </div>
-            )}
             {mostRecentLoss && (
               <div className="stats-summary">
                 <div className="stat-item">

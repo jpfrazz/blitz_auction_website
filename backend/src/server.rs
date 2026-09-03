@@ -175,6 +175,7 @@ impl Server {
                 get(handlers::get_auto_bid).post(handlers::set_auto_bid),
             )
                             .route("/drafts/{draft_id}/save", post(handlers::post_player_save))
+                            .route("/drafts/{draft_id}/location", post(handlers::post_player_location))
                             .route("/drafts/{draft_id}/forfeit", post(handlers::post_player_forfeit))
                             .route("/drafts/{draft_id}/state-load-notification", post(handlers::post_state_load_notification))
             .route("/drafts/{draft_id}/start", post(handlers::start_draft))

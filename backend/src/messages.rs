@@ -98,6 +98,20 @@ pub struct PostSaveRequest {
     pub hall_of_fame_team: Option<Vec<HallOfFamePokemon>>,
 }
 
+/// Body of the `POST /api/drafts/{draft_id}/location` endpoint. The emulator
+/// posts this on every map transition read from its WASM heap, so it carries
+/// only the raw internal map identifier (e.g. "Route110_SeasideCyclingRoad_2F")
+/// which the frontend formats for display. Nothing here is persisted; the .sav
+/// flush already stores `map_name` on its own cadence.
+#[derive(Clone, Debug, Deserialize)]
+pub struct PostLocationRequest {
+    pub map_name: String,
+    /// Mirror of the game's `gMain.inBattle` at the poll moment, so spectators
+    /// can append "(In battle)" to a player's location.
+    #[serde(default)]
+    pub in_battle: bool,
+}
+
 /// Body of the `POST /api/drafts/{draft_id}/forfeit` endpoint. Records an
 /// early concession as a loss against the chosen boss trainer without waiting
 /// for the in-game wipe to finish.
@@ -224,6 +238,16 @@ pub enum ServerMessage {
     SaveUpdate {
         user_id: String,
         save_data: SaveData,
+    },
+    /// Lightweight live location ping from an emulator's WASM heap. The full
+    /// `SaveUpdate` only fires on a .sav flush / party change, so this keeps
+    /// spectators up to date between those (a MapUpdate broadcast from a map
+    /// transition the .sav cache would miss for up to 10 seconds). No DB write:
+    /// the .sav flush already persists `map_name` on its own cadence.
+    LocationUpdate {
+        user_id: String,
+        map_name: String,
+        in_battle: bool,
     },
     StateLoadNotification {
         user_id: String,

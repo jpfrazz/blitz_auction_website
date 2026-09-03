@@ -1,9 +1,12 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Header from '../../shared/components/Header';
 import Footer from '../../shared/components/Footer';
 import { createDraft, CreateDraftRequest } from '../../shared/api/draft';
+import { fetchPokemonList } from '../../shared/api/pokemon';
+import { Pokemon } from '../../types';
 import '../AuctionSetup/AuctionSetup.scss';
+import { generateRandomDraftName } from '../../shared/utils/draftNameGenerator';
 
 const Draft1v1Setup = () => (
   <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
@@ -20,6 +23,11 @@ const Draft1v1SetupForm: React.FC = () => {
   const [draftName, setDraftName] = useState('');
   const [password, setPassword] = useState('');
   const [submitError, setSubmitError] = useState<string | null>(null);
+  const [pokemonList, setPokemonList] = useState<Pokemon[]>([]);
+
+  useEffect(() => {
+    fetchPokemonList().then(setPokemonList);
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -60,15 +68,29 @@ const Draft1v1SetupForm: React.FC = () => {
           <div className="auction-setup-field" style={{ flex: 1 }}>
             <label className="auction-setup-label">
               Draft Name:
-              <input
-                className="auction-setup-input"
-                type="text"
-                name="draft-name"
-                autoComplete="off"
-                value={draftName}
-                onChange={(e) => setDraftName(e.target.value)}
-                required
-              />
+              <div className="auction-setup-input-wrapper">
+                <input
+                  className="auction-setup-input"
+                  type="text"
+                  name="draft-name"
+                  autoComplete="off"
+                  value={draftName}
+                  onChange={(e) => setDraftName(e.target.value)}
+                  required
+                />
+                <button
+                  type="button"
+                  className="auction-setup-refresh-btn"
+                  onClick={() => {
+                    const names = pokemonList.map(p => p.name);
+                    setDraftName(generateRandomDraftName(names));
+                  }}
+                  title="Generate random name"
+                  aria-label="Generate random draft name"
+                >
+                  ⟳
+                </button>
+              </div>
             </label>
           </div>
           <div className="auction-setup-field" style={{ flex: 1 }}>

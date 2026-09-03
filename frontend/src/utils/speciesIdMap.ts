@@ -986,7 +986,7 @@ export const SPECIES_BY_ID: Record<number, SpeciesInfo> = {
   976: { name: "Rapidash-Galar", icon: "rapidash-galar", baseId: 78, form: "Galar" },
   977: { name: "Slowpoke-Galar", icon: "slowpoke-galar", baseId: 79, form: "Galar" },
   978: { name: "Slowbro-Galar", icon: "slowbro-galar", baseId: 80, form: "Galar" },
-  979: { name: "Farfetch'd-Galar", icon: "farfetchd-galar", baseId: 83, form: "Galar" },
+  979: { name: "Farfetch'd-Galar", icon: "farfetch'd", baseId: 83, form: "Galar" },
   980: { name: "Weezing-Galar", icon: "weezing-galar", baseId: 110, form: "Galar" },
   981: { name: "Mr. Mime-Galar", icon: "mr-mime-galar", baseId: 122, form: "Galar" },
   982: { name: "Articuno-Galar", icon: "articuno-galar", baseId: 144, form: "Galar" },

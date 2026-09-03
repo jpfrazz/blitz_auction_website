@@ -203,6 +203,10 @@ export interface SaveData {
   player_faint_counter: number | null;
   /** Personalities previously seen fainted, persisted by the backend. */
   fainted_pids?: number[];
+  /** Save file encryption key (from section 0), needed to decode the .sav's
+   *  encrypted money and trainer-card data. (The live EWRAM frame is already
+   *  decrypted by the game via GetMoney, so it does NOT need this key.) */
+  encryptionKey?: number;
 }
 
 // ── Live RAM party parsing ──────────────────────────────────────────────────
@@ -526,6 +530,88 @@ function decodeString(bytes: Uint8Array): string {
   return result.trim();
 }
 
+function decodeBcd(bcd: number): number {
+  let result = 0;
+  let multiplier = 1;
+  while (bcd > 0) {
+    const nibble = bcd & 0xf;
+    result += nibble * multiplier;
+    multiplier *= 10;
+    bcd >>= 4;
+  }
+  return result;
+}
+
+// ---- Live warp-buffer read ----
+// The Blitz decomp writes gLiveWarpStatus (a fixed 20-byte frame: magic
+// 0xEA5A, mapGroup, mapNum, warpId, x, y, sequence, money) to the END of EWRAM
+// (0x0203F000) on every map transition, so external tools can poll the
+// player's current map AND money at a known GBA address without scanning the heap.
+// The GBA EWRAM region sits at a session-stable offset inside the WASM heap;
+// we discover that base once with findLiveMapEwramBase() and then every poll
+// is a single readLiveMapFrame() call.
+export const LIVE_WARP_EWRAM_BASE_OFFSET = 0x3f000;
+export const LIVE_WARP_MONEY_OFFSET = 0x10;
+const LIVE_WARP_MAGIC = 0xea5a;
+const LIVE_WARP_BUFFER_SIZE = 20;
+const LIVE_WARP_SEQUENCE_OFFSET = 0x0c;
+// The Blitz decomp reuses the frame's pad byte as a live battle flag: the game
+// mirrors gMain.inBattle into the buffer every main-loop frame, so a non-zero
+// byte here means the player is mid-battle (wild, trainer, safari, frontier,
+// link, or recorded — all covered automatically).
+const LIVE_WARP_IN_BATTLE_OFFSET = 0x05;
+
+export interface LiveMapFrame {
+  mapGroup: number;
+  mapNum: number;
+  sequence: number;
+  inBattle: boolean;
+  money: number;
+}
+
+export function readLiveMapFrame(bytes: Uint8Array, ewramBase: number): LiveMapFrame | null {
+  const off = ewramBase + LIVE_WARP_EWRAM_BASE_OFFSET;
+  if (off < 0 || off + LIVE_WARP_BUFFER_SIZE > bytes.length) return null;
+  const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
+  if (view.getUint16(off, true) !== LIVE_WARP_MAGIC) return null;
+  const sequence = view.getUint32(off + LIVE_WARP_SEQUENCE_OFFSET, true);
+  if (sequence === 0) return null;
+  // Live EWRAM frame stores money as a PLAIN integer: the Blitz decomp writes
+  // GetMoney(&gSaveBlock1Ptr->money) (decrypted) into gLiveWarpStatus, so no
+  // XOR/key or BCD decode is needed here — unlike the .sav parser above, which
+  // must XOR the stored amount with the encryption key.
+  const money = view.getUint32(off + LIVE_WARP_MONEY_OFFSET, true);
+  return {
+    mapGroup: view.getInt8(off + 2),
+    mapNum: view.getInt8(off + 3),
+    sequence,
+    inBattle: view.getUint8(off + LIVE_WARP_IN_BATTLE_OFFSET) !== 0,
+    money,
+  };
+}
+
+export function findLiveMapEwramBase(
+  bytes: Uint8Array,
+  startOff: number,
+  endOff: number,
+  isValid: (mapGroup: number, mapNum: number, money: number) => boolean
+): number | null {
+  const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
+  for (let base = startOff; base <= endOff; base += 4) {
+    const off = base + LIVE_WARP_EWRAM_BASE_OFFSET;
+    if (off + LIVE_WARP_BUFFER_SIZE > bytes.length) break;
+    if (view.getUint16(off, true) !== LIVE_WARP_MAGIC) continue;
+    if (view.getUint32(off + LIVE_WARP_SEQUENCE_OFFSET, true) === 0) continue;
+    const mapGroup = view.getInt8(off + 2);
+    const mapNum = view.getInt8(off + 3);
+    if (mapGroup < 0 || mapNum < 0) continue;
+    const money = view.getUint32(off + LIVE_WARP_MONEY_OFFSET, true);
+    if (!isValid(mapGroup, mapNum, money)) continue;
+    return base;
+  }
+  return null;
+}
+
 export function parseSaveFile(
   data: Uint8Array,
   pokemonMetadata: Record<string, any>,
@@ -753,7 +839,6 @@ export function parseSaveFile(
         // Create a unique key for this entry to detect duplicates
         const entryKey = `${actualTrainerId}-${hours}-${minutes}-${seconds}-${isLoss}`;
         if (seenEntries.has(entryKey)) {
-          console.log(`[SaveParser] Skipping duplicate entry: ${entryKey}`);
           continue;
         }
         seenEntries.add(entryKey);
@@ -776,9 +861,6 @@ export function parseSaveFile(
         if (isLoss) most_recent_loss = trainer_card_wins[trainer_card_wins.length - 1];
       }
     }
-
-    console.log(`[SaveParser] Parsed ${trainer_card_wins.length} trainer card entries`);
-    console.log(`[SaveParser] Most recent loss:`, most_recent_loss);
   }
 
   const most_recent_loss_name = most_recent_loss ? getTrainerNameById(most_recent_loss.trainer_id) : null;
@@ -789,8 +871,63 @@ export function parseSaveFile(
   const playerFaintCounterOffset = activeSlot.slotOffset + 0x0d08;
   if (data.length > playerFaintCounterOffset) {
     player_faint_counter = data[playerFaintCounterOffset];
-    console.log('[SaveParser] playerFaintCounter from offset', playerFaintCounterOffset.toString(16), ':', player_faint_counter);
   }
 
-  return { trainer_name, money, badge_count, map_name, party, box, trainer_card_wins, most_recent_loss, most_recent_loss_name, player_faint_counter };
+  return { trainer_name, money, badge_count, map_name, party, box, trainer_card_wins, most_recent_loss, most_recent_loss_name, player_faint_counter, encryptionKey };
+}
+
+// Mapping of trainer IDs to trainer names (for boss trainers)
+const MAP_SEGMENT_PATCHES: Array<[string, string]> = [
+  ['MrBrineys', "Mr. Briney's"],
+  ['PokemonCenter', 'Pokémon Center'],
+  ['PokemonLeague', 'Pokémon League'],
+  ['MtChimney', 'Mt. Chimney'],
+  ['MtPyre', 'Mt. Pyre'],
+  ['Brendans', "Brendan's"],
+  ['Mays', "May's"],
+  ['Wallys', "Wally's"],
+  ['Stevens', "Steven's"],
+  ['Brandons', "Brandon's"],
+  ['Lucys', "Lucy's"],
+  ['Drakes', "Drake's"],
+  ['Spensers', "Spenser's"],
+  ['Sidneys', "Sidney's"],
+  ['Tuckers', "Tucker's"],
+  ['Glacias', "Glacia's"],
+  ['Phoebes', "Phoebe's"],
+  ['Lanettes', "Lanette's"],
+  ['Brineys', "Briney's"],
+  ['Wandas', "Wanda's"],
+  ['Cutters', "Cutter's"],
+  ['Scotts', "Scott's"],
+  ['WinstreFamilys', "Winstrate Family's"],
+  ['FossilManiacs', "Fossil Maniac's"],
+  ['OldLadys', "Old Lady's"],
+  ['Misters', 'Mr.'],
+];
+
+// Floor markers ("1F", "B1F") and room variants ("2R", "4P") are kept as-is
+// rather than having the camel split shatter them into separate letters.
+const MAP_SEGMENT_KEEP = /^[B]?[1-6]?F$|^[1-9][PR]$/;
+
+function formatMapSegment(seg: string): string {
+  if (MAP_SEGMENT_KEEP.test(seg)) return seg;
+  let s = seg;
+  for (const [from, to] of MAP_SEGMENT_PATCHES) s = s.split(from).join(to);
+  s = s
+    .replace(/([a-z0-9])([A-Z])/g, '$1 $2')
+    .replace(/([A-Z]+)([A-Z][a-z])/g, '$1 $2')
+    .replace(/([A-Za-z])(\d)/g, '$1 $2');
+  s = s.replace(/\bOf\b/g, 'of');
+  return s.trim();
+}
+
+export function formatMapName(raw: string): string {
+  if (!raw) return raw;
+  if (/^Unknown Map \(.*\)$/.test(raw)) return 'Unknown';
+  return raw
+    .split('_')
+    .map(formatMapSegment)
+    .filter(Boolean)
+    .join(' ');
 }

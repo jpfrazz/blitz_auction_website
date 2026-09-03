@@ -158,6 +158,7 @@
   flex-direction: column;
   flex: 1 1 100%;
   position: relative; // For overlay positioning
+  z-index: 0; // Own stacking context so resize handles/overlays can't escape above the fixed header (z-index 101)
   min-width: 0;
   min-height: 0;
   height: 100%;
@@ -217,6 +218,50 @@
 
   &:hover {
     background: rgba(74, 222, 128, 0.18);
+  }
+}
+
+// ── Initial heap-scan load bar ─────────────────────────────────────────────
+// Fixed to the bottom-right corner so it reads as a system status indicator
+// rather than part of the emulator layout. Only shown while the first full
+// WASM-heap scan is locating the live party (see scanProgress in the page).
+.scan-load-bar {
+  position: fixed;
+  right: 1rem;
+  bottom: 1rem;
+  z-index: 400;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.35rem;
+  min-width: 220px;
+  padding: 0.6rem 0.8rem;
+  background: rgba($eb-bg, 0.85);
+  border: 1px solid $eb-border;
+  border-radius: 8px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.45);
+  pointer-events: none;
+  user-select: none;
+
+  .scan-load-bar-track {
+    width: 100%;
+    height: 6px;
+    background: $eb-border;
+    border-radius: 3px;
+    overflow: hidden;
+  }
+
+  .scan-load-bar-fill {
+    height: 100%;
+    background: $eb-accent;
+    border-radius: 3px;
+    transition: width 0.2s ease-out;
+  }
+
+  .scan-load-bar-label {
+    font-size: 0.9rem;
+    color: $eb-text-muted;
+    line-height: 1;
   }
 }
 
@@ -574,6 +619,19 @@
 .sidebar-badges {
   font-size: 1rem;
   color: $eb-primary;
+}
+
+.sidebar-map {
+  font-size: 1rem;
+  color: $eb-text-muted;
+  padding: 0 0.8rem 0.3rem;
+}
+
+.in-battle-suffix {
+  font-size: 0.85em;
+  font-style: italic;
+  font-weight: 600;
+  color: $eb-text;
 }
 
 .sidebar-mon-list {

@@ -31,7 +31,7 @@ const FAQ = () => (
         <h2 className="faq-question">What's Emerald Blitz?</h2>
         <hr />
         <p className="faq-answer">
-          Emerald Blitz is a revamped version of Pokémon Emerald streamlined for nuzlocke draft racing. Despite playing through the entire Hoenn region with a team of nine Pokemon, from first gym to Elite Four Champion, a single playthrough takes just two hours to complete. Emerald Blitz is customized with new features and quality-of-life improvements geared toward making the game as fast as possible; it's all of the good with none of the tedium.
+          Emerald Blitz is a revamped version of Pokémon Emerald streamlined for nuzlocke draft racing. Despite playing through the entire Hoenn region with a team of nine Pokemon, from first gym to Elite Four Champion, a single playthrough takes just 90 minutes to complete. Emerald Blitz is customized with new features and quality-of-life improvements geared toward making the game as fast as possible; it's all of the good with none of the tedium.
         </p>
       </section>
 
@@ -305,6 +305,9 @@ const FAQ = () => (
             </li>
             <li>
               <b>Portable PC:</b> Gives access to the PC anywhere, anytime... besides in the Elite Four.
+            </li>
+            <li>
+              <b>Burmy Binder:</b> A consumable item that changes Wormadam's form. You’re gifted three by an NPC in the Pretty Petal Flower Shop.
             </li>
             <li>
               <b>Rotom Catalog:</b> A consumable item that changes Rotom’s form. You’re gifted three by an NPC in the Fortree City furniture store.

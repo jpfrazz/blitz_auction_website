@@ -1,8 +1,10 @@
 import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { useParams, useSearchParams } from 'react-router-dom';
 import Header from '../../shared/components/Header';
-import { parseSaveFile, SaveData, SavePokemon, SaveBoxPokemon, getTrainerNameById, parseRamParty, getRamPartyCount, ramPartyScore, findRamPartyOffset, findRamPartyCopies, hashRamParty, RAM_PARTY_BYTES, SECTION_SIZE, SLOT_SIZE, NUM_SECTIONS, FOOTER_OFFSET, SIGNATURE } from '../../utils/parseSaveFile';
+import { parseSaveFile, SaveData, SavePokemon, SaveBoxPokemon, getTrainerNameById, parseRamParty, getRamPartyCount, ramPartyScore, findRamPartyOffset, findRamPartyCopies, hashRamParty, formatMapName, findLiveMapEwramBase, readLiveMapFrame, LIVE_WARP_EWRAM_BASE_OFFSET, RAM_PARTY_BYTES, SECTION_SIZE, SLOT_SIZE, NUM_SECTIONS, FOOTER_OFFSET, SIGNATURE } from '../../utils/parseSaveFile';
+import { MAP_NAMES } from '../Auction/mapNames';
 import { getIconName, createResolveMetadata, isActuallyNicknamed } from '../../utils/speciesUtils';
+import { SPECIES_BY_ID } from '../../utils/speciesIdMap';
 import { MOVES, MOVE_TYPE_COLORS } from '../../utils/movesData';
 import { fetchCurrentUser, fetchDraftById, claimEeveelution, unclaimEeveelution, fetchControlBindings, saveControlBindings, forfeitDraft } from '../../shared/api/draftData';
 import { fetchPokemonList } from '../../shared/api/pokemon';
@@ -123,6 +125,7 @@ declare global {
         getState(): Uint8Array;
         loadState(state: Uint8Array): void;
         quickLoad(slot?: number): void;
+        getSaveFilePath(): string;
         FS?: {
           syncfs(populate: boolean, callback: (err: any) => void): void;
         };
@@ -386,7 +389,7 @@ async function deleteStoredSave(key: string): Promise<void> {
 }
 
 // Map of user_id → latest parsed save for other draft players
-type OtherPlayerSaves = Record<string, { displayName: string; save: SaveData | null; lastBadgeTime?: number }>;
+type OtherPlayerSaves = Record<string, { displayName: string; save: SaveData | null; lastBadgeTime?: number; mapName?: string; inBattle?: boolean }>;
 
 // Returns "Wally" or "Steven" when the player has a champion win on their
 // trainer card (Wally = 656, Steven = 804), otherwise null. Used to display
@@ -398,6 +401,183 @@ function getChampionName(saveData: SaveData | null | undefined): string | null {
   if (championWins.length === 0) return null;
   return championWins[championWins.length - 1].trainer_id === 804 ? 'Steven' : 'Wally';
 }
+
+// ── Memoized player cards ──────────────────────────────────────────────────
+// One card per racer in the right sidebar and the Tab-key standings overlay.
+// Extracted behind React.memo so a location/battle ping for a single player
+// (or our own save flushes) only re-renders that player's card instead of
+// re-sorting every box in the sidebar on every message. All helper props are
+// referentially stable (useCallback/useMemo in the parent), so the default
+// shallow prop compare skips cards whose data didn't change.
+interface PlayerCardProps {
+  uid: string;
+  displayName: string;
+  saveData: SaveData | null;
+  mapName: string | undefined;
+  inBattle: boolean;
+  sortPokemon: (uid: string, mons: any[]) => any[];
+  isMonFainted: (uid: string, mon: any) => boolean;
+  isPlayerDisconnected: (uid: string, saveData: SaveData | null) => boolean;
+  resolveMetadata: (speciesId: number, nickname?: string) => any;
+}
+
+const cardEntries = (saveData: SaveData | null): any[] => [
+  ...(saveData?.party ?? []).map((m: any) => ({ ...m, _isParty: true })),
+  ...(saveData?.box ?? []).map((m: any) => ({ ...m, _isParty: false })),
+];
+
+const OverlayPlayerCard = React.memo(function OverlayPlayerCard({
+  uid,
+  displayName,
+  saveData,
+  mapName,
+  inBattle,
+  sortPokemon,
+  isMonFainted,
+  isPlayerDisconnected,
+  resolveMetadata,
+}: PlayerCardProps) {
+  // Detect wipe (InsideOfTruck) or win (champion trainer-card win)
+  const isWiped = saveData?.map_name === 'InsideOfTruck';
+  const mostRecentLossName = saveData?.most_recent_loss_name;
+  const championName = getChampionName(saveData);
+  const showDisconnected =
+    isPlayerDisconnected(uid, saveData) && !isWiped && !championName;
+  const currentMap = mapName ?? saveData?.map_name;
+
+  return (
+    <div className="overlay-player-card">
+      <div className="overlay-player-header">
+        <span className={`overlay-username ${showDisconnected ? 'disconnected' : ''}`}>{displayName}</span>
+        {isWiped && mostRecentLossName && (
+          <span className="wipe-text">(Wiped to {mostRecentLossName})</span>
+        )}
+        {championName && (
+          <span className="win-text">(Beat {championName}!)</span>
+        )}
+        {showDisconnected && (
+          <span className="disconnect-text">(Disconnected)</span>
+        )}
+        <span className="overlay-badges">
+          {saveData ? `${saveData.badge_count} ${saveData.badge_count === 1 ? 'badge' : 'badges'}` : '— badges'}
+        </span>
+      </div>
+      {currentMap && (
+        <div className="sidebar-map" title={`${currentMap} (map)`}>
+          {formatMapName(currentMap)}
+          {inBattle && <span className="in-battle-suffix"> (In battle)</span>}
+        </div>
+      )}
+      {saveData ? (
+        <div className="overlay-mon-icons">
+          {sortPokemon(uid, cardEntries(saveData)).map((mon: any, i: number, arr: any[]) => {
+            const speciesId = mon.species_id ?? mon.speciesId;
+            const speciesData = resolveMetadata(speciesId, mon.nickname);
+            const realName = (speciesId === 412 && mon.nickname?.toLowerCase() === 'egg') ? "Egg" : (speciesData?.name || `ID ${speciesId}`);
+            const iconName = getIconName(realName, speciesId);
+            const fainted = isMonFainted(uid, mon);
+            const prevFainted = i > 0 ? isMonFainted(uid, arr[i - 1]) : false;
+            const isFirstFainted = fainted && !prevFainted;
+
+            return (
+              <span key={`overlay-icon-${i}`} className={`mini-icon-wrapper overlay ${isFirstFainted ? 'first-fainted' : ''}`}>
+                <img
+                  src={`/MiniIcons/${iconName}.png`}
+                  alt={mon.nickname || realName}
+                  className={`overlay-mini-icon ${fainted ? 'fainted' : ''}`}
+                  style={fainted ? { filter: 'grayscale(100%)', opacity: 0.6 } : {}}
+                  title={`${realName}`}
+                  onError={(e) => { (e.target as HTMLImageElement).src = '/MiniIcons/question.png'; }}
+                />
+              </span>
+            );
+          })}
+        </div>
+      ) : (
+        <p className="overlay-no-save">Waiting for save…</p>
+      )}
+    </div>
+  );
+});
+
+const SidebarPlayerCard = React.memo(function SidebarPlayerCard({
+  uid,
+  displayName,
+  saveData,
+  mapName,
+  inBattle,
+  isReady,
+  sortPokemon,
+  isMonFainted,
+  isPlayerDisconnected,
+  resolveMetadata,
+}: PlayerCardProps & { isReady: boolean }) {
+  // Detect wipe (InsideOfTruck) or win (champion trainer-card win)
+  const isWiped = saveData?.map_name === 'InsideOfTruck';
+  const mostRecentLossName = saveData?.most_recent_loss_name;
+  const championName = getChampionName(saveData);
+  const showDisconnected =
+    isPlayerDisconnected(uid, saveData) && !isWiped && !championName;
+  const currentMap = mapName ?? saveData?.map_name;
+
+  return (
+    <div className={`sidebar-player-card ${isReady ? 'race-ready' : ''}`}>
+      <div className="sidebar-player-header">
+        <span className={`sidebar-username ${showDisconnected ? 'disconnected' : ''} ${isWiped ? 'wiped' : ''} ${championName ? 'winner' : ''}`}>
+          {displayName}
+          {isWiped && mostRecentLossName && (
+            <span className="wipe-text"> (Wiped to {mostRecentLossName})</span>
+          )}
+          {championName && (
+            <span className="win-text"> (Beat {championName}!)</span>
+          )}
+          {showDisconnected && (
+            <span className="disconnect-text"> (Disconnected)</span>
+          )}
+        </span>
+        <span className="sidebar-badges">
+          {saveData ? `${saveData.badge_count} ${saveData.badge_count === 1 ? 'badge' : 'badges'}` : '— badges'}
+        </span>
+      </div>
+      {currentMap && (
+        <div className="sidebar-map" title={`${currentMap} (map)`}>
+          {formatMapName(currentMap)}
+          {inBattle && <span className="in-battle-suffix"> (In battle)</span>}
+        </div>
+      )}
+      {saveData ? (
+        <div className="sidebar-mon-icons">
+          {sortPokemon(uid, cardEntries(saveData)).map((mon: any, i: number, arr: any[]) => {
+            const speciesId = mon.species_id ?? mon.speciesId;
+            const speciesData = resolveMetadata(speciesId, mon.nickname);
+            const realName = (speciesId === 412 && mon.nickname?.toLowerCase() === 'egg') ? "Egg" : (speciesData?.name || `ID ${speciesId}`);
+            const iconName = getIconName(realName, speciesId);
+            const abilityName = speciesData?.abilities?.[mon.ability_num] || 'Unknown';
+            const fainted = isMonFainted(uid, mon);
+            const prevFainted = i > 0 ? isMonFainted(uid, arr[i - 1]) : false;
+            const isFirstFainted = fainted && !prevFainted;
+            const hasNickname = isActuallyNicknamed(mon.nickname, speciesId, realName);
+
+            return (
+              <span key={`icon-${i}`} className={`mini-icon-wrapper sidebar ${isFirstFainted ? 'first-fainted' : ''}`}>
+                <img
+                  src={`/MiniIcons/${iconName}.png`}
+                  alt={mon.nickname || realName}
+                  className={`sidebar-mini-icon ${fainted ? 'fainted' : ''}`}
+                  style={fainted ? { filter: 'grayscale(100%)', opacity: 0.6 } : {}}
+                  title={`${hasNickname ? `${mon.nickname} (${realName})` : realName} (${abilityName}) - ${mon.nature || 'Unknown'} Nature${mon.nature ? NATURE_EFFECTS[mon.nature] : ''}${mon.ivs ? `\nIVs: ${mon.ivs.hp}/${mon.ivs.atk}/${mon.ivs.def}/${mon.ivs.spa}/${mon.ivs.spd}/${mon.ivs.spe}` : ''}${mon.moves && mon.moves.some((id: number) => id > 0) ? `\nMoves: ${mon.moves.filter((id: number) => id > 0).map((id: number) => MOVES[id]?.name).filter(Boolean).join(', ')}` : ''}`}
+                  onError={(e) => { (e.target as HTMLImageElement).src = '/MiniIcons/question.png'; }}
+                />
+              </span>
+            );
+          })}
+        </div>
+      ) : (
+        <p className="sidebar-no-save">Waiting for save…</p>
+      )}
+    </div>
+  );
+});
 
 // Boss trainers a player can forfeit to. Ids match TRAINER_ID_TO_NAME in
 // parseSaveFile.ts so the recorded loss shows the same name everywhere.
@@ -455,14 +635,45 @@ const isBossIvs = (ivs: { hp: number; atk: number; def: number; spa: number; spd
   return ivs.hp === 31 && ivs.atk === 31 && ivs.def === 31 && ivs.spa === 31 && ivs.spd === 31 && ivs.spe === 31;
 };
 
-// Drops slots that decoded from a garbage live read (see isTrainerNameNickname)
-// or that belong to a boss trainer (all-31 IVs, see isBossIvs).
+const normalizeName = (s: string): string => s.toLowerCase().replace(/[^a-z0-9]/g, '');
+
+// A live read that pinned the wrong region can decode a slot whose plaintext
+// nickname is a *different* species' name than the species_id it decrypts to.
+//  That is physically impossible for a real Pokémon:
+//   • an un-nicknamed mon's nickname is always its own species name (or a
+//     truncated prefix of it), and
+//   • a genuinely nicknamed mon never carries another species' exact name.
+// So if a slot's nickname is ANY valid species name other than its own, the
+// slot came from a misaligned/garbage read and must not be shown.
+const isForeignSpeciesNickname = (mon: SavePokemon): boolean => {
+  const nick = mon.nickname;
+  if (!nick) return false;
+  if (mon.species_id === 412 && nick.toLowerCase() === 'egg') return false;
+  const n = normalizeName(nick);
+  if (!n) return false;
+  const ownInfo = SPECIES_BY_ID[mon.species_id];
+  const ownName = ownInfo ? normalizeName(ownInfo.name) : '';
+  // It's this mon's own (possibly truncated) species name -> fine.
+  if (ownName && (ownName === n || ownName.startsWith(n))) return false;
+  // Does the nickname name some *other* species in the ROM map?
+  for (const id in SPECIES_BY_ID) {
+    if (Number(id) === mon.species_id) continue;
+    const cand = normalizeName(SPECIES_BY_ID[id].name);
+    if (cand === n || cand.startsWith(n)) return true;
+  }
+  return false;
+};
+
+// Drops slots that decoded from a garbage live read (see isTrainerNameNickname),
+// that belong to a boss trainer (all-31 IVs, see isBossIvs), or whose plaintext
+// nickname is another species' name (see isForeignSpeciesNickname).
 // Returns null when the ENTIRE read is garbage so the caller can fall back to
 // the .sav party instead of clobbering the display with nonsense.
 const filterLiveParty = (party: SavePokemon[], trainerName: string | undefined): SavePokemon[] | null => {
   const clean = party.filter((m) => {
     if (isTrainerNameNickname(m.nickname, trainerName)) return false;
     if (isBossIvs(m.ivs)) return false;
+    if (isForeignSpeciesNickname(m)) return false;
     return true;
   });
   return clean.length > 0 ? clean : null;
@@ -510,6 +721,17 @@ const EmulatorPage: React.FC = () => {
   const [emulatorHeightPx, setEmulatorHeightPx] = useState<number | null>(null);
   const [emulatorWidthPx, setEmulatorWidthPx] = useState<number | null>(null);
   const [isResizing, setIsResizing] = useState(false);
+
+  // Progress (0..1) of the initial full-heap scan that locates the live party
+  // in the WASM heap. Mirrors liveScanStateRef so the first scan's lag spike is
+  // explained by a small load bar bottom-right instead of looking like a
+  // freeze. null = not scanning / hidden.
+  const [scanProgress, setScanProgress] = useState<number | null>(null);
+
+  // Whether THIS player is mid-battle, read live from the game's EWRAM buffer
+  // (byte +0x05 of gLiveWarpStatus, mirrored from gMain.inBattle every frame).
+  // Drives the "(In battle)" suffix on the player's own location card.
+  const [myInBattle, setMyInBattle] = useState(false);
 
   const [autosaveHistory, setAutosaveHistory] = useState<{ id: string; ts: number }[]>([]);
   const [isAutosaveModalOpen, setIsAutosaveModalOpen] = useState(false);
@@ -644,6 +866,20 @@ const EmulatorPage: React.FC = () => {
   // Mirror of mySaveData so the live poll can read the latest base save
   // (trainer/money/badges/box from the .sav parse) without a stale closure.
   const mySaveDataRef = useRef<SaveData | null>(null);
+  // Live current-map: the WASM-heap offset where the GBA EWRAM region begins,
+  // discovered once by scanning for the decomp's live warp buffer (see the map
+  // read in livePollRef), plus the chunked-scan state. `lastPostedMapRef` is
+  // the last map identifier committed, so the /location ping only fires on an
+  // actual map transition. `lastPostedBattleRef` mirrors the in-battle flag the
+  // same way so entering/exiting a battle also pings without spamming.
+  const ewramBaseRef = useRef<number | null>(null);
+  const ewramScanStartRef = useRef(0);
+  const ewramScanDoneRef = useRef(false);
+  const ewramScanRetryAtRef = useRef(0);
+  const lastPostedMapRef = useRef<string | null>(null);
+  const lastPostedBattleRef = useRef(false);
+  const LIVE_MAP_SCAN_CHUNK = 2 * 1024 * 1024;
+  const LIVE_MAP_SCAN_RETRY_MS = 10000;
   // Inferred PC box. Blitz only writes the flash on manual saves, so the .sav
   // box goes stale the moment the player moves mons around in storage. Since a
   // mon that leaves the live party must have gone to the box, we carry
@@ -680,6 +916,8 @@ const EmulatorPage: React.FC = () => {
   // party reappears there after a reset or battle.
   const LIVE_PARTY_MISS_LIMIT = 10;
   const LIVE_PARTY_OFFSETS_KEY = 'blitz_live_party_offsets';
+  // Filesystem watcher: poll .sav mtime/size to detect manual saves instantly.
+  const savWatcherRef = useRef<{ intervalId: ReturnType<typeof setInterval> | null; lastStat: { mtime: number; size: number } | null; retryIntervalId: ReturnType<typeof setInterval> | null; haveSeenSave: boolean }>({ intervalId: null, lastStat: null, retryIntervalId: null, haveSeenSave: false });
   // Consecutive fast-path misses at the current offset (transient battle
   // states recover within a tick or two, so a miss is never fatal).
   const livePartyMissesRef = useRef(0);
@@ -789,7 +1027,6 @@ const EmulatorPage: React.FC = () => {
       }
       setPokemonMetadata(map);
       setPokemonById(idMap);
-      console.log(`[Icon Metadata] Loaded ${all.length} pokemon (${regular.length} regular, ${rental.length} rental)`);
     }).catch((err) => {
       console.error('[Icon Metadata] Failed to load pokemon list:', err);
     });
@@ -849,7 +1086,6 @@ const EmulatorPage: React.FC = () => {
           }
           if (msg.type === 'SaveUpdate') {
             const { user_id, save_data } = msg.data as { user_id: string; save_data: any };
-            console.log('[EmulatorPage] SaveUpdate received for', user_id, save_data);
             setOtherSaves((prev) => {
               const prevBadges = prev[user_id]?.save?.badge_count ?? 0;
               const newBadges = save_data?.badge_count ?? 0;
@@ -860,6 +1096,30 @@ const EmulatorPage: React.FC = () => {
                   displayName: prev[user_id]?.displayName ?? user_id,
                   save: save_data,
                   lastBadgeTime: badgeChanged ? Date.now() : prev[user_id]?.lastBadgeTime,
+                },
+              };
+            });
+          }
+          // Lightweight live location ping from another player's heap read.
+          // Bail on our own echo (the server broadcasts to every subscriber,
+          // poster included) and on messages that don't change anything, so a
+          // redundant ping doesn't re-render the sidebar player cards.
+          if (msg.type === 'LocationUpdate') {
+            const { user_id, map_name, in_battle } = msg.data as { user_id: string; map_name: string; in_battle?: boolean };
+            if (user_id === currentUserId) return;
+            const nextInBattle = !!in_battle;
+            setOtherSaves((prev) => {
+              const prevEntry = prev[user_id];
+              if (prevEntry && prevEntry.mapName === map_name && !!prevEntry.inBattle === nextInBattle) {
+                return prev;
+              }
+              return {
+                ...prev,
+                [user_id]: {
+                  displayName: prevEntry?.displayName ?? user_id,
+                  save: prevEntry?.save ?? null,
+                  mapName: map_name,
+                  inBattle: nextInBattle,
                 },
               };
             });
@@ -972,14 +1232,12 @@ const EmulatorPage: React.FC = () => {
 
         if (reconnectCountRef.current < maxReconnectAttempts) {
           const delay = baseReconnectInterval * Math.pow(2, reconnectCountRef.current);
-          console.log('reconnecting ws');
           reconnectTimeoutRef.current = setTimeout(() => {
             reconnectCountRef.current += 1;
             wsConnect();
           }, delay);
         }
         else {
-          console.log('failed to reconnect ws in 5 tries, aborting...');
         }
       }
     };
@@ -1042,12 +1300,12 @@ const EmulatorPage: React.FC = () => {
     mySaveDataRef.current = mySaveData;
   }, [mySaveData]);
 
-  const isMonFainted = (uid: string, mon: any) => {
+  const isMonFainted = useCallback((uid: string, mon: any) => {
     if (mon.hp === 0) return true;
     const deadSet = faintedPids[uid];
     if (deadSet && deadSet.has(mon.personality)) return true;
     return false;
-  };
+  }, [faintedPids]);
 
   const toggleMarked = useCallback((pid: number) => {
     setMarkedPids(prev => {
@@ -1135,16 +1393,10 @@ const EmulatorPage: React.FC = () => {
         if (ok) {
           const region = { start, end: start + save.length };
           saveBufferRegionRef.current = region;
-          console.debug('[liveParty] flash save region located in heap', {
-            region,
-            saveLen: save.length,
-            heapLen: heap.length,
-          });
           return;
         }
       }
     }
-    console.debug('[liveParty] flash save region not located', { hit, saveLen: save.length, heapLen: heap.length });
   };
   const isInSaveBuffer = (off: number | null): boolean => {
     const r = saveBufferRegionRef.current;
@@ -1225,6 +1477,85 @@ const EmulatorPage: React.FC = () => {
     const heap = gm?.Module?.HEAPU8;
     if (!heap || heap.length < RAM_PARTY_BYTES + 3) return;
 
+    // Live current-map read. The Blitz decomp writes gLiveWarpStatus to a FIXED
+    // GBA EWRAM address (the last 16 bytes of EWRAM, 0x0203F000) on every map
+    // transition, so the player's location can be polled at a known address
+    // instead of scanning the heap for a party-anchored save block. The EWRAM
+    // region sits at a session-stable offset in the WASM heap; we locate it once
+    // (chunked, budgeted per tick) and every later poll is a single 16-byte
+    // read. The magic + advancing sequence only appear after the first in-game
+    // warp, so before that lastPostedMapRef stays null and the .sav's map_name
+    // is authoritative. This is independent of party detection, so it can never
+    // drift to a stale party/save copy the way an anchor-based read could.
+    let rawName: string | null = null;
+    let inBattle = false;
+    {
+      const ewramBase = ewramBaseRef.current;
+      if (ewramBase !== null) {
+        const frame = readLiveMapFrame(heap, ewramBase);
+        if (frame !== null) {
+          // Byte +0x05 of gLiveWarpStatus mirrors gMain.inBattle every frame,
+          // so this flips within one poll of entering/exiting any battle.
+          inBattle = frame.inBattle;
+          const nm = MAP_NAMES[frame.mapGroup]?.[frame.mapNum];
+          if (typeof nm === 'string') rawName = nm;
+        }
+      } else if (ewramScanDoneRef.current) {
+        // A finished pass with no buffer yet (pre-first-warp, or the buffer was
+        // cleared). Retry on a long backoff instead of scanning every tick.
+        if (Date.now() >= ewramScanRetryAtRef.current) {
+          ewramScanDoneRef.current = false;
+          ewramScanStartRef.current = 0;
+        }
+      } else {
+        const start = ewramScanStartRef.current;
+        const endLimit = Math.min(heap.length - LIVE_WARP_EWRAM_BASE_OFFSET, LIVE_SCAN_MAX_BYTES);
+        const next = Math.min(start + LIVE_MAP_SCAN_CHUNK, endLimit);
+        const base = findLiveMapEwramBase(
+          heap,
+          start,
+          next,
+          // Accept only a real LiveWarp buffer: valid map. The scan walks the
+          // heap from low addresses and can otherwise latch a false positive
+          // (random bytes that coincidentally carry the magic + a nonzero
+          // sequence + a valid-looking map) before reaching the real struct.
+          (g, n) => typeof MAP_NAMES[g]?.[n] === 'string'
+        );
+        if (base !== null) {
+          ewramBaseRef.current = base;
+          ewramScanDoneRef.current = true;
+          ewramScanRetryAtRef.current = 0;
+        } else if (next >= endLimit) {
+          ewramScanDoneRef.current = true;
+          ewramScanRetryAtRef.current = Date.now() + LIVE_MAP_SCAN_RETRY_MS;
+        } else {
+          ewramScanStartRef.current = next;
+        }
+      }
+    }
+    if (inBattle !== myInBattle) {
+      setMyInBattle(inBattle);
+    }
+    if (rawName !== null) {
+      const base = mySaveDataRef.current;
+      if (base && base.map_name !== rawName) {
+        mySaveDataRef.current = { ...base, map_name: rawName };
+        setMySaveData(mySaveDataRef.current);
+      }
+      if (lastPostedMapRef.current !== rawName || lastPostedBattleRef.current !== inBattle) {
+        lastPostedMapRef.current = rawName;
+        lastPostedBattleRef.current = inBattle;
+        if (draftId) {
+          fetch(`/api/drafts/${draftId}/location`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ map_name: rawName, in_battle: inBattle }),
+            credentials: 'include',
+          }).catch(() => { });
+        }
+      }
+    }
+
     // Applies a freshly read live party on top of the latest parsed save,
     // keeping trainer/money/badges and the inferred box intact.
     const applyLiveParty = (party: SavePokemon[]) => {
@@ -1271,7 +1602,6 @@ const EmulatorPage: React.FC = () => {
         }
         livePartyCandidatesRef.current.sort((a, b) => a - b);
         livePartyCandHashesRef.current = livePartyCandidatesRef.current.map(() => '');
-        console.debug('[liveParty] party copies located', { candidates: livePartyCandidatesRef.current });
         // A single copy leaves nothing to disambiguate — pin it directly.
         if (livePartyCandidatesRef.current.length === 1) {
           const c = livePartyCandidatesRef.current[0];
@@ -1282,7 +1612,6 @@ const EmulatorPage: React.FC = () => {
             livePartySessionValidatedRef.current = true;
             livePartyProvenLiveRef.current = true;
             livePartySigScanRef.current = { ids: [], next: 0 };
-            console.debug('[liveParty] single party copy, pinned', { off: c });
             applyLiveParty(parseRamParty(heap, c, false));
             return;
           }
@@ -1332,13 +1661,6 @@ const EmulatorPage: React.FC = () => {
         livePartySessionValidatedRef.current = true;
         livePartyProvenLiveRef.current = true;
         livePartySigScanRef.current = { ids: [], next: 0 };
-        console.debug('[liveParty] live party confirmed', {
-          off: target,
-          inFlash: isInSaveBuffer(target),
-          flashRegion: saveBufferRegionRef.current,
-          via: converged >= 0 ? 'converged-copy' : 'changed',
-          candidates: cands,
-        });
         applyLiveParty(parseRamParty(heap, target, false));
         return;
       }
@@ -1373,10 +1695,6 @@ const EmulatorPage: React.FC = () => {
         const hash = hashRamParty(heap, off);
         if (hash !== livePartyHashRef.current) {
           livePartyHashRef.current = hash;
-          console.debug('[liveParty] party updated', {
-            off,
-            species: parseRamParty(heap, off, false).map((m) => m.species_id),
-          });
           applyLiveParty(parseRamParty(heap, off, strict));
         }
         return;
@@ -1410,7 +1728,6 @@ const EmulatorPage: React.FC = () => {
       // session (different ROM build → different EWRAM layout) must give way to
       // a fresh scan. An offset validated this session is kept forever.
       if (!livePartySessionValidatedRef.current && livePartyMissesRef.current >= LIVE_PARTY_MISS_LIMIT) {
-        console.debug('[liveParty] persisted offset never validated, rescanning', { off });
         livePartyOffsetRef.current = null;
         livePartyHashRef.current = '';
         livePartyMissesRef.current = 0;
@@ -1423,8 +1740,6 @@ const EmulatorPage: React.FC = () => {
         st2.best = null;
         st2.next = 0;
         st2.lastAttempt = 0;
-      } else if (livePartyMissesRef.current === 1 || livePartyMissesRef.current % 40 === 0) {
-        console.debug('[liveParty] party region not valid this tick (transient)', { off, misses: livePartyMissesRef.current });
       }
       return;
     }
@@ -1440,6 +1755,12 @@ const EmulatorPage: React.FC = () => {
     st.running = true;
     const deadline = performance.now() + LIVE_SCAN_BUDGET_MS;
     const endLimit = Math.min(heap.length - RAM_PARTY_BYTES, LIVE_SCAN_MAX_BYTES);
+    // The first full-heap scan is the moment the tab visibly stutters (each
+    // tick spends up to the whole budget chewing 4-byte strides), so surface a
+    // load bar bottom-right until the party is located instead of letting that
+    // spike look like a freeze. Only the initial scan reaches this block — once
+    // an offset is found the poll uses the fast path and never rescans.
+    setScanProgress(st.next === 0 ? 0 : Math.min(1, st.next / endLimit));
     while (st.next <= endLimit && performance.now() < deadline) {
       // Skip the flash save-slot buffer wholesale — it is a rotating copy of
       // the save image, not live RAM, and its shapes can outscore the real
@@ -1460,8 +1781,6 @@ const EmulatorPage: React.FC = () => {
       st.lastAttempt = now;
       if (found !== null && getRamPartyCount(heap, found, false) !== null) {
         const party = parseRamParty(heap, found, false);
-        const count = getRamPartyCount(heap, found, false);
-        console.debug('[liveParty] found live party', { heapSize: heap.length, off: found, count, party });
         livePartyOffsetRef.current = found;
         livePartyHashRef.current = hashRamParty(heap, found);
         livePartyMissesRef.current = 0;
@@ -1477,6 +1796,7 @@ const EmulatorPage: React.FC = () => {
           } catch { /* ignore storage errors */ }
         }
         st.running = false;
+        setScanProgress(null);
         // Locate all copies of this party so the live one (which may sit
         // outside the checksum-valid region) can be identified by change.
         if (!livePartyProvenLiveRef.current && (party.length ?? 0) >= 2) {
@@ -1486,7 +1806,9 @@ const EmulatorPage: React.FC = () => {
         return;
       }
       // scanned the search region without a trustworthy party — retry later
-      console.debug('[liveParty] full heap scan found no party', { heapSize: heap.length, scannedTo: endLimit });
+      // No party yet (brand-new file / not saved) — hide the bar until the
+      // next backoff-gated pass.
+      setScanProgress(null);
     }
     st.running = false;
   };
@@ -1499,7 +1821,8 @@ const EmulatorPage: React.FC = () => {
     let parsed: SaveData;
     try {
       parsed = parseSaveFile(bytes, pokemonMetadata, pokemonById);
-    } catch {
+    } catch (e) {
+      console.error('[onRawSaveBytesRef] Parse error:', e);
       return;
     }
     // The flash save lags live RAM: the game only writes the flash on manual
@@ -1526,46 +1849,30 @@ const EmulatorPage: React.FC = () => {
     // trainer's OT name. Drop those slots; if the whole read was garbage,
     // keep the .sav party (which is a properly aligned save image).
     const livePartyClean = liveParty ? filterLiveParty(liveParty, parsed.trainer_name) : null;
-    if (liveParty && !livePartyClean) {
-      console.warn('[liveParty] dropped garbage live read (trainer-name nicknames)', {
-        off: liveOff,
-        count: liveParty.length,
-      });
-    }
     // Tag whether the pinned offset is the rotating flash save-slot buffer
-    // (the .sav image) vs. real EWRAM, then log the party being merged.
-    console.debug('[debug.sav] handler', {
-      liveOff,
-      inFlash: isInSaveBuffer(liveOff),
-      flashRegion: saveBufferRegionRef.current,
-      savPartySpecies: (parsed.party ?? []).map((m) => m.species_id),
-      livePartySpecies: liveParty?.map((m) => m.species_id) ?? null,
-      savPartyPids: (parsed.party ?? []).map((m) => m.personality),
-      livePartyPids: liveParty?.map((m) => m.personality) ?? null,
-      boxBefore: inferredBoxRef.current.size,
-    });
-    // The .sav carries the party's plaintext personalities at save time — use
-    // them to locate every copy in RAM (the live gPlayerParty included) when
-    // the live region is not yet proven. Self-heals once the player saves.
+    // (the .sav image) vs. real EWRAM. The .sav carries the party's plaintext
+    // personalities at save time — use them to locate every copy in RAM (the
+    // live gPlayerParty included) when the live region is not yet proven.
+    // Self-heals once the player saves.
     const savParty = parsed.party ?? [];
     if (!livePartyProvenLiveRef.current && (savParty.length ?? 0) >= 2 && !livePartySigScanRef.current.ids.length) {
       livePartySigScanRef.current = { ids: savParty.map((m) => m.personality), next: 0 };
     }
     reconcileBoxFromSave(parsed.box ?? [], parsed.party ?? [], livePartyClean);
-    console.debug('[debug.sav] afterReconcile', {
-      boxAfter: inferredBoxRef.current.size,
-      boxSpecies: Array.from(inferredBoxRef.current.values()).map((m) => m.species_id),
-      lastPartyPids: Array.from(lastPartyPidsRef.current),
-    });
     const syncedSave: SaveData = {
       ...parsed,
+      money: parsed.money,
+      // Prefer the live-settled map while one exists: the flash .sav can lag the
+      // live location by up to 10s, so it drives `map_name`. The buffer read is
+      // magic-validated, so a miss simply yields no update and the .sav's map
+      // shows through and recovers the display.
+      ...(lastPostedMapRef.current ? { map_name: lastPostedMapRef.current } : {}),
       ...(livePartyClean ? { party: livePartyClean } : {}),
       box: Array.from(inferredBoxRef.current.values()),
     };
     setMySaveData(syncedSave);
     const now = new Date();
     setSaveLastSynced(now);
-    console.log(`Synced save at ${now.toLocaleTimeString()}`);
 
     // Check for wipe (InsideOfTruck) and send notification
     const isWiped = parsed.map_name === 'InsideOfTruck';
@@ -1611,15 +1918,14 @@ const EmulatorPage: React.FC = () => {
     );
     const hallOfFameTeam = beatChampion
       ? (syncedSave.party ?? []).slice(0, 6).map((mon: any) => {
-          const speciesId = mon.species_id ?? mon.speciesId;
-          const speciesData = resolveMetadata(speciesId, mon.nickname);
-          const realName = (speciesId === 412 && mon.nickname?.toLowerCase() === 'egg') ? "Egg" : (speciesData?.name || `ID ${speciesId}`);
-          return { name: realName, icon: getIconName(realName, speciesId) };
-        })
+        const speciesId = mon.species_id ?? mon.speciesId;
+        const speciesData = resolveMetadata(speciesId, mon.nickname);
+        const realName = (speciesId === 412 && mon.nickname?.toLowerCase() === 'egg') ? "Egg" : (speciesData?.name || `ID ${speciesId}`);
+        return { name: realName, icon: getIconName(realName, speciesId) };
+      })
       : undefined;
 
     if (draftId) {
-      console.log('[EmulatorPage] Sending save data with trainer_card_wins:', syncedSave.trainer_card_wins);
       postSaveToBackend(syncedSave, hallOfFameTeam ? { hall_of_fame_team: hallOfFameTeam } : undefined);
     }
   };
@@ -1752,19 +2058,15 @@ const EmulatorPage: React.FC = () => {
     };
 
     let localStorageKey = getLocalStorageKey();
-    console.log('[ControlBindings] Initial localStorage key:', localStorageKey);
 
     // Load control bindings from backend
     const loadControlBindings = async () => {
       try {
         const bindings = await fetchControlBindings();
-        console.log('[ControlBindings] Fetched from backend:', bindings);
         if (bindings && typeof bindings === 'object') {
           lastKnownBindingsRef.current = JSON.stringify(bindings);
-          console.log('[ControlBindings] Stored bindings in ref, will apply after EmulatorJS initializes');
           return bindings;
         } else {
-          console.log('[ControlBindings] No bindings found or invalid format');
           return null;
         }
       } catch (err) {
@@ -1775,12 +2077,10 @@ const EmulatorPage: React.FC = () => {
 
     // Load bindings and then initialize emulator
     loadControlBindings().then((bindings) => {
-      console.log('[ControlBindings] Bindings loaded, initializing emulator');
 
       // Set control settings directly in EmulatorJS configuration
       // The correct property is EJS_defaultControls (mapped to config.defaultControllers)
       if (bindings) {
-        console.log('[ControlBindings] Setting EJS_defaultControls:', bindings);
         (window as any).EJS_defaultControls = bindings;
       }
 
@@ -1791,7 +2091,6 @@ const EmulatorPage: React.FC = () => {
         // Check ALL matching localStorage keys for changes
         const allKeys = Object.keys(localStorage).filter(k => k.startsWith('ejs-') && k.endsWith('-settings'));
         const matchingKeys = allKeys.filter(k => k.startsWith(`ejs-${gameId}-${core}-`));
-        console.log('[ControlBindings] Checking matching keys:', matchingKeys);
 
         for (const key of matchingKeys) {
           const settingsStr = localStorage.getItem(key);
@@ -1800,11 +2099,8 @@ const EmulatorPage: React.FC = () => {
               const settings = JSON.parse(settingsStr);
               const currentBindings = settings.controlSettings;
               const bindingsStr = currentBindings ? JSON.stringify(currentBindings) : null;
-              console.log('[ControlBindings] Key:', key, 'Extracted controlSettings:', bindingsStr?.substring(0, 100), 'Last known:', lastKnownBindingsRef.current?.substring(0, 100));
               if (bindingsStr && bindingsStr !== lastKnownBindingsRef.current) {
-                console.log('[ControlBindings] Detected change in', key, ', saving to backend:', currentBindings);
                 saveControlBindings(currentBindings).then(() => {
-                  console.log('[ControlBindings] Successfully saved to backend');
                 }).catch(err => {
                   console.error('[ControlBindings] Failed to save control bindings:', err);
                 });
@@ -1851,7 +2147,7 @@ const EmulatorPage: React.FC = () => {
         // Toggle overlay on Tab key
         if (e.key === 'Tab') {
           e.preventDefault();
-          setShowOverlay(prev => !prev);
+          // setShowOverlay(prev => !prev);
         }
       };
       document.addEventListener('keydown', blockShortcutsRef.current, true);
@@ -1917,21 +2213,33 @@ const EmulatorPage: React.FC = () => {
       ];
 
       // Set callbacks BEFORE loading the emulator script
-      // Hook saveSaveFiles once the emulator is ready — fires on toolbar save
-      // button, tab background/unload, and our 30-second auto-sync interval.
+      // Hook saveSaveFiles once the emulator is ready — this is the true "the
+      // saved game changed" signal: it fires when the player saves in-game or
+      // uses the toolbar save button, carrying the actual .sav bytes. We dedupe
+      // bursts of identical bytes (the mGBA "double-tap" / repeated flushes
+      // emit the same data twice) so we parse + broadcast only real changes.
       window.EJS_ready = () => {
-        console.log('[ControlBindings] EmulatorJS ready');
 
+        let lastSavHash: string | null = null;
         window.EJS_emulator?.on('saveSaveFiles', (rawData) => {
           const bytes = rawData as Uint8Array | null | undefined;
           if (!bytes || !(bytes instanceof Uint8Array) || bytes.length === 0) return;
+          // Cheap content hash: skip identical re-emits of the same save.
+          let h = 0x811c9dc5;
+          for (let i = 0; i < bytes.length; i++) {
+            h ^= bytes[i];
+            h = Math.imul(h, 0x01000193);
+          }
+          const hash = (h >>> 0).toString(16);
+          if (hash === lastSavHash) return;
+          lastSavHash = hash;
           onRawSaveBytesRef.current?.(bytes);
 
-          // Sync Emscripten FS to IndexedDB
+          // Sync Emscripten FS to IndexedDB so the browser-stored save survives
+          // a reload even when no manual save is made.
           try {
             window.EJS_emulator?.gameManager?.FS?.syncfs(false, (err: any) => {
               if (err) console.error('Error syncing IDBFS:', err);
-              else console.log('Successfully synced IDBFS to browser IndexedDB.');
             });
           } catch (e) {
             console.error('Failed to run syncfs:', e);
@@ -1955,37 +2263,30 @@ const EmulatorPage: React.FC = () => {
       // for the "start" event before scheduling the interval.
       // We use a "double-tap" save to fix mgba core buffer lag.
       window.EJS_onGameStart = () => {
-        console.log('[ControlBindings] Game started, applying saved bindings');
 
         // Apply saved bindings when the game starts
         if (lastKnownBindingsRef.current) {
           const bindings = JSON.parse(lastKnownBindingsRef.current);
-          console.log('[ControlBindings] Applying bindings on game start:', bindings);
 
           // Try multiple approaches to set controls
           setTimeout(() => {
             const gameMgr = window.EJS_emulator?.gameManager;
             if (gameMgr) {
-              console.log('[ControlBindings] Game manager available, exploring structure:', Object.keys(gameMgr));
 
               // Try to find and update the virtual gamepad controls
               if ((gameMgr as any).virtualGamepad) {
-                console.log('[ControlBindings] Found virtualGamepad, setting controls');
                 (gameMgr as any).virtualGamepad.controls = bindings;
               }
 
               // Try to update the controls object directly
               if ((gameMgr as any).controls) {
-                console.log('[ControlBindings] Found controls object, updating');
                 Object.assign((gameMgr as any).controls, bindings);
               }
 
               // Try to access the input system
               if ((gameMgr as any).input) {
-                console.log('[ControlBindings] Found input system, exploring:', Object.keys((gameMgr as any).input));
                 if ((gameMgr as any).input.controls) {
                   (gameMgr as any).input.controls = bindings;
-                  console.log('[ControlBindings] Set input.controls');
                 }
               }
 
@@ -1993,7 +2294,6 @@ const EmulatorPage: React.FC = () => {
               const possibleMethods = ['setControls', 'updateControls', 'loadControls', 'applyControls'];
               for (const method of possibleMethods) {
                 if (typeof (gameMgr as any)[method] === 'function') {
-                  console.log('[ControlBindings] Calling method:', method);
                   (gameMgr as any)[method](bindings);
                 }
               }
@@ -2001,12 +2301,132 @@ const EmulatorPage: React.FC = () => {
           }, 1000);
         }
 
-        syncIntervalRef.current = setInterval(() => {
-          window.EJS_emulator?.gameManager?.saveSaveFiles();
-          setTimeout(() => {
-            window.EJS_emulator?.gameManager?.saveSaveFiles();
-          }, 200);
-        }, 10_000);
+        // Filesystem watcher: polls the Emscripten FS for the flash-backed .sav/.srm
+        // every 3s and parses ONLY when the bytes actually change.
+        //
+        // The save file path is provided by the libretro core via
+        // gameManager.getSaveFilePath()
+        let savPath: string | null = null;
+        let savLastHash: string | null = null;
+        let savLastBytes: Uint8Array | null = null;
+        const hashBytes = (bytes: Uint8Array): string => {
+          let h = 0x811c9dc5;
+          for (let i = 0; i < bytes.length; i++) {
+            h ^= bytes[i];
+            h = Math.imul(h, 0x01000193);
+          }
+          return (h >>> 0).toString(16);
+        };
+        const hashSample = (bytes: Uint8Array): string => {
+          // Hash only a small window (head + tail) so the common no-change tick
+          // skips the full 128KB hash. FNV-1a over the sample bytes.
+          const head = 1024;
+          const tail = 1024;
+          let h = 0x811c9dc5;
+          const len = bytes.length;
+          const end = Math.max(0, len - tail);
+          const step = Math.max(1, Math.floor(end / 32) || 1);
+          for (let i = 0; i < end; i += step) {
+            h ^= bytes[i];
+            h = Math.imul(h, 0x01000193);
+          }
+          for (let i = 0; i < head && i < len; i++) {
+            h ^= bytes[i];
+            h = Math.imul(h, 0x01000193);
+          }
+          if (tail > 0) {
+            for (let i = end; i < len; i++) {
+              h ^= bytes[i];
+              h = Math.imul(h, 0x01000193);
+            }
+          }
+          return (h >>> 0).toString(16);
+        };
+        const parseSavFile = () => {
+          const FS = window.EJS_emulator?.gameManager?.FS ?? (window as any).Module?.FS;
+          if (!FS || !savPath) return;
+          try {
+            // Re-read the file on every tick (cheap-ish) so we never go stale,
+            // but only do the full hash + parse when the sampled region moved.
+            const bytes = FS.readFile(savPath, { encoding: 'binary' });
+            if (!bytes || bytes.length === 0) return;
+            const arr = bytes instanceof Uint8Array ? bytes : new Uint8Array(bytes);
+            // A non-empty save file exists — mark it so the SRAM flush can back
+            // off from its pre-first-save cadence.
+            if (!savWatcherRef.current.haveSeenSave) {
+              savWatcherRef.current.haveSeenSave = true;
+            }
+            // If we already have a copy and its head/tail window is identical,
+            // the saved game almost certainly didn't change — skip the full
+            // hash entirely (mtime is unreliable for mGBA flash writes, so we
+            // can't stat-and-bail; the sample is our cheap content check).
+            if (savLastBytes && hashSample(arr) === hashSample(savLastBytes)) return;
+            const h = hashBytes(arr);
+            // Content-hash only: mtime is unreliable for mGBA flash writes.
+            if (h === savLastHash) return;
+            savLastHash = h;
+            savLastBytes = arr;
+            onRawSaveBytesRef.current?.(arr);
+          } catch { }
+        };
+        const startWatcher = () => {
+          const FS = window.EJS_emulator?.gameManager?.FS ?? (window as any).Module?.FS;
+          if (!FS) return false;
+          // First, ask the core for the exact save file path
+          try {
+            const corePath = window.EJS_emulator?.gameManager?.getSaveFilePath?.();
+            if (corePath) {
+              try {
+                const stat = FS.stat(corePath);
+                if (stat && stat.size > 0) { savPath = corePath; return true; }
+              } catch { }
+              // Try to list parent directory to understand structure
+              const parts = corePath.split('/');
+              parts.pop();
+              const parentDir = parts.join('/') || '/';
+              try {
+                const entries = FS.readdir(parentDir);
+              } catch { }
+            }
+          } catch { }
+          // Fallback: try to infer from gameName (draftId)
+          const gameName = draftId || 'game';
+          const fallbackPaths = [
+            `/data/saves/${gameName}.srm`,
+            `/data/saves/${gameName}.sav`,
+            `/data/saves/pokemon_emerald.srm`,
+            `/data/saves/pokemon_emerald.sav`,
+            `/data/saves/mGBA/${gameName}.srm`,
+            `/data/saves/mGBA/${gameName}.sav`,
+          ];
+          for (const p of fallbackPaths) {
+            try {
+              const stat = FS.stat(p);
+              if (stat && stat.size > 0) { savPath = p; return true; }
+            } catch { }
+          }
+          // List /data/saves to see what's actually there
+          try {
+            const entries = FS.readdir('/data/saves');
+          } catch { }
+          return false;
+        };
+        if (startWatcher()) {
+          savWatcherRef.current.intervalId = setInterval(parseSavFile, 3000);
+          parseSavFile();
+        } else {
+          // Retry finding the path every 10s until it appears (e.g., first save creates it)
+          const retryInterval = setInterval(() => {
+            if (startWatcher()) {
+              clearInterval(retryInterval);
+              savWatcherRef.current.retryIntervalId = null;
+              savWatcherRef.current.intervalId = setInterval(parseSavFile, 3000);
+              parseSavFile();
+            }
+          }, 10000);
+          // Clean up retry on unmount
+          savWatcherRef.current.retryIntervalId = retryInterval;
+        }
 
         // If a party offset was found for this exact ROM in a previous session,
         // probe it directly instead of scanning the heap — the EWRAM layout is
@@ -2025,7 +2445,6 @@ const EmulatorPage: React.FC = () => {
               livePartyCandHashesRef.current = [];
               livePartyProvenLiveRef.current = false;
               livePartySigScanRef.current = { ids: [], next: 0 };
-              console.debug('[liveParty] restoring persisted party offset', { savedOff });
             }
           } catch { /* ignore storage errors */ }
         }
@@ -2035,15 +2454,28 @@ const EmulatorPage: React.FC = () => {
         if (liveSyncIntervalRef.current !== null) {
           clearInterval(liveSyncIntervalRef.current);
         }
-        const gm0 = window.EJS_emulator?.gameManager;
-        console.debug('[liveParty] starting live poll', {
-          heapPresent: !!gm0?.Module?.HEAPU8,
-          heapSize: gm0?.Module?.HEAPU8?.length,
-          partyBytes: RAM_PARTY_BYTES,
-        });
         liveSyncIntervalRef.current = setInterval(() => {
           livePollRef.current?.();
         }, LIVE_POLL_MS);
+
+        // Periodically flush SRAM to filesystem so in-game saves become visible.
+        // In-game save writes to SRAM but doesn't auto-flush; this triggers the
+        // saveSaveFiles event and creates the .srm file for the watcher. saveSaveFiles
+        // is a mutator on the emulator thread (it serializes the SRAM buffer), so it
+        // backs off once a save file exists: flush every 5s BEFORE the first save so
+        // the .srm gets created sooner, then settle to every 10s afterwards (the 3s
+        // watcher already surfaces in-game saves the moment the core writes them).
+        let sramFlushTimer: ReturnType<typeof setInterval> | null = null;
+        const sramFlush = () => {
+          try { window.EJS_emulator?.gameManager?.saveSaveFiles?.(); } catch { }
+          const hasSave = !!savWatcherRef.current.haveSeenSave;
+          clearInterval(sramFlushTimer as ReturnType<typeof setInterval>);
+          sramFlushTimer = setInterval(sramFlush, hasSave ? 10000 : 5000);
+          (window as any).__sramFlushInterval = sramFlushTimer;
+        };
+        sramFlushTimer = setInterval(sramFlush, 5000);
+        // Store for cleanup
+        (window as any).__sramFlushInterval = sramFlushTimer;
         livePollRef.current?.();
 
         // Autosave state every 60 seconds
@@ -2062,11 +2494,11 @@ const EmulatorPage: React.FC = () => {
 
               const newId = Date.now().toString();
               const key = `state_${draftId || 'standalone'}_${newId}`;
-              
+
               void setStoredSave(key, stateData);
               const now = new Date();
               const newEntry = { id: newId, ts: now.getTime() };
-              
+
               history.push(newEntry);
               // Keep only the most recent 60 autosaves
               while (history.length > 60) {
@@ -2075,7 +2507,7 @@ const EmulatorPage: React.FC = () => {
                   void deleteStoredSave(`state_${draftId || 'standalone'}_${oldest.id}`);
                 }
               }
-              
+
               localStorage.setItem(metaKey, JSON.stringify(history));
               // Normalize before updating state
               const norm = history.map((e: any) => {
@@ -2089,8 +2521,6 @@ const EmulatorPage: React.FC = () => {
                 return { id, ts };
               });
               setAutosaveHistory(norm);
-              
-              console.log('Autosaved emulator state successfully.');
             }
           } catch (e) {
             console.warn('Failed to capture autosave state:', e);
@@ -2134,6 +2564,14 @@ const EmulatorPage: React.FC = () => {
         clearInterval(syncIntervalRef.current);
         syncIntervalRef.current = null;
       }
+      if (savWatcherRef.current.intervalId !== null) {
+        clearInterval(savWatcherRef.current.intervalId);
+        savWatcherRef.current.intervalId = null;
+      }
+      if (savWatcherRef.current.retryIntervalId !== null) {
+        clearInterval(savWatcherRef.current.retryIntervalId);
+        savWatcherRef.current.retryIntervalId = null;
+      }
       if (liveSyncIntervalRef.current !== null) {
         clearInterval(liveSyncIntervalRef.current);
         liveSyncIntervalRef.current = null;
@@ -2145,6 +2583,12 @@ const EmulatorPage: React.FC = () => {
       if (controlBindingsIntervalRef.current !== null) {
         clearInterval(controlBindingsIntervalRef.current);
         controlBindingsIntervalRef.current = null;
+      }
+      // Cleanup SRAM flush interval
+      const sramFlushInterval = (window as any).__sramFlushInterval;
+      if (sramFlushInterval) {
+        clearInterval(sramFlushInterval);
+        (window as any).__sramFlushInterval = null;
       }
       // Restore original localStorage.setItem
       if (originalSetItemRef.current) {
@@ -2392,7 +2836,7 @@ const EmulatorPage: React.FC = () => {
   }, [readyPlayers, allPlayerEntries, countdown]);
 
   // Sorting helper: Active -> Boxed -> Fainted (at end)
-  const sortPokemon = (uid: string, mons: any[]) => {
+  const sortPokemon = useCallback((uid: string, mons: any[]) => {
     return [...mons].sort((a, b) => {
       const aFainted = isMonFainted(uid, a);
       const bFainted = isMonFainted(uid, b);
@@ -2400,17 +2844,20 @@ const EmulatorPage: React.FC = () => {
       if (a._isParty !== b._isParty) return a._isParty ? -1 : 1;
       return 0;
     });
-  };
+  }, [isMonFainted]);
 
   // True when a player had joined the race (has a save or we've seen them
   // connected) but no longer has a live emulator WebSocket — i.e. they closed
   // their tab or left. Never applies to our own entry, and only once we know
   // who's online so nothing flashes before the presence snapshot arrives.
-  const isPlayerDisconnected = (uid: string, saveData: SaveData | null) =>
-    presenceLoaded &&
-    uid !== currentUserId &&
-    !connectedUsers.has(uid) &&
-    (saveData !== null || everConnectedUsers.has(uid));
+  const isPlayerDisconnected = useCallback(
+    (uid: string, saveData: SaveData | null) =>
+      presenceLoaded &&
+      uid !== currentUserId &&
+      !connectedUsers.has(uid) &&
+      (saveData !== null || everConnectedUsers.has(uid)),
+    [presenceLoaded, currentUserId, connectedUsers, everConnectedUsers]
+  );
 
   // ── Emulator resize handlers ─────────────────────────────────────────────
   // The handles sit on the emulator's bottom / right edges (the boundaries
@@ -2581,6 +3028,16 @@ const EmulatorPage: React.FC = () => {
                   </>
                 )}
               </div>
+              {scanProgress !== null && (
+                <div className="scan-load-bar">
+                  <div className="scan-load-bar-track">
+                    <div className="scan-load-bar-fill" style={{ width: `${Math.round(scanProgress * 100)}%` }} />
+                  </div>
+                  <span className="scan-load-bar-label">
+                    {scanProgress < 1 ? 'Scanning game memory…' : 'Scanning…'}
+                  </span>
+                </div>
+              )}
               {countdown !== null && (
                 <div className="countdown-overlay">
                   <span className="countdown-text">
@@ -2688,67 +3145,21 @@ const EmulatorPage: React.FC = () => {
                       </div>
                     )}
                     {/* Race standings */}
-                    {sidebarEntries.map(([uid, { displayName, save }]) => {
+                    {sidebarEntries.map(([uid, { displayName, save, mapName, inBattle }]) => {
                       const isCurrentUser = uid === currentUserId;
-                      const saveData = isCurrentUser ? mySaveData : save;
-                      const displayDisplayName = isCurrentUser ? (currentUsername || 'You') : displayName;
-
-                      // Detect wipe (InsideOfTruck) or win (champion trainer-card win)
-                      const isWiped = saveData?.map_name === 'InsideOfTruck';
-                      const mostRecentLossName = saveData?.most_recent_loss_name;
-                      const championName = getChampionName(saveData);
-                      const showDisconnected =
-                        isPlayerDisconnected(uid, saveData) && !isWiped && !championName;
-
                       return (
-                        <div key={uid} className="overlay-player-card">
-                          <div className="overlay-player-header">
-                            <span className={`overlay-username ${showDisconnected ? 'disconnected' : ''}`}>{displayDisplayName}</span>
-                            {isWiped && mostRecentLossName && (
-                              <span className="wipe-text">(Wiped to {mostRecentLossName})</span>
-                            )}
-                            {championName && (
-                              <span className="win-text">(Beat {championName}!)</span>
-                            )}
-                            {showDisconnected && (
-                              <span className="disconnect-text">(Disconnected)</span>
-                            )}
-                            <span className="overlay-badges">
-                              {saveData ? `${saveData.badge_count} ${saveData.badge_count === 1 ? 'badge' : 'badges'}` : '— badges'}
-                            </span>
-                          </div>
-                          {saveData ? (
-                            <div className="overlay-mon-icons">
-                              {sortPokemon(uid, [
-                                ...(saveData.party ?? []).map((m: any) => ({ ...m, _isParty: true })),
-                                ...(saveData.box ?? []).map((m: any) => ({ ...m, _isParty: false })),
-                              ]).map((mon: any, i: number, arr: any[]) => {
-                                const speciesId = mon.species_id ?? mon.speciesId;
-                                const speciesData = resolveMetadata(speciesId, mon.nickname);
-                                const realName = (speciesId === 412 && mon.nickname?.toLowerCase() === 'egg') ? "Egg" : (speciesData?.name || `ID ${speciesId}`);
-                                const iconName = getIconName(realName, speciesId);
-                                const fainted = isMonFainted(uid, mon);
-                                const prevFainted = i > 0 ? isMonFainted(uid, arr[i - 1]) : false;
-                                const isFirstFainted = fainted && !prevFainted;
-
-                                return (
-                                  <span key={`overlay-icon-${i}`} className={`mini-icon-wrapper overlay ${isFirstFainted ? 'first-fainted' : ''}`}>
-                                    <img
-                                      src={`/MiniIcons/${iconName}.png`}
-                                      alt={mon.nickname || realName}
-                                      className={`overlay-mini-icon ${fainted ? 'fainted' : ''}`}
-                                      style={fainted ? { filter: 'grayscale(100%)', opacity: 0.6 } : {}}
-                                      title={`${realName}`}
-                                      onError={(e) => { (e.target as HTMLImageElement).src = '/MiniIcons/question.png'; }}
-                                    />
-                                  </span>
-                                );
-                              })}
-                            </div>
-                          ) : (
-                            <p className="overlay-no-save">Waiting for save…</p>
-                          )}
-                        </div>
+                        <OverlayPlayerCard
+                          key={uid}
+                          uid={uid}
+                          displayName={isCurrentUser ? (currentUsername || 'You') : displayName}
+                          saveData={isCurrentUser ? mySaveData : save}
+                          mapName={isCurrentUser ? undefined : mapName}
+                          inBattle={isCurrentUser ? myInBattle : !!inBattle}
+                          sortPokemon={sortPokemon}
+                          isMonFainted={isMonFainted}
+                          isPlayerDisconnected={isPlayerDisconnected}
+                          resolveMetadata={resolveMetadata}
+                        />
                       );
                     })}
                   </div>
@@ -2947,71 +3358,22 @@ const EmulatorPage: React.FC = () => {
                 className="emulator-sidebar"
                 style={emulatorWidthPx !== null ? { flex: '1 1 0', maxWidth: 'none' } : undefined}
               >
-                {sidebarEntries.map(([uid, { displayName, save }]) => {
+                {sidebarEntries.map(([uid, { displayName, save, mapName, inBattle }]) => {
                   const isCurrentUser = uid === currentUserId;
-                  const saveData = isCurrentUser ? mySaveData : save;
-                  const displayDisplayName = isCurrentUser ? (currentUsername || 'You') : displayName;
-
-                  // Detect wipe (InsideOfTruck) or win (champion trainer-card win)
-                  const isWiped = saveData?.map_name === 'InsideOfTruck';
-                  const mostRecentLossName = saveData?.most_recent_loss_name;
-                  const championName = getChampionName(saveData);
-                  const showDisconnected =
-                    isPlayerDisconnected(uid, saveData) && !isWiped && !championName;
-
                   return (
-                    <div key={uid} className={`sidebar-player-card ${readyPlayers.has(uid) ? 'race-ready' : ''}`}>
-                      <div className="sidebar-player-header">
-                        <span className={`sidebar-username ${showDisconnected ? 'disconnected' : ''} ${isWiped ? 'wiped' : ''} ${championName ? 'winner' : ''}`}>
-                          {displayDisplayName}
-                          {isWiped && mostRecentLossName && (
-                            <span className="wipe-text"> (Wiped to {mostRecentLossName})</span>
-                          )}
-                          {championName && (
-                            <span className="win-text"> (Beat {championName}!)</span>
-                          )}
-                          {showDisconnected && (
-                            <span className="disconnect-text"> (Disconnected)</span>
-                          )}
-                        </span>
-                        <span className="sidebar-badges">
-                          {saveData ? `${saveData.badge_count} ${saveData.badge_count === 1 ? 'badge' : 'badges'}` : '— badges'}
-                        </span>
-                      </div>
-                      {saveData ? (
-                        <div className="sidebar-mon-icons">
-                          {sortPokemon(uid, [
-                            ...(saveData.party ?? []).map((m: any) => ({ ...m, _isParty: true })),
-                            ...(saveData.box ?? []).map((m: any) => ({ ...m, _isParty: false })),
-                          ]).map((mon: any, i: number, arr: any[]) => {
-                            const speciesId = mon.species_id ?? mon.speciesId;
-                            const speciesData = resolveMetadata(speciesId, mon.nickname);
-                            const realName = (speciesId === 412 && mon.nickname?.toLowerCase() === 'egg') ? "Egg" : (speciesData?.name || `ID ${speciesId}`);
-                            const iconName = getIconName(realName, speciesId);
-                            const abilityName = speciesData?.abilities?.[mon.ability_num] || 'Unknown';
-                            const fainted = isMonFainted(uid, mon);
-                            const prevFainted = i > 0 ? isMonFainted(uid, arr[i - 1]) : false;
-                            const isFirstFainted = fainted && !prevFainted;
-                            const hasNickname = isActuallyNicknamed(mon.nickname, speciesId, realName);
-
-                            return (
-                              <span key={`icon-${i}`} className={`mini-icon-wrapper sidebar ${isFirstFainted ? 'first-fainted' : ''}`}>
-                                <img
-                                  src={`/MiniIcons/${iconName}.png`}
-                                alt={mon.nickname || realName}
-                                className={`sidebar-mini-icon ${fainted ? 'fainted' : ''}`}
-                                style={fainted ? { filter: 'grayscale(100%)', opacity: 0.6 } : {}}
-                                title={`${hasNickname ? `${mon.nickname} (${realName})` : realName} (${abilityName}) - ${mon.nature || 'Unknown'} Nature${mon.nature ? NATURE_EFFECTS[mon.nature] : ''}${mon.ivs ? `\nIVs: ${mon.ivs.hp}/${mon.ivs.atk}/${mon.ivs.def}/${mon.ivs.spa}/${mon.ivs.spd}/${mon.ivs.spe}` : ''}${mon.moves && mon.moves.some((id: number) => id > 0) ? `\nMoves: ${mon.moves.filter((id: number) => id > 0).map((id: number) => MOVES[id]?.name).filter(Boolean).join(', ')}` : ''}`}
-                                onError={(e) => { (e.target as HTMLImageElement).src = '/MiniIcons/question.png'; }}
-                              />
-                            </span>
-                            );
-                          })}
-                        </div>
-                      ) : (
-                        <p className="sidebar-no-save">Waiting for save…</p>
-                      )}
-                    </div>
+                    <SidebarPlayerCard
+                      key={uid}
+                      uid={uid}
+                      displayName={isCurrentUser ? (currentUsername || 'You') : displayName}
+                      saveData={isCurrentUser ? mySaveData : save}
+                      mapName={isCurrentUser ? undefined : mapName}
+                      inBattle={isCurrentUser ? myInBattle : !!inBattle}
+                      isReady={readyPlayers.has(uid)}
+                      sortPokemon={sortPokemon}
+                      isMonFainted={isMonFainted}
+                      isPlayerDisconnected={isPlayerDisconnected}
+                      resolveMetadata={resolveMetadata}
+                    />
                   );
                 })}
               </aside>

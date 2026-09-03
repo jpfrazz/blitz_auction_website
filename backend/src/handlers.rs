@@ -5,8 +5,8 @@ use crate::{
     draft::{Draft, DraftLobbyResponse, DraftResponse, DraftSettings, DraftState, AutoBidResponse},
     messages::{
         ChatMessage, ClientBidRequest, ClientBidResponse, ClientJoinResponse, ForfeitRequest,
-        HallOfFamePokemon, PostSaveRequest, SaveData, ServerMessage, TrainerCardWin,
-        get_trainer_name_by_id,
+        HallOfFamePokemon, PostLocationRequest, PostSaveRequest, SaveData, ServerMessage,
+        TrainerCardWin, get_trainer_name_by_id,
     },
     pokemon::{self, Pokemon},
     pokemon_data_updater::{self, KeyMoveCsvRecord, PokemonCsvRecord},
@@ -2230,6 +2230,58 @@ pub async fn post_player_save(
         let _ = draft.broadcast_tx.send(crate::messages::ServerMessage::SaveUpdate {
             user_id: user_id.clone(),
             save_data: save_data.clone(),
+        });
+    }
+
+    Ok(())
+}
+
+/// Lightweight handler backing `POST /api/drafts/{draft_id}/location`. The
+/// emulator posts the current map identifier whenever a live heap read shows it
+/// changed (map transition), so spectators see a player's location between the
+/// chunkier .sav flushes. It only broadcasts to the draft's WebSocket
+/// subscribers — nothing is written to the DB, since the .sav flush already
+/// persists `map_name` and this is purely meant to bridge the sub-10s gap.
+#[debug_handler]
+pub async fn post_player_location(
+    auth_session: AuthSession<AuthBackend>,
+    Path(draft_id): Path<String>,
+    State(state): State<ServerState>,
+    Json(request): Json<PostLocationRequest>,
+) -> Result<(), AppError> {
+    let Some(user) = auth_session.user else {
+        return Err((StatusCode::FORBIDDEN, "user is not logged in".to_string()));
+    };
+    let Ok(draft_uuid) = Uuid::from_str(&draft_id) else {
+        return Err((
+            StatusCode::BAD_REQUEST,
+            "invalid draft id".to_string(),
+        ));
+    };
+    let user_id = user.get_user_id_string();
+    let (user_db_id, guest_db_id) = user.get_user_and_guest_id();
+
+    // Gate on the user being a team member so spectators/host can't spam pings
+    // on a draft they're not in.
+    let row = sqlx::query(
+        "SELECT 1 FROM teams WHERE draft_id = $1 AND (user_id = $2 OR guest_id = $3)",
+    )
+    .bind(draft_uuid)
+    .bind(user_db_id)
+    .bind(guest_db_id)
+    .fetch_optional(&state.db_pool)
+    .await
+    .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, format!("db error: {}", e)))?;
+
+    if row.is_none() {
+        return Err((StatusCode::FORBIDDEN, "user is not on this draft".to_string()));
+    }
+
+    if let Some(draft) = state.drafts.get(&draft_uuid) {
+        let _ = draft.broadcast_tx.send(crate::messages::ServerMessage::LocationUpdate {
+            user_id: user_id.clone(),
+            map_name: request.map_name,
+            in_battle: request.in_battle,
         });
     }
 

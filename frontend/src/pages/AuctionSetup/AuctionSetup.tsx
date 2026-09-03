@@ -9,6 +9,7 @@ import Footer from '../../shared/components/Footer';
 import './AuctionSetup.scss';
 import '../../shared/style/theme.scss';
 import { createDraft, CreateDraftRequest } from '../../shared/api/draft';
+import { generateRandomDraftName } from '../../shared/utils/draftNameGenerator';
 
 const MIN_TEAM_SIZE = 2;
 const MAX_TEAM_SIZE = 10;
@@ -117,15 +118,29 @@ const AuctionSetupForm: React.FC = () => {
         <div style={{ display: 'flex', gap: '10px', width: '100%' }}>
           <div className="auction-setup-field" style={{ flex: 1 }}>
             <label className="auction-setup-label">Draft Name:
-              <input
-                className="auction-setup-input"
-                type="text"
-                name="draft-name"
-                autoComplete="off"
-                value={draftName}
-                onChange={e => setDraftName(e.target.value)}
-                required
-              />
+              <div className="auction-setup-input-wrapper">
+                <input
+                  className="auction-setup-input"
+                  type="text"
+                  name="draft-name"
+                  autoComplete="off"
+                  value={draftName}
+                  onChange={e => setDraftName(e.target.value)}
+                  required
+                />
+                <button
+                  type="button"
+                  className="auction-setup-refresh-btn"
+                  onClick={() => {
+                    const names = pokemonList.map(p => p.name);
+                    setDraftName(generateRandomDraftName(names));
+                  }}
+                  title="Generate random name"
+                  aria-label="Generate random draft name"
+                >
+                  ⟳
+                </button>
+              </div>
             </label>
           </div>
           <div className="auction-setup-field" style={{ flex: 1 }}>
