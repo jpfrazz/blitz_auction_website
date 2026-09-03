@@ -247,7 +247,7 @@ const HallOfFameStatsTab: React.FC<HallOfFameStatsTabProps> = ({ validDraftIds }
                 transform: showFilters ? 'rotate(90deg)' : 'rotate(0deg)',
               }}
             >
-              <TbSettings size={30} />
+              <TbSettings size={24} />
             </button>
           </div>
         </div>
