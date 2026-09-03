@@ -48,7 +48,7 @@
 
 .auction-setup-label {
 	color: $eb-text;
-	font-size: 1.2rem;
+	font-size: 1.25rem;
 	font-weight: 500;
 	display: flex;
 	flex-direction: column;
@@ -63,7 +63,7 @@
 	border: 1px solid $eb-border;
 	border-radius: 5px;
 	padding: 10px 14px;
-	font-size: 1.08rem;
+	font-size: 1.18rem;
 	transition: border 0.2s;
 	margin-left: 0;
 	width: 100%;
@@ -88,7 +88,7 @@
   position: absolute;
   right: 6px;
   top: 50%;
-  transform: translateY(-50%);
+  transform: translateY(calc(-50% - 1px));
   width: 32px;
   height: 32px;
   border: none;
@@ -111,7 +111,13 @@
   background: transparent;
 }
 
-.auction-setup-refresh-btn:focus {
+.auction-setup-refresh-btn:focus:not(:hover) {
+  outline: none;
+  color: rgba(255, 255, 255, 0.35);
+  background: transparent;
+}
+
+.auction-setup-refresh-btn:focus:hover {
   outline: none;
   color: rgba(255, 255, 255, 0.95);
   background: transparent;

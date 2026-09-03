@@ -291,7 +291,7 @@ const AuctionSetupForm: React.FC = () => {
       borderRadius: '8px',
       background: 'rgba(255, 255, 255, 0.05)',
       border: '1px solid rgba(255, 255, 255, 0.1)',
-      fontSize: '1.2rem',
+      fontSize: '1.25rem',
       lineHeight: '1.5',
       color: 'var(--sl-color-neutral-300)',
       maxWidth: '70%',
