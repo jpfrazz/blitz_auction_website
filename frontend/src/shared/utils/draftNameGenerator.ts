@@ -6,7 +6,10 @@ const ADJECTIVES = [
   "Highly Anticipated",
   "Awfully Peculiar",
   "Jaw Dropping",
+  "Top Secret",
   "State of the Art",
+  "Cutting Edge",
+  "Fancy Schmancy",
   "Mystical",
   "Mysterious",
   "Incredible",
@@ -14,6 +17,7 @@ const ADJECTIVES = [
   "Sensational",
   "Electrifying",
   "Fiery",
+  "Alluring",
   "All Too Convenient",
   "Spellbinding",
   "Damp",
@@ -37,12 +41,14 @@ const ADJECTIVES = [
   "Sublime",
   "Divine",
   "Ominous",
+  "Fashionable",
   "Silly",
   "Ephemeral",
   "Fabled",
   "Irresistible",
   "Pretty Neat",
   "Infamous",
+  "Exclusive",
 ];
 
 const NOUNS = ["Lobby", "Waiting Room", "Draft"];

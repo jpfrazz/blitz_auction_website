@@ -110,17 +110,13 @@ const LobbyViewer: React.FC = () => {
       enableColumnFilter: false,
     },
     {
-      header: 'Ranked',
-      accessorKey: 'ranked',
-      cell: info => (info.getValue<boolean>() ? '✓' : '✗'),
-      enableColumnFilter: false,
-    },
-    {
       header: 'Format',
       id: 'format',
       cell: info => {
-        const type = info.row.original.draft_type || 'auction';
-        return type === '1v1' ? '1v1' : 'Auction';
+        const row = info.row.original;
+        if (row.draft_type === '1v1') return '1v1';
+        if (row.ranked) return 'Ranked';
+        return 'Auction';
       },
     },
     {
@@ -255,7 +251,7 @@ const LobbyViewer: React.FC = () => {
               <tbody>
                 {table.getRowModel().rows.length === 0 && (
                   <tr>
-                    <td colSpan={7} className="lobby-viewer-empty">
+                    <td colSpan={6} className="lobby-viewer-empty">
                       No active drafts found.
                     </td>
                   </tr>

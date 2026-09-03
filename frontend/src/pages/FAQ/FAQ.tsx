@@ -16,10 +16,12 @@ const FAQ = () => (
         <hr />
         <ul className="info-toc-list">
           <li><a href="#what-is-emerald-blitz">What's Emerald Blitz?</a></li>
+          <li><a href="#who-made-emerald-blitz">Who made Emerald Blitz, and why?</a></li>
           <li><a href="#how-do-i-play">How do I play?</a></li>
           <li><a href="#what-are-the-rules">What are the rules?</a></li>
           <li><a href="#how-do-i-draft-with-my-friends">How do I draft with my friends?</a></li>
-          <li><a href="#why-is-my-draft-not-green">Why isn't my draft shaded green in the stats tab?</a></li>
+          <li><a href="#how-can-the-website-track-my-stats">How can the website track my stats?</a></li>
+          <li><a href="#why-is-my-draft-not-green">What's the difference between a casual and a competitive draft in the stats tab?</a></li>
           <li><a href="#can-you-add-a-skip-button">Can you add a skip button to the draft?</a></li>
           <li><a href="#can-i-play-by-myself">Can I play by myself without drafting?</a></li>
           <li><a href="#whats-changed">So, what's changed from vanilla Emerald?</a></li>
@@ -32,6 +34,20 @@ const FAQ = () => (
         <hr />
         <p className="faq-answer">
           Emerald Blitz is a revamped version of Pokémon Emerald streamlined for nuzlocke draft racing. Despite playing through the entire Hoenn region with a team of nine Pokemon, from first gym to Elite Four Champion, a single playthrough takes just 90 minutes to complete. Emerald Blitz is customized with new features and quality-of-life improvements geared toward making the game as fast as possible; it's all of the good with none of the tedium.
+        </p>
+      </section>
+
+      <section id="who-made-emerald-blitz" className="faq-section" style={{ scrollMarginTop: '120px' }}>
+        <h2 className="faq-question">Who made Emerald Blitz, and why?</h2>
+        <hr />
+        <p className="faq-answer">
+          I did! I'm Nathan. I also made this website with the help of JPFrazz and Plutonium98.
+        </p>
+        <p className="faq-answer" style={{ marginTop: '1rem' }}>
+          Twelve years ago, my friends and I used to get together every weekend to draft race Pokémon Emerald in my basement. We would take turns picking Pokémon via a giant spreadsheet, then stay up all night to see who could beat the game first.
+        </p>
+        <p className="faq-answer" style={{ marginTop: '1rem' }}>
+          ...And we never stopped! Suffice to say, we've had a lot of time to refine the experience. I truly believe that draft nuzlocke races are the most fun way to play Pokémon, and I hope Blitz can show you why!
         </p>
       </section>
 
@@ -49,7 +65,21 @@ const FAQ = () => (
             Download a GBA emulator like <a href="https://mgba.io/downloads.html" target="_blank" rel="noopener noreferrer">mGBA</a>.
           </li>
         </ol>
-        <p className="faq-answer">And you’re good to go!</p>
+        <p className="faq-answer">Or...</p>
+        <ol className="faq-answer">
+          <li>
+            Open this site's <a href="https://emeraldblitz.com/TeamPlanner" target="_blank" rel="noopener noreferrer">team planner</a>
+          </li>
+          <li>
+            Select your Pokémon
+          </li>
+          <li>
+            Click the Emulator button
+          </li>
+        </ol>
+        <p className="faq-answer">
+          From there, the website will automatically patch your game, and the Auto Withdraw button will give you your chosen team!
+        </p>
       </section>
 
       <section id="what-are-the-rules" className="faq-section" style={{ scrollMarginTop: '120px' }}>
@@ -100,6 +130,14 @@ const FAQ = () => (
             <b>Note!</b> While the total number of Pokémon sold is 8 times the total number of players, if you're able to win more than 8 auctions, you can play with more than 8 Pokemon! Similarly, if you spend big on your picks, you might play with as few as 6 Pokémon...
           </li>
         </ol>
+      </section>
+
+      <section id="how-can-the-website-track-my-stats" className="faq-section" style={{ scrollMarginTop: '120px' }}>
+        <h2 className="faq-question">How can the website track my stats?</h2>
+        <hr />
+        <p className="faq-answer">
+          By playing via the site's embedded emulator! After you finish a draft, click the "Play Emulator" button. The emulator page provides all players real-time updates on everybody's progress, including their badges, location, Eeveelution, and more. If you're logged into the site via discord, the site also saves all of this information (like which Pokémon you drafted, your splits, and your Hall of Fame team) to your player profile!
+        </p>
       </section>
 
       <section id="why-is-my-draft-not-green" className="faq-section" style={{ scrollMarginTop: '120px' }}>
