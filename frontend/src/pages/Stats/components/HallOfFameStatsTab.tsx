@@ -164,7 +164,7 @@ const HallOfFameStatsTab: React.FC<HallOfFameStatsTabProps> = ({ validDraftIds }
                   value={selectedChampion}
                   onChange={(e) => setSelectedChampion(e.target.value)}
                 >
-                  <option value="">All</option>
+                  <option value="">Both</option>
                   <option value="Wally">Wally</option>
                   <option value="Steven">Steven</option>
                 </select>
@@ -206,7 +206,7 @@ const HallOfFameStatsTab: React.FC<HallOfFameStatsTabProps> = ({ validDraftIds }
                 className="stats-setting-item"
                 style={{ display: 'flex', alignItems: 'center', gap: '8px' }}
               >
-                <span style={{ fontSize: '0.85rem', color: '#888', whiteSpace: 'nowrap' }}>
+                <span style={{ fontSize: '0.9rem', color: '#888', whiteSpace: 'nowrap' }}>
                   Includes
                 </span>
                 <input
