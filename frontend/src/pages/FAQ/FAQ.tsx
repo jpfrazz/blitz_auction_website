@@ -56,16 +56,18 @@ const FAQ = () => (
         <hr />
         <ol className="faq-answer">
           <li>
-            Download the patch from <a href="/">here</a>.
+            Download the patch from <a href="/">here</a>
           </li>
           <li>
-            Apply the patch online using <a href="https://www.marcrobledo.com/RomPatcher.js/" target="_blank" rel="noopener noreferrer">this ROM Patcher</a>.
+            Apply the patch online using <a href="https://www.marcrobledo.com/RomPatcher.js/" target="_blank" rel="noopener noreferrer">this ROM Patcher</a>
           </li>
           <li>
-            Download a GBA emulator like <a href="https://mgba.io/downloads.html" target="_blank" rel="noopener noreferrer">mGBA</a>.
+            Download a GBA emulator like <a href="https://mgba.io/downloads.html" target="_blank" rel="noopener noreferrer">mGBA</a>
           </li>
         </ol>
+
         <p className="faq-answer">Or...</p>
+        
         <ol className="faq-answer">
           <li>
             Open this site's <a href="https://emeraldblitz.com/TeamPlanner" target="_blank" rel="noopener noreferrer">team planner</a>
@@ -144,7 +146,7 @@ const FAQ = () => (
         <h2 className="faq-question">Why isn't my draft shaded green in the stats tab?</h2>
         <hr />
         <p className="faq-answer">
-          The goal of the stats section is to calculate average prices for Pokémon when drafted in races using the official ruleset. The following characteristics disqualify a draft from the statistics:
+          The goal of the stats section is to calculate average prices for Pokémon when drafted in races using the official ruleset. The traits below disqualify a draft from the statistics:
         </p>
         <ol className="faq-answer">
           <li>Fewer than 40 Pokémon sold</li>
