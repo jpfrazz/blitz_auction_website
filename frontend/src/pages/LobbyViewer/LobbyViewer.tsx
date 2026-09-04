@@ -115,12 +115,6 @@ const LobbyViewer: React.FC = () => {
       enableColumnFilter: false,
     },
     {
-      header: 'Password',
-      accessorKey: 'has_password',
-      cell: info => (info.getValue<boolean>() ? '🔒' : '🔓'),
-      enableColumnFilter: false,
-    },
-    {
       header: 'Format',
       id: 'format',
       cell: info => {
@@ -165,6 +159,7 @@ const LobbyViewer: React.FC = () => {
             >
               Join
             </Link>
+            <span>{info.row.original.has_password ? '🔒' : '🔓'}</span>
             {isCreator && (
               <button
                 className="lobby-viewer-delete-button"
@@ -209,7 +204,7 @@ const LobbyViewer: React.FC = () => {
                     {headerGroup.headers.map(header => (
                       <th
                         key={header.id}
-                        style={{ width: header.id !== 'draft_name' ? '11%' : undefined }}
+                        style={{ width: header.id !== 'draft_name' ? '12%' : undefined }}
                       >
                         <div className="lobby-header-container">
                           <div
