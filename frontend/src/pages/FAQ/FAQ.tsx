@@ -26,7 +26,7 @@ const FAQ = () => (
           <li><a href="#why-is-my-draft-not-green">What's the difference between a casual and a competitive draft in the stats tab?</a></li>
           <li><a href="#can-you-add-a-skip-button">Can you add a skip button to the draft?</a></li>
           <li><a href="#can-i-play-by-myself">Can I play by myself without drafting?</a></li>
-          <li><a href="#whats-changed">So, what's changed from vanilla Emerald?</a></li>
+          <li><a href="#whats-changed">What's changed from vanilla Emerald?</a></li>
           <li><a href="#what-do-the-new-items-do">What do the new items do?</a></li>
         </ul>
       </nav>
@@ -157,7 +157,7 @@ const FAQ = () => (
       </section>
 
       <section id="why-is-my-draft-not-green" className="faq-section" style={{ scrollMarginTop: '120px' }}>
-        <h2 className="faq-question">What's the difference between a casual and a competitive draft in the stats tab??</h2>
+        <h2 className="faq-question">What's the difference between a casual and a competitive draft in the stats tab?</h2>
         <hr />
         <p className="faq-answer">
           The goal of the stats section is to calculate average prices for Pokémon when drafted in races using the official ruleset. The traits below disqualify a draft from the statistics:
@@ -202,7 +202,7 @@ const FAQ = () => (
       </section>
 
       <section id="whats-changed" className="faq-section" style={{ scrollMarginTop: '120px' }}>
-        <h2 className="faq-question">So, what's changed from vanilla Emerald?</h2>
+        <h2 className="faq-question">What's changed from vanilla Emerald?</h2>
         <hr />
         <div className="faq-answer">
           <h3 style={{ textAlign: 'left' }}>Roguelike Randomization</h3>
