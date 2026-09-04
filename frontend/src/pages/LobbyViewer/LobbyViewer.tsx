@@ -131,7 +131,7 @@ const LobbyViewer: React.FC = () => {
       },
     },
     {
-      header: 'Teams',
+      header: 'Players',
       id: 'teams',
       cell: info => `${info.row.original.teams_joined}/${info.row.original.total_teams}`,
     },
@@ -209,7 +209,7 @@ const LobbyViewer: React.FC = () => {
                     {headerGroup.headers.map(header => (
                       <th
                         key={header.id}
-                        style={{ width: header.id !== 'draft_name' ? '12%' : undefined }}
+                        style={{ width: header.id !== 'draft_name' ? '11%' : undefined }}
                       >
                         <div className="lobby-header-container">
                           <div
