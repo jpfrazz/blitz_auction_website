@@ -86,9 +86,14 @@ const LobbyViewer: React.FC = () => {
 
   const filteredDrafts = useMemo(() => {
     const sixHoursAgo = new Date(Date.now() - 6 * 60 * 60 * 1000);
+    const oneHourAgo = new Date(Date.now() - 1 * 60 * 60 * 1000);
     return drafts.filter(draft => {
       if (!draft.created_at) return true;
-      return new Date(draft.created_at) > sixHoursAgo;
+      const createdAt = new Date(draft.created_at);
+      if (createdAt < sixHoursAgo) return false;
+      const isPending = draft.draft_state === 'PENDING';
+      if (isPending && createdAt < oneHourAgo) return false;
+      return true;
     });
   }, [drafts]);
 

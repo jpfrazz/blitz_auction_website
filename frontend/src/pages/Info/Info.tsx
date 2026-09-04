@@ -33,7 +33,7 @@ const Info = () => (
         <h2 className="info-question">Heart Scale Locations</h2>
         <hr />
         <p className="info-answer">
-          Exchange Heart Scales at the Move Relearner to access powerful moves. Heart Scales can be found hidden in the following locations:
+          Exchange Heart Scales at the Move Relearner to access powerful moves. Heart Scales can be found hidden in these spots:
         </p>
         <div className="location-scale-grid">
           {/* Example images and captions. Replace filenames and captions as needed. */}

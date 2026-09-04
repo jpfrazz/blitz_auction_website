@@ -37,7 +37,9 @@ const NATURE_EFFECTS: Record<string, string> = {
   "Bashful": ""
 };
 
-type PlayerSave = { displayName: string; save: SaveData | null };
+// badgeTimes[n] is the wall-clock time this player's badge count was first
+// observed to reach n, used to break badge-count ties in acquisition order.
+type PlayerSave = { displayName: string; save: SaveData | null; badgeTimes?: Record<number, number> };
 
 // Returns "Wally" or "Steven" when the player has a champion win on their
 // trainer card (Wally = 656, Steven = 804), otherwise null. Used to display
@@ -97,6 +99,9 @@ const SpectatePage: React.FC = () => {
           for (const team of draft.teams) {
             const teamKey = team.user_id ?? team.guest_id ?? '';
             next[teamKey] = {
+              // Preserve prior badgeTimes (and other state) across hydration so
+              // previously-recorded badge reach times aren't wiped.
+              ...next[teamKey],
               displayName: team.global_name?.trim() || team.username || '',
               // Prefer the latest save the backend persisted for this team so a
               // finished player's data still shows after a page reload.
@@ -199,10 +204,27 @@ const SpectatePage: React.FC = () => {
           }
           if (msg.type === 'SaveUpdate') {
             const { user_id, save_data } = msg.data as { user_id: string; save_data: any };
-            setPlayerSaves((prev) => ({
-              ...prev,
-              [user_id]: { displayName: prev[user_id]?.displayName ?? user_id, save: save_data },
-            }));
+            setPlayerSaves((prev) => {
+              const prevBadges = prev[user_id]?.save?.badge_count ?? 0;
+              const newBadges = save_data?.badge_count ?? 0;
+              // Record the first time each newly-reached badge count is observed
+              // so ties at the same count are ordered by who got there first.
+              const badgeTimes = { ...(prev[user_id]?.badgeTimes ?? {}) };
+              if (newBadges > prevBadges) {
+                const now = Date.now();
+                for (let n = prevBadges + 1; n <= newBadges; n++) {
+                  badgeTimes[n] ??= now;
+                }
+              }
+              return {
+                ...prev,
+                [user_id]: {
+                  displayName: prev[user_id]?.displayName ?? user_id,
+                  save: save_data,
+                  badgeTimes,
+                },
+              };
+            });
           }
           // Lightweight live location ping from an emulator's heap read.
           if (msg.type === 'LocationUpdate') {
@@ -221,6 +243,9 @@ const SpectatePage: React.FC = () => {
               const next = { ...prev };
               for (const t of teams) {
                 next[t.user_id] = {
+                  // Preserve prior badgeTimes (and other state) so a DraftUpdate
+                  // doesn't wipe recorded badge reach times.
+                  ...next[t.user_id],
                   displayName: t.global_name?.trim() || t.username,
                   save: t.save_data ?? next[t.user_id]?.save ?? null,
                 };
@@ -310,7 +335,13 @@ const SpectatePage: React.FC = () => {
       .sort(([, a], [, b]) => {
         const badgesA = a.save?.badge_count ?? 0;
         const badgesB = b.save?.badge_count ?? 0;
-        return badgesB - badgesA;
+        if (badgesA !== badgesB) return badgesB - badgesA;
+        // Tiebreaker: the first player to obtain the current badge count goes
+        // on top (earliest reach time first). Players without a recorded time
+        // sort below everyone they're tied with.
+        const timeA = a.badgeTimes?.[badgesA] ?? Infinity;
+        const timeB = b.badgeTimes?.[badgesB] ?? Infinity;
+        return timeA - timeB;
       });
   }, [playerSaves]);
 

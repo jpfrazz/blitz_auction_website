@@ -388,7 +388,15 @@ pub async fn list_open_drafts(
 
     let mut open_drafts = vec![];
     for entry in drafts.iter() {
-        open_drafts.push(entry.value().get_lobby().await?);
+        // Skip drafts that have already finished instead of listing them, and
+        // don't let a single unavailable lobby break the whole viewer.
+        let Ok(lobby) = entry.value().get_lobby().await else {
+            continue;
+        };
+        if lobby.draft_state == DraftState::COMPLETED {
+            continue;
+        }
+        open_drafts.push(lobby);
     }
 
     Ok(Json(open_drafts))

@@ -21,6 +21,7 @@ const FAQ = () => (
           <li><a href="#how-do-i-play">How do I play?</a></li>
           <li><a href="#what-are-the-rules">What are the rules?</a></li>
           <li><a href="#how-do-i-draft-with-my-friends">How do I draft with my friends?</a></li>
+          <li><a href="#what-do-i-do-if-i-dont-have-any-friends-who-like-pokemon">What do I do if I don't have any friends who like Pokémon?</a></li>
           <li><a href="#how-can-the-website-track-my-stats">How can the website track my stats?</a></li>
           <li><a href="#why-is-my-draft-not-green">What's the difference between a casual and a competitive draft in the stats tab?</a></li>
           <li><a href="#can-you-add-a-skip-button">Can you add a skip button to the draft?</a></li>
@@ -135,13 +136,22 @@ const FAQ = () => (
         </ol>
       </section>
 
+      <section id="what-do-i-do-if-i-dont-have-any-friends-who-like-pokemon" className="faq-section" style={{ scrollMarginTop: '120px' }}>
+        <h2 className="faq-question">What do I do if I don't have any friends who like Pokémon?</h2>
+        <hr />
+        <p className="faq-answer">Play in community races!</p>
+        <p className="faq-answer" style={{ marginTop: '1rem' }}>
+          The discord community is super friendly and hosts multiple public races every day. Even if you've never played before, we'd love to have you. Join the discord to get notified any time a community race is happening!
+        </p>
+      </section>
+
       <section id="how-can-the-website-track-my-stats" className="faq-section" style={{ scrollMarginTop: '120px' }}>
         <h2 className="faq-question">How can the website track my stats?</h2>
         <hr />
         <p className="faq-answer">
           By playing via the site's embedded emulator!
         </p>
-        <p className="faq-answer">
+        <p className="faq-answer" style={{ marginTop: '1rem' }}>
           After you finish a draft, click the "Play Emulator" button. The emulator page provides all players real-time updates on everybody's progress, including their badges, location, Eeveelution, and more. If you're logged into the site via discord, the site also saves all of this information (like which Pokémon you drafted, your splits, and your Hall of Fame team) to your player profile!
         </p>
       </section>

@@ -75,7 +75,7 @@ pub struct DraftLobbyResponse {
     teams_joined: u32,
     total_teams: u32,
     total_auctions: u32,
-    draft_state: DraftState,
+    pub draft_state: DraftState,
     created_at: chrono::DateTime<Utc>,
 }
 

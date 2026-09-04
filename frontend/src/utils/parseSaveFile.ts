@@ -204,10 +204,15 @@ export interface SaveData {
   /** Personalities previously seen fainted, persisted by the backend. */
   fainted_pids?: number[];
   /** Save file encryption key (from section 0), needed to decode the .sav's
-   *  encrypted money and trainer-card data. (The live EWRAM frame is already
-   *  decrypted by the game via GetMoney, so it does NOT need this key.) */
+   *  encrypted money and trainer-card data. */
   encryptionKey?: number;
 }
+
+// Money in this economy never legitimately exceeds this ceiling.
+const MAX_VALID_MONEY = 80_000;
+// Last plausible money seen, so a single corrupted parse falls back to the
+// previous good value instead of flashing a junk amount.
+let lastGoodMoney: number | null = null;
 
 // ── Live RAM party parsing ──────────────────────────────────────────────────
 // Blitz is a pokeemerald-expansion fork, so the in-RAM `struct Pokemon` is the
@@ -551,7 +556,6 @@ function decodeBcd(bcd: number): number {
 // we discover that base once with findLiveMapEwramBase() and then every poll
 // is a single readLiveMapFrame() call.
 export const LIVE_WARP_EWRAM_BASE_OFFSET = 0x3f000;
-export const LIVE_WARP_MONEY_OFFSET = 0x10;
 const LIVE_WARP_MAGIC = 0xea5a;
 const LIVE_WARP_BUFFER_SIZE = 20;
 const LIVE_WARP_SEQUENCE_OFFSET = 0x0c;
@@ -566,7 +570,6 @@ export interface LiveMapFrame {
   mapNum: number;
   sequence: number;
   inBattle: boolean;
-  money: number;
 }
 
 export function readLiveMapFrame(bytes: Uint8Array, ewramBase: number): LiveMapFrame | null {
@@ -576,17 +579,11 @@ export function readLiveMapFrame(bytes: Uint8Array, ewramBase: number): LiveMapF
   if (view.getUint16(off, true) !== LIVE_WARP_MAGIC) return null;
   const sequence = view.getUint32(off + LIVE_WARP_SEQUENCE_OFFSET, true);
   if (sequence === 0) return null;
-  // Live EWRAM frame stores money as a PLAIN integer: the Blitz decomp writes
-  // GetMoney(&gSaveBlock1Ptr->money) (decrypted) into gLiveWarpStatus, so no
-  // XOR/key or BCD decode is needed here — unlike the .sav parser above, which
-  // must XOR the stored amount with the encryption key.
-  const money = view.getUint32(off + LIVE_WARP_MONEY_OFFSET, true);
   return {
     mapGroup: view.getInt8(off + 2),
     mapNum: view.getInt8(off + 3),
     sequence,
     inBattle: view.getUint8(off + LIVE_WARP_IN_BATTLE_OFFSET) !== 0,
-    money,
   };
 }
 
@@ -594,7 +591,7 @@ export function findLiveMapEwramBase(
   bytes: Uint8Array,
   startOff: number,
   endOff: number,
-  isValid: (mapGroup: number, mapNum: number, money: number) => boolean
+  isValid: (mapGroup: number, mapNum: number) => boolean
 ): number | null {
   const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
   for (let base = startOff; base <= endOff; base += 4) {
@@ -605,8 +602,7 @@ export function findLiveMapEwramBase(
     const mapGroup = view.getInt8(off + 2);
     const mapNum = view.getInt8(off + 3);
     if (mapGroup < 0 || mapNum < 0) continue;
-    const money = view.getUint32(off + LIVE_WARP_MONEY_OFFSET, true);
-    if (!isValid(mapGroup, mapNum, money)) continue;
+    if (!isValid(mapGroup, mapNum)) continue;
     return base;
   }
   return null;
@@ -667,7 +663,13 @@ export function parseSaveFile(
   const encryptionKey = view.getUint32(s0 + ENCRYPTION_KEY_OFFSET, true);
   const trainer_name = decodeString(data.slice(s0, s0 + 12));
   const rawMoney = view.getUint32(s1 + MONEY_OFFSET, true);
-  const money = (rawMoney ^ encryptionKey) >>> 0;
+  const parsedMoney = (rawMoney ^ encryptionKey) >>> 0;
+  // Reject implausible money (torn read / corrupted encryption-key XOR) by
+  // falling back to the last good value. Keeps the display stable when the
+  // emulator reads the flash file mid-write.
+  const money =
+    parsedMoney > MAX_VALID_MONEY && lastGoodMoney !== null ? lastGoodMoney : parsedMoney;
+  if (money <= MAX_VALID_MONEY) lastGoodMoney = money;
 
   const mapGroup = data[s1 + MAP_GROUP_OFFSET];
   const mapNum = data[s1 + MAP_NUM_OFFSET];
