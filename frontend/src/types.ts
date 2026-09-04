@@ -149,7 +149,7 @@ export interface DraftLobby {
   draft_name: string;
   has_password: boolean;
   host: string;
-  //host_username: string;
+  host_username: string;
   //players: string[];
   ranked: boolean;
   draft_type: string;

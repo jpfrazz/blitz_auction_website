@@ -103,6 +103,12 @@ const LobbyViewer: React.FC = () => {
       accessorKey: 'draft_name',
     },
     {
+      header: 'Host',
+      accessorKey: 'host_username',
+      cell: info => info.getValue<string>() || '-',
+      enableColumnFilter: false,
+    },
+    {
       header: 'Created',
       accessorKey: 'created_at',
       cell: info => getTimeAgo(info.getValue<string>()),
@@ -256,7 +262,7 @@ const LobbyViewer: React.FC = () => {
               <tbody>
                 {table.getRowModel().rows.length === 0 && (
                   <tr>
-                    <td colSpan={6} className="lobby-viewer-empty">
+                    <td colSpan={8} className="lobby-viewer-empty">
                       No active drafts found.
                     </td>
                   </tr>

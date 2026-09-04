@@ -157,7 +157,7 @@ const FAQ = () => (
       </section>
 
       <section id="why-is-my-draft-not-green" className="faq-section" style={{ scrollMarginTop: '120px' }}>
-        <h2 className="faq-question">Why isn't my draft shaded green in the stats tab?</h2>
+        <h2 className="faq-question">What's the difference between a casual and a competitive draft in the stats tab??</h2>
         <hr />
         <p className="faq-answer">
           The goal of the stats section is to calculate average prices for Pokémon when drafted in races using the official ruleset. The traits below disqualify a draft from the statistics:

@@ -388,10 +388,8 @@ async function deleteStoredSave(key: string): Promise<void> {
   }
 }
 
-// Map of user_id → latest parsed save for other draft players.
-// badgeTimes[n] is the wall-clock time this player's badge count was first
-// observed to reach n, used to break badge-count ties in acquisition order.
-type OtherPlayerSaves = Record<string, { displayName: string; save: SaveData | null; badgeTimes?: Record<number, number>; mapName?: string; inBattle?: boolean }>;
+// Map of user_id → latest parsed save for other draft players
+type OtherPlayerSaves = Record<string, { displayName: string; save: SaveData | null; mapName?: string; inBattle?: boolean }>;
 
 // Returns "Wally" or "Steven" when the player has a champion win on their
 // trainer card (Wally = 656, Steven = 804), otherwise null. Used to display
@@ -402,6 +400,19 @@ function getChampionName(saveData: SaveData | null | undefined): string | null {
   const championWins = wins.filter(w => !w.is_loss && (w.trainer_id === 656 || w.trainer_id === 804));
   if (championWins.length === 0) return null;
   return championWins[championWins.length - 1].trainer_id === 804 ? 'Steven' : 'Wally';
+}
+
+// In-game seconds elapsed when a player obtained their Nth badge, derived from
+// the gym leader win on their trainer card with version === N. Used to break
+// badge-count ties: the player who earned badge N at the earliest in-game time
+// is ordered first. Returns Infinity when the info isn't available so unknown
+// players sort below everyone they're tied with.
+function badgeReachSeconds(save: SaveData | null | undefined, badgeCount: number): number {
+  const wins = save?.trainer_card_wins;
+  if (badgeCount <= 0 || !wins || wins.length === 0) return Infinity;
+  const gym = wins.find(w => w.version === badgeCount);
+  if (!gym) return Infinity;
+  return gym.hours * 3600 + gym.minutes * 60 + gym.seconds;
 }
 
 // ── Memoized player cards ──────────────────────────────────────────────────
@@ -984,8 +995,8 @@ const EmulatorPage: React.FC = () => {
           for (const team of draft.teams) {
             const teamKey = team.user_id ?? team.guest_id ?? '';
             next[teamKey] = {
-              // Preserve prior badgeTimes (and other state) across hydration so
-              // previously-recorded badge reach times aren't wiped.
+              // Preserve existing entry state (e.g. live mapName/inBattle)
+              // across hydration.
               ...next[teamKey],
               displayName: team.global_name?.trim() || team.username || '',
               // Prefer the latest save the backend persisted so a player who has
@@ -1091,28 +1102,14 @@ const EmulatorPage: React.FC = () => {
           }
           if (msg.type === 'SaveUpdate') {
             const { user_id, save_data } = msg.data as { user_id: string; save_data: any };
-            setOtherSaves((prev) => {
-              const prevBadges = prev[user_id]?.save?.badge_count ?? 0;
-              const newBadges = save_data?.badge_count ?? 0;
-              // Record the first time each newly-reached badge count is observed
-              // so ties at the same count are ordered by who got there first.
-              const badgeTimes = { ...(prev[user_id]?.badgeTimes ?? {}) };
-              if (newBadges > prevBadges) {
-                const now = Date.now();
-                for (let n = prevBadges + 1; n <= newBadges; n++) {
-                  badgeTimes[n] ??= now;
-                }
-              }
-              return {
-                ...prev,
-                [user_id]: {
-                  ...prev[user_id],
-                  displayName: prev[user_id]?.displayName ?? user_id,
-                  save: save_data,
-                  badgeTimes,
-                },
-              };
-            });
+            setOtherSaves((prev) => ({
+              ...prev,
+              [user_id]: {
+                ...prev[user_id],
+                displayName: prev[user_id]?.displayName ?? user_id,
+                save: save_data,
+              },
+            }));
           }
           // Lightweight live location ping from another player's heap read.
           // Bail on our own echo (the server broadcasts to every subscriber,
@@ -1150,8 +1147,7 @@ const EmulatorPage: React.FC = () => {
               const next = { ...prev };
               for (const t of teams) {
                 next[t.user_id] = {
-                  // Preserve prior badgeTimes (and other state) so a DraftUpdate
-                  // doesn't wipe recorded badge reach times.
+                  // Preserve existing entry state across DraftUpdate.
                   ...next[t.user_id],
                   displayName: t.global_name?.trim() || t.username,
                   save: t.save_data ?? next[t.user_id]?.save ?? null,
@@ -2820,12 +2816,10 @@ const EmulatorPage: React.FC = () => {
       const badgesA = a.save?.badge_count ?? 0;
       const badgesB = b.save?.badge_count ?? 0;
       if (badgesA !== badgesB) return badgesB - badgesA;
-      // Tiebreaker: the first player to obtain the current badge count goes
-      // on top (earliest reach time first). Players without a recorded time
-      // sort below everyone they're tied with.
-      const timeA = a.badgeTimes?.[badgesA] ?? Infinity;
-      const timeB = b.badgeTimes?.[badgesB] ?? Infinity;
-      return timeA - timeB;
+      // Tiebreaker: the player who obtained the current badge count at the
+      // earliest in-game time (from their trainer card gym win) goes on top.
+      // Players without a recorded time sort below everyone they're tied with.
+      return badgeReachSeconds(a.save, badgesA) - badgeReachSeconds(b.save, badgesB);
     });
   // Show every player in the sidebar (the sidebar scrolls if they don't fit)
   const sidebarEntries = allPlayerEntries;

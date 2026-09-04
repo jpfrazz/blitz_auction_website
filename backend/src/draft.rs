@@ -67,7 +67,7 @@ pub struct DraftLobbyResponse {
     draft_name: String,
     has_password: bool,
     host: String,
-    //host_username: String,
+    pub host_username: String,
     //players: Vec<String>,
     ranked: bool,
     draft_type: String,
@@ -75,7 +75,7 @@ pub struct DraftLobbyResponse {
     teams_joined: u32,
     total_teams: u32,
     total_auctions: u32,
-    pub draft_state: DraftState,
+    draft_state: DraftState,
     created_at: chrono::DateTime<Utc>,
 }
 
@@ -2808,7 +2808,7 @@ impl From<&DraftActor> for DraftLobbyResponse {
             draft_name: value.draft.draft_name.clone(),
             has_password: value.settings.password.is_some(),
             host: value.host.clone(),
-            //host_username,
+            host_username,
             //players,
             ranked: value.settings.ranked,
             draft_type,
