@@ -159,7 +159,7 @@ const LobbyViewer: React.FC = () => {
             >
               Join
             </Link>
-            <span>{info.row.original.has_password ? '🔒' : '🔓'}</span>
+            {info.row.original.has_password && <span>🔒</span>}
             {isCreator && (
               <button
                 className="lobby-viewer-delete-button"
