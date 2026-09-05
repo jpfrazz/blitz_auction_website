@@ -1,0 +1,85 @@
+9/X/26
+
+
+-----------------------------------------------
+Boss Tweaks
+-----------------------------------------------
+
+Juan & Wallace 1 and 2 Reworked
+Pokemon controlled by Tatsugiri's Commander ability can now land critical hits
+
+The team is now...
+
+Luvdisc
+Level: 11
+- Safeguard
+- Flip Turn
+- Splash
+
+Tatsugiri
+Level: 10 (-3 levels)
+- Water Pulse
+- Rapid Spin
+- Harden
+- Splash
+
+Dondozo @ Oran Berry
+Level: 15
+- Order Up (From Waterfall)
+- Water Gun
+- Noble Roar
+- Tackle
+
+//Instead of starting the fight with Dondozo, Tatsugiri now leads with a Flip Turn Luvdisc by its side.
+//Luvdisc starts the fight by Safeguarding the first turn and Flip Turning the second. Can you kill the Tatsugiri before Luvdisc Flip Turns? Can you Fake Out or Encore the Luvdisc to buy yourself extra time? Can you switch to bait Flip Turn into a Water Absorb Pokemon, causing Luvdisc to fail to swap out?
+//Keep in mind, you'll have time for two Eevee Quick Attacks before the Luvdisc Flip Turns, or a Tail Whip into a Quick Attack. Alongside a physical attacker who Eevee outspeeds, Tail Whip > a partner's physical attack > Quick Attack usually KOs the Tatsugiri before Dondozo has a chance to appear.
+//Even if you fail to kill the Tatsugiri, though, Dondozo with Order Up is doing much less damage than it was with Waterfall. While it might score a critical hit, a crit Order Up won't one-shot Eevee from full at +0. Luvdisc also outspeeds Tatsugiri, meaning that if it gets off a Flip Turn into Dondozo, that'll be the only attack for their turn.
+
+//I'm hoping that this makes the fight more intuitive. Ideally, seeing the lead Flip Turn Luvdisc with the Order Up Dondozo in the back presents a puzzle that invites the player to craft a solution.
+
+Juan & Wallace 3 Dondozo Water Gun > Order Up
+Juan & Wallace 3 Dondozo Water Gun > Noble Roar
+//Necessary for learnset consistency with the 1&2 changes
+
+Juan & Wallace 1-2 Tatsugiri: Always Stretchy (+Speed with Order Up)
+Juan & Wallace 3-4 Tatsugiri: Always Droopy (+Defense with Order Up)
+Juan & Wallace 5-8 Tatsugiri: Always Curly (+Attack with Order Up)
+//Previously, Tatsugiri's form was always random
+
+
+Viola 2
+Beautifly Mega Drain > Absorb
+Viola 4
+Beautifly Giga Drain > Mega Drain
+
+Flannery 4
+Marowak Shadow Bone > Shadow Punch
+//Marowak already uses one move it doesn't actually learn... What's one more?
+
+Spenser
+Ludicolo Ice Beam > Ice Punch
+
+
+-----------------------------------------------
+QoL
+-----------------------------------------------
+
+Added a Toggle to disable evolution
+//In the party menu, in the same spot where you're prompted to press A to nickname your Pokémon, you're also prompted to press L to toggle disabling evolution. Doing so adds an Everstone to the bottom left corner of your summary screen. Pokemon who have evolution disabled can't evolve by leveling up.
+//This replaces the "Hold L in the party menu" to delay evolution. It should be more user-friendly and less esoteric.
+
+Added Berries to the Elite Four party menu
+
+Removed the Shuppet in front of the Cut HM house in Rustboro
+
+
+-----------------------------------------------
+Bug Fix
+-----------------------------------------------
+
+Fixed Scott's Memory
+//Previously, Scott "forgot" what TMs he offered you if you saved and turned off the game. Now, he will always keep track.
+//Thanks Jeans for the report
+
+Fixed an obscure bug where the player could swap their Pokemon with a berry in the party menu
+

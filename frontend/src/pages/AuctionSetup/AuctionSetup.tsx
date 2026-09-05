@@ -57,7 +57,7 @@ const AuctionSetupForm: React.FC = () => {
   const [createdAuctionId, setCreatedAuctionId] = useState<string | null>(null);
   const [showModal, setShowModal] = useState(false);
   const [pokemonList, setPokemonList] = useState<Pokemon[]>([]);
-  const [excludedPokemon, setExcludedPokemon] = useState<Set<number>>(new Set());
+  const [excludedPokemon, setExcludedPokemon] = useState<Set<string>>(new Set());
 
   // Load Pokémon list from API
   useEffect(() => {
@@ -87,10 +87,13 @@ const AuctionSetupForm: React.FC = () => {
         draft_name: draftName.trim(),
         ranked,
         password: password.trim() || null,
-        excluded_pokemon: Array.from(excludedPokemon).map(id => ({
-          pokedex_id: id,
-          form: null, // Default to empty form, update if you have form data
-        })),
+        excluded_pokemon: Array.from(excludedPokemon).map(key => {
+          const [pokedexIdStr, form] = key.split(':');
+          return {
+            pokedex_id: parseInt(pokedexIdStr, 10),
+            form: form || null,
+          };
+        }),
         num_auctions: numPokemon,
         auction_length: DEFAULT_AUCTION_SECONDS,
       };
@@ -226,8 +229,9 @@ const AuctionSetupForm: React.FC = () => {
                   <button
                     type="button"
                     onClick={() => {
-                      const baseIds = pokemonList.filter(p => (p as any).stage === 'base').map(p => p.id);
-                      setExcludedPokemon(new Set(baseIds));
+                      const basePokemon = pokemonList.filter(p => (p as any).stage === 'base');
+                      const allKeys = basePokemon.map(p => `${p.id}:${(p as any).form || ''}`);
+                      setExcludedPokemon(new Set(allKeys));
                     }}
                     disabled={excludedPokemon.size === pokemonList.filter(p => (p as any).stage === 'base').length}
                     style={{
@@ -256,26 +260,29 @@ const AuctionSetupForm: React.FC = () => {
                   .filter(p => (p as any).stage === 'base')
                   .sort((a, b) => a.name.localeCompare(b.name))
                   .map((pokemon) => {
-                  const isExcluded = excludedPokemon.has(pokemon.id);
+                  const form = (pokemon as any).form || '';
+                  const compositeKey = `${pokemon.id}:${form}`;
+                  const isExcluded = excludedPokemon.has(compositeKey);
+                  const displayName = form ? `${pokemon.name} (${form})` : pokemon.name;
                   return (
                     <div
                       className={`auction-modal-grid-item${isExcluded ? ' auction-modal-grid-item-excluded' : ''}`}
-                      key={pokemon.id}
-                      title={pokemon.name}
+                      key={compositeKey}
+                      title={displayName}
                       onClick={() => {
                         setExcludedPokemon(prev => {
                           const next = new Set(prev);
-                          if (next.has(pokemon.id)) next.delete(pokemon.id); else next.add(pokemon.id);
+                          if (next.has(compositeKey)) next.delete(compositeKey); else next.add(compositeKey);
                           return next;
                         });
                       }}
                     >
                       <img
                         src={`/baseforms/${pokemon.name}.png`}
-                        alt={pokemon.name}
+                        alt={displayName}
                         className="auction-modal-pokemon-img"
                       />
-                      <div className="auction-modal-pokemon-name">{pokemon.name}</div>
+                      <div className="auction-modal-pokemon-name">{displayName}</div>
                     </div>
                   );
                 })}

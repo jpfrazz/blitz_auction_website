@@ -657,7 +657,7 @@ const PokemonStatsTab: React.FC<PokemonStatsTabProps> = ({
                   transform: showSettings ? 'rotate(90deg)' : 'rotate(0deg)'
                 }}
               >
-                <TbSettings />
+                <TbSettings size={16} />
               </button>
               <input
                 className="pokemon-search-input"

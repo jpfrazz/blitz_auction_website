@@ -3,8 +3,8 @@
 .match-history-page {
   min-height: 100vh;
   background:
-    radial-gradient(1200px 500px at 10% -20%, rgba(27, 153, 139, 0.25), transparent 55%),
-    radial-gradient(900px 500px at 95% 10%, rgba(239, 113, 52, 0.16), transparent 60%),
+    radial-gradient(1200px 500px at 10% -20%, rgba($eb-primary, 0.25), transparent 55%),
+    radial-gradient(900px 500px at 95% 10%, rgba($eb-primary-hover, 0.16), transparent 60%),
     $eb-bg;
 }
 

@@ -825,6 +825,11 @@ const Info = () => (
           <li>At the end of the three turns, a mega-evolved Pokemon reverts to its base form</li>
           <li>When a Pokemon reverts to its base form, any entrance ability (like Intimidate, Protean) resets and triggers again</li>
         </ul>
+        <h3 className="info-subheading"><strong>Healing Moves</strong></h3>
+        <ul>
+          <li>Most healing moves now have 1 PP. These include: Milk Drink, Moonlight, Morning Sun, Shore Up, Slack Off, Soft-Boiled, Strength Sap, Synthesis, Recover, Recycle, Rest, Roost and Wish</li>
+          <li>No other moves in Blitz have been modified in any way</li>
+        </ul>
         <h3 className="info-subheading"><strong>Weather</strong></h3>
         <ul>
           <li>Weather lasts for five turns</li>
@@ -912,7 +917,7 @@ const Info = () => (
           <li>Pressing "L" while riding Flygon instantly opens the Fly map</li>
           <li>Pressing "Select" while viewing the overworld map instantly snaps the cursor to Slateport City</li>
           <li>Pressing "Select" while in the party menu uses the Rare Candy on the hovered Pokémon</li>
-          <li>Holding "L" while in the party menu prevents Pokemon from evolving (useful for delaying evolutions)</li>
+          <li>Pressing "L" while in the party menu toggles disabling evolution</li>
         </ul>
       </section>
 

@@ -593,9 +593,8 @@ const Stats: React.FC = () => {
         <section className="stats-hero-card">
           <div>
             <h1>Draft Stats</h1>
-            <p>Auction analytics across competitive drafts</p>
+            <p>Price data, draft histories, player profiles and more!</p>
           </div>
-          <div className="stats-hero-meta">Live from completed draft data</div>
         </section>
 
         <section className="stats-kpi-grid">

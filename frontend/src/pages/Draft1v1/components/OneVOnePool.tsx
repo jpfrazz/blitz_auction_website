@@ -1,5 +1,5 @@
 import React from 'react';
-import { OneVOnePoolSlot, OneVOnePlayer, OneVOneHistoryEntry, Pokemon } from '../../../types';
+import { OneVOnePoolSlot, OneVOnePlayer, OneVOneHistoryEntry, Pokemon, Team, OneVOneState } from '../../../types';
 import './OneVOnePool.scss';
 
 interface OneVOnePoolProps {
@@ -12,6 +12,8 @@ interface OneVOnePoolProps {
   selectedSlot?: OneVOnePoolSlot | null;
   onSelect: (slot: OneVOnePoolSlot) => void;
   onHover?: (slot: OneVOnePoolSlot | null) => void;
+  currentUserTeam?: Team | null;
+  oneVOne?: OneVOneState | null;
 }
 
 function slotKey(slot: OneVOnePoolSlot): string {
@@ -76,8 +78,51 @@ function orderPool(pool: OneVOnePoolSlot[], history: OneVOneHistoryEntry[]): One
   });
 }
 
-const OneVOnePool: React.FC<OneVOnePoolProps> = ({ pool, history, slotLabels, isActive, selectedSlot, onSelect, onHover }) => {
+function getHoverClass(
+  isActive: boolean,
+  currentPlayer: OneVOnePlayer | null | undefined,
+  currentAction: string | null | undefined,
+  currentUserTeam: Team | null | undefined,
+  oneVOne: OneVOneState | null | undefined
+): string {
+  if (!isActive || !currentPlayer || !currentAction || !currentUserTeam || !oneVOne) {
+    return '';
+  }
+
+  const isCurrentUserP1 = teamMatchesId(currentUserTeam, oneVOne.player1);
+  const isCurrentUserP2 = teamMatchesId(currentUserTeam, oneVOne.player2);
+
+  if ((currentPlayer === 'P1' && isCurrentUserP1) || (currentPlayer === 'P2' && isCurrentUserP2)) {
+    if (currentAction === 'Pick') {
+      return currentPlayer === 'P1' ? 'hover-p1-pick' : 'hover-p2-pick';
+    }
+    if (currentAction === 'Ban') {
+      return currentPlayer === 'P1' ? 'hover-p1-ban' : 'hover-p2-ban';
+    }
+  }
+
+  return '';
+}
+
+function teamMatchesId(t: Team, id: string): boolean {
+  return [t.user_id, t.guest_id].includes(id);
+}
+
+const OneVOnePool: React.FC<OneVOnePoolProps> = ({
+  pool,
+  history,
+  slotLabels,
+  currentPlayer,
+  currentAction,
+  isActive,
+  selectedSlot,
+  onSelect,
+  onHover,
+  currentUserTeam,
+  oneVOne,
+}) => {
   const sortedPool = orderPool(pool, history);
+  const hoverClass = getHoverClass(isActive, currentPlayer, currentAction, currentUserTeam, oneVOne);
 
   return (
     <div className="one-v-one-pool">
@@ -86,15 +131,17 @@ const OneVOnePool: React.FC<OneVOnePoolProps> = ({ pool, history, slotLabels, is
           const status = statusClass(slot.status);
           const isSelected = selectedSlot && sameSlot(selectedSlot, slot);
           const label = slotLabels?.get(slotKey(slot));
+          const isAvailable = slot.status === 'Available';
+          const baseClasses = `one-v-one-pool-square ${status.cls} ${isActive && isAvailable ? 'clickable' : ''} ${isSelected ? 'selected' : ''} ${isAvailable && hoverClass ? hoverClass : ''} ${isSelected && isAvailable && hoverClass ? `${hoverClass}-persistent` : ''}`;
           return (
             <div
               key={`${slot.pokemon.pokedex_id}-${slot.pokemon.form ?? ''}-${idx}`}
               className="one-v-one-pool-cell"
             >
               <div
-                className={`one-v-one-pool-square ${status.cls} ${isActive && slot.status === 'Available' ? 'clickable' : ''} ${isSelected ? 'selected' : ''}`}
+                className={baseClasses}
                 onClick={() => {
-                  if (isActive && slot.status === 'Available') onSelect(slot);
+                  if (isActive && isAvailable) onSelect(slot);
                 }}
                 onMouseEnter={() => onHover?.(slot)}
                 onMouseLeave={() => onHover?.(null)}

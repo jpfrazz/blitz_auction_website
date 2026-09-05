@@ -53,6 +53,7 @@ const OneVOneInfoPanel: React.FC<OneVOneInfoPanelProps> = ({
 }) => {
   const [secondsRemaining, setSecondsRemaining] = useState(0);
   const [isResetting, setIsResetting] = useState(false);
+  const [messageKey, setMessageKey] = useState(0);
 
   useEffect(() => {
     if (!timerEnabled) {
@@ -88,6 +89,10 @@ const OneVOneInfoPanel: React.FC<OneVOneInfoPanelProps> = ({
       clearTimeout(resetTimer);
     };
   }, [turnExpiresAt, currentServerTime, isPaused, pausedTimeRemaining, turnLength, timerEnabled]);
+
+  useEffect(() => {
+    setMessageKey((prev) => prev + 1);
+  }, [currentPlayerLabel, currentAction]);
 
   const progress = turnLength > 0 ? secondsRemaining / turnLength : 0;
 
@@ -140,7 +145,7 @@ const OneVOneInfoPanel: React.FC<OneVOneInfoPanelProps> = ({
         </button>
       )}
 
-      <div className={`one-v-one-info-message ${nameColorClass}`}>
+      <div className={`one-v-one-info-message ${nameColorClass} message-changed`} key={messageKey}>
         {currentPlayerLabel && currentAction ? (
           <>
             {currentPlayerLabel}

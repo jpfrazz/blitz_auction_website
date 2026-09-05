@@ -10,6 +10,7 @@ const ADJECTIVES = [
   "State of the Art",
   "Cutting Edge",
   "Fancy Schmancy",
+  "Funky Fresh",
   "Mystical",
   "Mysterious",
   "Incredible",

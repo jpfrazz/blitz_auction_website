@@ -17,7 +17,7 @@ import {
   updatePendingDraftSettings,
   oneVOneToggleTimer,
 } from '../../shared/api/draftData';
-import { Draft, Pokemon, Team, OneVOnePoolSlot } from '../../types';
+import { Draft, Pokemon, Team, OneVOnePoolSlot, OneVOneState } from '../../types';
 import { fetchPokemonList } from '../../shared/api/pokemon';
 import PlayerRow from '../Auction/components/PlayerRow';
 import AuctionChatBox from '../Auction/components/AuctionChatBox';
@@ -443,6 +443,8 @@ const Draft1v1Page: React.FC = () => {
                   selectedSlot={selectedSlot}
                   onSelect={setSelectedSlot}
                   onHover={setHoveredSlot}
+                  currentUserTeam={currentUserTeam}
+                  oneVOne={oneVOne}
                 />
               )}
               {!poolCollapsed && oneVOne?.eeveelution_phase && oneVOne.eeveelutions.length > 0 && (
@@ -457,6 +459,8 @@ const Draft1v1Page: React.FC = () => {
                     selectedSlot={selectedSlot}
                     onSelect={setSelectedSlot}
                     onHover={setHoveredSlot}
+                    currentUserTeam={currentUserTeam}
+                    oneVOne={oneVOne}
                   />
                 </div>
               )}

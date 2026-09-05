@@ -6,15 +6,21 @@
   font-size: 1.6rem;
   color: #fff;
   font-weight: 700;
-  animation: text-pulse 2.2s ease-in-out infinite;
 }
 
-@keyframes text-pulse {
-  0%, 100% {
+.one-v-one-info-message.message-changed {
+  animation: message-pop 0.4s ease-out;
+}
+
+@keyframes message-pop {
+  0% {
     transform: scale(1);
   }
-  50% {
-    transform: scale(1.08);
+  30% {
+    transform: scale(1.15);
+  }
+  100% {
+    transform: scale(1);
   }
 }
 
