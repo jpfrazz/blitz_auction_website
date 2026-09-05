@@ -621,6 +621,12 @@
   color: $eb-primary;
 }
 
+.sidebar-player-meta {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
 .sidebar-map {
   font-size: 1rem;
   color: $eb-text-muted;

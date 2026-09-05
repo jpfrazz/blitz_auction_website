@@ -538,18 +538,20 @@ const SidebarPlayerCard = React.memo(function SidebarPlayerCard({
       <div className="sidebar-player-header">
         <span className={`sidebar-username ${showDisconnected ? 'disconnected' : ''} ${isWiped ? 'wiped' : ''} ${championName ? 'winner' : ''}`}>
           {displayName}
+        </span>
+        <span className="sidebar-player-meta">
+          <span className="sidebar-badges">
+            {saveData ? `${saveData.badge_count} ${saveData.badge_count === 1 ? 'badge' : 'badges'}` : '— badges'}
+          </span>
           {isWiped && mostRecentLossName && (
-            <span className="wipe-text"> (Wiped to {mostRecentLossName})</span>
+            <span className="wipe-text">(Wiped to {mostRecentLossName})</span>
           )}
           {championName && (
-            <span className="win-text"> (Beat {championName}!)</span>
+            <span className="win-text">(Beat {championName}!)</span>
           )}
           {showDisconnected && (
-            <span className="disconnect-text"> (Disconnected)</span>
+            <span className="disconnect-text">(Disconnected)</span>
           )}
-        </span>
-        <span className="sidebar-badges">
-          {saveData ? `${saveData.badge_count} ${saveData.badge_count === 1 ? 'badge' : 'badges'}` : '— badges'}
         </span>
       </div>
       {currentMap && (

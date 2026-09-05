@@ -118,6 +118,12 @@
   color: $eb-primary;
 }
 
+.spectate-player-meta {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
 .spectate-map {
   font-size: 0.95rem;
   color: $eb-text-muted;

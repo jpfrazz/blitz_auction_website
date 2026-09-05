@@ -388,17 +388,19 @@ const SpectatePage: React.FC = () => {
                           {displayName}
                         </a>
                       </span>
-                      {isWiped && mostRecentLossName && (
-                        <span className="wipe-text">(Wiped to {mostRecentLossName})</span>
-                      )}
-                      {championName && (
-                        <span className="win-text">(Beat {championName}!)</span>
-                      )}
-                      {showDisconnected && (
-                        <span className="disconnect-text">(Disconnected)</span>
-                      )}
-                      <span className="spectate-badges">
-                        {save ? `${save.badge_count} ${save.badge_count === 1 ? 'badge' : 'badges'}` : '— badges'}
+                      <span className="spectate-player-meta">
+                        <span className="spectate-badges">
+                          {save ? `${save.badge_count} ${save.badge_count === 1 ? 'badge' : 'badges'}` : '— badges'}
+                        </span>
+                        {isWiped && mostRecentLossName && (
+                          <span className="wipe-text">(Wiped to {mostRecentLossName})</span>
+                        )}
+                        {championName && (
+                          <span className="win-text">(Beat {championName}!)</span>
+                        )}
+                        {showDisconnected && (
+                          <span className="disconnect-text">(Disconnected)</span>
+                        )}
                       </span>
                     </div>
                     {currentMap && (

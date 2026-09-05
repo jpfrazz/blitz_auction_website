@@ -271,6 +271,8 @@ dex_number,name,form,evolves_from_id,evolves_from_form,type1,type2,stage,ability
 56,Mankey,,,,Fighting,,base,Vital Spirit,Anger Point,Defiant,40,80,35,35,45,70,,,,"Tip: Rage Fist\nPrimeape's signature move Rage Fist begins at 50 base power and grows stronger each time Primeape is hit.\nHowever, it's been nerfed in Emerald Blitz to cap at 100 base power instead of 350."
 57,Primeape,,56,,Fighting,,evo,Vital Spirit,Anger Point,Defiant,65,105,60,60,70,95,"Level 28",,,
 979,Annihilape,,57,,Fighting,Ghost,evo,Vital Spirit,Inner Focus,Defiant,110,115,80,50,90,90,"Level 35",,,
+942,Maschiff,,,,Dark,,base,Intimidate,Run Away,Stakeout,60,78,60,35,51,51,,,,
+943,Mabosstiff,,942,,Dark,,evo,Intimidate,Guard Dog,Stakeout,80,120,90,60,70,85,"Level 30",,,
 458,Mantyke,,,,Water,Flying,base,Swift Swim,Water Absorb,Water Veil,45,20,50,60,120,50,,,,
 226,Mantine,,458,,Water,Flying,evo,Swift Swim,Water Absorb,Water Veil,85,40,70,80,140,70,"Level 20",,,
 179,Mareep,,,,Electric,,base,Static,,Plus,55,40,40,65,45,35,,"Stage 2",,"Unique Mechanic: Milk Drink\nWhen used outside of battle, Milk Drink levels up one other Pokémon, ignoring the level cap.\nEach evolution line can only use Milk Drink once, so choose wisely!"
