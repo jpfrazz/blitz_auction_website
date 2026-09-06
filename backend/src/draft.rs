@@ -1804,6 +1804,13 @@ impl DraftActor {
             return Err((StatusCode::PRECONDITION_FAILED, "not your turn".to_string()));
         }
         let is_eevee = engine.eeveelution_phase;
+        if is_eevee {
+            // During eeveelution phase, only eeveelutions can be banned
+            let is_valid_eeveelution = engine.eeveelutions.iter().any(|s| s.pokemon.pokedex_id == pokedex_id && s.pokemon.form == form);
+            if !is_valid_eeveelution {
+                return Err((StatusCode::PRECONDITION_FAILED, "only eeveelutions can be banned during the eeveelution phase".to_string()));
+            }
+        }
         self.one_v_one_apply_ban(current_player, pokedex_id, form, is_eevee).await;
         Ok(())
     }

@@ -39,7 +39,7 @@ Level: 15
 //I'm hoping that this makes the fight more intuitive. Ideally, seeing the lead Flip Turn Luvdisc with the Order Up Dondozo in the back presents a puzzle that invites the player to craft a solution.
 
 Juan & Wallace 3 Dondozo Water Gun > Order Up
-Juan & Wallace 3 Dondozo Water Gun > Noble Roar
+Juan & Wallace 4 Dondozo Water Gun > Noble Roar
 //Necessary for learnset consistency with the 1&2 changes
 
 Juan & Wallace 1-2 Tatsugiri: Always Stretchy (+Speed with Order Up)

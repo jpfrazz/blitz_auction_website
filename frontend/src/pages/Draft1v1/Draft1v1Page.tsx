@@ -439,7 +439,7 @@ const Draft1v1Page: React.FC = () => {
                   slotLabels={slotLabels}
                   currentPlayer={oneVOne.current_player}
                   currentAction={oneVOne.current_action}
-                  isActive={draft.draft_state === 'BIDDING' && currentPlayerIsMe && !isPaused}
+                  isActive={draft.draft_state === 'BIDDING' && currentPlayerIsMe && !isPaused && !oneVOne.eeveelution_phase}
                   selectedSlot={selectedSlot}
                   onSelect={setSelectedSlot}
                   onHover={setHoveredSlot}
