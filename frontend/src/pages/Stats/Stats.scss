@@ -16,9 +16,9 @@
 }
 
 .stats-hero-card {
-  background: linear-gradient(130deg, #112426, #1f2b2f 46%, #222f22 100%);
-  border: 1px solid $eb-border;
-  border-left: 6px solid #40c9a2;
+  background: rgba(15, 20, 24, 0.9);
+  border: 1px solid #2a373f;
+  border-left: 6px solid $eb-primary;
   border-radius: 12px;
   padding: 1rem 1.2rem 1.1rem;
   margin-bottom: 1rem;
@@ -31,11 +31,12 @@
 .stats-hero-card h1 {
   margin: 0;
   font-size: 2.5rem;
+  color: $eb-text;
 }
 
 .stats-hero-card p {
   margin: 0.35rem 0 0;
-  color: #d3e7e3;
+  color: #95a8b1;
   font-size: 1.2rem;
 }
 
@@ -43,7 +44,7 @@
   font-size: 1.15rem;
   text-transform: uppercase;
   letter-spacing: 0.08em;
-  color: #9de3d3;
+  color: #6a7d87;
 }
 
 .stats-kpi-grid {
