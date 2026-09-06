@@ -1,5 +1,6 @@
-9/X/26
+9/6/26
 
+1.0.12 Beta Notes
 
 -----------------------------------------------
 Boss Tweaks
@@ -64,13 +65,17 @@ Ludicolo Ice Beam > Ice Punch
 QoL
 -----------------------------------------------
 
-Added a Toggle to disable evolution
-//In the party menu, in the same spot where you're prompted to press A to nickname your Pokémon, you're also prompted to press L to toggle disabling evolution. Doing so adds an Everstone to the bottom left corner of your summary screen. Pokemon who have evolution disabled can't evolve by leveling up.
-//This replaces the "Hold L in the party menu" to delay evolution. It should be more user-friendly and less esoteric.
+Added the ability to adjust items of PC Pokemon from the party menu
+//Adds functions like choosing "Move" to swap an item from a PC Pokemon to a party Pokemon all from the party menu.
+//This is a substantial change under the hood. I've tested it relatively extensively but please keep an eye out for bugs.
 
 Added Berries to the Elite Four party menu
 
-Removed the Shuppet in front of the Cut HM house in Rustboro
+Added a Toggle to disable evolution
+//In the party menu, in the same spot where you're prompted to press A to nickname your Pokémon, you're now also prompted to press L to toggle disabling evolution. Doing so adds an Everstone to the bottom left corner of your summary screen. Pokemon who have evolution disabled can't evolve by leveling up.
+//This replaces the "Hold L in the party menu" to delay evolution. It should be more user-friendly and less esoteric.
+
+Removed the Shuppet in front of the Cut HM house in Rustboro City
 
 
 -----------------------------------------------
@@ -81,5 +86,10 @@ Fixed Scott's Memory
 //Previously, Scott "forgot" what TMs he offered you if you saved and turned off the game. Now, he will always keep track.
 //Thanks Jeans for the report
 
+Fixed a bug where defeating a Living Legend in the museum didn't spawn the next fight
+//Thanks Freez, Manthief and Jeans for the reports
+
 Fixed an obscure bug where the player could swap their Pokemon with a berry in the party menu
+
+
 

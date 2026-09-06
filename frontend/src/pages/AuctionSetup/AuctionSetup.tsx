@@ -10,6 +10,7 @@ import './AuctionSetup.scss';
 import '../../shared/style/theme.scss';
 import { createDraft, CreateDraftRequest } from '../../shared/api/draft';
 import { generateRandomDraftName } from '../../shared/utils/draftNameGenerator';
+import { getTipMessagesEnabled } from '../../shared/utils/tipMessages';
 
 const MIN_TEAM_SIZE = 2;
 const MAX_TEAM_SIZE = 10;
@@ -27,8 +28,19 @@ const AuctionSetup = () => (
 );
 
 const AuctionSetupForm: React.FC = () => {
+  const [tipsEnabled, setTipsEnabled] = useState(getTipMessagesEnabled);
   const [hasRefereeRole, setHasRefereeRole] = useState(false);
   const navigate = useNavigate();
+
+  useEffect(() => {
+    const handleSettingsChanged = () => setTipsEnabled(getTipMessagesEnabled());
+    window.addEventListener('eb-settings-changed', handleSettingsChanged);
+    window.addEventListener('storage', handleSettingsChanged);
+    return () => {
+      window.removeEventListener('eb-settings-changed', handleSettingsChanged);
+      window.removeEventListener('storage', handleSettingsChanged);
+    };
+  }, []);
 
   useEffect(() => {
     fetchCurrentUser()
@@ -292,19 +304,21 @@ const AuctionSetupForm: React.FC = () => {
         )}
       </form>
     </div>
-    <div className="auction-setup-tip" style={{
-      marginTop: '20px',
-      padding: '16px 20px',
-      borderRadius: '8px',
-      background: 'rgba(255, 255, 255, 0.05)',
-      border: '1px solid rgba(255, 255, 255, 0.1)',
-      fontSize: '1.25rem',
-      lineHeight: '1.5',
-      color: 'var(--sl-color-neutral-300)',
-      maxWidth: '70%',
-    }}>
-      <strong>TIP:</strong> Don't cap how many Pokemon a player can win in the auction! Some players will finish the auction with more Pokémon than others, and that's essential to the strategy. If one player drafts lots of weak, cheap Pokémon, they're able to play with more than a player who drafts powerful, expensive ones!
-    </div>
+    {tipsEnabled && (
+      <div className="auction-setup-tip" style={{
+        marginTop: '20px',
+        padding: '16px 20px',
+        borderRadius: '8px',
+        background: 'rgba(255, 255, 255, 0.05)',
+        border: '1px solid rgba(255, 255, 255, 0.1)',
+        fontSize: '1.25rem',
+        lineHeight: '1.5',
+        color: 'var(--sl-color-neutral-300)',
+        maxWidth: '70%',
+      }}>
+        <strong>TIP:</strong> Don't cap how many Pokemon a player can win in the auction! Some players will finish the auction with more Pokémon than others, and that's essential to the strategy. If one player drafts lots of weak, cheap Pokémon, they're able to play with more than a player who drafts powerful, expensive ones!
+      </div>
+    )}
     </>
   );
 };

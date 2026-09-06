@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useLocation } from 'react-router-dom';
+import { getTipMessagesEnabled } from '../utils/tipMessages';
 import './Footer.scss';
 
 const footerButtons = [
@@ -13,15 +14,26 @@ const footerButtons = [
 function Footer() {
   const { pathname } = useLocation();
   const [showDiscordHint, setShowDiscordHint] = useState(false);
+  const [tipsEnabled, setTipsEnabled] = useState(getTipMessagesEnabled);
 
   useEffect(() => {
-    if (pathname !== '/') {
+    const handleSettingsChanged = () => setTipsEnabled(getTipMessagesEnabled());
+    window.addEventListener('eb-settings-changed', handleSettingsChanged);
+    window.addEventListener('storage', handleSettingsChanged);
+    return () => {
+      window.removeEventListener('eb-settings-changed', handleSettingsChanged);
+      window.removeEventListener('storage', handleSettingsChanged);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (pathname !== '/' || !tipsEnabled) {
       setShowDiscordHint(false);
       return;
     }
     const timer = setTimeout(() => setShowDiscordHint(true), 3000);
     return () => clearTimeout(timer);
-  }, [pathname]);
+  }, [pathname, tipsEnabled]);
 
   return (
     <footer className="footer">

@@ -597,25 +597,6 @@ const Stats: React.FC = () => {
           </div>
         </section>
 
-        <section className="stats-kpi-grid">
-          <article className="kpi-card stats-row-animate" style={{ animationDelay: '0ms' }}>
-            <div className="kpi-label">Completed Drafts</div>
-            <div className="kpi-value">{kpis.uniqueDrafts}</div>
-          </article>
-          <article className="kpi-card stats-row-animate" style={{ animationDelay: '50ms' }}>
-            <div className="kpi-label">Tracked Players</div>
-            <div className="kpi-value">{kpis.uniquePlayers}</div>
-          </article>
-          <article className="kpi-card stats-row-animate" style={{ animationDelay: '100ms' }}>
-            <div className="kpi-label">Total Sales</div>
-            <div className="kpi-value">{kpis.totalWinningAuctions}</div>
-          </article>
-          <article className="kpi-card stats-row-animate" style={{ animationDelay: '150ms' }}>
-            <div className="kpi-label">Total Money Spent</div>
-            <div className="kpi-value">${kpis.totalMoneySpent.toLocaleString()}</div>
-          </article>
-        </section>
-
         <section className="stats-tab-bar" aria-label="Stats tabs">
           <button
             className={`tab-chip ${activeTab === 'pokemon' ? 'active' : ''}`}

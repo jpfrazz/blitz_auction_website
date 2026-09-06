@@ -1,5 +1,6 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useRef } from 'react';
 import { buildNotebookWithdrawSequence, BUTTON_MAP } from './notebookPokemonList';
+import HoverTip from '../../shared/components/HoverTip';
 import './NotebookWithdrawButton.scss';
 
 interface NotebookWithdrawButtonProps {
@@ -17,6 +18,8 @@ const NotebookWithdrawButton: React.FC<NotebookWithdrawButtonProps> = ({
 }) => {
   const [isRunning, setIsRunning] = useState(false);
   const [status, setStatus] = useState<string | null>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [tipHover, setTipHover] = useState(false);
 
   const handleWithdraw = useCallback(async () => {
     if (isRunning) return;
@@ -84,10 +87,21 @@ const NotebookWithdrawButton: React.FC<NotebookWithdrawButtonProps> = ({
   }, [isRunning, pokemon, onWithdrawingChange]);
 
   return (
-    <div className="notebook-withdraw-container">
+    <div
+      className="notebook-withdraw-container"
+      ref={containerRef}
+      onMouseEnter={() => setTipHover(true)}
+      onMouseLeave={() => setTipHover(false)}
+    >
       {status && (
         <div className="notebook-withdraw-notification">{status}</div>
       )}
+      <HoverTip
+        text="To quickly withdraw your team, press A on the notebook in your room and leave the cursor on Amaura (the first Pokémon listed). Then, press this button!"
+        color="#6366f1"
+        anchorRef={containerRef}
+        hover={tipHover}
+      />
       <button
         className="notebook-withdraw-button"
         onClick={handleWithdraw}

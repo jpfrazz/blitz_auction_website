@@ -5,7 +5,10 @@
   flex-direction: column;
   min-height: 100vh;
   box-sizing: border-box;
-  background: $eb-bg;
+  background:
+    radial-gradient(1200px 500px at 10% -20%, rgba($eb-primary, 0.25), transparent 55%),
+    radial-gradient(900px 500px at 95% 10%, rgba($eb-primary-hover, 0.16), transparent 60%),
+    $eb-bg;
   padding-top: 5.6rem;
 }
 

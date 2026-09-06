@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { Team } from '../../types';
 import { FaArrowRight } from 'react-icons/fa';
+import HoverTip from '../../shared/components/HoverTip';
 import './EeveelutionClaimButton.scss';
 
 interface Eeveelution {
@@ -32,6 +33,8 @@ const EeveelutionClaimButton: React.FC<EeveelutionClaimButtonProps> = ({
   const [claiming, setClaiming] = useState<string | null>(null);
   const [notification, setNotification] = useState<string | null>(null);
   const [isClosing, setIsClosing] = useState(false);
+  const mainButtonRef = useRef<HTMLButtonElement>(null);
+  const [tipHover, setTipHover] = useState(false);
 
   // Determine which eeveelutions are already claimed by checking all teams
   const getClaimedInfo = (pokedexId: number, form: string | null): { username: string; userId: string } | null => {
@@ -119,10 +122,20 @@ const EeveelutionClaimButton: React.FC<EeveelutionClaimButtonProps> = ({
         </div>
       )}
 
+      <HoverTip
+        text="Once you evolve your Eevee, nobody else can use that Eeveelution!"
+        color="#10b981"
+        anchorRef={mainButtonRef}
+        hover={tipHover}
+      />
+
       {!isExpanded ? (
         <button
+          ref={mainButtonRef}
           className="eeveelution-main-button"
           onClick={() => setIsExpanded(true)}
+          onMouseEnter={() => setTipHover(true)}
+          onMouseLeave={() => setTipHover(false)}
         >
           Claim Eeveelution
         </button>

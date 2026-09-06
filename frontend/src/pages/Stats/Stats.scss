@@ -96,9 +96,9 @@
 }
 
 .tab-chip.active {
-  background: linear-gradient(140deg, #2a8167, #1f5b71);
+  background: $eb-primary;
   border-color: transparent;
-  color: #f5fdfd;
+  color: $eb-text-black;
 }
 
 .stats-content-grid {

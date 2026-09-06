@@ -1,0 +1,41 @@
+@import '../style/theme.scss';
+
+.hover-tip {
+  position: fixed;
+  width: 340px;
+  max-width: calc(100vw - 1.5rem);
+  background-color: $eb-surface;
+  border: 0.125rem solid var(--tip-color, #6366f1);
+  border-radius: 0.5rem;
+  padding: 0.9rem 1rem;
+  color: $eb-text;
+  font-size: 1.15rem;
+  line-height: 1.5;
+  z-index: 9999;
+  box-shadow: $eb-shadow;
+  transform: translateY(-100%);
+  animation: tipFadeIn 0.25s ease;
+
+  &::after {
+    content: '';
+    position: absolute;
+    bottom: -0.7rem;
+    left: 50%;
+    transform: translateX(-50%);
+    border-left: 0.55rem solid transparent;
+    border-right: 0.55rem solid transparent;
+    border-top: 0.7rem solid var(--tip-color, #6366f1);
+  }
+}
+
+@keyframes tipFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-96%);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(-100%);
+  }
+}
