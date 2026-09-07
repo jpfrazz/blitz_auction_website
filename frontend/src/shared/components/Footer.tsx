@@ -1,11 +1,12 @@
 import React, { useEffect, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import { getTipMessagesEnabled } from '../utils/tipMessages';
+import PokeCommunityIcon from './PokeCommunityIcon';
 import './Footer.scss';
 
 const footerButtons = [
   { icon: '/generic/Github.png', alt: 'GitHub', link: 'https://github.com/FranklyNathan/EmeraldBlitz' },
-  { icon: '/generic/twitter.png', alt: 'Twitter', link: 'https://x.com/P_Emerald_Blitz' },
+  { icon: '/generic/twitter.png', alt: 'PokeCommunity', link: 'https://www.pokecommunity.com/threads/pok%C3%A9mon-emerald-blitz-hack-for-nuzlocke-races.539370/', Component: PokeCommunityIcon },
   { icon: '/generic/Youtube.png', alt: 'YouTube', link: 'https://www.youtube.com/@PkmnEmeraldBlitz' },
   { icon: '/generic/Discord.png', alt: 'Discord', link: 'https://discord.com/invite/CsUSZ5UhzW' },
 //   { icon: '/generic/Download.png', alt: 'Download', link: '/Download' }, Removed while the home page is the download page
@@ -68,7 +69,11 @@ function Footer() {
               rel="noopener noreferrer"
               className="footerButton"
             >
-              <img src={btn.icon} alt={btn.alt} className="footerIcon" />
+              {'Component' in btn && btn.Component ? (
+                <btn.Component width={30} height={30} color="currentColor" className="footerIcon" />
+              ) : (
+                <img src={btn.icon} alt={btn.alt} className="footerIcon" />
+              )}
             </a>
           ))}
           {showDiscordHint && (

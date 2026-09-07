@@ -99,3 +99,12 @@
 .eevee-bans-got-it {
   font-size: 1.3rem;
 }
+
+@media (max-width: 1024px) {
+  .one-v-one-pool-container {
+    max-height: 55vh;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
+  }
+}

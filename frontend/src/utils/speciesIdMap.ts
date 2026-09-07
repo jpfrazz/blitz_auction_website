@@ -872,7 +872,7 @@ export const SPECIES_BY_ID: Record<number, SpeciesInfo> = {
   862: { name: "Obstagoon", icon: "obstagoon", baseId: 862, form: "" },
   863: { name: "Perrserker", icon: "perrserker", baseId: 863, form: "" },
   864: { name: "Cursola", icon: "cursola", baseId: 864, form: "" },
-  865: { name: "Sirfetch'd", icon: "sirfetch'd", baseId: 865, form: "" },
+  865: { name: "Sirfetch'd", icon: "sirfetchd", baseId: 865, form: "" },
   866: { name: "Mr. Rime", icon: "mr-rime", baseId: 866, form: "" },
   867: { name: "Runerigus", icon: "runerigus", baseId: 867, form: "" },
   868: { name: "Milcery", icon: "milcery", baseId: 868, form: "" },

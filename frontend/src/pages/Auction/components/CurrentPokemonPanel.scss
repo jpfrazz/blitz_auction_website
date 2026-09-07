@@ -131,6 +131,11 @@
 	line-height: 1.1;
 }
 
+.evo-method-tooltip {
+	border-bottom: 1px dotted currentColor;
+	cursor: help;
+}
+
 .evo-pokemon-img-evolution {
 	width: 100%;
 	max-width: 8rem;

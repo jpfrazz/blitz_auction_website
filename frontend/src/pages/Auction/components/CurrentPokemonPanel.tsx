@@ -2,6 +2,8 @@ import React from 'react';
 import { TbArrowRight, TbArrowsSplit } from "react-icons/tb";
 import { VscArrowBoth } from "react-icons/vsc";
 import { Auction, Pokemon } from '../../../types';
+import HoverTip from '../../../shared/components/HoverTip';
+import { getTipMessagesEnabled } from '../../../shared/utils/tipMessages';
 import './CurrentPokemonPanel.scss';
 
 interface CurrentPokemonPanelProps {
@@ -9,6 +11,88 @@ interface CurrentPokemonPanelProps {
   all_pokemon: Pokemon[];
   onToggleEgg?: (id: number | null) => void;
 }
+
+const EVOLUTION_METHOD_TOOLTIPS: Record<string, string> = {
+  Guru: 'An NPC in Slateport City can evolve this Pokémon early after you earn 2 badges',
+  Oracle: 'An NPC in Slateport City can evolve this Pokémon early after you earn 4 badges',
+};
+
+const SLATEPORT_ITEM_METHOD_TIPS: Record<string, string> = {
+  'Linking Cord': 'Available for purchase from the Slateport Market after you earn 6 badges',
+  'Dragon Scale': 'Available for purchase from the Slateport Market after you earn 4 badges',
+  'Metal Coat': 'Available for purchase from the Slateport Market after you earn 4 badges',
+  "King's Rock": 'Available for purchase from the Slateport Market after you earn 4 badges',
+};
+
+const SLATEPORT_BADGES_4_TIP = 'Available for purchase from the Slateport Market after you earn 4 badges';
+
+function getWholeMethodTip(method: string): string | null {
+  const trimmed = method.trim();
+  const itemTip = SLATEPORT_ITEM_METHOD_TIPS[trimmed];
+  if (itemTip) return itemTip;
+  if (trimmed.endsWith('Stone')) return SLATEPORT_BADGES_4_TIP;
+  return null;
+}
+
+const EvolutionMethodWord: React.FC<{ text: string; tipText: string; tipsEnabled: boolean }> = ({ text, tipText, tipsEnabled }) => {
+  const wordRef = React.useRef<HTMLSpanElement>(null);
+  const [hover, setHover] = React.useState(false);
+
+  return (
+    <span
+      ref={wordRef}
+      className={tipsEnabled ? 'evo-method-tooltip' : ''}
+      onMouseEnter={() => setHover(true)}
+      onMouseLeave={() => setHover(false)}
+    >
+      {text}
+      {hover && (
+        <HoverTip text={tipText} color="#6366f1" anchorRef={wordRef} hover={hover} />
+      )}
+    </span>
+  );
+};
+
+const EvolutionMethodLabel: React.FC<{ method: string | undefined }> = ({ method }) => {
+  const [tipsEnabled, setTipsEnabled] = React.useState(getTipMessagesEnabled);
+
+  React.useEffect(() => {
+    const handleSettingsChanged = () => setTipsEnabled(getTipMessagesEnabled());
+    window.addEventListener('eb-settings-changed', handleSettingsChanged);
+    window.addEventListener('storage', handleSettingsChanged);
+    return () => {
+      window.removeEventListener('eb-settings-changed', handleSettingsChanged);
+      window.removeEventListener('storage', handleSettingsChanged);
+    };
+  }, []);
+
+  if (!method) return null;
+
+  const wholeTip = getWholeMethodTip(method);
+  if (wholeTip) {
+    return (
+      <span className="evo-method-label-horizontal">
+        <EvolutionMethodWord text={method.trim()} tipText={wholeTip} tipsEnabled={tipsEnabled} />
+      </span>
+    );
+  }
+
+  const keywords = Object.keys(EVOLUTION_METHOD_TOOLTIPS);
+  const pattern = new RegExp(`(${keywords.join('|')})`, 'g');
+  const parts = method.split(pattern);
+
+  return (
+    <span className="evo-method-label-horizontal">
+      {parts.map((part, i) => {
+        const tipText = EVOLUTION_METHOD_TOOLTIPS[part];
+        if (tipText) {
+          return <EvolutionMethodWord key={i} text={part} tipText={tipText} tipsEnabled={tipsEnabled} />;
+        }
+        return part;
+      })}
+    </span>
+  );
+};
 
 
 // Helper to build the evolution tree for a given Pokémon
@@ -285,7 +369,7 @@ const EvolutionTree: React.FC<{ node: EvoNode }> = ({ node }) => {
                   ) : (
                     <TbArrowRight size={32} color="#888" />
                   )}
-                  <div className="evo-method-label-horizontal">{child.methodFromParent}</div>
+                  <EvolutionMethodLabel method={child.methodFromParent} />
                 </div>
                 <EvolutionTree node={child} />
               </div>
