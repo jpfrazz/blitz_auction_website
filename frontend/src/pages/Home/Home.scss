@@ -3,7 +3,8 @@
 .home-page {
   display: flex;
   flex-direction: column;
-  min-height: 100vh;
+  height: 100vh;
+  overflow: hidden;
   background:
     radial-gradient(1200px 500px at 10% -20%, rgba($eb-primary, 0.25), transparent 55%),
     radial-gradient(900px 500px at 95% 10%, rgba($eb-primary-hover, 0.16), transparent 60%),
@@ -63,13 +64,21 @@
 
 .home-main {
   flex: 1;
+  min-height: 0;
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
-  padding: 7.5rem 16px 0;
+  justify-content: safe center;
+  padding: 4rem 16px 0;
   box-sizing: border-box;
+  overflow-y: auto;
+  overflow-x: hidden;
+  scrollbar-width: none;
   visibility: hidden;
+
+  &::-webkit-scrollbar {
+    display: none;
+  }
 
   &.visible {
     visibility: visible;
@@ -135,7 +144,7 @@
 
 .home-instructions {
   color: #95a8b1;
-  font-size: 1rem;
+  font-size: 1.02rem;
   text-align: center;
   max-width: 480px;
   line-height: 1.5;
@@ -167,7 +176,7 @@
 
 .space-hint {
   position: fixed;
-  bottom: 8rem;
+  bottom: calc(var(--footer-h, 7rem) + 1rem);
   left: 2rem;
   color: $eb-text;
   background: rgba(0, 0, 0, 0.6);
@@ -193,17 +202,19 @@
     height: 100dvh; /* Use dynamic viewport height to account for mobile browser bars */
     display: flex;
     flex-direction: column; /* Arrange children vertically */
+    overflow: hidden; /* Prevent page scroll; home-main scrolls internally */
   }
 
   .home-main {
-    padding: 25dvh 1rem 0; /* Position logo roughly 1/4th down the screen */
+    padding: 10dvh 1rem 0; /* Less reserved space so the footer fits on screen */
     justify-content: flex-start; /* Move content up */
     flex: 1; /* Allow main content to grow and fill available space */
+    min-height: 0; /* Allow main to shrink so the footer stays visible */
     overflow-y: auto; /* Enable vertical scrolling if content overflows */
   }
 
   .home-logo {
-    width: 50vw;
+    width: 36vw;
     margin-top: 0; /* Remove top margin on mobile */
     margin-bottom: 0.5rem;
   }

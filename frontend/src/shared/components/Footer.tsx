@@ -11,10 +11,19 @@ const footerButtons = [
 //   { icon: '/generic/Download.png', alt: 'Download', link: '/Download' }, Removed while the home page is the download page
 ];
 
+const DISCLAIMER_TEXT = (
+  <>
+    Emerald Blitz is a free, non-commercial fan project not affiliated with Nintendo, The Pokémon Company, or Game Freak. All content, images, and trademarks are the property of their respective owners.
+    <br />
+    This website does not run ads or accept funds. It does not host or distribute ROMs. It hosts only a bps patch file. When using its embedded mGBA emulator to play legally obtained ROMs, your ROMs never leave your device.
+  </>
+);
+
 function Footer() {
   const { pathname } = useLocation();
   const [showDiscordHint, setShowDiscordHint] = useState(false);
   const [tipsEnabled, setTipsEnabled] = useState(getTipMessagesEnabled);
+  const [showDisclaimer, setShowDisclaimer] = useState(true);
 
   useEffect(() => {
     const handleSettingsChanged = () => setTipsEnabled(getTipMessagesEnabled());
@@ -35,30 +44,51 @@ function Footer() {
     return () => clearTimeout(timer);
   }, [pathname, tipsEnabled]);
 
+  useEffect(() => {
+    if (pathname !== '/') return;
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.code === 'Space') {
+        e.preventDefault();
+        setShowDisclaimer(false);
+      }
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [pathname]);
+
   return (
-    <footer className="footer">
+    <footer className={`footer ${showDisclaimer ? 'with-disclaimer' : 'no-disclaimer'}`}>
       <div className="footerInner">
-        {footerButtons.map(btn => (
-          <a
-            key={btn.alt}
-            href={btn.link}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="footerButton"
-          >
-            <img src={btn.icon} alt={btn.alt} className="footerIcon" />
-          </a>
-        ))}
-        {showDiscordHint && (
-          <div className="discord-hint">
-            <button
-              className="discord-hint-close"
-              onClick={() => setShowDiscordHint(false)}
-              aria-label="Close"
+        <div className="footerSocial">
+          {footerButtons.map(btn => (
+            <a
+              key={btn.alt}
+              href={btn.link}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="footerButton"
             >
-              -
-            </button>
-            Join the discord for daily races!
+              <img src={btn.icon} alt={btn.alt} className="footerIcon" />
+            </a>
+          ))}
+          {showDiscordHint && (
+            <div className="discord-hint">
+              <button
+                className="discord-hint-close"
+                onClick={() => setShowDiscordHint(false)}
+                aria-label="Close"
+              >
+                -
+              </button>
+              Join the discord for daily races!
+            </div>
+          )}
+        </div>
+        {showDisclaimer && (
+          <div className="footerDisclaimer">
+            <div className="footerDisclaimerText">
+              {DISCLAIMER_TEXT}
+            </div>
           </div>
         )}
       </div>

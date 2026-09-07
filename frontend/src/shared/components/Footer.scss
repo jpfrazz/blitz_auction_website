@@ -1,19 +1,31 @@
 .footer {
   margin-top: 40px;
   width: 100%;
-  min-height: 64px;
+  min-height: 80px;
   position: relative;
   left: 0;
   bottom: 0;
   z-index: 100;
   display: flex;
   justify-content: center;
-  align-items: center;
+  align-items: flex-start;
+  padding: 14px 0 8px;
+  box-sizing: border-box;
+  transition: min-height 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94), padding-bottom 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94);
 }
 .footerInner {
   display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+  gap: 10px;
+}
+.footerSocial {
+  display: flex;
   flex-direction: row;
   gap: 14px;
+  align-items: center;
+  justify-content: center;
   position: relative;
 }
 .footerButton {
@@ -30,6 +42,34 @@
   filter: invert(1);
   pointer-events: none;
   object-fit: contain;
+}
+.footerDisclaimer {
+  color: #f0f0f0;
+  font-size: 0.96rem;
+  text-align: center;
+  line-height: 1.4;
+  width: 100%;
+  max-width: 100%;
+  opacity: 0.85;
+  transition: opacity 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94), transform 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94), max-height 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  overflow: hidden;
+}
+.footerDisclaimerText {
+  width: max-content;
+  max-width: 100%;
+  margin: 0 auto;
+  text-align: left;
+}
+.footer.no-disclaimer {
+  min-height: 64px;
+  align-items: center;
+  padding-top: 10px;
+  padding-bottom: 10px;
+}
+.footer.no-disclaimer .footerDisclaimer {
+  opacity: 0;
+  transform: translateY(-10px);
+  max-height: 0;
 }
 .discord-hint {
   position: absolute;
@@ -73,4 +113,29 @@
 @keyframes discordFloat {
   0%, 100% { transform: translateY(-50%); }
   50% { transform: translateY(calc(-50% - 2px)); }
+}
+
+@media (max-width: 1024px) {
+  .discord-hint {
+    display: none;
+  }
+
+  .footer {
+    min-height: 63px;
+    align-items: center;
+    padding-top: 10px;
+    padding-bottom: 10px;
+  }
+
+  .footerDisclaimer {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 70px;
+    width: auto;
+    max-width: none;
+    padding: 0 12px;
+    font-size: 0.85rem;
+    pointer-events: none;
+  }
 }

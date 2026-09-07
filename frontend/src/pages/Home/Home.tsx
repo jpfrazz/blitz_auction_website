@@ -142,6 +142,8 @@ const HoppingIcons = () => {
 const Home = () => {
   const [isLoaded, setIsLoaded] = useState(false);
   const imgRef = useRef<HTMLImageElement>(null);
+  const pageRef = useRef<HTMLDivElement>(null);
+  const footerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (imgRef.current?.complete) {
@@ -149,8 +151,28 @@ const Home = () => {
     }
   }, []);
 
+  useEffect(() => {
+    const page = pageRef.current;
+    const wrapper = footerRef.current;
+    if (!page || !wrapper) return;
+    const footEl = wrapper.querySelector('footer');
+    if (!footEl) return;
+    const update = () => {
+      const distFromBottom = window.innerHeight - footEl.getBoundingClientRect().top;
+      page.style.setProperty('--footer-h', `${Math.max(distFromBottom, 0)}px`);
+    };
+    update();
+    if (typeof ResizeObserver !== 'undefined') {
+      const observer = new ResizeObserver(update);
+      observer.observe(footEl);
+      return () => observer.disconnect();
+    }
+    window.addEventListener('resize', update);
+    return () => window.removeEventListener('resize', update);
+  }, []);
+
   return (
-    <div className="home-page">
+    <div className="home-page" ref={pageRef}>
       <Header />
       <HoppingIcons />
       <main className={`home-main ${isLoaded ? 'visible' : ''}`}>
@@ -177,7 +199,9 @@ const Home = () => {
           </div>
         </div>
       </main>
-      <Footer />
+      <div ref={footerRef}>
+        <Footer />
+      </div>
     </div>
   );
 };
