@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import Select, { MultiValue, ActionMeta } from 'react-select';
+import Select, { MultiValue, ActionMeta, components as SelectComponents } from 'react-select';
+import type { OptionProps } from 'react-select';
 import Header from '../../shared/components/Header';
 import Footer from '../../shared/components/Footer';
 import TeamPlannerTab from '../Auction/components/PokemonTablePanel/TeamPlannerTab';
@@ -12,6 +13,32 @@ type PokemonOption = {
   value: string;
   label: string;
   pokemon: Pokemon;
+};
+
+function formatPokemonName(name: string): string {
+  const lower = name.toLowerCase();
+  if (lower.startsWith("farfetch'd")) {
+    return "farfetch'd";
+  }
+  return lower.replace(/'/g, '');
+}
+
+const PokemonSelectOption = (props: OptionProps<PokemonOption, true>) => {
+  return (
+    <SelectComponents.Option {...props}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+        <img
+          src={`/MiniIcons/${formatPokemonName(props.data.pokemon.name)}.png`}
+          alt=""
+          style={{ width: 24, height: 24, flexShrink: 0 }}
+          onError={(e) => {
+            (e.currentTarget as HTMLImageElement).src = '/MiniIcons/question.png';
+          }}
+        />
+        <span>{props.data.label}</span>
+      </div>
+    </SelectComponents.Option>
+  );
 };
 
 const TeamPlanner = () => {
@@ -191,6 +218,7 @@ const TeamPlanner = () => {
               placeholder="Search Pokémon..."
               menuPortalTarget={document.body}
               menuPosition="fixed"
+              components={{ Option: PokemonSelectOption }}
               styles={{
                 menuPortal: (base) => ({ ...base, zIndex: 9999 }),
                 control: (base) => ({
@@ -210,6 +238,10 @@ const TeamPlanner = () => {
                   color: '#f1f1f1',
                   border: '1px solid #2a2d31',
                   fontSize: '1.15rem',
+                }),
+                menuList: (base) => ({
+                  ...base,
+                  maxHeight: '360px',
                 }),
                 multiValue: (base) => ({
                   ...base,
