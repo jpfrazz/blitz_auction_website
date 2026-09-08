@@ -1,6 +1,4 @@
-9/6/26
-
-1.0.12 Beta Notes
+9/8/26
 
 -----------------------------------------------
 Boss Tweaks
@@ -11,7 +9,7 @@ Pokemon controlled by Tatsugiri's Commander ability can now land critical hits
 
 The team is now...
 
-Luvdisc
+Luvdisc (New!)
 Level: 11
 - Safeguard
 - Flip Turn
@@ -62,6 +60,19 @@ Ludicolo Ice Beam > Ice Punch
 
 
 -----------------------------------------------
+Pokémon Changes
+-----------------------------------------------
+
+Flareon Evolution Move: Ember > Flame Charge
+
+//Oh Flareon, you're the last Eeveelution to be chosen again! As you know, I don't usually mind Pokémon being weak (if all Pokémon are worth 2500, the draft loses much of its complexity--it's the range in power that makes deciding what to bid on so tricky). But Flareon isn't in the draft, and the recurring decision of which Eeveelution to choose after gym 4 would be more interesting if Flareon were closer to the rest of the pack.
+
+//Not that this makes Flareon a top tier Eeveelution or anything. But Flame Charge is perfect for Flareon: a physical fire-type attack that patches up its low Speed and helps enable the aggressive, Guts-boosted gameplan it wants to play for.
+
+//I've wanted to give Flareon access to Flame Charge for ages via TM, but I don't like the implication of giving Pokémon like Dachsbun the ability to setup Atk/SpAtk/Speed pass just as well as Ninjask, or already high-tier fires like Chandelure and Skeledirge a way to buff their own speed. So, I've settled for the ugly decision to modify its learnset outright. This won't become a routine, but it makes too much sense for this specific Pokémon.
+
+
+-----------------------------------------------
 QoL
 -----------------------------------------------
 
@@ -71,11 +82,19 @@ Added the ability to adjust items of PC Pokemon from the party menu
 
 Added Berries to the Elite Four party menu
 
+Additional NPCs use the PC-Party Menu:
+Move Relearner in Fallarbor Town
+Status Cook in Slateport
+Move Tutors across Hoenn
+//Previously, they still used the old menu that only showed the six Pokémon in your party
+
 Added a Toggle to disable evolution
 //In the party menu, in the same spot where you're prompted to press A to nickname your Pokémon, you're now also prompted to press L to toggle disabling evolution. Doing so adds an Everstone to the bottom left corner of your summary screen. Pokemon who have evolution disabled can't evolve by leveling up.
 //This replaces the "Hold L in the party menu" to delay evolution. It should be more user-friendly and less esoteric.
 
 Removed the Shuppet in front of the Cut HM house in Rustboro City
+
+Changed Flame Charge to 2x animation speed
 
 
 -----------------------------------------------
@@ -89,7 +108,19 @@ Fixed Scott's Memory
 Fixed a bug where defeating a Living Legend in the museum didn't spawn the next fight
 //Thanks Freez, Manthief and Jeans for the reports
 
+Fixed a bug where the player was able to deposit party Pokémon from certain Elite Four rooms
+//Thanks ProfSkarmory for finding this
+
+Fixed a bug where the Hidden Power type-change NPC failed if selecting a Pokémon from the PC-Party Menu
+//Thanks Shartwagon for reporting
+
 Fixed an obscure bug where the player could swap their Pokemon with a berry in the party menu
+//Thanks to FranklyNathan for being such a sleuth and finding this bad boy
 
 
+-----------------------------------------------
+Pool Addition
+-----------------------------------------------
 
++Maschiff
+//The boss is in.

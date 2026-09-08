@@ -592,8 +592,8 @@ const Stats: React.FC = () => {
       <main className="match-history-main">
         <section className="stats-hero-card">
           <div>
-            <h1>Draft Stats</h1>
-            <p>Price data, draft histories, player profiles and more!</p>
+            <h1>Blitz Stats</h1>
+            <p>All data from the website's drafts and races are stored in our database and presented here</p>
           </div>
         </section>
 

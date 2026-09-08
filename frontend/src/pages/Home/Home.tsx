@@ -129,7 +129,7 @@ const HoppingIcons = () => {
           style={{
             position: 'absolute',
             left: `${icon.x}px`,
-            bottom: `${icon.y + 65}px`,
+            bottom: `${icon.y + 67}px`,
             imageRendering: 'pixelated'
           }}
           onError={(e) => e.currentTarget.style.display = 'none'}
