@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
 import Header from '../../shared/components/Header';
 import { fetchPokemonList, fetchRentalPokemonList } from '../../shared/api/pokemon';
 import { Auction, Pokemon } from '../../types';
@@ -6,10 +7,12 @@ import AllPokemonTab from '../Auction/components/PokemonTablePanel/AllPokemonTab
 import './Pokedex.scss';
 
 const Pokedex: React.FC = () => {
+  const navigate = useNavigate();
+  const { tab } = useParams<{ tab?: string }>();
   const [pokemon, setPokemon] = useState<Pokemon[]>([]);
   const [rentalPokemon, setRentalPokemon] = useState<Pokemon[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'all' | 'rental'>('all');
+  const activeTab = tab === 'Rental' ? 'rental' : 'all';
 
   useEffect(() => {
     Promise.all([
@@ -40,13 +43,13 @@ const Pokedex: React.FC = () => {
             <div className="tabs">
               <button
                 className={`tab-button ${activeTab === 'all' ? 'active' : ''}`}
-                onClick={() => setActiveTab('all')}
+                onClick={() => navigate('/Pokedex')}
               >
                 All Pokémon
               </button>
               <button
                 className={`tab-button ${activeTab === 'rental' ? 'active' : ''}`}
-                onClick={() => setActiveTab('rental')}
+                onClick={() => navigate('/Pokedex/Rental')}
               >
                 Rental Pokémon
               </button>

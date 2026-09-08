@@ -381,7 +381,7 @@ const SpectatePage: React.FC = () => {
                     <div className="spectate-player-header">
                       <span className={`spectate-username ${showDisconnected ? 'disconnected' : ''} ${isWiped ? 'wiped' : ''} ${championName ? 'winner' : ''}`}>
                         <a
-                          href={`/Stats?tab=player-search&userId=${encodeURIComponent(uid)}`}
+                          href={`/Stats/PlayerProfiles/${encodeURIComponent(displayName)}?userId=${encodeURIComponent(uid)}`}
                           target="_blank"
                           rel="noopener noreferrer"
                         >

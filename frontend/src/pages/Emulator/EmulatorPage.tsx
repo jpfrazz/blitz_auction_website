@@ -10,6 +10,7 @@ import { fetchCurrentUser, fetchDraftById, claimEeveelution, unclaimEeveelution,
 import { fetchPokemonList } from '../../shared/api/pokemon';
 import EeveelutionClaimButton from './EeveelutionClaimButton';
 import NotebookWithdrawButton from './NotebookWithdrawButton';
+import HoverTip from '../../shared/components/HoverTip';
 import './EmulatorPage.scss';
 
 (function () {
@@ -778,6 +779,8 @@ const EmulatorPage: React.FC = () => {
   // Ready to Race state
   const [readyPlayers, setReadyPlayers] = useState<Set<string>>(new Set());
   const [countdown, setCountdown] = useState<number | null>(null);
+  const readyRaceButtonRef = useRef<HTMLButtonElement>(null);
+  const [readyRaceTipHover, setReadyRaceTipHover] = useState(false);
   const [raceStarted, setRaceStarted] = useState(false);
 
   // Persist fainted state via Personality ID (User ID -> Set of PIDs)
@@ -3264,12 +3267,23 @@ const EmulatorPage: React.FC = () => {
                       />
                     )}
                     {draftId && draftData && countdown === null && !raceStarted && !anyPlayerHasBadge && (
-                      <button
-                        className={`ready-race-button ${readyPlayers.has(currentUserId ?? '') ? 'ready' : ''}`}
-                        onClick={handleToggleReady}
-                      >
-                        {readyPlayers.has(currentUserId ?? '') ? 'Ready!' : 'Ready to Race'}
-                      </button>
+                      <>
+                        <HoverTip
+                          text="Once everybody has clicked this button, a 10-second countdown will begin!"
+                          color="#4ade80"
+                          anchorRef={readyRaceButtonRef}
+                          hover={readyRaceTipHover}
+                        />
+                        <button
+                          ref={readyRaceButtonRef}
+                          className={`ready-race-button ${readyPlayers.has(currentUserId ?? '') ? 'ready' : ''}`}
+                          onClick={handleToggleReady}
+                          onMouseEnter={() => setReadyRaceTipHover(true)}
+                          onMouseLeave={() => setReadyRaceTipHover(false)}
+                        >
+                          {readyPlayers.has(currentUserId ?? '') ? 'Ready!' : 'Ready to Race'}
+                        </button>
+                      </>
                     )}
 
                     <div className="panel-toggle-group">

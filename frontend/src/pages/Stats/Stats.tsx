@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { Navigate, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import Header from '../../shared/components/Header';
 import { fetchStatsPageData } from '../../shared/api/stats';
 import { StatsPagePlayer, StatsPageResponse, StatsPageTeamRow } from '../../types';
@@ -12,6 +12,14 @@ import HallOfFameStatsTab from './components/HallOfFameStatsTab';
 import './Stats.scss';
 
 type StatsTab = 'pokemon' | 'drafts' | 'player-search' | 'hall-of-fame' | 'tier-list';
+
+const TAB_BY_SEGMENT: Record<string, StatsTab> = {
+  'Pokemon': 'pokemon',
+  'Drafts': 'drafts',
+  'PlayerProfiles': 'player-search',
+  'HallOfFame': 'hall-of-fame',
+  'TierList': 'tier-list',
+};
 
 interface PlayerAggregate {
   key: string;
@@ -103,12 +111,11 @@ const EEVEELUTION_IDS = new Set([133, 134, 135, 136, 196, 197, 470, 471, 700]);
 
 const Stats: React.FC = () => {
   const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
+  const { tab: tabSegment, username } = useParams<{ tab?: string; username?: string }>();
   const [stats, setStats] = useState<StatsPageResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<StatsTab>(
-    searchParams.get('tab') === 'player-search' ? 'player-search' : 'pokemon',
-  );
   const initialUserId = searchParams.get('userId') ?? undefined;
   const [expandedDraftId, setExpandedDraftId] = useState<string | null>(null);
   const [draftSortMode, setDraftSortMode] = useState<'order' | 'price' | 'user' | 'race'>('order');
@@ -566,6 +573,15 @@ const Stats: React.FC = () => {
     URL.revokeObjectURL(url);
   };
 
+  const activeTab: StatsTab = username
+    ? 'player-search'
+    : (TAB_BY_SEGMENT[tabSegment ?? ''] ?? (searchParams.get('tab') === 'player-search' ? 'player-search' : 'pokemon'));
+
+  // Legacy /Stats/Username URLs redirect to the Player Profiles route.
+  if (tabSegment && !TAB_BY_SEGMENT[tabSegment]) {
+    return <Navigate to={`/Stats/PlayerProfiles/${encodeURIComponent(tabSegment)}`} replace />;
+  }
+
   if (loading) {
     return (
       <div className="match-history-page">
@@ -593,7 +609,7 @@ const Stats: React.FC = () => {
         <section className="stats-hero-card">
           <div>
             <h1>Blitz Stats</h1>
-            <p>Data from all players' draft races is stored in our database and presented here</p>
+            <p>So much data! Booyah!</p>
           </div>
         </section>
 
@@ -601,35 +617,35 @@ const Stats: React.FC = () => {
           <button
             className={`tab-chip ${activeTab === 'pokemon' ? 'active' : ''}`}
             type="button"
-            onClick={() => setActiveTab('pokemon')}
+            onClick={() => navigate('/Stats/Pokemon')}
           >
             Pokemon
           </button>
           <button
             className={`tab-chip ${activeTab === 'drafts' ? 'active' : ''}`}
             type="button"
-            onClick={() => setActiveTab('drafts')}
+            onClick={() => navigate('/Stats/Drafts')}
           >
             Drafts
           </button>
           <button
             className={`tab-chip ${activeTab === 'player-search' ? 'active' : ''}`}
             type="button"
-            onClick={() => setActiveTab('player-search')}
+            onClick={() => navigate('/Stats/PlayerProfiles')}
           >
-            Player Search
+            Player Profiles
           </button>
           <button
             className={`tab-chip ${activeTab === 'hall-of-fame' ? 'active' : ''}`}
             type="button"
-            onClick={() => setActiveTab('hall-of-fame')}
+            onClick={() => navigate('/Stats/HallOfFame')}
           >
             Hall of Fame
           </button>
           <button
             className={`tab-chip ${activeTab === 'tier-list' ? 'active' : ''}`}
             type="button"
-            onClick={() => setActiveTab('tier-list')}
+            onClick={() => navigate('/Stats/TierList')}
           >
             Tier List
           </button>
@@ -1029,6 +1045,7 @@ const Stats: React.FC = () => {
             error={error}
             validDraftIds={validDraftIds}
             initialUserId={initialUserId}
+            initialUserName={username}
           />
         )}
 

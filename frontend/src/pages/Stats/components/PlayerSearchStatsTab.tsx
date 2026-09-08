@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { fetchMatchHistoryByUserId, fetchBossBattleHistory, BossBattleHistoryEntry } from '../../../shared/api/stats';
 import { MatchHistoryTeam, StatsAuction, StatsPagePlayer, StatsPageResponse } from '../../../types';
 import type { PlayerStatPill } from './playerStatPills';
@@ -13,6 +14,7 @@ interface PlayerSearchStatsTabProps {
   error?: string | null;
   validDraftIds: Set<string>;
   initialUserId?: string;
+  initialUserName?: string;
 }
 
 interface PokemonDraftSummary {
@@ -262,7 +264,9 @@ const PlayerSearchStatsTab: React.FC<PlayerSearchStatsTabProps> = ({
   error = null,
   validDraftIds,
   initialUserId,
+  initialUserName,
 }) => {
+  const navigate = useNavigate();
   const [searchInput, setSearchInput] = useState('');
   const [isAutocompleteOpen, setIsAutocompleteOpen] = useState(false);
   const [expandedTeamId, setExpandedTeamId] = useState<number | null>(null);
@@ -630,6 +634,10 @@ const PlayerSearchStatsTab: React.FC<PlayerSearchStatsTabProps> = ({
     setPlayerMatchHistoryLoading(true);
     setPlayerMatchHistoryError(null);
 
+    const displayName = player.global_name || player.user_name;
+    navigate(`/Stats/PlayerProfiles/${encodeURIComponent(displayName)}`, { replace: true });
+    initialSelectionHandled.current = true;
+
     try {
       const history = await fetchMatchHistoryByUserId(player.user_id);
       setPlayerMatchHistory(history);
@@ -658,13 +666,23 @@ const PlayerSearchStatsTab: React.FC<PlayerSearchStatsTabProps> = ({
   const initialSelectionHandled = useRef(false);
 
   useEffect(() => {
-    if (!initialUserId || !stats || initialSelectionHandled.current) return;
-    const player = stats.players.find((p) => p.user_id === initialUserId);
+    if (!stats || initialSelectionHandled.current) return;
+    if (!initialUserId && !initialUserName) return;
+    let player = initialUserId
+      ? stats.players.find((p) => p.user_id === initialUserId)
+      : undefined;
+    if (!player && initialUserName) {
+      const query = initialUserName.trim().toLowerCase();
+      player = stats.players.find((p) => !p.is_guest && (
+        p.user_name.toLowerCase() === query ||
+        (p.global_name ?? '').toLowerCase() === query
+      ));
+    }
     if (player) {
       initialSelectionHandled.current = true;
       handleSelectPlayer(player);
     }
-  }, [initialUserId, stats, handleSelectPlayer]);
+  }, [initialUserId, initialUserName, stats, handleSelectPlayer]);
 
   const handleSubmitSearch = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();

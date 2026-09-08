@@ -46,9 +46,12 @@ if (container) {
           <Route path="/LobbyViewer" element={<LobbyViewer />} />
           <Route path="/Leaderboard" element={<LeaderboardPage />} />
           <Route path="/Stats" element={<Stats />} />
+          <Route path="/Stats/:tab" element={<Stats />} />
+          <Route path="/Stats/PlayerProfiles/:username" element={<Stats />} />
           <Route path="/TeamPlanner" element={<TeamPlanner />} />
           <Route path="/FAQ" element={<FAQ />} />
           <Route path="/Pokedex" element={<Pokedex />} />
+          <Route path="/Pokedex/:tab" element={<Pokedex />} />
           <Route path="/Info" element={<Info />} />
           <Route path="/BossBattles" element={<BossBattles />} />
           <Route path="/SpeedTest" element={<SpeedTest />} />

@@ -277,7 +277,7 @@ const HallOfFameStatsTab: React.FC<HallOfFameStatsTabProps> = ({ validDraftIds }
                   {entry.user_id ? (
                     <a
                       className="admin-hof-entry-player"
-                      href={`/Stats?tab=player-search&userId=${encodeURIComponent(entry.user_id)}`}
+                      href={`/Stats/PlayerProfiles/${encodeURIComponent(entry.user_name ?? entry.user_id)}?userId=${encodeURIComponent(entry.user_id)}`}
                       target="_blank"
                       rel="noreferrer"
                       title="View match history"

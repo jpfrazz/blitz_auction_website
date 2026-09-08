@@ -35,7 +35,7 @@ const FAQ = () => (
         <h2 className="faq-question">What's Emerald Blitz?</h2>
         <hr />
         <p className="faq-answer">
-          Emerald Blitz is a revamped version of Pokémon Emerald streamlined for nuzlocke draft racing. Despite playing through the entire Hoenn region with a team of nine Pokemon, from first gym to Elite Four Champion, a single playthrough takes just 90 minutes to complete. Emerald Blitz is customized with new features and quality-of-life improvements geared toward making the game as fast as possible; it's all of the good with none of the tedium.
+          Emerald Blitz is a revamped version of Pokémon Emerald streamlined for nuzlocke draft racing. Despite playing through the entire Hoenn region, from first gym to Elite Four Champion, a single playthrough takes just 90 minutes. Emerald Blitz is customized with new features and quality-of-life improvements geared toward making the game as fast as possible; it's all of the good with none of the tedium.
         </p>
       </section>
 
@@ -99,7 +99,7 @@ const FAQ = () => (
             </ul>
           </li>
           <li>
-            Besides your starter Eevee and <a href="/Pokedex?tab=rental">rental Pokemon:</a>, you can only use Pokemon you purchased at auction. They’re all in your notebook at the start of the game. You can’t catch Pokemon.
+            Besides your starter Eevee and <a href="/Pokedex/Rental">rental Pokemon:</a>, you can only use Pokemon you purchased at auction. They’re all in your notebook at the start of the game. You can’t catch Pokemon.
           </li>
           <li>The first player to beat the game wins.</li>
           <li>
@@ -197,7 +197,7 @@ const FAQ = () => (
           Yes! The notebook includes a "Random" option at the bottom of its list. Choose this option eight times to generate yourself a random team of Pokémon, then get racing!
         </p>
         <p className="faq-answer" style={{ marginTop: '1rem' }}>
-          Also, KCH42 creates a Weekly Box every Friday composed of eight Pokemon designed to offer a unique experience. Join the Discord server to stay up to date on each week's box!
+          Also, <a href="/Stats/PlayerProfiles/KCH42">KCH42</a> creates a Weekly Box every Friday composed of eight Pokemon designed to offer a unique experience. Join the Discord server to stay up to date on each week's box!
         </p>
       </section>
 
@@ -221,28 +221,6 @@ const FAQ = () => (
               </li>
           </ul>
 
-          <h3 style={{ textAlign: 'left' }}>Quality of Life Improvements</h3>
-          <ul>
-            <li>
-              <b>Pokemon Catalog:</b> The notebook on the player's desk now comes stocked with every Pokémon in the draft. Simply scroll through, select your Pokemon, and get racing.
-            </li>
-            <li>
-              <b>Permanent Repel:</b> The Cleanse Tag now functions as a toggleable permanent repel.
-            </li>
-            <li>
-              <b>Portable PC:</b> A PC in your bag, accessible from anywhere besides the Elite Four chambers.
-            </li>
-            <li>
-              <b>Med Kit:</b> A key item Pokecenter in your bag, automatically registered when you enter the Elite Four.
-            </li>
-            <li>
-              <b>Visible IVs:</b> When paused to view your Pokémon’s stats, press A to display their IVs.
-            </li>
-            <li>
-              <b>Custom Colors:</b> Choose from ten custom trainer palettes by interacting with the PC in your room!
-            </li>
-          </ul>
-
           <h3 style={{ textAlign: 'left' }}>Built for Speed</h3>
           <ul>
             <li>
@@ -259,25 +237,6 @@ const FAQ = () => (
             </li>
           </ul>
 
-          <h3 style={{ textAlign: 'left' }}>Difficulty Boosts</h3>
-          <ul>
-            <li>
-              <b>Nuzlocke Mechanics:</b> Your Pokémon can’t overlevel the most powerful Pokémon of the next major boss trainer. You can’t use items in battle.
-            </li>
-            <li>
-              <b>Stat Boosting Cap:</b> While a Pokemon’s stats can still be debuffed to -6, a Pokemon’s stat stage can never be raised beyond +1. You’ll need to rely on more creative strategies than Dragon Dance sweeps to take down these bosses.
-            </li>
-            <li>
-              <b>Updated Teams:</b> Gym leaders use more well-rounded teams, having bolstered their rosters with new Alolan, Hisuian, and Galarian members.
-            </li>
-            <li>
-              <b>New Boss Fights:</b> The Elite Four champion is now either Steven Stone wielding a Mega Metagross or Wally and his Mega Gallade. Wallace, meanwhile, now joins Juan to make the 8th gym a double battle. Battle Factory Brains join the Elite Four to make each fight a flip between two possibilities. Additionally, Viola is vacationing from Kalos to give Hoenn some bug representation.
-            </li>
-            <li>
-              <b>Buffed Battles:</b> All enemy trainers use perfect 31-IV Pokémon.
-            </li>
-          </ul>
-
           <h3 style={{ textAlign: 'left' }}>Reworked Shop</h3>
           <ul>
             <li>
@@ -291,50 +250,19 @@ const FAQ = () => (
             </li>
           </ul>
 
-          <h3 style={{ textAlign: 'left' }}>Modern Mechanics</h3>
-          <ul>
-            <li>
-              <b>Mega Evolution:</b> Mega Stones are here! Click Fight in battle and then press Start before selecting your move to mega evolve. Mega-evolved Pokemon revert to their base form after three turns.
-            </li>
-            <li>
-              <b>Fairy Types:</b> Fairy Type has been added to the game. Pokémon have had their typing and learnsets updated to generation VII.
-            </li>
-            <li>
-              <b>Generation IX Pokémon:</b> The auction pool includes Pokémon and items all the way up to additions from Legends ZA.
-            </li>
-            <li>
-              <b>Physical/Special Split:</b> Moves calculate damage based on the split introduced in generation IV.
-            </li>
-            <li>
-              <b>New TMs:</b> TMs from generation 6 including Hone Claws, Dazzling Gleam, X-Scissor, and Trick Room help even out coverage for your team.
-            </li>
-          </ul>
-
-          <h3 style={{ textAlign: 'left' }}>New Unique Tools</h3>
+          <h3 style={{ textAlign: 'left' }}>New Tools</h3>
           <ul>
             <li>
               <b>Milk Drink:</b> Skiddo and Mareep’s Milk Drink can now be used in the overworld to increase a Pokemon’s level by one, ignoring the level cap. Choose carefully--you can only use it once!
             </li>
             <li>
-              <b>Forecast:</b> Castform’s Forecast ability now sets rain, sun or hail depending on the type of the first move in its movelist.
-            </li>
-            <li>
               <b>Last Respects:</b> Last Respects’ power is now determined by how many deaths you’ve had over the course of your run, gaining 15 Base Power each time a Pokemon faints. Your Houndstone only grows more powerful as its allies fall.
-            </li>
-            <li>
-              <b>Seed Sower:</b> Arboliva’s signature ability now sets Leech Seed when another Pokemon’s attack makes contact with it.
             </li>
             <li>
               <b>Undead Corsola:</b> Upon fainting, Corsola revives at the end of the battle as Galarian Corsola.
             </li>
             <li>
               <b>Applin Evolution:</b> Applin’s split evolution path is now determined by what gym you reach first: Fortree for Flapple, Lavaridge for Appletun, and Rustboro for Dipplin.
-            </li>
-            <li>
-              <b>Sketch:</b> Smeargle’s signature move can now be used from the party menu to learn one of four powerful, randomly selected moves.
-            </li>
-            <li>
-              <b>Run Away:</b> Eevee’s ability Run Away now functions like Emergency Exit when dropped below 1/4th HP, allowing it to switch out and stay safe when things get hairy.
             </li>
             <li>
               ...And many more!
@@ -355,16 +283,10 @@ const FAQ = () => (
               <b>Cleanse Tag:</b> Now functions as a permanent, toggleable repel. Comes turned on.
             </li>
             <li>
-              <b>Med Kit:</b> Key item which heals all Pokémon in your party to full health and restores PP. Does not heal status (so as not to interfere with Guts, Quick Feet, Poison Heal, etc.). To heal status, use the new "Heal" command in the menu.
+              <b>Med Kit:</b> Key item which heals all Pokémon in your party. Pokemon Centers are a thing of the past!
             </li>
             <li>
               <b>Portable PC:</b> Gives access to the PC anywhere, anytime... besides in the Elite Four.
-            </li>
-            <li>
-              <b>Burmy Binder:</b> A consumable item that changes Wormadam's form. You’re gifted three by an NPC in the Pretty Petal Flower Shop.
-            </li>
-            <li>
-              <b>Rotom Catalog:</b> A consumable item that changes Rotom’s form. You’re gifted three by an NPC in the Fortree City furniture store.
             </li>
           </ul>
         </div>
