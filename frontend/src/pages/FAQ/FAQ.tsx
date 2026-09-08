@@ -35,7 +35,7 @@ const FAQ = () => (
         <h2 className="faq-question">What's Emerald Blitz?</h2>
         <hr />
         <p className="faq-answer">
-          Emerald Blitz is a revamped version of Pokémon Emerald streamlined for nuzlocke draft racing. Despite playing through the entire Hoenn region, from first gym to Elite Four Champion, a single playthrough takes just 90 minutes. Emerald Blitz is customized with new features and quality-of-life improvements geared toward making the game as fast as possible; it's all of the good with none of the tedium.
+          Emerald Blitz is a revamped version of Pokémon Emerald streamlined for nuzlocke draft racing. Despite playing through the entire Hoenn region, a single playthrough takes just 90 minutes. Emerald Blitz is customized with new features and quality-of-life improvements geared toward making the game as fast as possible; it's all of the good with none of the tedium.
         </p>
       </section>
 
