@@ -593,7 +593,7 @@ const Stats: React.FC = () => {
         <section className="stats-hero-card">
           <div>
             <h1>Blitz Stats</h1>
-            <p>All data from the website's drafts and races are stored in our database and presented here</p>
+            <p>Data from all players' draft races is stored in our database and presented here</p>
           </div>
         </section>
 
