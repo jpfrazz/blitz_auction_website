@@ -5,7 +5,6 @@ Boss Tweaks
 -----------------------------------------------
 
 Juan & Wallace 1 and 2 Reworked
-
 The team is now...
 
 Luvdisc (New!)
@@ -40,7 +39,6 @@ Even if you fail to kill the Tatsugiri, though, Dondozo with Order Up is doing m
 
 I'm hoping that this makes the fight more intuitive. Ideally, seeing the lead Flip Turn Luvdisc with the Order Up Dondozo in the back presents a puzzle that invites the player to craft a solution.
 //Extended Commentary End
-
 Juan & Wallace 3 Dondozo Water Gun > Order Up
 Juan & Wallace 4 Dondozo Water Gun > Noble Roar
 //Necessary for learnset consistency with the 1&2 changes
@@ -80,7 +78,6 @@ As much as possible, Blitz's moves and abilities will stick to their official ef
 
 Eevee will never get trapped by Maxie Crobat Mean Look again. Hallelujah! In all seriousness, I don't love that Eevee is now once again flipping between a useful ability and an irrelevant one. Maybe a future patch will add in some niche trapping move to an early gym leader to give Run Away some use, or modify Roxanne's AI to actually use Block with Nosepass...
 //Extended Commentary End
-
 Slash BP 70>80
 Milk Drink can now target an ally in double battles
 Mega Baxcalibur Ability: Thermal Exchange
