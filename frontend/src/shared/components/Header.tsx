@@ -285,7 +285,7 @@ function Header() {
                 Auction Setup
               </Link>
                 <Link to="/Draft1v1Setup" className="navButton navDropdownItem" onClick={handleNavLinkClick} target={linkTarget} rel={linkRel}>
-                  1v1 Setup (New!)
+                  1v1 Setup
                 </Link>
               <Link to="/LobbyViewer" className="navButton navDropdownItem" onClick={handleNavLinkClick} target={linkTarget} rel={linkRel}>
                 Lobby Viewer
