@@ -903,7 +903,7 @@ const Info = () => (
           <li>Has a status condition</li>
           <li>Can't move first and KO yours this turn</li>
         </ul>
-        <p className="info-answer">
+        <p className="info-answer info-answer-heading">
           <strong>AI Move Scoring</strong>
         </p>
         <p className="info-answer">
@@ -913,13 +913,13 @@ const Info = () => (
           <li>Moves where the attacker outspeeds and KOs get +6</li>
           <li>Moves where the attacker doesn't outspeed but KOs get +4</li>
           <li>If no move KOs, moves where the attacker KOs in fewest turns get +1</li>
-          <li>In the event of a tie, where multiple moves KO in the same number of turns, both moves get +1</li>
+          <li>In the event of a tie where multiple moves KO in the same number of turns, both moves get +1</li>
         </ul>
         <p className="info-answer">
           Notably, this means if you have a Pokémon at just 1HP, and the opponent has four attacking moves of different types, it will pick between them randomly. They all KO.
         </p>
         <p className="info-answer">
-          Also, it means that if your opponent knows two just attacking moves which each 3HKO your Pokémon, it will pick between them randomly.
+          Also, it means that if your opponent knows just two attacking moves which each 3HKO your Pokémon, it will pick between them randomly.
         </p>
         <p className="info-answer">
           In double battles, the AI will score all four of its moves against both of your Pokémon, then choose the attack/target combination that had the highest score. If it's a tie, it picks at random.

@@ -237,7 +237,7 @@ const BossBattles = () => {
 
       if (rawBaseName.includes('JUAN')) {
         const blitzContent: React.ReactNode[] = [
-          <div key="blitz-text"><b>Blitz Mechanic:</b> When Tatsugiri becomes a Commander, he disappears inside the mouth of his ally, raising their Attack, SpAtk, and Speed, but preventing them from landing critical hits.</div>
+          <div key="blitz-text"><b>Blitz Mechanic:</b> When Tatsugiri becomes a Commander, he disappears inside the mouth of his ally, raising their Attack, SpAtk, and Speed (but not defense or SpDef)</div>
         ];
         if (['6', '7', '8'].includes(gymNum)) {
           blitzContent.push(
@@ -427,6 +427,8 @@ const BossBattles = () => {
           </div>
         </div>
 
+        <div className="info-box">All enemy Pokémon have a Serious (neutral) nature with 31 IVs and 0 EVs in every stat.</div>
+
         {loading && <div>Loading boss data...</div>}
         {error && <div style={{color: 'red'}}>Error: {error}</div>}
 
@@ -443,7 +445,6 @@ const BossBattles = () => {
 
             return (
               <div 
-                key={trainer.id} 
                 className="trainer-section"
                 style={{ borderBottomColor: trainer.color || '#444' }}
               >
@@ -454,7 +455,6 @@ const BossBattles = () => {
                     {trainer.items && (
                       <div className="info-box">Items: {trainer.items}</div>
                     )}
-                    <div className="info-box">All enemy Pokémon have a Serious (neutral) nature with 31 IVs and 0 EVs in every stat.</div>
                     {hasBlitzMechanic && (
                       <button
                         className={`toggle-btn blitz-mechanic-btn ${isBlitzOn ? 'on' : 'off'}`}
