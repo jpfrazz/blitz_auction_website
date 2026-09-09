@@ -454,6 +454,7 @@ const BossBattles = () => {
                     {trainer.items && (
                       <div className="info-box">Items: {trainer.items}</div>
                     )}
+                    <div className="info-box">All enemy Pokémon have a Serious (neutral) nature with 31 IVs and 0 EVs in every stat.</div>
                     {hasBlitzMechanic && (
                       <button
                         className={`toggle-btn blitz-mechanic-btn ${isBlitzOn ? 'on' : 'off'}`}

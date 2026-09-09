@@ -24,7 +24,7 @@ function Footer() {
   const { pathname } = useLocation();
   const [showDiscordHint, setShowDiscordHint] = useState(false);
   const [tipsEnabled, setTipsEnabled] = useState(getTipMessagesEnabled);
-  const [showDisclaimer, setShowDisclaimer] = useState(true);
+  const [showDisclaimer, setShowDisclaimer] = useState(() => pathname === '/');
 
   useEffect(() => {
     const handleSettingsChanged = () => setTipsEnabled(getTipMessagesEnabled());

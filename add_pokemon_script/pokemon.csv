@@ -356,7 +356,7 @@ dex_number,name,form,evolves_from_id,evolves_from_form,type1,type2,stage,ability
 393,Piplup,,,,Water,,base,Torrent,,Defiant,53,51,53,61,56,40,,,,
 394,Prinplup,,393,,Water,,evo,Torrent,,Defiant,64,66,68,81,76,50,"Level 16",,,
 395,Empoleon,,394,,Water,Steel,evo,Torrent,,Defiant,84,86,88,111,101,60,"Level 36",,,
-77,Ponyta,,,,Fire,,base,Run Away,Flash Fire,Flame Body,50,85,55,65,65,90,,,,"Tip: Run Away\nRun Away now functions like Emergency Exit, forcibly switching the Pokémon out once it drops below a 1/4 HP threshold. Rapidash is the only Pokémon in Emerald Blitz who retains access to this useful ability all of the way to its final evolution."
+77,Ponyta,,,,Fire,,base,Run Away,Flash Fire,Flame Body,50,85,55,65,65,90,,,,
 78,Rapidash,,77,,Fire,,evo,Run Away,Flash Fire,Flame Body,65,100,70,80,80,105,"Level 40 (Oracle)",,,
 311,Plusle and Minun,,,,Electric,,base,Plus,Minus,Lightning Rod,60,50,40,85,75,95,,,,"Tip: Two-for-one!\nBlitz's two-for-one duo are electric! These Pokemon come as a pair when withdrawn from the player's notebook. With their Plus and Minus abilities, they're excellent into the game's two double battles."
 60,Poliwag,,,,Water,,base,Water Absorb,Damp,Swift Swim,40,50,40,40,40,90,,,,

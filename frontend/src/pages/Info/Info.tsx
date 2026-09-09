@@ -858,10 +858,6 @@ const Info = () => (
         <h2 className="info-question">AI Logic</h2>
         <hr />
         <p className="info-answer">
-          All enemy Pokémon have Serious nature (neutral) with 31 IVs and 0 EVs in every stat.<br />
-          <br />
-          The AI can only heal each Pokémon a maximum of once per battle.<br />
-          <br />
           <strong>The enemy AI is 50% likely to switch if...</strong>
         </p>
         <ul>
@@ -907,6 +903,27 @@ const Info = () => (
           <li>Has a status condition</li>
           <li>Can't move first and KO yours this turn</li>
         </ul>
+        <p className="info-answer">
+          <strong>AI Move Scoring</strong>
+        </p>
+        <p className="info-answer">
+          The AI decides which attack to use by "scoring" each of its moves, then selecting the move that receives the highest score. Scoring is complex, but the most important factors to know are...
+        </p>
+        <ul>
+          <li>Moves where the attacker outspeeds and KOs get +6</li>
+          <li>Moves where the attacker doesn't outspeed but KOs get +4</li>
+          <li>If no move KOs, moves where the attacker KOs in fewest turns get +1</li>
+          <li>In the event of a tie, where multiple moves KO in the same number of turns, both moves get +1</li>
+        </ul>
+        <p className="info-answer">
+          Notably, this means if you have a Pokémon at just 1HP, and the opponent has four attacking moves of different types, it will pick between them randomly. They all KO.
+        </p>
+        <p className="info-answer">
+          Also, it means that if your opponent knows two just attacking moves which each 3HKO your Pokémon, it will pick between them randomly.
+        </p>
+        <p className="info-answer">
+          In double battles, the AI will score all four of its moves against both of your Pokémon, then choose the attack/target combination that had the highest score. If it's a tie, it picks at random.
+        </p>
       </section>
 
       <section id="key-binds" className="info-section">
@@ -936,7 +953,6 @@ const Info = () => (
           <li><strong>Grassy Pelt:</strong> Boosts 1.5x defense in Sun, not in Grassy Terrain.</li>
           <li><strong>Honey Gather:</strong> Finds a held Sitrus Berry at the end of a boss battle.</li>
           <li><strong>Pickup:</strong> Finds a held Sitrus Berry at the end of a boss battle.</li>
-          <li><strong>Run Away:</strong> Forces the user to switch out when HP drops below 1/4.</li>
           <li><strong>Seed Sower:</strong> Sets Leech Seed when an opposing attack makes contact.</li>
           <li><strong>Surge Surfer:</strong> Boosts 2x speed in Rain, not in Electric Terrain.</li>
         </ul>

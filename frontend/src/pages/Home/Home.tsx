@@ -129,7 +129,7 @@ const HoppingIcons = () => {
           style={{
             position: 'absolute',
             left: `${icon.x}px`,
-            bottom: `${icon.y + 67}px`,
+            bottom: `${icon.y + 64}px`,
             imageRendering: 'pixelated'
           }}
           onError={(e) => e.currentTarget.style.display = 'none'}
@@ -185,7 +185,7 @@ const Home = () => {
         />
         <div className={`home-actions ${isLoaded ? 'animate' : ''}`}>
           <div className="home-version-pill">
-            Current Release: v1.0.11
+            Current Release: v1.0.12
           </div>
           <a
             href="/emeraldblitz.bps"

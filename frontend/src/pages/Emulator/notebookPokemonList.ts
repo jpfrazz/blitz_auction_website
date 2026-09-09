@@ -104,7 +104,7 @@ export const NOTEBOOK_POKEMON_LIST: string[] = [
   'Mankey',
   'Mantyke',
   'Mareep',
-  //'Maschiff',
+  'Maschiff',
   'Mawile',
   'Meditite',
   'Meowth',

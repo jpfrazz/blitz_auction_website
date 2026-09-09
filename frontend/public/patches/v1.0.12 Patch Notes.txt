@@ -1,11 +1,10 @@
-9/8/26
+9/9/26
 
 -----------------------------------------------
 Boss Tweaks
 -----------------------------------------------
 
 Juan & Wallace 1 and 2 Reworked
-Pokemon controlled by Tatsugiri's Commander ability can now land critical hits
 
 The team is now...
 
@@ -29,27 +28,38 @@ Level: 15
 - Noble Roar
 - Tackle
 
-//Instead of starting the fight with Dondozo, Tatsugiri now leads with a Flip Turn Luvdisc by its side.
-//Luvdisc starts the fight by Safeguarding the first turn and Flip Turning the second. Can you kill the Tatsugiri before Luvdisc Flip Turns? Can you Fake Out or Encore the Luvdisc to buy yourself extra time? Can you switch to bait Flip Turn into a Water Absorb Pokemon, causing Luvdisc to fail to swap out?
-//Keep in mind, you'll have time for two Eevee Quick Attacks before the Luvdisc Flip Turns, or a Tail Whip into a Quick Attack. Alongside a physical attacker who Eevee outspeeds, Tail Whip > a partner's physical attack > Quick Attack usually KOs the Tatsugiri before Dondozo has a chance to appear.
-//Even if you fail to kill the Tatsugiri, though, Dondozo with Order Up is doing much less damage than it was with Waterfall. While it might score a critical hit, a crit Order Up won't one-shot Eevee from full at +0. Luvdisc also outspeeds Tatsugiri, meaning that if it gets off a Flip Turn into Dondozo, that'll be the only attack for their turn.
+Pokemon controlled by Tatsugiri's Commander ability can now land critical hits
+//Extended Commentary Start
+Instead of starting the fight with Dondozo, Tatsugiri now leads with a Flip Turn Luvdisc by its side.
 
-//I'm hoping that this makes the fight more intuitive. Ideally, seeing the lead Flip Turn Luvdisc with the Order Up Dondozo in the back presents a puzzle that invites the player to craft a solution.
+Luvdisc starts the fight by Safeguarding the first turn and Flip Turning the second. Can you kill the Tatsugiri before Luvdisc Flip Turns? Can you Fake Out or Encore the Luvdisc to buy yourself extra time? Can you switch to bait Flip Turn into a Water Absorb Pokemon, causing Luvdisc to fail to swap out?
+
+Keep in mind, you'll have time for two Eevee Quick Attacks before the Luvdisc Flip Turns, or a Tail Whip into a Quick Attack. Alongside a physical attacker who Eevee outspeeds, Tail Whip > a partner's physical attack > Quick Attack usually KOs the Tatsugiri before Dondozo has a chance to appear.
+
+Even if you fail to kill the Tatsugiri, though, Dondozo with Order Up is doing much less damage than it was with Waterfall. While it might score a critical hit, a crit Order Up won't one-shot Eevee from full at +0. Luvdisc also outspeeds Tatsugiri, meaning that if it gets off a Flip Turn into Dondozo, that'll be the only attack for their turn.
+
+I'm hoping that this makes the fight more intuitive. Ideally, seeing the lead Flip Turn Luvdisc with the Order Up Dondozo in the back presents a puzzle that invites the player to craft a solution.
+//Extended Commentary End
 
 Juan & Wallace 3 Dondozo Water Gun > Order Up
 Juan & Wallace 4 Dondozo Water Gun > Noble Roar
 //Necessary for learnset consistency with the 1&2 changes
+Juan & Wallace 3/4 Wailmer and Tatsugiri swap levels
 
 Juan & Wallace 1-2 Tatsugiri: Always Stretchy (+Speed with Order Up)
 Juan & Wallace 3-4 Tatsugiri: Always Droopy (+Defense with Order Up)
 Juan & Wallace 5-8 Tatsugiri: Always Curly (+Attack with Order Up)
-//Previously, Tatsugiri's form was always random
+//Previously, Tatsugiri's form was random
 
 
 Viola 2
 Beautifly Mega Drain > Absorb
 Viola 4
 Beautifly Giga Drain > Mega Drain
+
+Norman 3
+Zorua Level 23>22
+Linoone Level 23>22
 
 Flannery 4
 Marowak Shadow Bone > Shadow Punch
@@ -60,17 +70,36 @@ Ludicolo Ice Beam > Ice Punch
 
 
 -----------------------------------------------
-Pokémon Changes
+Balance Changes
 -----------------------------------------------
+
+Run Away effect updated to Champions M-C
+//Run Away now allows Pokémon to escape trapping effects like Mean Look, Arena Trap, and Fire Spin. Blitz's custom Run Away effect has been removed.
+//Extended Commentary Start
+As much as possible, Blitz's moves and abilities will stick to their official effects. Outright useless abilities will continue to have custom effects, but if Champions goes on to give in-battles uses to Pickup or Honey Gather, I'll update accordingly.
+
+Eevee will never get trapped by Maxie Crobat Mean Look again. Hallelujah! In all seriousness, I don't love that Eevee is now once again flipping between a useful ability and an irrelevant one. Maybe a future patch will add in some niche trapping move to an early gym leader to give Run Away some use, or modify Roxanne's AI to actually use Block with Nosepass...
+//Extended Commentary End
+
+Slash BP 70>80
+Milk Drink can now target an ally in double battles
+Mega Baxcalibur Ability: Thermal Exchange
+//Updated for Champions M-C
+
+Meteor Assault BP 150>170
+Farfetch'd/Sirfetch'd now learn Aerial Ace via TM
+//What a time to be a duck
+
 
 Flareon Evolution Move: Ember > Flame Charge
 
-//Oh Flareon, you're the last Eeveelution to be chosen again! As you know, I don't usually mind Pokémon being weak (if all Pokémon are worth 2500, the draft loses much of its complexity--it's the range in power that makes deciding what to bid on so tricky). But Flareon isn't in the draft, and the recurring decision of which Eeveelution to choose after gym 4 would be more interesting if Flareon were closer to the rest of the pack.
+//Extended Commentary Start
+Oh Flareon, you're the last Eeveelution to be chosen again! As you know, I don't usually mind Pokémon being weak (if all Pokémon are worth 2500, the draft loses its complexity--it's the range in power that makes deciding what to bid on so tricky). But Flareon isn't in the draft, and the recurring decision of which Eeveelution to choose after gym 4 would be more interesting if Flareon were closer to the rest of the pack.
 
-//Not that this makes Flareon a top tier Eeveelution or anything. But Flame Charge is perfect for Flareon: a physical fire-type attack that patches up its low Speed and helps enable the aggressive, Guts-boosted gameplan it wants to play for.
+Not that this makes Flareon a highly sought after Eeveelution or anything. But Flame Charge is perfect for Flareon: a physical fire-type attack that patches up its low Speed and helps enable the aggressive, Guts-boosted gameplan it wants to play for.
 
-//I've wanted to give Flareon access to Flame Charge for ages via TM, but I don't like the implication of giving Pokémon like Dachsbun the ability to setup Atk/SpAtk/Speed pass just as well as Ninjask, or already high-tier fires like Chandelure and Skeledirge a way to buff their own speed. So, I've settled for the ugly decision to modify its learnset outright. This won't become a routine, but it makes too much sense for this specific Pokémon.
-
+I've wanted to give Flareon access to Flame Charge for ages via TM, but I don't like the implication of giving Pokémon like Dachsbun the ability to setup Atk/SpAtk/Speed pass just as well as Ninjask, or already high-tier fires like Chandelure and Skeledirge a way to buff their own speed. So, I've settled for the ugly decision to modify its learnset outright. This won't become a routine, but it makes too much sense for this specific Pokémon.
+//Extended Commentary End
 
 -----------------------------------------------
 QoL
@@ -83,9 +112,9 @@ Added the ability to adjust items of PC Pokemon from the party menu
 Added Berries to the Elite Four party menu
 
 Additional NPCs use the PC-Party Menu:
-Move Relearner in Fallarbor Town
-Status Cook in Slateport
-Move Tutors across Hoenn
+-Move Relearner in Fallarbor Town
+-Status Cook in Slateport
+-Move Tutors across Hoenn
 //Previously, they still used the old menu that only showed the six Pokémon in your party
 
 Added a Toggle to disable evolution
@@ -95,6 +124,9 @@ Added a Toggle to disable evolution
 Removed the Shuppet in front of the Cut HM house in Rustboro City
 
 Changed Flame Charge to 2x animation speed
+
+Added SEL tag to Bag's Rare Candy
+//To indicate the party menu's Rare Candy hotkey
 
 
 -----------------------------------------------
@@ -114,8 +146,10 @@ Fixed a bug where the player was able to deposit party Pokémon from certain Eli
 Fixed a bug where the Hidden Power type-change NPC failed if selecting a Pokémon from the PC-Party Menu
 //Thanks Shartwagon for reporting
 
-Fixed an obscure bug where the player could swap their Pokemon with a berry in the party menu
+Fixed a bug where you could attempt to use the Rare Candy via select in the Party Menu during a trainer battle
 //Thanks to FranklyNathan for being such a sleuth and finding this bad boy
+
+Fixed an obscure bug where the player could swap their Pokemon with a berry in the party menu
 
 
 -----------------------------------------------
