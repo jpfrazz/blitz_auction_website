@@ -74,7 +74,7 @@ Balance Changes
 Run Away effect updated to Champions M-C
 //Run Away now allows Pokémon to escape trapping effects like Mean Look, Arena Trap, and Fire Spin. Blitz's custom Run Away effect has been removed.
 //Extended Commentary Start
-As much as possible, Blitz's moves and abilities will stick to their official effects. Outright useless abilities will continue to have custom effects, but if Champions goes on to give in-battles uses to Pickup or Honey Gather, I'll update accordingly.
+As much as possible, Blitz's moves and abilities will stick to their official effects. Outright useless abilities will continue to have custom effects, but if Champions goes on to give in-battle uses to Pickup or Honey Gather, I'll update accordingly.
 
 Eevee will never get trapped by Maxie Crobat Mean Look again. Hallelujah! In all seriousness, I don't love that Eevee is now once again flipping between a useful ability and an irrelevant one. Maybe a future patch will add in some niche trapping move to an early gym leader to give Run Away some use, or modify Roxanne's AI to actually use Block with Nosepass...
 //Extended Commentary End
