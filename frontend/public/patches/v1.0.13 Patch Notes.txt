@@ -1,4 +1,4 @@
-9/11/2026
+9/12/2026
 
 -----------------------------------------------
 QoL
@@ -25,7 +25,7 @@ Bug Fixes
 -----------------------------------------------
 
 Fixed a bug where if Luvdisc was Juan and Wallace's final Pokémon, it would use Safeguard repeatedly instead of using Flip Turn
-//Both moves were receiving -10 score since Flip Turn had no Pokémon to swap to. Flip Turn no longer receives a negative score if it has no Pokémon to swap to.
+//Flip Turn no longer receives a negative score if the enemy AI has no Pokémon to swap to.
 
 Fixed Flygon's hopping visual
 //Now, when Flygon hops over a rock smash rock from below, Flygon is correctly drawn on top of the rock, not beneath.
