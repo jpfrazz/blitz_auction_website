@@ -184,6 +184,22 @@
   transition: height 0.2s ease-out;
 }
 
+.emulator-gamepad-warning {
+  position: absolute;
+  top: 8px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 400;
+  max-width: 92%;
+  padding: 6px 12px;
+  border-radius: 6px;
+  background: rgba(180, 40, 40, 0.92);
+  color: #fff;
+  font-size: 0.82rem;
+  text-align: center;
+  pointer-events: none;
+}
+
 // ── Emulator resize handles ────────────────────────────────────────────────
 // Thin strips on the emulator's bottom / right / corner edges, i.e. the
 // boundaries against the save panel below and the sidebar to the right.

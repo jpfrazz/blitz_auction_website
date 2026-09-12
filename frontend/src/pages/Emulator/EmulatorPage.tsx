@@ -150,6 +150,125 @@ declare global {
 const ACCEPTED_EXTENSIONS = ['gba'];
 const BLITZ_PATCH_URL = '/emeraldblitz.bps';
 
+// Canonical GBA control defaults (control index -> keyboard key name). These
+// mirror the presets baked into `EmulatorJS.initControlVars` (as shipped in
+// emulator.min.js) and are used to re-seed control sets that were wiped.
+const GBA_KEYBOARD_KEYS: Record<number, string> = {
+  0: 'k',
+  1: 's',
+  2: 'l',
+  3: 'enter',
+  4: 'w',
+  5: 's',
+  6: 'a',
+  7: 'd',
+  8: 'j',
+  9: 'a',
+  10: 'q',
+  11: 'e',
+  12: 'tab',
+  13: 'r',
+  14: '',
+  15: '',
+  16: 'h',
+  17: 'f',
+  18: 'g',
+  19: 't',
+  20: 'l',
+  21: 'j',
+  22: 'k',
+  23: 'i',
+  24: '1',
+  25: '2',
+  26: '3',
+};
+
+// Canonical GBA gamepad button labels (control index -> physical gamepad label).
+// EmulatorJS matches physical controller events against each control's `value2`,
+// so this map is the gamepad side of `initControlVars`.
+const GBA_GAMEPAD_LABELS: Record<number, string> = {
+  0: 'BUTTON_2',
+  1: 'BUTTON_4',
+  2: 'SELECT',
+  3: 'START',
+  4: 'DPAD_UP',
+  5: 'DPAD_DOWN',
+  6: 'DPAD_LEFT',
+  7: 'DPAD_RIGHT',
+  8: 'BUTTON_1',
+  9: 'BUTTON_3',
+  10: 'LEFT_TOP_SHOULDER',
+  11: 'RIGHT_TOP_SHOULDER',
+  12: 'LEFT_BOTTOM_SHOULDER',
+  13: 'RIGHT_BOTTOM_SHOULDER',
+  14: 'LEFT_STICK',
+  15: 'RIGHT_STICK',
+  16: 'LEFT_STICK_X:+1',
+  17: 'LEFT_STICK_X:-1',
+  18: 'LEFT_STICK_Y:+1',
+  19: 'LEFT_STICK_Y:-1',
+  20: 'RIGHT_STICK_X:+1',
+  21: 'RIGHT_STICK_X:-1',
+  22: 'RIGHT_STICK_Y:+1',
+  23: 'RIGHT_STICK_Y:-1',
+};
+
+const buildDefaultControls = (): Record<string, Record<string, any>> => {
+  const controls: Record<string, any> = {};
+  for (let idx = 0; idx < 30; idx++) {
+    const entry: any = {};
+    if (GBA_KEYBOARD_KEYS[idx] !== undefined) entry.value = GBA_KEYBOARD_KEYS[idx];
+    if (GBA_GAMEPAD_LABELS[idx]) entry.value2 = GBA_GAMEPAD_LABELS[idx];
+    controls[String(idx)] = entry;
+  }
+  return controls;
+};
+
+/**
+ * Heal saved control bindings (`{ player: { index: { value?, value2? } } }`) so a
+ * physical gamepad always works. Stored bindings can lose their gamepad `value2`
+ * labels when they were saved before this fork added the presets, wiped via the
+ * "Clear" button, or carried over from another core. EmulatorJS keys physical
+ * controller events off `value2`, so without it a controller is silently ignored.
+ *
+ * - Preserves every user-set keyboard `value` / gamepad `value2`.
+ * - Backfills a missing `value2` from the canonical gamepad map.
+ * - Re-seeds player 0 with the canonical defaults when its bindings are empty
+ *   (the post-"Clear" case) so both keyboard and gamepad resume working.
+ */
+const normalizeControlBindings = (bindings: unknown): unknown => {
+  if (!bindings || typeof bindings !== 'object') return bindings;
+  const players = bindings as Record<string, Record<string, any>>;
+  const out: Record<string, Record<string, any>> = {};
+  for (let p = 0; p < 4; p++) {
+    const src = players[p] || players[String(p)];
+    if (!src || typeof src !== 'object') {
+      out[String(p)] = p === 0 ? buildDefaultControls() : {};
+      continue;
+    }
+    const entries: Record<string, any> = {};
+    for (const idxStr of Object.keys(src)) {
+      const entry = src[idxStr];
+      if (!entry || typeof entry !== 'object') continue;
+      const idx = parseInt(idxStr, 10);
+      const healed: any = { ...entry };
+      const label = GBA_GAMEPAD_LABELS[idx];
+      // "Clear" sets value2 to "" (empty string) rather than removing it, so
+      // treat empty/missing value2 as cleared and restore the gamepad label.
+      if (label && typeof healed.value2 !== 'string') healed.value2 = label;
+      else if (label && healed.value2 === '') healed.value2 = label;
+      entries[idxStr] = healed;
+    }
+    const isEmpty = Object.keys(entries).length === 0;
+    if (isEmpty && p === 0) {
+      out[String(p)] = buildDefaultControls();
+    } else {
+      out[String(p)] = entries;
+    }
+  }
+  return out;
+};
+
 /**
  * Implements the BPS (Beat Patch System) patching algorithm.
  * Based on the spec: https://www.romhacking.net/documents/746/
@@ -751,6 +870,13 @@ const EmulatorPage: React.FC = () => {
 
   const [autosaveHistory, setAutosaveHistory] = useState<{ id: string; ts: number }[]>([]);
   const [isAutosaveModalOpen, setIsAutosaveModalOpen] = useState(false);
+
+  // The Gamepad API is unavailable on some browsers (e.g. iOS Safari / older
+  // Safari). Physical controllers can never work there, so surface that instead
+  // of silently ignoring controller input.
+  const [gamepadSupported] = useState<boolean>(() =>
+    typeof navigator !== 'undefined' && typeof (navigator as any).getGamepads === 'function'
+  );
 
   // Current logged-in user (to exclude self from sidebar)
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
@@ -2082,8 +2208,12 @@ const EmulatorPage: React.FC = () => {
       try {
         const bindings = await fetchControlBindings();
         if (bindings && typeof bindings === 'object') {
-          lastKnownBindingsRef.current = JSON.stringify(bindings);
-          return bindings;
+          // Heal the saved control settings so the physical gamepad `value2`
+          // labels that EmulatorJS keys controller input off of are always
+          // present (old builds / "Clear" / cross-core saves can drop them).
+          const healed = normalizeControlBindings(bindings);
+          lastKnownBindingsRef.current = JSON.stringify(healed);
+          return healed;
         } else {
           return null;
         }
@@ -2116,16 +2246,19 @@ const EmulatorPage: React.FC = () => {
             try {
               const settings = JSON.parse(settingsStr);
               const currentBindings = settings.controlSettings;
-              const bindingsStr = currentBindings ? JSON.stringify(currentBindings) : null;
+              // Heal before persisting so a stale/cleared binding set is repaired
+              // (gamepad `value2` restored) rather than re-uploaded as-is.
+              const healed = currentBindings ? normalizeControlBindings(currentBindings) : null;
+              const bindingsStr = healed ? JSON.stringify(healed) : null;
               if (bindingsStr && bindingsStr !== lastKnownBindingsRef.current) {
-                saveControlBindings(currentBindings).then(() => {
+                saveControlBindings(healed).then(() => {
                 }).catch(err => {
                   console.error('[ControlBindings] Failed to save control bindings:', err);
                 });
                 lastKnownBindingsRef.current = bindingsStr;
                 // Update all matching keys with the new bindings
                 matchingKeys.forEach(k => {
-                  const updatedSettings = { ...settings, controlSettings: currentBindings };
+                  const updatedSettings = { ...settings, controlSettings: healed };
                   localStorage.setItem(k, JSON.stringify(updatedSettings));
                 });
                 break; // Only save once per polling interval
@@ -2282,42 +2415,23 @@ const EmulatorPage: React.FC = () => {
       // We use a "double-tap" save to fix mgba core buffer lag.
       window.EJS_onGameStart = () => {
 
-        // Apply saved bindings when the game starts
-        if (lastKnownBindingsRef.current) {
-          const bindings = JSON.parse(lastKnownBindingsRef.current);
-
-          // Try multiple approaches to set controls
-          setTimeout(() => {
-            const gameMgr = window.EJS_emulator?.gameManager;
-            if (gameMgr) {
-
-              // Try to find and update the virtual gamepad controls
-              if ((gameMgr as any).virtualGamepad) {
-                (gameMgr as any).virtualGamepad.controls = bindings;
-              }
-
-              // Try to update the controls object directly
-              if ((gameMgr as any).controls) {
-                Object.assign((gameMgr as any).controls, bindings);
-              }
-
-              // Try to access the input system
-              if ((gameMgr as any).input) {
-                if ((gameMgr as any).input.controls) {
-                  (gameMgr as any).input.controls = bindings;
-                }
-              }
-
-              // Try to call any available control update method
-              const possibleMethods = ['setControls', 'updateControls', 'loadControls', 'applyControls'];
-              for (const method of possibleMethods) {
-                if (typeof (gameMgr as any)[method] === 'function') {
-                  (gameMgr as any)[method](bindings);
-                }
-              }
-            }
-          }, 1000);
-        }
+        // Apply + heal saved bindings once the game is running. EmulatorJS
+        // hydrates `emulator.controls` from `EJS_defaultControls` and/or a stale
+        // localStorage `ejs-*-settings` key; normalize the live controls
+        // (restoring any lost gamepad `value2` labels) and force them back in
+        // place so a physical controller keeps working regardless of how the
+        // bindings arrived.
+        setTimeout(() => {
+          const emu = window.EJS_emulator;
+          if (!emu) return;
+          const current = (emu as any).controls;
+          if (!current || typeof current !== 'object') return;
+          const healed = normalizeControlBindings(current) as any;
+          Object.assign(current, healed);
+          if ((emu as any).virtualGamepad) {
+            (emu as any).virtualGamepad.controls = healed;
+          }
+        }, 1000);
 
         // Filesystem watcher: polls the Emscripten FS for the flash-backed .sav/.srm
         // every 3s and parses ONLY when the bytes actually change.
@@ -3036,6 +3150,11 @@ const EmulatorPage: React.FC = () => {
                     ...(isResizing ? { transition: 'none' } : {}),
                   }}
                 />
+                {!gamepadSupported && (
+                  <div className="emulator-gamepad-warning">
+                    Your browser doesn't support game controllers (Gamepad API). Use the keyboard instead, or try Chrome, Edge, Firefox, or recent Safari.
+                  </div>
+                )}
                 {!isPanelMinimized && (
                   <>
                     <div className="resize-handle bottom" onMouseDown={(e) => startResize(e, 'bottom')} />

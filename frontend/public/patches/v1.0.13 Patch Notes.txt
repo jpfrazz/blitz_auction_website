@@ -1,0 +1,34 @@
+9/11/2026
+
+-----------------------------------------------
+QoL
+-----------------------------------------------
+
+Added "Auto Heal" to settings
+//While turned on, this setting heals your Pokémon's HP and PP to full whenever you enter a gym, an Elite Four hallway, or start a battle. It doesn't heal status conditions (its functionality mirrors the Med Kit's "Semi Heal" option).
+//The heal applies to all Pokémon in your party and Box 1 of your PC.
+//Removes the need to ever manually use the Med Kit. 
+//Intellectuals will note that between PC Pokémon in the party menu, berries in the party menu, Rare Candy registered to Select, and this new Auto Heal setting, the bag is less necessary than ever before.
+
+Sped up berry picking
+//Berry trees no longer display the "You found... Do you want to pick the... [Y/N]" message before picking or the "You put the berries away... The soil returned..." message after.
+
+Added Flygon Control Pop Ups
+-The first time you ever ride Flygon, a "B to Accel" tip briefly appears
+-The first time you ride Flygon after obtaining a badge, an "L to Fly" tip briefly appears
+
+Added two new player palettes: Red and Black
+
+
+-----------------------------------------------
+Bug Fixes
+-----------------------------------------------
+
+Fixed a bug where if Luvdisc was Juan and Wallace's final Pokémon, it would use Safeguard repeatedly instead of using Flip Turn
+//Both moves were receiving -10 score since Flip Turn had no Pokémon to swap to. Flip Turn no longer receives a negative score if it has no Pokémon to swap to.
+
+Fixed Flygon's hopping visual
+//Now, when Flygon hops over a rock smash rock from below, Flygon is correctly drawn on top of the rock, not beneath.
+
+Cleaned up the animation when opening mail in your room
+//Previously, there was a flash of graphical nonsense before the mail appeared. Now, we've got a smooth fade to black.

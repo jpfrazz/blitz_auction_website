@@ -74,6 +74,7 @@ class GamepadHandler {
                             index: gamepad.index,
                             label: this.getAxisLabel(axis, newVal),
                             gamepadIndex: gamepad.index,
+                            gamepad: gamepad,
                         });
                     }
                     gamepadToSave.axes[axisIndex] = newVal;
@@ -91,9 +92,9 @@ class GamepadHandler {
                     gamepadToSave.buttons[buttonIndex] = {pressed:pressed2};
                     if (pressed !== pressed2) {
                         if (pressed2) {
-                            this.dispatchEvent('buttondown', {index: buttonIndex, label: this.getButtonLabel(buttonIndex), gamepadIndex: gamepad.index});
+                            this.dispatchEvent('buttondown', {index: buttonIndex, label: this.getButtonLabel(buttonIndex), gamepadIndex: gamepad.index, gamepad: gamepad});
                         } else {
-                            this.dispatchEvent('buttonup', {index: buttonIndex, label:this.getButtonLabel(buttonIndex), gamepadIndex: gamepad.index});
+                            this.dispatchEvent('buttonup', {index: buttonIndex, label:this.getButtonLabel(buttonIndex), gamepadIndex: gamepad.index, gamepad: gamepad});
                         }
                     }
 
@@ -108,7 +109,7 @@ class GamepadHandler {
                     if (b == null) return -1;
                     return a.index - b.index;
                 });
-                this.dispatchEvent('connected', {gamepadIndex: gamepad.index});
+                this.dispatchEvent('connected', {gamepadIndex: gamepad.index, gamepad: gamepad});
             }
         });
 
@@ -123,7 +124,7 @@ class GamepadHandler {
                 }
             }
             if (!has) {
-                this.dispatchEvent('disconnected', {gamepadIndex: this.gamepads[j].index});
+                this.dispatchEvent('disconnected', {gamepadIndex: this.gamepads[j].index, gamepad: this.gamepads[j]});
                 this.gamepads.splice(j, 1);
                 j--;
             }
