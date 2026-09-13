@@ -23,9 +23,8 @@ const Info = () => (
           <li><a href="#gym-benchmarks">Gym Benchmarks</a></li>
           <li><a href="#inter-gym-mechanics">Inter-Gym Mechanics</a></li>
           <li><a href="#battle-mechanics">Battle Mechanics</a></li>
-          <li><a href="#ai-logic">AI Logic</a></li>
-          <li><a href="#key-binds">Input Tips</a></li>
           <li><a href="#ability-reworks">Reworked Abilities</a></li>
+          <li><a href="#ai-logic">AI Logic</a></li>
         </ul>
       </nav>
 
@@ -854,6 +853,26 @@ const Info = () => (
         </ul>
       </section>
 
+      <section id="ability-reworks" className="info-section">
+        <h2 className="info-question">Reworked Abilities</h2>
+        <hr />
+        <p className="info-answer">
+          Abilities which would otherwise be useless have been reworked for Blitz. These include...
+        </p>
+        <ul className="info-answer">
+          <li><strong>Anticipation:</strong> Raises the user's Evasiveness by 1 stage when the opposing Pokémon has a super-effective move.</li>
+          <li><strong>Ball Fetch:</strong> Finds a held Sitrus Berry at the end of a boss battle.</li>
+          <li><strong>Forecast:</strong> Sets weather on entry based on the first move in the Pokémon's learnset (sun for fire, rain for water, hail for ice).</li>
+          <li><strong>Frisk:</strong> Steals the opponent's held item on switch in.</li>
+          <li><strong>Gluttony:</strong> Consuming a berry causes the pokemon to ransack the bag, eating 2-3 additional Oran Berries.</li>
+          <li><strong>Grassy Pelt:</strong> Boosts 1.5x defense in Sun, not in Grassy Terrain.</li>
+          <li><strong>Honey Gather:</strong> Finds a held Sitrus Berry at the end of a boss battle.</li>
+          <li><strong>Pickup:</strong> Finds a held Sitrus Berry at the end of a boss battle.</li>
+          <li><strong>Seed Sower:</strong> Sets Leech Seed when an opposing attack makes contact.</li>
+          <li><strong>Surge Surfer:</strong> Boosts 2x speed in Rain, not in Electric Terrain.</li>
+        </ul>
+      </section>
+
       <section id="ai-logic" className="info-section">
         <h2 className="info-question">AI Logic</h2>
         <hr />
@@ -924,38 +943,6 @@ const Info = () => (
         <p className="info-answer">
           In double battles, the AI will score all four of its moves against both of your Pokémon, then choose the attack/target combination that had the highest score. If it's a tie, it picks at random.
         </p>
-      </section>
-
-      <section id="key-binds" className="info-section">
-        <h2 className="info-question">Input Tips</h2>
-        <hr />
-        <ul>
-          <li>Holding "B" on your Gameboy while riding Flygon urges him to move at 1.5x speed</li>
-          <li>Pressing "L" while riding Flygon instantly opens the Fly map</li>
-          <li>Pressing "Select" while viewing the overworld map instantly snaps the cursor to Slateport City</li>
-          <li>Pressing "Select" while in the party menu uses the Rare Candy on the hovered Pokémon</li>
-          <li>Pressing "L" while in the party menu toggles disabling evolution</li>
-        </ul>
-      </section>
-
-      <section id="ability-reworks" className="info-section">
-        <h2 className="info-question">Reworked Abilities</h2>
-        <hr />
-        <p className="info-answer">
-          Abilities which would otherwise be useless have been reworked for Blitz. These include...
-        </p>
-        <ul className="info-answer">
-          <li><strong>Anticipation:</strong> Raises the user's Evasiveness by 1 stage when the opposing Pokémon has a super-effective move.</li>
-          <li><strong>Ball Fetch:</strong> Finds a held Sitrus Berry at the end of a boss battle.</li>
-          <li><strong>Forecast:</strong> Sets weather on entry based on the first move in the Pokémon's learnset (sun for fire, rain for water, hail for ice).</li>
-          <li><strong>Frisk:</strong> Steals the opponent's held item on switch in.</li>
-          <li><strong>Gluttony:</strong> Consuming a berry causes the pokemon to ransack the bag, eating 2-3 additional Oran Berries.</li>
-          <li><strong>Grassy Pelt:</strong> Boosts 1.5x defense in Sun, not in Grassy Terrain.</li>
-          <li><strong>Honey Gather:</strong> Finds a held Sitrus Berry at the end of a boss battle.</li>
-          <li><strong>Pickup:</strong> Finds a held Sitrus Berry at the end of a boss battle.</li>
-          <li><strong>Seed Sower:</strong> Sets Leech Seed when an opposing attack makes contact.</li>
-          <li><strong>Surge Surfer:</strong> Boosts 2x speed in Rain, not in Electric Terrain.</li>
-        </ul>
       </section>
     </main>
     <Footer />

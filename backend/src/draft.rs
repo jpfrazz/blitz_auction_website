@@ -51,6 +51,10 @@ pub struct DraftResponse {
     format: String,
     total_teams: u32,
     teams: Vec<Team>,
+    /// Players who were moved to the spectator list (not active teams). The
+    /// host can move them back into a player slot while the draft is pending.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    spectators: Vec<SpectatorInfo>,
     draft_state: DraftState,
     current_auction: usize,
     completed_auctions: Vec<AuctionResponse>,
@@ -337,6 +341,13 @@ struct Team {
     /// 1v1 drafts: number of pokemon picked (mirrors DB column).
     #[serde(skip)]
     pokemon_drafted: u32,
+}
+
+#[derive(Clone, Debug, Serialize)]
+pub struct SpectatorInfo {
+    pub user_id: String,
+    pub user_name: String,
+    pub global_name: Option<String>,
 }
 
 impl DraftResponse {
@@ -805,6 +816,8 @@ impl Draft {
         num_teams: u32,
         num_auctions: u32,
         remove_team_ids: Vec<String>,
+        move_to_spectator_user_ids: Vec<String>,
+        add_spectator_user_ids: Vec<String>,
     ) -> Result<DraftResponse, AppError> {
         let (response_sender, response_receiver) = oneshot::channel();
         let cmd = DraftCommand::UpdatePendingSettings {
@@ -813,6 +826,8 @@ impl Draft {
             num_teams,
             num_auctions,
             remove_team_ids,
+            move_to_spectator_user_ids,
+            add_spectator_user_ids,
         };
         self.actor_sender.send(cmd).await.map_err(|e| {
             (
@@ -1028,6 +1043,8 @@ enum DraftCommand {
         num_teams: u32,
         num_auctions: u32,
         remove_team_ids: Vec<String>,
+        move_to_spectator_user_ids: Vec<String>,
+        add_spectator_user_ids: Vec<String>,
     },
     UpdateUserName {
         user_id: String,
@@ -1257,6 +1274,8 @@ impl DraftActor {
                         num_teams,
                         num_auctions,
                         remove_team_ids,
+                        move_to_spectator_user_ids,
+                        add_spectator_user_ids,
                     } => {
                         let res = self
                             .update_pending_settings(
@@ -1264,6 +1283,8 @@ impl DraftActor {
                                 num_teams,
                                 num_auctions,
                                 remove_team_ids,
+                                move_to_spectator_user_ids,
+                                add_spectator_user_ids,
                             )
                             .await;
                         let _ = response_sender.send(res);
@@ -2612,6 +2633,8 @@ impl DraftActor {
         num_teams: u32,
         num_auctions: u32,
         remove_team_ids: Vec<String>,
+        move_to_spectator_user_ids: Vec<String>,
+        add_spectator_user_ids: Vec<String>,
     ) -> Result<DraftResponse, AppError> {
         if self.draft_state != DraftState::PENDING {
             return Err((
@@ -2637,12 +2660,6 @@ impl DraftActor {
             if unique_remove_ids.contains(&team_id) {
                 continue;
             }
-            if team_id == self.host {
-                return Err((
-                    StatusCode::BAD_REQUEST,
-                    "host cannot be removed".to_string(),
-                ));
-            }
             if !self.teams.contains_key(&team_id) {
                 return Err((
                     StatusCode::BAD_REQUEST,
@@ -2652,12 +2669,51 @@ impl DraftActor {
             unique_remove_ids.push(team_id);
         }
 
-        let teams_after = self.teams.len().saturating_sub(unique_remove_ids.len()) as u32;
+        let mut unique_spectate_ids = Vec::new();
+        for spectator_id in move_to_spectator_user_ids {
+            if unique_spectate_ids.contains(&spectator_id) || unique_remove_ids.contains(&spectator_id) {
+                continue;
+            }
+            if !self.teams.contains_key(&spectator_id) {
+                return Err((
+                    StatusCode::BAD_REQUEST,
+                    format!("team {} not in draft", spectator_id),
+                ));
+            }
+            unique_spectate_ids.push(spectator_id);
+        }
+
+        let mut unique_add_ids = Vec::new();
+        for spectator_id in add_spectator_user_ids {
+            if unique_add_ids.contains(&spectator_id) {
+                continue;
+            }
+            if self
+                .spectators
+                .iter()
+                .all(|u| u.get_user_id_string() != spectator_id)
+            {
+                return Err((
+                    StatusCode::BAD_REQUEST,
+                    format!("user {} is not a spectator", spectator_id),
+                ));
+            }
+            unique_add_ids.push(spectator_id);
+        }
+
+        let removed_total = unique_remove_ids.len() + unique_spectate_ids.len();
+        let mut teams_after = self.teams.len().saturating_sub(removed_total) as u32;
         if num_teams < teams_after {
             return Err((
                 StatusCode::BAD_REQUEST,
                 "num_teams less than remaining teams".to_string(),
             ));
+        }
+        for _ in &unique_add_ids {
+            if teams_after >= num_teams {
+                return Err((StatusCode::BAD_REQUEST, "draft is already full".to_string()));
+            }
+            teams_after += 1;
         }
 
         let current_auctions_len = self.auctions.len() as u32;
@@ -2694,20 +2750,72 @@ impl DraftActor {
         }
 
         // Update DB
+        let combined_remove_ids: Vec<String> = unique_remove_ids
+            .iter()
+            .chain(unique_spectate_ids.iter())
+            .cloned()
+            .collect();
         let new_ids = self
             .db_writer
             .update_draft_settings(
                 num_teams,
-                unique_remove_ids.clone(),
+                combined_remove_ids,
                 new_auctions_data.clone(),
                 truncate_to,
             )
             .await?;
 
+        // Persist spectators moving back into a player slot.
+        for spectator_id in &unique_add_ids {
+            if let Some(user) = self
+                .spectators
+                .iter()
+                .find(|u| u.get_user_id_string() == *spectator_id)
+                .cloned()
+            {
+                self.db_writer.join_draft(user).await?;
+            }
+        }
+
         // Update state
+        for spectator_id in unique_spectate_ids {
+            if let Some(user) = self.team_users.remove(&spectator_id) {
+                if self
+                    .spectators
+                    .iter()
+                    .all(|u| u.get_user_id_string() != spectator_id)
+                {
+                    self.spectators.push(user);
+                }
+            }
+            self.teams.remove(&spectator_id);
+        }
         for team_id in unique_remove_ids {
             self.teams.remove(&team_id);
             self.team_users.remove(&team_id);
+        }
+        for spectator_id in unique_add_ids {
+            if let Some(pos) = self
+                .spectators
+                .iter()
+                .position(|u| u.get_user_id_string() == spectator_id)
+            {
+                let user = self.spectators.remove(pos);
+                let uid = user.get_user_id_string();
+                let team = Team {
+                    user_id: uid.clone(),
+                    username: user.get_user_name_string(),
+                    global_name: user.get_global_name(),
+                    ready: uid == self.host,
+                    budget_remaining: self.settings.starting_money,
+                    auctions_won: vec![],
+                    save_data: None,
+                    auto_bid: None,
+                    pokemon_drafted: 0,
+                };
+                self.teams.insert(uid.clone(), team);
+                self.team_users.insert(uid, user);
+            }
         }
         self.settings.num_teams = num_teams;
         self.settings.num_auctions = num_auctions;
@@ -2779,6 +2887,15 @@ impl From<&DraftActor> for DraftResponse {
             total_teams: value.settings.num_teams,
             total_auctions: value.settings.num_auctions,
             teams: value.teams.values().cloned().collect(),
+            spectators: value
+                .spectators
+                .iter()
+                .map(|user| SpectatorInfo {
+                    user_id: user.get_user_id_string(),
+                    user_name: user.get_user_name_string(),
+                    global_name: user.get_global_name(),
+                })
+                .collect(),
             draft_state: value.draft_state.clone(),
             current_auction: value.current_auction,
             completed_auctions: value.completed_auctions.clone(),

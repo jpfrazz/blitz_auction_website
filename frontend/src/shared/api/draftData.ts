@@ -109,11 +109,15 @@ export async function updatePendingDraftSettings(
   num_teams: number,
   num_auctions: number,
   remove_team_ids: string[] = [],
+  move_to_spectator_user_ids: string[] = [],
+  add_spectator_user_ids: string[] = [],
 ): Promise<Draft> {
   const response = await axios.post(`/api/drafts/${draft_id}/pending-settings`, {
     num_teams,
     num_auctions,
     remove_team_ids,
+    move_to_spectator_user_ids,
+    add_spectator_user_ids,
   });
 
   return response.data;

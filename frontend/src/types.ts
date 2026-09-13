@@ -116,6 +116,12 @@ export interface OneVOneState {
   banned_eeveelutions: number[];
 }
 
+export interface SpectatorInfo {
+  user_id: string;
+  user_name: string;
+  global_name?: string | null;
+}
+
 export interface Draft {
   draft_id: string;
   draft_name: string;
@@ -127,6 +133,7 @@ export interface Draft {
   format: string;
   total_teams: number;
   teams: Team[];
+  spectators?: SpectatorInfo[];
   draft_state: DraftState;
   current_auction: number;
   completed_auctions: Auction[];

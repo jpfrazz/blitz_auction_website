@@ -173,7 +173,7 @@ const AuctionSetupForm: React.FC = () => {
         </div>
         <div style={{ display: 'flex', gap: '10px', width: '100%' }}>
           <div className="auction-setup-field" style={{ flex: 1 }}>
-            <label className="auction-setup-label">Number of Teams:
+            <label className="auction-setup-label">Number of Players:
               <input
                 className="auction-setup-input"
                 type="number"

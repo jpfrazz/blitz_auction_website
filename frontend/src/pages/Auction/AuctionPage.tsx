@@ -64,6 +64,8 @@ const AuctionPage: React.FC = () => {
   const [pendingNumTeams, setPendingNumTeams] = useState('');
   const [pendingNumAuctions, setPendingNumAuctions] = useState('');
   const [selectedTeamIdsToRemove, setSelectedTeamIdsToRemove] = useState<string[]>([]);
+  const [selectedTeamIdsToSpectate, setSelectedTeamIdsToSpectate] = useState<string[]>([]);
+  const [selectedSpectatorIdsToAdd, setSelectedSpectatorIdsToAdd] = useState<string[]>([]);
   const [savingDraftSettings, setSavingDraftSettings] = useState(false);
   const [draftSettingsError, setDraftSettingsError] = useState<string | null>(null);
 
@@ -497,6 +499,8 @@ const AuctionPage: React.FC = () => {
     setPendingNumTeams(String(draft.total_teams));
     setPendingNumAuctions(String(draft.total_auctions));
     setSelectedTeamIdsToRemove([]);
+    setSelectedTeamIdsToSpectate([]);
+    setSelectedSpectatorIdsToAdd([]);
     setDraftSettingsError(null);
     setShowDraftSettingsModal(true);
   };
@@ -508,7 +512,7 @@ const AuctionPage: React.FC = () => {
     const nextNumAuctions = Number(pendingNumAuctions);
 
     if (!Number.isInteger(nextNumTeams) || nextNumTeams <= 0) {
-      setDraftSettingsError('Number of teams must be a positive whole number.');
+      setDraftSettingsError('Number of players must be a positive whole number.');
       return;
     }
 
@@ -526,9 +530,13 @@ const AuctionPage: React.FC = () => {
         nextNumTeams,
         nextNumAuctions,
         selectedTeamIdsToRemove,
+        selectedTeamIdsToSpectate,
+        selectedSpectatorIdsToAdd,
       );
       setDraft(updatedDraft);
       setSelectedTeamIdsToRemove([]);
+      setSelectedTeamIdsToSpectate([]);
+      setSelectedSpectatorIdsToAdd([]);
       setShowDraftSettingsModal(false);
     } catch (error: any) {
       setDraftSettingsError(error?.response?.data || error?.message || 'Failed to update draft settings.');
@@ -560,6 +568,26 @@ const AuctionPage: React.FC = () => {
       }
 
       return [...prev, teamId];
+    });
+  };
+
+  const toggleTeamSpectate = (teamId: string) => {
+    setSelectedTeamIdsToSpectate((prev) => {
+      if (prev.includes(teamId)) {
+        return prev.filter((id) => id !== teamId);
+      }
+
+      return [...prev, teamId];
+    });
+  };
+
+  const toggleSpectatorAdd = (userId: string) => {
+    setSelectedSpectatorIdsToAdd((prev) => {
+      if (prev.includes(userId)) {
+        return prev.filter((id) => id !== userId);
+      }
+
+      return [...prev, userId];
     });
   };
 
@@ -664,10 +692,10 @@ const AuctionPage: React.FC = () => {
             {showDraftSettingsModal && draft && (
               <div className="auction-password-modal-overlay">
                 <div className="auction-password-modal" onClick={e => e.stopPropagation()}>
-                  <h3 className="auction-password-modal-title">Edit Pending Draft Settings</h3>
+                  <h3 className="auction-password-modal-title auction-settings-modal-title">Pending Draft Settings</h3>
                   <div className="auction-settings-field-row">
                     <label className="auction-settings-field-label">
-                      Number of Teams
+                      Number of Players
                       <input
                         className="auction-password-modal-input"
                         type="number"
@@ -690,13 +718,13 @@ const AuctionPage: React.FC = () => {
                     </label>
                   </div>
                   <div className="auction-settings-remove-teams">
-                    <div className="auction-settings-remove-teams-title">Remove Joined Teams</div>
-                    {draft.teams.filter((team) => team.user_id !== draft.host).length === 0 ? (
+                    <div className="auction-settings-remove-teams-title">Kick Player</div>
+                    {draft.teams.filter((team) => team.user_id !== draft.host && !selectedTeamIdsToSpectate.includes(team.user_id ?? '')).length === 0 ? (
                       <div className="auction-settings-remove-teams-empty">No removable teams joined.</div>
                     ) : (
                       <div className="auction-settings-remove-teams-list">
                         {draft.teams
-                          .filter((team) => team.user_id !== draft.host)
+                          .filter((team) => team.user_id !== draft.host && !selectedTeamIdsToSpectate.includes(team.user_id ?? ''))
                           .map((team, idx) => (
                             <label key={team.user_id ?? team.guest_id ?? idx} className="auction-settings-remove-teams-item">
                               <input
@@ -711,6 +739,48 @@ const AuctionPage: React.FC = () => {
                       </div>
                     )}
                   </div>
+                  <div className="auction-settings-remove-teams">
+                    <div className="auction-settings-remove-teams-title">Move Player to Spectator</div>
+                    {draft.teams.filter((team) => !selectedTeamIdsToRemove.includes(team.user_id ?? '')).length === 0 ? (
+                      <div className="auction-settings-remove-teams-empty">No players to move.</div>
+                    ) : (
+                      <div className="auction-settings-remove-teams-list">
+                        {draft.teams
+                          .filter((team) => !selectedTeamIdsToRemove.includes(team.user_id ?? ''))
+                          .map((team, idx) => (
+                            <label key={team.user_id ?? team.guest_id ?? idx} className="auction-settings-remove-teams-item">
+                              <input
+                                type="checkbox"
+                                checked={selectedTeamIdsToSpectate.includes(team.user_id ?? '')}
+                                onChange={() => toggleTeamSpectate(team.user_id ?? '')}
+                                disabled={savingDraftSettings}
+                              />
+                              <span>{team.username}{team.user_id === draft.host ? ' (Host)' : ''}</span>
+                            </label>
+                          ))}
+                      </div>
+                    )}
+                  </div>
+                  <div className="auction-settings-remove-teams">
+                    <div className="auction-settings-remove-teams-title">Move Spectator to Player</div>
+                    {(draft.spectators ?? []).length === 0 ? (
+                      <div className="auction-settings-remove-teams-empty">No spectators to move.</div>
+                    ) : (
+                      <div className="auction-settings-remove-teams-list">
+                        {(draft.spectators ?? []).map((spectator, idx) => (
+                          <label key={spectator.user_id ?? idx} className="auction-settings-remove-teams-item">
+                            <input
+                              type="checkbox"
+                              checked={selectedSpectatorIdsToAdd.includes(spectator.user_id)}
+                              onChange={() => toggleSpectatorAdd(spectator.user_id)}
+                              disabled={savingDraftSettings}
+                            />
+                            <span>{spectator.global_name || spectator.user_name}{spectator.user_id === draft.host ? ' (Host)' : ''}</span>
+                          </label>
+                        ))}
+                      </div>
+                    )}
+                  </div>
                   {draftSettingsError && <div className="auction-password-modal-error">{draftSettingsError}</div>}
                   <div className="auction-password-modal-actions">
                     <button
@@ -718,6 +788,8 @@ const AuctionPage: React.FC = () => {
                       onClick={() => {
                         setShowDraftSettingsModal(false);
                         setSelectedTeamIdsToRemove([]);
+                        setSelectedTeamIdsToSpectate([]);
+                        setSelectedSpectatorIdsToAdd([]);
                         setDraftSettingsError(null);
                       }}
                       disabled={savingDraftSettings}

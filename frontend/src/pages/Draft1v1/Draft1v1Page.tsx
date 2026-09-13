@@ -693,7 +693,7 @@ const Draft1v1Page: React.FC = () => {
             <div className="auction-password-modal" onClick={(e) => e.stopPropagation()}>
               <h3 className="auction-password-modal-title">Kick Player</h3>
               <div className="auction-settings-remove-teams">
-                <div className="auction-settings-remove-teams-title">Remove Joined Teams</div>
+                <div className="auction-settings-remove-teams-title">Kick Player</div>
                 {draft.teams.filter((t) => t.user_id !== draft.host).length === 0 ? (
                   <div className="auction-settings-remove-teams-empty">No removable players joined.</div>
                 ) : (

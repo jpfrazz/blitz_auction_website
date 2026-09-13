@@ -76,16 +76,58 @@
   color: $eb-primary;
 }
 
+.faq-toc-group {
+  margin-bottom: 20px;
+}
+
+.faq-toc-group .info-toc-list {
+  padding-left: 28px;
+}
+
+.faq-toc-subheading {
+  color: $eb-text;
+  font-size: 1.4rem;
+  font-weight: bold;
+  margin: 0 0 8px 0;
+  text-align: left;
+}
+
+.faq-toc-subheading a {
+  color: $eb-text;
+  text-decoration: none;
+}
+
+.faq-toc-subheading a:hover {
+  color: $eb-primary;
+  text-decoration: underline;
+}
+
+.faq-subsection {
+  width: 100%;
+  max-width: 1100px;
+  margin: 0 auto 40px auto;
+}
+
+.faq-subsection-heading {
+  color: $eb-text;
+  font-size: 2.4rem;
+  font-weight: bold;
+  text-align: left;
+  margin: 0 0 32px 0;
+  padding-bottom: 8px;
+  border-bottom: 2px solid $eb-primary;
+}
+
 .faq-section {
   font-size: 1.8rem;
   width: 100%;
   max-width: 1100px;
-  margin: 0 auto 60px auto;
+  margin: 0 auto 32px auto;
   color: $eb-text;
 }
 
 .faq-question {
-  font-size: 2.4rem;
+  font-size: 2rem;
   font-weight: bold;
   margin-bottom: 8px;
   margin-top: 0;
@@ -93,7 +135,7 @@
 
 .faq-section hr {
   border: none;
-  border-top: 2px solid $eb-primary;
+  border-top: 1px solid $eb-primary;
   margin-bottom: 12px;
 }
 
@@ -151,7 +193,15 @@
   }
 
   .faq-question {
-    font-size: 1.6rem;
+    font-size: 1.5rem;
+  }
+
+  .faq-subsection-heading {
+    font-size: 1.8rem;
+  }
+
+  .faq-toc-subheading {
+    font-size: 1.3rem;
   }
 
   .faq-answer {

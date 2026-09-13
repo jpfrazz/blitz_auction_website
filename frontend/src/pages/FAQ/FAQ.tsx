@@ -15,282 +15,346 @@ const FAQ = () => (
       <nav className="info-toc-card">
         <h2 className="info-toc-heading">Contents</h2>
         <hr />
-        <ul className="info-toc-list">
-          <li><a href="#what-is-emerald-blitz">What's Emerald Blitz?</a></li>
-          <li><a href="#who-made-emerald-blitz">Who made Emerald Blitz, and why?</a></li>
-          <li><a href="#how-do-i-play">How do I play?</a></li>
-          <li><a href="#what-are-the-rules">What are the rules?</a></li>
-          <li><a href="#how-do-i-draft-with-my-friends">How do I draft with my friends?</a></li>
-          <li><a href="#what-do-i-do-if-i-dont-have-any-friends-who-like-pokemon">What do I do if I don't have any friends who like Pokémon?</a></li>
-          <li><a href="#how-can-the-website-track-my-stats">How can the website track my stats?</a></li>
-          <li><a href="#why-is-my-draft-not-green">What's the difference between a casual and a competitive draft in the stats tab?</a></li>
-          <li><a href="#can-you-add-a-skip-button">Can you add a skip button to the draft?</a></li>
-          <li><a href="#can-i-play-by-myself">Can I play by myself without drafting?</a></li>
-          <li><a href="#whats-changed">What's changed from vanilla Emerald?</a></li>
-          <li><a href="#what-do-the-new-items-do">What do the new items do?</a></li>
-        </ul>
+        <div className="faq-toc-group">
+          <h3 className="faq-toc-subheading"><a href="#introduction">Introduction</a></h3>
+          <ul className="info-toc-list">
+            <li><a href="#what-is-emerald-blitz">What's Emerald Blitz?</a></li>
+            <li><a href="#who-made-emerald-blitz">Who made Emerald Blitz, and why?</a></li>
+          </ul>
+        </div>
+        <div className="faq-toc-group">
+          <h3 className="faq-toc-subheading"><a href="#getting-started">Getting Started</a></h3>
+          <ul className="info-toc-list">
+            <li><a href="#how-do-i-play">How do I play?</a></li>
+            <li><a href="#what-are-the-rules">What are the rules?</a></li>
+            <li><a href="#how-do-i-draft-with-my-friends">How do I draft with my friends?</a></li>
+            <li><a href="#what-do-i-do-if-i-dont-have-any-friends-who-like-pokemon">What do I do if I don't have any friends who like Pokémon?</a></li>
+          </ul>
+        </div>
+        <div className="faq-toc-group">
+          <h3 className="faq-toc-subheading"><a href="#ways-to-play">Ways to Play</a></h3>
+          <ul className="info-toc-list">
+            <li><a href="#can-i-play-by-myself">Can I play by myself without drafting?</a></li>
+            <li><a href="#can-you-add-a-skip-button">Can you add a skip button to the draft?</a></li>
+          </ul>
+        </div>
+        <div className="faq-toc-group">
+          <h3 className="faq-toc-subheading"><a href="#stats-page">Stats Page</a></h3>
+          <ul className="info-toc-list">
+            <li><a href="#how-can-the-website-track-my-stats">How can the website track my stats?</a></li>
+            <li><a href="#why-is-my-draft-not-green">What's the difference between a casual and a competitive draft in the stats tab?</a></li>
+            <li><a href="#how-does-the-website-decide-on-outliers">How does the website calculate outliers?</a></li>
+          </ul>
+        </div>
+        <div className="faq-toc-group">
+          <h3 className="faq-toc-subheading"><a href="#blitz-changes">Blitz Changes</a></h3>
+          <ul className="info-toc-list">
+            <li><a href="#how-does-this-mechanic-work">How does [this] mechanic work?</a></li>
+            <li><a href="#whats-changed">What's changed from vanilla Emerald?</a></li>
+            <li><a href="#what-do-the-new-items-do">What do the new items do?</a></li>
+          </ul>
+        </div>
       </nav>
 
-      <section id="what-is-emerald-blitz" className="faq-section" style={{ scrollMarginTop: '120px' }}>
-        <h2 className="faq-question">What's Emerald Blitz?</h2>
-        <hr />
-        <p className="faq-answer">
-          Emerald Blitz is a revamped version of Pokémon Emerald streamlined for nuzlocke draft racing. Despite playing through the entire Hoenn region, a single playthrough takes just 90 minutes. Emerald Blitz is customized with new features and quality-of-life improvements geared toward making the game as fast as possible; it's all of the good with none of the tedium.
-        </p>
-      </section>
+      <div className="faq-subsection">
+        <h2 id="introduction" className="faq-subsection-heading" style={{ scrollMarginTop: '120px' }}>Introduction</h2>
 
-      <section id="who-made-emerald-blitz" className="faq-section" style={{ scrollMarginTop: '120px' }}>
-        <h2 className="faq-question">Who made Emerald Blitz, and why?</h2>
-        <hr />
-        <p className="faq-answer">
-          I did! I'm Nathan. I also made this website with the help of JPFrazz and Plutonium98.
-        </p>
-        <p className="faq-answer" style={{ marginTop: '1rem' }}>
-          Twelve years ago, my friends and I used to get together every weekend to draft race Pokémon Emerald in my basement. We would take turns picking Pokémon via a giant spreadsheet, then stay up all night to see who could beat the game first.
-        </p>
-        <p className="faq-answer" style={{ marginTop: '1rem' }}>
-          ...And we never stopped! Suffice to say, we've had a lot of time to refine the experience. I truly believe that draft nuzlocke races are the most fun way to play Pokémon, and I hope Blitz can show you why!
-        </p>
-      </section>
+        <section id="what-is-emerald-blitz" className="faq-section" style={{ scrollMarginTop: '120px' }}>
+          <h2 className="faq-question">What's Emerald Blitz?</h2>
+          <hr />
+          <p className="faq-answer">
+            Emerald Blitz is a revamped version of Pokémon Emerald streamlined for nuzlocke draft racing. Despite playing through the entire Hoenn region, a single playthrough takes just 90 minutes. Emerald Blitz is customized with new features and quality-of-life improvements geared toward making the game as fast as possible; it's all of the good with none of the tedium.
+          </p>
+        </section>
 
-      <section id="how-do-i-play" className="faq-section" style={{ scrollMarginTop: '120px' }}>
-        <h2 className="faq-question">How do I play?</h2>
-        <hr />
-        <ol className="faq-answer">
-          <li>
-            Download the patch from <a href="/">here</a>
-          </li>
-          <li>
-            Apply the patch online using <a href="https://www.marcrobledo.com/RomPatcher.js/" target="_blank" rel="noopener noreferrer">this ROM Patcher</a>
-          </li>
-          <li>
-            Download a GBA emulator like <a href="https://mgba.io/downloads.html" target="_blank" rel="noopener noreferrer">mGBA</a>
-          </li>
-        </ol>
+        <section id="who-made-emerald-blitz" className="faq-section" style={{ scrollMarginTop: '120px' }}>
+          <h2 className="faq-question">Who made Emerald Blitz, and why?</h2>
+          <hr />
+          <p className="faq-answer">
+            I did! I'm Nathan. I also made this website with the help of JPFrazz and Plutonium98.
+          </p>
+          <p className="faq-answer" style={{ marginTop: '1rem' }}>
+            Twelve years ago, my friends and I used to get together every weekend to draft race Pokémon Emerald in my basement. We would take turns picking Pokémon via a giant spreadsheet, then stay up all night to see who could beat the game first.
+          </p>
+          <p className="faq-answer" style={{ marginTop: '1rem' }}>
+            ...And we never stopped! Suffice to say, we've had a lot of time to refine the experience. I truly believe that draft nuzlocke races are the most fun way to play Pokémon, and I hope Blitz can show you why!
+          </p>
+        </section>
+      </div>
 
-        <p className="faq-answer">Or...</p>
-        
-        <ol className="faq-answer">
-          <li>
-            Open this site's <a href="https://emeraldblitz.com/TeamPlanner" target="_blank" rel="noopener noreferrer">team planner</a>
-          </li>
-          <li>
-            Select your Pokémon
-          </li>
-          <li>
-            Click the Emulator button
-          </li>
-        </ol>
-        <p className="faq-answer">
-          From there, the website will automatically patch your game, and the Auto Withdraw button will give you your chosen team!
-        </p>
-      </section>
+      <div className="faq-subsection">
+        <h2 id="getting-started" className="faq-subsection-heading" style={{ scrollMarginTop: '120px' }}>Getting Started</h2>
 
-      <section id="what-are-the-rules" className="faq-section" style={{ scrollMarginTop: '120px' }}>
-        <h2 className="faq-question">What are the rules?</h2>
-        <hr />
-        <ul className="faq-answer">
-          <li>
-            This is a nuzlocke:
-            <ul>
-              <li>If a Pokemon faints, it’s dead forever.</li>
-              <li>You can’t use items in battle.</li>
-              <li>Battles are played on set mode (you don’t get the option to switch when you KO an opponent’s Pokemon).</li>
-            </ul>
-          </li>
-          <li>
-            Besides your starter Eevee and <a href="/Pokedex/Rental">rental Pokemon:</a>, you can only use Pokemon you purchased at auction. They’re all in your notebook at the start of the game. You can’t catch Pokemon.
-          </li>
-          <li>The first player to beat the game wins.</li>
-          <li>
-            Pokemon can’t level up beyond the level of the next gym leader’s ace (level caps are implemented in game, so you can’t accidentally overlevel).
-          </li>
-          <li>
-            The race begins when players leave their rooms. Any actions you take in your starting room, like withdrawing your party and hatching eggs, can be done before the race begins.
-          </li>
-          <li>
-            Only one player per race can use any given Eeveelution. In other words, once a player evolves their Eevee into Umbreon, no other players can use Umbreon.
-          </li>
-        </ul>
-      </section>
-
-      <section id="how-do-i-draft-with-my-friends" className="faq-section" style={{ scrollMarginTop: '120px' }}>
-        <h2 className="faq-question">How do I draft with my friends?</h2>
-        <hr />
-        <ol className="faq-answer">
-          <li>
-            Head to <a href="/auctionsetup" target="_blank" rel="noopener noreferrer">Auction Setup</a>.
-          </li>
-          <li>
-            The official ruleset uses the following setting:
-            <ul>
-              <li>Total Pokémon: 8 * Number of players (64 for 8-player drafts)</li>
-            </ul>
-          </li>
-          <li>Press <b>Create Auction</b>.</li>
-          <li>Once you’re taken to the auction, tell your friends to find your auction in the Lobby Viewer.</li>
-          <li>After everyone has joined and clicked "Ready Up," press "Start Draft" to begin!</li>
-          <li>
-            <b>Note!</b> While the total number of Pokémon sold is 8 times the total number of players, if you're able to win more than 8 auctions, you can play with more than 8 Pokemon! Similarly, if you spend big on your picks, you might play with as few as 6 Pokémon...
-          </li>
-        </ol>
-      </section>
-
-      <section id="what-do-i-do-if-i-dont-have-any-friends-who-like-pokemon" className="faq-section" style={{ scrollMarginTop: '120px' }}>
-        <h2 className="faq-question">What do I do if I don't have any friends who like Pokémon?</h2>
-        <hr />
-        <p className="faq-answer">Play in community races!</p>
-        <p className="faq-answer" style={{ marginTop: '1rem' }}>
-          The discord community is super friendly and hosts multiple public races every day. Even if you've never played before, we'd love to have you. Join the discord to get notified any time a community race is happening!
-        </p>
-      </section>
-
-      <section id="how-can-the-website-track-my-stats" className="faq-section" style={{ scrollMarginTop: '120px' }}>
-        <h2 className="faq-question">How can the website track my stats?</h2>
-        <hr />
-        <p className="faq-answer">
-          By playing via the site's embedded emulator!
-        </p>
-        <p className="faq-answer" style={{ marginTop: '1rem' }}>
-          After you finish a draft, click the "Play Emulator" button. The emulator page provides all players real-time updates on everybody's progress, including their badges, location, Eeveelution, and more. If you're logged into the site via discord, the site also saves all of this information (like which Pokémon you drafted, your splits, and your Hall of Fame team) to your player profile!
-        </p>
-      </section>
-
-      <section id="why-is-my-draft-not-green" className="faq-section" style={{ scrollMarginTop: '120px' }}>
-        <h2 className="faq-question">What's the difference between a casual and a competitive draft in the stats tab?</h2>
-        <hr />
-        <p className="faq-answer">
-          The goal of the stats section is to calculate average prices for Pokémon when drafted in races using the official ruleset. The traits below disqualify a draft from the statistics:
-        </p>
-        <ol className="faq-answer">
-          <li>Fewer than 40 Pokémon sold</li>
-          <li>More than 3 Pokémon sold for $100</li>
-          <li>A Pokémon sold for $12,000 or more</li>
-          <li>Total Pokémon sold is not equal to 8 times the total number of players</li>
-        </ol>
-        <p className="faq-answer" style={{ marginTop: '1rem' }}>
-          That said, all drafts are still preserved in the draft tab for you and your friends to look at! They just don't contribute to Pokémon-price calculations.
-        </p>
-        <p className="faq-answer" style={{ marginTop: '1rem' }}>
-          Drafts that don't meet these four criteria are marked as "Casual Drafts" in the stats tab.
-        </p>
-      </section>
-
-      <section id="can-you-add-a-skip-button" className="faq-section" style={{ scrollMarginTop: '120px' }}>
-        <h2 className="faq-question">Can you add a skip button to the draft?</h2>
-        <hr />
-        <p className="faq-answer">
-          If you're wondering this, you're probably misunderstanding how to draft! You're allowed to use as many Pokémon as you draft in your race. Getting Pokémon for cheap puts you at a huge advantage, because now you have a better chance to play with more Pokemon than your opponents! Even the weakest Pokémon in Blitz are worth a few 100; nothing is worthless. There's never a situation where you'd want to skip a Pokémon.
-        </p>
-        <p className="faq-answer" style={{ marginTop: '1rem' }}>
-          For example, if you're drafting with five players (and 40 Pokémon are for sale), and you win 10 Pokémon, not only do you have more Pokemon to use than your opponents, but some of your opponents will be stuck playing with fewer than eight!
-        </p>
-        <p className="faq-answer" style={{ marginTop: '1rem' }}>
-          For this reason, the draft forces players to make a decision: do you want to play with fewer than eight pokemon with lots of powerful top tiers, or more than eight with some low tier heroes?
-        </p>
-      </section>
-
-      <section id="can-i-play-by-myself" className="faq-section" style={{ scrollMarginTop: '120px' }}>
-        <h2 className="faq-question">Can I play by myself without drafting?</h2>
-        <hr />
-        <p className="faq-answer">
-          Yes! The notebook includes a "Random" option at the bottom of its list. Choose this option eight times to generate yourself a random team of Pokémon, then get racing!
-        </p>
-        <p className="faq-answer" style={{ marginTop: '1rem' }}>
-          Also, <a href="/Stats/PlayerProfiles/KCH42">KCH42</a> creates a Weekly Box every Friday composed of eight Pokemon designed to offer a unique experience. Join the Discord server to stay up to date on each week's box!
-        </p>
-      </section>
-
-      <section id="whats-changed" className="faq-section" style={{ scrollMarginTop: '120px' }}>
-        <h2 className="faq-question">What's changed from vanilla Emerald?</h2>
-        <hr />
-        <div className="faq-answer">
-          <h3 style={{ textAlign: 'left' }}>Roguelike Randomization</h3>
-          <ul>
+        <section id="how-do-i-play" className="faq-section" style={{ scrollMarginTop: '120px' }}>
+          <h2 className="faq-question">How do I play?</h2>
+          <hr />
+          <ol className="faq-answer">
             <li>
-              <b>Randomized Gyms:</b> Gyms are randomized; upon entering a gym, you'll be warped to any of Hoenn's eight gyms at random. Leader teams are adjusted to your current strength.
+              Download the patch from <a href="/">here</a>
             </li>
             <li>
-              <b>Elite... eight!?</b> Battle Frontier Brains join the Elite Four for a more diverse lineup of final bosses.
+              Apply the patch online using <a href="https://www.marcrobledo.com/RomPatcher.js/" target="_blank" rel="noopener noreferrer">this ROM Patcher</a>
             </li>
+            <li>
+              Download a GBA emulator like <a href="https://mgba.io/downloads.html" target="_blank" rel="noopener noreferrer">mGBA</a>
+            </li>
+          </ol>
+
+          <p className="faq-answer">Or...</p>
+
+          <ol className="faq-answer">
+            <li>
+              Open this site's <a href="https://emeraldblitz.com/TeamPlanner" target="_blank" rel="noopener noreferrer">team planner</a>
+            </li>
+            <li>
+              Select your Pokémon
+            </li>
+            <li>
+              Click the Emulator button
+            </li>
+          </ol>
+          <p className="faq-answer">
+            From there, the website will automatically patch your game, and the Auto Withdraw button will give you your chosen team!
+          </p>
+        </section>
+
+        <section id="what-are-the-rules" className="faq-section" style={{ scrollMarginTop: '120px' }}>
+          <h2 className="faq-question">What are the rules?</h2>
+          <hr />
+          <ul className="faq-answer">
+            <li>
+              This is a nuzlocke:
+              <ul>
+                <li>If a Pokemon faints, it’s lost forever.</li>
+                <li>You can’t use items in battle.</li>
+                <li>Battles are played on set mode (you don’t get the option to switch when you KO an opponent’s Pokemon).</li>
+              </ul>
+            </li>
+            <li>
+              Besides your starter Eevee and <a href="/Pokedex/Rental">rental Pokemon:</a>, you can only use Pokemon you purchased at auction. They’re all in your notebook at the start of the game. You can’t catch Pokemon.
+            </li>
+            <li>The first player to beat the game wins.</li>
+            <li>
+              Pokemon can’t level up beyond the level of the next gym leader’s ace (level caps are implemented in game, so you can’t accidentally overlevel).
+            </li>
+            <li>
+              The race only begins when players leave their rooms. Any actions you take in your starting room, like withdrawing your party and hatching eggs, can be done without pressure before the race begins.
+            </li>
+            <li>
+              Only one player per race can use any given Eeveelution. For example, once a player evolves their Eevee into Umbreon, no other players can use Umbreon.
+            </li>
+          </ul>
+        </section>
+
+        <section id="how-do-i-draft-with-my-friends" className="faq-section" style={{ scrollMarginTop: '120px' }}>
+          <h2 className="faq-question">How do I draft with my friends?</h2>
+          <hr />
+          <ol className="faq-answer">
+            <li>
+              Head to <a href="/auctionsetup" target="_blank" rel="noopener noreferrer">Auction Setup</a>.
+            </li>
+            <li>
+              The official ruleset uses the following setting:
+              <ul>
+                <li>Total Pokémon: 8 * Number of players (64 for 8-player drafts)</li>
+              </ul>
+            </li>
+            <li>Press <b>Create Auction</b>.</li>
+            <li>Once you’re taken to the auction, tell your friends to find your auction in the Lobby Viewer.</li>
+            <li>After everyone has joined and clicked "Ready Up," press "Start Draft" to begin!</li>
+            <li>Once the draft finishes, press "Play Emulator" and submit a legally obtained copy of Pokemon Emerald for the website to patch automatically. Have fun!</li>
+          </ol>
+        </section>
+
+        <section id="what-do-i-do-if-i-dont-have-any-friends-who-like-pokemon" className="faq-section" style={{ scrollMarginTop: '120px' }}>
+          <h2 className="faq-question">What do I do if I don't have any friends who like Pokémon?</h2>
+          <hr />
+          <p className="faq-answer">Play in community races!</p>
+          <p className="faq-answer" style={{ marginTop: '1rem' }}>
+            The discord community is super friendly and hosts multiple public races every day. Even if you've never played before, we'd love to have you. Join the discord to get notified any time a community race is happening!
+          </p>
+        </section>
+      </div>
+
+      <div className="faq-subsection">
+        <h2 id="ways-to-play" className="faq-subsection-heading" style={{ scrollMarginTop: '120px' }}>Ways to Play</h2>
+
+        <section id="can-i-play-by-myself" className="faq-section" style={{ scrollMarginTop: '120px' }}>
+          <h2 className="faq-question">Can I play by myself without drafting?</h2>
+          <hr />
+          <p className="faq-answer">
+            Yes! The notebook includes a "Random" option at the bottom of its list. Choose this option eight times to generate yourself a random team of Pokémon, then get racing!
+          </p>
+          <p className="faq-answer" style={{ marginTop: '1rem' }}>
+            Also, <a href="/Stats/PlayerProfiles/KCH42">KCH42</a> creates a Weekly Box every Friday composed of eight Pokemon designed to offer a unique experience. Join the Discord server to stay up to date on each week's box!
+          </p>
+        </section>
+
+        <section id="can-you-add-a-skip-button" className="faq-section" style={{ scrollMarginTop: '120px' }}>
+          <h2 className="faq-question">Can you add a skip button to the draft?</h2>
+          <hr />
+          <p className="faq-answer">
+            If you're wondering this, you're probably misunderstanding how to draft! You're allowed to use as many Pokémon as you draft in your race. Getting Pokémon for cheap puts you at a huge advantage, because now you have a better chance to play with more Pokemon than your opponents! Even the weakest Pokémon in Blitz are worth a few 100; nothing is worthless. There's never a situation where you'd want to skip a Pokémon.
+          </p>
+          <p className="faq-answer" style={{ marginTop: '1rem' }}>
+            For example, if you're drafting with five players (and 40 Pokémon are for sale), and you win 10 Pokémon, not only do you have more Pokemon to use than your opponents, but some of your opponents will be stuck playing with fewer than eight!
+          </p>
+          <p className="faq-answer" style={{ marginTop: '1rem' }}>
+            For this reason, the draft forces players to make a decision: do you want to play with fewer than eight pokemon with lots of powerful top tiers, or more than eight with some low tier heroes?
+          </p>
+        </section>
+      </div>
+
+      <div className="faq-subsection">
+        <h2 id="stats-page" className="faq-subsection-heading" style={{ scrollMarginTop: '120px' }}>Stats Page</h2>
+
+        <section id="how-can-the-website-track-my-stats" className="faq-section" style={{ scrollMarginTop: '120px' }}>
+          <h2 className="faq-question">How can the website track my stats?</h2>
+          <hr />
+          <p className="faq-answer">
+            By playing via the site's embedded emulator!
+          </p>
+          <p className="faq-answer" style={{ marginTop: '1rem' }}>
+            After you finish a draft, click the "Play Emulator" button. The emulator page provides all players real-time updates on everybody's progress, including their badges, location, Eeveelution, and more. If you're logged into the site via discord, the site also saves all of this information (like which Pokémon you drafted, your splits, and your Hall of Fame team) to your player profile!
+          </p>
+        </section>
+
+        <section id="why-is-my-draft-not-green" className="faq-section" style={{ scrollMarginTop: '120px' }}>
+          <h2 className="faq-question">What's the difference between a casual and a competitive draft in the stats tab?</h2>
+          <hr />
+          <p className="faq-answer">
+            The stats section calculates average prices for Pokémon when drafted in races using the official ruleset. Drafts aren't counted toward the stats if...
+          </p>
+          <ol className="faq-answer">
+            <li>Fewer than 40 Pokémon sold</li>
+            <li>More than 3 Pokémon sold for $100</li>
+            <li>A Pokémon sold for $12,000 or more</li>
+            <li>Total Pokémon sold is not equal to 8 times the total number of players</li>
+          </ol>
+          <p className="faq-answer" style={{ marginTop: '1rem' }}>
+            That said, all drafts are still preserved in the draft tab for you and your friends to look at! They just don't contribute to Pokémon-price calculations.
+          </p>
+          <p className="faq-answer" style={{ marginTop: '1rem' }}>
+            Drafts that don't meet these four criteria are marked as "Casual Drafts" in the stats tab.
+          </p>
+        </section>
+
+        <section id="how-does-the-website-decide-on-outliers" className="faq-section" style={{ scrollMarginTop: '120px' }}>
+          <h2 className="faq-question">How does the website calculate outliers?</h2>
+          <hr />
+          <p className="faq-answer">
+            The cost breakdown in the stats page prices each Pokémon using what's called an Interquartile Range (IQR) "fences" method.
+          </p>
+          <ol className="faq-answer">
+            <li>The $100 minimum-bid sales are dropped before calculating.</li>
+            <li>The data is then split into four quartiles. The difference between Q1 and Q3 is the IQR.</li>
+            <li>Only sales within the "fences" are kept: Q1 - 1.5 × IQR (lower) up to Q3 + 2.0 × IQR (upper). Anything below the lower fence or above the upper fence is excluded.</li>
+          </ol>
+        </section>
+      </div>
+
+      <div className="faq-subsection">
+        <h2 id="blitz-changes" className="faq-subsection-heading" style={{ scrollMarginTop: '120px' }}>Blitz Changes</h2>
+
+        <section id="how-does-this-mechanic-work" className="faq-section" style={{ scrollMarginTop: '120px' }}>
+          <h2 className="faq-question">How does [this] mechanic work?</h2>
+          <hr />
+          <p className="faq-answer">
+            The <a href="/Info">Info page</a> has all of the at-a-glance information you need for finding items, learning mechanics, and understanding AI behavior.
+          </p>
+        </section>
+
+        <section id="whats-changed" className="faq-section" style={{ scrollMarginTop: '120px' }}>
+          <h2 className="faq-question">What's changed from vanilla Emerald?</h2>
+          <hr />
+          <div className="faq-answer">
+            <h3 style={{ textAlign: 'left' }}>Roguelike Randomization</h3>
+            <ul>
               <li>
-                <b>Rental Pokemon:</b> For ¥8000, a shady salesman will allow you to rent a random Pokémon from his powerful collection. You'd better not try to steal it!
+                <b>Randomized Gyms:</b> Gyms are randomized; upon entering a gym, you'll be warped to any of Hoenn's eight gyms at random. Leader teams are adjusted to your current strength.
               </li>
               <li>
-                <b>Scott's TMs:</b> Starting at the fourth gym, each time you earn a badge, Scott offers you a random set of five TMs for sale from a pool of 36 potential options. May Scott be ever in your favor!
+                <b>Elite... eight!?</b> Battle Frontier Brains join the Elite Four for a more diverse lineup of final bosses.
               </li>
-          </ul>
+                <li>
+                  <b>Rental Pokemon:</b> For ¥8000, a shady salesman will allow you to rent a random Pokémon from his powerful collection. You'd better not try to steal it!
+                </li>
+                <li>
+                  <b>Scott's TMs:</b> Starting at the fourth gym, each time you earn a badge, Scott offers you a random set of five TMs for sale from a pool of 36 potential options. May Scott be ever in your favor!
+                </li>
+            </ul>
 
-          <h3 style={{ textAlign: 'left' }}>Built for Speed</h3>
-          <ul>
-            <li>
-              <b>Level Cap Candy:</b> Instantly jumps your Pokémon to the level it next learns a move, evolves, or hits the current cap (whichever of the three comes first). The evolution animation is shortened. Asking to learn a move only asks once, not twice.
-            </li>
-            <li>
-              <b>Flygon Bike:</b> Flygon replaces the bike, able to hop up ledges, move over shallow water, leap over rocks and trees, and Fly with the press of a button.
-            </li>
-            <li>
-              <b>Just the Good Stuff:</b> All plot, including all events involving Team Aqua and Magma, Steven, Wally, and Scott have been removed.
-            </li>
-            <li>
-              <b>Polite Trainers:</b> Ordinary trainers no longer challenge any player they see. They can still be fought, however, if you interact with them.
-            </li>
-          </ul>
+            <h3 style={{ textAlign: 'left' }}>Built for Speed</h3>
+            <ul>
+              <li>
+                <b>Level Cap Candy:</b> Instantly jumps your Pokémon to the level it next learns a move, evolves, or hits the current cap (whichever of the three comes first). The evolution animation is shortened. Asking to learn a move only asks once, not twice.
+              </li>
+              <li>
+                <b>Flygon Bike:</b> Flygon replaces the bike, able to hop up ledges, move over shallow water, leap over rocks and trees, and Fly with the press of a button.
+              </li>
+              <li>
+                <b>Just the Good Stuff:</b> All plot, including all events involving Team Aqua and Magma, Steven, Wally, and Scott have been removed.
+              </li>
+              <li>
+                <b>Polite Trainers:</b> Ordinary trainers no longer challenge any player they see. They can still be fought, however, if you interact with them.
+              </li>
+            </ul>
 
-          <h3 style={{ textAlign: 'left' }}>Reworked Shop</h3>
-          <ul>
-            <li>
-              <b>Fixed Money Supply:</b> Players are no longer able to sell items, and non-boss battles no longer award money. The player has 62,000 to spend, and every purchase has an opportunity cost.
-            </li>
-            <li>
-              <b>Slateport Outdoor Market:</b> Most relevant items, including evolution stones, mega stones, TMs, and ability-changing items are available for purchase in the Slateport outdoor market.
-            </li>
-            <li>
-              <b>Purchasable Berries:</b> All easily accessible berries are available for sale in the Pretty Petal Flower Shop.
-            </li>
-          </ul>
+            <h3 style={{ textAlign: 'left' }}>Reworked Shop</h3>
+            <ul>
+              <li>
+                <b>Fixed Money Supply:</b> Players are no longer able to sell items, and non-boss battles no longer award money. The player has 62,000 to spend, and every purchase has an opportunity cost.
+              </li>
+              <li>
+                <b>Slateport Outdoor Market:</b> Most relevant items, including evolution stones, mega stones, TMs, and ability-changing items are available for purchase in the Slateport outdoor market.
+              </li>
+              <li>
+                <b>Purchasable Berries:</b> All easily accessible berries are available for sale in the Pretty Petal Flower Shop.
+              </li>
+            </ul>
 
-          <h3 style={{ textAlign: 'left' }}>New Tools</h3>
-          <ul>
-            <li>
-              <b>Milk Drink:</b> Skiddo and Mareep’s Milk Drink can now be used in the overworld to increase a Pokemon’s level by one, ignoring the level cap. Choose carefully--you can only use it once!
-            </li>
-            <li>
-              <b>Last Respects:</b> Last Respects’ power is now determined by how many deaths you’ve had over the course of your run, gaining 15 Base Power each time a Pokemon faints. Your Houndstone only grows more powerful as its allies fall.
-            </li>
-            <li>
-              <b>Undead Corsola:</b> Upon fainting, Corsola revives at the end of the battle as Galarian Corsola.
-            </li>
-            <li>
-              <b>Applin Evolution:</b> Applin’s split evolution path is now determined by what gym you reach first: Fortree for Flapple, Lavaridge for Appletun, and Rustboro for Dipplin.
-            </li>
-            <li>
-              ...And many more!
-            </li>
-          </ul>
-        </div>
-      </section>
+            <h3 style={{ textAlign: 'left' }}>New Tools</h3>
+            <ul>
+              <li>
+                <b>Milk Drink:</b> Skiddo and Mareep’s Milk Drink can now be used in the overworld to increase a Pokemon’s level by one, ignoring the level cap. Choose carefully--you can only use it once!
+              </li>
+              <li>
+                <b>Last Respects:</b> Last Respects’ power is now determined by how many deaths you’ve had over the course of your run, gaining 15 Base Power each time a Pokemon faints. Your Houndstone only grows more powerful as its allies fall.
+              </li>
+              <li>
+                <b>Undead Corsola:</b> Upon fainting, Corsola revives at the end of the battle as Galarian Corsola.
+              </li>
+              <li>
+                <b>Applin Evolution:</b> Applin’s split evolution path is now determined by what gym you reach first: Fortree for Flapple, Lavaridge for Appletun, and Rustboro for Dipplin.
+              </li>
+              <li>
+                ...And many more!
+              </li>
+            </ul>
+          </div>
+        </section>
 
-      <section id="what-do-the-new-items-do" className="faq-section" style={{ scrollMarginTop: '120px' }}>
-        <h2 className="faq-question">What do the new items do?</h2>
-        <hr />
-        <div className="faq-answer">
-          <ul>
-            <li>
-              <b>Birch’s Flygon:</b> Replaces the bike, able to hop up ledges, move over shallow water, leap over rocks and trees, accelerate to 1.5x speed by holding B, and Fly by pressing L. Comes registered (press Select to mount).
-            </li>
-            <li>
-              <b>Cleanse Tag:</b> Now functions as a permanent, toggleable repel. Comes turned on.
-            </li>
-            <li>
-              <b>Med Kit:</b> Key item which heals all Pokémon in your party. Pokemon Centers are a thing of the past!
-            </li>
-            <li>
-              <b>Portable PC:</b> Gives access to the PC anywhere, anytime... besides in the Elite Four.
-            </li>
-          </ul>
-        </div>
-      </section>
+        <section id="what-do-the-new-items-do" className="faq-section" style={{ scrollMarginTop: '120px' }}>
+          <h2 className="faq-question">What do the new items do?</h2>
+          <hr />
+          <div className="faq-answer">
+            <ul>
+              <li>
+                <b>Birch’s Flygon:</b> Replaces the bike, able to hop up ledges, move over shallow water, leap over rocks and trees, accelerate to 1.5x speed by holding B, and Fly by pressing L. Comes registered (press Select to mount).
+              </li>
+              <li>
+                <b>Cleanse Tag:</b> Now functions as a permanent, toggleable repel. Comes turned on.
+              </li>
+              <li>
+                <b>Med Kit:</b> Key item which heals all Pokémon in your party. Pokemon Centers are a thing of the past!
+              </li>
+              <li>
+                <b>Portable PC:</b> Gives access to the PC anywhere, anytime... besides in the Elite Four.
+              </li>
+            </ul>
+          </div>
+        </section>
+      </div>
     </main>
     <Footer />
     </div>

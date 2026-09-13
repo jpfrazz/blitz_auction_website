@@ -71,6 +71,10 @@ pub struct UpdatePendingDraftSettingsRequest {
     pub num_auctions: u32,
     #[serde(default)]
     pub remove_team_ids: Vec<String>,
+    #[serde(default)]
+    pub move_to_spectator_user_ids: Vec<String>,
+    #[serde(default)]
+    pub add_spectator_user_ids: Vec<String>,
 }
 
 #[derive(Clone, Debug, Deserialize)]
@@ -3678,6 +3682,8 @@ pub async fn update_pending_draft_settings(
             update_request.num_teams,
             update_request.num_auctions,
             update_request.remove_team_ids,
+            update_request.move_to_spectator_user_ids,
+            update_request.add_spectator_user_ids,
         )
         .await?;
 
