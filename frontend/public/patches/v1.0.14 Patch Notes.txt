@@ -1,0 +1,22 @@
+9/14/2026
+
+-----------------------------------------------
+QoL
+-----------------------------------------------
+
+Added highlighted regions to the Fly map to notify when new resources are available
+//For example, on the Fly map, after obtaining the 6th badge, a pulsing square will appear over Route 104 with the message "New Berries Available!"
+
+Hovering berries in the party menu now raises them by 2 pixels and triples the amplitude of the bob animation
+//Makes it easier to track your cursor as you hover berries
+
+TM previews now show mini icons for Pokémon in the daycare
+
+
+-----------------------------------------------
+Bug Fix
+-----------------------------------------------
+
+Fixed a bug where Juan and Wallace's Tatsugiri in gyms 5-8 was still a random form instead of always Curly
+//I am sorry, Curly Tatsugiri. It won't happen again.
+//Thanks Freez for reporting

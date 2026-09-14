@@ -4,7 +4,7 @@ import Footer from '../../shared/components/Footer';
 import './PatchNotes.scss';
 
 const patches = [
-  'v1.0.13 Patch Notes.txt','v1.0.12 Patch Notes.txt','v1.0.11 Patch Notes.txt','v1.0.10 Patch Notes.txt','v1.0.9 Patch Notes.txt','v1.0.8 Patch Notes.txt','v1.0.7 Patch Notes.txt','v1.0.6 Patch Notes.txt','v1.0.5 Patch Notes.txt','v1.0.4 Patch Notes.txt','v1.0.3 Patch Notes.txt','v1.0.2 Patch Notes.txt','v1.0.1 Patch Notes.txt','v1.0.0 Patch Notes.txt',
+  'v1.0.14 Patch Notes.txt','v1.0.13 Patch Notes.txt','v1.0.12 Patch Notes.txt','v1.0.11 Patch Notes.txt','v1.0.10 Patch Notes.txt','v1.0.9 Patch Notes.txt','v1.0.8 Patch Notes.txt','v1.0.7 Patch Notes.txt','v1.0.6 Patch Notes.txt','v1.0.5 Patch Notes.txt','v1.0.4 Patch Notes.txt','v1.0.3 Patch Notes.txt','v1.0.2 Patch Notes.txt','v1.0.1 Patch Notes.txt','v1.0.0 Patch Notes.txt',
   'v0.9.2 Patch Notes.txt','v0.9.1 Patch Notes.txt','v0.9.0 Patch Notes.txt',
   'v0.8.9 Patch Notes.txt','v0.8.8 Patch Notes.txt','v0.8.7 Patch Notes.txt','v0.8.6 Patch Notes.txt','v0.8.5 Patch Notes.txt','v0.8.4 Patch Notes.txt','v0.8.32 Patch Notes.txt','v0.8.3 Patch Notes.txt','v0.8.2 Patch Notes.txt','v0.8.1 Patch Notes.txt','v0.8.0 Patch Notes.txt',
   'v0.7.9 Patch Notes.txt','v0.7.8 Patch Notes.txt','v0.7.7 Patch Notes.txt','v0.7.6 Patch Notes.txt','v0.7.5 Patch Notes.txt','v0.7.4 Patch Notes.txt','v0.7.3 Patch Notes.txt','v0.7.2 Patch Notes.txt','v0.7.1 Patch Notes.txt','v0.7.0 Patch Notes.txt',
@@ -15,6 +15,13 @@ const patches = [
   'v0.2.9 Patch Notes.txt','v0.2.8 Patch Notes.txt','v0.2.7 Patch Notes.txt','v0.2.6 Patch Notes.txt','v0.2.5 Patch Notes.txt','v0.2.4 Patch Notes.txt','v0.2.3 Patch Notes.txt','v0.2.2 Patch Notes.txt','v0.2.1 Patch Notes.txt','v0.2.0 Patch Notes.txt',
   'v0.1.9 Patch Notes.txt','v0.1.8 Patch Notes.txt','v0.1.7 Patch Notes.txt'
 ];
+
+const bugfixVersions = ['1.0.1', '1.0.2', '1.0.3', '1.0.6', '1.0.7', '1.0.8', '1.0.11', '1.0.13', '1.0.14'];
+
+const isBugfixVersion = (filename: string) => {
+  const shortName = filename.replace(' Patch Notes.txt', '').replace(/^v/, '');
+  return bugfixVersions.includes(shortName);
+};
 
 const START_MARKER = '//Extended Commentary Start';
 const END_MARKER = '//Extended Commentary End';
@@ -97,8 +104,7 @@ const PatchItem = ({ filename }: { filename: string }) => {
   };
 
   const shortName = filename.replace(' Patch Notes.txt', '').replace(/^v/, '');
-  const bugfixVersions = ['1.0.1', '1.0.2', '1.0.3', '1.0.6', '1.0.7', '1.0.8', '1.0.11', '1.0.13'];
-  const isBugfix = bugfixVersions.includes(shortName);
+  const isBugfix = isBugfixVersion(filename);
   const isCurrentMajor = (() => {
     const parts = shortName.split('.').map(Number);
     return parts.length >= 2 && parts[0] >= 1;
@@ -156,14 +162,56 @@ const PatchItem = ({ filename }: { filename: string }) => {
 };
 
 const PatchNotes = () => {
+  const [showBugfixPatches, setShowBugfixPatches] = useState(true);
+
+  const visiblePatches = showBugfixPatches
+    ? patches
+    : patches.filter(filename => !isBugfixVersion(filename));
+
   return (
     <>
       <Header />
       <main className="patch-notes-page">
-        <h1 className="page-title">Patch Notes</h1>
+        <div className="patch-notes-header">
+          <h1 className="page-title">Patch Notes</h1>
+          <div className="bugfix-toggle-wrapper">
+            <span
+              className="bugfix-toggle-label"
+              onClick={() => setShowBugfixPatches(!showBugfixPatches)}
+            >
+              Show Bugfix Patches
+            </span>
+            <div
+              role="switch"
+              aria-checked={showBugfixPatches}
+              aria-label="Show Bugfix Patches"
+              onClick={() => setShowBugfixPatches(!showBugfixPatches)}
+              style={{
+                position: 'relative',
+                width: '40px',
+                height: '20px',
+                backgroundColor: showBugfixPatches ? 'var(--eb-primary, #7CB946)' : '#333',
+                borderRadius: '20px',
+                cursor: 'pointer',
+                transition: 'background-color 0.3s ease'
+              }}
+            >
+              <div style={{
+                position: 'absolute',
+                top: '2px',
+                left: showBugfixPatches ? '22px' : '2px',
+                width: '16px',
+                height: '16px',
+                backgroundColor: 'white',
+                borderRadius: '50%',
+                transition: 'left 0.3s ease'
+              }} />
+            </div>
+          </div>
+        </div>
         <div className="patch-container">
           <div className="patch-list">
-            {patches.map(p => <PatchItem key={p} filename={p} />)}
+            {visiblePatches.map(p => <PatchItem key={p} filename={p} />)}
           </div>
         </div>
       </main>

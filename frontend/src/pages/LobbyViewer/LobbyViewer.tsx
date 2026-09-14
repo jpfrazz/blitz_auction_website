@@ -32,6 +32,20 @@ function formatDraftState(draftState: DraftState): string {
   return 'UNKNOWN';
 }
 
+function isDraftPending(draftState: unknown): boolean {
+  if (draftState == null) return false;
+
+  if (typeof draftState === 'string') {
+    return draftState === 'PENDING' || draftState === 'Pending';
+  }
+
+  if (typeof draftState === 'object') {
+    return 'PENDING' in draftState || 'Pending' in draftState;
+  }
+
+  return false;
+}
+
 function getTimeAgo(dateString?: string): string {
   if (!dateString) return '-';
   const now = new Date();
@@ -159,7 +173,7 @@ const LobbyViewer: React.FC = () => {
             >
               Join
             </Link>
-            {info.row.original.has_password && <span>🔒</span>}
+            {info.row.original.has_password && isDraftPending(info.row.original.draft_state) && <span>🔒</span>}
             {isCreator && (
               <button
                 className="lobby-viewer-delete-button"

@@ -678,7 +678,7 @@ const Stats: React.FC = () => {
                         position: 'relative', 
                         width: '40px', 
                         height: '20px', 
-                        backgroundColor: competitiveOnly ? '#4caf50' : '#333', 
+                        backgroundColor: competitiveOnly ? 'var(--eb-primary, #7CB946)' : '#333', 
                         borderRadius: '20px', 
                         cursor: 'pointer', 
                         transition: 'background-color 0.3s ease' 
@@ -709,7 +709,7 @@ const Stats: React.FC = () => {
                         position: 'relative', 
                         width: '40px', 
                         height: '20px', 
-                        backgroundColor: include1v1s ? '#4caf50' : '#333', 
+                        backgroundColor: include1v1s ? 'var(--eb-primary, #7CB946)' : '#333', 
                         borderRadius: '20px', 
                         cursor: 'pointer', 
                         transition: 'background-color 0.3s ease' 
