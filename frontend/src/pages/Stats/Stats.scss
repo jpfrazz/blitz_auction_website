@@ -816,7 +816,7 @@
   top: 0.8rem;
   right: 1rem;
   padding: 0.1rem 0.55rem;
-  border-radius: 999px;
+  border-radius: 4px;
   font-size: 0.9rem;
   font-weight: 700;
   letter-spacing: 0.02em;
@@ -824,9 +824,9 @@
 }
 
 .admin-hof-draft-type.competitive {
-  color: #90ee90;
-  background: rgba(76, 175, 80, 0.18);
-  border: 1px solid rgba(76, 175, 80, 0.5);
+  color: $eb-primary;
+  background: rgba(124, 185, 70, 0.15);
+  border: 1px solid rgba(124, 185, 70, 0.45);
 }
 
 .admin-hof-draft-type.casual {
@@ -836,9 +836,9 @@
 }
 
 .admin-hof-draft-type.one-v-one {
-  color: #90caf9;
-  background: rgba(33, 150, 243, 0.15);
-  border: 1px solid rgba(33, 150, 243, 0.5);
+  color: $eb-accent;
+  background: rgba(79, 195, 247, 0.12);
+  border: 1px solid rgba(79, 195, 247, 0.45);
 }
 
 .admin-hof-entry-head {
@@ -855,16 +855,16 @@
 }
 
 .admin-hof-entry-player.admin-hof-entry-player {
-  color: #6db3f2;
+  color: $eb-accent;
   text-decoration: underline;
-  text-decoration-color: rgba(109, 179, 242, 0.5);
+  text-decoration-color: rgba(79, 195, 247, 0.5);
   text-underline-offset: 3px;
   transition: color 0.15s ease, text-decoration-color 0.15s ease;
 }
 
 .admin-hof-entry-player.admin-hof-entry-player:hover {
-  color: #9ed0ff;
-  text-decoration-color: #9ed0ff;
+  color: lighten($eb-accent, 12%);
+  text-decoration-color: lighten($eb-accent, 12%);
 }
 
 .admin-hof-entry-race {
@@ -874,7 +874,7 @@
 
 .admin-hof-entry-beat {
   font-weight: 600;
-  color: #90ee90;
+  color: $eb-primary;
   font-size: 1.3rem;
 }
 

@@ -741,7 +741,7 @@ const PokemonStatsTab: React.FC<PokemonStatsTabProps> = ({
                     <td style={{
                       backgroundColor: entry.priceMovement > 0 ? 'rgba(0, 255, 0, 0.15)' : entry.priceMovement < 0 ? 'rgba(255, 0, 0, 0.15)' : undefined,
                       fontWeight: entry.priceMovement !== 0 ? 'bold' : 'normal',
-                      color: entry.priceMovement > 0 ? '#4caf50' : entry.priceMovement < 0 ? '#f44336' : 'inherit'
+                      color: entry.priceMovement > 0 ? '#4caf50' : entry.priceMovement < 0 ? '#f44336' : '#4fc3f7'
                     }}>
                       {entry.priceMovement > 0
                         ? `↑ $${entry.priceMovement.toLocaleString()}`

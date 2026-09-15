@@ -329,6 +329,10 @@
         gap: 0.4rem;
     }
 
+    .player-draft-overview-row:nth-child(even) {
+        background-color: rgba(255, 255, 255, 0.03);
+    }
+
     .player-draft-overview-table-header,
     .player-draft-overview-row {
         display: grid;
@@ -366,7 +370,7 @@
         top: 0;
         z-index: 1;
         background: $eb-bg;
-        padding-bottom: 0.35rem;
+        padding: 0.45rem 0.75rem;
         border-bottom: 1px solid $eb-border;
         color: $eb-text-muted;
         font-size: 1.1rem;
@@ -386,7 +390,7 @@
     }
 
     .player-draft-overview-row {
-        padding: 0.45rem 0;
+        padding: 0.45rem 0.75rem;
         color: $eb-text;
         font-size: 1.25rem;
     }
