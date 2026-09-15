@@ -1899,6 +1899,30 @@ pub async fn ready_up(
 }
 
 #[debug_handler]
+pub async fn become_spectator(
+    State(state): State<ServerState>,
+    Path(draft_id): Path<String>,
+    auth_session: AuthSession<AuthBackend>,
+) -> Result<(), AppError> {
+    let user = auth_session.user.expect("user should exist");
+
+    let draft_uuid = Uuid::from_str(&draft_id).map_err(|e| {
+        (
+            StatusCode::BAD_REQUEST,
+            format!("requested draft does not exist"),
+        )
+    })?;
+    let Some(draft) = state.drafts.get(&draft_uuid) else {
+        return Err((
+            StatusCode::BAD_REQUEST,
+            format!("requested draft does not exist"),
+        ));
+    };
+
+    draft.become_spectator(user.get_user_id_string()).await
+}
+
+#[debug_handler]
 pub async fn get_auto_bid(
     State(state): State<ServerState>,
     Path(draft_id): Path<String>,

@@ -2,7 +2,7 @@ import React, { useEffect, useState, useRef, useMemo, useCallback } from 'react'
 import { connectDraftWebSocket } from '../../shared/api/draftWebSocket';
 import { useLocation, useNavigate } from 'react-router-dom';
 import Header from '../../shared/components/Header';
-import { fetchDraftById, fetchDraftPokemon, fetchDraftCurrentAuction, readyUpDraft, joinDraft, fetchCurrentUser, claimEeveelution, unclaimEeveelution, startDraft, pauseDraft, unpauseDraft, submitRaceResults, updatePendingDraftSettings } from '../../shared/api/draftData';
+import { fetchDraftById, fetchDraftPokemon, fetchDraftCurrentAuction, readyUpDraft, becomeDraftSpectator, joinDraft, fetchCurrentUser, claimEeveelution, unclaimEeveelution, startDraft, pauseDraft, unpauseDraft, submitRaceResults, updatePendingDraftSettings } from '../../shared/api/draftData';
 import { fetchPokemonList } from '../../shared/api/pokemon';
 import { getUserId } from '../../shared/utils/user';
 import './AuctionPage.scss';
@@ -38,6 +38,7 @@ const AuctionPage: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [startingDraft, setStartingDraft] = useState(false);
   const [readyingUp, setReadyingUp] = useState(false);
+  const [becomingSpectator, setBecomingSpectator] = useState(false);
   const [pausingDraft, setPausingDraft] = useState(false);
   const [joiningDraft, setJoiningDraft] = useState(false);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
@@ -417,6 +418,19 @@ const AuctionPage: React.FC = () => {
       console.error('Error readying up:', error);
     } finally {
       setReadyingUp(false);
+    }
+  };
+
+  const handleBecomeSpectator = async () => {
+    if (!draft) return;
+    setBecomingSpectator(true);
+    try {
+      const updated = await becomeDraftSpectator(draft.draft_id);
+      setDraft(updated);
+    } catch (error) {
+      console.error('Error becoming spectator:', error);
+    } finally {
+      setBecomingSpectator(false);
     }
   };
 
@@ -914,6 +928,15 @@ const AuctionPage: React.FC = () => {
                               className="button"
                             >
                               {readyingUp ? 'Readying Up...' : 'Ready Up'}
+                            </button>
+                          )}
+                          {currentUserTeam && currentUserId !== draft.host && (
+                            <button
+                              onClick={handleBecomeSpectator}
+                              disabled={becomingSpectator}
+                              className="button"
+                            >
+                              {becomingSpectator ? 'Becoming Spectator...' : 'Become Spectator'}
                             </button>
                           )}
                         </div>

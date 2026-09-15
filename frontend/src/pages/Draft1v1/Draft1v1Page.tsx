@@ -10,6 +10,7 @@ import {
   pauseDraft,
   unpauseDraft,
   readyUpDraft,
+  becomeDraftSpectator,
   oneVOnePick,
   oneVOneBan,
   claimEeveelution,
@@ -72,6 +73,7 @@ const Draft1v1Page: React.FC = () => {
   const [joiningDraft, setJoiningDraft] = useState(false);
   const [startingDraft, setStartingDraft] = useState(false);
   const [readyingUp, setReadyingUp] = useState(false);
+  const [becomingSpectator, setBecomingSpectator] = useState(false);
   const [pausingDraft, setPausingDraft] = useState(false);
   const [showKickPlayerModal, setShowKickPlayerModal] = useState(false);
   const [selectedTeamIdsToRemove, setSelectedTeamIdsToRemove] = useState<string[]>([]);
@@ -264,6 +266,19 @@ const Draft1v1Page: React.FC = () => {
       setError(e.response?.data || e.message);
     } finally {
       setReadyingUp(false);
+    }
+  };
+
+  const handleBecomeSpectator = async () => {
+    if (!draft) return;
+    setBecomingSpectator(true);
+    try {
+      const updated = await becomeDraftSpectator(draft.draft_id);
+      setDraft(updated);
+    } catch (e: any) {
+      setError(e.response?.data || e.message);
+    } finally {
+      setBecomingSpectator(false);
     }
   };
 
@@ -636,6 +651,11 @@ const Draft1v1Page: React.FC = () => {
                       {currentUserTeam && !currentUserTeam.ready && (
                         <button className="button" onClick={handleReadyUp} disabled={readyingUp}>
                           {readyingUp ? 'Readying Up...' : 'Ready Up'}
+                        </button>
+                      )}
+                      {currentUserTeam && !isHost && (
+                        <button className="button" onClick={handleBecomeSpectator} disabled={becomingSpectator}>
+                          {becomingSpectator ? 'Becoming Spectator...' : 'Become Spectator'}
                         </button>
                       )}
                     </div>

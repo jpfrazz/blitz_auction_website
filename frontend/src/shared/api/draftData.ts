@@ -89,6 +89,12 @@ export async function readyUpDraft(draft_id: string): Promise<Draft> {
   return response.data;
 }
 
+export async function becomeDraftSpectator(draft_id: string): Promise<Draft> {
+  await axios.post(`/api/drafts/${draft_id}/become-spectator`);
+  const response = await axios.get(`/api/drafts/${draft_id}`);
+  return response.data;
+}
+
 export async function pauseDraft(draft_id: string): Promise<void> {
   await axios.post(`/api/drafts/${draft_id}/pause`);
 }

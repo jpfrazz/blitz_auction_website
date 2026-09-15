@@ -142,7 +142,7 @@
   width: 2.75rem;
   height: 2.5rem;
   border-radius: 50%;
-  margin-right: 0.75rem;
+  margin-right: 0;
 }
 
 .userDropdown {
@@ -157,15 +157,14 @@
   margin: 0;
   display: flex;
   align-items: center;
-  gap: 0.5em;
-  padding: 0.125rem 0.25rem;
+  gap: 6px;
+  padding: 0.125rem 0.5rem 0.125rem 0.25rem;
   min-height: 3rem;
   box-sizing: border-box;
 }
 
 .userDropdownTrigger h1 {
   margin: 0;
-  margin-right: -0.25rem;
   font-size: 1.1rem;
   font-weight: 600;
   line-height: 1;

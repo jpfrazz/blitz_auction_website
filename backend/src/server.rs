@@ -169,6 +169,7 @@ impl Server {
             .route("/drafts/{draft_id}", delete(handlers::delete_draft))
             .route("/drafts/{draft_id}/join", post(handlers::join_draft))
             .route("/drafts/{draft_id}/ready", post(handlers::ready_up))
+            .route("/drafts/{draft_id}/become-spectator", post(handlers::become_spectator))
             .route("/drafts/{draft_id}/bid", post(handlers::bid))
             .route(
                 "/drafts/{draft_id}/auto-bid",

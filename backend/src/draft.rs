@@ -701,6 +701,27 @@ impl Draft {
         })?
     }
 
+    pub async fn become_spectator(&self, user_id: String) -> Result<(), AppError> {
+        let (response_sender, response_receiver) = oneshot::channel();
+        let cmd = DraftCommand::BecomeSpectator {
+            response_sender,
+            user_id,
+        };
+        self.actor_sender.send(cmd).await.map_err(|e| {
+            (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                format!("failed to send become spectator cmd to actor, {}", e),
+            )
+        })?;
+
+        response_receiver.await.map_err(|e| {
+            (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                format!("failed to wait for actor response, {}", e),
+            )
+        })?
+    }
+
     pub async fn get_auto_bid(&self, user_id: String) -> Result<AutoBidResponse, AppError> {
         let (response_sender, response_receiver) = oneshot::channel();
         let cmd = DraftCommand::GetAutoBid {
@@ -1012,6 +1033,10 @@ enum DraftCommand {
         response_sender: oneshot::Sender<Result<(), AppError>>,
         user_id: String,
     },
+    BecomeSpectator {
+        response_sender: oneshot::Sender<Result<(), AppError>>,
+        user_id: String,
+    },
     GetCurrentAuction(oneshot::Sender<Result<Option<AuctionResponse>, AppError>>),
     GetAutoBid {
         response_sender: oneshot::Sender<Result<AutoBidResponse, AppError>>,
@@ -1223,6 +1248,15 @@ impl DraftActor {
                         if ok {
                             self.broadcast();
                         };
+                    }
+                    DraftCommand::BecomeSpectator {
+                        response_sender,
+                        user_id,
+                    } => {
+                        let res = self.become_spectator(user_id).await;
+                        let ok = res.is_ok();
+                        let _ = response_sender.send(res);
+                        self.broadcast();
                     }
                     DraftCommand::GetCurrentAuction(response_sender) => {
                         let res = self.get_current_auction().await;
@@ -2336,6 +2370,37 @@ impl DraftActor {
         };
 
         team.ready = true;
+        Ok(())
+    }
+
+    async fn become_spectator(&mut self, user_id: String) -> Result<(), AppError> {
+        if self.draft_state != DraftState::PENDING {
+            return Err((
+                StatusCode::PRECONDITION_FAILED,
+                "draft must be in PENDING state to become a spectator".to_string(),
+            ));
+        }
+        if user_id == self.host {
+            return Err((StatusCode::BAD_REQUEST, "host cannot become a spectator".to_string()));
+        }
+        let Some(user) = self.team_users.get(&user_id).cloned() else {
+            return Err((
+                StatusCode::BAD_REQUEST,
+                "user is not a participant in this draft".to_string(),
+            ));
+        };
+
+        self.db_writer.kick_draft(user.clone()).await?;
+        self.teams.remove(&user_id);
+        self.team_users.remove(&user_id);
+        if self
+            .spectators
+            .iter()
+            .all(|u| u.get_user_id_string() != user_id)
+        {
+            self.spectators.push(user);
+        }
+
         Ok(())
     }
 
