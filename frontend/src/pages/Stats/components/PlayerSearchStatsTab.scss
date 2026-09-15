@@ -395,18 +395,24 @@
         font-size: 1.25rem;
     }
 
+    .diff-negative,
+    .diff-positive {
+        align-self: stretch;
+        display: flex;
+        align-items: center;
+        justify-content: flex-end;
+        font-weight: 600;
+        border-radius: 4px;
+    }
+
     .diff-negative {
         color: #4caf50;
         background: rgba(0, 255, 0, 0.15);
-        font-weight: 600;
-        border-radius: 4px;
     }
 
     .diff-positive {
         color: #f44336;
         background: rgba(255, 0, 0, 0.15);
-        font-weight: 600;
-        border-radius: 4px;
     }
 
     .player-stat-pill-grid {
