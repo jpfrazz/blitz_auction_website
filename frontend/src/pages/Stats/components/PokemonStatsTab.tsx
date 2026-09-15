@@ -545,14 +545,14 @@ const PokemonStatsTab: React.FC<PokemonStatsTabProps> = ({
                   <TbRefresh />
                 </button>
                 <div className="stats-setting-item" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <span style={{ fontSize: '0.85rem', color: '#888', whiteSpace: 'nowrap' }}>Cutoff Date</span>
+                  <span style={{ fontSize: '0.85rem', color: 'var(--eb-text-muted, #b0b0b0)', whiteSpace: 'nowrap' }}>Cutoff Date</span>
                   <span 
                     title="Exclude all sales that occurred before this date"
                     style={{ 
                       cursor: 'help', 
-                      color: '#888', 
+                      color: 'var(--eb-primary)', 
                       fontSize: '0.7rem',
-                      border: '1px solid #444',
+                      border: '1px solid var(--eb-primary)',
                       borderRadius: '50%',
                       width: '14px',
                       height: '14px',
@@ -573,14 +573,14 @@ const PokemonStatsTab: React.FC<PokemonStatsTabProps> = ({
                   />
                 </div>
                 <div className="stats-setting-item" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <span style={{ fontSize: '0.85rem', color: '#888', whiteSpace: 'nowrap' }}>Lookback Window</span>
+                  <span style={{ fontSize: '0.85rem', color: 'var(--eb-text-muted, #b0b0b0)', whiteSpace: 'nowrap' }}>Lookback Window</span>
                   <span 
                     title="The number of recent drafts to use as the comparison baseline for calculating rank and price movement"
                     style={{ 
                       cursor: 'help', 
-                      color: '#888', 
+                      color: 'var(--eb-primary)', 
                       fontSize: '0.7rem',
-                      border: '1px solid #444',
+                      border: '1px solid var(--eb-primary)',
                       borderRadius: '50%',
                       width: '14px',
                       height: '14px',
@@ -604,14 +604,14 @@ const PokemonStatsTab: React.FC<PokemonStatsTabProps> = ({
                   />
                 </div>
                 <div className="stats-setting-item" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <span style={{ fontSize: '0.85rem', color: '#888', whiteSpace: 'nowrap' }}>Type</span>
+                  <span style={{ fontSize: '0.85rem', color: 'var(--eb-text-muted, #b0b0b0)', whiteSpace: 'nowrap' }}>Type</span>
                   <span 
                     title="Show only Pokemon of the selected type"
                     style={{ 
                       cursor: 'help', 
-                      color: '#888', 
+                      color: 'var(--eb-primary)', 
                       fontSize: '0.7rem',
-                      border: '1px solid #444',
+                      border: '1px solid var(--eb-primary)',
                       borderRadius: '50%',
                       width: '14px',
                       height: '14px',
@@ -637,7 +637,7 @@ const PokemonStatsTab: React.FC<PokemonStatsTabProps> = ({
                     ))}
                   </select>
                 </div>
-                <div className="settings-divider" style={{ width: '1px', height: '24px', backgroundColor: '#333', margin: '0 4px', flexShrink: 0 }} />
+                <div className="settings-divider" style={{ width: '1px', height: '24px', backgroundColor: 'var(--eb-border, #2a2d31)', margin: '0 4px', flexShrink: 0 }} />
               </div>
               <button
                 type="button"
@@ -647,7 +647,7 @@ const PokemonStatsTab: React.FC<PokemonStatsTabProps> = ({
                 style={{
                   background: 'none',
                   border: 'none',
-                  color: showSettings ? 'var(--eb-primary)' : '#888',
+                  color: showSettings ? 'var(--eb-primary)' : 'var(--eb-text-muted, #b0b0b0)',
                   cursor: 'pointer',
                   display: 'flex',
                   alignItems: 'center',
@@ -706,7 +706,7 @@ const PokemonStatsTab: React.FC<PokemonStatsTabProps> = ({
                 {filteredPokemonSummary.map((entry, index) => (
                   <React.Fragment key={entry.key}>
                     <tr 
-                      className={`stats-row-animate ${expandedPokemon === entry.key ? 'expanded' : ''}`} 
+                      className={`stats-row-animate ${expandedPokemon === entry.key ? 'expanded' : ''} ${index % 2 === 0 ? 'pokemon-row-stripe' : ''}`} 
                       style={{ animationDelay: `${200 + index * 30}ms`, cursor: 'pointer' }}
                       onClick={() => setExpandedPokemon(expandedPokemon === entry.key ? null : entry.key)}
                     >

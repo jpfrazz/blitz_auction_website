@@ -1,3 +1,5 @@
+@import '../../../shared/style/theme.scss';
+
 .tier-list-tab {
     padding: 20px 0;
     display: flex;
@@ -9,27 +11,27 @@
         flex-direction: column;
         background: rgba(0, 0, 0, 0.2);
         padding: 10px 15px;
-        border-radius: 8px;
+        border-radius: 4px;
         gap: 15px;
 
         .list-selector {
             display: flex;
             gap: 10px;
             .list-btn {
-                background: #333;
-                border: 1px solid #444;
-                color: #888;
+                background: $eb-surface;
+                border: 1px solid $eb-border;
+                color: $eb-text-muted;
                 padding: 6px 12px;
                 border-radius: 4px;
                 cursor: pointer;
-                &.active { background: #4caf50; color: white; border-color: #4caf50; }
+                &.active { background: $eb-primary; color: $eb-text-black; border-color: $eb-primary; }
             }
             .list-action-btns {
                 display: flex;
                 gap: 5px;
                 .add-list-btn, .copy-list-btn {
-                    background: #444;
-                    color: white;
+                    background: $eb-surface;
+                    color: $eb-text;
                     border: none;
                     width: 32px;
                     height: 32px;
@@ -38,34 +40,34 @@
                     display: flex;
                     align-items: center;
                     justify-content: center;
-                    &:hover { background: #555; }
+                    &:hover { background: $eb-border; }
                 }
                 .copy-list-btn { font-size: 0.85rem; }
 
                 .pool-picker-overlay {
                     display: flex;
                     gap: 4px;
-                    background: #2a2a2a;
+                    background: $eb-bg;
                     padding: 2px;
                     border-radius: 4px;
-                    border: 1px solid #444;
+                    border: 1px solid $eb-border;
                     button {
-                        background: #444;
+                        background: $eb-surface;
                         border: none;
-                        color: #ccc;
+                        color: $eb-text;
                         padding: 2px 8px;
                         border-radius: 2px;
                         cursor: pointer;
                         font-size: 0.85rem;
-                        &:hover { background: #555; color: white; }
+                        &:hover { background: $eb-border; color: white; }
                         &.cancel { color: #ff7f7f; }
                     }
                 }
             }
             .delete-list-btn {
-                background: #444; color: #ff7f7f; border: none; width: 32px; height: 32px; border-radius: 4px; cursor: pointer;
+                background: $eb-surface; color: #ff7f7f; border: none; width: 32px; height: 32px; border-radius: 4px; cursor: pointer;
                 display: flex; align-items: center; justify-content: center;
-                &:hover { background: #555; }
+                &:hover { background: $eb-border; }
             }
         }
     }
@@ -79,7 +81,7 @@
             display: flex;
             align-items: center;
             gap: 8px;
-            color: #888;
+            color: $eb-text-muted;
             font-size: 0.9rem;
             .size-slider {
                 cursor: pointer;
@@ -92,13 +94,13 @@
             gap: 10px;
 
             .util-btn {
-                background: #444; color: white; border: 1px solid #555; padding: 6px 15px; border-radius: 4px; cursor: pointer;
-                &:hover { background: #555; }
-                &.active { background: #4caf50; border-color: #4caf50; }
+                background: $eb-surface; color: $eb-text; border: 1px solid $eb-border; padding: 6px 15px; border-radius: 4px; cursor: pointer;
+                &:hover { background: $eb-border; }
+                &.active { background: $eb-primary; border-color: $eb-primary; color: $eb-text-black; }
             }
             .delete-btn {
-                background: #444; color: #ff7f7f; border: 1px solid #555; padding: 6px 15px; border-radius: 4px; cursor: pointer;
-                &:hover { background: #555; }
+                background: $eb-surface; color: #ff7f7f; border: 1px solid $eb-border; padding: 6px 15px; border-radius: 4px; cursor: pointer;
+                &:hover { background: $eb-border; }
             }
             .reset-btn {
                 background: #8b0000; color: white; border: none; padding: 6px 15px; border-radius: 4px; cursor: pointer;
@@ -160,14 +162,14 @@
         .list-name-input {
             background: transparent;
             border: none;
-            border-bottom: 2px solid #333;
+            border-bottom: 2px solid $eb-border;
             color: white;
             font-size: 2rem;
             font-weight: bold;
             width: 100%;
             padding: 5px 0;
             outline: none;
-            &:focus { border-bottom-color: #4caf50; }
+            &:focus { border-bottom-color: $eb-primary; }
         }
     }
 
@@ -187,7 +189,7 @@
             display: flex;
             min-height: 80px;
             border-bottom: 1px solid #111;
-            background: #1a1a1a;
+            background: $eb-surface;
             width: 100%;
 
             .tier-label {
@@ -230,11 +232,11 @@
                 .settings-cog, .move-arrow {
                     background: transparent;
                     border: none;
-                    color: #444;
+                    color: $eb-text-muted;
                     cursor: pointer;
                     font-size: 1rem;
-                    &:hover { color: #888; }
-                    &:disabled { color: #222; cursor: default; }
+                    &:hover { color: $eb-text; }
+                    &:disabled { color: $eb-bg; cursor: default; }
                 }
 
                 .settings-cog {
@@ -245,8 +247,8 @@
                     position: absolute;
                     right: 100%;
                     top: 0;
-                    background: #2a2a2a;
-                    border: 1px solid #444;
+                    background: $eb-bg;
+                    border: 1px solid $eb-border;
                     border-radius: 4px;
                     z-index: 100;
                     display: flex;
@@ -262,7 +264,7 @@
                         text-align: left;
                         cursor: pointer;
                         font-size: 0.85rem;
-                        &:hover { background: #3a3a3a; }
+                        &:hover { background: $eb-surface; }
                         &.danger { color: #ff7f7f; }
                     }
                 }
@@ -278,10 +280,10 @@
         justify-content: center;
         cursor: pointer;
         transition: transform 0.1s ease;
-        border: 1px solid #333;
+        border: 1px solid $eb-border;
         img { width: 90%; height: 90%; object-fit: contain; pointer-events: none; }
         &:active { cursor: grabbing; }
-        &:hover { border-color: #4caf50; z-index: 2; }
+        &:hover { border-color: $eb-primary; z-index: 2; }
 
         .rank-badge {
             position: absolute;
@@ -298,9 +300,9 @@
     }
 
     .pokemon-pool-container {
-        background: #111;
+        background: $eb-bg;
         padding: 20px;
-        border-radius: 8px;
+        border-radius: 4px;
 
         .pokemon-pool-header {
             display: flex;
@@ -310,20 +312,20 @@
 
             h3 {
                 margin: 0;
-                color: #888;
+                color: $eb-text-muted;
                 font-size: 1.1rem; // Slightly larger
             }
 
             .pool-search-input {
-                background: #2a2a2a;
-                border: 1px solid #444;
+                background: $eb-surface;
+                border: 1px solid $eb-border;
                 border-radius: 4px;
                 color: white;
                 padding: 6px 10px;
                 font-size: 0.9rem;
                 outline: none;
                 width: 180px;
-                &:focus { border-color: #4caf50; }
+                &:focus { border-color: $eb-primary; }
             }
         }
 

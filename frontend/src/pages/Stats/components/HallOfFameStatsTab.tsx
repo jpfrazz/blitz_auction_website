@@ -128,9 +128,9 @@ const HallOfFameStatsTab: React.FC<HallOfFameStatsTabProps> = ({ validDraftIds }
                   title="Exclude hall of fame runs that occurred before this date"
                   style={{
                     cursor: 'help',
-                    color: '#888',
+                    color: 'var(--eb-primary)',
                     fontSize: '0.7rem',
-                    border: '1px solid #444',
+                    border: '1px solid var(--eb-primary)',
                     borderRadius: '50%',
                     width: '14px',
                     height: '14px',
@@ -174,9 +174,9 @@ const HallOfFameStatsTab: React.FC<HallOfFameStatsTabProps> = ({ validDraftIds }
                   title="Show only runs completed faster than this time (e.g. 1:30:00)"
                   style={{
                     cursor: 'help',
-                    color: '#888',
+                    color: 'var(--eb-primary)',
                     fontSize: '0.7rem',
-                    border: '1px solid #444',
+                    border: '1px solid var(--eb-primary)',
                     borderRadius: '50%',
                     width: '14px',
                     height: '14px',
@@ -215,7 +215,7 @@ const HallOfFameStatsTab: React.FC<HallOfFameStatsTabProps> = ({ validDraftIds }
                 style={{
                   width: '1px',
                   height: '24px',
-                  backgroundColor: '#333',
+                  backgroundColor: 'var(--eb-border, #2a2d31)',
                   margin: '0 4px',
                   flexShrink: 0,
                 }}
@@ -229,7 +229,7 @@ const HallOfFameStatsTab: React.FC<HallOfFameStatsTabProps> = ({ validDraftIds }
               style={{
                 background: 'none',
                 border: 'none',
-                color: showFilters ? 'var(--eb-primary)' : '#888',
+                color: showFilters ? 'var(--eb-primary)' : 'var(--eb-text-muted, #b0b0b0)',
                 cursor: 'pointer',
                 display: 'flex',
                 alignItems: 'center',

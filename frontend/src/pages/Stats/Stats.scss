@@ -16,10 +16,9 @@
 }
 
 .stats-hero-card {
-  background: rgba(15, 20, 24, 0.9);
-  border: 1px solid #2a373f;
-  border-left: 6px solid $eb-primary;
-  border-radius: 12px;
+  background: $eb-surface;
+  border: 1px solid $eb-border;
+  border-radius: 4px;
   padding: 1rem 1.2rem 1.1rem;
   margin-bottom: 1rem;
   display: flex;
@@ -36,7 +35,7 @@
 
 .stats-hero-card p {
   margin: 0.35rem 0 0;
-  color: #95a8b1;
+  color: $eb-text-muted;
   font-size: 1.2rem;
 }
 
@@ -44,7 +43,7 @@
   font-size: 1.15rem;
   text-transform: uppercase;
   letter-spacing: 0.08em;
-  color: #6a7d87;
+  color: $eb-text-muted;
 }
 
 .stats-kpi-grid {
@@ -55,14 +54,14 @@
 }
 
 .kpi-card {
-  background: rgba(15, 20, 24, 0.9);
-  border: 1px solid #2a373f;
-  border-radius: 12px;
+  background: $eb-surface;
+  border: 1px solid $eb-border;
+  border-radius: 4px;
   padding: 0.75rem 0.9rem;
 }
 
 .kpi-label {
-  color: #95a8b1;
+  color: $eb-text-muted;
   text-transform: uppercase;
   letter-spacing: 0.06em;
   font-size: 0.95rem;
@@ -82,10 +81,10 @@
 }
 
 .tab-chip {
-  border: 1px solid #32424c;
-  background: #131a1f;
-  color: #cfd9de;
-  border-radius: 999px;
+  border: 1px solid $eb-border;
+  background: $eb-bg;
+  color: $eb-text;
+  border-radius: 4px;
   padding: 0.45rem 0.8rem;
   font-weight: 600;
   cursor: pointer;
@@ -93,7 +92,7 @@
 }
 
 .tab-chip:hover {
-  border-color: #4b6878;
+  border-color: $eb-text-muted;
 }
 
 .tab-chip.active {
@@ -112,9 +111,9 @@
 }
 
 .stats-panel {
-  background: #14191d;
+  background: $eb-surface;
   border: 1px solid $eb-border;
-  border-radius: 12px;
+  border-radius: 4px;
   padding: 0.9rem;
   min-width: 0; // Allows the panel to shrink smaller than its content width in a grid
 }
@@ -125,8 +124,8 @@
     -webkit-overflow-scrolling: touch; // Smooth momentum scrolling for mobile devices
     overflow-y: auto;
     max-height: 750px;
-    border: 1px solid #29353d;
-    border-radius: 10px;
+    border: 1px solid $eb-border;
+    border-radius: 4px;
   }
 
   table {
@@ -139,7 +138,7 @@
   td {
     padding: 0.58rem 0.62rem;
     text-align: left;
-    border-bottom: 1px solid #273138;
+    border-bottom: 1px solid $eb-border;
     font-size: 1.25rem;
     white-space: nowrap; // Prevents data from wrapping and breaking table alignment
   }
@@ -148,11 +147,11 @@
     position: sticky;
     top: 0;
     z-index: 10;
-    color: #92a6b0;
+    color: $eb-text-muted;
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.05em;
-    background: #0f1318;
+    background: $eb-bg;
   }
 
   tbody tr:hover {
@@ -188,9 +187,9 @@
   align-items: center;
   justify-content: space-between;
   gap: 0.75rem;
-  border: 1px solid #27323a;
-  background: #111519;
-  border-radius: 10px;
+  border: 1px solid $eb-border;
+  background: $eb-bg;
+  border-radius: 4px;
   padding: 0.55rem 0.65rem;
 }
 
@@ -219,7 +218,7 @@
 }
 
 .muted {
-  color: #95a6ae;
+  color: $eb-text-muted;
 }
 
 .empty-cell {
@@ -322,15 +321,15 @@
 }
 
 .draft-details-row {
-  background-color: #0d1115;
+  background-color: $eb-bg;
 
   &:hover {
-    background-color: #0d1115 !important;
+    background-color: $eb-bg !important;
   }
 
   td {
     padding: 1rem;
-    border-bottom: 1px solid #273138;
+    border-bottom: 1px solid $eb-border;
   }
 }
 
@@ -341,14 +340,14 @@
 }
 
 .draft-detail-card {
-  background: #161b20;
+  background: $eb-surface;
   padding: 0.6rem;
-  border-radius: 8px;
+  border-radius: 4px;
   display: flex;
   flex-direction: column;
   align-items: center;
   text-align: center;
-  border: 1px solid #2a353f;
+  border: 1px solid $eb-border;
   position: relative;
   z-index: 0;
 
@@ -396,13 +395,13 @@
 
   .pokemon-price {
     font-size: 0.85rem;
-    color: #40c9a2;
+    color: $eb-primary;
     font-weight: 700;
   }
 
   .pokemon-winner {
     font-size: 0.8rem;
-    color: #95a6ae;
+    color: $eb-text-muted;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -428,9 +427,9 @@
   align-items: baseline;
   gap: 0.6rem;
   padding: 0.45rem 0.7rem;
-  border: 1px solid #2a353f;
-  background: #161b20;
-  border-radius: 8px;
+  border: 1px solid $eb-border;
+  background: $eb-surface;
+  border-radius: 4px;
   font-size: 1.25rem;
 
   &.unranked {
@@ -440,20 +439,20 @@
 
 .race-results-placement {
   font-weight: 700;
-  color: #40c9a2;
+  color: $eb-primary;
   min-width: 2.2rem;
   text-align: right;
 }
 
 .race-results-user {
-  color: #e6edf0;
+  color: $eb-text;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
 .race-results-message {
-  color: #95a6ae;
+  color: $eb-text-muted;
   font-size: 1.2rem;
 }
 
@@ -486,9 +485,9 @@
 }
 
 .race-results-modal {
-  background: #101518;
-  border: 1px solid #2a373f;
-  border-radius: 10px;
+  background: $eb-surface;
+  border: 1px solid $eb-border;
+  border-radius: 4px;
   padding: 1.6rem;
   max-width: 620px;
   width: 92%;
@@ -499,7 +498,7 @@
 
 .race-results-modal-title {
   margin: 0 0 0.4rem;
-  color: #40c9a2;
+  color: $eb-primary;
   font-size: 1.5rem;
   font-weight: 600;
 }
@@ -525,7 +524,7 @@
 
 .race-results-editor-label {
   flex: 1;
-  color: #ffffff;
+  color: $eb-text;
   font-weight: 500;
   white-space: nowrap;
   overflow: hidden;
@@ -535,20 +534,20 @@
 .race-results-editor-select {
   flex: 0 0 150px;
   padding: 0.55rem 0.65rem;
-  background-color: #22272c;
-  color: #ffffff;
-  border: 1px solid #3a454e;
-  border-radius: 6px;
+  background-color: $eb-surface;
+  color: $eb-text;
+  border: 1px solid $eb-border;
+  border-radius: 4px;
   font-size: 1rem;
   cursor: pointer;
 
   &:hover {
-    border-color: #4b6878;
+    border-color: $eb-text-muted;
   }
 
   &:focus {
     outline: none;
-    border-color: #40c9a2;
+    border-color: $eb-primary;
   }
 
   &:disabled {
@@ -557,8 +556,8 @@
   }
 
   option {
-    background-color: #1b2126;
-    color: #ffffff;
+    background-color: $eb-bg;
+    color: $eb-text;
   }
 }
 
@@ -566,15 +565,15 @@
   flex: 1;
   min-width: 0;
   padding: 0.55rem 0.65rem;
-  background-color: #22272c;
-  color: #ffffff;
-  border: 1px solid #3a454e;
-  border-radius: 6px;
+  background-color: $eb-surface;
+  color: $eb-text;
+  border: 1px solid $eb-border;
+  border-radius: 4px;
   font-size: 1rem;
 
   &:focus {
     outline: none;
-    border-color: #40c9a2;
+    border-color: $eb-primary;
   }
 
   &:disabled {
@@ -587,7 +586,7 @@
   display: flex;
   justify-content: flex-end;
   gap: 0.8rem;
-  border-top: 1px solid #2a373f;
+  border-top: 1px solid $eb-border;
   padding-top: 1rem;
 }
 
@@ -622,8 +621,8 @@
 
 .hof-filter-bar {
   .stats-filter-input {
-    background: #0f1418;
-    border: 1px solid #32424c;
+    background: $eb-bg;
+    border: 1px solid $eb-border;
     color: #fff;
     border-radius: 4px;
     padding: 0.25rem 0.5rem;
@@ -632,7 +631,7 @@
 
     &:focus {
       outline: none;
-      border-color: #40c9a2;
+      border-color: $eb-primary;
     }
   }
 
@@ -641,22 +640,22 @@
   }
 
   .pokemon-search-input {
-    background: #0f1418;
-    border: 1px solid #32424c;
+    background: $eb-bg;
+    border: 1px solid $eb-border;
     color: #fff;
-    border-radius: 8px;
+    border-radius: 4px;
     padding: 0.5rem 0.75rem;
     min-width: 240px;
     font-size: 0.95rem;
 
     &::placeholder {
-      color: #8a98a0;
+      color: $eb-text-muted;
     }
 
     &:focus {
       outline: none;
-      border-color: #40c9a2;
-      box-shadow: 0 0 0 2px rgba(64, 201, 162, 0.12);
+      border-color: $eb-primary;
+      box-shadow: 0 0 0 2px rgba(124, 185, 70, 0.12);
     }
   }
 
@@ -705,7 +704,7 @@
 
     span:first-of-type {
       font-size: 1rem;
-      color: #888;
+      color: $eb-text-muted;
       white-space: nowrap;
     }
 
@@ -806,9 +805,9 @@
   display: flex;
   flex-direction: column;
   gap: 0.6rem;
-  background: #162636;
-  border: 1px solid #2b3e52;
-  border-radius: 10px;
+  background: $eb-surface;
+  border: 1px solid $eb-border;
+  border-radius: 4px;
   padding: 0.8rem 1rem;
 }
 
@@ -869,7 +868,7 @@
 }
 
 .admin-hof-entry-race {
-  color: #a9c3dc;
+  color: $eb-text-muted;
   font-size: 1.3rem;
 }
 
@@ -880,7 +879,7 @@
 }
 
 .admin-hof-entry-beat .admin-hof-entry-time {
-  color: #c8d6e4;
+  color: $eb-text;
   font-weight: 400;
   font-size: 1.3rem;
 }
@@ -903,9 +902,9 @@
   flex-direction: column;
   align-items: center;
   gap: 0.15rem;
-  background: #1d374b;
-  border: 1px solid #3b5c78;
-  border-radius: 8px;
+  background: $eb-surface;
+  border: 1px solid $eb-border;
+  border-radius: 4px;
   padding: 0.3rem 0.5rem;
 }
 
@@ -925,6 +924,6 @@
 }
 
 .admin-hof-empty {
-  color: #7d93ab;
+  color: $eb-text-muted;
   font-style: italic;
 }
