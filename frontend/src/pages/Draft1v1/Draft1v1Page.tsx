@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState, useMemo } from 'react';
+import React, { useEffect, useRef, useState, useMemo, useCallback } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import Header from '../../shared/components/Header';
 import { connectDraftWebSocket } from '../../shared/api/draftWebSocket';
@@ -86,7 +86,12 @@ const Draft1v1Page: React.FC = () => {
   const [selectedSlot, setSelectedSlot] = useState<OneVOnePoolSlot | null>(null);
   const [hoveredSlot, setHoveredSlot] = useState<OneVOnePoolSlot | null>(null);
   const [poolCollapsed, setPoolCollapsed] = useState(false);
+  const [eggRevealId, setEggRevealId] = useState<number | null>(null);
   const wsRef = useRef<WebSocket | null>(null);
+
+  const handleToggleEggView = useCallback((id: number | null) => {
+    setEggRevealId(id);
+  }, []);
 
   useEffect(() => {
     if (!draftId) return;
@@ -192,6 +197,33 @@ const Draft1v1Page: React.FC = () => {
   const poolPokemon = useMemo<Pokemon[]>(() => {
     return oneVOne?.pool.map((slot) => slot.pokemon) ?? [];
   }, [oneVOne]);
+
+  const displayDraft = useMemo(() => {
+    if (!draft) return null;
+    if (!eggRevealId) return draft;
+
+    const transformPkmn = (p: Pokemon) => {
+      if (p.name.trim().toLowerCase() !== 'egg' && !p.name.startsWith('Egg (')) return p;
+      const lookupSource = allPokemon.length > 0 ? allPokemon : poolPokemon;
+      const target = lookupSource.find(tp => String(tp.pokedex_id ?? tp.id).trim() === String(eggRevealId).trim());
+      if (!target) return p;
+      return {
+        ...p,
+        ...target,
+        name: `Egg (${target.name})`,
+        isRevealedEgg: true
+      };
+    };
+
+    return {
+      ...draft,
+      teams: draft.teams.map(t => ({
+        ...t,
+        auctions_won: (t.auctions_won ?? []).map(transformPkmn),
+        pokemon: (t.pokemon ?? []).map(transformPkmn)
+      }))
+    };
+  }, [draft, allPokemon, poolPokemon, eggRevealId]);
 
   const slotLabels = useMemo<Map<string, string>>(() => {
     const map = new Map<string, string>();
@@ -514,11 +546,12 @@ const Draft1v1Page: React.FC = () => {
                   {tab === TAB_ALL && <AllPokemonTab pokemon={poolPokemon} auctions={[]} allPokemon={allPokemon.length > 0 ? allPokemon : poolPokemon} />}
                   {tab === TAB_TEAM && (
                     <TeamPlannerTab
-                      teams={draft.teams}
+                      teams={displayDraft?.teams ?? draft.teams}
                       currentUserId={currentUserId}
                       allPokemon={allPokemon.length > 0 ? allPokemon : poolPokemon}
                       minimizedPokemon={minimizedPokemon}
                       onToggleMinimize={handleToggleMinimize}
+                      onToggleEgg={handleToggleEggView}
                     />
                   )}
                   {tab === TAB_HISTORY && (
