@@ -250,7 +250,14 @@ const BossBattles = () => {
           infoSections.push({
             type: 'bossTip',
             content: [
-              <div key="tip"><b>Boss Tip:</b> Eevee&apos;s Baby-Doll Eyes is a surefire way to outspeed the Dondozo and lower its attack stat. Because Dondozo can&apos;t swap out, lowering its stats is key to making this fight managable!</div>
+              <div key="tip"><b>Boss Tip:</b> Eevee&apos;s Baby-Doll Eyes is a surefire way to outspeed the Dondozo and lower its attack stat. Because Dondozo can&apos;t swap out, lowering its stats is key to making this fight manageable!</div>
+            ]
+          });
+        } else if (['3', '4'].includes(gymNum)) {
+          infoSections.push({
+            type: 'bossTip',
+            content: [
+              <div key="tip"><b>Boss Tip:</b> Eevee&apos;s Baby-Doll Eyes is a surefire way to outspeed the Dondozo and lower its attack stat. Because Dondozo can&apos;t swap out once Tatsugiri commands it, lowering its stats is key to making this fight manageable!</div>
             ]
           });
         }

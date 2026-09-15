@@ -647,7 +647,7 @@ const PokemonStatsTab: React.FC<PokemonStatsTabProps> = ({
                 style={{
                   background: 'none',
                   border: 'none',
-                  color: showSettings ? '#4caf50' : '#888',
+                  color: showSettings ? 'var(--eb-primary)' : '#888',
                   cursor: 'pointer',
                   display: 'flex',
                   alignItems: 'center',

@@ -120,12 +120,10 @@ const HallOfFameStatsTab: React.FC<HallOfFameStatsTabProps> = ({ validDraftIds }
                 <TbRefresh />
               </button>
               <div
-                className="stats-setting-item"
+                className="stats-setting-item cutoff-date-label"
                 style={{ display: 'flex', alignItems: 'center', gap: '8px' }}
               >
-                <span style={{ fontSize: '0.85rem', color: '#888', whiteSpace: 'nowrap' }}>
-                  Cutoff Date
-                </span>
+                <span>Cutoff Date</span>
                 <span
                   title="Exclude hall of fame runs that occurred before this date"
                   style={{
@@ -152,12 +150,10 @@ const HallOfFameStatsTab: React.FC<HallOfFameStatsTabProps> = ({ validDraftIds }
                 />
               </div>
               <div
-                className="stats-setting-item"
+                className="stats-setting-item champion-label"
                 style={{ display: 'flex', alignItems: 'center', gap: '8px' }}
               >
-                <span style={{ fontSize: '0.85rem', color: '#888', whiteSpace: 'nowrap' }}>
-                  Champion
-                </span>
+                <span>Champion</span>
                 <select
                   className="stats-filter-input"
                   style={{ width: '96px' }}
@@ -170,12 +166,10 @@ const HallOfFameStatsTab: React.FC<HallOfFameStatsTabProps> = ({ validDraftIds }
                 </select>
               </div>
               <div
-                className="stats-setting-item"
+                className="stats-setting-item faster-than-label"
                 style={{ display: 'flex', alignItems: 'center', gap: '8px' }}
               >
-                <span style={{ fontSize: '0.85rem', color: '#888', whiteSpace: 'nowrap' }}>
-                  Faster Than
-                </span>
+                <span>Faster Than</span>
                 <span
                   title="Show only runs completed faster than this time (e.g. 1:30:00)"
                   style={{
@@ -203,17 +197,15 @@ const HallOfFameStatsTab: React.FC<HallOfFameStatsTabProps> = ({ validDraftIds }
                 />
               </div>
               <div
-                className="stats-setting-item"
+                className="stats-setting-item includes-label"
                 style={{ display: 'flex', alignItems: 'center', gap: '8px' }}
               >
-                <span style={{ fontSize: '0.9rem', color: '#888', whiteSpace: 'nowrap' }}>
-                  Includes
-                </span>
+                <span>Includes</span>
                 <input
                   className="stats-filter-input"
                   type="text"
                   placeholder="e.g. Swampert"
-                  style={{ width: '130px', textAlign: 'left' }}
+                  style={{ textAlign: 'left' }}
                   value={pokemonFilter}
                   onChange={(e) => setPokemonFilter(e.target.value)}
                 />
@@ -237,7 +229,7 @@ const HallOfFameStatsTab: React.FC<HallOfFameStatsTabProps> = ({ validDraftIds }
               style={{
                 background: 'none',
                 border: 'none',
-                color: showFilters ? '#4caf50' : '#888',
+                color: showFilters ? 'var(--eb-primary)' : '#888',
                 cursor: 'pointer',
                 display: 'flex',
                 alignItems: 'center',

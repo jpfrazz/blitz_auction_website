@@ -628,7 +628,7 @@
     border-radius: 4px;
     padding: 0.25rem 0.5rem;
     font-size: 0.95rem;
-    min-height: 28px;
+    min-height: 22px;
 
     &:focus {
       outline: none;
@@ -675,10 +675,11 @@
     white-space: nowrap;
 
     &.visible {
-      max-width: 800px;
+      max-width: 850px;
       opacity: 1;
       margin-right: 12px;
       pointer-events: auto;
+      overflow: visible;
     }
 
     & > div {
@@ -695,6 +696,36 @@
   .stats-settings-toggle {
     &:hover {
       color: #fff !important;
+    }
+  }
+
+  .stats-setting-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+
+    span:first-of-type {
+      font-size: 1rem;
+      color: #888;
+      white-space: nowrap;
+    }
+
+    &.champion-label span:first-of-type,
+    &.faster-than-label span:first-of-type,
+    &.cutoff-date-label span:first-of-type {
+      font-size: 1rem;
+    }
+
+    &.includes-label span:first-of-type {
+      font-size: 1rem;
+    }
+
+    &.includes-label {
+      margin-right: 48px;
+    }
+
+    .includes-label .stats-filter-input {
+      width: 120px;
     }
   }
 

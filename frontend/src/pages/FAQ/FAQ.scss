@@ -82,13 +82,15 @@
 
 .faq-toc-group .info-toc-list {
   padding-left: 28px;
+  margin-top: 0px;
+  margin-bottom: 2px;
 }
 
 .faq-toc-subheading {
   color: $eb-text;
   font-size: 1.4rem;
   font-weight: bold;
-  margin: 0 0 8px 0;
+  margin: 0 0 0px 0;
   text-align: left;
 }
 
@@ -113,7 +115,7 @@
   font-size: 2.4rem;
   font-weight: bold;
   text-align: left;
-  margin: 0 0 32px 0;
+  margin: 0 0 16px 0;
   padding-bottom: 8px;
   border-bottom: 2px solid $eb-primary;
 }

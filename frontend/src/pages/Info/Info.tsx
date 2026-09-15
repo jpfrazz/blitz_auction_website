@@ -739,18 +739,19 @@ const Info = () => (
                 <th>Gym</th>
                 <th>Level Cap</th>
                 <th>Money Awarded</th>
+                <th>Total Money</th>
               </tr>
             </thead>
             <tbody>
-              <tr><td>Gym 1</td><td>15</td><td>3,750</td></tr>
-              <tr><td>Gym 2</td><td>19</td><td>4,750</td></tr>
-              <tr><td>Gym 3</td><td>24</td><td>6,000</td></tr>
-              <tr><td>Gym 4</td><td>29</td><td>7,250</td></tr>
-              <tr><td>Gym 5</td><td>32</td><td>8,000</td></tr>
-              <tr><td>Gym 6</td><td>35</td><td>8,750</td></tr>
-              <tr><td>Gym 7</td><td>42</td><td>10,500</td></tr>
-              <tr><td>Gym 8</td><td>48</td><td>12,000</td></tr>
-              <tr><td>Elite 4</td><td>58</td><td>-</td></tr>
+              <tr><td>Gym 1</td><td>15</td><td>3,750</td><td>5,000</td></tr>
+              <tr><td>Gym 2</td><td>19</td><td>4,750</td><td>9,750</td></tr>
+              <tr><td>Gym 3</td><td>24</td><td>6,000</td><td>15,750</td></tr>
+              <tr><td>Gym 4</td><td>29</td><td>7,250</td><td>23,000</td></tr>
+              <tr><td>Gym 5</td><td>32</td><td>8,000</td><td>31,000</td></tr>
+              <tr><td>Gym 6</td><td>35</td><td>8,750</td><td>39,750</td></tr>
+              <tr><td>Gym 7</td><td>42</td><td>10,500</td><td>50,250</td></tr>
+              <tr><td>Gym 8</td><td>48</td><td>12,000</td><td>62,250</td></tr>
+              <tr><td>Elite 4</td><td>58</td><td>-</td><td>-</td></tr>
             </tbody>
           </table>
         </div>
@@ -785,7 +786,7 @@ const Info = () => (
           <li>You can no longer rent Pokémon after obtaining the 7th badge.</li>
           <li>Once renter NPC chooses a Pokémon to offer to you, he'll continue to offer that same Pokémon until you rent it (it doesn't randomize each time you speak to him).</li>
           <li>Mega Stones for the eight Pokémon in the pool who can mega evolve are available for purchase in Slateport's outdoor market after you obtain the 6th gym badge.</li>
-          <li>Stealing a Pokémon effectively locks you out of the Slateport outdoor market, as renter NPC will reclaim his Pokémon on entrance. Because of this, doing so by renting at the latest possible point costs ¥30,250 (the cost of the rental plus the prize money you're no longer able to spend).</li>
+          <li>Stealing a Pokémon effectively locks you out of the Slateport outdoor market, as renter NPC will reclaim his Pokémon on entrance. Scott will also stop selling you TMs.</li>
         </ul>
       </section>
 
