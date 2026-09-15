@@ -805,7 +805,7 @@
   display: flex;
   flex-direction: column;
   gap: 0.6rem;
-  background: $eb-surface;
+  background: $eb-bg;
   border: 1px solid $eb-border;
   border-radius: 4px;
   padding: 0.8rem 1rem;
@@ -824,9 +824,9 @@
 }
 
 .admin-hof-draft-type.competitive {
-  color: $eb-primary;
-  background: rgba(124, 185, 70, 0.15);
-  border: 1px solid rgba(124, 185, 70, 0.45);
+  color: #4caf50;
+  background: rgba(76, 175, 80, 0.15);
+  border: 1px solid rgba(76, 175, 80, 0.45);
 }
 
 .admin-hof-draft-type.casual {

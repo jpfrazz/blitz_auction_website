@@ -158,6 +158,14 @@
   display: flex;
   align-items: center;
   gap: 0.5em;
+  padding: 0;
+}
+
+.userDropdownTrigger h1 {
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 600;
+  line-height: 1;
 }
 .userDropdownMenu {
   display: flex;
