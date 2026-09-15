@@ -2157,7 +2157,7 @@ pub async fn post_player_save(
         });
 
         // Recalculate version numbers for gym leaders based on chronological order
-        let gym_leader_ids: std::collections::HashSet<i32> = [265, 855, 266, 267, 268, 269, 270, 271, 272].iter().copied().collect();
+let gym_leader_ids: std::collections::HashSet<i32> = [265, 855, 266, 267, 268, 269, 270, 271, 272, 601, 34].iter().copied().collect();
         let mut gym_leader_version = 0u32;
         for win in &mut sorted_wins {
             if gym_leader_ids.contains(&(win.trainer_id as i32)) {
@@ -2354,7 +2354,7 @@ pub async fn post_player_forfeit(
         },
     };
 
-    let gym_leader_ids: std::collections::HashSet<i32> = [265, 855, 266, 267, 268, 269, 270, 271, 272].iter().copied().collect();
+    let gym_leader_ids: std::collections::HashSet<i32> = [265, 855, 266, 267, 268, 269, 270, 271, 272, 601, 34].iter().copied().collect();
     let gym_leader_wins = save_data
         .trainer_card_wins
         .iter()

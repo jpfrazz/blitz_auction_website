@@ -138,7 +138,7 @@ export function getTrainerNameById(trainerId: number, version?: number): string 
   // If version is provided and it's a gym leader, append version number
   if (version !== undefined) {
     // Gym leaders that have version numbers
-    const gymLeaderIds = [265, 855, 266, 267, 268, 269, 270, 271, 272]; // Roxanne, Viola, Brawly, Wattson, Flannery, Norman, Winona, Tate & Liza, Juan & Wallace
+    const gymLeaderIds = [265, 855, 266, 267, 268, 269, 270, 271, 272, 601, 34]; // Roxanne, Viola, Brawly, Wattson, Flannery, Norman, Winona, Tate & Liza, Juan & Wallace, Maxie, Archie
     if (gymLeaderIds.includes(trainerId)) {
       // Extract base name (remove " 1" if present)
       const baseWithoutVersion = baseName.replace(/ \d+$/, '');
@@ -409,6 +409,8 @@ export function parseRamParty(
       spd: (packedIvs >> 25) & 0x1f,
     };
 
+    const hiddenNatureModifier = (bytes[slotOff + 18] >> 3) & 0x1f;
+
     party.push({
       personality,
       nickname: decodeString(bytes.slice(slotOff + 8, slotOff + 20)),
@@ -417,7 +419,7 @@ export function parseRamParty(
       max_hp: readU16(bytes, slotOff + 104),
       species_id,
       ability_num: (miscWord2 >> 29) & 3,
-      nature: NATURES[personality % 25],
+      nature: NATURES[(personality % 25) ^ hiddenNatureModifier],
       ivs,
       moves: readMoves(bytes, slotOff, key, order),
     });
@@ -713,6 +715,7 @@ export function parseSaveFile(
     const nickname = decodeString(data.slice(pStart + 8, pStart + 20));
 
     if (species_id > 0) {
+      const hiddenNatureModifier = (data[pStart + 18] >> 3) & 0x1f;
       party.push({
         personality,
         nickname,
@@ -721,7 +724,7 @@ export function parseSaveFile(
         max_hp,
         species_id,
         ability_num,
-        nature: NATURES[personality % 25],
+        nature: NATURES[(personality % 25) ^ hiddenNatureModifier],
         ivs,
         moves: readMoves(data, pStart, key, order),
       });
@@ -784,12 +787,14 @@ export function parseSaveFile(
 
       if (species_id > 0 && species_id < 0xffff) {
         const nickname = decodeString(storageData.slice(pStart + 8, pStart + 20));
+        const hiddenNatureModifier = (storageData[pStart + 18] >> 3) & 0x1f;
         box.push({
           personality,
           nickname,
           species_id,
           ability_num,
-          nature: NATURES[personality % 25], ivs,
+          nature: NATURES[(personality % 25) ^ hiddenNatureModifier],
+          ivs,
           moves: readMoves(storageData, pStart, key, order),
         });
       }
@@ -810,7 +815,7 @@ export function parseSaveFile(
 
   // Track overall boss fight index for gym leaders to assign version numbers
   let bossFightIndex = 0;
-  const gymLeaderIds = [265, 855, 266, 267, 268, 269, 270, 271, 272]; // Roxanne, Viola, Brawly, Wattson, Flannery, Norman, Winona, Tate & Liza, Juan & Wallace
+  const gymLeaderIds = [265, 855, 266, 267, 268, 269, 270, 271, 272, 601, 34]; // Roxanne, Viola, Brawly, Wattson, Flannery, Norman, Winona, Tate & Liza, Juan & Wallace, Maxie, Archie
 
   // Use a Set to track seen entries and prevent duplicates
   const seenEntries = new Set<string>();
