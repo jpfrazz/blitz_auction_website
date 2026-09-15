@@ -706,8 +706,8 @@ const PokemonStatsTab: React.FC<PokemonStatsTabProps> = ({
                 {filteredPokemonSummary.map((entry, index) => (
                   <React.Fragment key={entry.key}>
                     <tr 
-                      className={`stats-row-animate ${expandedPokemon === entry.key ? 'expanded' : ''} ${index % 2 === 0 ? 'pokemon-row-stripe' : ''}`} 
-                      style={{ animationDelay: `${200 + index * 30}ms`, cursor: 'pointer' }}
+                      className={`${index < 30 ? 'stats-row-animate' : ''} ${expandedPokemon === entry.key ? 'expanded' : ''} ${index % 2 === 0 ? 'pokemon-row-stripe' : ''}`} 
+                      style={{ animationDelay: `${200 + (index < 30 ? index * 30 : 30 * 30)}ms`, cursor: 'pointer' }}
                       onClick={() => setExpandedPokemon(expandedPokemon === entry.key ? null : entry.key)}
                     >
                     <td style={{ backgroundColor: getPriceColor(entry.avgWinningBid) }}>{entry.rank}</td>

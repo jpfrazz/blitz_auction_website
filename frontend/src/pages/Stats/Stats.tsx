@@ -746,10 +746,10 @@ const Stats: React.FC = () => {
                     {visibleDrafts.map((draft, index) => (
                       <React.Fragment key={draft.draftId}>
                         <tr
-                          className={`draft-row-clickable stats-row-animate ${draft.draftType === '1v1' ? 'one-v-one-draft' : validDraftIds.has(draft.draftId) ? 'competitive-draft' : 'non-competitive-draft'}`}
+                          className={`draft-row-clickable ${index < 30 ? 'stats-row-animate' : ''} ${draft.draftType === '1v1' ? 'one-v-one-draft' : validDraftIds.has(draft.draftId) ? 'competitive-draft' : 'non-competitive-draft'}`}
                           title={!validDraftIds.has(draft.draftId) && draft.validationError ? `Excluded from stats: ${draft.validationError}` : undefined}
                           style={{
-                            animationDelay: `${200 + index * 30}ms`,
+                            animationDelay: `${200 + (index < 30 ? index * 30 : 30 * 30)}ms`,
                             backgroundColor:
                               draft.draftType === '1v1'
                                 ? 'rgba(33, 150, 243, 0.1)'

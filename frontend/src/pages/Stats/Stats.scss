@@ -805,10 +805,11 @@
   display: flex;
   flex-direction: column;
   gap: 0.6rem;
-  background: $eb-bg;
+  background: #0b0c0d;
   border: 1px solid $eb-border;
   border-radius: 4px;
   padding: 0.8rem 1rem;
+  box-shadow: $eb-shadow;
 }
 
 .admin-hof-draft-type {
