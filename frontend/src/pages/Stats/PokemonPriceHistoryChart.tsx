@@ -95,14 +95,16 @@ const CustomTooltip = ({ active, payload, label }: any) => {
   return null;
 };
 
-interface PokemonPriceHistoryChartProps {
+interface PokemonHistoryChartProps {
   pokemonKey: string;
   pokemonName: string;
   stats: StatsPageResponse;
   cutoffDate?: string;
 }
 
-const PokemonPriceHistoryChart: React.FC<PokemonPriceHistoryChartProps> = ({ pokemonKey, pokemonName, stats, cutoffDate }) => {
+// Chart body only (no outer box / title). Used by the standalone snapshot and
+// by the tabbed history dropdown.
+const PokemonPriceHistoryChartBody: React.FC<PokemonHistoryChartProps> = ({ pokemonKey, stats, cutoffDate }) => {
   const chartData = useMemo(() => {
     const cutoff = cutoffDate ? new Date(cutoffDate).getTime() : 0;
 
@@ -232,48 +234,56 @@ const PokemonPriceHistoryChart: React.FC<PokemonPriceHistoryChartProps> = ({ pok
   const { data, lowerBound, upperBound, xAxisTicks } = chartData;
 
   return (
+    <ResponsiveContainer width="100%" height="100%">
+      <LineChart data={data} margin={{ top: 5, right: 40, left: 10, bottom: 25 }}>
+        <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
+        <XAxis 
+          dataKey="saleNumber" 
+          stroke="#666" 
+          tick={{ fontSize: 11 }}
+          ticks={xAxisTicks}
+          label={{ value: 'Sale #', position: 'insideBottom', offset: -15, fill: '#666', fontSize: 11 }}
+        />
+        <YAxis 
+          stroke="#666" 
+          tick={{ fontSize: 11 }}
+          label={{ value: 'Price ($)', angle: -90, position: 'insideLeft', fill: '#666', fontSize: 11 }}
+        />
+        <Tooltip content={<CustomTooltip />} />
+        
+        {upperBound !== null && <ReferenceLine y={upperBound} stroke="#8B0000" strokeDasharray="5 5" label={{ value: 'Outlier Bound', position: 'right', fill: '#8B0000', fontSize: 10 }} />}
+        {lowerBound !== null && <ReferenceLine y={lowerBound} stroke="#8B0000" strokeDasharray="5 5" />}
+
+        <Line 
+          type="monotone" 
+          dataKey="cost" 
+          stroke="#36A2EB" 
+          strokeWidth={0}
+          dot={(props: any) => {
+            const { cx, cy, payload } = props;
+            const fill = payload.isOutlier ? '#8B0000' : '#36A2EB'; // Dark red for outliers
+            return (
+              <circle key={`dot-${payload.saleNumber}`} cx={cx} cy={cy} r={4} fill={fill} stroke="none" />
+            );
+          }}
+          activeDot={{ r: 6, fill: '#fff', stroke: '#36A2EB' }}
+        />
+      </LineChart>
+    </ResponsiveContainer>
+  );
+};
+
+// Standalone snapshot used in the Draft Breakdown tab.
+const PokemonPriceHistoryChart: React.FC<PokemonHistoryChartProps> = ({ pokemonKey, pokemonName, stats, cutoffDate }) => {
+  return (
     <div className="pokemon-price-history-chart" style={{ width: '100%', height: '280px', marginTop: '10px', background: 'rgba(0,0,0,0.1)', borderRadius: '8px', padding: '15px', boxSizing: 'border-box' }}>
       <h4 style={{ margin: '0 0 15px', fontSize: '1rem', color: '#888', textAlign: 'center', fontWeight: 600 }}>
         Price History: {pokemonName}
       </h4>
-      <ResponsiveContainer width="100%" height="100%">
-        <LineChart data={data} margin={{ top: 5, right: 40, left: 10, bottom: 25 }}>
-          <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
-          <XAxis 
-            dataKey="saleNumber" 
-            stroke="#666" 
-            tick={{ fontSize: 11 }}
-            ticks={xAxisTicks}
-            label={{ value: 'Sale #', position: 'insideBottom', offset: -15, fill: '#666', fontSize: 11 }}
-          />
-          <YAxis 
-            stroke="#666" 
-            tick={{ fontSize: 11 }}
-            label={{ value: 'Price ($)', angle: -90, position: 'insideLeft', fill: '#666', fontSize: 11 }}
-          />
-          <Tooltip content={<CustomTooltip />} />
-          
-          {upperBound !== null && <ReferenceLine y={upperBound} stroke="#8B0000" strokeDasharray="5 5" label={{ value: 'Outlier Bound', position: 'right', fill: '#8B0000', fontSize: 10 }} />}
-          {lowerBound !== null && <ReferenceLine y={lowerBound} stroke="#8B0000" strokeDasharray="5 5" />}
-
-          <Line 
-            type="monotone" 
-            dataKey="cost" 
-            stroke="#36A2EB" 
-            strokeWidth={0}
-            dot={(props: any) => {
-              const { cx, cy, payload } = props;
-              const fill = payload.isOutlier ? '#8B0000' : '#36A2EB'; // Dark red for outliers
-              return (
-                <circle key={`dot-${payload.saleNumber}`} cx={cx} cy={cy} r={4} fill={fill} stroke="none" />
-              );
-            }}
-            activeDot={{ r: 6, fill: '#fff', stroke: '#36A2EB' }}
-          />
-        </LineChart>
-      </ResponsiveContainer>
+      <PokemonPriceHistoryChartBody pokemonKey={pokemonKey} pokemonName={pokemonName} stats={stats} cutoffDate={cutoffDate} />
     </div>
   );
 };
 
+export { PokemonPriceHistoryChartBody };
 export default PokemonPriceHistoryChart;

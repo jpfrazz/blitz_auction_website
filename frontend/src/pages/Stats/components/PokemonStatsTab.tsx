@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import PokemonPriceHistoryChart from '../PokemonPriceHistoryChart';
+import PokemonHistoryChart from '../PokemonHistoryChart';
 import { fetchPokemonList } from '../../../shared/api/pokemon';
 import { Pokemon, StatsAuction, StatsPageResponse } from '../../../types';
 import { TbSettings, TbRefresh } from 'react-icons/tb';
@@ -869,7 +869,7 @@ const PokemonStatsTab: React.FC<PokemonStatsTabProps> = ({
                       <tr className="price-history-dropdown-row">
                         <td colSpan={9}>
                           <div className="price-history-container">
-                            <PokemonPriceHistoryChart 
+                            <PokemonHistoryChart 
                               pokemonKey={entry.key} 
                               pokemonName={`${entry.name}${entry.form && entry.form !== 'base' ? ` (${toLabel(entry.form)})` : ''}`}
                               stats={stats!} 

@@ -285,6 +285,20 @@
         &:active { cursor: grabbing; }
         &:hover { border-color: $eb-primary; z-index: 2; }
 
+        &.dragging {
+            opacity: 0.3;
+            border-style: dashed;
+            border-color: $eb-text-muted;
+        }
+
+        &.drop-indicator {
+            border: 2px dashed $eb-text-muted;
+            background: rgba(255, 255, 255, 0.04);
+            cursor: default;
+            pointer-events: none;
+            &:hover { border-color: $eb-text-muted; z-index: auto; }
+        }
+
         .rank-badge {
             position: absolute;
             top: -2px;
