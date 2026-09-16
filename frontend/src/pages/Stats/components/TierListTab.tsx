@@ -587,6 +587,35 @@ const TierListTab: React.FC<TierListTabProps> = ({ stats }) => {
         onDragOver(e, targetTierId, onRightHalf ? idx + 1 : idx);
     };
 
+    // Hover over blank container space: find the nearest pokemon square and
+    // insert before/after it based on the cursor's x. This keeps the slot near
+    // the cursor instead of jumping to the very end of the container when the
+    // cursor passes over the empty stretch after the last image on a line.
+    const onDragOverBlank = (e: React.DragEvent, targetTierId: string, root: HTMLElement) => {
+        const squares = Array.from(root.querySelectorAll<HTMLElement>('.pokemon-square'));
+        if (squares.length === 0) {
+            onDragOver(e, targetTierId, 0);
+            return;
+        }
+
+        const x = e.clientX;
+        const y = e.clientY;
+        let nearest = squares[0];
+        let nearestDist = Infinity;
+        for (const el of squares) {
+            const r = el.getBoundingClientRect();
+            const d = (x - (r.left + r.width / 2)) ** 2 + (y - (r.top + r.height / 2)) ** 2;
+            if (d < nearestDist) {
+                nearestDist = d;
+                nearest = el;
+            }
+        }
+
+        const idx = squares.indexOf(nearest);
+        const r = nearest.getBoundingClientRect();
+        onDragOver(e, targetTierId, x > r.left + r.width / 2 ? idx + 1 : idx);
+    };
+
     const handleDrop = (e: React.DragEvent) => {
         e.preventDefault();
         if (!draggedPokemon || !activeList || !dropTarget) {
@@ -760,7 +789,7 @@ const TierListTab: React.FC<TierListTabProps> = ({ stats }) => {
                         <div 
                             key={tier.id} 
                             className="tier-row"
-                            onDragOver={(e) => onDragOver(e, tier.id, tier.pokemon.length)}
+                            onDragOver={(e) => onDragOverBlank(e, tier.id, e.currentTarget)}
                             onDrop={handleDrop}
                         >
                             <div 
@@ -779,7 +808,7 @@ const TierListTab: React.FC<TierListTabProps> = ({ stats }) => {
                             </div>
                             <div 
                                 className="tier-items"
-                                onDragOver={(e) => onDragOver(e, tier.id, tier.pokemon.length)}
+                                onDragOver={(e) => onDragOverBlank(e, tier.id, e.currentTarget)}
                             >
                                 {tier.pokemon.map((name, idx) => (
                                     <div 
@@ -862,7 +891,7 @@ const TierListTab: React.FC<TierListTabProps> = ({ stats }) => {
                 </div>
                 <div 
                     className="pool-items"
-                    onDragOver={(e) => onDragOver(e, 'pool', filteredPool.length)}
+                    onDragOver={(e) => onDragOverBlank(e, 'pool', e.currentTarget)}
                     onDrop={handleDrop}
                 >
                     {filteredPool.map((name, idx) => (
