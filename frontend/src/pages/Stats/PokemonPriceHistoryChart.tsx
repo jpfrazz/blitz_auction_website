@@ -83,7 +83,7 @@ const CustomTooltip = ({ active, payload, label }: any) => {
           </p>
           <p style={{ margin: 0, color: '#fff' }}>
             <span style={{ color: '#888' }}>Price:</span> ${price.toLocaleString()}
-            {data.isClipped && <span style={{ color: '#888' }}> (clipped to top edge)</span>}
+            {data.clipSide && <span style={{ color: '#888' }}> (clipped to {data.clipSide} edge)</span>}
           </p>
           {data.winner !== 'Guest' && (
             <p style={{ margin: 0, color: '#fff' }}>
@@ -199,6 +199,7 @@ const PokemonPriceHistoryChartBody: React.FC<PokemonHistoryChartProps> = ({ poke
     // 2. Statistical Outlier Detection (align with PokemonStatsTab logic)
     // Ignore $100 bids for the bound calculation
     const filteredForBounds = allSales.map(s => s.cost).filter(c => c !== 100);
+    let iqr = 0;
     let lowerBound: number | null = null;
     let upperBound: number | null = null;
 
@@ -206,7 +207,7 @@ const PokemonPriceHistoryChartBody: React.FC<PokemonHistoryChartProps> = ({ poke
       const sortedCosts = [...filteredForBounds].sort((a, b) => a - b);
       const q1 = calculateQuantile(sortedCosts, 0.25);
       const q3 = calculateQuantile(sortedCosts, 0.75);
-      const iqr = q3 - q1;
+      iqr = q3 - q1;
       
       lowerBound = q1 - 1.5 * iqr;
       upperBound = q3 + 2.0 * iqr;
@@ -221,17 +222,37 @@ const PokemonPriceHistoryChartBody: React.FC<PokemonHistoryChartProps> = ({ poke
       winner: s.winner
     }));
 
-    // Robust axis: if a few extreme outliers push the top of the scale far
-    // above the bulk of the data, clamp the axis so non-outlier points use the
-    // full plot height. Out-of-range points are pinned just below the top edge
-    // as hollow rings; their true value is shown in the tooltip.
+    // Robust axis: clip only points that sit more than a large margin beyond
+    // the IQR fences. The Tukey "far out" distance (1.5x IQR past the whisker)
+    // is the industry standard here: near-outliers that merely tickle the fence
+    // stay on-scale so the axis hugs the bulk of the data; truly extreme sales
+    // are pinned to the matching chart edge as hollow rings. Hover shows the
+    // true value.
     const maxCost = data.reduce((max, d) => (d.cost > max ? d.cost : max), 0);
-    const robustMax = upperBound !== null && upperBound > 0 ? upperBound : maxCost;
-    const displayMax = (robustMax > 0 ? robustMax : maxCost) || 1;
+    const minCost = data.reduce((min, d) => (d.cost < min ? d.cost : min), Infinity);
+    const clipGap = iqr * 1.5; // Tukey far-out threshold from each fence
+    const topClipStart = upperBound !== null ? upperBound + clipGap : maxCost;
+    const bottomClipEnd = lowerBound !== null ? lowerBound - clipGap : minCost;
+
+    // Axis limits based on visible (non-clipped) points
+    const visible = data.filter((d) => d.cost <= topClipStart && d.cost >= bottomClipEnd);
+    const maxVisible = visible.length > 0
+      ? visible.reduce((m, d) => Math.max(m, d.cost), 0)
+      : maxCost;
+    const minVisible = visible.length > 0
+      ? visible.reduce((m, d) => Math.min(m, d.cost), Infinity)
+      : minCost;
+    const axisMax = maxVisible > 0 ? Math.ceil(maxVisible * 1.04) + 1 : 1;
+    const axisMin = Math.max(0, Math.floor(minVisible * 0.96) - 1);
+    const pinnedTop = axisMax - (axisMax - axisMin) * 0.015;   // just inside top edge
+    const pinnedBottom = axisMin + (axisMax - axisMin) * 0.015; // just inside bottom edge
 
     const plotted = data.map((d) => {
-      if (d.cost > displayMax) {
-        return { ...d, realCost: d.cost, cost: displayMax * 1.025, isClipped: true };
+      if (d.cost > topClipStart) {
+        return { ...d, realCost: d.cost, cost: pinnedTop, clipSide: 'top' as const };
+      }
+      if (d.cost < bottomClipEnd) {
+        return { ...d, realCost: d.cost, cost: pinnedBottom, clipSide: 'bottom' as const };
       }
       return d;
     });
@@ -243,12 +264,12 @@ const PokemonPriceHistoryChartBody: React.FC<PokemonHistoryChartProps> = ({ poke
     }
     if (xAxisTicks.length === 0 && data.length > 0) xAxisTicks.push(1);
 
-    return { data: plotted, lowerBound, upperBound, displayMax, xAxisTicks };
+    return { data: plotted, lowerBound, upperBound, axisMin, axisMax, xAxisTicks };
   }, [pokemonKey, stats]);
 
   if (!chartData || chartData.data.length === 0) return null;
 
-  const { data, lowerBound, upperBound, displayMax, xAxisTicks } = chartData;
+  const { data, lowerBound, upperBound, axisMin, axisMax, xAxisTicks } = chartData;
 
   return (
     <ResponsiveContainer width="100%" height="100%">
@@ -264,13 +285,13 @@ const PokemonPriceHistoryChartBody: React.FC<PokemonHistoryChartProps> = ({ poke
         <YAxis 
           stroke="#666" 
           tick={{ fontSize: 11 }}
-          domain={[0, displayMax * 1.05]}
+          domain={[axisMin, axisMax]}
           label={{ value: 'Price ($)', angle: -90, position: 'insideLeft', fill: '#666', fontSize: 11 }}
         />
         <Tooltip content={<CustomTooltip />} />
         
-        {(upperBound !== null && upperBound > 0) && <ReferenceLine y={upperBound} stroke="#8B0000" strokeDasharray="5 5" label={{ value: 'Outlier Bound', position: 'right', fill: '#8B0000', fontSize: 10 }} />}
-        {lowerBound !== null && <ReferenceLine y={lowerBound} stroke="#8B0000" strokeDasharray="5 5" />}
+        {(upperBound !== null && upperBound > axisMin && upperBound < axisMax) && <ReferenceLine y={upperBound} stroke="#8B0000" strokeDasharray="5 5" label={{ value: 'Outlier Bound', position: 'right', fill: '#8B0000', fontSize: 10 }} />}
+        {(lowerBound !== null && lowerBound > axisMin && lowerBound < axisMax) && <ReferenceLine y={lowerBound} stroke="#8B0000" strokeDasharray="5 5" />}
 
         <Line 
           type="monotone" 
@@ -279,7 +300,7 @@ const PokemonPriceHistoryChartBody: React.FC<PokemonHistoryChartProps> = ({ poke
           strokeWidth={0}
           dot={(props: any) => {
             const { cx, cy, payload } = props;
-            if (payload.isClipped) {
+            if (payload.clipSide) {
               return <circle key={`dot-${payload.saleNumber}`} cx={cx} cy={cy} r={5} fill="none" stroke="#8B0000" strokeWidth={2} />;
             }
             const fill = payload.isOutlier ? '#8B0000' : '#36A2EB'; // Dark red for outliers
