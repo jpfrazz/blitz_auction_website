@@ -66,6 +66,7 @@ function calculateQuantile(sortedData: number[], q: number) {
 const CustomTooltip = ({ active, payload, label }: any) => {
   if (active && payload && payload.length) {
     const data = payload[0].payload;
+    const price = data.realCost ?? data.cost;
     return (
       <div style={{ 
         backgroundColor: '#1a1a1a', 
@@ -81,7 +82,8 @@ const CustomTooltip = ({ active, payload, label }: any) => {
             <span style={{ color: '#888' }}>Date:</span> {data.date}
           </p>
           <p style={{ margin: 0, color: '#fff' }}>
-            <span style={{ color: '#888' }}>Price:</span> ${data.cost.toLocaleString()}
+            <span style={{ color: '#888' }}>Price:</span> ${price.toLocaleString()}
+            {data.isClipped && <span style={{ color: '#888' }}> (clipped to top edge)</span>}
           </p>
           {data.winner !== 'Guest' && (
             <p style={{ margin: 0, color: '#fff' }}>
@@ -219,6 +221,21 @@ const PokemonPriceHistoryChartBody: React.FC<PokemonHistoryChartProps> = ({ poke
       winner: s.winner
     }));
 
+    // Robust axis: if a few extreme outliers push the top of the scale far
+    // above the bulk of the data, clamp the axis so non-outlier points use the
+    // full plot height. Out-of-range points are pinned just below the top edge
+    // as hollow rings; their true value is shown in the tooltip.
+    const maxCost = data.reduce((max, d) => (d.cost > max ? d.cost : max), 0);
+    const robustMax = upperBound !== null && upperBound > 0 ? upperBound : maxCost;
+    const displayMax = (robustMax > 0 ? robustMax : maxCost) || 1;
+
+    const plotted = data.map((d) => {
+      if (d.cost > displayMax) {
+        return { ...d, realCost: d.cost, cost: displayMax * 1.025, isClipped: true };
+      }
+      return d;
+    });
+
     const xAxisTicks = [];
     const tickInterval = data.length > 50 ? 10 : 5;
     for (let i = tickInterval; i <= data.length; i += tickInterval) {
@@ -226,12 +243,12 @@ const PokemonPriceHistoryChartBody: React.FC<PokemonHistoryChartProps> = ({ poke
     }
     if (xAxisTicks.length === 0 && data.length > 0) xAxisTicks.push(1);
 
-    return { data, lowerBound, upperBound, xAxisTicks };
+    return { data: plotted, lowerBound, upperBound, displayMax, xAxisTicks };
   }, [pokemonKey, stats]);
 
   if (!chartData || chartData.data.length === 0) return null;
 
-  const { data, lowerBound, upperBound, xAxisTicks } = chartData;
+  const { data, lowerBound, upperBound, displayMax, xAxisTicks } = chartData;
 
   return (
     <ResponsiveContainer width="100%" height="100%">
@@ -247,11 +264,12 @@ const PokemonPriceHistoryChartBody: React.FC<PokemonHistoryChartProps> = ({ poke
         <YAxis 
           stroke="#666" 
           tick={{ fontSize: 11 }}
+          domain={[0, displayMax * 1.05]}
           label={{ value: 'Price ($)', angle: -90, position: 'insideLeft', fill: '#666', fontSize: 11 }}
         />
         <Tooltip content={<CustomTooltip />} />
         
-        {upperBound !== null && <ReferenceLine y={upperBound} stroke="#8B0000" strokeDasharray="5 5" label={{ value: 'Outlier Bound', position: 'right', fill: '#8B0000', fontSize: 10 }} />}
+        {(upperBound !== null && upperBound > 0) && <ReferenceLine y={upperBound} stroke="#8B0000" strokeDasharray="5 5" label={{ value: 'Outlier Bound', position: 'right', fill: '#8B0000', fontSize: 10 }} />}
         {lowerBound !== null && <ReferenceLine y={lowerBound} stroke="#8B0000" strokeDasharray="5 5" />}
 
         <Line 
@@ -261,6 +279,9 @@ const PokemonPriceHistoryChartBody: React.FC<PokemonHistoryChartProps> = ({ poke
           strokeWidth={0}
           dot={(props: any) => {
             const { cx, cy, payload } = props;
+            if (payload.isClipped) {
+              return <circle key={`dot-${payload.saleNumber}`} cx={cx} cy={cy} r={5} fill="none" stroke="#8B0000" strokeWidth={2} />;
+            }
             const fill = payload.isOutlier ? '#8B0000' : '#36A2EB'; // Dark red for outliers
             return (
               <circle key={`dot-${payload.saleNumber}`} cx={cx} cy={cy} r={4} fill={fill} stroke="none" />
