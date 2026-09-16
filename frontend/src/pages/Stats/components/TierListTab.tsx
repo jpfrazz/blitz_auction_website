@@ -579,6 +579,14 @@ const TierListTab: React.FC<TierListTabProps> = ({ stats }) => {
         setDropTarget({ tierId: targetTierId, index: targetIndex });
     };
 
+    // Hover over a pokemon square: drop before it when the cursor is on its
+    // left half, after it when the cursor is on its right half.
+    const onDragOverSquare = (e: React.DragEvent, targetTierId: string, idx: number) => {
+        const rect = e.currentTarget.getBoundingClientRect();
+        const onRightHalf = e.clientX > rect.left + rect.width / 2;
+        onDragOver(e, targetTierId, onRightHalf ? idx + 1 : idx);
+    };
+
     const handleDrop = (e: React.DragEvent) => {
         e.preventDefault();
         if (!draggedPokemon || !activeList || !dropTarget) {
@@ -639,9 +647,11 @@ const TierListTab: React.FC<TierListTabProps> = ({ stats }) => {
 
     // Renders a full-size empty slot as the last flex child, then realigns it
     // into position with CSS `order` so the surrounding pokemon visibly move
-    // aside. The slot keeps pointer events and reasserts its own index in
-    // onDragOver, so reflowing items around it never bounces the dragover
-    // target (which is what caused the row flicker).
+    // aside. Squares use even orders and the slot an odd order, so the slot
+    // never ties with a square's order (a tie would push it one spot right).
+    // The slot keeps pointer events and reasserts its own index in onDragOver,
+    // so reflowing items around it never bounces the dragover target (which is
+    // what caused the row flicker).
     const renderDropSlot = (tierId: string) => {
         if (!dropTarget || dropTarget.tierId !== tierId) return null;
         return (
@@ -651,7 +661,7 @@ const TierListTab: React.FC<TierListTabProps> = ({ stats }) => {
                     width: `${squareSize}px`,
                     height: `${squareSize}px`,
                     flexBasis: `${squareSize}px`,
-                    order: dropTarget.index,
+                    order: dropTarget.index * 2 - 1,
                 }}
                 onDragOver={(e) => onDragOver(e, tierId, dropTarget.index)}
             />
@@ -777,13 +787,13 @@ const TierListTab: React.FC<TierListTabProps> = ({ stats }) => {
                                         className={`pokemon-square${draggedPokemon && draggedPokemon.sourceId === tier.id && draggedPokemon.name === name ? ' dragging' : ''}`}
                                         draggable
                                         onDragStart={(e) => onDragStart(e, name, tier.id, idx)}
-                                        onDragOver={(e) => onDragOver(e, tier.id, idx)}
+                                        onDragOver={(e) => onDragOverSquare(e, tier.id, idx)}
                                         onDragEnd={handleDragEnd}
                                         style={{ 
                                             width: `${squareSize}px`, 
                                             height: `${squareSize}px`,
                                             flexBasis: `${squareSize}px`,
-                                            order: idx
+                                            order: idx * 2
                                         }}
                                     >
                                         {showComparison && (() => {
@@ -861,9 +871,9 @@ const TierListTab: React.FC<TierListTabProps> = ({ stats }) => {
                             className={`pokemon-square${draggedPokemon && draggedPokemon.sourceId === 'pool' && draggedPokemon.name === name ? ' dragging' : ''}`}
                             draggable
                             onDragStart={(e) => onDragStart(e, name, 'pool', idx)}
-                            onDragOver={(e) => onDragOver(e, 'pool', idx)}
+                            onDragOver={(e) => onDragOverSquare(e, 'pool', idx)}
                             onDragEnd={handleDragEnd}
-                            style={{ width: `${squareSize}px`, height: `${squareSize}px`, flexBasis: `${squareSize}px`, order: idx }}
+                            style={{ width: `${squareSize}px`, height: `${squareSize}px`, flexBasis: `${squareSize}px`, order: idx * 2 }}
                         >
                             <img src={getPokemonImage(name)} alt={name} title={name} />
                         </div>

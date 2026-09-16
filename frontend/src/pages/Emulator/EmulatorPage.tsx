@@ -786,6 +786,10 @@ const isForeignSpeciesNickname = (mon: SavePokemon): boolean => {
   if (mon.species_id === 412 && nick.toLowerCase() === 'egg') return false;
   const n = normalizeName(nick);
   if (!n) return false;
+  // Gen III Nincada→Ninjask+Shedinja copies the source mon's struct and only
+  // overwrites the species, so Shedinja's raw nickname field legitimately holds
+  // the pre-evolution's species name ("NINCADA"/"NINJASK") instead of "SHEDINJA".
+  if (mon.species_id === 292 && (n === 'nincada' || n === 'ninjask')) return false;
   const ownInfo = SPECIES_BY_ID[mon.species_id];
   const ownName = ownInfo ? normalizeName(ownInfo.name) : '';
   // It's this mon's own (possibly truncated) species name -> fine.
