@@ -64,6 +64,8 @@ const Admin: React.FC = () => {
   const [raceResults, setRaceResults] = useState<AdminRaceResult[]>([]);
   const [raceResultsLoading, setRaceResultsLoading] = useState(false);
   const [raceResultsError, setRaceResultsError] = useState<string | null>(null);
+  const [autoFillRaceRunning, setAutoFillRaceRunning] = useState(false);
+  const [autoFillRaceMessage, setAutoFillRaceMessage] = useState<string | null>(null);
 
   const [metrics, setMetrics] = useState<AdminMetricSummary[]>([]);
   const [metricsLoading, setMetricsLoading] = useState(false);
@@ -297,6 +299,26 @@ const Admin: React.FC = () => {
       setDraftError('Recalculation failed.');
     } finally {
       setDraftTeamsLoading(false);
+    }
+  };
+
+  const handleAutoFillRacePlacements = async () => {
+    if (!window.confirm("Auto-fill race placements for all drafts that beat Steven/Wally and have no results entered yet. Manual entries will not be overwritten. Proceed?")) return;
+    setAutoFillRaceRunning(true);
+    setAutoFillRaceMessage(null);
+    try {
+      const res = await fetch('/api/admin/race-results/auto-fill', { method: 'POST' });
+      if (!res.ok) {
+        throw new Error((await res.text()) || res.statusText);
+      }
+      const data = await res.json();
+      setAutoFillRaceMessage(
+        `Auto-filled ${data.drafts_updated} draft(s) covering ${data.teams_updated} team(s).`,
+      );
+    } catch (err: any) {
+      setAutoFillRaceMessage(err?.message ?? 'Auto-fill failed.');
+    } finally {
+      setAutoFillRaceRunning(false);
     }
   };
 
@@ -870,6 +892,21 @@ const Admin: React.FC = () => {
               {tab === 'race-results' && (
                 <div className="admin-tab-content">
                   <h2>Race Results</h2>
+                  <div className="admin-controls-row" style={{ flexWrap: 'wrap', marginBottom: '1.2rem' }}>
+                    <button
+                      type="button"
+                      className="button"
+                      onClick={handleAutoFillRacePlacements}
+                      disabled={autoFillRaceRunning}
+                    >
+                      {autoFillRaceRunning ? 'Auto-filling...' : 'Auto-fill Placements'}
+                    </button>
+                    {autoFillRaceMessage && (
+                      <div className="admin-message" style={{ margin: '0 0 0 1rem' }}>
+                        {autoFillRaceMessage}
+                      </div>
+                    )}
+                  </div>
                   {raceResultsError && <div className="admin-message admin-error">{raceResultsError}</div>}
                   {raceResultsLoading ? (
                     <div className="admin-message">Loading race results...</div>

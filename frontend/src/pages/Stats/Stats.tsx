@@ -796,7 +796,7 @@ const Stats: React.FC = () => {
                             const isOpening = expandedDraftId !== draft.draftId;
                             setExpandedDraftId(isOpening ? draft.draftId : null);
                             if (isOpening) {
-                              setDraftSortMode(draft.draftType === '1v1' ? 'order' : 'race');
+                              setDraftSortMode('race');
                               setSelectedPokemonForChart(null);
                             }
                           }}
@@ -824,27 +824,7 @@ const Stats: React.FC = () => {
                         {expandedDraftId === draft.draftId && (
                           <tr className="draft-details-row">
                             <td colSpan={7}>
-                              {draft.draftType === '1v1' ? (
-                                <div className="draft-details-controls" style={{ display: 'flex', gap: '8px', marginBottom: '12px', padding: '10px 10px 0' }}>
-                                  <button
-                                    className={`tab-chip ${draftSortMode === 'user' ? 'active' : ''}`}
-                                    type="button"
-                                    style={{ padding: '2px 8px', fontSize: '0.95rem', minWidth: 'auto', margin: 0 }}
-                                    onClick={() => setDraftSortMode('user')}
-                                  >
-                                    Sort by Player
-                                  </button>
-                                  <button
-                                    className={`tab-chip ${draftSortMode === 'order' ? 'active' : ''}`}
-                                    type="button"
-                                    style={{ padding: '2px 8px', fontSize: '0.95rem', minWidth: 'auto', margin: 0 }}
-                                    onClick={() => setDraftSortMode('order')}
-                                  >
-                                    Sort by Pick Order
-                                  </button>
-                                </div>
-                              ) : (
-                                <>
+                              <>
                                   <div className="draft-details-controls" style={{ display: 'flex', gap: '8px', marginBottom: '12px', padding: '10px 10px 0' }}>
                                     <button
                                       className={`tab-chip ${draftSortMode === 'race' ? 'active' : ''}`}
@@ -865,34 +845,56 @@ const Stats: React.FC = () => {
                                   </div>
                                   {draftSortMode !== 'race' && (
                                     <div className="draft-details-controls" style={{ display: 'flex', gap: '8px', marginBottom: '12px', padding: '0 10px' }}>
-                                      <button
-                                        className={`tab-chip ${draftSortMode === 'order' ? 'active' : ''}`}
-                                        type="button"
-                                        style={{ padding: '2px 8px', fontSize: '0.85rem', minWidth: 'auto', margin: 0 }}
-                                        onClick={() => setDraftSortMode('order')}
-                                      >
-                                        Sort by Sale Order
-                                      </button>
-                                      <button
-                                        className={`tab-chip ${draftSortMode === 'price' ? 'active' : ''}`}
-                                        type="button"
-                                        style={{ padding: '2px 8px', fontSize: '0.85rem', minWidth: 'auto', margin: 0 }}
-                                        onClick={() => setDraftSortMode('price')}
-                                      >
-                                        Sort by Price
-                                      </button>
-                                      <button
-                                        className={`tab-chip ${draftSortMode === 'user' ? 'active' : ''}`}
-                                        type="button"
-                                        style={{ padding: '2px 8px', fontSize: '0.85rem', minWidth: 'auto', margin: 0 }}
-                                        onClick={() => setDraftSortMode('user')}
-                                      >
-                                        Sort by Player
-                                      </button>
+                                      {draft.draftType === '1v1' ? (
+                                        <>
+                                          <button
+                                            className={`tab-chip ${draftSortMode === 'user' ? 'active' : ''}`}
+                                            type="button"
+                                            style={{ padding: '2px 8px', fontSize: '0.85rem', minWidth: 'auto', margin: 0 }}
+                                            onClick={() => setDraftSortMode('user')}
+                                          >
+                                            Sort by Player
+                                          </button>
+                                          <button
+                                            className={`tab-chip ${draftSortMode === 'order' ? 'active' : ''}`}
+                                            type="button"
+                                            style={{ padding: '2px 8px', fontSize: '0.85rem', minWidth: 'auto', margin: 0 }}
+                                            onClick={() => setDraftSortMode('order')}
+                                          >
+                                            Sort by Pick Order
+                                          </button>
+                                        </>
+                                      ) : (
+                                        <>
+                                          <button
+                                            className={`tab-chip ${draftSortMode === 'order' ? 'active' : ''}`}
+                                            type="button"
+                                            style={{ padding: '2px 8px', fontSize: '0.85rem', minWidth: 'auto', margin: 0 }}
+                                            onClick={() => setDraftSortMode('order')}
+                                          >
+                                            Sort by Sale Order
+                                          </button>
+                                          <button
+                                            className={`tab-chip ${draftSortMode === 'price' ? 'active' : ''}`}
+                                            type="button"
+                                            style={{ padding: '2px 8px', fontSize: '0.85rem', minWidth: 'auto', margin: 0 }}
+                                            onClick={() => setDraftSortMode('price')}
+                                          >
+                                            Sort by Price
+                                          </button>
+                                          <button
+                                            className={`tab-chip ${draftSortMode === 'user' ? 'active' : ''}`}
+                                            type="button"
+                                            style={{ padding: '2px 8px', fontSize: '0.85rem', minWidth: 'auto', margin: 0 }}
+                                            onClick={() => setDraftSortMode('user')}
+                                          >
+                                            Sort by Player
+                                          </button>
+                                        </>
+                                      )}
                                     </div>
                                   )}
                                 </>
-                              )}
                               {(() => {
                                 if (draftSortMode === 'race') {
                                   return <RaceResultsTab draftId={draft.draftId} />;

@@ -251,6 +251,10 @@ impl Server {
                 get(handlers::get_admin_race_results),
             )
             .route(
+                "/admin/race-results/auto-fill",
+                post(handlers::admin_auto_fill_race_placements),
+            )
+            .route(
                 "/drafts/{draft_id}/pending-settings",
                 post(handlers::update_pending_draft_settings),
             )

@@ -1504,6 +1504,79 @@ pub async fn get_admin_race_results(
     Ok(Json(results))
 }
 
+#[derive(Serialize)]
+pub struct AutoFillRacePlacementsResult {
+    pub drafts_updated: i64,
+    pub teams_updated: i64,
+}
+
+#[debug_handler]
+pub async fn admin_auto_fill_race_placements(
+    State(state): State<ServerState>,
+    auth_session: AuthSession<AuthBackend>,
+) -> Result<Json<AutoFillRacePlacementsResult>, AppError> {
+    let _ = require_referee_user(auth_session.user)?;
+
+    let mut tx = state.db_pool.begin().await.map_err(|e| {
+        (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            format!("failed to start transaction: {}", e),
+        )
+    })?;
+
+    let rows = sqlx::query(
+        r#"
+        WITH candidates AS (
+            SELECT b.team_id, b.draft_id,
+                   (b.hours * 3600 + b.minutes * 60 + b.seconds) AS finish_seconds
+            FROM boss_battle_history b
+            JOIN drafts d ON d.draft_id = b.draft_id
+              AND d.state = 'COMPLETED' AND d.draft_type <> '1v1'
+            WHERE (b.trainer_id = 804 OR b.trainer_id = 656) AND NOT b.is_loss
+        ),
+        earliest AS (
+            SELECT DISTINCT ON (team_id) team_id, draft_id, finish_seconds
+            FROM candidates
+            ORDER BY team_id, finish_seconds
+        ),
+        no_manual AS (
+            SELECT draft_id FROM teams GROUP BY draft_id
+            HAVING bool_and(race_placement IS NULL AND race_wipe_trainer IS NULL)
+        ),
+        ranked AS (
+            SELECT e.team_id, e.draft_id,
+                   row_number() OVER (PARTITION BY e.draft_id ORDER BY e.finish_seconds) AS rn
+            FROM earliest e JOIN no_manual nm ON nm.draft_id = e.draft_id
+        )
+        UPDATE teams t SET race_placement = ranked.rn
+        FROM ranked WHERE t.team_id = ranked.team_id
+        RETURNING t.draft_id
+        "#,
+    )
+    .fetch_all(&mut *tx)
+    .await
+    .map_err(|e: sqlx::Error| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    tx.commit().await.map_err(|e| {
+        (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            format!("failed to commit transaction: {}", e),
+        )
+    })?;
+
+    let teams_updated = rows.len() as i64;
+    let mut drafts: std::collections::HashSet<Uuid> = std::collections::HashSet::new();
+    for row in rows {
+        let draft_id: Uuid = row.get("draft_id");
+        drafts.insert(draft_id);
+    }
+
+    Ok(Json(AutoFillRacePlacementsResult {
+        drafts_updated: drafts.len() as i64,
+        teams_updated,
+    }))
+}
+
 #[derive(Clone, Debug, Serialize)]
 pub struct RaceResultTeam {
     pub team_id: i64,
