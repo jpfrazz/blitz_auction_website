@@ -120,8 +120,9 @@ const Stats: React.FC = () => {
   const [expandedDraftId, setExpandedDraftId] = useState<string | null>(null);
   const [draftSortMode, setDraftSortMode] = useState<'order' | 'price' | 'user' | 'race'>('order');
   const [selectedPokemonForChart, setSelectedPokemonForChart] = useState<{ key: string; name: string } | null>(null);
-  const [competitiveOnly, setCompetitiveOnly] = useState(true);
-  const [include1v1s, setInclude1v1s] = useState(false);
+  const [showCompetitive, setShowCompetitive] = useState(true);
+  const [showCasual, setShowCasual] = useState(false);
+  const [show1v1s, setShow1v1s] = useState(false);
   const [gridColumns, setGridColumns] = useState<number>(0);
 
   useEffect(() => {
@@ -498,11 +499,14 @@ const Stats: React.FC = () => {
   const visibleDrafts = useMemo(() => {
     return draftSummary.filter((draft) => {
       if (draft.draftType === '1v1') {
-        return include1v1s && finished1v1DraftIds.has(draft.draftId);
+        return show1v1s && finished1v1DraftIds.has(draft.draftId);
       }
-      return !competitiveOnly || validDraftIds.has(draft.draftId);
+      if (validDraftIds.has(draft.draftId)) {
+        return showCompetitive;
+      }
+      return showCasual;
     });
-  }, [draftSummary, include1v1s, finished1v1DraftIds, competitiveOnly, validDraftIds]);
+  }, [draftSummary, show1v1s, finished1v1DraftIds, showCompetitive, showCasual, validDraftIds]);
 
   const kpis = useMemo(() => {
     // Adding 152 to account for legacy drafts
@@ -668,17 +672,17 @@ const Stats: React.FC = () => {
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                     <span 
                       style={{ cursor: 'pointer', fontWeight: 500 }} 
-                      onClick={() => setCompetitiveOnly(!competitiveOnly)}
+                      onClick={() => setShowCompetitive(!showCompetitive)}
                     >
-                      Competitive Drafts only
+                      Competitive Drafts
                     </span>
                     <div
-                      onClick={() => setCompetitiveOnly(!competitiveOnly)}
+                      onClick={() => setShowCompetitive(!showCompetitive)}
                       style={{ 
                         position: 'relative', 
                         width: '40px', 
                         height: '20px', 
-                        backgroundColor: competitiveOnly ? 'var(--eb-primary, #7CB946)' : '#333', 
+                        backgroundColor: showCompetitive ? 'var(--eb-primary, #7CB946)' : '#333', 
                         borderRadius: '20px', 
                         cursor: 'pointer', 
                         transition: 'background-color 0.3s ease' 
@@ -687,7 +691,7 @@ const Stats: React.FC = () => {
                       <div style={{ 
                         position: 'absolute', 
                         top: '2px', 
-                        left: competitiveOnly ? '22px' : '2px', 
+                        left: showCompetitive ? '22px' : '2px', 
                         width: '16px', 
                         height: '16px', 
                         backgroundColor: 'white', 
@@ -699,17 +703,17 @@ const Stats: React.FC = () => {
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                     <span 
                       style={{ cursor: 'pointer', fontWeight: 500 }} 
-                      onClick={() => setInclude1v1s(!include1v1s)}
+                      onClick={() => setShowCasual(!showCasual)}
                     >
-                      Include 1v1s
+                      Casual Drafts
                     </span>
                     <div
-                      onClick={() => setInclude1v1s(!include1v1s)}
+                      onClick={() => setShowCasual(!showCasual)}
                       style={{ 
                         position: 'relative', 
                         width: '40px', 
                         height: '20px', 
-                        backgroundColor: include1v1s ? 'var(--eb-primary, #7CB946)' : '#333', 
+                        backgroundColor: showCasual ? 'var(--eb-primary, #7CB946)' : '#333', 
                         borderRadius: '20px', 
                         cursor: 'pointer', 
                         transition: 'background-color 0.3s ease' 
@@ -718,7 +722,38 @@ const Stats: React.FC = () => {
                       <div style={{ 
                         position: 'absolute', 
                         top: '2px', 
-                        left: include1v1s ? '22px' : '2px', 
+                        left: showCasual ? '22px' : '2px', 
+                        width: '16px', 
+                        height: '16px', 
+                        backgroundColor: 'white', 
+                        borderRadius: '50%', 
+                        transition: 'left 0.3s ease' 
+                      }} />
+                    </div>
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <span 
+                      style={{ cursor: 'pointer', fontWeight: 500 }} 
+                      onClick={() => setShow1v1s(!show1v1s)}
+                    >
+                      1v1s
+                    </span>
+                    <div
+                      onClick={() => setShow1v1s(!show1v1s)}
+                      style={{ 
+                        position: 'relative', 
+                        width: '40px', 
+                        height: '20px', 
+                        backgroundColor: show1v1s ? 'var(--eb-primary, #7CB946)' : '#333', 
+                        borderRadius: '20px', 
+                        cursor: 'pointer', 
+                        transition: 'background-color 0.3s ease' 
+                      }}
+                    >
+                      <div style={{ 
+                        position: 'absolute', 
+                        top: '2px', 
+                        left: show1v1s ? '22px' : '2px', 
                         width: '16px', 
                         height: '16px', 
                         backgroundColor: 'white', 

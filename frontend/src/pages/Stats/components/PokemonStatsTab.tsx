@@ -813,9 +813,9 @@ const PokemonStatsTab: React.FC<PokemonStatsTabProps> = ({
                     >
                     <td style={{ backgroundColor: getPriceColor(entry.avgWinningBid) }}>{entry.rank}</td>
                     <td style={{
-                      backgroundColor: entry.recentMovement > 0 ? 'rgba(0, 255, 0, 0.15)' : entry.recentMovement < 0 ? 'rgba(255, 0, 0, 0.15)' : undefined,
+                      backgroundColor: entry.recentMovement > 0 ? 'rgba(0, 255, 0, 0.15)' : entry.recentMovement < 0 ? 'rgba(255, 0, 0, 0.15)' : 'rgba(79, 195, 247, 0.15)',
                       fontWeight: entry.recentMovement !== 0 ? 'bold' : 'normal',
-                      color: entry.recentMovement > 0 ? '#4caf50' : entry.recentMovement < 0 ? '#f44336' : 'inherit'
+                      color: entry.recentMovement > 0 ? '#4caf50' : entry.recentMovement < 0 ? '#f44336' : '#4fc3f7'
                     }}>
                       {entry.recentMovement > 0
                         ? `↑ ${entry.recentMovement}`
