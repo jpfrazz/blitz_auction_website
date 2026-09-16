@@ -3,6 +3,10 @@ var PokedexPokemonPanel = PokedexResultPanel.extend({
 		id = toID(id);
 		var pokemon = Dex.species.get(id);
 		this.id = id;
+		if (!pokemon) {
+			this.html('<div class="pfx-body dexentry"><h1>Pok&eacute;mon not found</h1><p>This Pok&eacute;mon is not part of this dex.</p></div>');
+			return;
+		}
 		this.shortTitle = pokemon.baseSpecies;
 
         let obtainable = pokemon.tier === "obtainable";

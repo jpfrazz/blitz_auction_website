@@ -1,12 +1,12 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import PokemonPriceHistoryChart from '../PokemonPriceHistoryChart';
 import { fetchPokemonList } from '../../../shared/api/pokemon';
-import { Pokemon, StatsPageResponse } from '../../../types';
+import { Pokemon, StatsAuction, StatsPageResponse } from '../../../types';
 import { TbSettings, TbRefresh } from 'react-icons/tb';
 import '../Stats.scss';
 import './PokemonStatsTab.scss';
 
-type SortKey = 'rank' | 'name' | 'avgWinningBid' | 'minBid' | 'maxBid' | 'priceVariance' | 'bidsWon' | 'recentMovement' | 'priceMovement';
+type SortKey = 'rank' | 'name' | 'avgWinningBid' | 'minBid' | 'maxBid' | 'priceVariance' | 'bidsWon' | 'recentMovement' | 'priceMovement' | 'avgOneVOnePick' | 'total1v1Picks' | 'pickMovement';
 
 interface PokemonAggregate {
   key: string;
@@ -21,6 +21,9 @@ interface PokemonAggregate {
   rank: number;
   recentMovement: number;
   priceMovement: number;
+  avgOneVOnePick: number | null;
+  total1v1Picks: number;
+  pickMovement: number;
   types: string[];
 }
 
@@ -82,6 +85,37 @@ const resolveIdentity = (name: string, form: string) => {
   const key = `${currentName}${effectiveForm ? '-' + effectiveForm : ''}`;
   return { name: currentName, form: effectiveForm, key };
 };
+
+function buildOneVOnePickMap(
+  auctions: StatsAuction[] | undefined,
+  playedDraftIds: Set<string>,
+  excludeDraftIds: Set<string>,
+): Map<string, number[]> {
+  const map = new Map<string, number[]>();
+  (auctions ?? []).forEach((a) => {
+    if (a.draft_type !== '1v1') return;
+    if (!playedDraftIds.has(a.draft_id)) return;
+    if (excludeDraftIds.has(a.draft_id)) return;
+
+    let slot: number;
+    if (a.action === 'LEFTOVER') {
+      // The four unused pool pokemon never get an actual pick slot, so the
+      // four that weren't picked or banned count as 29.
+      slot = 29;
+    } else if ((a.action === 'PICK' || a.action === 'BAN') && a.draft_order >= 1 && a.draft_order <= 28) {
+      // The main 1v1 phase is exactly 28 picks/bans, and draft_order tracks
+      // the pick slot. Eeveelution-phase bans (draft_order >= 29) are skipped.
+      slot = a.draft_order;
+    } else {
+      return;
+    }
+
+    const { key } = resolveIdentity(a.name, a.form || '');
+    if (!map.has(key)) map.set(key, []);
+    map.get(key)!.push(slot);
+  });
+  return map;
+}
 
 const POKEMON_TYPES = [
   'Normal', 'Fire', 'Water', 'Grass', 'Electric', 'Ice', 'Fighting', 'Poison', 'Ground',
@@ -254,6 +288,51 @@ const PokemonStatsTab: React.FC<PokemonStatsTabProps> = ({
       legacy: new Set(sliced.filter(s => s.type === 'legacy').map(s => s.id))
     };
   }, [unifiedTimeline, lookbackWindow]);
+
+  const played1v1DraftIds = useMemo(() => {
+    const played = new Set<string>();
+    (stats?.teams ?? []).forEach((t) => {
+      if (t.has_save) played.add(t.draft_id);
+    });
+    return played;
+  }, [stats?.teams]);
+
+  const oneVOnePickMap = useMemo(
+    () => buildOneVOnePickMap(stats?.auctions, played1v1DraftIds, new Set()),
+    [stats?.auctions, played1v1DraftIds],
+  );
+
+  // Newest-first timeline of the played 1v1 drafts, for picking out the ones
+  // that fall inside the lookback window.
+  const oneVOneDraftTimeline = useMemo(() => {
+    const tsMap = new Map<string, number>();
+    (stats?.auctions ?? []).forEach((a) => {
+      if (a.draft_type !== '1v1') return;
+      if (!played1v1DraftIds.has(a.draft_id)) return;
+      const ts = a.created_at ? new Date(a.created_at).getTime() : 0;
+      const prev = tsMap.get(a.draft_id) ?? 0;
+      if (ts > prev) tsMap.set(a.draft_id, ts);
+    });
+    return Array.from(tsMap.entries())
+      .map(([id, ts]) => ({ id, ts }))
+      .sort((x, y) => y.ts - x.ts);
+  }, [stats?.auctions, played1v1DraftIds]);
+
+  const recent1v1DraftIds = useMemo(() => {
+    const depth = Math.max(0, parseInt(lookbackWindow) || 0);
+    const recent = new Set<string>();
+    for (let i = 0; i < depth && i < oneVOneDraftTimeline.length; i++) {
+      recent.add(oneVOneDraftTimeline[i].id);
+    }
+    return recent;
+  }, [oneVOneDraftTimeline, lookbackWindow]);
+
+  // Pick slots excluding the drafts inside the lookback window, used as the
+  // baseline for the "Pick +/-" movement column.
+  const oneVOneHistoricPickMap = useMemo(
+    () => buildOneVOnePickMap(stats?.auctions, played1v1DraftIds, recent1v1DraftIds),
+    [stats?.auctions, played1v1DraftIds, recent1v1DraftIds],
+  );
 
   const typeLookup = useMemo(() => {
     const map = new Map<string, string[]>();
@@ -439,6 +518,20 @@ const PokemonStatsTab: React.FC<PokemonStatsTabProps> = ({
 
       const priceVariance = max - min;
 
+      const picks = oneVOnePickMap.get(entry.key) || [];
+      const avgOneVOnePick = picks.length > 0
+        ? picks.reduce((acc, p) => acc + p, 0) / picks.length
+        : null;
+
+      const historicPicks = oneVOneHistoricPickMap.get(entry.key) || [];
+      const historicAvgPick = historicPicks.length > 0
+        ? historicPicks.reduce((acc, p) => acc + p, 0) / historicPicks.length
+        : null;
+
+      const pickMovement = avgOneVOnePick !== null && historicAvgPick !== null
+        ? avgOneVOnePick - historicAvgPick
+        : 0;
+
       return {
         key: entry.key,
         name: entry.name,
@@ -452,6 +545,9 @@ const PokemonStatsTab: React.FC<PokemonStatsTabProps> = ({
         rank: 0,
         recentMovement: 0,
         priceMovement: 0,
+        avgOneVOnePick,
+        total1v1Picks: picks.length,
+        pickMovement,
         types: entry.types,
       };
     });
@@ -475,13 +571,18 @@ const PokemonStatsTab: React.FC<PokemonStatsTabProps> = ({
       p.priceMovement = histData ? p.avgWinningBid - histData.avg : 0;
     });
     return results;
-  }, [sortedAuctions, stats?.legacy, recentDraftInfo, typeLookup]);
+  }, [sortedAuctions, stats?.legacy, recentDraftInfo, typeLookup, oneVOnePickMap, oneVOneHistoricPickMap]);
 
   const pokemonSummary = useMemo<PokemonAggregate[]>(() => {
     return [...aggregatedPokemon].sort((a, b) => {
       const { key, direction } = sortConfig;
-      if (a[key] < b[key]) return direction === 'asc' ? -1 : 1;
-      if (a[key] > b[key]) return direction === 'asc' ? 1 : -1;
+      const av = a[key];
+      const bv = b[key];
+      if (av === null && bv === null) return 0;
+      if (av === null) return 1;
+      if (bv === null) return -1;
+      if (av < bv) return direction === 'asc' ? -1 : 1;
+      if (av > bv) return direction === 'asc' ? 1 : -1;
       return 0;
     });
   }, [aggregatedPokemon, sortConfig]);
@@ -688,17 +789,17 @@ const PokemonStatsTab: React.FC<PokemonStatsTabProps> = ({
                   <th className="sortable" onClick={() => handleSort('priceMovement')}>
                     Price +/- {sortConfig.key === 'priceMovement' ? (sortConfig.direction === 'asc' ? '↑' : '↓') : ''}
                   </th>
-                  <th className="sortable" onClick={() => handleSort('minBid')}>
-                    Lowest Cost {sortConfig.key === 'minBid' ? (sortConfig.direction === 'asc' ? '↑' : '↓') : ''}
-                  </th>
-                  <th className="sortable" onClick={() => handleSort('maxBid')}>
-                    Highest Cost {sortConfig.key === 'maxBid' ? (sortConfig.direction === 'asc' ? '↑' : '↓') : ''}
-                  </th>
-                  <th className="sortable" onClick={() => handleSort('priceVariance')}>
-                    Price Variance {sortConfig.key === 'priceVariance' ? (sortConfig.direction === 'asc' ? '↑' : '↓') : ''}
-                  </th>
                   <th className="sortable" onClick={() => handleSort('bidsWon')}>
                     Total Sales {sortConfig.key === 'bidsWon' ? (sortConfig.direction === 'asc' ? '↑' : '↓') : ''}
+                  </th>
+                  <th className="sortable" onClick={() => handleSort('avgOneVOnePick')}>
+                    AVG 1v1 PICK {sortConfig.key === 'avgOneVOnePick' ? (sortConfig.direction === 'asc' ? '↑' : '↓') : ''}
+                  </th>
+                  <th className="sortable" onClick={() => handleSort('pickMovement')}>
+                    Pick +/- {sortConfig.key === 'pickMovement' ? (sortConfig.direction === 'asc' ? '↑' : '↓') : ''}
+                  </th>
+                  <th className="sortable" onClick={() => handleSort('total1v1Picks')}>
+                    Total Picks {sortConfig.key === 'total1v1Picks' ? (sortConfig.direction === 'asc' ? '↑' : '↓') : ''}
                   </th>
                 </tr>
               </thead>
@@ -749,10 +850,20 @@ const PokemonStatsTab: React.FC<PokemonStatsTabProps> = ({
                           ? `↓ $${Math.abs(entry.priceMovement).toLocaleString()}`
                           : '-'}
                     </td>
-                    <td>${entry.minBid.toLocaleString()}</td>
-                    <td>${entry.maxBid.toLocaleString()}</td>
-                    <td>{entry.priceVariance.toLocaleString()}</td>
                     <td>{entry.bidsWon}</td>
+                    <td>{entry.avgOneVOnePick !== null ? parseFloat(entry.avgOneVOnePick.toFixed(1)).toLocaleString() : '-'}</td>
+                    <td style={{
+                      backgroundColor: entry.pickMovement > 0 ? 'rgba(0, 255, 0, 0.15)' : entry.pickMovement < 0 ? 'rgba(255, 0, 0, 0.15)' : 'rgba(79, 195, 247, 0.15)',
+                      fontWeight: entry.pickMovement !== 0 ? 'bold' : 'normal',
+                      color: entry.pickMovement > 0 ? '#4caf50' : entry.pickMovement < 0 ? '#f44336' : '#4fc3f7'
+                    }}>
+                      {entry.pickMovement > 0
+                        ? `↑ ${entry.pickMovement.toFixed(1)}`
+                        : entry.pickMovement < 0
+                          ? `↓ ${Math.abs(entry.pickMovement).toFixed(1)}`
+                          : '-'}
+                    </td>
+                    <td>{entry.total1v1Picks}</td>
                   </tr>
                     {expandedPokemon === entry.key && (
                       <tr className="price-history-dropdown-row">

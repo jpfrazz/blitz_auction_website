@@ -223,6 +223,7 @@ export interface StatsPageTeamRow {
   updated_at: string;
   created_at: string;
   draft_type?: string;
+  has_save?: boolean;
 }
 
 export interface StatsPagePlayer {

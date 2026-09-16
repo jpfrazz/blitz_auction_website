@@ -33,6 +33,7 @@ pub struct StatsTeam {
     pub draft_type: String,
     pub placement: Option<i32>,
     pub race_placement: Option<i32>,
+    pub has_save: bool,
 }
 
 #[derive(Serialize, FromRow)]
@@ -117,7 +118,9 @@ pub async fn get_stats_page_data(
 
     let teams =
         sqlx::query_as::<_, StatsTeam>(
-            "SELECT t.user_id, t.guest_id, t.draft_id, t.placement, t.race_placement, d.draft_name, COALESCE(d.host_user_id, d.host_guest_id) AS host, d.ranked, d.draft_type
+            "SELECT t.user_id, t.guest_id, t.draft_id, t.placement, t.race_placement,
+                    (t.save_data IS NOT NULL) AS has_save,
+                    d.draft_name, COALESCE(d.host_user_id, d.host_guest_id) AS host, d.ranked, d.draft_type
              FROM teams t
              JOIN drafts d ON t.draft_id = d.draft_id
              WHERE d.state = 'COMPLETED'"

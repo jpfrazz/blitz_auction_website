@@ -6,8 +6,11 @@ Runs the full pipeline:
   1. Generates required build-artifact headers from the ROM source
   2. Extracts data from the ROM source via porydex
   3. Copies the generated data files into the ComprehensiveDex folder
-  4. Applies obtainable tiers from pokemon.csv
-  5. Applies correct evolution methods from pokemon.csv (including Guru / Oracle items)
+  4. Wholly erases Gmax and "-[Type]" forme species (e.g. all Gigantamax formes,
+     every Arceus/Silvally type forme, Calyrex-Ice, etc.)
+  5. Applies obtainable tiers from pokemon.csv
+  6. Applies correct evolution methods from pokemon.csv (including Guru / Oracle items)
+  7. Applies egg moves from egg_moves.h
 
 Usage:
     python update_pokedex.py
@@ -172,7 +175,73 @@ def copy_data():
     print("  ✓ Cleared porydex site/data cache")
 
 # ══════════════════════════════════════════════════════════════════════════════
-#  STEP 4 – Apply obtainable tiers from pokemon.csv
+#  STEP 4 – Wholly erase Gmax / -[Type] forme species
+# ══════════════════════════════════════════════════════════════════════════════
+
+# Any species whose display name ends in "Gmax" (e.g. "Venusaur-Gmax") is wholly
+# removed from the dex.
+_GMAX_NAME_RE = re.compile(r"Gmax$", re.IGNORECASE)
+
+# Any species whose display name ends in "-<Type>" is also wholly removed. The
+# leading "-" is deliberate: it hits formes like "Arceus-Fire" and
+# "Silvally-Ground" without ever matching ordinary Pokémon such as Clefairy,
+# Blipbug or Regirock (their names contain a type name but not the "-" suffix).
+_TYPE_FORM_SUFFIXES = [
+    "Normal", "Fire", "Water", "Electric", "Grass", "Ice", "Fighting",
+    "Poison", "Ground", "Flying", "Psychic", "Bug", "Rock", "Ghost",
+    "Dragon", "Dark", "Steel", "Fairy",
+]
+_TYPE_FORM_NAME_RE = re.compile(
+    "-(?:" + "|".join(_TYPE_FORM_SUFFIXES) + ")$",
+    re.IGNORECASE,
+)
+
+
+def remove_hidden_species(data: dict) -> set[str]:
+    step("Wholly erasing Gmax / -[Type] forme species")
+
+    removed: set[str] = set()
+    removed_names: set[str] = set()
+    for key, v in data.items():
+        name = v.get("name", "")
+        if _GMAX_NAME_RE.search(name) or _TYPE_FORM_NAME_RE.search(name):
+            removed.add(key)
+            removed_names.add(name)
+
+    for key in removed:
+        del data[key]
+
+    # Prune references in surviving species to the erased ones, so no page
+    # links to a now-missing entry.
+    pruned = 0
+    list_fields = ("otherFormes", "cosmeticFormes", "evos")
+    for v in data.values():
+        for field in list_fields:
+            if field not in v:
+                continue
+            kept = [entry for entry in v[field]
+                    if entry not in removed_names and to_id(entry) not in removed]
+            if kept:
+                if len(kept) != len(v[field]):
+                    v[field] = kept
+                    pruned += 1
+            else:
+                del v[field]
+                pruned += 1
+        prevo = v.get("prevo")
+        if prevo and (prevo in removed_names or to_id(prevo) in removed):
+            del v["prevo"]
+            pruned += 1
+
+    print(f"  ✓ Wholly removed {len(removed)} species")
+    if removed:
+        print("  ✓ Removed: " + ", ".join(sorted(removed_names)))
+    if pruned:
+        print(f"  ✓ Pruned {pruned} stale reference(s) in surviving species")
+    return removed
+
+# ══════════════════════════════════════════════════════════════════════════════
+#  STEP 5 – Apply obtainable tiers from pokemon.csv
 # ══════════════════════════════════════════════════════════════════════════════
 
 def apply_obtainable(data: dict) -> int:
@@ -219,7 +288,7 @@ def apply_obtainable(data: dict) -> int:
     return updated
 
 # ══════════════════════════════════════════════════════════════════════════════
-#  STEP 5 – Apply evolution methods from pokemon.csv
+#  STEP 6 – Apply evolution methods from pokemon.csv
 # ══════════════════════════════════════════════════════════════════════════════
 
 _STONES = [
@@ -346,7 +415,7 @@ def apply_evo_methods(data: dict) -> int:
     return updated
 
 # ══════════════════════════════════════════════════════════════════════════════
-#  STEP 6 – Apply egg moves from egg_moves.h
+#  STEP 7 – Apply egg moves from egg_moves.h
 # ══════════════════════════════════════════════════════════════════════════════
 
 def apply_egg_moves(learnsets: dict, species_data: dict) -> int:
@@ -464,6 +533,8 @@ def main():
         content = f.read()
     species_data = json.loads(content[len(js_prefix):].rstrip().rstrip(";"))
 
+    removed_keys = remove_hidden_species(species_data)
+
     apply_obtainable(species_data)
     apply_evo_methods(species_data)
 
@@ -477,6 +548,10 @@ def main():
     with open(learnsets_path, encoding="utf-8") as f:
         ls_content = f.read()
     learnsets_data = json.loads(ls_content[len(ls_prefix):].rstrip().rstrip(";"))
+
+    # Drop learnset entries for wholly erased species
+    for key in removed_keys:
+        learnsets_data.pop(key, None)
 
     apply_egg_moves(learnsets_data, species_data)
 

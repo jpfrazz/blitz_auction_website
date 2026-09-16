@@ -2856,7 +2856,7 @@ exports.BattleMovedex = {
             "slicing": 1
         },
         "name": "Slash",
-        "basePower": 70,
+        "basePower": 80,
         "type": "Normal",
         "accuracy": 100,
         "critRatio": 2,
@@ -12500,7 +12500,7 @@ exports.BattleMovedex = {
             "mirror": 1
         },
         "name": "Meteor Assault",
-        "basePower": 150,
+        "basePower": 170,
         "type": "Fighting",
         "accuracy": 100,
         "pp": 5,
