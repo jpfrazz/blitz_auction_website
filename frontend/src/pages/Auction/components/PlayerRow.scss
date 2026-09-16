@@ -72,7 +72,7 @@
 }
 
 .player-ready {
-    background: $eb-primary;
+    background: var(--player-card-color, $eb-primary);
 }
 
 .player-slot-p1 {
@@ -88,13 +88,13 @@
 }
 
 .player-not-ready {
-    background: $eb-primary-hover;
+    background: var(--player-card-color, $eb-primary-hover);
 }
 
 .player-zero-money {
-    background: #b71c1c !important;
+    background: var(--out-of-money-color, #b71c1c) !important;
     color: #fff !important;
-    border-color: #b71c1c !important;
+    border-color: var(--out-of-money-color, #b71c1c) !important;
 }
 
 .player-disconnected {

@@ -66,6 +66,7 @@ function badgeReachSeconds(save: SaveData | null | undefined, badgeCount: number
 const SpectatePage: React.FC = () => {
   const { draftId } = useParams<{ draftId?: string }>();
   const [draft, setDraft] = useState<any>(null);
+  const [spectatorCount, setSpectatorCount] = useState(0);
   const [playerSaves, setPlayerSaves] = useState<Record<string, PlayerSave>>({});
   // Live current-map names received via LocationUpdate broadcasts, keyed by
   // user id. Kept separate from the save so a player who closes their tab (and
@@ -105,6 +106,7 @@ const SpectatePage: React.FC = () => {
       .then((draft) => {
         if (cancelled) return;
         setDraft(draft);
+        setSpectatorCount(draft.spectators?.length ?? 0);
         setPlayerSaves((prev) => {
           const next = { ...prev };
           for (const team of draft.teams) {
@@ -232,6 +234,10 @@ const SpectatePage: React.FC = () => {
               global_name?: string | null;
               save_data?: SaveData | null;
             }>;
+            const spectators = msg.data?.spectators as Array<{ user_id?: string }> | undefined;
+            if (Array.isArray(spectators)) {
+              setSpectatorCount(spectators.length);
+            }
             setPlayerSaves((prev) => {
               const next = { ...prev };
               for (const t of teams) {
@@ -353,6 +359,7 @@ const SpectatePage: React.FC = () => {
             <div className="spectate-header">
               <h1 className="spectate-title">Spectating</h1>
               <p className="spectate-subtitle">{draft.draft_name}</p>
+              <p className="spectate-spectator-count">Current Spectators: {spectatorCount}</p>
             </div>
 
             <div className="spectate-grid">

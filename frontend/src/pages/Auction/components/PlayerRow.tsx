@@ -47,9 +47,11 @@ interface SortableItemProps {
   hideMoney?: boolean;
   positionColorClass?: string;
   highlighted?: boolean;
+  currentUserId?: string | null;
+  playerCardColor?: string;
 }
 
-const SortableItem: React.FC<SortableItemProps> = ({ team, highestBidderId, wsConnected, animatingId, autoSortByFunds, getIconName, auctionCompleted, hideMoney, positionColorClass, highlighted }) => {
+const SortableItem: React.FC<SortableItemProps> = ({ team, highestBidderId, wsConnected, animatingId, autoSortByFunds, getIconName, auctionCompleted, hideMoney, positionColorClass, highlighted, currentUserId, playerCardColor }) => {
   const {
     attributes,
     listeners,
@@ -67,6 +69,9 @@ const SortableItem: React.FC<SortableItemProps> = ({ team, highestBidderId, wsCo
     opacity: isDragging ? 0.5 : 1,
     cursor: autoSortByFunds ? 'default' : 'grab',
   };
+
+  const isMyCard = !team.isPlaceholder && playerCardColor && team.user_id === currentUserId;
+  const colorVarStyle = isMyCard ? { ['--player-card-color' as any]: playerCardColor } : {};
 
   const playerName = team.isPlaceholder ? null : (team.global_name || team.username || team.user_id);
   const isFilled = !team.isPlaceholder;
@@ -110,6 +115,7 @@ const SortableItem: React.FC<SortableItemProps> = ({ team, highestBidderId, wsCo
         ref={setNodeRef}
         {...attributes}
         className={baseClasses}
+        style={colorVarStyle}
         layout
         layoutId={team.dragId}
         transition={{ duration: 0.4, ease: [0.25, 0.1, 0.25, 1] }}
@@ -122,7 +128,7 @@ const SortableItem: React.FC<SortableItemProps> = ({ team, highestBidderId, wsCo
   return (
     <div
       ref={setNodeRef}
-      style={style}
+      style={{ ...style, ...colorVarStyle }}
       {...attributes}
       {...listeners}
       className={baseClasses}
@@ -176,11 +182,23 @@ const PlayerRow: React.FC<PlayerRowProps> = ({ teams, numPlayers, highestBidderI
     return stored === null ? true : stored === 'true';
   });
 
+  const [playerCardColor, setPlayerCardColor] = React.useState(() => {
+    if (typeof window === 'undefined') return '';
+    return localStorage.getItem('eb-player-card-color') || '';
+  });
+
+  const [outOfMoneyColor, setOutOfMoneyColor] = React.useState(() => {
+    if (typeof window === 'undefined') return '#b71c1c';
+    return localStorage.getItem('eb-out-of-money-color') || '#b71c1c';
+  });
+
   // Listen for settings changes
   React.useEffect(() => {
     const handleStorageChange = () => {
       setTwoRowMode(localStorage.getItem('eb-two-row-player-height') === 'true');
       setAutoSortByFunds(localStorage.getItem('eb-auto-sort-by-funds') === 'true');
+      setPlayerCardColor(localStorage.getItem('eb-player-card-color') || '');
+      setOutOfMoneyColor(localStorage.getItem('eb-out-of-money-color') || '#b71c1c');
     };
 
     window.addEventListener('storage', handleStorageChange);
@@ -289,7 +307,7 @@ const PlayerRow: React.FC<PlayerRowProps> = ({ teams, numPlayers, highestBidderI
         items={items.map(item => item.dragId)}
         strategy={horizontalListSortingStrategy}
       >
-        <div className={containerClassName}>
+        <div className={containerClassName} style={{ ['--out-of-money-color' as any]: outOfMoneyColor }}>
           {items.map((team, idx) => (
             <SortableItem
               key={team.dragId}
@@ -303,6 +321,8 @@ const PlayerRow: React.FC<PlayerRowProps> = ({ teams, numPlayers, highestBidderI
               hideMoney={hideMoney}
               positionColorClass={positionColors && !team.isPlaceholder ? (idx === 0 ? 'player-slot-p1' : idx === 1 ? 'player-slot-p2' : '') : ''}
               highlighted={!!highlightId && (team.user_id === highlightId || team.guest_id === highlightId)}
+              currentUserId={currentUserId}
+              playerCardColor={playerCardColor}
             />
           ))}
         </div>

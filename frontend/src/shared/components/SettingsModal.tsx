@@ -48,6 +48,14 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ onClose }) => {
     return stored === null ? true : stored === 'true';
   });
 
+  const [playerCardColor, setPlayerCardColor] = useState(() => {
+    return localStorage.getItem('eb-player-card-color') || '';
+  });
+
+  const [outOfMoneyColor, setOutOfMoneyColor] = useState(() => {
+    return localStorage.getItem('eb-out-of-money-color') || '#b71c1c';
+  });
+
   const [isCapturingHotkey, setIsCapturingHotkey] = useState(false);
 
   useEffect(() => {
@@ -74,6 +82,16 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ onClose }) => {
     localStorage.setItem('eb-tip-messages', String(tipMessages));
     window.dispatchEvent(new CustomEvent('eb-settings-changed'));
   }, [tipMessages]);
+
+  useEffect(() => {
+    localStorage.setItem('eb-player-card-color', playerCardColor);
+    window.dispatchEvent(new CustomEvent('eb-settings-changed'));
+  }, [playerCardColor]);
+
+  useEffect(() => {
+    localStorage.setItem('eb-out-of-money-color', outOfMoneyColor);
+    window.dispatchEvent(new CustomEvent('eb-settings-changed'));
+  }, [outOfMoneyColor]);
 
   const handleColorChange = (color: string) => {
     setPrimaryColor(color);
@@ -154,7 +172,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ onClose }) => {
           {activeTab === 'auction' && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', background: 'rgba(255,255,255,0.05)', padding: '1rem', borderRadius: '8px' }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <span style={{ fontSize: '1.1rem' }}>Two-Row Player Height</span>
+                <span className="settings-label">Two-Row Player Height</span>
                 <button
                   onClick={() => setTwoRowPlayerHeight(!twoRowPlayerHeight)}
                   style={{
@@ -177,7 +195,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ onClose }) => {
               </div>
 
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '0.4rem' }}>
-                <span style={{ fontSize: '1.1rem' }}>Auto-Sort by Funds</span>
+                <span className="settings-label">Auto-Sort by Funds</span>
                 <button
                   onClick={() => setAutoSortByFunds(!autoSortByFunds)}
                   style={{
@@ -198,6 +216,34 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ onClose }) => {
               <div style={{ fontSize: '0.95rem', color: '#b3b3b3', marginTop: '-0.6rem' }}>
                 Automatically sort players by remaining funds
               </div>
+
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '0.4rem' }}>
+                <span className="settings-label">Player Card Color</span>
+                <input
+                  type="color"
+                  value={playerCardColor || '#7CB946'}
+                  onChange={(e) => setPlayerCardColor(e.target.value)}
+                  style={{ width: '40px', height: '40px', border: 'none', cursor: 'pointer', background: 'transparent' }}
+                  title="Color of just your player card during auctions"
+                />
+              </div>
+              <div style={{ fontSize: '0.95rem', color: '#b3b3b3', marginTop: '-0.6rem' }}>
+                Color of just your player card during auctions
+              </div>
+
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '0.4rem' }}>
+                <span className="settings-label">Out of Money Card Color</span>
+                <input
+                  type="color"
+                  value={outOfMoneyColor}
+                  onChange={(e) => setOutOfMoneyColor(e.target.value)}
+                  style={{ width: '40px', height: '40px', border: 'none', cursor: 'pointer', background: 'transparent' }}
+                  title="Color of player cards when players run out of money"
+                />
+              </div>
+              <div style={{ fontSize: '0.95rem', color: '#b3b3b3', marginTop: '-0.6rem' }}>
+                Color of player cards when players run out of money
+              </div>
             </div>
           )}
 
@@ -205,7 +251,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ onClose }) => {
             <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', background: 'rgba(255,255,255,0.05)', padding: '1rem', borderRadius: '8px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                  <span style={{ fontSize: '1.1rem' }}>Tip Messages</span>
+                  <span className="settings-label">Tip Messages</span>
                   <button
                     onClick={() => setTipMessages(!tipMessages)}
                     style={{
@@ -230,7 +276,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ onClose }) => {
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', background: 'rgba(255,255,255,0.05)', padding: '1rem', borderRadius: '8px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                  <span style={{ fontSize: '1.1rem' }}>Notes Hotkey</span>
+                  <span className="settings-label">Notes Hotkey</span>
                   <button
                     onClick={() => setIsCapturingHotkey(true)}
                     onKeyDown={(e) => {

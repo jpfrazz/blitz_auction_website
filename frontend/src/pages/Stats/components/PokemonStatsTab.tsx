@@ -853,9 +853,9 @@ const PokemonStatsTab: React.FC<PokemonStatsTabProps> = ({
                     <td>{entry.bidsWon}</td>
                     <td>{entry.avgOneVOnePick !== null ? parseFloat(entry.avgOneVOnePick.toFixed(1)).toLocaleString() : '-'}</td>
                     <td style={{
-                      backgroundColor: entry.pickMovement > 0 ? 'rgba(0, 255, 0, 0.15)' : entry.pickMovement < 0 ? 'rgba(255, 0, 0, 0.15)' : 'rgba(79, 195, 247, 0.15)',
+                      backgroundColor: entry.pickMovement > 0 ? 'rgba(255, 0, 0, 0.15)' : entry.pickMovement < 0 ? 'rgba(0, 255, 0, 0.15)' : 'rgba(79, 195, 247, 0.15)',
                       fontWeight: entry.pickMovement !== 0 ? 'bold' : 'normal',
-                      color: entry.pickMovement > 0 ? '#4caf50' : entry.pickMovement < 0 ? '#f44336' : '#4fc3f7'
+                      color: entry.pickMovement > 0 ? '#f44336' : entry.pickMovement < 0 ? '#4caf50' : '#4fc3f7'
                     }}>
                       {entry.pickMovement > 0
                         ? `↑ ${entry.pickMovement.toFixed(1)}`
