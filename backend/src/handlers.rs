@@ -1531,7 +1531,7 @@ pub async fn admin_auto_fill_race_placements(
                    (b.hours * 3600 + b.minutes * 60 + b.seconds) AS finish_seconds
             FROM boss_battle_history b
             JOIN drafts d ON d.draft_id = b.draft_id
-              AND d.state = 'COMPLETED' AND d.draft_type <> '1v1'
+              AND d.state = 'COMPLETED'
             WHERE (b.trainer_id = 804 OR b.trainer_id = 656) AND NOT b.is_loss
         ),
         earliest AS (
