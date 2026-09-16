@@ -1,4 +1,4 @@
-import React, { Fragment, useState, useEffect, useMemo, useRef } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import * as htmlToImage from 'html-to-image';
 import { FaCog, FaArrowUp, FaArrowDown, FaCopy, FaTrash } from 'react-icons/fa';
 import { StatsPageResponse, StatsPagePlayer } from '../../../types';
@@ -637,25 +637,25 @@ const TierListTab: React.FC<TierListTabProps> = ({ stats }) => {
         setDropTarget(null);
     };
 
-    // Renders an invisible zero-size flex marker (so it never shifts the row
-    // layout, which would cause dragover target flicker) with the visible
-    // dashed slot drawn as an absolute overlay centered on the item gap.
-    const renderDropIndicator = (tierId: string, idx: number) => {
-        if (dropTarget && dropTarget.tierId === tierId && dropTarget.index === idx) {
-            return (
-                <div className="drop-indicator">
-                    <div
-                        className="drop-indicator-box"
-                        style={{
-                            width: `${squareSize}px`,
-                            height: `${squareSize}px`,
-                            left: `${-(squareSize / 2) + 2.5}px`,
-                        }}
-                    />
-                </div>
-            );
-        }
-        return null;
+    // Renders a full-size empty slot as the last flex child, then realigns it
+    // into position with CSS `order` so the surrounding pokemon visibly move
+    // aside. The slot keeps pointer events and reasserts its own index in
+    // onDragOver, so reflowing items around it never bounces the dragover
+    // target (which is what caused the row flicker).
+    const renderDropSlot = (tierId: string) => {
+        if (!dropTarget || dropTarget.tierId !== tierId) return null;
+        return (
+            <div
+                className="drop-indicator"
+                style={{
+                    width: `${squareSize}px`,
+                    height: `${squareSize}px`,
+                    flexBasis: `${squareSize}px`,
+                    order: dropTarget.index,
+                }}
+                onDragOver={(e) => onDragOver(e, tierId, dropTarget.index)}
+            />
+        );
     };
 
     const getPokemonImage = (name: string) => {
@@ -772,39 +772,38 @@ const TierListTab: React.FC<TierListTabProps> = ({ stats }) => {
                                 onDragOver={(e) => onDragOver(e, tier.id, tier.pokemon.length)}
                             >
                                 {tier.pokemon.map((name, idx) => (
-                                    <Fragment key={name}>
-                                        {renderDropIndicator(tier.id, idx)}
-                                        <div 
-                                            className={`pokemon-square${draggedPokemon && draggedPokemon.sourceId === tier.id && draggedPokemon.name === name ? ' dragging' : ''}`}
-                                            draggable
-                                            onDragStart={(e) => onDragStart(e, name, tier.id, idx)}
-                                            onDragOver={(e) => onDragOver(e, tier.id, idx)}
-                                            onDragEnd={handleDragEnd}
-                                            style={{ 
-                                                width: `${squareSize}px`, 
-                                                height: `${squareSize}px`,
-                                                flexBasis: `${squareSize}px`
-                                            }}
-                                        >
-                                            {showComparison && (() => {
-                                                const defIdx = defaultRanks.get(name);
-                                                const currIdx = currentRanks.get(name);
-                                                if (defIdx === undefined || currIdx === undefined || defIdx === currIdx) return null;
-                                                const diff = defIdx - currIdx;
-                                                return (
-                                                    <div 
-                                                        className="rank-badge" 
-                                                        style={{ backgroundColor: diff > 0 ? '#4caf50' : '#f44336' }}
-                                                    >
-                                                        {diff > 0 ? `+${diff}` : diff}
-                                                    </div>
-                                                );
-                                            })()}
-                                            <img src={getPokemonImage(name)} alt={name} title={name} />
-                                        </div>
-                                    </Fragment>
+                                    <div 
+                                        key={name} 
+                                        className={`pokemon-square${draggedPokemon && draggedPokemon.sourceId === tier.id && draggedPokemon.name === name ? ' dragging' : ''}`}
+                                        draggable
+                                        onDragStart={(e) => onDragStart(e, name, tier.id, idx)}
+                                        onDragOver={(e) => onDragOver(e, tier.id, idx)}
+                                        onDragEnd={handleDragEnd}
+                                        style={{ 
+                                            width: `${squareSize}px`, 
+                                            height: `${squareSize}px`,
+                                            flexBasis: `${squareSize}px`,
+                                            order: idx
+                                        }}
+                                    >
+                                        {showComparison && (() => {
+                                            const defIdx = defaultRanks.get(name);
+                                            const currIdx = currentRanks.get(name);
+                                            if (defIdx === undefined || currIdx === undefined || defIdx === currIdx) return null;
+                                            const diff = defIdx - currIdx;
+                                            return (
+                                                <div 
+                                                    className="rank-badge" 
+                                                    style={{ backgroundColor: diff > 0 ? '#4caf50' : '#f44336' }}
+                                                >
+                                                    {diff > 0 ? `+${diff}` : diff}
+                                                </div>
+                                            );
+                                        })()}
+                                        <img src={getPokemonImage(name)} alt={name} title={name} />
+                                    </div>
                                 ))}
-                                {renderDropIndicator(tier.id, tier.pokemon.length)}
+                                {renderDropSlot(tier.id)}
                             </div>
                             <div className="tier-settings">
                                 {rowIdx !== 0 && (
@@ -857,21 +856,19 @@ const TierListTab: React.FC<TierListTabProps> = ({ stats }) => {
                     onDrop={handleDrop}
                 >
                     {filteredPool.map((name, idx) => (
-                        <Fragment key={name}>
-                            {renderDropIndicator('pool', idx)}
-                            <div 
-                                className={`pokemon-square${draggedPokemon && draggedPokemon.sourceId === 'pool' && draggedPokemon.name === name ? ' dragging' : ''}`}
-                                draggable
-                                onDragStart={(e) => onDragStart(e, name, 'pool', idx)}
-                                onDragOver={(e) => onDragOver(e, 'pool', idx)}
-                                onDragEnd={handleDragEnd}
-                                style={{ width: `${squareSize}px`, height: `${squareSize}px`, flexBasis: `${squareSize}px` }}
-                            >
-                                <img src={getPokemonImage(name)} alt={name} title={name} />
-                            </div>
-                        </Fragment>
+                        <div 
+                            key={name} 
+                            className={`pokemon-square${draggedPokemon && draggedPokemon.sourceId === 'pool' && draggedPokemon.name === name ? ' dragging' : ''}`}
+                            draggable
+                            onDragStart={(e) => onDragStart(e, name, 'pool', idx)}
+                            onDragOver={(e) => onDragOver(e, 'pool', idx)}
+                            onDragEnd={handleDragEnd}
+                            style={{ width: `${squareSize}px`, height: `${squareSize}px`, flexBasis: `${squareSize}px`, order: idx }}
+                        >
+                            <img src={getPokemonImage(name)} alt={name} title={name} />
+                        </div>
                     ))}
-                    {renderDropIndicator('pool', filteredPool.length)}
+                    {renderDropSlot('pool')}
                 </div>
             </div>
         </section>

@@ -123,8 +123,8 @@ const PokemonPickHistoryChartBody: React.FC<PokemonHistoryChartProps> = ({ pokem
           pickNumber = a.draft_order;
         }
 
-        const actorKey = a.winning_user_id || a.winning_guest_id || '';
-        const actorName = actorKey ? playersMap.get(actorKey) || actorKey : null;
+        const actorKey = a.winning_user_id || '';
+        const actorName = actorKey ? playersMap.get(actorKey) || null : null;
 
         return {
           pickNumber,

@@ -306,19 +306,14 @@
     }
 
     .drop-indicator {
-        position: relative;
-        width: 0;
-        min-width: 0;
-        overflow: visible;
-        pointer-events: none;
-
-        .drop-indicator-box {
-            position: absolute;
-            top: 0;
-            border: 2px dashed $eb-text-muted;
-            background: rgba(255, 255, 255, 0.04);
-            border-radius: 2px;
-        }
+        flex-shrink: 0;
+        align-self: stretch;
+        box-sizing: border-box;
+        cursor: default;
+        border: 2px dashed $eb-text-muted;
+        background: rgba(255, 255, 255, 0.04);
+        border-radius: 2px;
+        &:hover { border-color: $eb-primary; }
     }
 
     .pokemon-pool-container {
