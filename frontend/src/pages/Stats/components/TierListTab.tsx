@@ -637,14 +637,22 @@ const TierListTab: React.FC<TierListTabProps> = ({ stats }) => {
         setDropTarget(null);
     };
 
-    // Renders an empty drop slot at the target position while dragging
+    // Renders an invisible zero-size flex marker (so it never shifts the row
+    // layout, which would cause dragover target flicker) with the visible
+    // dashed slot drawn as an absolute overlay centered on the item gap.
     const renderDropIndicator = (tierId: string, idx: number) => {
         if (dropTarget && dropTarget.tierId === tierId && dropTarget.index === idx) {
             return (
-                <div
-                    className="pokemon-square drop-indicator"
-                    style={{ width: `${squareSize}px`, height: `${squareSize}px`, flexBasis: `${squareSize}px` }}
-                />
+                <div className="drop-indicator">
+                    <div
+                        className="drop-indicator-box"
+                        style={{
+                            width: `${squareSize}px`,
+                            height: `${squareSize}px`,
+                            left: `${-(squareSize / 2) + 2.5}px`,
+                        }}
+                    />
+                </div>
             );
         }
         return null;

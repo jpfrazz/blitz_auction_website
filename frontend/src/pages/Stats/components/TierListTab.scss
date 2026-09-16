@@ -291,14 +291,6 @@
             border-color: $eb-text-muted;
         }
 
-        &.drop-indicator {
-            border: 2px dashed $eb-text-muted;
-            background: rgba(255, 255, 255, 0.04);
-            cursor: default;
-            pointer-events: none;
-            &:hover { border-color: $eb-text-muted; z-index: auto; }
-        }
-
         .rank-badge {
             position: absolute;
             top: -2px;
@@ -310,6 +302,22 @@
             font-weight: bold;
             z-index: 5;
             pointer-events: none;
+        }
+    }
+
+    .drop-indicator {
+        position: relative;
+        width: 0;
+        min-width: 0;
+        overflow: visible;
+        pointer-events: none;
+
+        .drop-indicator-box {
+            position: absolute;
+            top: 0;
+            border: 2px dashed $eb-text-muted;
+            background: rgba(255, 255, 255, 0.04);
+            border-radius: 2px;
         }
     }
 
