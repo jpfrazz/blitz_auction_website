@@ -63,6 +63,27 @@ function calculateQuantile(sortedData: number[], q: number) {
   return sortedData[base];
 }
 
+// Y-axis tick positions as round, easy-to-glance numbers (multiples of 100 or
+// 250). With the axis no longer anchored at 0, Recharts' default ticker drifts
+// to awkward offsets; this snaps labels back to a nice grid across the domain.
+function niceYTicks(min: number, max: number): number[] {
+  const range = max - min;
+  if (range <= 0) return [];
+  const targetStep = range / 5;
+  const candidates: number[] = [];
+  for (let exp = 2; exp <= 7; exp += 1) {
+    candidates.push(100 * Math.pow(10, exp - 2));
+    candidates.push(250 * Math.pow(10, exp - 2));
+    candidates.push(500 * Math.pow(10, exp - 2));
+  }
+  const step = candidates.find((c) => c >= targetStep) ?? candidates[candidates.length - 1];
+  const ticks: number[] = [];
+  for (let t = Math.ceil(min / step) * step; t <= max; t += step) {
+    ticks.push(t);
+  }
+  return ticks;
+}
+
 const CustomTooltip = ({ active, payload, label }: any) => {
   if (active && payload && payload.length) {
     const data = payload[0].payload;
@@ -264,12 +285,12 @@ const PokemonPriceHistoryChartBody: React.FC<PokemonHistoryChartProps> = ({ poke
     }
     if (xAxisTicks.length === 0 && data.length > 0) xAxisTicks.push(1);
 
-    return { data: plotted, lowerBound, upperBound, axisMin, axisMax, xAxisTicks };
+    return { data: plotted, lowerBound, upperBound, axisMin, axisMax, yAxisTicks: niceYTicks(axisMin, axisMax), xAxisTicks };
   }, [pokemonKey, stats]);
 
   if (!chartData || chartData.data.length === 0) return null;
 
-  const { data, lowerBound, upperBound, axisMin, axisMax, xAxisTicks } = chartData;
+  const { data, lowerBound, upperBound, axisMin, axisMax, yAxisTicks, xAxisTicks } = chartData;
 
   return (
     <ResponsiveContainer width="100%" height="100%">
@@ -286,6 +307,7 @@ const PokemonPriceHistoryChartBody: React.FC<PokemonHistoryChartProps> = ({ poke
           stroke="#666" 
           tick={{ fontSize: 11 }}
           domain={[axisMin, axisMax]}
+          ticks={yAxisTicks}
           label={{ value: 'Price ($)', angle: -90, position: 'insideLeft', fill: '#666', fontSize: 11 }}
         />
         <Tooltip content={<CustomTooltip />} />
