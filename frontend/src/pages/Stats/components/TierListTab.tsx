@@ -168,7 +168,7 @@ const TierListTab: React.FC<TierListTabProps> = ({ stats }) => {
     const [activeListId, setActiveListId] = useState<string | null>(null);
     const [openMenuId, setOpenMenuId] = useState<string | null>(null);
     const [draggedPokemon, setDraggedPokemon] = useState<{ name: string; sourceId: string; index: number } | null>(null);
-    const [dropTarget, setDropTarget] = useState<{ tierId: string; index: number } | null>(null);
+    const [dropTarget, setDropTarget] = useState<{ tierId: string; index: number; noOp?: boolean } | null>(null);
     const [pool, setPool] = useState<string[]>([]);
     const [poolSearch, setPoolSearch] = useState('');
     const [isSidePool, setIsSidePool] = useState(false);
@@ -576,7 +576,21 @@ const TierListTab: React.FC<TierListTabProps> = ({ stats }) => {
         e.preventDefault();
         e.dataTransfer.dropEffect = 'move';
         if (!draggedPokemon || !activeList) return;
-        setDropTarget({ tierId: targetTierId, index: targetIndex });
+
+        const { sourceId, index: sourceIndex } = draggedPokemon;
+
+        // Crossing over your own starting spot (or the gap directly next to it)
+        // leaves the item unmoved. Treat those as a no-op so the drop point
+        // shows around the starting square instead of a slot off to its side.
+        const isNoOp = sourceId === targetTierId &&
+            !(targetTierId === 'pool' && poolSearch) &&
+            (targetIndex === sourceIndex || targetIndex === sourceIndex + 1);
+
+        setDropTarget({
+            tierId: targetTierId,
+            index: isNoOp ? sourceIndex : targetIndex,
+            noOp: isNoOp,
+        });
     };
 
     // Hover over a pokemon square: drop before it when the cursor is on its
@@ -625,7 +639,13 @@ const TierListTab: React.FC<TierListTabProps> = ({ stats }) => {
         }
 
         const { name, sourceId, index: sourceIndex } = draggedPokemon;
-        const { tierId: targetTierId, index: targetIndex } = dropTarget;
+        const { tierId: targetTierId, index: targetIndex, noOp } = dropTarget;
+
+        if (noOp) {
+            setDraggedPokemon(null);
+            setDropTarget(null);
+            return;
+        }
 
         if (targetTierId === 'pool') {
             // Remove from the source tier when dragging a tiered pokemon into the pool
@@ -682,7 +702,7 @@ const TierListTab: React.FC<TierListTabProps> = ({ stats }) => {
     // so reflowing items around it never bounces the dragover target (which is
     // what caused the row flicker).
     const renderDropSlot = (tierId: string) => {
-        if (!dropTarget || dropTarget.tierId !== tierId) return null;
+        if (!dropTarget || dropTarget.tierId !== tierId || dropTarget.noOp) return null;
         return (
             <div
                 className="drop-indicator"

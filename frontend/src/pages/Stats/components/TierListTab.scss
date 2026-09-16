@@ -286,9 +286,10 @@
         &:hover { border-color: $eb-primary; z-index: 2; }
 
         &.dragging {
-            opacity: 0.3;
+            opacity: 0.35;
             border-style: dashed;
             border-color: $eb-text-muted;
+            background: rgba(255, 255, 255, 0.04);
         }
 
         .rank-badge {
