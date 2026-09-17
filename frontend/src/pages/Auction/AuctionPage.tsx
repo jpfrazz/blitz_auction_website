@@ -925,16 +925,16 @@ const AuctionPage: React.FC = () => {
                             <button
                               onClick={handleReadyUp}
                               disabled={readyingUp}
-                              className="button"
+                              className="button ready-up-button"
                             >
                               {readyingUp ? 'Readying Up...' : 'Ready Up'}
                             </button>
                           )}
-                          {currentUserTeam && currentUserId !== draft.host && (
+                          {currentUserTeam && !currentUserReady && currentUserId !== draft.host && (
                             <button
                               onClick={handleBecomeSpectator}
                               disabled={becomingSpectator}
-                              className="button"
+                              className="button become-spectator-button"
                             >
                               {becomingSpectator ? 'Becoming Spectator...' : 'Become Spectator'}
                             </button>

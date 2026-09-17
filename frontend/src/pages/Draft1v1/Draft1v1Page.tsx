@@ -649,12 +649,12 @@ const Draft1v1Page: React.FC = () => {
                         </>
                       )}
                       {currentUserTeam && !currentUserTeam.ready && (
-                        <button className="button" onClick={handleReadyUp} disabled={readyingUp}>
+                        <button className="button ready-up-button" onClick={handleReadyUp} disabled={readyingUp}>
                           {readyingUp ? 'Readying Up...' : 'Ready Up'}
                         </button>
                       )}
-                      {currentUserTeam && !isHost && (
-                        <button className="button" onClick={handleBecomeSpectator} disabled={becomingSpectator}>
+                      {currentUserTeam && !currentUserTeam.ready && !isHost && (
+                        <button className="button become-spectator-button" onClick={handleBecomeSpectator} disabled={becomingSpectator}>
                           {becomingSpectator ? 'Becoming Spectator...' : 'Become Spectator'}
                         </button>
                       )}
