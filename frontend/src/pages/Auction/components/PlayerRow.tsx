@@ -49,9 +49,10 @@ interface SortableItemProps {
   highlighted?: boolean;
   currentUserId?: string | null;
   playerCardColor?: string;
+  positionColors?: boolean;
 }
 
-const SortableItem: React.FC<SortableItemProps> = ({ team, highestBidderId, wsConnected, animatingId, autoSortByFunds, getIconName, auctionCompleted, hideMoney, positionColorClass, highlighted, currentUserId, playerCardColor }) => {
+const SortableItem: React.FC<SortableItemProps> = ({ team, highestBidderId, wsConnected, animatingId, autoSortByFunds, getIconName, auctionCompleted, hideMoney, positionColorClass, highlighted, currentUserId, playerCardColor, positionColors }) => {
   const {
     attributes,
     listeners,
@@ -73,7 +74,7 @@ const SortableItem: React.FC<SortableItemProps> = ({ team, highestBidderId, wsCo
   // Position-colored slots are 1v1 P1/P2 cards, which always use their fixed
   // blue/red styling; the custom player card color from settings is only for
   // auction drafts.
-  const isMyCard = !team.isPlaceholder && !positionColorClass && playerCardColor && team.user_id === currentUserId;
+  const isMyCard = !positionColors && !team.isPlaceholder && playerCardColor && team.user_id === currentUserId;
   const colorVarStyle = isMyCard ? { ['--player-card-color' as any]: playerCardColor } : {};
 
   const playerName = team.isPlaceholder ? null : (team.global_name || team.username || team.user_id);
@@ -326,6 +327,7 @@ const PlayerRow: React.FC<PlayerRowProps> = ({ teams, numPlayers, highestBidderI
               highlighted={!!highlightId && (team.user_id === highlightId || team.guest_id === highlightId)}
               currentUserId={currentUserId}
               playerCardColor={playerCardColor}
+              positionColors={positionColors}
             />
           ))}
         </div>
