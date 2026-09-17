@@ -824,11 +824,13 @@ impl Actor {
         let _ = sqlx::query!(
             r#"
                 DELETE FROM teams
-                WHERE user_id IS NOT DISTINCT FROM $1
+                WHERE draft_id = $3
+                    AND user_id IS NOT DISTINCT FROM $1
                     AND guest_id IS NOT DISTINCT FROM $2
             "#,
             user_id,
             guest_id,
+            self.draft_id,
         )
         .execute(&self.pool)
         .await
