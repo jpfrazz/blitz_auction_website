@@ -825,8 +825,8 @@ impl Actor {
             r#"
                 DELETE FROM teams
                 WHERE draft_id = $3
-                    AND user_id IS NOT DISTINCT FROM $1
-                    AND guest_id IS NOT DISTINCT FROM $2
+                    AND user_id IS NOT DISTINCT FROM $1::TEXT
+                    AND guest_id IS NOT DISTINCT FROM $2::TEXT
             "#,
             user_id,
             guest_id,

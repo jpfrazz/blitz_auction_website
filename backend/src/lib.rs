@@ -22,7 +22,7 @@ pub mod users;
 
 pub fn init_auth_layer(pool: PgPool) {
     let session_store = MemoryStore::default();
-    let _session_layer: SessionManagerLayer<MemoryStore> = SessionManagerLayer::new(session_store)
+    let session_layer = SessionManagerLayer::new(session_store)
         .with_expiry(Expiry::OnInactivity(Duration::hours(1)))
         .with_always_save(true);
 
