@@ -11,7 +11,7 @@ const LobbyLimitModal: React.FC<LobbyLimitModalProps> = ({ onClose }) => (
   <div className="lobby-limit-modal-overlay" onClick={onClose}>
     <div className="lobby-limit-modal" onClick={e => e.stopPropagation()}>
       <div className="lobby-limit-modal-header">
-        <span>Too Many Open Lobbies</span>
+        <span>You're clogging the Lobby Viewer!</span>
         <button className="lobby-limit-modal-close" onClick={onClose} aria-label="Close">
           &times;
         </button>
