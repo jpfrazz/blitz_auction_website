@@ -821,17 +821,17 @@ impl Actor {
 
     async fn kick_draft(&self, user: User) -> Result<(), AppError> {
         let (user_id, guest_id) = user.get_user_and_guest_id();
-        let _ = sqlx::query!(
+        let _ = sqlx::query(
             r#"
                 DELETE FROM teams
                 WHERE draft_id = $3
                     AND user_id IS NOT DISTINCT FROM $1::TEXT
                     AND guest_id IS NOT DISTINCT FROM $2::TEXT
             "#,
-            user_id,
-            guest_id,
-            self.draft_id,
         )
+        .bind(user_id)
+        .bind(guest_id)
+        .bind(self.draft_id)
         .execute(&self.pool)
         .await
         .map_err(|e| {
