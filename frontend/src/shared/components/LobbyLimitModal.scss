@@ -1,0 +1,74 @@
+.lobby-limit-modal-overlay {
+	position: fixed;
+	top: 0;
+	left: 0;
+	right: 0;
+	bottom: 0;
+	background: rgba(0, 0, 0, 0.7);
+	z-index: 1000;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+}
+
+.lobby-limit-modal {
+	background: #1f2030;
+	border-radius: 12px;
+	box-shadow: 0 4px 24px #000a;
+	padding: 24px;
+	min-width: 380px;
+	max-width: 90vw;
+}
+
+.lobby-limit-modal-header {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	font-size: 1.3rem;
+	font-weight: 600;
+	color: #f0f0f0;
+	margin-bottom: 12px;
+}
+
+.lobby-limit-modal-close {
+	position: relative;
+	background: none;
+	border: none;
+	color: #aaa;
+	font-size: 28px;
+	line-height: 1;
+	cursor: pointer;
+	margin-left: 12px;
+}
+
+.lobby-limit-modal-close:hover {
+	color: #fff;
+}
+
+.lobby-limit-modal-body {
+	display: flex;
+	flex-direction: column;
+	gap: 12px;
+	color: #ddd;
+	font-size: 0.95rem;
+	line-height: 1.5;
+}
+
+.lobby-limit-modal-body p {
+	margin: 0;
+}
+
+.lobby-limit-modal-hint {
+	color: #aaa;
+	font-size: 0.9rem;
+}
+
+.lobby-limit-modal-actions {
+	display: flex;
+	gap: 10px;
+	margin-top: 8px;
+}
+
+.lobby-limit-modal-link {
+	text-align: center;
+}

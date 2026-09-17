@@ -8,9 +8,10 @@ import Header from '../../shared/components/Header';
 import Footer from '../../shared/components/Footer';
 import './AuctionSetup.scss';
 import '../../shared/style/theme.scss';
-import { createDraft, CreateDraftRequest } from '../../shared/api/draft';
+import { createDraft, CreateDraftRequest, isLobbyLimitError } from '../../shared/api/draft';
 import { generateRandomDraftName } from '../../shared/utils/draftNameGenerator';
 import { getTipMessagesEnabled } from '../../shared/utils/tipMessages';
+import LobbyLimitModal from '../../shared/components/LobbyLimitModal';
 
 const MIN_TEAM_SIZE = 2;
 const MAX_TEAM_SIZE = 10;
@@ -68,6 +69,7 @@ const AuctionSetupForm: React.FC = () => {
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [createdAuctionId, setCreatedAuctionId] = useState<string | null>(null);
   const [showModal, setShowModal] = useState(false);
+  const [showLobbyLimit, setShowLobbyLimit] = useState(false);
   const [pokemonList, setPokemonList] = useState<Pokemon[]>([]);
   const [excludedPokemon, setExcludedPokemon] = useState<Set<string>>(new Set());
 
@@ -117,6 +119,12 @@ const AuctionSetupForm: React.FC = () => {
         navigate(`/Auction?${response}`);
       }
     } catch (err: any) {
+      // If the host-lobby cap was hit, show the popup that tells the user to
+      // delete an existing lobby first.
+      if (isLobbyLimitError(err)) {
+        setShowLobbyLimit(true);
+        return;
+      }
       // If the backend returned a specific error string (like a profanity warning), use it.
       const errorMessage = err.response?.data || err.message || 'Failed to create auction.';
       setSubmitError(typeof errorMessage === 'string' ? errorMessage : 'Failed to create auction.');
@@ -319,6 +327,7 @@ const AuctionSetupForm: React.FC = () => {
         <strong>TIP:</strong> Don't cap how many Pokemon a player can win in the auction! Some players will finish the auction with more Pokémon than others, and that's essential to the strategy. If one player drafts lots of weak, cheap Pokémon, they're able to play with more than a player who drafts powerful, expensive ones!
       </div>
     )}
+    {showLobbyLimit && <LobbyLimitModal onClose={() => setShowLobbyLimit(false)} />}
     </>
   );
 };

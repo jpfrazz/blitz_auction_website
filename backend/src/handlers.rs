@@ -33,7 +33,10 @@ use sqlx::Row;
 use std::{
     collections::{HashMap, HashSet},
     str::FromStr,
-    sync::Arc,
+    sync::{
+        Arc,
+        atomic::{AtomicUsize, Ordering},
+    },
 };
 use tokio::sync::{RwLock, broadcast};
 use tower_sessions::Session;
@@ -378,6 +381,37 @@ pub async fn create_draft(
     }
 
     let host = auth_session.user.expect("user should exist");
+
+    // Cap how many open lobbies a single host can have sitting in the lobby
+    // viewer. Lobbies still waiting to start (PENDING) or currently drafting
+    // (BIDDING) count; finished (COMPLETED) drafts aren't lobbies anymore and
+    // don't block new ones. The in-memory map keeps every draft since server
+    // start unless the host deleted it, but only non-completed drafts are
+    // actionable from the viewer.
+    const MAX_OPEN_LOBBIES: usize = 3;
+    let mut open_lobbies = 0usize;
+    for entry in state.drafts.iter() {
+        let draft = entry.value();
+        if draft.host.get_user_id_string() != host.get_user_id_string() {
+            continue;
+        }
+        // Don't let a single unavailable lobby break creation; skip it.
+        let Ok(lobby) = draft.get_lobby().await else {
+            continue;
+        };
+        if lobby.draft_state == DraftState::PENDING
+            || lobby.draft_state == DraftState::BIDDING
+        {
+            open_lobbies += 1;
+        }
+    }
+    if open_lobbies >= MAX_OPEN_LOBBIES {
+        return Err((
+            StatusCode::BAD_REQUEST,
+            format!("LOBBY_LIMIT:{}", MAX_OPEN_LOBBIES),
+        ));
+    }
+
     let draft = Draft::build(host, draft_settings, state.db_pool.clone()).await?;
     let draft_id = draft.draft_id;
     state.drafts.insert(draft_id, draft);
@@ -4131,34 +4165,50 @@ pub async fn websocket_handler(
     };
     let tx = draft.broadcast_tx.clone();
     let presence = draft.presence.clone();
-    Ok(ws.on_upgrade(move |socket| handle_websocket(socket, tx, presence)))
+    let spectator_count = draft.spectator_count.clone();
+    Ok(ws.on_upgrade(move |socket| handle_websocket(socket, tx, presence, spectator_count)))
 }
 
 async fn handle_websocket(
     mut socket: WebSocket,
     tx: broadcast::Sender<ServerMessage>,
     presence: Arc<dashmap::DashMap<String, usize>>,
+    spectator_count: Arc<AtomicUsize>,
 ) {
     let mut rx = tx.subscribe();
     // The player user_id this socket registered itself as (via PresenceRegister).
-    // Only the emulator page sends that message, so spectators stay anonymous.
+    // Only the emulator page sends that message; a socket that never registers
+    // is a spectator (Spectate page / lobby viewer).
     let mut registered_user: Option<String> = None;
+    // Every socket starts as a viewer; an emulator socket converts to a player
+    // the moment it registers presence (briefly ticking the count up then down
+    // on connect, which is imperceptible in practice).
+    let mut is_viewer = true;
+    let count = spectator_count.fetch_add(1, Ordering::SeqCst) + 1;
+    let _ = tx.send(ServerMessage::SpectatorCount { count });
 
     // Tell a freshly connected client who is already online so it can render
-    // connected/disconnected state immediately instead of waiting for events.
+    // connected/disconnected state immediately instead of waiting for events,
+    // and the current spectator count so the header is right on first paint.
     let connected: Vec<String> = presence
         .iter()
         .filter(|e| *e.value() > 0)
         .map(|e| e.key().clone())
         .collect();
+    let spectator_count_now = spectator_count.load(Ordering::SeqCst);
     if let Ok(json_text) = serde_json::to_string(&ServerMessage::PresenceSnapshot {
         user_ids: connected,
+        spectator_count: spectator_count_now,
     }) {
         if socket
             .send(Message::Text(json_text.into()))
             .await
             .is_err()
         {
+            // Socket died before the loop started; release this viewer's count
+            // so the negotiated count doesn't leak +1.
+            let count = spectator_count.fetch_sub(1, Ordering::SeqCst).saturating_sub(1);
+            let _ = tx.send(ServerMessage::SpectatorCount { count });
             return;
         }
     }
@@ -4201,6 +4251,16 @@ async fn handle_websocket(
                                         *count == 1
                                     };
                                     registered_user = Some(user_id.clone());
+                                    // This socket is a player, not a spectator:
+                                    // undo the viewer count increment above.
+                                    if is_viewer {
+                                        is_viewer = false;
+                                        let count = spectator_count
+                                            .fetch_sub(1, Ordering::SeqCst)
+                                            .saturating_sub(1);
+                                        let _ = tx
+                                            .send(ServerMessage::SpectatorCount { count });
+                                    }
                                     if was_offline {
                                         let _ = tx.send(ServerMessage::PlayerConnected { user_id });
                                     }
@@ -4264,6 +4324,10 @@ async fn handle_websocket(
     // The socket dropped (tab closed, page navigated away, network blip that
     // didn't recover). Release this socket's presence registration and tell the
     // lobby the player left once their last connection is gone.
+    if is_viewer {
+        let count = spectator_count.fetch_sub(1, Ordering::SeqCst).saturating_sub(1);
+        let _ = tx.send(ServerMessage::SpectatorCount { count });
+    }
     if let Some(user_id) = registered_user {
         let remaining = match presence.entry(user_id.clone()) {
             entry::Entry::Occupied(mut e) => {

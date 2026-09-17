@@ -106,7 +106,6 @@ const SpectatePage: React.FC = () => {
       .then((draft) => {
         if (cancelled) return;
         setDraft(draft);
-        setSpectatorCount(draft.spectators?.length ?? 0);
         setPlayerSaves((prev) => {
           const next = { ...prev };
           for (const team of draft.teams) {
@@ -198,6 +197,9 @@ const SpectatePage: React.FC = () => {
             setConnectedUsers(new Set(ids));
             setEverConnectedUsers((prev) => new Set([...Array.from(prev), ...ids]));
             setPresenceLoaded(true);
+            if (typeof msg.data?.spectator_count === 'number') {
+              setSpectatorCount(msg.data.spectator_count);
+            }
           }
           if (msg.type === 'PlayerConnected') {
             const { user_id } = msg.data as { user_id: string };
@@ -213,6 +215,11 @@ const SpectatePage: React.FC = () => {
               return next;
             });
             setPresenceLoaded(true);
+          }
+          if (msg.type === 'SpectatorCount') {
+            if (typeof msg.data?.count === 'number') {
+              setSpectatorCount(msg.data.count);
+            }
           }
           if (msg.type === 'SaveUpdate') {
             const { user_id, save_data } = msg.data as { user_id: string; save_data: any };
@@ -234,10 +241,6 @@ const SpectatePage: React.FC = () => {
               global_name?: string | null;
               save_data?: SaveData | null;
             }>;
-            const spectators = msg.data?.spectators as Array<{ user_id?: string }> | undefined;
-            if (Array.isArray(spectators)) {
-              setSpectatorCount(spectators.length);
-            }
             setPlayerSaves((prev) => {
               const next = { ...prev };
               for (const t of teams) {

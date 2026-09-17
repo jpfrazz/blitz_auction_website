@@ -4,6 +4,16 @@ export interface ExcludedPokemon {
   form: string | null;
 }
 
+// Max open lobbies a single host may keep in the lobby viewer (see backend
+// handlers::create_draft). Creation is rejected once this many exist.
+export const MAX_HOSTED_LOBBIES = 3;
+
+// True when a createDraft error is the backend host-lobby cap being hit, so
+// callers can show the "delete some lobbies first" popup instead of inline text.
+export function isLobbyLimitError(err: unknown): boolean {
+  return err instanceof Error && err.message.includes('LOBBY_LIMIT');
+}
+
 export interface CreateDraftRequest {
   num_teams: number;
   starting_money: number;

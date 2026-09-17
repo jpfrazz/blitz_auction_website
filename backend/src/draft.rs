@@ -5,7 +5,7 @@ use petname::petname;
 use rand::seq::SliceRandom;
 use serde::{Deserialize, Serialize};
 use sqlx::{PgPool, Row};
-use std::{collections::{HashMap, HashSet}, sync::Arc};
+use std::{collections::{HashMap, HashSet}, sync::{Arc, atomic::AtomicUsize}};
 use strum::Display;
 use tokio::{
     sync::{broadcast, mpsc, oneshot},
@@ -35,6 +35,11 @@ pub struct Draft {
     /// and the count is decremented when its socket drops; the Spectate page
     /// never registers, so it doesn't count as a player connection.
     pub presence: Arc<DashMap<String, usize>>,
+    /// Number of live anonymous viewer (Spectate page / lobby) WebSocket
+    /// connections for this draft. Emulator sockets register presence and are
+    /// excluded, so this counts actual spectators, unlike the spectator roster
+    /// below (teams moved out of a player slot while the draft is pending).
+    pub spectator_count: Arc<AtomicUsize>,
     pub created_at: chrono::DateTime<Utc>,
     actor_sender: mpsc::Sender<DraftCommand>,
 }
@@ -79,7 +84,7 @@ pub struct DraftLobbyResponse {
     teams_joined: u32,
     total_teams: u32,
     total_auctions: u32,
-    draft_state: DraftState,
+    pub draft_state: DraftState,
     created_at: chrono::DateTime<Utc>,
 }
 
@@ -385,6 +390,7 @@ impl Draft {
             broadcast_tx,
             actor_sender,
             presence: Arc::new(DashMap::new()),
+            spectator_count: Arc::new(AtomicUsize::new(0)),
             created_at,
         }
     }

@@ -70,7 +70,10 @@ const SortableItem: React.FC<SortableItemProps> = ({ team, highestBidderId, wsCo
     cursor: autoSortByFunds ? 'default' : 'grab',
   };
 
-  const isMyCard = !team.isPlaceholder && playerCardColor && team.user_id === currentUserId;
+  // Position-colored slots are 1v1 P1/P2 cards, which always use their fixed
+  // blue/red styling; the custom player card color from settings is only for
+  // auction drafts.
+  const isMyCard = !team.isPlaceholder && !positionColorClass && playerCardColor && team.user_id === currentUserId;
   const colorVarStyle = isMyCard ? { ['--player-card-color' as any]: playerCardColor } : {};
 
   const playerName = team.isPlaceholder ? null : (team.global_name || team.username || team.user_id);

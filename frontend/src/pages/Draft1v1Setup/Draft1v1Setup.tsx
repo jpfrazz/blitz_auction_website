@@ -2,11 +2,12 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Header from '../../shared/components/Header';
 import Footer from '../../shared/components/Footer';
-import { createDraft, CreateDraftRequest } from '../../shared/api/draft';
+import { createDraft, CreateDraftRequest, isLobbyLimitError } from '../../shared/api/draft';
 import { fetchPokemonList } from '../../shared/api/pokemon';
 import { Pokemon } from '../../types';
 import '../AuctionSetup/AuctionSetup.scss';
 import { generateRandomDraftName } from '../../shared/utils/draftNameGenerator';
+import LobbyLimitModal from '../../shared/components/LobbyLimitModal';
 
 const Draft1v1Setup = () => (
   <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
@@ -23,6 +24,7 @@ const Draft1v1SetupForm: React.FC = () => {
   const [draftName, setDraftName] = useState('');
   const [password, setPassword] = useState('');
   const [submitError, setSubmitError] = useState<string | null>(null);
+  const [showLobbyLimit, setShowLobbyLimit] = useState(false);
   const [pokemonList, setPokemonList] = useState<Pokemon[]>([]);
 
   useEffect(() => {
@@ -54,6 +56,12 @@ const Draft1v1SetupForm: React.FC = () => {
       const draftId = await createDraft(data);
       navigate(`/Draft1v1?${draftId}`);
     } catch (err: any) {
+      // If the host-lobby cap was hit, show the popup that tells the user to
+      // delete an existing lobby first.
+      if (isLobbyLimitError(err)) {
+        setShowLobbyLimit(true);
+        return;
+      }
       const errorMessage = err.response?.data || err.message || 'Failed to create 1v1 draft.';
       setSubmitError(typeof errorMessage === 'string' ? errorMessage : 'Failed to create 1v1 draft.');
     }
@@ -113,6 +121,7 @@ const Draft1v1SetupForm: React.FC = () => {
           </button>
         </div>
       </form>
+      {showLobbyLimit && <LobbyLimitModal onClose={() => setShowLobbyLimit(false)} />}
     </div>
   );
 };
