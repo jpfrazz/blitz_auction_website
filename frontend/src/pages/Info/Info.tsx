@@ -924,6 +924,24 @@ const Info = () => (
           <li>Can't move first and KO yours this turn</li>
         </ul>
         <p className="info-answer info-answer-heading">
+          <strong>Switch In Selection</strong>
+        </p>
+        <p className="info-answer">
+          When the enemy AI's Pokémon faints, it picks which of its Pokemon to send in next based on whichever is in the highest priority tier:
+        </p>
+        <ul>
+          <li>Outspeeds and KOs</li>
+          <li>KOs but doesn't outspeed</li>
+          <li>Outspeeds and 2HKOs</li>
+          <li>2HKOs but doesn't outspeed</li>
+          <li>Resists your revealed moves and hits back super effectively</li>
+          <li>Resists your revealed moves but doesn't hit back super effectively</li>
+          <li>Wins the 1v1</li>
+        </ul>
+        <p className="info-answer">
+          If the enemy AI has multiple Pokémon in the same priority tier, it picks between them at random. For example, if your opponent has four Pokémon which all outspeed and KO your Pokémon, each of those Pokémon has a 25% chance to be sent in next.
+        </p>
+        <p className="info-answer info-answer-heading">
           <strong>AI Move Scoring</strong>
         </p>
         <p className="info-answer">

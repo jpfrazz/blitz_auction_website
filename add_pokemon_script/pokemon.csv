@@ -591,6 +591,8 @@ dex_number,name,form,evolves_from_id,evolves_from_form,type1,type2,stage,ability
 279,Pelipper,,278,,Water,Flying,evo,Keen Eye,Drizzle,Rain Dish,60,50,100,95,70,65,"Level 25",,,
 746,Wishiwashi,,,,Water,,base,Schooling,,,45,20,20,25,25,40,,,,
 746,Wishiwashi-School,School,746,,Water,,evo,Schooling,,,45,140,130,140,135,30,"Schooling Level 20",,,
+831,Wooloo,,,,Normal,,base,Fluffy,Run Away,Bulletproof,42,40,38,40,38,68,,,,
+832,Dubwool,,831,,Normal,,evo,Fluffy,Steadfast,Bulletproof,72,80,100,60,60,88,"Level 24",,,
 194,Wooper,Paldea,,,Poison,Ground,base,Poison Point,Water Absorb,Unaware,55,45,45,25,25,15,,,,
 980,Clodsire,Paldea,194,Paldea,Poison,Ground,evo,Poison Point,Water Absorb,Unaware,130,75,60,45,100,20,"Level 20",,,
 835,Yamper,,,,Electric,,base,Ball Fetch,,Rattled,59,45,50,40,50,26,,,,

@@ -1,0 +1,59 @@
+9/19/2026
+
+-----------------------------------------------
+Boss Held Item Tweaks
+-----------------------------------------------
+
+Gym 3 Aces now hold Oran Berries, not Sitrus Berries
+//For reference, here's how much HP each ace previously healed via Sitrus:
+   Nosepass: 14
+   Beautifly: 17
+   Hariyama: 28
+   Manectric: 19
+   Torkoal: 19
+   Vigoroth: 20
+   Tropius: 22
+   Solrock: 21
+   Lunatone: 21
+   Dondozo: 28
+
+
+Norman 2-4 Held Item Oran/Sitrus Berry > Quick Claw
+//A nerf. Quick Claw is largely useless since Vigoroth outspeeds most Pokémon, but it's thematically appropriate for the "high energy" stage of this evolution line. And the item being a claw of course matches with Vigoroth's claws.
+
+
+-----------------------------------------------
+Gen 9 Move Backports
+-----------------------------------------------
+
+Super Fang
+Shroodle: 18
+
+Mach Punch
+Loppuny: 9
+Clobbopus: 18
+//These Pokémon have had these moves added to their learnsets from ZA
+
+
+-----------------------------------------------
+QoL
+-----------------------------------------------
+
+Updated INVERT on Scott's shop
+//Its description now notes Select to preview. Previewing invert now displays prices as reset to 4000.
+
+
+-----------------------------------------------
+Bug Fixes
+-----------------------------------------------
+
+Adjusted Doubles AI so it will never use a spread move if it affects neither of your Pokémon
+//Baltoy's Bulldoze is given a positive score bonus if its ally (Lunatone, Solrock, Natu) are immune. However, this bonus could cause Bulldoze to be the highest scoring move even if both of the player's Pokémon were also immune. Now, Baltoy/Claydol won't get that bonus if all three Pokémon on the field would be unaffected by Bulldoze/Earthquake.
+
+
+-----------------------------------------------
+Pool Addition
+-----------------------------------------------
+
++Wooloo
+//Joins Skwovet as a normal type with a smoking hot level 24 evolution.
