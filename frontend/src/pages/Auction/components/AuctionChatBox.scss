@@ -79,6 +79,15 @@
   color: $eb-primary;
   font-weight: 600;
   font-size: 1.2rem;
+
+  a {
+    color: inherit;
+    text-decoration: none;
+
+    &:hover {
+      text-decoration: underline;
+    }
+  }
 }
 
 .auction-chat-time {

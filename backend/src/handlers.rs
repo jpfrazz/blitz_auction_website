@@ -3889,25 +3889,38 @@ pub async fn unclaim_eeveelution(
     Ok(Json(result))
 }
 
+#[derive(Clone, Debug, Deserialize)]
+pub struct ChatListParams {
+    pub after: Option<i64>,
+}
+
 #[debug_handler]
 pub async fn get_draft_chats(
     State(state): State<ServerState>,
     Path(draft_id): Path<String>,
+    Query(params): Query<ChatListParams>,
 ) -> Result<Json<Vec<ChatMessage>>, (StatusCode, String)> {
     let draft_uuid = Uuid::from_str(&draft_id)
         .map_err(|_| (StatusCode::BAD_REQUEST, "invalid draft id".to_string()))?;
 
-    let rows = sqlx::query(
+    let mut query_builder = sqlx::QueryBuilder::new(
         "SELECT c.chat_id, c.draft_id, c.user_id, COALESCE(u.user_name, c.user_id) AS user_name, c.message, c.created_at
          FROM chats c
          LEFT JOIN users u ON u.user_id = c.user_id
-         WHERE c.draft_id = $1
-         ORDER BY c.created_at ASC",
-    )
-    .bind(draft_uuid)
-    .fetch_all(&state.db_pool)
-    .await
-    .map_err(|e: sqlx::Error| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+         WHERE c.draft_id = ",
+    );
+    query_builder.push_bind(draft_uuid);
+    if let Some(after) = params.after {
+        query_builder.push(" AND c.chat_id > ");
+        query_builder.push_bind(after);
+    }
+    query_builder.push(" ORDER BY c.created_at ASC");
+
+    let rows = query_builder
+        .build()
+        .fetch_all(&state.db_pool)
+        .await
+        .map_err(|e: sqlx::Error| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
 
     let chats = rows
         .into_iter()

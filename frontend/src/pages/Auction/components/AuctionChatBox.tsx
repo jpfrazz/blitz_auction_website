@@ -7,16 +7,28 @@ interface AuctionChatBoxProps {
   draftId: string;
   isGuest: boolean;
   isLoggedIn: boolean;
+  messages: ChatMessage[];
+  onMessagesChange: React.Dispatch<React.SetStateAction<ChatMessage[]>>;
+  wsConnected: boolean;
 }
 
-const AuctionChatBox: React.FC<AuctionChatBoxProps> = ({ draftId, isGuest, isLoggedIn }) => {
-  const [messages, setMessages] = useState<ChatMessage[]>([]);
+const REALTIME_POLL_INTERVAL_MS = 30000;
+
+const AuctionChatBox: React.FC<AuctionChatBoxProps> = ({
+  draftId,
+  isGuest,
+  isLoggedIn,
+  messages,
+  onMessagesChange,
+  wsConnected,
+}) => {
   const [newMessage, setNewMessage] = useState('');
   const [isSending, setIsSending] = useState(false);
   const [isCollapsed, setIsCollapsed] = useState(true);
   const [chatError, setChatError] = useState<string | null>(null);
   const chatBodyRef = useRef<HTMLDivElement | null>(null);
   const isNearBottomRef = useRef(true);
+  const lastChatIdRef = useRef<number | null>(null);
 
   const isNearBottom = (element: HTMLDivElement) => {
     const threshold = 40;
@@ -24,20 +36,87 @@ const AuctionChatBox: React.FC<AuctionChatBoxProps> = ({ draftId, isGuest, isLog
     return distanceFromBottom <= threshold;
   };
 
-  const loadChats = useCallback(async () => {
+  const appendMessages = useCallback(
+    (incoming: ChatMessage[]) => {
+      if (incoming.length === 0) return;
+      onMessagesChange((prev) => {
+        const existingIds = new Set(prev.map((m) => m.chat_id));
+        const fresh = incoming.filter((m) => !existingIds.has(m.chat_id));
+        if (fresh.length === 0) return prev;
+        return [...prev, ...fresh];
+      });
+    },
+    [onMessagesChange],
+  );
+
+  const loadFullHistory = useCallback(async () => {
     try {
       const data = await fetchDraftChats(draftId);
-      setMessages(data);
+      // Merge rather than replace: a NewMessage can arrive over the WebSocket
+      // while this fetch is in flight, and replacing would drop it from view if
+      // the DB snapshot predates it. Merging by chat_id can only add messages.
+      onMessagesChange((prev) => {
+        if (data.length === 0) return prev;
+        const byId = new Map(prev.map((m) => [m.chat_id, m]));
+        for (const m of data) {
+          byId.set(m.chat_id, m);
+        }
+        return Array.from(byId.values()).sort((a, b) =>
+          a.created_at.localeCompare(b.created_at),
+        );
+      });
     } catch (error) {
       console.error('Failed to fetch chats:', error);
     }
-  }, [draftId]);
+  }, [draftId, onMessagesChange]);
 
+  const loadNewMessages = useCallback(async () => {
+    if (lastChatIdRef.current === null) {
+      await loadFullHistory();
+      return;
+    }
+    try {
+      const data = await fetchDraftChats(draftId, lastChatIdRef.current);
+      appendMessages(data);
+    } catch (error) {
+      console.error('Failed to fetch chats:', error);
+    }
+  }, [draftId, loadFullHistory, appendMessages]);
+
+  // Track the most recent chat id so incremental fetches only pull new messages.
   useEffect(() => {
-    loadChats();
-    const interval = setInterval(loadChats, 1000);
+    if (messages.length > 0) {
+      lastChatIdRef.current = messages[messages.length - 1].chat_id;
+    }
+  }, [messages]);
+
+  // Load full history once on mount. The page connects to the draft WebSocket,
+  // so later messages are delivered via NewMessage events instead of polling.
+  useEffect(() => {
+    loadFullHistory();
+  }, [loadFullHistory]);
+
+  // If the WebSocket ever drops, fall back to a slow poll while the chat is
+  // visible so messages still arrive. This polls incrementally, only returning
+  // messages we have not seen yet.
+  useEffect(() => {
+    if (isCollapsed || wsConnected) {
+      return;
+    }
+    const interval = setInterval(loadNewMessages, REALTIME_POLL_INTERVAL_MS);
     return () => clearInterval(interval);
-  }, [loadChats]);
+  }, [isCollapsed, wsConnected, loadNewMessages]);
+
+  // When the WebSocket reconnects, refetch the full history to catch anything
+  // missed while it was down.
+  const wasConnectedRef = useRef(wsConnected);
+  useEffect(() => {
+    const wasConnected = wasConnectedRef.current;
+    wasConnectedRef.current = wsConnected;
+    if (wsConnected && !wasConnected) {
+      loadFullHistory();
+    }
+  }, [wsConnected, loadFullHistory]);
 
   useEffect(() => {
     if (isCollapsed || !chatBodyRef.current) {
@@ -83,7 +162,7 @@ const AuctionChatBox: React.FC<AuctionChatBoxProps> = ({ draftId, isGuest, isLog
     try {
       const response = await createDraftChat(draftId, trimmed);
       if (response) {
-        setMessages((prev) => [...prev, response]);
+        appendMessages([response]);
       }
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Failed to send chat';
@@ -125,7 +204,15 @@ const AuctionChatBox: React.FC<AuctionChatBoxProps> = ({ draftId, isGuest, isLog
                   <div className={`auction-chat-message${!showHeader ? ' chained' : ''}`} key={message.chat_id}>
                     {showHeader && (
                       <div className="auction-chat-message-header">
-                        <span className="auction-chat-user">{message.user_name}</span>
+                        <span className="auction-chat-user">
+                          <a
+                            href={`/Stats/PlayerProfiles/${encodeURIComponent(message.user_name)}?userId=${encodeURIComponent(message.user_id)}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                          >
+                            {message.user_name}
+                          </a>
+                        </span>
                         <span className="auction-chat-time">{formatTime(message.created_at)}</span>
                       </div>
                     )}

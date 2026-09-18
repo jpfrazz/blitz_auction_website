@@ -15,7 +15,7 @@ import AuctionStatsPanel from './components/AuctionStatsPanel';
 import PokemonTablePanel from './components/PokemonTablePanel/PokemonTablePanel';
 import EeveelutionClaimModal from './components/EeveelutionClaimModal';
 import ResultsSubmissionModal from './components/ResultsSubmissionModal';
-import { Draft, Auction, Pokemon } from '../../types';
+import { Draft, Auction, Pokemon, ChatMessage } from '../../types';
 import confetti from 'canvas-confetti';
 
 const AUCTION_ALERT_SOUND_PATH = encodeURI('/pokeball.wav');
@@ -54,6 +54,7 @@ const AuctionPage: React.FC = () => {
   const [showResultsSubmissionModal, setShowResultsSubmissionModal] = useState(false);
   const [avatar, setAvatar] = useState<string | undefined>(undefined);
   const [wsConnected, setWsConnected] = useState(true);
+  const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
   const [isAuctionSoundMuted, setIsAuctionSoundMuted] = useState<boolean>(() => {
     if (typeof window === 'undefined') {
       return true;
@@ -277,6 +278,7 @@ const AuctionPage: React.FC = () => {
 
       ws.onopen = () => {
         reconnectCountRef.current = 0;
+        setWsConnected(true);
       }
 
       ws.onmessage = (event) => {
@@ -290,6 +292,16 @@ const AuctionPage: React.FC = () => {
             case 'AuctionUpdate':
               setCurrentAuction(msg.data);
               break;
+            case 'NewMessage': {
+              const newChat = msg.data as ChatMessage;
+              setChatMessages((prev) => {
+                if (prev.some((m) => m.chat_id === newChat.chat_id)) {
+                  return prev;
+                }
+                return [...prev, newChat];
+              });
+              break;
+            }
           }
         } catch (e) {
           console.error('Error parsing websocket message', e);
@@ -297,6 +309,8 @@ const AuctionPage: React.FC = () => {
       };
       // reconnect if ws is disconnected unintentionally
       ws.onclose = (event) => {
+        setWsConnected(false);
+
         if (event.wasClean) return;
 
         if (reconnectCountRef.current < maxReconnectAttempts) {
@@ -969,7 +983,14 @@ const AuctionPage: React.FC = () => {
                         total_auctions={draft.total_auctions}
                       />
                     )}
-                    <AuctionChatBox draftId={draft.draft_id} isGuest={isGuest} isLoggedIn={isLoggedIn} />
+                    <AuctionChatBox
+                      draftId={draft.draft_id}
+                      isGuest={isGuest}
+                      isLoggedIn={isLoggedIn}
+                      messages={chatMessages}
+                      onMessagesChange={setChatMessages}
+                      wsConnected={wsConnected}
+                    />
                   </>
                 )}
               </div>

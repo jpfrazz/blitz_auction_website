@@ -1,12 +1,13 @@
 // Utility to connect to a draft websocket and handle messages
 // Usage: connectDraftWebSocket(draftId, onDraftState)
-import { Auction, Draft } from '../../types';
+import { Auction, ChatMessage, Draft } from '../../types';
 
 export function connectDraftWebSocket(
   draftId: string,
   onDraftState: (draft: Draft) => void,
   onAuctionState: (auction: Auction) => void,
-  onStatusChange?: (connected: boolean) => void
+  onStatusChange?: (connected: boolean) => void,
+  onNewMessage?: (message: ChatMessage) => void
 ) {
   const protocol = window.location.protocol === 'https:' ? 'wss' : 'ws';
   const wsUrl = `${protocol}://${window.location.host}/api/ws/${draftId}`;
@@ -26,6 +27,9 @@ export function connectDraftWebSocket(
           break;
         case 'AuctionUpdate':
           onAuctionState(msg.data);
+          break;
+        case 'NewMessage':
+          if (onNewMessage) onNewMessage(msg.data);
           break;
       }
     } catch (e) {

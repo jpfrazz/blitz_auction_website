@@ -238,8 +238,9 @@ export async function forfeitDraft(
 }
 
 // Fetch chat messages for a draft
-export async function fetchDraftChats(draft_id: string): Promise<ChatMessage[]> {
-  const response = await axios.get(`/api/drafts/${draft_id}/chats`);
+export async function fetchDraftChats(draft_id: string, after?: number): Promise<ChatMessage[]> {
+  const params = after !== undefined && after !== null ? `?after=${after}` : '';
+  const response = await axios.get(`/api/drafts/${draft_id}/chats${params}`);
   return response.data;
 }
 

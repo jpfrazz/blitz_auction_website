@@ -18,7 +18,7 @@ import {
   updatePendingDraftSettings,
   oneVOneToggleTimer,
 } from '../../shared/api/draftData';
-import { Draft, Pokemon, Team, OneVOnePoolSlot, OneVOneState } from '../../types';
+import { Draft, Pokemon, Team, OneVOnePoolSlot, OneVOneState, ChatMessage } from '../../types';
 import { fetchPokemonList } from '../../shared/api/pokemon';
 import PlayerRow from '../Auction/components/PlayerRow';
 import AuctionChatBox from '../Auction/components/AuctionChatBox';
@@ -84,6 +84,7 @@ const Draft1v1Page: React.FC = () => {
   const [tab, setTab] = useState<string>(TAB_HOVER);
   const [minimizedPokemon, setMinimizedPokemon] = useState<Set<string>>(new Set());
   const [wsConnected, setWsConnected] = useState(true);
+  const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
   const [hasRefereeRole, setHasRefereeRole] = useState(false);
   const [selectedSlot, setSelectedSlot] = useState<OneVOnePoolSlot | null>(null);
   const [hoveredSlot, setHoveredSlot] = useState<OneVOnePoolSlot | null>(null);
@@ -132,7 +133,14 @@ const Draft1v1Page: React.FC = () => {
       draftId,
       (updated) => setDraft(updated),
       () => {},
-      setWsConnected
+      setWsConnected,
+      (newChat) =>
+        setChatMessages((prev) => {
+          if (prev.some((m) => m.chat_id === newChat.chat_id)) {
+            return prev;
+          }
+          return [...prev, newChat];
+        })
     );
     wsRef.current = ws;
     return () => ws.close();
@@ -685,7 +693,14 @@ const Draft1v1Page: React.FC = () => {
                     onConfirm={handleConfirmAction}
                   />
                 )}
-                <AuctionChatBox draftId={draft.draft_id} isGuest={isGuest} isLoggedIn={isLoggedIn} />
+                <AuctionChatBox
+                  draftId={draft.draft_id}
+                  isGuest={isGuest}
+                  isLoggedIn={isLoggedIn}
+                  messages={chatMessages}
+                  onMessagesChange={setChatMessages}
+                  wsConnected={wsConnected}
+                />
               </>
             )}
           </div>
