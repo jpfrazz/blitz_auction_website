@@ -2,6 +2,7 @@ import React, { useEffect, useState, useRef } from 'react';
 import './Header.scss';
 import { Link, useLocation } from 'react-router-dom';
 import { fetchCurrentUser, changeGuestName } from '../api/draftData';
+import { fetchPendingBossBattleSubmissionCount } from '../api/users';
 import { UserRole } from '../../types';
 import SettingsModal from './SettingsModal';
 import { scrollToTop } from '../utils/scroll';
@@ -81,6 +82,43 @@ function Header() {
   });
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
+  const [pendingSubmissionCount, setPendingSubmissionCount] = useState(0);
+
+  const isAdminUser =
+    !!user &&
+    ((user.roles ?? []).some((role) => role.role_name === 'Website Dev') ||
+      user.username === 'franklynathan' ||
+      user.username === 'jage04' ||
+      user.username === 'Jason' ||
+      user.username === 'mfrazz' ||
+      user.username === 'jpfrazz');
+
+  useEffect(() => {
+    if (!isAdminUser) {
+      setPendingSubmissionCount(0);
+      return;
+    }
+    let cancelled = false;
+    const refresh = async () => {
+      try {
+        const count = await fetchPendingBossBattleSubmissionCount();
+        if (!cancelled) setPendingSubmissionCount(count);
+      } catch {
+        if (!cancelled) setPendingSubmissionCount(0);
+      }
+    };
+    refresh();
+    const interval = setInterval(refresh, 20000);
+    const onVisibility = () => {
+      if (!document.hidden) refresh();
+    };
+    document.addEventListener('visibilitychange', onVisibility);
+    return () => {
+      cancelled = true;
+      clearInterval(interval);
+      document.removeEventListener('visibilitychange', onVisibility);
+    };
+  }, [isAdminUser]);
 
   useEffect(() => {
     if (user?.user_id) {
@@ -339,16 +377,27 @@ function Header() {
               {btn.label}
             </Link>
           ))}
-          {user && ((user.roles ?? []).some((role) => role.role_name === 'Website Dev') || user.username === 'franklynathan' || user.username === 'jage04' || user.username === 'Jason' || user.username === 'mfrazz' || user.username === 'jpfrazz') && (
-            <Link
-              to="/Admin"
-              className="navButton"
-              onClick={handleNavLinkClick}
-              target={linkTarget}
-              rel={linkRel}
-            >
-              Admin
-            </Link>
+          {isAdminUser && (
+            <div className="admin-nav">
+              <Link
+                to="/Admin"
+                className="navButton"
+                onClick={handleNavLinkClick}
+                target={linkTarget}
+                rel={linkRel}
+              >
+                Admin
+              </Link>
+              {pendingSubmissionCount > 0 && (
+                <span
+                  className="admin-nav-badge"
+                  title={`${pendingSubmissionCount} pending boss battle submission${pendingSubmissionCount === 1 ? '' : 's'}`}
+                  aria-label={`${pendingSubmissionCount} pending boss battle submission${pendingSubmissionCount === 1 ? '' : 's'}`}
+                >
+                  !
+                </span>
+              )}
+            </div>
           )}
           {!user && (
             <a href="/api/login" className="navButton" onClick={handleNavLinkClick} target={linkTarget} rel={linkRel}>Login</a>

@@ -9,6 +9,7 @@ import PlayerSearchStatsTab from './components/PlayerSearchStatsTab';
 import TierListTab from './components/TierListTab';
 import RaceResultsTab from './components/RaceResultsTab';
 import HallOfFameStatsTab from './components/HallOfFameStatsTab';
+import { fetchCurrentUser } from '../../shared/api/draftData';
 import './Stats.scss';
 
 type StatsTab = 'pokemon' | 'drafts' | 'player-search' | 'hall-of-fame' | 'tier-list';
@@ -124,6 +125,21 @@ const Stats: React.FC = () => {
   const [showCasual, setShowCasual] = useState(false);
   const [show1v1s, setShow1v1s] = useState(false);
   const [gridColumns, setGridColumns] = useState<number>(0);
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    fetchCurrentUser()
+      .then((user) => {
+        if (!cancelled) {
+          setCurrentUserId(user.user_id);
+        }
+      })
+      .catch((e) => console.error('[Stats] Error fetching current user:', e));
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   useEffect(() => {
     if (!expandedDraftId) {
@@ -1083,6 +1099,7 @@ const Stats: React.FC = () => {
             validDraftIds={validDraftIds}
             initialUserId={initialUserId}
             initialUserName={username}
+            currentUserId={currentUserId}
           />
         )}
 

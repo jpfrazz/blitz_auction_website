@@ -153,11 +153,17 @@ const LobbyViewer: React.FC = () => {
       id: 'join',
       cell: info => {
         const ranked = info.row.original.ranked;
-        const disableJoin = ranked && isGuest;
         const isCreator = info.row.original.host === currentUserId;
 
         const is1v1 = info.row.original.draft_type === '1v1';
         const joinTarget = is1v1 ? `/Draft1v1?${info.row.original.draft_id}` : `/Auction?${info.row.original.draft_id}`;
+
+        // Once a lobby leaves the pending phase it enters the drafting phase and
+        // beyond, so watchers get a "Spectate" link instead of a "Join" button.
+        const isPending = isDraftPending(info.row.original.draft_state);
+        const showSpectate = !isPending;
+        // Guests can't join ranked lobbies, but spectating is open to everyone.
+        const disableJoin = isPending && ranked && isGuest;
 
         return (
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -171,7 +177,7 @@ const LobbyViewer: React.FC = () => {
               }}
               style={disableJoin ? { pointerEvents: 'none', opacity: 0.5 } : {}}
             >
-              Join
+              {showSpectate ? 'Spectate' : 'Join'}
             </Link>
             {info.row.original.has_password && isDraftPending(info.row.original.draft_state) && <span>🔒</span>}
             {isCreator && (

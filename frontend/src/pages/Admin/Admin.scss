@@ -201,3 +201,120 @@
     grid-template-columns: 1fr;
   }
 }
+
+.admin-submissions-hint {
+  color: #a9c3dc;
+  font-size: 0.92rem;
+  margin: 0 0 0.8rem;
+}
+
+.admin-boss-battle-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.admin-boss-battle-line {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+
+  .win {
+    color: #53df62;
+  }
+
+  .loss {
+    color: #ff6b6b;
+  }
+}
+
+.admin-boss-battle-time {
+  color: #a9c3dc;
+  font-weight: 600;
+}
+
+.admin-boss-battle-outcome {
+  color: #7d94ad;
+  font-size: 0.85rem;
+}
+
+.admin-boss-battle-note {
+  margin-top: 0.35rem;
+  color: #ffc72c;
+  font-size: 0.88rem;
+}
+
+.admin-boss-submission-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  color: #a9c3dc;
+  font-size: 0.95rem;
+}
+
+.boss-battle-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  background: rgba(0, 0, 0, 0.65);
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 5vh 1rem;
+  overflow-y: auto;
+}
+
+.boss-battle-modal {
+  width: min(680px, 100%);
+  box-sizing: border-box;
+  background: #101a24;
+  border: 1px solid #243242;
+  border-radius: 8px;
+  padding: 1.1rem 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.8rem;
+  box-shadow: 0 8px 40px rgba(0, 0, 0, 0.5);
+  color: #eef4fb;
+}
+
+.boss-battle-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 1.25rem;
+  font-weight: 700;
+}
+
+.boss-battle-modal-close {
+  width: 30px;
+  height: 30px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid #2b3e52;
+  border-radius: 4px;
+  background: #172637;
+  color: #a9c3dc;
+  font-size: 1.2rem;
+  line-height: 1;
+  cursor: pointer;
+
+  &:hover {
+    color: #ff8f8f;
+    border-color: #ff8f8f;
+  }
+}
+
+.boss-battle-modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.6rem;
+}
+
+.boss-battle-modal-submit {
+  background: #7cb946;
+  border-color: #7cb946;
+  color: #101a24;
+  font-weight: 700;
+}

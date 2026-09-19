@@ -11,7 +11,14 @@ import {
   updateAdminDiscordUser,
   updateAdminDraftPlacements,
   updateAdminHallOfFameTeam,
+  approveBossBattleSubmission,
+  fetchAdminBossBattleSubmissions,
+  rejectBossBattleSubmission,
+  AdminBossBattleSubmission,
 } from '../../shared/api/users';
+import { BossBattleSubmissionBattle } from '../../shared/api/stats';
+import BossBattleEditor from '../../shared/components/BossBattleEditor';
+import { getTrainerNameById } from '../../utils/parseSaveFile';
 import {
   AdminDiscordUser,
   AdminDraftSummary,
@@ -26,7 +33,7 @@ import { fetchCurrentUser } from '../../shared/api/draftData';
 import { getIconName } from '../../utils/speciesUtils';
 import HallOfFameTeamEditorModal from './HallOfFameTeamEditorModal';
 
-type AdminTab = 'draft-results' | 'discord-users' | 'upload-pokemon-data' | 'boss-battle-history' | 'hall-of-fame' | 'race-results' | 'metrics';
+type AdminTab = 'draft-results' | 'discord-users' | 'upload-pokemon-data' | 'boss-battle-history' | 'boss-battle-submissions' | 'hall-of-fame' | 'race-results' | 'metrics';
 
 const Admin: React.FC = () => {
   const [hasRefereeRole, setHasRefereeRole] = useState<boolean | null>(null);
@@ -55,6 +62,13 @@ const Admin: React.FC = () => {
   const [bossBattleHistoryError, setBossBattleHistoryError] = useState<string | null>(null);
   const [bossBattleHistorySuccess, setBossBattleHistorySuccess] = useState<string | null>(null);
   const [bossBattleSavingId, setBossBattleSavingId] = useState<number | null>(null);
+  const [bossSubmissions, setBossSubmissions] = useState<AdminBossBattleSubmission[]>([]);
+  const [bossSubmissionsLoading, setBossSubmissionsLoading] = useState(false);
+  const [bossSubmissionsError, setBossSubmissionsError] = useState<string | null>(null);
+  const [bossSubmissionsSuccess, setBossSubmissionsSuccess] = useState<string | null>(null);
+  const [editingSubmission, setEditingSubmission] = useState<AdminBossBattleSubmission | null>(null);
+  const [editingBattles, setEditingBattles] = useState<BossBattleSubmissionBattle[]>([]);
+  const [actingOnTeamId, setActingOnTeamId] = useState<number | null>(null);
   const [hallOfFameEntries, setHallOfFameEntries] = useState<AdminHallOfFameEligibleEntry[]>([]);
   const [hallOfFameTeamsLoading, setHallOfFameTeamsLoading] = useState(false);
   const [hallOfFameTeamsError, setHallOfFameTeamsError] = useState<string | null>(null);
@@ -74,6 +88,62 @@ const Admin: React.FC = () => {
   const [metricsAutoRefresh, setMetricsAutoRefresh] = useState(false);
   const [metricsSortCol, setMetricsSortCol] = useState<keyof AdminMetricSummary>('request_count');
   const [metricsSortDir, setMetricsSortDir] = useState<'asc' | 'desc'>('desc');
+
+  const loadBossBattleSubmissions = () => {
+    setBossSubmissionsLoading(true);
+    setBossSubmissionsError(null);
+    fetchAdminBossBattleSubmissions()
+      .then((data) => setBossSubmissions(data))
+      .catch((err: any) => setBossSubmissionsError(err?.response?.data ?? 'Failed to load boss battle submissions.'))
+      .finally(() => setBossSubmissionsLoading(false));
+  };
+
+  useEffect(() => {
+    if (!hasRefereeRole || tab !== 'boss-battle-submissions') return;
+    loadBossBattleSubmissions();
+  }, [hasRefereeRole, tab]);
+
+  const openEditBossSubmission = (submission: AdminBossBattleSubmission) => {
+    setEditingSubmission(submission);
+    setEditingBattles(submission.battles.map((battle) => ({ ...battle })));
+  };
+
+  const closeEditBossSubmission = () => {
+    if (actingOnTeamId !== null) return;
+    setEditingSubmission(null);
+  };
+
+  const handleApproveBossSubmission = async (teamId: number, battles?: BossBattleSubmissionBattle[]) => {
+    setActingOnTeamId(teamId);
+    setBossSubmissionsError(null);
+    setBossSubmissionsSuccess(null);
+    try {
+      await approveBossBattleSubmission(teamId, battles);
+      setBossSubmissionsSuccess(`Approved boss battle submission for team ${teamId}.`);
+      setEditingSubmission(null);
+      loadBossBattleSubmissions();
+    } catch (err: any) {
+      setBossSubmissionsError(err?.response?.data ?? 'Failed to approve boss battle submission.');
+    } finally {
+      setActingOnTeamId(null);
+    }
+  };
+
+  const handleRejectBossSubmission = async (teamId: number) => {
+    if (!window.confirm(`Reject the pending boss battle submission for team ${teamId}?`)) return;
+    setActingOnTeamId(teamId);
+    setBossSubmissionsError(null);
+    setBossSubmissionsSuccess(null);
+    try {
+      await rejectBossBattleSubmission(teamId);
+      setBossSubmissionsSuccess(`Rejected boss battle submission for team ${teamId}.`);
+      loadBossBattleSubmissions();
+    } catch (err: any) {
+      setBossSubmissionsError(err?.response?.data ?? 'Failed to reject boss battle submission.');
+    } finally {
+      setActingOnTeamId(null);
+    }
+  };
 
   const loadMetrics = () => {
     setMetricsLoading(true);
@@ -518,6 +588,13 @@ const Admin: React.FC = () => {
                   Boss Battle History
                 </button>
                 <button
+                  className={`admin-tab ${tab === 'boss-battle-submissions' ? 'active' : ''}`}
+                  onClick={() => setTab('boss-battle-submissions')}
+                  type="button"
+                >
+                  Boss Battle Submissions
+                </button>
+                <button
                   className={`admin-tab ${tab === 'hall-of-fame' ? 'active' : ''}`}
                   onClick={() => setTab('hall-of-fame')}
                   type="button"
@@ -812,6 +889,134 @@ const Admin: React.FC = () => {
                           ))}
                         </tbody>
                       </table>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {tab === 'boss-battle-submissions' && (
+                <div className="admin-tab-content">
+                  <h2>Boss Battle Submissions</h2>
+                  {bossSubmissionsError && <div className="admin-message admin-error">{bossSubmissionsError}</div>}
+                  {bossSubmissionsSuccess && <div className="admin-message admin-success">{bossSubmissionsSuccess}</div>}
+                  <p className="admin-submissions-hint">
+                    Pending boss battle history uploaded by players. Approving writes the battles into the
+                    team&apos;s match history. Submissions are kept in memory and are lost if the server restarts.
+                  </p>
+                  {bossSubmissionsLoading ? (
+                    <div className="admin-message">Loading boss battle submissions...</div>
+                  ) : bossSubmissions.length === 0 ? (
+                    <div className="admin-message">No pending boss battle submissions.</div>
+                  ) : (
+                    <div className="admin-table-wrap">
+                      <table>
+                        <thead>
+                          <tr>
+                            <th>User</th>
+                            <th>Draft</th>
+                            <th>Team ID</th>
+                            <th>Battles</th>
+                            <th>Created At</th>
+                            <th></th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {bossSubmissions.map((submission) => (
+                            <tr key={submission.team_id}>
+                              <td>{submission.user_name ?? submission.user_id ?? submission.guest_id ?? '-'}</td>
+                              <td>{submission.draft_name ?? submission.draft_id.slice(0, 8)}</td>
+                              <td>{submission.team_id}</td>
+                              <td>
+                                <div className="admin-boss-battle-list">
+                                  {submission.battles.map((battle, idx) => (
+                                    <div className="admin-boss-battle-line" key={idx}>
+                                      <span className={battle.is_loss ? 'loss' : 'win'}>
+                                        {getTrainerNameById(battle.trainer_id, battle.version ?? undefined)}
+                                      </span>
+                                      <span className="admin-boss-battle-time">
+                                        {battle.hours === 5 && battle.minutes === 0 && battle.seconds === 0
+                                          ? 'Forfeit'
+                                          : `${battle.hours > 0 ? `${battle.hours}h ` : ''}${battle.minutes}m ${battle.seconds}s`}
+                                      </span>
+                                      <span className="admin-boss-battle-outcome">
+                                        {battle.is_loss ? 'Loss' : 'Win'}
+                                      </span>
+                                    </div>
+                                  ))}
+                                </div>
+                                {submission.note && <div className="admin-boss-battle-note">Note: {submission.note}</div>}
+                              </td>
+                              <td>{new Date(submission.created_at).toLocaleString()}</td>
+                              <td>
+                                <button
+                                  type="button"
+                                  className="button"
+                                  style={{ padding: '0.25rem 0.5rem', fontSize: '0.8rem', marginRight: '0.35rem' }}
+                                  onClick={() => openEditBossSubmission(submission)}
+                                  disabled={actingOnTeamId !== null}
+                                >
+                                  Review
+                                </button>
+                                <button
+                                  type="button"
+                                  className="button"
+                                  style={{ padding: '0.25rem 0.5rem', fontSize: '0.8rem' }}
+                                  onClick={() => handleRejectBossSubmission(submission.team_id)}
+                                  disabled={actingOnTeamId !== null}
+                                >
+                                  {actingOnTeamId === submission.team_id ? 'Working...' : 'Reject'}
+                                </button>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+
+                  {editingSubmission && (
+                    <div className="boss-battle-modal-backdrop" onClick={closeEditBossSubmission}>
+                      <div className="boss-battle-modal" onClick={(e) => e.stopPropagation()}>
+                        <div className="boss-battle-modal-header">
+                          <span>Review Submission - Team {editingSubmission.team_id}</span>
+                          <button
+                            type="button"
+                            className="boss-battle-modal-close"
+                            onClick={closeEditBossSubmission}
+                            disabled={actingOnTeamId !== null}
+                          >
+                            &times;
+                          </button>
+                        </div>
+                        <div className="admin-boss-submission-meta">
+                          <span>{editingSubmission.draft_name ?? 'Unknown draft'}</span>
+                          <span>{editingSubmission.user_name ?? editingSubmission.user_id ?? editingSubmission.guest_id ?? '-'}</span>
+                          {editingSubmission.note && <span>Note: {editingSubmission.note}</span>}
+                        </div>
+                        <BossBattleEditor
+                          battles={editingBattles}
+                          onChange={setEditingBattles}
+                          disabled={actingOnTeamId !== null}
+                        />
+                        <div className="boss-battle-modal-actions">
+                          <button
+                            type="button"
+                            className="button"
+                            onClick={closeEditBossSubmission}
+                            disabled={actingOnTeamId !== null}
+                          >
+                            Cancel
+                          </button>
+                          <button
+                            type="button"
+                            className="button boss-battle-modal-submit"
+                            onClick={() => handleApproveBossSubmission(editingSubmission.team_id, editingBattles)}
+                            disabled={actingOnTeamId !== null}
+                          >
+                            {actingOnTeamId === editingSubmission.team_id ? 'Approving...' : 'Approve'}
+                          </button>
+                        </div>
+                      </div>
                     </div>
                   )}
                 </div>

@@ -10,6 +10,7 @@ import {
   HallOfFamePokemon,
   Pokemon,
 } from "../../types";
+import { BossBattleSubmissionBattle } from "./stats";
 
 export interface LeaderboardEntry {
 	user_id: string;
@@ -265,4 +266,37 @@ export async function updateAdminDiscordUser(
   payload: { mmr: number; wins: number; losses: number },
 ): Promise<void> {
   await axios.post(`/api/admin/users/${user_id}/update`, payload);
+}
+
+export interface AdminBossBattleSubmission {
+  team_id: number;
+  draft_id: string;
+  draft_name: string | null;
+  user_id: string | null;
+  guest_id: string | null;
+  user_name: string | null;
+  battles: BossBattleSubmissionBattle[];
+  note?: string | null;
+  created_at: string;
+}
+
+export async function fetchAdminBossBattleSubmissions(): Promise<AdminBossBattleSubmission[]> {
+  const response = await axios.get('/api/admin/boss-battle-submissions');
+  return response.data;
+}
+
+export async function fetchPendingBossBattleSubmissionCount(): Promise<number> {
+  const response = await axios.get('/api/admin/boss-battle-submissions/count');
+  return response.data.count;
+}
+
+export async function approveBossBattleSubmission(
+  teamId: number,
+  battles?: BossBattleSubmissionBattle[],
+): Promise<void> {
+  await axios.post(`/api/admin/boss-battle-submissions/${teamId}/approve`, { battles });
+}
+
+export async function rejectBossBattleSubmission(teamId: number): Promise<void> {
+  await axios.post(`/api/admin/boss-battle-submissions/${teamId}/reject`);
 }

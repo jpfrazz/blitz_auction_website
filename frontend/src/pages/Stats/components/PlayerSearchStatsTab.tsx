@@ -1,6 +1,16 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { fetchMatchHistoryByUserId, fetchBossBattleHistory, BossBattleHistoryEntry } from '../../../shared/api/stats';
+import {
+  fetchMatchHistoryByUserId,
+  fetchBossBattleHistory,
+  fetchMyBossBattleSubmissions,
+  submitBossBattleSubmission,
+  withdrawBossBattleSubmission,
+  BossBattleHistoryEntry,
+  BossBattleSubmission,
+  BossBattleSubmissionBattle,
+} from '../../../shared/api/stats';
+import BossBattleEditor from '../../../shared/components/BossBattleEditor';
 import { MatchHistoryTeam, StatsAuction, StatsPagePlayer, StatsPageResponse } from '../../../types';
 import type { PlayerStatPill } from './playerStatPills';
 import { getPlayerStatPills } from './playerStatPills';
@@ -15,6 +25,7 @@ interface PlayerSearchStatsTabProps {
   validDraftIds: Set<string>;
   initialUserId?: string;
   initialUserName?: string;
+  currentUserId?: string | null;
 }
 
 interface PokemonDraftSummary {
@@ -265,6 +276,7 @@ const PlayerSearchStatsTab: React.FC<PlayerSearchStatsTabProps> = ({
   validDraftIds,
   initialUserId,
   initialUserName,
+  currentUserId,
 }) => {
   const navigate = useNavigate();
   const [searchInput, setSearchInput] = useState('');
@@ -277,6 +289,87 @@ const PlayerSearchStatsTab: React.FC<PlayerSearchStatsTabProps> = ({
   const [bossBattleHistory, setBossBattleHistory] = useState<Map<number, BossBattleHistoryEntry[]>>(new Map());
   const [bossBattleHistoryLoading, setBossBattleHistoryLoading] = useState(false);
   const [pokemonFilterQuery, setPokemonFilterQuery] = useState('');
+  const [mySubmissions, setMySubmissions] = useState<Map<number, BossBattleSubmission>>(new Map());
+  const [mySubmissionsLoading, setMySubmissionsLoading] = useState(false);
+  const [uploadTeam, setUploadTeam] = useState<{
+    teamId: number;
+    draftId: string;
+    battles: BossBattleSubmissionBattle[];
+    note: string;
+  } | null>(null);
+  const [uploadSaving, setUploadSaving] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!currentUserId) return;
+    let cancelled = false;
+    setMySubmissionsLoading(true);
+    fetchMyBossBattleSubmissions()
+      .then((submissions) => {
+        if (cancelled) return;
+        setMySubmissions(new Map(submissions.map((submission) => [submission.team_id, submission])));
+      })
+      .catch((e) => console.error('[PlayerSearchStatsTab] Error fetching boss battle submissions:', e))
+      .finally(() => {
+        if (!cancelled) setMySubmissionsLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [currentUserId]);
+
+  const openUploadModal = (teamId: number, draftId: string, existing?: BossBattleSubmission) => {
+    setUploadTeam({
+      teamId,
+      draftId,
+      battles: existing ? existing.battles.map((battle) => ({ ...battle })) : [],
+      note: existing?.note ?? '',
+    });
+    setUploadError(null);
+  };
+
+  const closeUploadModal = () => {
+    if (uploadSaving) return;
+    setUploadTeam(null);
+    setUploadError(null);
+  };
+
+  const handleSubmitUpload = async () => {
+    if (!uploadTeam) return;
+    if (uploadTeam.battles.length === 0) {
+      setUploadError('Add at least one boss battle before submitting.');
+      return;
+    }
+    setUploadSaving(true);
+    setUploadError(null);
+    try {
+      const submission = await submitBossBattleSubmission(
+        uploadTeam.teamId,
+        uploadTeam.battles,
+        uploadTeam.note.trim() || null,
+      );
+      setMySubmissions((prev) => new Map(prev).set(submission.team_id, submission));
+      setUploadTeam(null);
+    } catch (e: any) {
+      console.error('[PlayerSearchStatsTab] Error submitting boss battles:', e);
+      setUploadError(e?.response?.data ?? 'Failed to submit boss battle history.');
+    } finally {
+      setUploadSaving(false);
+    }
+  };
+
+  const handleWithdraw = async (teamId: number) => {
+    try {
+      await withdrawBossBattleSubmission(teamId);
+      setMySubmissions((prev) => {
+        const next = new Map(prev);
+        next.delete(teamId);
+        return next;
+      });
+    } catch (e) {
+      console.error('[PlayerSearchStatsTab] Error withdrawing boss battle submission:', e);
+    }
+  };
 
   const filteredPlayers = useMemo(() => {
     if (!searchInput.trim() || !stats?.players) {
@@ -1124,7 +1217,48 @@ const PlayerSearchStatsTab: React.FC<PlayerSearchStatsTabProps> = ({
                                   <span>Time</span>
                                 </div>
                                 {bossBattleHistory.get(team.team_id)?.length === 0 && (
-                                  <div className="match-draft-details-empty">No boss battles recorded</div>
+                                  selectedPlayer?.user_id === currentUserId && !mySubmissionsLoading ? (
+                                    (() => {
+                                      const pending = mySubmissions.get(team.team_id);
+                                      if (pending) {
+                                        return (
+                                          <div className="boss-submission-status">
+                                            <span className="boss-submission-pending">Pending Confirmation</span>
+                                            <button
+                                              type="button"
+                                              className="boss-submission-action"
+                                              onClick={() => openUploadModal(team.team_id, team.draft_id, pending)}
+                                            >
+                                              Edit
+                                            </button>
+                                            <button
+                                              type="button"
+                                              className="boss-submission-action"
+                                              onClick={() => handleWithdraw(team.team_id)}
+                                            >
+                                              Withdraw
+                                            </button>
+                                          </div>
+                                        );
+                                      }
+                                      return (
+                                        <div className="boss-submission-empty">
+                                          <span>No boss battles recorded</span>
+                                          <button
+                                            type="button"
+                                            className="boss-submission-add"
+                                            title="Upload boss battle history"
+                                            aria-label="Upload boss battle history"
+                                            onClick={() => openUploadModal(team.team_id, team.draft_id)}
+                                          >
+                                            +
+                                          </button>
+                                        </div>
+                                      );
+                                    })()
+                                  ) : (
+                                    <div className="match-draft-details-empty">No boss battles recorded</div>
+                                  )
                                 )}
                                 {bossBattleHistory.get(team.team_id)?.map((battle, idx) => (
                                   <div className="match-draft-details-row" key={idx}>
@@ -1154,6 +1288,51 @@ const PlayerSearchStatsTab: React.FC<PlayerSearchStatsTabProps> = ({
             </>
           )}
         </div>
+
+        {uploadTeam && (
+          <div className="boss-battle-modal-backdrop" onClick={closeUploadModal}>
+            <div className="boss-battle-modal" onClick={(e) => e.stopPropagation()}>
+              <div className="boss-battle-modal-header">
+                <span>Submit Splits</span>
+                <button type="button" className="boss-battle-modal-close" onClick={closeUploadModal}>
+                  &times;
+                </button>
+              </div>
+              <p className="boss-battle-modal-hint">
+                If you draft via the website but then play your run on a local emulator, you can submit your
+                splits to this module to have your results recorded on the website. After you submit, send Nathan
+                a screenshot of your trainer card over Discord so that he can verify it. Once approved, the
+                results will be added to your profile.
+              </p>
+              <BossBattleEditor
+                battles={uploadTeam.battles}
+                onChange={(battles) => setUploadTeam((prev) => (prev ? { ...prev, battles } : prev))}
+              />
+              <input
+                type="text"
+                className="boss-battle-note-input"
+                placeholder="Note (optional)"
+                value={uploadTeam.note}
+                disabled={uploadSaving}
+                onChange={(e) => setUploadTeam((prev) => (prev ? { ...prev, note: e.target.value } : prev))}
+              />
+              {uploadError && <div className="boss-battle-modal-error">{uploadError}</div>}
+              <div className="boss-battle-modal-actions">
+                <button type="button" className="button" onClick={closeUploadModal} disabled={uploadSaving}>
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  className="button boss-battle-modal-submit"
+                  onClick={handleSubmitUpload}
+                  disabled={uploadSaving}
+                >
+                  {uploadSaving ? 'Submitting...' : 'Submit'}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </article>
     </section>
   );

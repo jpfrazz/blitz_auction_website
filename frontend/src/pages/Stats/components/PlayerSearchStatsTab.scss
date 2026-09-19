@@ -919,3 +919,175 @@
         }
     }
 }
+
+.player-search-stats-tab .boss-submission-empty {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    padding: 0.25rem 0;
+}
+
+.player-search-stats-tab .boss-submission-add {
+    flex-shrink: 0;
+    width: 26px;
+    height: 26px;
+    box-sizing: border-box;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 0 4px 0;
+    border: 1px solid $eb-primary;
+    border-radius: 50%;
+    background: $eb-surface;
+    color: $eb-primary;
+    font-size: 1.15rem;
+    font-weight: 700;
+    line-height: 1;
+    cursor: pointer;
+    transition: background-color 0.15s ease, color 0.15s ease, transform 0.15s ease;
+
+    &:hover {
+        background: $eb-primary;
+        color: $eb-bg;
+        transform: scale(1.08);
+    }
+}
+
+.player-search-stats-tab .boss-submission-status {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    padding: 0.35rem 0.5rem;
+    border: 1px solid $eb-border;
+    border-radius: 4px;
+    background: rgba(124, 185, 70, 0.08);
+}
+
+.player-search-stats-tab .boss-submission-pending {
+    flex: 1;
+    color: #ffc72c;
+    font-weight: 700;
+    font-size: 0.95rem;
+}
+
+.player-search-stats-tab .boss-submission-action {
+    padding: 0.2rem 0.6rem;
+    border: 1px solid $eb-border;
+    border-radius: 4px;
+    background: $eb-bg;
+    color: $eb-text;
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: border-color 0.15s ease, background-color 0.15s ease;
+
+    &:hover {
+        border-color: $eb-primary;
+        background: $eb-surface;
+    }
+}
+
+.player-search-stats-tab .boss-battle-modal-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 1000;
+    background: rgba(0, 0, 0, 0.65);
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    padding: 5vh 1rem;
+    overflow-y: auto;
+}
+
+.player-search-stats-tab .boss-battle-modal {
+    width: min(680px, 100%);
+    box-sizing: border-box;
+    margin-top: 6rem;
+    background: $eb-surface;
+    border: 1px solid $eb-border;
+    border-radius: 4px;
+    padding: 1.1rem 1.25rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.8rem;
+    box-shadow: 0 8px 40px rgba(0, 0, 0, 0.5);
+}
+
+.player-search-stats-tab .boss-battle-modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    color: $eb-text;
+    font-size: 2rem;
+    font-weight: 700;
+}
+
+.player-search-stats-tab .boss-battle-modal-close {
+    width: 32px;
+    height: 32px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid $eb-border;
+    border-radius: 4px;
+    background: $eb-surface;
+    color: $eb-text-muted;
+    font-size: 1.3rem;
+    line-height: 1;
+    cursor: pointer;
+
+    &:hover {
+        color: #f85149;
+        border-color: #f85149;
+    }
+}
+
+.player-search-stats-tab .boss-battle-modal-hint {
+    margin: 0;
+    color: $eb-text-muted;
+    font-size: 1.15rem;
+}
+
+.player-search-stats-tab .boss-battle-note-input {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 0.5rem 0.7rem;
+    border: 1px solid $eb-border;
+    border-radius: 4px;
+    background: $eb-bg;
+    color: $eb-text;
+    font-size: 1.05rem;
+
+    &::placeholder {
+        color: $eb-text-muted;
+    }
+
+    &:focus {
+        outline: none;
+        border-color: $eb-primary;
+        box-shadow: 0 0 0 2px rgba(124, 185, 70, 0.1);
+    }
+}
+
+.player-search-stats-tab .boss-battle-modal-error {
+    color: #f85149;
+    font-size: 0.92rem;
+}
+
+.player-search-stats-tab .boss-battle-modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.6rem;
+
+    .button {
+        font-size: 1.15rem;
+        padding: 0.45rem 1rem;
+    }
+}
+
+.player-search-stats-tab .boss-battle-modal-submit {
+    background: $eb-primary;
+    border-color: $eb-primary;
+    color: $eb-bg;
+    font-weight: 700;
+}

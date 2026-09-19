@@ -1061,6 +1061,120 @@ pub struct AdminBossBattleHistoryEntry {
     pub created_at: String,
 }
 
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+pub struct BossBattleSubmissionBattle {
+    pub trainer_id: i32,
+    #[serde(default)]
+    pub version: Option<i32>,
+    pub hours: i32,
+    pub minutes: i32,
+    pub seconds: i32,
+    #[serde(default)]
+    pub is_loss: bool,
+}
+
+#[derive(Debug, Clone)]
+pub struct PendingBossBattleSubmission {
+    pub team_id: i64,
+    pub draft_id: String,
+    pub battles: Vec<BossBattleSubmissionBattle>,
+    pub note: Option<String>,
+    pub owner_user_id: String,
+    pub created_at: chrono::DateTime<chrono::Utc>,
+}
+
+#[derive(Debug, Clone, Serialize)]
+pub struct MyBossBattleSubmission {
+    pub team_id: i64,
+    pub draft_id: String,
+    pub battles: Vec<BossBattleSubmissionBattle>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub note: Option<String>,
+    pub created_at: String,
+}
+
+#[derive(Debug, Clone, Serialize)]
+pub struct AdminBossBattleSubmission {
+    pub team_id: i64,
+    pub draft_id: String,
+    pub draft_name: Option<String>,
+    pub user_id: Option<String>,
+    pub guest_id: Option<String>,
+    pub user_name: Option<String>,
+    pub battles: Vec<BossBattleSubmissionBattle>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub note: Option<String>,
+    pub created_at: String,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct CreateBossBattleSubmissionRequest {
+    pub team_id: i64,
+    pub battles: Vec<BossBattleSubmissionBattle>,
+    #[serde(default)]
+    pub note: Option<String>,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct UpdateBossBattleSubmissionRequest {
+    #[serde(default)]
+    pub battles: Option<Vec<BossBattleSubmissionBattle>>,
+}
+
+fn sanitize_submission_battles(battles: &mut Vec<BossBattleSubmissionBattle>) {
+    for battle in battles.iter_mut() {
+        if battle.hours < 0 {
+            battle.hours = 0;
+        }
+        if battle.minutes < 0 {
+            battle.minutes = 0;
+        } else if battle.minutes > 59 {
+            battle.minutes = 59;
+        }
+        if battle.seconds < 0 {
+            battle.seconds = 0;
+        } else if battle.seconds > 59 {
+            battle.seconds = 59;
+        }
+    }
+}
+
+/// Prepares approved battles the same way emulator saves do so uploaded
+/// history is formatted identically: chronological order, gym-leader version
+/// recomputation and intra-submission deduplication.
+fn finalize_submission_battles(battles: &mut Vec<BossBattleSubmissionBattle>) {
+    battles.sort_by(|a, b| {
+        let a_total = a.hours as i64 * 3600 + a.minutes as i64 * 60 + a.seconds as i64;
+        let b_total = b.hours as i64 * 3600 + b.minutes as i64 * 60 + b.seconds as i64;
+        a_total.cmp(&b_total)
+    });
+
+    let gym_leader_ids: HashSet<i32> = [265, 855, 266, 267, 268, 269, 270, 271, 272, 601, 34]
+        .iter()
+        .copied()
+        .collect();
+    let mut gym_leader_version = 0u32;
+    for battle in battles.iter_mut() {
+        if gym_leader_ids.contains(&battle.trainer_id) {
+            gym_leader_version += 1;
+            battle.version = Some(gym_leader_version as i32);
+        } else {
+            battle.version = None;
+        }
+    }
+
+    let mut seen_entries = HashSet::new();
+    battles.retain(|battle| {
+        seen_entries.insert((
+            battle.trainer_id,
+            battle.hours,
+            battle.minutes,
+            battle.seconds,
+            battle.is_loss,
+        ))
+    });
+}
+
 #[debug_handler]
 pub async fn get_admin_boss_battle_history(
     State(state): State<ServerState>,
@@ -1081,6 +1195,339 @@ pub async fn get_admin_boss_battle_history(
     .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, format!("db error: {}", e)))?;
 
     Ok(Json(history))
+}
+
+/// Returns the current user's pending boss battle submissions.
+#[debug_handler]
+pub async fn get_my_boss_battle_submissions(
+    State(state): State<ServerState>,
+    auth_session: AuthSession<AuthBackend>,
+) -> Result<Json<Vec<MyBossBattleSubmission>>, AppError> {
+    let Some(user) = auth_session.user else {
+        return Err((StatusCode::UNAUTHORIZED, "user not authenticated".to_string()));
+    };
+    let user_id = user.get_user_id_string();
+
+    let mut out: Vec<MyBossBattleSubmission> = state
+        .boss_battle_submissions
+        .iter()
+        .filter(|entry| entry.owner_user_id == user_id)
+        .map(|entry| MyBossBattleSubmission {
+            team_id: entry.team_id,
+            draft_id: entry.draft_id.clone(),
+            battles: entry.battles.clone(),
+            note: entry.note.clone(),
+            created_at: entry.created_at.to_rfc3339(),
+        })
+        .collect();
+    out.sort_by(|a, b| a.created_at.cmp(&b.created_at));
+    Ok(Json(out))
+}
+
+/// Returns the number of pending boss battle submissions for referees.
+#[debug_handler]
+pub async fn get_admin_boss_battle_submission_count(
+    State(state): State<ServerState>,
+    auth_session: AuthSession<AuthBackend>,
+) -> Result<Json<serde_json::Value>, AppError> {
+    let _ = require_referee_user(auth_session.user)?;
+    Ok(Json(serde_json::json!({ "count": state.boss_battle_submissions.len() })))
+}
+
+/// Creates/updates a pending boss battle submission for one of the caller's teams.
+#[debug_handler]
+pub async fn post_boss_battle_submission(
+    State(state): State<ServerState>,
+    auth_session: AuthSession<AuthBackend>,
+    Json(mut request): Json<CreateBossBattleSubmissionRequest>,
+) -> Result<Json<MyBossBattleSubmission>, AppError> {
+    let Some(user) = auth_session.user else {
+        return Err((StatusCode::UNAUTHORIZED, "user not authenticated".to_string()));
+    };
+    let (user_db_id, guest_db_id) = user.get_user_and_guest_id();
+    let user_id = user.get_user_id_string();
+
+    sanitize_submission_battles(&mut request.battles);
+    request
+        .battles
+        .retain(|b| b.hours > 0 || b.minutes > 0 || b.seconds > 0);
+    if request.battles.is_empty() {
+        return Err((
+            StatusCode::BAD_REQUEST,
+            "submission must contain at least one boss battle".to_string(),
+        ));
+    }
+
+    let row = sqlx::query(
+        "SELECT draft_id FROM teams WHERE team_id = $1 AND (user_id = $2 OR guest_id = $3)",
+    )
+    .bind(request.team_id)
+    .bind(&user_db_id)
+    .bind(&guest_db_id)
+    .fetch_optional(&state.db_pool)
+    .await
+    .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, format!("db error: {}", e)))?;
+
+    let Some(row) = row else {
+        return Err((
+            StatusCode::FORBIDDEN,
+            "team does not exist or does not belong to you".to_string(),
+        ));
+    };
+    let draft_uuid: Uuid = row
+        .try_get("draft_id")
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let draft_id = draft_uuid.to_string();
+
+    let now = Utc::now();
+    match state.boss_battle_submissions.entry(request.team_id) {
+        entry::Entry::Occupied(mut occupied) => {
+            let submission = occupied.get_mut();
+            submission.battles = request.battles.clone();
+            submission.note = request.note.clone();
+        }
+        entry::Entry::Vacant(vacant) => {
+            vacant.insert(PendingBossBattleSubmission {
+                team_id: request.team_id,
+                draft_id: draft_id.clone(),
+                battles: request.battles.clone(),
+                note: request.note.clone(),
+                owner_user_id: user_id,
+                created_at: now,
+            });
+        }
+    }
+
+    Ok(Json(MyBossBattleSubmission {
+        team_id: request.team_id,
+        draft_id,
+        battles: request.battles,
+        note: request.note,
+        created_at: now.to_rfc3339(),
+    }))
+}
+
+/// Withdraws the caller's pending submission for a team.
+#[debug_handler]
+pub async fn withdraw_boss_battle_submission(
+    State(state): State<ServerState>,
+    Path(team_id): Path<i64>,
+    auth_session: AuthSession<AuthBackend>,
+) -> Result<Json<serde_json::Value>, AppError> {
+    let Some(user) = auth_session.user else {
+        return Err((StatusCode::UNAUTHORIZED, "user not authenticated".to_string()));
+    };
+    let user_id = user.get_user_id_string();
+
+    if let Some((_, entry)) = state.boss_battle_submissions.remove(&team_id) {
+        if entry.owner_user_id != user_id {
+            state.boss_battle_submissions.insert(team_id, entry);
+            return Err((
+                StatusCode::FORBIDDEN,
+                "submission does not belong to you".to_string(),
+            ));
+        }
+        return Ok(Json(serde_json::json!({ "withdrawn": true })));
+    }
+
+    Ok(Json(serde_json::json!({ "withdrawn": false })))
+}
+
+/// Lists all pending boss battle submissions for referees.
+#[debug_handler]
+pub async fn get_admin_boss_battle_submissions(
+    State(state): State<ServerState>,
+    auth_session: AuthSession<AuthBackend>,
+) -> Result<Json<Vec<AdminBossBattleSubmission>>, AppError> {
+    let _ = require_referee_user(auth_session.user)?;
+
+    let entries: Vec<PendingBossBattleSubmission> = state
+        .boss_battle_submissions
+        .iter()
+        .map(|entry| entry.clone())
+        .collect();
+
+    if entries.is_empty() {
+        return Ok(Json(Vec::new()));
+    }
+
+    let team_ids: Vec<i64> = entries.iter().map(|e| e.team_id).collect();
+    let rows = sqlx::query(
+        "SELECT t.team_id, t.draft_id::text AS draft_id, d.draft_name,
+                t.user_id, t.guest_id, COALESCE(u.user_name, g.user_name) AS user_name
+         FROM teams t
+         LEFT JOIN drafts d ON d.draft_id = t.draft_id
+         LEFT JOIN users u ON u.user_id = t.user_id
+         LEFT JOIN guests g ON g.user_id = t.guest_id
+         WHERE t.team_id = ANY($1)",
+    )
+    .bind(&team_ids)
+    .fetch_all(&state.db_pool)
+    .await
+    .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, format!("db error: {}", e)))?;
+
+    let mut team_info: HashMap<
+        i64,
+        (String, Option<String>, Option<String>, Option<String>, Option<String>),
+    > = HashMap::new();
+    for row in rows {
+        let team_id: i64 = row
+            .try_get("team_id")
+            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+        let draft_id: String = row
+            .try_get("draft_id")
+            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+        team_info.insert(
+            team_id,
+            (
+                draft_id,
+                row.try_get("draft_name").ok(),
+                row.try_get("user_id").ok(),
+                row.try_get("guest_id").ok(),
+                row.try_get("user_name").ok(),
+            ),
+        );
+    }
+
+    let mut out: Vec<AdminBossBattleSubmission> = entries
+        .into_iter()
+        .map(|entry| {
+            let default_id = entry.draft_id.clone();
+            let (draft_id, draft_name, user_id, guest_id, user_name) = team_info
+                .remove(&entry.team_id)
+                .unwrap_or((default_id, None, None, None, None));
+            AdminBossBattleSubmission {
+                team_id: entry.team_id,
+                draft_id,
+                draft_name,
+                user_id,
+                guest_id,
+                user_name,
+                battles: entry.battles,
+                note: entry.note,
+                created_at: entry.created_at.to_rfc3339(),
+            }
+        })
+        .collect();
+    out.sort_by(|a, b| a.created_at.cmp(&b.created_at));
+    Ok(Json(out))
+}
+
+/// Approves a pending submission, writing the battles into boss_battle_history
+/// for the team/draft exactly the way an emulator save would.
+#[debug_handler]
+pub async fn approve_boss_battle_submission(
+    State(state): State<ServerState>,
+    Path(team_id): Path<i64>,
+    auth_session: AuthSession<AuthBackend>,
+    Json(request): Json<UpdateBossBattleSubmissionRequest>,
+) -> Result<Json<serde_json::Value>, AppError> {
+    let _ = require_referee_user(auth_session.user)?;
+
+    let Some((_, entry)) = state.boss_battle_submissions.remove(&team_id) else {
+        return Err((
+            StatusCode::NOT_FOUND,
+            "no pending submission for this team".to_string(),
+        ));
+    };
+
+    let mut battles = match request.battles {
+        Some(battles) => battles,
+        None => entry.battles.clone(),
+    };
+    sanitize_submission_battles(&mut battles);
+    battles.retain(|b| b.hours > 0 || b.minutes > 0 || b.seconds > 0);
+    if battles.is_empty() {
+        state.boss_battle_submissions.insert(entry.team_id, entry);
+        return Err((
+            StatusCode::BAD_REQUEST,
+            "approved submission must contain at least one boss battle".to_string(),
+        ));
+    }
+
+    // Verify the team still exists before writing anything.
+    let row = sqlx::query("SELECT draft_id FROM teams WHERE team_id = $1")
+        .bind(team_id)
+        .fetch_optional(&state.db_pool)
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, format!("db error: {}", e)))?;
+
+    let Some(row) = row else {
+        // Team no longer exists; the submission no longer applies.
+        return Err((
+            StatusCode::GONE,
+            "team no longer exists; submission discarded".to_string(),
+        ));
+    };
+    let draft_uuid: Uuid = row
+        .try_get("draft_id")
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    // Format the battles identically to emulator saves before storing.
+    finalize_submission_battles(&mut battles);
+
+    let mut tx = state
+        .db_pool
+        .begin()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, format!("db error: {}", e)))?;
+
+    sqlx::query("DELETE FROM boss_battle_history WHERE team_id = $1 AND draft_id = $2")
+        .bind(team_id)
+        .bind(draft_uuid)
+        .execute(&mut *tx)
+        .await
+        .map_err(|e| {
+            (StatusCode::INTERNAL_SERVER_ERROR, format!("db error: {}", e))
+        })?;
+
+    for battle in &battles {
+        sqlx::query(
+            "INSERT INTO boss_battle_history
+                (team_id, draft_id, trainer_id, version, hours, minutes, seconds, is_loss)
+             VALUES ($1, $2, $3, $4, $5, $6, $7, $8)",
+        )
+        .bind(team_id)
+        .bind(draft_uuid)
+        .bind(battle.trainer_id)
+        .bind(battle.version)
+        .bind(battle.hours)
+        .bind(battle.minutes)
+        .bind(battle.seconds)
+        .bind(battle.is_loss)
+        .execute(&mut *tx)
+        .await
+        .map_err(|e| {
+            (StatusCode::INTERNAL_SERVER_ERROR, format!("db error: {}", e))
+        })?;
+    }
+
+    if let Err(e) = tx.commit().await {
+        // Restore the pending submission so it is not silently lost.
+        state.boss_battle_submissions.insert(team_id, entry);
+        return Err((StatusCode::INTERNAL_SERVER_ERROR, format!("db error: {}", e)));
+    }
+
+    Ok(Json(serde_json::json!({
+        "team_id": team_id,
+        "battles_recorded": battles.len()
+    })))
+}
+
+/// Rejects a pending submission, removing it without touching the database.
+#[debug_handler]
+pub async fn reject_boss_battle_submission(
+    State(state): State<ServerState>,
+    Path(team_id): Path<i64>,
+    auth_session: AuthSession<AuthBackend>,
+) -> Result<Json<serde_json::Value>, AppError> {
+    let _ = require_referee_user(auth_session.user)?;
+
+    let rejected = state.boss_battle_submissions.remove(&team_id).is_some();
+    Ok(Json(serde_json::json!({
+        "team_id": team_id,
+        "rejected": rejected
+    })))
 }
 
 #[debug_handler]

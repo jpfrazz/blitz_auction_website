@@ -1,0 +1,147 @@
+@import '../style/theme.scss';
+
+.boss-battle-editor {
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+
+    .boss-battle-editor-toolbar {
+        display: flex;
+        gap: 0.6rem;
+        flex-wrap: wrap;
+
+        .button {
+            font-size: 1.05rem;
+            padding: 0.4rem 0.85rem;
+        }
+    }
+
+    .boss-battle-editor-empty {
+        padding: 0.75rem;
+        border: 1px dashed $eb-border;
+        border-radius: 4px;
+        color: $eb-text-muted;
+        font-size: 1.05rem;
+        text-align: center;
+    }
+
+    .boss-battle-editor-error {
+        color: #f85149;
+        font-size: 1rem;
+    }
+
+    .boss-battle-editor-row {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.5rem;
+        border: 1px solid $eb-border;
+        border-radius: 4px;
+        background: $eb-bg;
+        flex-wrap: wrap;
+
+        select {
+            min-width: 130px;
+            padding: 0.35rem 0.45rem;
+            border: 1px solid $eb-border;
+            border-radius: 4px;
+            background: $eb-surface;
+            color: $eb-text;
+            font-size: 1.05rem;
+        }
+
+        input[type='number'] {
+            width: 4rem;
+            padding: 0.35rem 0.45rem;
+            border: 1px solid $eb-border;
+            border-radius: 4px;
+            background: $eb-surface;
+            color: $eb-text;
+            font-size: 1.05rem;
+
+            &:focus {
+                outline: none;
+                border-color: $eb-primary;
+            }
+        }
+
+        .boss-battle-trainer-id {
+            width: 4.5rem !important;
+        }
+
+        .boss-battle-version {
+            width: 3rem !important;
+        }
+
+        .boss-battle-time {
+            display: flex;
+            align-items: center;
+            gap: 0.2rem;
+            margin-left: 0.75rem;
+
+            .boss-battle-time-unit {
+                color: $eb-text-muted;
+                font-size: 0.95rem;
+            }
+        }
+
+        .boss-battle-result-toggle {
+            display: flex;
+            border: 1px solid $eb-border;
+            border-radius: 4px;
+            overflow: hidden;
+            background: $eb-surface;
+
+            .boss-battle-result-btn {
+                padding: 0.3rem 0.65rem;
+                border: none;
+                border-radius: 0;
+                background: transparent;
+                color: $eb-text-muted;
+                font-size: 1rem;
+                font-weight: 600;
+                box-shadow: none;
+                cursor: pointer;
+                transition: background-color 0.15s ease, color 0.15s ease;
+
+                &:hover:not(:disabled) {
+                    background: $eb-surface;
+                    color: $eb-text;
+                }
+
+                &.win.active {
+                    background: rgba(83, 223, 98, 0.18);
+                    color: #53df62;
+                }
+
+                &.loss.active {
+                    background: rgba(255, 107, 107, 0.18);
+                    color: #ff6b6b;
+                }
+            }
+        }
+
+        .boss-battle-remove {
+            margin-left: auto;
+            flex-shrink: 0;
+            width: 28px;
+            height: 28px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            border: 1px solid $eb-border;
+            border-radius: 4px;
+            background: $eb-surface;
+            color: $eb-text-muted;
+            font-size: 1.25rem;
+            line-height: 1;
+            cursor: pointer;
+            transition: color 0.15s ease, border-color 0.15s ease;
+
+            &:hover {
+                color: #f85149;
+                border-color: #f85149;
+            }
+        }
+    }
+}

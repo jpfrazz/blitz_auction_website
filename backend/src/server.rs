@@ -20,12 +20,14 @@ use tower_sessions_sqlx_store_chrono::PostgresStore;
 use uuid::Uuid;
 
 type DraftCache = Arc<DashMap<Uuid, Arc<Draft>>>;
+pub type SubmissionStore = DashMap<i64, crate::handlers::PendingBossBattleSubmission>;
 
 #[derive(Clone, Debug)]
 pub struct ServerState {
     pub db_pool: PgPool,
     pub drafts: DraftCache,
     pub metrics_collector: MetricsCollector,
+    pub boss_battle_submissions: Arc<SubmissionStore>,
 }
 
 #[derive(Clone, Debug, strum::Display)]
@@ -70,10 +72,12 @@ impl Server {
 
         let metrics_collector = metrics::init_metrics_collector(db_pool.clone());
         let drafts = DraftCache::new(DashMap::new());
+        let boss_battle_submissions = Arc::new(DashMap::new());
         let server_state = ServerState {
             db_pool,
             drafts,
             metrics_collector,
+            boss_battle_submissions,
         };
         let server = Self::new(server_state);
 
@@ -232,6 +236,31 @@ impl Server {
             .route(
                 "/admin/boss-battle-history/{id}/trainer",
                 post(handlers::update_admin_boss_battle_trainer),
+            )
+            .route(
+                "/boss-battle-submissions",
+                get(handlers::get_my_boss_battle_submissions)
+                    .post(handlers::post_boss_battle_submission),
+            )
+            .route(
+                "/boss-battle-submissions/{team_id}/withdraw",
+                post(handlers::withdraw_boss_battle_submission),
+            )
+            .route(
+                "/admin/boss-battle-submissions",
+                get(handlers::get_admin_boss_battle_submissions),
+            )
+            .route(
+                "/admin/boss-battle-submissions/count",
+                get(handlers::get_admin_boss_battle_submission_count),
+            )
+            .route(
+                "/admin/boss-battle-submissions/{team_id}/approve",
+                post(handlers::approve_boss_battle_submission),
+            )
+            .route(
+                "/admin/boss-battle-submissions/{team_id}/reject",
+                post(handlers::reject_boss_battle_submission),
             )
             .route("/admin/metrics", get(handlers::get_admin_metrics))
             .route(
