@@ -32,7 +32,7 @@ Shroodle: 18
 Mach Punch
 Loppuny: 9
 Clobbopus: 18
-//These Pokémon have had these moves added to their learnsets from ZA
+//These Pokémon have had moves added to their learnsets from ZA
 
 
 -----------------------------------------------
@@ -48,7 +48,7 @@ Bug Fixes
 -----------------------------------------------
 
 Adjusted Doubles AI so it will never use a spread move if it affects neither of your Pokémon
-//Baltoy's Bulldoze is given a positive score bonus if its ally (Lunatone, Solrock, Natu) are immune. However, this bonus could cause Bulldoze to be the highest scoring move even if both of the player's Pokémon were also immune. Now, Baltoy/Claydol won't get that bonus if all three Pokémon on the field would be unaffected by Bulldoze/Earthquake.
+//Baltoy's Bulldoze is given a positive score bonus if its ally (Lunatone, Solrock, Natu) are immune. However, this bonus could previously cause Bulldoze to be the highest scoring move even if both of the player's Pokémon were also immune. Now, Baltoy/Claydol won't get that bonus if all three Pokémon on the field would be unaffected by Bulldoze/Earthquake.
 
 
 -----------------------------------------------
@@ -57,3 +57,4 @@ Pool Addition
 
 +Wooloo
 //Joins Skwovet as a normal type with a smoking hot level 24 evolution.
+//Tougher but flammable.

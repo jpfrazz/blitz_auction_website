@@ -222,6 +222,7 @@ export const NOTEBOOK_POKEMON_LIST: string[] = [
   'Weedle',
   'Wingull',
   'Wishiwashi',
+  'Wooloo',
   'Wooper',
   'Yamper',
   'Yanma',
