@@ -116,6 +116,17 @@ declare global {
     EJS_pauseOnBlur: boolean;
     EJS_language: string;
     EJS_ready: (() => void) | undefined;
+    // EmulatorJS capture/screenshot config (loader.js: `config.capture = window.EJS_screenCapture`).
+    // `photo.source` is what `takeScreenshot` uses: "canvas" (default, races the
+    // cleared WebGL/CPU buffer -> intermittent all-black PNG) or "retroarch"
+    // (reads mGBA's /screenshot.png from the emulated FS -> reliable).
+    EJS_screenCapture?: {
+      photo: {
+        source: 'canvas' | 'retroarch';
+        format: 'png' | 'jpg' | 'webp' | 'jpeg';
+        upscale: number;
+      };
+    };
     EJS_onGameStart: (() => void) | undefined;
     EJS_emulator: {
       on(event: string, callback: (data?: unknown) => void): void;
@@ -2356,6 +2367,18 @@ const EmulatorPage: React.FC = () => {
         fullscreen: false,
         exitEmulation: false,
         diskButton: false,
+      };
+
+      // Screenshot via "canvas" races mGBA's render buffer and produces an
+      // intermittent all-black PNG (canvas readback happens on a rAF that draws
+      // the already-cleared framebuffer). Force the RetroArch source instead,
+      // which reads mGBA's /screenshot.png from the emulated FS.
+      window.EJS_screenCapture = {
+        photo: {
+          source: 'retroarch',
+          format: 'png',
+          upscale: 1,
+        },
       };
 
       window.EJS_hideSettings = [
