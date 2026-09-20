@@ -764,13 +764,13 @@ const Info = () => (
           <strong>Move Relearner</strong>
         </p>
         <p className="info-answer">
-          Available after obtaining 5 badges, the move relearner functions just like in vanilla Emerald. Exchange one Heart Scale to relearn a move from a previous level in a Pokemon's level-up learnset. But wait, there's more! After gym 8, the Move Relearner also gains the ability to teach <i>any</i> move from a Pokemon's level-up learnset, including moves learned above the current level.
+          Available after obtaining four badges, the move relearner functions just like in vanilla Emerald. Exchange one Heart Scale to relearn a move from a previous level in a Pokemon's level-up learnset. But wait, there's more! After gym 8, the Move Relearner also gains the ability to teach <i>any</i> move from a Pokemon's level-up learnset, including moves learned above the current level.
         </p>
         <p className="info-answer">
           <strong>Move Tutors</strong>
         </p>
         <p className="info-answer">
-          All Move Tutors present in vanilla Emerald are still present scattered across Hoenn. They can teach their move to just one Pokemon (and, it's free!). They won't appear, however, until you've obtained four badges.
+          All Move Tutors present in vanilla Emerald are still here. They can teach their move to just one Pokemon (and, it's free!). They won't appear, however, until you've obtained four badges.
         </p>
         <p className="info-answer">
           <strong>Day Care</strong>
