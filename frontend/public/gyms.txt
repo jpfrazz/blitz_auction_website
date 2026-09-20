@@ -128,7 +128,7 @@ Ability: Intimidate
 - Howl
 - Bite
 
-Nosepass (F) @ Sitrus Berry
+Nosepass (F) @ Oran Berry
 Level: 24
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
@@ -548,7 +548,7 @@ Ability: Speed Boost
 - Bug Bite
 - Double Team
 
-Beautifly (F) @ Sitrus Berry
+Beautifly (F) @ Oran Berry
 Level: 24
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
@@ -968,7 +968,7 @@ Ability: Steadfast
 - Rock Smash
 - Roost
 
-Hariyama (M) @ Sitrus Berry
+Hariyama (M) @ Oran Berry
 Level: 24
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
@@ -1808,7 +1808,7 @@ Ability: Oblivious
 - Sunny Day
 - Amnesia
 
-Torkoal (F) @ Sitrus Berry
+Torkoal (F) @ Oran Berry
 Level: 24
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
@@ -2178,7 +2178,7 @@ Ability: Quick Feet
 - Facade
 - Pin Missile
 
-Vigoroth (M) @ Oran Berry
+Vigoroth (M) @ Quick Claw
 Level: 19
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
@@ -2228,7 +2228,7 @@ Ability: Quick Feet
 - Facade
 - Hone Claws
 
-Vigoroth (M) @ Sitrus Berry
+Vigoroth (M) @ Quick Claw
 Level: 24
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
@@ -2278,7 +2278,7 @@ Ability: Quick Feet
 - Facade
 - Hone Claws
 
-Vigoroth (M) @ Sitrus Berry
+Vigoroth (M) @ Quick Claw
 Level: 29
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
@@ -2648,7 +2648,7 @@ Ability: Guts
 - Pluck
 - Double Team
 
-Tropius (F) @ Sitrus Berry
+Tropius (F) @ Oran Berry
 Level: 24
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
@@ -3028,7 +3028,7 @@ Ability: Levitate
 - Calm Mind
 - Rapid Spin
 
-Lunatone @ Sitrus Berry
+Lunatone @ Oran Berry
 Level: 24
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
@@ -3038,7 +3038,7 @@ Ability: Levitate
 - Calm Mind
 - Icy Wind
 
-Solrock @ Sitrus Berry
+Solrock @ Oran Berry
 Level: 24
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious
@@ -3446,7 +3446,7 @@ Ability: Commander
 - Rapid Spin
 - Feint Attack
 
-Dondozo (M) @ Sitrus Berry
+Dondozo (M) @ Oran Berry
 Level: 24
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 Nature: Serious

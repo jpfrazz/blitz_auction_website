@@ -1152,14 +1152,17 @@ var BattlePokemonSearch = /** @class */ (function (_super) {
                 });
             }
         }
-        // Filter out Gmax Pokemon from standard tier selection
+        // Filter out erased Pokemon (Gmax / Totem / Pikachu costume formes) from
+        // standard tier selection. The data pipeline wholly removes them from
+        // species.js, but the prebuilt search index still lists them, so drop any
+        // species that no longer exists in the dex.
         if (!/^(battlestadium|vgc|doublesubers)/g.test(format)) {
             tierSet = tierSet.filter(function (_a) {
                 var type = _a[0], id = _a[1];
                 if (type === 'header' && id === 'DUber by technicality')
                     return false;
                 if (type === 'pokemon')
-                    return !id.endsWith('gmax');
+                    return id in BattlePokedex;
                 return true;
             });
         }

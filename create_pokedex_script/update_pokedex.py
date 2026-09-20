@@ -6,8 +6,9 @@ Runs the full pipeline:
   1. Generates required build-artifact headers from the ROM source
   2. Extracts data from the ROM source via porydex
   3. Copies the generated data files into the ComprehensiveDex folder
-  4. Wholly erases Gmax and "-[Type]" forme species (e.g. all Gigantamax formes,
-     every Arceus/Silvally type forme, Calyrex-Ice, etc.)
+  4. Wholly erases Gmax, "-[Type]", "-Totem" and Pikachu costume forme species
+     (e.g. all Gigantamax formes, every Arceus/Silvally type forme,
+     Calyrex-Ice, Kommo-o-Totem, Pikachu-Rock-Star, Pikachu-Starter, etc.)
   5. Applies obtainable tiers from pokemon.csv
   6. Applies correct evolution methods from pokemon.csv (including Guru / Oracle items)
   7. Applies egg moves from egg_moves.h
@@ -182,6 +183,16 @@ def copy_data():
 # removed from the dex.
 _GMAX_NAME_RE = re.compile(r"Gmax$", re.IGNORECASE)
 
+# Any species whose display name ends in "-Totem" (e.g. "Kommo-o-Totem",
+# "Raticate-Alola-Totem") is also wholly removed from the dex, mirroring the
+# Gmax erasure.
+_TOTEM_NAME_RE = re.compile(r"-Totem$", re.IGNORECASE)
+
+# Any Pikachu costume forme (e.g. "Pikachu-Rock-Star", "Pikachu-Belle",
+# "Pikachu-Original", "Pikachu-Partner", "Pikachu-Starter") is wholly removed,
+# keeping only plain "Pikachu" in the dex.
+_PIKACHU_FORM_NAME_RE = re.compile(r"^Pikachu-", re.IGNORECASE)
+
 # Any species whose display name ends in "-<Type>" is also wholly removed. The
 # leading "-" is deliberate: it hits formes like "Arceus-Fire" and
 # "Silvally-Ground" without ever matching ordinary Pokémon such as Clefairy,
@@ -198,13 +209,14 @@ _TYPE_FORM_NAME_RE = re.compile(
 
 
 def remove_hidden_species(data: dict) -> set[str]:
-    step("Wholly erasing Gmax / -[Type] forme species")
+    step("Wholly erasing Gmax / -[Type] / -Totem / Pikachu-forme species")
 
     removed: set[str] = set()
     removed_names: set[str] = set()
     for key, v in data.items():
         name = v.get("name", "")
-        if _GMAX_NAME_RE.search(name) or _TYPE_FORM_NAME_RE.search(name):
+        if (_GMAX_NAME_RE.search(name) or _TYPE_FORM_NAME_RE.search(name)
+                or _TOTEM_NAME_RE.search(name) or _PIKACHU_FORM_NAME_RE.search(name)):
             removed.add(key)
             removed_names.add(name)
 
