@@ -143,10 +143,10 @@ function parseLegacyCost(cost: string): number | null {
 }
 
 function getPriceColor(price: number): string {
-  if (price >= 5000) return 'hsla(0, 85%, 45%, 0.35)';
+  if (price >= 4500) return 'hsla(0, 85%, 45%, 0.35)';
   if (price <= 1250) return 'hsla(270, 85%, 45%, 0.35)';
 
-  const maxPrice = 5000;
+  const maxPrice = 4500;
   const minPrice = 1250;
   const range = maxPrice - minPrice;
   const stepSize = 250;

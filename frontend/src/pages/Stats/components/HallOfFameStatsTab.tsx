@@ -144,7 +144,7 @@ const HallOfFameStatsTab: React.FC<HallOfFameStatsTabProps> = ({ validDraftIds }
                 <input
                   className="stats-filter-input"
                   type="date"
-                  style={{ width: '130px' }}
+                  style={{ width: '104px' }}
                   value={cutoffDate}
                   onChange={(e) => setCutoffDate(e.target.value)}
                 />
