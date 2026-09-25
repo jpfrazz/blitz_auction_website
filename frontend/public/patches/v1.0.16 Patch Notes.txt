@@ -1,0 +1,11 @@
+9/25/2026
+
+-----------------------------------------------
+Bug Fixes
+-----------------------------------------------
+
+Fixed a bug where choosing Random in the Pokémon notebook crashed the game
+
+Fixed a bug where egg icons "spoiled" the Pokémon within while in the PC portion of the party menu
+
+Fixed a bug where the mini icons displaying in TM description boxes could overflow onto a 3rd row

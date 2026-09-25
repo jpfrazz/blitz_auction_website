@@ -230,6 +230,13 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ onClose }) => {
               <div style={{ fontSize: '0.95rem', color: '#b3b3b3', marginTop: '-0.6rem' }}>
                 Color of just your player card during auctions
               </div>
+              <input
+                type="text"
+                value={playerCardColor}
+                onChange={(e) => setPlayerCardColor(e.target.value)}
+                placeholder="#7CB946"
+                style={{ fontSize: '0.95rem', width: '100%', padding: '8px', borderRadius: '4px', border: '1px solid #444', background: '#111', color: '#f1f1f1' }}
+              />
 
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '0.4rem' }}>
                 <span className="settings-label">Out of Money Card Color</span>
