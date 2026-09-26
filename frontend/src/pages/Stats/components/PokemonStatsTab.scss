@@ -194,26 +194,37 @@
         }
     }
 
+    // Row entrance animation.
+    // Only opacity and transform are animated on purpose. An earlier version
+    // also interpolated `filter: blur(4px) -> blur(0)` and held a
+    // `backdrop-filter: blur(2px)` on every row. Both force a full
+    // re-rasterisation of each row on every frame (and a backdrop snapshot per
+    // row), so a dozen simultaneously animating rows pinned the main thread and
+    // the stagger read as lag rather than as motion. Compositor-only properties
+    // keep it at 60fps on weak hardware.
     @keyframes blitz-load-in {
-        0% {
+        from {
             opacity: 0;
-            transform: translateY(15px) scale(0.98);
-            filter: blur(4px);
+            transform: translate3d(0, 12px, 0);
         }
 
-        100% {
+        to {
             opacity: 1;
-            transform: translateY(0) scale(1);
-            filter: blur(0);
+            transform: translate3d(0, 0, 0);
         }
     }
 
     .stats-row-animate {
         opacity: 0;
         /* Start hidden */
-        animation: blitz-load-in 0.4s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
-        // Glass effect enhancement
-        backdrop-filter: blur(2px);
+        will-change: transform, opacity;
+        animation: blitz-load-in 0.32s cubic-bezier(0.22, 0.61, 0.36, 1) forwards;
+    }
+
+    // Added from JS on animationend so the promoted layer is discarded once the
+    // row has settled instead of being held for the lifetime of the table.
+    .stats-row-animate.is-settled {
+        will-change: auto;
     }
 
     .price-history-dropdown-row {
@@ -235,10 +246,33 @@
         from {
             max-height: 0;
             opacity: 0;
+            transform: translate3d(0, -8px, 0);
         }
         to {
             max-height: 350px; // Sufficient for 280px chart + margins/padding
             opacity: 1;
+            transform: translate3d(0, 0, 0);
+        }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        .stats-row-animate {
+            animation: none;
+            opacity: 1;
+            transform: none;
+            will-change: auto;
+        }
+
+        .price-history-container {
+            animation: none;
+        }
+
+        .stats-analysis-settings {
+            transition: none;
+        }
+
+        .stats-settings-toggle {
+            transition: none;
         }
     }
 }

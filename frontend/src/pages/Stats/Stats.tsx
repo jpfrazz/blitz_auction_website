@@ -110,6 +110,43 @@ function parseLegacyCost(cost: string): number | null {
 
 const EEVEELUTION_IDS = new Set([133, 134, 135, 136, 196, 197, 470, 471, 700]);
 
+// How many mini icons to eagerly warm before revealing the table, and the longest
+// we will wait for them. Roughly covers the rows visible in the 750px scroller
+// with headroom; everything past that loads lazily on scroll.
+const PRELOAD_ICON_COUNT = 32;
+const PRELOAD_ICON_BUDGET_MS = 1500;
+
+function preloadIcons(names: string[], budgetMs: number): Promise<void> {
+  if (names.length === 0) {
+    return Promise.resolve();
+  }
+
+  return new Promise<void>((resolve) => {
+    let pending = names.length;
+    let settled = false;
+
+    const finish = () => {
+      if (settled) return;
+      settled = true;
+      window.clearTimeout(timer);
+      resolve();
+    };
+
+    const timer = window.setTimeout(finish, budgetMs);
+
+    names.forEach((name) => {
+      const img = new Image();
+      const settle = () => {
+        pending -= 1;
+        if (pending <= 0) finish();
+      };
+      img.onload = settle;
+      img.onerror = settle;
+      img.src = `/MiniIcons/${formatPokemonName(name)}.png`;
+    });
+  });
+}
+
 const Stats: React.FC = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
@@ -180,19 +217,26 @@ const Stats: React.FC = () => {
           legacyCount: data.legacy?.length ?? 0,
         });
 
-        // Preload mini icons so the animation doesn't start until they are ready
-        const uniqueNames = new Set<string>();
-        data.auctions.forEach((a) => uniqueNames.add(a.name));
-        data.legacy?.forEach((l: any) => uniqueNames.add(l.pokemon));
+        // Warm the icons for the rows that are actually on screen so the entrance
+        // animation never plays over an empty image slot. This used to await
+        // *every* mini icon in the dataset (~1.1k of them) in one Promise.all,
+        // which held the page on "Loading stats..." for the slowest request and
+        // then dumped ~1.1k PNG decodes onto the main thread at the exact moment
+        // the stagger began. The cap keeps the reveal snappy, the budget stops a
+        // single slow icon from stalling it, and the remaining rows now load
+        // lazily (see loading="lazy" on the row icons) as they are scrolled to.
+        const iconNames: string[] = [];
+        const seenIconNames = new Set<string>();
+        const collectIconName = (name: string) => {
+          if (name && !seenIconNames.has(name)) {
+            seenIconNames.add(name);
+            iconNames.push(name);
+          }
+        };
+        data.auctions.forEach((a) => collectIconName(a.name));
+        data.legacy?.forEach((l: any) => collectIconName(l.pokemon));
 
-        await Promise.all(Array.from(uniqueNames).map((name) => {
-          return new Promise<void>((resolve) => {
-            const img = new Image();
-            img.src = `/MiniIcons/${formatPokemonName(name)}.png`;
-            img.onload = () => resolve();
-            img.onerror = () => resolve();
-          });
-        }));
+        await preloadIcons(iconNames.slice(0, PRELOAD_ICON_COUNT), PRELOAD_ICON_BUDGET_MS);
 
         setStats(data);
       } catch (e: any) {
@@ -793,14 +837,24 @@ const Stats: React.FC = () => {
                       <th style={{ width: '60px' }}></th>
                     </tr>
                   </thead>
-                  <tbody>
-                    {visibleDrafts.map((draft, index) => (
+                  <tbody
+                    onAnimationEnd={(event) => {
+                      // Release the promoted layer once a row has finished animating
+                      // so `will-change` is not held for the lifetime of the table.
+                      if (event.target !== event.currentTarget) {
+                        (event.target as HTMLElement).classList.add('is-settled');
+                      }
+                    }}
+                  >
+                    {visibleDrafts.map((draft, index) => {
+                      const shouldAnimate = index < 30;
+                      return (
                       <React.Fragment key={draft.draftId}>
                         <tr
-                          className={`draft-row-clickable ${index < 30 ? 'stats-row-animate' : ''} ${draft.draftType === '1v1' ? 'one-v-one-draft' : validDraftIds.has(draft.draftId) ? 'competitive-draft' : 'non-competitive-draft'}`}
+                          className={`draft-row-clickable ${shouldAnimate ? 'stats-row-animate' : ''} ${draft.draftType === '1v1' ? 'one-v-one-draft' : validDraftIds.has(draft.draftId) ? 'competitive-draft' : 'non-competitive-draft'}`}
                           title={!validDraftIds.has(draft.draftId) && draft.validationError ? `Excluded from stats: ${draft.validationError}` : undefined}
                           style={{
-                            animationDelay: `${200 + (index < 30 ? index * 30 : 30 * 30)}ms`,
+                            ...(shouldAnimate ? { animationDelay: `${120 + index * 30}ms` } : {}),
                             backgroundColor:
                               draft.draftType === '1v1'
                                 ? 'rgba(33, 150, 243, 0.1)'
@@ -952,6 +1006,8 @@ const Stats: React.FC = () => {
                                       <img
                                         src={`/baseforms/${auction.name}.png`}
                                         alt={auction.name}
+                                        loading="lazy"
+                                        decoding="async"
                                         onError={(ev) => {
                                           (ev.currentTarget as HTMLImageElement).style.display = 'none';
                                         }}
@@ -1078,7 +1134,8 @@ const Stats: React.FC = () => {
                           </tr>
                         )}
                       </React.Fragment>
-                    ))}
+                      );
+                    })}
                     {visibleDrafts.length === 0 && (
                       <tr>
                         <td colSpan={6} className="empty-cell">No draft stats available.</td>

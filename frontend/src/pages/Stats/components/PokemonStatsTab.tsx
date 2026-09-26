@@ -803,12 +803,22 @@ const PokemonStatsTab: React.FC<PokemonStatsTabProps> = ({
                   </th>
                 </tr>
               </thead>
-              <tbody>
-                {filteredPokemonSummary.map((entry, index) => (
+              <tbody
+                onAnimationEnd={(event) => {
+                  // Release the promoted layer once a row has finished animating
+                  // so `will-change` is not held for the lifetime of the table.
+                  if (event.target !== event.currentTarget) {
+                    (event.target as HTMLElement).classList.add('is-settled');
+                  }
+                }}
+              >
+                {filteredPokemonSummary.map((entry, index) => {
+                  const shouldAnimate = index < 30;
+                  return (
                   <React.Fragment key={entry.key}>
                     <tr 
-                      className={`${index < 30 ? 'stats-row-animate' : ''} ${expandedPokemon === entry.key ? 'expanded' : ''} ${index % 2 === 0 ? 'pokemon-row-stripe' : ''}`} 
-                      style={{ animationDelay: `${200 + (index < 30 ? index * 30 : 30 * 30)}ms`, cursor: 'pointer' }}
+                      className={`${shouldAnimate ? 'stats-row-animate' : ''} ${expandedPokemon === entry.key ? 'expanded' : ''} ${index % 2 === 0 ? 'pokemon-row-stripe' : ''}`} 
+                      style={shouldAnimate ? { animationDelay: `${120 + index * 30}ms`, cursor: 'pointer' } : { cursor: 'pointer' }}
                       onClick={() => setExpandedPokemon(expandedPokemon === entry.key ? null : entry.key)}
                     >
                     <td style={{ backgroundColor: getPriceColor(entry.avgWinningBid) }}>{entry.rank}</td>
@@ -829,6 +839,8 @@ const PokemonStatsTab: React.FC<PokemonStatsTabProps> = ({
                           <img
                             src={`/MiniIcons/${formatPokemonName(entry.name)}.png`}
                             alt={entry.name}
+                            loading="lazy"
+                            decoding="async"
                             style={{ width: 'auto', height: 'auto', maxWidth: '32px', maxHeight: '32px', objectFit: 'contain' }}
                             onError={(e) => {
                               (e.target as HTMLImageElement).style.display = 'none';
@@ -880,7 +892,8 @@ const PokemonStatsTab: React.FC<PokemonStatsTabProps> = ({
                       </tr>
                     )}
                   </React.Fragment>
-                ))}
+                  );
+                })}
                 {filteredPokemonSummary.length === 0 && (
                   <tr>
                     <td colSpan={9} className="empty-cell">No pokemon stats available.</td>
