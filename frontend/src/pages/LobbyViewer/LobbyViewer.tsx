@@ -278,7 +278,7 @@ const LobbyViewer: React.FC = () => {
                 {table.getRowModel().rows.length === 0 && (
                   <tr>
                     <td colSpan={8} className="lobby-viewer-empty">
-                      No active drafts found.
+                      No active drafts.
                     </td>
                   </tr>
                 )}
