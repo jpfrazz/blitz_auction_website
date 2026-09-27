@@ -48,6 +48,12 @@
   margin: 0 0 8px 0;
 }
 
+.faq-page .info-toc-card {
+  width: fit-content;
+  margin-left: 0;
+  margin-right: auto;
+}
+
 .faq-toc-card hr {
   border: none;
   border-top: 2px solid $eb-border;

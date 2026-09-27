@@ -713,9 +713,6 @@ const Info = () => (
           Each TM costs $4000. In addition to TMs, for $2000, you can choose to "invert" the shop, swapping all TMs with their same-type counterpart.
         </p>
         <p className="info-answer">
-          Pressing "Select" while in the shop allows you to preview the inverted TMs so that you can check which Pokémon in your party could learn them.
-        </p>
-        <p className="info-answer">
           If, at gym 8, there's a TM-type that you've yet to see, Scott is guaranteed to offer you a TM of that type.
         </p>
         <p className="info-answer">

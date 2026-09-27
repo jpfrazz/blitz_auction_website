@@ -1,0 +1,45 @@
+@import '../style/theme.scss';
+
+// Inline reference to a control in the app, for use inside prose.
+//
+// Reads as a ghosted version of the site's real buttons: primary-coloured text
+// in a translucent primary fill with a primary-tinted outline. Everything is
+// derived from --eb-primary, so re-theming the site re-tints these too.
+//
+// Sizing is in `em` rather than `rem` on purpose. Wiki pages set their own
+// body sizes (FAQ and Info both use 1.5rem, dropping to 1.25rem on mobile), and
+// `em` lets a reference sit correctly in any of them without per-page overrides.
+.ui-ref {
+  display: inline;
+  padding: 0.05em 0.28em;
+  border: 1px solid color-mix(in srgb, var(--eb-primary) 45%, transparent);
+  border-radius: 0.16em;
+  background-color: color-mix(in srgb, var(--eb-primary) 14%, transparent);
+  color: var(--eb-primary);
+  font-family: inherit;
+  font-size: 0.92em;
+  font-weight: 600;
+  line-height: inherit;
+  text-decoration: none;
+  // A long label that has to wrap gets a correctly rounded border on both
+  // fragments instead of being clipped at the line break.
+  -webkit-box-decoration-break: clone;
+  box-decoration-break: clone;
+  transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+
+// Only the linked variant is interactive, so only it gets an interactive
+// affordance. A plain reference stays inert on hover rather than inviting a
+// click it cannot honour.
+a.ui-ref:hover,
+a.ui-ref:focus-visible {
+  background-color: color-mix(in srgb, var(--eb-primary) 26%, transparent);
+  border-color: var(--eb-primary);
+  color: var(--eb-primary-hover);
+  text-decoration: none;
+}
+
+a.ui-ref:focus-visible {
+  outline: 2px solid var(--eb-primary);
+  outline-offset: 2px;
+}

@@ -217,39 +217,54 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ onClose }) => {
                 Automatically sort players by remaining funds
               </div>
 
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '0.4rem' }}>
-                <span className="settings-label">Player Card Color</span>
-                <input
-                  type="color"
-                  value={playerCardColor || '#7CB946'}
-                  onChange={(e) => setPlayerCardColor(e.target.value)}
-                  style={{ width: '40px', height: '40px', border: 'none', cursor: 'pointer', background: 'transparent' }}
-                  title="Color of just your player card during auctions"
-                />
+              <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginTop: '0.4rem' }}>
+                <div>
+                  <span className="settings-label">Player Card Color</span>
+                  <div style={{ fontSize: '0.95rem', color: '#b3b3b3', marginTop: '0.3rem' }}>
+                    Color of just your player card during auctions
+                  </div>
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.25rem' }}>
+                  <input
+                    type="color"
+                    value={playerCardColor || '#7CB946'}
+                    onChange={(e) => setPlayerCardColor(e.target.value)}
+                    style={{ width: '40px', height: '40px', border: 'none', cursor: 'pointer', background: 'transparent' }}
+                    title="Color of just your player card during auctions"
+                  />
+                  <input
+                    type="text"
+                    value={playerCardColor}
+                    onChange={(e) => setPlayerCardColor(e.target.value)}
+                    placeholder="#7CB946"
+                    style={{ width: '36px', padding: '2px 4px', textAlign: 'center', fontSize: '0.7rem', borderRadius: '4px', border: '1px solid #444', background: '#111', color: '#f1f1f1' }}
+                  />
+                </div>
               </div>
-              <div style={{ fontSize: '0.95rem', color: '#b3b3b3', marginTop: '-0.6rem' }}>
-                Color of just your player card during auctions
-              </div>
-              <input
-                type="text"
-                value={playerCardColor}
-                onChange={(e) => setPlayerCardColor(e.target.value)}
-                placeholder="#7CB946"
-                style={{ fontSize: '0.95rem', width: '100%', padding: '8px', borderRadius: '4px', border: '1px solid #444', background: '#111', color: '#f1f1f1' }}
-              />
 
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '0.4rem' }}>
-                <span className="settings-label">Out of Money Card Color</span>
-                <input
-                  type="color"
-                  value={outOfMoneyColor}
-                  onChange={(e) => setOutOfMoneyColor(e.target.value)}
-                  style={{ width: '40px', height: '40px', border: 'none', cursor: 'pointer', background: 'transparent' }}
-                  title="Color of player cards when players run out of money"
-                />
-              </div>
-              <div style={{ fontSize: '0.95rem', color: '#b3b3b3', marginTop: '-0.6rem' }}>
-                Color of player cards when players run out of money
+              <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginTop: '0.4rem' }}>
+                <div>
+                  <span className="settings-label">Out of Money Card Color</span>
+                  <div style={{ fontSize: '0.95rem', color: '#b3b3b3', marginTop: '0.3rem' }}>
+                    Color of player cards when players run out of money
+                  </div>
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.25rem' }}>
+                  <input
+                    type="color"
+                    value={outOfMoneyColor}
+                    onChange={(e) => setOutOfMoneyColor(e.target.value)}
+                    style={{ width: '40px', height: '40px', border: 'none', cursor: 'pointer', background: 'transparent' }}
+                    title="Color of player cards when players run out of money"
+                  />
+                  <input
+                    type="text"
+                    value={outOfMoneyColor}
+                    onChange={(e) => setOutOfMoneyColor(e.target.value)}
+                    placeholder="#b71c1c"
+                    style={{ width: '36px', padding: '2px 4px', textAlign: 'center', fontSize: '0.7rem', borderRadius: '4px', border: '1px solid #444', background: '#111', color: '#f1f1f1' }}
+                  />
+                </div>
               </div>
             </div>
           )}

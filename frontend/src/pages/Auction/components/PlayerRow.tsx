@@ -32,6 +32,12 @@ interface PlayerRowProps {
   auctionCompleted?: boolean;
   hideMoney?: boolean;
   positionColors?: boolean;
+  /**
+   * Identifies the P1 team when `positionColors` is set. Cards are matched
+   * against this rather than against their position in the row, so a reorder
+   * can never paint a player with the other player's colour.
+   */
+  positionOneId?: string | null;
   highlightId?: string | null;
   equalWidth?: boolean;
 }
@@ -64,11 +70,16 @@ const SortableItem: React.FC<SortableItemProps> = ({ team, highestBidderId, wsCo
     id: team.dragId,
   });
 
+  // Position-coloured cards are locked to their P1/P2 slot, so they must not
+  // respond to drag gestures at all — otherwise the row would let the user
+  // pick a card up only to snap it straight back.
+  const draggable = !positionColors;
+
   const style = {
     transform: CSS.Transform.toString(transform),
     transition,
     opacity: isDragging ? 0.5 : 1,
-    cursor: autoSortByFunds ? 'default' : 'grab',
+    cursor: draggable && !autoSortByFunds ? 'grab' : 'default',
   };
 
   // Position-colored slots are 1v1 P1/P2 cards, which always use their fixed
@@ -134,7 +145,7 @@ const SortableItem: React.FC<SortableItemProps> = ({ team, highestBidderId, wsCo
       ref={setNodeRef}
       style={{ ...style, ...colorVarStyle }}
       {...attributes}
-      {...listeners}
+      {...(draggable ? listeners : {})}
       className={baseClasses}
     >
       {cardContent}
@@ -142,7 +153,7 @@ const SortableItem: React.FC<SortableItemProps> = ({ team, highestBidderId, wsCo
   );
 };
 
-const PlayerRow: React.FC<PlayerRowProps> = ({ teams, numPlayers, highestBidderId, wsConnected = true, currentUserId, highestBid, auctionCompleted, hideMoney, positionColors, highlightId, equalWidth }) => {
+const PlayerRow: React.FC<PlayerRowProps> = ({ teams, numPlayers, highestBidderId, wsConnected = true, currentUserId, highestBid, auctionCompleted, hideMoney, positionColors, positionOneId, highlightId, equalWidth }) => {
   const [animatingId, setAnimatingId] = React.useState<string | null>(null);
   const isInitial = React.useRef(true);
 
@@ -162,6 +173,10 @@ const PlayerRow: React.FC<PlayerRowProps> = ({ teams, numPlayers, highestBidderI
   );
 
   const handleDragEnd = (event: DragEndEvent) => {
+    // Position-coloured rows (1v1) are painted by P1/P2 rather than by where
+    // they sit, so reordering them is both pointless and misleading.
+    if (positionColors) return;
+
     const { active, over } = event;
 
     if (over && active.id !== over.id) {
@@ -216,9 +231,14 @@ const PlayerRow: React.FC<PlayerRowProps> = ({ teams, numPlayers, highestBidderI
   // Prepare the list of teams and placeholders
   const sortedTeams = React.useMemo(() => {
     const baseTeams = [...teams];
-    
-    // Auto-sort by funds if enabled
-    if (autoSortByFunds) {
+
+    // Position-coloured rows (1v1) arrive already ordered P1 then P2, and the
+    // caller needs that order preserved. Reordering here would silently swap
+    // which player a card belongs to, so both of the reorders below are skipped.
+    if (positionColors) {
+      // Intentionally left in the order the caller supplied.
+    } else if (autoSortByFunds) {
+      // Auto-sort by funds if enabled
       baseTeams.sort((a, b) => {
         const aFunds = a.budget_remaining ?? 0;
         const bFunds = b.budget_remaining ?? 0;
@@ -232,14 +252,14 @@ const PlayerRow: React.FC<PlayerRowProps> = ({ teams, numPlayers, highestBidderI
         baseTeams.unshift(myTeam);
       }
     }
-    
+
     // Map existing teams to objects with a stable dragId, then pad with placeholders
     const padded = baseTeams.map((t, i) => ({ ...t, dragId: t.user_id || `team-${i}` }));
     while (padded.length < numPlayers) {
       padded.push({ isPlaceholder: true, dragId: `placeholder-${padded.length}` } as any);
     }
     return padded;
-  }, [teams, currentUserId, numPlayers, autoSortByFunds]);
+  }, [teams, currentUserId, numPlayers, autoSortByFunds, positionColors]);
 
   // Sync local items with props when the underlying data changes (e.g. someone joins/leaves)
   React.useEffect(() => {
@@ -255,7 +275,7 @@ const PlayerRow: React.FC<PlayerRowProps> = ({ teams, numPlayers, highestBidderI
       }
 
       // If auto-sort is enabled, reorder items to match sorted order using arrayMove for animation
-      if (autoSortByFunds) {
+      if (autoSortByFunds && !positionColors) {
         let newOrder = [...prevItems];
         // Apply moves to transform current order to sorted order
         for (let targetIndex = 0; targetIndex < sortedTeams.length; targetIndex++) {
@@ -278,7 +298,7 @@ const PlayerRow: React.FC<PlayerRowProps> = ({ teams, numPlayers, highestBidderI
         return freshData ? { ...freshData } : item;
       });
     });
-  }, [sortedTeams, autoSortByFunds]);
+  }, [sortedTeams, autoSortByFunds, positionColors]);
 
   React.useEffect(() => {
     if (isInitial.current) {
@@ -296,6 +316,20 @@ const PlayerRow: React.FC<PlayerRowProps> = ({ teams, numPlayers, highestBidderI
   const getIconName = (name: string) => {
     if (name.toLowerCase().startsWith('egg')) return 'egg';
     return name.toLowerCase();
+  };
+
+  // Resolves a card's P1/P2 colour from which team it actually is, never from
+  // where it happens to sit in the row. Keying this off the render index was
+  // the source of a bug where 1v1 players saw each other's colours, because
+  // the row reorders itself (auto-sort by funds, "me first", dragging).
+  const getPositionColorClass = (team: any, idx: number): string => {
+    if (!positionColors || team.isPlaceholder) return '';
+    if (positionOneId) {
+      const isP1 = team.user_id === positionOneId || team.guest_id === positionOneId;
+      return isP1 ? 'player-slot-p1' : 'player-slot-p2';
+    }
+    // No P1 id supplied, so fall back to the caller's ordering.
+    return idx === 0 ? 'player-slot-p1' : idx === 1 ? 'player-slot-p2' : '';
   };
 
   const containerClassName = `auction-players-row ${twoRowMode ? 'two-row-mode' : ''} ${equalWidth ? 'equal-width' : ''}${highlightId ? ' players-turn-highlight' : ''}`;
@@ -323,7 +357,7 @@ const PlayerRow: React.FC<PlayerRowProps> = ({ teams, numPlayers, highestBidderI
               getIconName={getIconName}
               auctionCompleted={auctionCompleted}
               hideMoney={hideMoney}
-              positionColorClass={positionColors && !team.isPlaceholder ? (idx === 0 ? 'player-slot-p1' : idx === 1 ? 'player-slot-p2' : '') : ''}
+              positionColorClass={getPositionColorClass(team, idx)}
               highlighted={!!highlightId && (team.user_id === highlightId || team.guest_id === highlightId)}
               currentUserId={currentUserId}
               playerCardColor={playerCardColor}

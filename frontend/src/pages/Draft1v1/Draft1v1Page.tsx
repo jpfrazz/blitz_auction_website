@@ -477,6 +477,7 @@ const Draft1v1Page: React.FC = () => {
             auctionCompleted={draft.draft_state === 'COMPLETED'}
             hideMoney
             positionColors={!!oneVOne}
+            positionOneId={oneVOne?.player1 ?? null}
             highlightId={highlightTeamId}
             equalWidth
           />

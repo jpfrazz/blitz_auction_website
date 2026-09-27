@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from 'react';
 import { useLocation } from 'react-router-dom';
-import { getTipMessagesEnabled } from '../utils/tipMessages';
 import PokeCommunityIcon from './PokeCommunityIcon';
 import './Footer.scss';
 
@@ -22,28 +21,7 @@ const DISCLAIMER_TEXT = (
 
 function Footer() {
   const { pathname } = useLocation();
-  const [showDiscordHint, setShowDiscordHint] = useState(false);
-  const [tipsEnabled, setTipsEnabled] = useState(getTipMessagesEnabled);
   const [showDisclaimer, setShowDisclaimer] = useState(() => pathname === '/');
-
-  useEffect(() => {
-    const handleSettingsChanged = () => setTipsEnabled(getTipMessagesEnabled());
-    window.addEventListener('eb-settings-changed', handleSettingsChanged);
-    window.addEventListener('storage', handleSettingsChanged);
-    return () => {
-      window.removeEventListener('eb-settings-changed', handleSettingsChanged);
-      window.removeEventListener('storage', handleSettingsChanged);
-    };
-  }, []);
-
-  useEffect(() => {
-    if (pathname !== '/' || !tipsEnabled) {
-      setShowDiscordHint(false);
-      return;
-    }
-    const timer = setTimeout(() => setShowDiscordHint(true), 3000);
-    return () => clearTimeout(timer);
-  }, [pathname, tipsEnabled]);
 
   useEffect(() => {
     if (pathname !== '/') return;
@@ -76,18 +54,6 @@ function Footer() {
               )}
             </a>
           ))}
-          {showDiscordHint && (
-            <div className="discord-hint">
-              <button
-                className="discord-hint-close"
-                onClick={() => setShowDiscordHint(false)}
-                aria-label="Close"
-              >
-                -
-              </button>
-              Join the discord for daily races!
-            </div>
-          )}
         </div>
         {showDisclaimer && (
           <div className="footerDisclaimer">

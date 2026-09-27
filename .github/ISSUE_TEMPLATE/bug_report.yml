@@ -1,0 +1,49 @@
+name: Bug report
+description: Report something that isn't working as expected
+title: "[Bug]: "
+body:
+  - type: input
+    id: title
+    attributes:
+      label: Title
+      description: A short summary of the problem
+      placeholder: e.g. Bid form fails to submit on auction page
+    validations:
+      required: true
+
+  - type: textarea
+    id: description
+    attributes:
+      label: Description
+      description: What behavior are you expecting to happen? What behavior are you observing instead? Please be as descriptive as possible.
+      placeholder: I expected ..., but instead ...
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Reproduction Steps
+      description: What exact steps can somebody else follow in order to recreate the issue on their own? Provide as much context as you have for how to produce the bug.
+      placeholder: |
+        1. Go to ...
+        2. Click ...
+        3. Observe ...
+    validations:
+      required: true
+
+  - type: markdown
+    attributes:
+      value: |
+        ### Images / Video
+
+        Do you have images or videos to show the problem happen? Here you can attach screenshots, gif, or video — once you submit this form, drag and drop them right into the issue.
+
+  - type: textarea
+    id: attachments
+    attributes:
+      label: Images / Video links
+      description: Optionally paste links to hosted images, gifs, or videos (e.g. a screen recording) here.
+      placeholder: https://...
+    validations:
+      required: false

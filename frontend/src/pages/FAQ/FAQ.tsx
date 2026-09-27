@@ -1,6 +1,7 @@
 import React from 'react';
 import Header from '../../shared/components/Header';
 import Footer from '../../shared/components/Footer';
+import UiRef from '../../shared/components/UiRef';
 import './FAQ.scss';
 import '../Info/Info.scss';
 
@@ -25,9 +26,9 @@ const FAQ = () => (
         <div className="faq-toc-group">
           <h3 className="faq-toc-subheading"><a href="#getting-started">Getting Started</a></h3>
           <ul className="info-toc-list">
-            <li><a href="#how-do-i-play">How do I play?</a></li>
             <li><a href="#what-are-the-rules">What are the rules?</a></li>
-            <li><a href="#how-do-i-draft-with-my-friends">How do I draft with my friends?</a></li>
+            <li><a href="#how-do-i-play">How do I play?</a></li>
+            <li><a href="#how-do-i-race-my-friends">How do I race my friends?</a></li>
             <li><a href="#what-do-i-do-if-i-dont-have-any-friends-who-like-pokemon">What do I do if I don't have any friends who like Pokémon?</a></li>
           </ul>
         </div>
@@ -52,6 +53,13 @@ const FAQ = () => (
             <li><a href="#how-does-this-mechanic-work">How does [this] mechanic work?</a></li>
             <li><a href="#whats-changed">What's changed from vanilla Emerald?</a></li>
             <li><a href="#what-do-the-new-items-do">What do the new items do?</a></li>
+          </ul>
+        </div>
+        <div className="faq-toc-group">
+          <h3 className="faq-toc-subheading"><a href="#making-contributions">Making Contributions</a></h3>
+          <ul className="info-toc-list">
+            <li><a href="#can-i-add-features">Can I add features to the game or the website?</a></li>
+            <li><a href="#how-do-i-report-a-bug">How do I report a bug?</a></li>
           </ul>
         </div>
       </nav>
@@ -85,6 +93,34 @@ const FAQ = () => (
       <div className="faq-subsection">
         <h2 id="getting-started" className="faq-subsection-heading" style={{ scrollMarginTop: '120px' }}>Getting Started</h2>
 
+        <section id="what-are-the-rules" className="faq-section" style={{ scrollMarginTop: '120px' }}>
+          <h2 className="faq-question">What are the rules?</h2>
+          <hr />
+          <ul className="faq-answer">
+            <li>
+              This is a nuzlocke:
+              <ul>
+                <li>If a Pokemon faints, it’s lost forever.</li>
+                <li>You can’t use items in battle.</li>
+                <li>Battles are played on set mode (you don’t get the option to switch when you KO an opponent’s Pokemon).</li>
+              </ul>
+            </li>
+            <li>
+              Besides your starter Eevee and <a href="/Pokedex/Rental">rental Pokemon</a>, you can only use Pokemon you purchased at auction. They’re all in your notebook at the start of the game. You can’t catch Pokemon.
+            </li>
+            <li>The first player to beat the game wins.</li>
+            <li>
+              Pokemon can’t level up beyond the level of the next gym leader’s ace (level caps are implemented in game, so you can’t accidentally overlevel).
+            </li>
+            <li>
+              The race only begins when players leave their rooms. Any actions you take in your starting room, like withdrawing your party and hatching eggs, can be done without pressure before the race begins.
+            </li>
+            <li>
+              Only one player per race can use any given Eeveelution. For example, once a player evolves their Eevee into Umbreon, no other players can use Umbreon.
+            </li>
+          </ul>
+        </section>
+
         <section id="how-do-i-play" className="faq-section" style={{ scrollMarginTop: '120px' }}>
           <h2 className="faq-question">How do I play?</h2>
           <hr />
@@ -110,44 +146,16 @@ const FAQ = () => (
               Select your Pokémon
             </li>
             <li>
-              Click the Emulator button
+              Click <UiRef>Emulator</UiRef>
             </li>
           </ol>
           <p className="faq-answer">
-            From there, the website will automatically patch your game, and the Auto Withdraw button will give you your chosen team!
+            From there, the website will automatically patch your game, and the <UiRef>Auto Withdraw</UiRef> button will give you your chosen team!
           </p>
         </section>
 
-        <section id="what-are-the-rules" className="faq-section" style={{ scrollMarginTop: '120px' }}>
-          <h2 className="faq-question">What are the rules?</h2>
-          <hr />
-          <ul className="faq-answer">
-            <li>
-              This is a nuzlocke:
-              <ul>
-                <li>If a Pokemon faints, it’s lost forever.</li>
-                <li>You can’t use items in battle.</li>
-                <li>Battles are played on set mode (you don’t get the option to switch when you KO an opponent’s Pokemon).</li>
-              </ul>
-            </li>
-            <li>
-              Besides your starter Eevee and <a href="/Pokedex/Rental">rental Pokemon:</a>, you can only use Pokemon you purchased at auction. They’re all in your notebook at the start of the game. You can’t catch Pokemon.
-            </li>
-            <li>The first player to beat the game wins.</li>
-            <li>
-              Pokemon can’t level up beyond the level of the next gym leader’s ace (level caps are implemented in game, so you can’t accidentally overlevel).
-            </li>
-            <li>
-              The race only begins when players leave their rooms. Any actions you take in your starting room, like withdrawing your party and hatching eggs, can be done without pressure before the race begins.
-            </li>
-            <li>
-              Only one player per race can use any given Eeveelution. For example, once a player evolves their Eevee into Umbreon, no other players can use Umbreon.
-            </li>
-          </ul>
-        </section>
-
-        <section id="how-do-i-draft-with-my-friends" className="faq-section" style={{ scrollMarginTop: '120px' }}>
-          <h2 className="faq-question">How do I draft with my friends?</h2>
+        <section id="how-do-i-race-my-friends" className="faq-section" style={{ scrollMarginTop: '120px' }}>
+          <h2 className="faq-question">How do I race my friends?</h2>
           <hr />
           <ol className="faq-answer">
             <li>
@@ -159,11 +167,14 @@ const FAQ = () => (
                 <li>Total Pokémon: 8 * Number of players (64 for 8-player drafts)</li>
               </ul>
             </li>
-            <li>Press <b>Create Auction</b>.</li>
+            <li>Press <UiRef>Create Auction</UiRef>.</li>
             <li>Once you’re taken to the auction, tell your friends to find your auction in the Lobby Viewer.</li>
-            <li>After everyone has joined and clicked "Ready Up," press "Start Draft" to begin!</li>
-            <li>Once the draft finishes, press "Play Emulator" and submit a legally obtained copy of Pokemon Emerald for the website to patch automatically. Have fun!</li>
+            <li>After everyone has joined and clicked <UiRef>Ready Up</UiRef>, press <UiRef>Start Draft</UiRef> to begin!</li>
+            <li>Once the draft finishes, press <UiRef>Play Emulator</UiRef> and submit a legally obtained copy of Pokemon Emerald for the website to patch automatically.</li>
           </ol>
+          <p className="faq-answer" style={{ marginTop: '0.5rem' }}>
+            While playing, the website's emulator page displays all racer's current Pokémon, location, and badge count. You'll get live updates of all of your friends' progress as you race to the finish!
+          </p>
         </section>
 
         <section id="what-do-i-do-if-i-dont-have-any-friends-who-like-pokemon" className="faq-section" style={{ scrollMarginTop: '120px' }}>
@@ -215,7 +226,7 @@ const FAQ = () => (
             By playing via the site's embedded emulator!
           </p>
           <p className="faq-answer" style={{ marginTop: '1rem' }}>
-            After you finish a draft, click the "Play Emulator" button. The emulator page provides all players real-time updates on everybody's progress, including their badges, location, Eeveelution, and more. If you're logged into the site via discord, the site also saves all of this information (like which Pokémon you drafted, your splits, and your Hall of Fame team) to your player profile!
+            After you finish a draft, click <UiRef>Play Emulator</UiRef>. The emulator page provides all players real-time updates on everybody's progress, including their badges, location, Eeveelution, and more. If you're logged into the site via discord, the site also saves all of this information (like which Pokémon you drafted, your splits, and your Hall of Fame team) to your player profile!
           </p>
         </section>
 
@@ -232,7 +243,7 @@ const FAQ = () => (
             <li>Total Pokémon sold is not equal to 8 times the total number of players</li>
           </ol>
           <p className="faq-answer" style={{ marginTop: '1rem' }}>
-            That said, all drafts are still preserved in the draft tab for you and your friends to look at! They just don't contribute to Pokémon-price calculations.
+            That said, all drafts are still preserved in the draft tab for you and your friends to look at! They just don't contribute to the stats spreadsheet.
           </p>
           <p className="faq-answer" style={{ marginTop: '1rem' }}>
             Drafts that don't meet these four criteria are marked as "Casual Drafts" in the stats tab.
@@ -353,6 +364,26 @@ const FAQ = () => (
               </li>
             </ul>
           </div>
+        </section>
+      </div>
+
+      <div className="faq-subsection">
+        <h2 id="making-contributions" className="faq-subsection-heading" style={{ scrollMarginTop: '120px' }}>Making Contributions</h2>
+
+        <section id="can-i-add-features" className="faq-section" style={{ scrollMarginTop: '120px' }}>
+          <h2 className="faq-question">Can I add features to the game or the website?</h2>
+          <hr />
+          <p className="faq-answer">
+            Yes! This project is open source. Create pull requests on GitHub to add features or fix bugs.
+          </p>
+        </section>
+
+        <section id="how-do-i-report-a-bug" className="faq-section" style={{ scrollMarginTop: '120px' }}>
+          <h2 className="faq-question">How do I report a bug?</h2>
+          <hr />
+          <p className="faq-answer">
+            Use <a href="https://github.com/FranklyNathan/EmeraldBlitz" target="_blank" rel="noopener noreferrer">Emerald Blitz's GitHub page</a> or <a href="https://github.com/jpfrazz/blitz_auction_website" target="_blank" rel="noopener noreferrer">the website's GitHub</a> to report bugs by clicking <UiRef>Issues</UiRef> &gt; <UiRef>New Issue</UiRef>.
+          </p>
         </section>
       </div>
     </main>
