@@ -40,6 +40,12 @@
   box-sizing: border-box;
 }
 
+.info-main .info-toc-card {
+  width: fit-content;
+  margin-left: max(0px, calc((100% - 1100px) / 2));
+  margin-right: auto;
+}
+
 .info-toc-heading {
   color: $eb-text;
   font-size: 2rem;
