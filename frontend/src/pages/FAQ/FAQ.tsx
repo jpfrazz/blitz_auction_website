@@ -60,6 +60,7 @@ const FAQ = () => (
           <ul className="info-toc-list">
             <li><a href="#can-i-add-features">Can I add features to the game or the website?</a></li>
             <li><a href="#how-do-i-report-a-bug">How do I report a bug?</a></li>
+            <li><a href="#how-do-i-update-the-websites-key-moves-list">How do I update the website's key moves list?</a></li>
           </ul>
         </div>
       </nav>
@@ -383,6 +384,14 @@ const FAQ = () => (
           <hr />
           <p className="faq-answer">
             Use <a href="https://github.com/FranklyNathan/EmeraldBlitz" target="_blank" rel="noopener noreferrer">Emerald Blitz's GitHub page</a> or <a href="https://github.com/jpfrazz/blitz_auction_website" target="_blank" rel="noopener noreferrer">the website's GitHub</a> to report bugs by clicking <UiRef>Issues</UiRef> &gt; <UiRef>New Issue</UiRef>.
+          </p>
+        </section>
+
+        <section id="how-do-i-update-the-websites-key-moves-list" className="faq-section" style={{ scrollMarginTop: '120px' }}>
+          <h2 className="faq-question">How do I update the website's key moves list?</h2>
+          <hr />
+          <p className="faq-answer">
+            Use <a href="https://docs.getgrist.com/4y7M7jMoYfYo/pokemonmoves" target="_blank" rel="noopener noreferrer">the Grist spreadsheet</a> to add changes to the key moves list.
           </p>
         </section>
       </div>
