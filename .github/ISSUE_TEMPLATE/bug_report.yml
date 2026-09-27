@@ -44,6 +44,6 @@ body:
     attributes:
       label: Images / Video links
       description: Optionally paste links to hosted images, gifs, or videos (e.g. a screen recording) here.
-      placeholder: https://...
+      placeholder: Click the paperclip below to attach files...
     validations:
       required: false
