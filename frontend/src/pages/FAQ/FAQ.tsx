@@ -29,7 +29,7 @@ const FAQ = () => (
             <li><a href="#what-are-the-rules">What are the rules?</a></li>
             <li><a href="#how-do-i-play">How do I play?</a></li>
             <li><a href="#how-do-i-race-my-friends">How do I race my friends?</a></li>
-            <li><a href="#what-do-i-do-if-i-dont-have-any-friends-who-like-pokemon">What do I do if I don't have any friends who like Pokémon?</a></li>
+            <li><a href="#what-do-i-do-if-i-dont-have-any-friends-who-like-pokemon">What if I don't have any friends who like Pokémon?</a></li>
           </ul>
         </div>
         <div className="faq-toc-group">
@@ -180,7 +180,7 @@ const FAQ = () => (
         </section>
 
         <section id="what-do-i-do-if-i-dont-have-any-friends-who-like-pokemon" className="faq-section" style={{ scrollMarginTop: '120px' }}>
-          <h2 className="faq-question">What do I do if I don't have any friends who like Pokémon?</h2>
+          <h2 className="faq-question">What if I don't have any friends who like Pokémon?</h2>
           <hr />
           <p className="faq-answer">Play in community races!</p>
           <p className="faq-answer" style={{ marginTop: '1rem' }}>
@@ -196,16 +196,16 @@ const FAQ = () => (
           <h2 className="faq-question">What's a draft?</h2>
           <hr />
           <p className="faq-answer">
-            In Emerald Blitz, you assemble your team not by catching Pokémon in the wild but by winning them at auction.
+            Catching Pokemon is a thing of the past! In Emerald Blitz, you build your team by winning Pokémon at auction.
           </p>
           <p className="faq-answer" style={{ marginTop: '1rem' }}>
-            In an auction draft, the website randomly selects a pool of Pokémon and then presents them one at a time. You and your friends bid on the Pokémon, and whoever bids the highest amount wins it and adds it to their team. All players start the auction with the same amount of money. How to best spend it is one of the most skill-expressive parts of Blitz.
+            In an auction draft, the website randomly presents Pokemon for you and your friends to bid on one at a time. Whoever bids the most on each Pokemon wins it and adds it to their team! All players start the auction with the same amount of money. How to best spend it is one of the most skill-expressive parts of Blitz.
           </p>
           <p className="faq-answer" style={{ marginTop: '1rem' }}>
             By the end of the draft, everybody will have won a team of Pokémon, but some will be stronger or have more Pokémon than others!
           </p>
           <p className="faq-answer" style={{ marginTop: '1rem' }}>
-            Additionally, there's also a 1v1 Draft mode. In this format, instead of an auction where players bid with money, you instead take turns picking and banning from a pool of 36. This is a faster draft mode that offers a wider pool of Pokémon than you'd get if you hosted an auction with just 2 people.
+            Additionally, there's also a 1v1 Draft mode. In this format, instead of an auction where you bid with money, you and a friend instead take turns picking and banning from a pool of 36. This mode offers a wider pool of Pokémon than you'd get if you hosted an auction with just 2 people.
           </p>
         </section>
 
