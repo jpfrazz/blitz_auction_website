@@ -35,6 +35,7 @@ const FAQ = () => (
         <div className="faq-toc-group">
           <h3 className="faq-toc-subheading"><a href="#ways-to-play">Ways to Play</a></h3>
           <ul className="info-toc-list">
+            <li><a href="#whats-a-draft">What's a draft?</a></li>
             <li><a href="#can-i-play-by-myself">Can I play by myself without drafting?</a></li>
             <li><a href="#can-you-add-a-skip-button">Can you add a skip button to the draft?</a></li>
           </ul>
@@ -43,7 +44,7 @@ const FAQ = () => (
           <h3 className="faq-toc-subheading"><a href="#stats-page">Stats Page</a></h3>
           <ul className="info-toc-list">
             <li><a href="#how-can-the-website-track-my-stats">How can the website track my stats?</a></li>
-            <li><a href="#why-is-my-draft-not-green">What's the difference between a casual and a competitive draft in the stats tab?</a></li>
+            <li><a href="#why-is-my-draft-not-green">What's the difference between a casual and a competitive draft?</a></li>
             <li><a href="#how-does-the-website-decide-on-outliers">How does the website calculate outliers?</a></li>
           </ul>
         </div>
@@ -191,6 +192,23 @@ const FAQ = () => (
       <div className="faq-subsection">
         <h2 id="ways-to-play" className="faq-subsection-heading" style={{ scrollMarginTop: '120px' }}>Ways to Play</h2>
 
+        <section id="whats-a-draft" className="faq-section" style={{ scrollMarginTop: '120px' }}>
+          <h2 className="faq-question">What's a draft?</h2>
+          <hr />
+          <p className="faq-answer">
+            In Emerald Blitz, you assemble your team not by catching Pokémon in the wild but by winning them at auction.
+          </p>
+          <p className="faq-answer" style={{ marginTop: '1rem' }}>
+            In an auction draft, the website randomly selects a pool of Pokémon and then presents them one at a time. You and your friends bid on the Pokémon, and whoever bids the highest amount wins it and adds it to their team. All players start the auction with the same amount of money. How to best spend it is one of the most skill-expressive parts of Blitz.
+          </p>
+          <p className="faq-answer" style={{ marginTop: '1rem' }}>
+            By the end of the draft, everybody will have won a team of Pokémon, but some will be stronger or have more Pokémon than others!
+          </p>
+          <p className="faq-answer" style={{ marginTop: '1rem' }}>
+            Additionally, there's also a 1v1 Draft mode. In this format, instead of an auction where players bid with money, you instead take turns picking and banning from a pool of 36. This is a faster draft mode that offers a wider pool of Pokémon than you'd get if you hosted an auction with just 2 people.
+          </p>
+        </section>
+
         <section id="can-i-play-by-myself" className="faq-section" style={{ scrollMarginTop: '120px' }}>
           <h2 className="faq-question">Can I play by myself without drafting?</h2>
           <hr />
@@ -232,7 +250,7 @@ const FAQ = () => (
         </section>
 
         <section id="why-is-my-draft-not-green" className="faq-section" style={{ scrollMarginTop: '120px' }}>
-          <h2 className="faq-question">What's the difference between a casual and a competitive draft in the stats tab?</h2>
+          <h2 className="faq-question">What's the difference between a casual and a competitive draft?</h2>
           <hr />
           <p className="faq-answer">
             The stats section calculates average prices for Pokémon when drafted in races using the official ruleset. Drafts aren't counted toward the stats if...
