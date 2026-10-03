@@ -422,15 +422,14 @@ pub async fn create_draft(
 pub async fn list_open_drafts(
     State(state): State<ServerState>,
 ) -> Result<Json<Vec<DraftLobbyResponse>>, AppError> {
-    let drafts = state.drafts;
+    let draft_vec: Vec<_> = state.drafts.iter().map(|e| e.value().clone()).collect();
 
     let mut open_drafts = vec![];
-    for entry in drafts.iter() {
+    for draft in draft_vec {
         // Don't let a single unavailable lobby break the whole viewer; skip it.
-        let Ok(lobby) = entry.value().get_lobby().await else {
-            continue;
-        };
-        open_drafts.push(lobby);
+        if let Ok(lobby) = draft.get_lobby().await {
+            open_drafts.push(lobby);
+        }
     }
 
     Ok(Json(open_drafts))

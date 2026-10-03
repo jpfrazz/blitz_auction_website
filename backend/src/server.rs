@@ -13,7 +13,8 @@ use axum::{
 use axum_login::{AuthManagerLayer, AuthManagerLayerBuilder, AuthSession, AuthnBackend};
 use dashmap::DashMap;
 use oauth2::{AuthUrl, ClientId, ClientSecret, TokenUrl, basic::BasicClient};
-use std::{env, sync::Arc};
+use sqlx::postgres::PgPoolOptions;
+use std::{env, sync::Arc, time::Duration};
 use tower_http::cors::{Any, CorsLayer};
 use tower_sessions::{Expiry, SessionManagerLayer};
 use tower_sessions_sqlx_store_chrono::PostgresStore;
@@ -56,7 +57,13 @@ impl Server {
         let db_conn_string = env::var("DB_CONN_STRING").map_err(|e| {
             ServerError::MissingEnv(format!("missing DB_CONN_STRING: {}", e.to_string()))
         })?;
-        let db_pool = PgPool::connect(&db_conn_string)
+        let db_pool = PgPoolOptions::new()
+            .max_connections(40)
+            .min_connections(5)
+            .acquire_timeout(Duration::from_secs(5))
+            .idle_timeout(Duration::from_mins(10))
+            .max_lifetime(Duration::from_hours(6)) // recommended to alleviate db memory leaks
+            .connect(&db_conn_string)
             .await
             .map_err(|e| ServerError::PgConnection(e.to_string()))?;
         sqlx::migrate!("./migrations")

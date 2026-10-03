@@ -13,6 +13,10 @@ services:
             - backend
         networks:
             - auction_net
+        ulimits:
+            nofile:
+                soft: 65535
+                hard: 65535
 
     # rust axum
     backend:
@@ -32,6 +36,10 @@ services:
             - db
         networks:
             - auction_net
+        ulimits:
+            nofile:
+                soft: 65535
+                hard: 65535
 
     # postgres db
     db:
