@@ -400,7 +400,7 @@ function Header() {
             </div>
           )}
           {!user && (
-            <a href="/api/login" className="navButton" onClick={handleNavLinkClick} target={linkTarget} rel={linkRel}>Login</a>
+            <a href="/api/login" className="navButton" onClick={handleNavLinkClick} target={linkTarget} rel={linkRel}>Log In</a>
           )}
           {user && !user.is_guest && (
             <div className="userDropdown">
@@ -423,7 +423,7 @@ function Header() {
                   Settings
                 </button>
                 <button className="navButton userDropdownItem" onClick={() => { window.location.href = '/api/logout'; handleNavLinkClick(); }}>
-                  Logout
+                  Log Out
                 </button>
               </div>
             </div>
@@ -437,8 +437,8 @@ function Header() {
                 <button className="navButton userDropdownItem" onClick={() => { setShowNameModal(true); handleNavLinkClick(); }}>
                   Change Name
                 </button>
-                <button className="navButton userDropdownItem" onClick={() => { window.location.href = '/api/logout'; handleNavLinkClick(); }}>
-                  Logout
+                <button className="navButton userDropdownItem" onClick={() => { window.location.href = '/api/login'; handleNavLinkClick(); }}>
+                  Log In
                 </button>
               </div>
             </div>

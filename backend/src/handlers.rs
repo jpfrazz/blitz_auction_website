@@ -4475,9 +4475,18 @@ pub async fn create_draft_chat(
     Ok(Json(chat_message))
 }
 pub async fn discord_oauth_redirect(
-    auth_session: AuthSession<AuthBackend>,
+    mut auth_session: AuthSession<AuthBackend>,
     session: Session,
 ) -> Redirect {
+    // Drop any existing identity (e.g. the auto-created guest session) so that
+    // starting the Discord flow logs the current user out and yields a fresh
+    // session id for the callback. Without this, a guest hitting /api/login
+    // would keep its old auth hash and the callback's login would reuse the
+    // pre-existing session id.
+    if auth_session.user.is_some() && auth_session.logout().await.is_err() {
+        session.clear().await;
+    }
+
     let (auth_url, csrf_state) = auth_session.backend.authorize_url();
 
     session

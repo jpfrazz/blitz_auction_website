@@ -1112,6 +1112,17 @@ const EmulatorPage: React.FC = () => {
         credentials: 'include',
       }).catch(() => { });
     }
+    // Reset inference state when a state is loaded - the game state has gone back in time
+    inferredBoxRef.current.clear();
+    departedSinceSaveRef.current.clear();
+    lastSeenPartyRef.current.clear();
+    lastPartyPidsRef.current.clear();
+    // Also reset live party state to force re-detection of current party
+    livePartyHashRef.current = '';
+    livePartyProvenLiveRef.current = false;
+    livePartyCandidatesRef.current = [];
+    livePartyCandHashesRef.current = [];
+    livePartyMissesRef.current = 0;
   };
 
   // ── Fetch current user to filter self from sidebar ───────────────────────
@@ -2098,6 +2109,48 @@ const EmulatorPage: React.FC = () => {
     }
     setError(null);
     setIsPatching(true);
+    // Clear previous run state when loading a new ROM, but preserve state for ongoing races
+    // Clear if explicitly requested (fresh) or if it's solo play not coming from TeamPlanner
+    const isFresh = searchParams.get('fresh') === '1';
+    const shouldClearState = isFresh || (!draftId && urlPokemon.length === 0);
+    if (shouldClearState) {
+      setMySaveData(null);
+      setOtherSaves({});
+      setFaintedPids({});
+      setMarkedPids(new Set());
+      inferredBoxRef.current.clear();
+      departedSinceSaveRef.current.clear();
+      lastSeenPartyRef.current.clear();
+      lastPartyPidsRef.current.clear();
+      livePartyOffsetRef.current = null;
+      livePartyHashRef.current = '';
+      livePartyProvenLiveRef.current = false;
+      livePartyCandidatesRef.current = [];
+      livePartyCandHashesRef.current = [];
+      livePartySigScanRef.current = { ids: [], next: 0 };
+      livePartyMissesRef.current = 0;
+      livePartySessionValidatedRef.current = false;
+      mySaveDataRef.current = null;
+      // Remove fresh param from URL so refresh doesn't wipe again
+      if (isFresh) {
+        const newParams = new URLSearchParams(searchParams);
+        newParams.delete('fresh');
+        window.history.replaceState({}, '', `${window.location.pathname}${newParams.toString() ? '?' + newParams.toString() : ''}`);
+      }
+      // Also clear autosave history for fresh starts
+      setAutosaveHistory([]);
+      const metaKey = `autosaves_meta_${draftId || 'standalone'}`;
+      try { localStorage.removeItem(metaKey); } catch (e) {}
+      // Also clear individual autosave states
+      try {
+        const keys = Object.keys(localStorage);
+        for (let i = 0; i < keys.length; i++) {
+          if (keys[i].startsWith(`state_${draftId || 'standalone'}_`)) {
+            localStorage.removeItem(keys[i]);
+          }
+        }
+      } catch (e) {}
+    }
 
     try {
       let finalBlob: Blob = file;

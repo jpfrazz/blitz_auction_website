@@ -169,6 +169,7 @@ const TeamPlanner = () => {
                   onClick={() => {
                     const params = new URLSearchParams();
                     selectedPokemon.forEach(o => params.append('pokemon', o.value));
+                    params.append('fresh', '1');
                     window.open(`/Emulator?${params.toString()}`, '_blank');
                   }}
                 >
