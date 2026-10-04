@@ -1,0 +1,52 @@
+10/5/2025
+
+-----------------------------------------------
+QoL
+-----------------------------------------------
+
+Inverted Bag's Berry Display Order
+//Currently, berries sort in your bag such that no01 is first, then no02, no03, etc. This is inconvenient because the most useful berries, 07 Orans and 10 Sitrus, are listed last. Now, Sitrus and Oran Berries will sort toward the top.
+
+Hall of Fame MVP shows species name, not nickname
+//I see the appeal of the current implementation, but I think the clarity is preferable for screenshot's sake.
+
+
+-----------------------------------------------
+Bug Fixes
+-----------------------------------------------
+
+Fixed a bug where the Serious Mint wasn't updating the displayed Nature
+//The effect itself was working, but sometimes it failed to update the summary screen's display
+//Also updated the Serious Mint's item description to say what it actually does
+
+Fixed a bug where the female trainercard's backdrop color could erroneously change from pink to blue
+//Thanks Cheapd for reporting
+
+
+-----------------------------------------------
+Pool Additions
+-----------------------------------------------
+
++Basculin
+
+//Basculin evolves when the total levels of all your fainted Pokemon is 100 or more
+//For example, if you've lost a level 15, 24, 29, and 32 Pokémon, your Basculin can evolve into Basculegion. Or, if you've lost a level 35 Pokémon and a level 58 Pokémon, it can evolve. Or, if you've just finished sacrificing eight level 15 Pokémon to Blackbelt Nob, it can evolve before the first gym. Don't get any ideas, Manthief.
+//Fainted rental Pokémon do count toward the total, even after they've been reclaimed by Renter NPC
+
+//Basculegion's Pokedex entry reads "This Pokémon is cloaked in the souls of its comrades who perished during a punishing journey to the river of their birth." This is so sad. The idea of the original evolution mechanic (taking 294 HP of recoil damage without fainting) is that this is the one Basculin who lived, and all of the others who died are getting sort of absorbed into it (hence the ghost typing). We can't do the recoil evolution mechanic here (I guess we could, but that's not an evolution mechanic that creates the gameplay Blitz is going for). So, it has a new one that I think stays thematically appropriate.
+
+//And no, its egg move is not Last Respects. No stepping on Houndstone's toes!
+
+
++Slugma
+//Evolves when leveled up while knowing Ancient Power (Level 22)
+//I do not like changing vanilla level up evolutions--the point of Oracle was to remove the need for this. But I want Slugma in the game, and a gym 5 evo is not going to cut it for a Pokémon with the same BST as Hoppip. This change seems thematically appropriate for what the vanilla games would (should) actually do.
+
+
++Tangela 
+//Evolves when leveled up while knowing Ancient Power (Level 38)
+
+
++Klink
+//This really grinds my gears
+//The people have been purchasing my recent additions for 1500. My poor Cherubi. My poor Wooloo! I have added some Pokémon who will not sell for 1500.

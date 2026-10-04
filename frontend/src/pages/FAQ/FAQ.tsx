@@ -213,10 +213,7 @@ const FAQ = () => (
           <h2 className="faq-question">Can I play by myself without drafting?</h2>
           <hr />
           <p className="faq-answer">
-            Yes! The notebook includes a "Random" option at the bottom of its list. Choose this option eight times to generate yourself a random team of Pokémon, then get racing!
-          </p>
-          <p className="faq-answer" style={{ marginTop: '1rem' }}>
-            Also, <a href="/Stats/PlayerProfiles/KCH42">KCH42</a> creates a Weekly Box every Friday composed of eight Pokemon designed to offer a unique experience. Join the Discord server to stay up to date on each week's box!
+            Yes! The notebook includes a "Random" option at the bottom of its list. Choose this option eight times to generate yourself a random team of Pokémon, then get racing! (Or, pick your team manually if you want to play with your favorites!)
           </p>
         </section>
 

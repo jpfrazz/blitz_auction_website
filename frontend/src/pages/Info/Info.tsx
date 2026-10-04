@@ -142,13 +142,18 @@ const Info = () => (
           </div>
 
           <div className="location-scale-card">
-            <img src="/KeyNPCLocations/KeyNPC7.png" alt="Time-of-Day Jump - Starting House" />
-            <div className="location-scale-caption">Time Advancer - Starting House</div>
+            <img src="/KeyNPCLocations/KeyNPC8.png" alt="Energy Guru - Slateport City" />
+            <div className="location-scale-caption">Energy Guru - Slateport City</div>
           </div>
 
           <div className="location-scale-card">
-            <img src="/KeyNPCLocations/KeyNPC8.png" alt="Energy Guru - Slateport City" />
-            <div className="location-scale-caption">Energy Guru - Slateport City</div>
+            <img src="/KeyNPCLocations/KeyNPC11.png" alt="Rock Smash Guy - Mauville City" />
+            <div className="location-scale-caption">Rock Smash Guy - Mauville City</div>
+          </div>
+
+          <div className="location-scale-card">
+            <img src="/KeyNPCLocations/KeyNPC7.png" alt="Time-of-Day Jump - Starting House" />
+            <div className="location-scale-caption">Time Advancer - Starting House</div>
           </div>
 
           <div className="location-scale-card">
@@ -353,6 +358,7 @@ const Info = () => (
                 <img src="/MiniIcons/horsea.png" alt="Horsea" />
                 <img src="/MiniIcons/impidimp.png" alt="Impidimp" />
                 <img src="/MiniIcons/jangmo-o.png" alt="Jangmo-o" />
+                <img src="/MiniIcons/klink.png" alt="Klink" />
                 <img src="/MiniIcons/litwick.png" alt="Litwick" />
                 <img src="/MiniIcons/solosis.png" alt="Solosis" />
                 <img src="/MiniIcons/spheal.png" alt="Spheal" />
@@ -370,6 +376,7 @@ const Info = () => (
                 <li>Horsea &gt; Seadra</li>
                 <li>Impidimp &gt; Morgrem</li>
                 <li>Jangmo-o &gt; Hakamo-o</li>
+                <li>Klink &gt; Klang</li>
                 <li>Litwick &gt; Lampent</li>
                 <li>Solosis &gt; Duosion</li>
                 <li>Spheal &gt; Sealeo</li>

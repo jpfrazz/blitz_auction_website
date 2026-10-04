@@ -185,6 +185,11 @@ const EvolutionTree: React.FC<{ node: EvoNode }> = ({ node }) => {
       ? pokemon.name.match(/\(([^)]+)\)/)?.[1] || pokemon.name 
       : pokemon.name;
 
+    if (nameForImg.startsWith('Basculegion-') && (pokemon.form === 'M' || pokemon.form === 'F')) {
+      const gender = pokemon.form === 'M' ? 'Male' : 'Female';
+      return `/evolutions/Basculegion-${gender}.png`;
+    }
+
     if (pokemon.evolves_from_id && (pokemon.form === 'Alola' || pokemon.form === 'Galar' || pokemon.form === 'Hisui' || pokemon.form === 'Paldea')) {
       return `/evolutions/${nameForImg}-${pokemon.form}.png`;
     } else if (pokemon.evolves_from_id && (pokemon.form !== 'Mega' && pokemon.form !== 'Mega X')) {
