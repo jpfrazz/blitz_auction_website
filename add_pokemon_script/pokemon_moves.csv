@@ -104,6 +104,18 @@ pokedex_id,pokemon_name,form,move_name,learn_method,species,display_order
 371,Bagon,,Steel Wing,TM,,15
 371,Bagon,,Double-Edge,MR!,,16
 371,Bagon,,Hydro Pump,Egg,,17
+550,Basculin,,Aqua Jet,12,,1
+550,Basculin,,Crunch,32,,2
+550,Basculin,,Surf,HM,,3
+550,Basculin,,Wave Crash,44,,4
+550,Basculin,,Head Smash,56,,5
+550,Basculin,,Phantom Force,MR,Basculegion,6
+550,Basculin,,Shadow Ball,MR,Basculegion,7
+550,Basculin,,Flip Turn,TM,,8
+550,Basculin,,Ice Beam,TM,,9
+550,Basculin,,Zen Headbutt,TM,,10
+550,Basculin,,Waterfall,HM,,11
+550,Basculin,,Endeavor,Egg,,12
 374,Beldum,,Take Down,1,,1
 374,Beldum,,Metal Claw,Evo.,,2
 374,Beldum,,Bullet Punch,26,,3
@@ -219,15 +231,16 @@ pokedex_id,pokemon_name,form,move_name,learn_method,species,display_order
 427,Buneary,,Quick Attack,16,,2
 427,Buneary,,Return,Evo.,,3
 427,Buneary,,Jump Kick,23,,4
-427,Buneary,,Dizzy Punch,36,,5
-427,Buneary,,Charm,46,,6
-427,Buneary,,Bounce,56,,7
-427,Buneary,,Facade,TM,,8
-427,Buneary,,Fire Punch,TM,,9
-427,Buneary,,Ice Punch,TM,,10
-427,Buneary,,Play Rough,TM,,11
-427,Buneary,,High Jump Kick,MR!,,12
-427,Buneary,,Sky Uppercut,Egg,,13
+427,Buneary,,Mach Punch,MR,,5
+427,Buneary,,Dizzy Punch,36,,6
+427,Buneary,,Charm,46,,7
+427,Buneary,,Bounce,56,,8
+427,Buneary,,Facade,TM,,9
+427,Buneary,,Fire Punch,TM,,10
+427,Buneary,,Ice Punch,TM,,11
+427,Buneary,,Play Rough,TM,,12
+427,Buneary,,High Jump Kick,MR!,,13
+427,Buneary,,Sky Uppercut,Egg,,14
 1,Bulbasaur,,Leech Seed,7,,1
 1,Bulbasaur,,Vine Whip,9,,2
 1,Bulbasaur,,Razor Leaf,Evo.,,3
@@ -469,13 +482,14 @@ pokedex_id,pokemon_name,form,move_name,learn_method,species,display_order
 173,Cleffa,,Wish,Egg,,12
 852,Clobbopus,,Rock Smash,1,,1
 852,Clobbopus,,Detect,15,,2
-852,Clobbopus,,Brick Break,20,,3
-852,Clobbopus,,Mud Shot,TM,,4
-852,Clobbopus,,Bulk Up,25,,5
-852,Clobbopus,,Octolock,Evo.,,6
-852,Clobbopus,,Waterfall,HM,,7
-852,Clobbopus,,Ice Punch,TM,,8
-852,Clobbopus,,Power-Up Punch,Egg,,9
+852,Clobbopus,,Mach Punch,18,,3
+852,Clobbopus,,Brick Break,20,,4
+852,Clobbopus,,Mud Shot,TM,,5
+852,Clobbopus,,Bulk Up,25,,6
+852,Clobbopus,,Octolock,Evo.,,7
+852,Clobbopus,,Waterfall,HM,,8
+852,Clobbopus,,Ice Punch,TM,,9
+852,Clobbopus,,Power-Up Punch,Egg,,10
 341,Corphish,,Bubble Beam,14,,1
 341,Corphish,,Protect,17,,2
 341,Corphish,,Knock Off,23,,3
@@ -571,7 +585,7 @@ pokedex_id,pokemon_name,form,move_name,learn_method,species,display_order
 585,Deerling,,Charm,36,,7
 585,Deerling,,Play Rough,TM,,8
 585,Deerling,,Zen Headbutt,TM,,9
-585,Deerling,,Synthesis,Egg,,10
+585,Deerling,,Headbutt,Egg,,10
 751,Dewpider,,Bug Bite,13,,1
 751,Dewpider,,Bubble Beam,16,,2
 751,Dewpider,,Pounce,TM,,3
@@ -579,10 +593,10 @@ pokedex_id,pokemon_name,form,move_name,learn_method,species,display_order
 751,Dewpider,,Surf,HM,,5
 751,Dewpider,,Water Pulse,TM,,6
 751,Dewpider,,Waterfall,HM,,7
-751,Dewpider,,Lunge,45,,8
-751,Dewpider,,Mirror Coat,50,,9
-751,Dewpider,,Liquidation,57,,10
-751,Dewpider,,Crunch,TM,,11
+751,Dewpider,,Crunch,38,,8
+751,Dewpider,,Lunge,45,,9
+751,Dewpider,,Mirror Coat,50,,10
+751,Dewpider,,Liquidation,57,,11
 751,Dewpider,,Poison Jab,TM,,12
 751,Dewpider,,Sticky Web,Egg,,13
 50,Diglett,,Bulldoze,18,,1
@@ -927,19 +941,20 @@ pokedex_id,pokemon_name,form,move_name,learn_method,species,display_order
 704,Goomy,,Water Pulse,25,,4
 704,Goomy,,Rain Dance,25,,5
 704,Goomy,,Acid Spray,Evo.,Sliggoo,6
-704,Goomy,,Outrage,55,,7
-704,Goomy,,Iron Head,MR,Goodra-Hisui,8
-704,Goomy,,Muddy Water,58/MR,,9
-704,Goomy,,Heavy Slam,MR!,Goodra-Hisui,10
-704,Goomy,,Body Press,TM,,11
-704,Goomy,,Dragon Pulse,TM,,12
-704,Goomy,,Earthquake,TM,,13
-704,Goomy,,Flamethrower,TM,,14
-704,Goomy,,Flash Cannon,TM,,15
-704,Goomy,,Thunderbolt,TM,,16
-704,Goomy,,Ice Beam,TM,,17
-704,Goomy,,Sludge Bomb,TM,,18
-704,Goomy,,Curse,Egg,,19
+704,Goomy,,Dragon Pulse,35/TM,Sliggoo-Hisui,7
+704,Goomy,,Dragon Pulse,47/TM,Sliggoo,8
+704,Goomy,,Outrage,55,,9
+704,Goomy,,Iron Head,MR,Goodra-Hisui,10
+704,Goomy,,Muddy Water,58/MR,,11
+704,Goomy,,Heavy Slam,MR!,Goodra-Hisui,12
+704,Goomy,,Body Press,TM,,13
+704,Goomy,,Earthquake,TM,,14
+704,Goomy,,Flamethrower,TM,,15
+704,Goomy,,Flash Cannon,TM,,16
+704,Goomy,,Thunderbolt,TM,,17
+704,Goomy,,Ice Beam,TM,,18
+704,Goomy,,Sludge Bomb,TM,,19
+704,Goomy,,Curse,Egg,,20
 829,Gossifleur,,Leafage,1,,1
 829,Gossifleur,,Rapid Spin,4,,2
 829,Gossifleur,,Razor Leaf,12,,3
@@ -1052,8 +1067,8 @@ pokedex_id,pokemon_name,form,move_name,learn_method,species,display_order
 228,Houndour,,Incinerate,20,,3
 228,Houndour,,Snarl,24,,4
 228,Houndour,,Mud Shot,TM,,5
-228,Houndour,,Nasty Plot,MR,,6
-228,Houndour,,Thunder Fang,MR,,7
+228,Houndour,,Thunder Fang,MR,,6
+228,Houndour,,Nasty Plot,MR!,,7
 228,Houndour,,Inferno,MR!,,8
 228,Houndour,,Overheat,TM,,9
 228,Houndour,,Flamethrower,TM/50,,10
@@ -1108,6 +1123,13 @@ pokedex_id,pokemon_name,form,move_name,learn_method,species,display_order
 595,Joltik,,Giga Drain,TM,,7
 595,Joltik,,Thunderbolt,TM,,8
 595,Joltik,,Cross Poison,Egg,,9
+599,Klink,,Thunder Shock,11,,1
+599,Klink,,Rock Smash,HM,,2
+599,Klink,,Gear Grind,16,,3
+599,Klink,,Charge Beam,26,,4
+599,Klink,,Discharge,44,,5
+599,Klink,,Gear Up,MR,Klinklang,6
+599,Klink,,Thunderbolt,TM,,7
 246,Larvitar,,Bite,1,,1
 246,Larvitar,,Rock Throw,3,,2
 246,Larvitar,,Screech,10,,3
@@ -1269,7 +1291,7 @@ pokedex_id,pokemon_name,form,move_name,learn_method,species,display_order
 458,Mantyke,,Air Slash,36,,4
 458,Mantyke,,Ice Beam,TM,,5
 458,Mantyke,,Tailwind,Egg,,6
-942,Maschiff,,Hone Claws,7,,1
+942,Maschiff,,Snarl,7,,1
 942,Maschiff,,Hone Claws,10,,2
 942,Maschiff,,Bite,14,,3
 942,Maschiff,,Thief,TM,,4
@@ -1319,19 +1341,21 @@ pokedex_id,pokemon_name,form,move_name,learn_method,species,display_order
 52,Meowth,Galar,Night Slash,Egg,,14
 439,Mime Jr,,Confusion,4,,1
 439,Mime Jr,,Encore,18,,2
-439,Mime Jr,,Protect,MR,,3
-439,Mime Jr,,Baton Pass,MR,,4
-439,Mime Jr,,Slack Off,MR,,5
-439,Mime Jr,,Light Screen,MR,,6
-439,Mime Jr,,Reflect,MR,,7
+439,Mime Jr,,Protect,MR,Mr-Mime-Galar,3
+439,Mime Jr,,Baton Pass,MR,Mr-Mime-Galar,4
+439,Mime Jr,,Light Screen,MR,Mr-Mime-Galar,5
+439,Mime Jr,,Reflect,MR,Mr-Mime-Galar,6
+439,Mime Jr,,Slack Off,MR,Mr-Rime,7
 439,Mime Jr,,Calm Mind,TM,,8
-439,Mime Jr,,Freeze-Dry,44,,9
-439,Mime Jr,,Dazzling Gleam,MR/TM,,10
-439,Mime Jr,,Ice Beam,TM,,11
-439,Mime Jr,,Psychic,TM,,12
-439,Mime Jr,,Shadow Ball,TM,,13
-439,Mime Jr,,Thunderbolt,TM,,14
-439,Mime Jr,,Charm,Egg,,15
+439,Mime Jr,,Freeze-Dry,44,Mr-Rime,9
+439,Mime Jr,,Baton Pass,46,Mr-Mime,10
+439,Mime Jr,,Dazzling Gleam,MR/TM,,11
+439,Mime Jr,,Ice Beam,TM,Mr-Mime-Galar,12
+439,Mime Jr,,Psychic,TM/39,Mr-Mime,13
+439,Mime Jr,,Psychic,TM/48,Mr-Rime,14
+439,Mime Jr,,Shadow Ball,TM,,15
+439,Mime Jr,,Thunderbolt,TM,,16
+439,Mime Jr,,Charm,Egg,,17
 572,Minccino,,Tickle,9,,1
 572,Minccino,,Double Slap,13,,2
 572,Minccino,,Encore,15,,3
@@ -1950,7 +1974,7 @@ pokedex_id,pokemon_name,form,move_name,learn_method,species,display_order
 769,Sandygast,,Scorching Sands,TM,,11
 664,Scatterbug,,Protect,9,,1
 664,Scatterbug,,Bug Bite,15,,2
-664,Scatterbug,,Gust,17,,3
+664,Scatterbug,,Gust,Evo.,,3
 664,Scatterbug,,Draining Kiss,25,,4
 664,Scatterbug,,Sleep Powder,MR,,5
 664,Scatterbug,,Bug Buzz,35/TM,,6
@@ -2034,16 +2058,17 @@ pokedex_id,pokemon_name,form,move_name,learn_method,species,display_order
 403,Shinx,,Ice Fang,Egg,,9
 948,Shroodle,,Acid Spray,5,,1
 948,Shroodle,,Poison Fang,14,,2
-948,Shroodle,,Taunt,TM,,3
-948,Shroodle,,Slash,21,,4
-948,Shroodle,,U-turn,25,,5
-948,Shroodle,,Doodle,Evo.,,6
-948,Shroodle,,Poison Jab,Evo.,,7
-948,Shroodle,,Knock Off,45,,8
-948,Shroodle,,Gunk Shot,51,,9
-948,Shroodle,,Return,TM,,10
-948,Shroodle,,Seed Bomb,TM,,11
-948,Shroodle,,Parting Shot,Egg,,12
+948,Shroodle,,Super Fang,18,,3
+948,Shroodle,,Taunt,TM,,4
+948,Shroodle,,Slash,21,,5
+948,Shroodle,,U-turn,25,,6
+948,Shroodle,,Doodle,Evo.,,7
+948,Shroodle,,Poison Jab,Evo.,,8
+948,Shroodle,,Knock Off,45,,9
+948,Shroodle,,Gunk Shot,51,,10
+948,Shroodle,,Return,TM,,11
+948,Shroodle,,Seed Bomb,TM,,12
+948,Shroodle,,Parting Shot,Egg,,13
 285,Shroomish,,Leech Seed,8,,1
 285,Shroomish,,Mega Drain,12,,2
 285,Shroomish,,Bullet Seed,TM,,3
@@ -2137,60 +2162,65 @@ pokedex_id,pokemon_name,form,move_name,learn_method,species,display_order
 79,Slowpoke,Galar,Ice Beam,TM,,14
 79,Slowpoke,Galar,Shadow Ball,TM,,15
 79,Slowpoke,Galar,Belch,Egg,,16
-235,Smeargle,,Sketch,1,,1
-235,Smeargle,,Sketch,11,,2
-235,Smeargle,,Sketch,21,,3
-235,Smeargle,,Sketch,31,,4
-235,Smeargle,,Sketch,41,,5
-235,Smeargle,,Sketch,51,,6
-235,Smeargle,,Acid Spray,Sketch,,7
-235,Smeargle,,Beak Blast,Sketch,,8
-235,Smeargle,,Boomburst,Sketch,,9
-235,Smeargle,,Ceaseless Edge,Sketch,,10
-235,Smeargle,,Charm,Sketch,,11
-235,Smeargle,,Destiny Bond,Sketch,,12
-235,Smeargle,,Draco Meteor,Sketch,,13
-235,Smeargle,,Eerie Impulse,Sketch,,14
-235,Smeargle,,Electroweb,Sketch,,15
-235,Smeargle,,Endeavor,Sketch,,16
-235,Smeargle,,Explosion,Sketch,,17
-235,Smeargle,,Feather Dance,Sketch,,18
-235,Smeargle,,Fissure,Sketch,,19
-235,Smeargle,,Foul Play,Sketch,,20
-235,Smeargle,,Gigaton Hammer,Sketch,,21
-235,Smeargle,,Glare,Sketch,,22
-235,Smeargle,,King's Shield,Sketch,,23
-235,Smeargle,,Leech Seed,Sketch,,24
-235,Smeargle,,Light Screen,Sketch,,25
-235,Smeargle,,Milk Drink,Sketch,,26
-235,Smeargle,,Night Daze,Sketch,,27
-235,Smeargle,,Obstruct,Sketch,,28
-235,Smeargle,,Parting Shot,Sketch,,29
-235,Smeargle,,Pay Day,Sketch,,30
-235,Smeargle,,Perish Song,Sketch,,31
-235,Smeargle,,Powder,Sketch,,32
-235,Smeargle,,Rain Dance,Sketch,,33
-235,Smeargle,,Rapid Spin,Sketch,,34
-235,Smeargle,,Reflect,Sketch,,35
-235,Smeargle,,Sheer Cold,Sketch,,36
-235,Smeargle,,Snarl,Sketch,,37
-235,Smeargle,,Spiky Shield,Sketch,,38
-235,Smeargle,,Spore,Sketch,,39
-235,Smeargle,,Sticky Web,Sketch,,40
-235,Smeargle,,Stone Axe,Sketch,,41
-235,Smeargle,,Strength Sap,Sketch,,42
-235,Smeargle,,Sunny Day,Sketch,,43
-235,Smeargle,,Super Fang,Sketch,,44
-235,Smeargle,,Syrup Bomb,Sketch,,45
-235,Smeargle,,Tailwind,Sketch,,46
-235,Smeargle,,Tail Slap,Sketch,,47
-235,Smeargle,,Tail Whip,Sketch,,48
-235,Smeargle,,Taunt,Sketch,,49
-235,Smeargle,,Toxic Spikes,Sketch,,50
-235,Smeargle,,Volt Switch,Sketch,,51
-235,Smeargle,,Water Spout,Sketch,,52
-235,Smeargle,,Will-O-Wisp,Sketch,,53
-235,Smeargle,,U-turn,Sketch,,54
+218,Slugma,,Yawn,1,,1
+218,Slugma,,Incinerate,15,,2
+218,Slugma,,Ancient Power,22,,3
+218,Slugma,,Mud Shot,TM,,4
+218,Slugma,,Flame Burst,34,,5
+218,Slugma,,Flamethrower,54/TM,,6
+218,Slugma,,Earth Power,58,,7
+218,Slugma,,Power Gem,TM,,8
+218,Slugma,,Scorching Sands,TM,,9
+218,Slugma,,Heat Wave,Egg,,10
+235,Smeargle,,Sketch,"1, 11, 21...",,1
+235,Smeargle,,Acid Spray,Sketch,,2
+235,Smeargle,,Beak Blast,Sketch,,3
+235,Smeargle,,Boomburst,Sketch,,4
+235,Smeargle,,Ceaseless Edge,Sketch,,5
+235,Smeargle,,Charm,Sketch,,6
+235,Smeargle,,Destiny Bond,Sketch,,7
+235,Smeargle,,Draco Meteor,Sketch,,8
+235,Smeargle,,Eerie Impulse,Sketch,,9
+235,Smeargle,,Electroweb,Sketch,,10
+235,Smeargle,,Endeavor,Sketch,,11
+235,Smeargle,,Explosion,Sketch,,12
+235,Smeargle,,Feather Dance,Sketch,,13
+235,Smeargle,,Fissure,Sketch,,14
+235,Smeargle,,Foul Play,Sketch,,15
+235,Smeargle,,Gigaton Hammer,Sketch,,16
+235,Smeargle,,Glare,Sketch,,17
+235,Smeargle,,King's Shield,Sketch,,18
+235,Smeargle,,Leech Seed,Sketch,,19
+235,Smeargle,,Light Screen,Sketch,,20
+235,Smeargle,,Milk Drink,Sketch,,21
+235,Smeargle,,Night Daze,Sketch,,22
+235,Smeargle,,Obstruct,Sketch,,23
+235,Smeargle,,Parting Shot,Sketch,,24
+235,Smeargle,,Pay Day,Sketch,,25
+235,Smeargle,,Perish Song,Sketch,,26
+235,Smeargle,,Powder,Sketch,,27
+235,Smeargle,,Rain Dance,Sketch,,28
+235,Smeargle,,Rapid Spin,Sketch,,29
+235,Smeargle,,Reflect,Sketch,,30
+235,Smeargle,,Sheer Cold,Sketch,,31
+235,Smeargle,,Snarl,Sketch,,32
+235,Smeargle,,Spiky Shield,Sketch,,33
+235,Smeargle,,Spore,Sketch,,34
+235,Smeargle,,Sticky Web,Sketch,,35
+235,Smeargle,,Stone Axe,Sketch,,36
+235,Smeargle,,Strength Sap,Sketch,,37
+235,Smeargle,,Sunny Day,Sketch,,38
+235,Smeargle,,Super Fang,Sketch,,39
+235,Smeargle,,Syrup Bomb,Sketch,,40
+235,Smeargle,,Tailwind,Sketch,,41
+235,Smeargle,,Tail Slap,Sketch,,42
+235,Smeargle,,Tail Whip,Sketch,,43
+235,Smeargle,,Taunt,Sketch,,44
+235,Smeargle,,Toxic Spikes,Sketch,,45
+235,Smeargle,,Volt Switch,Sketch,,46
+235,Smeargle,,Water Spout,Sketch,,47
+235,Smeargle,,Will-O-Wisp,Sketch,,48
+235,Smeargle,,U-turn,Sketch,,49
 928,Smoliv,,Growth,7,,1
 928,Smoliv,,Razor Leaf,10,,2
 928,Smoliv,,Mega Drain,20,,3
@@ -2461,6 +2491,19 @@ pokedex_id,pokemon_name,form,move_name,learn_method,species,display_order
 938,Tadbulb,,Water Pulse,TM,,10
 938,Tadbulb,,Thunderbolt,TM,,11
 938,Tadbulb,,Muddy Water,Egg,,12
+114,Tangela,,Sleep Powder,4,,1
+114,Tangela,,Absorb,10,,2
+114,Tangela,,Rock Smash,HM,,3
+114,Tangela,,Growth,20,,4
+114,Tangela,,Mega Drain,23,,5
+114,Tangela,,Knock Off,27,,6
+114,Tangela,,Giga Drain,36/TM,,7
+114,Tangela,,Ancient Power,38,,8
+114,Tangela,,Tickle,46,,9
+114,Tangela,,Earthquake,TM,,10
+114,Tangela,,Rock Slide,TM,,11
+114,Tangela,,Sludge Bomb,TM,,12
+114,Tangela,,Leaf Storm,Egg,,13
 917,Tarountula,,Struggle Bug,5,,1
 917,Tarountula,,Bug Bite,14,,2
 917,Tarountula,,Silk Trap,Evo.,,3
@@ -2538,7 +2581,7 @@ pokedex_id,pokemon_name,form,move_name,learn_method,species,display_order
 175,Togepi,,Wish,29,,4
 175,Togepi,,Ancient Power,33,,5
 175,Togepi,,Aura Sphere,MR,Togekiss,6
-175,Togepi,,Air Slash,TM,,7
+175,Togepi,,Air Slash,MR/TM,,7
 175,Togepi,,Dazzling Gleam,TM,,8
 175,Togepi,,Flamethrower,TM,,9
 175,Togepi,,Shadow Ball,TM,,10
@@ -2782,6 +2825,16 @@ pokedex_id,pokemon_name,form,move_name,learn_method,species,display_order
 746,Wishiwashi,,Earthquake,TM,,7
 746,Wishiwashi,,Flip Turn,TM,,8
 746,Wishiwashi,,Muddy Water,Egg,,9
+831,Wooloo,,Defense Curl,4,,1
+831,Wooloo,,Double Kick,16,,2
+831,Wooloo,,Headbutt,21,,3
+831,Wooloo,,Rollout,MT,,4
+831,Wooloo,,Last Resort,56,,5
+831,Wooloo,,Body Press,TM,,6
+831,Wooloo,,Return,TM,,7
+831,Wooloo,,Rock Slide,TM,,8
+831,Wooloo,,Zen Headbutt,TM,,9
+831,Wooloo,,Counter,Egg,,10
 194,Wooper,Paldea,Mud Shot,1,,1
 194,Wooper,Paldea,Toxic Spikes,12,,2
 194,Wooper,Paldea,Yawn,21,,3
