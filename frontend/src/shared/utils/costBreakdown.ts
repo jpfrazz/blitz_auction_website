@@ -71,6 +71,8 @@ export function computeCostBreakdown({
     if (lookbackDate && auctionDate && auctionDate < lookbackDate) continue;
 
     const name = a.name || '';
+    // Remove Larvesta from cost breakdown
+    if (name.toLowerCase() === 'larvesta') continue;
     const form = a.form || '';
     const key = form ? name + '-' + form : name;
     saleRows.push({ key, name, form, bid, types: [] });
@@ -130,16 +132,20 @@ export function computeCostBreakdown({
   }
 
   let results: PokemonAggregate[] = Array.from(grouped.values()).map((entry) => {
+    // Filter out $100 sales and apply IQR outlier filtering (same as PokemonStatsTab)
     let bids = entry.bids.filter((b) => b !== 100);
     if (bids.length > 1) {
       const sortedBids = [...bids].sort((a, b) => a - b);
       const q1 = calculateQuantile(sortedBids, 0.25);
       const q3 = calculateQuantile(sortedBids, 0.75);
       const iqr = q3 - q1;
-      const lower = q1 - 1.5 * iqr;
-      const upper = q3 + 2.0 * iqr;
-      bids = sortedBids.filter((b) => b >= lower && b <= upper);
+      if (iqr > 0) {
+        const lower = q1 - 1.5 * iqr;
+        const upper = q3 + 2.0 * iqr;
+        bids = sortedBids.filter((b) => b >= lower && b <= upper);
+      }
     }
+    if (bids.length === 0) return null as any;
     const count = bids.length;
     const sum = bids.reduce((a, b) => a + b, 0);
     const avg = count > 0 ? Math.round(sum / count) : 0;
