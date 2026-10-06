@@ -177,17 +177,20 @@ export function computeCostBreakdown({
     };
   });
 
+  // Filter out nulls from IQR filtering
+  results = results.filter((r: any) => r !== null);
+
   if (typeFilter) {
-    results = results.filter((r) => r.types.length === 0 ? false : r.types.some((t) => t.toLowerCase() === typeFilter.toLowerCase()));
+    results = results.filter((r: any) => r.types.length === 0 ? false : r.types.some((t: any) => t.toLowerCase() === typeFilter.toLowerCase()));
   }
 
-  results.sort((a, b) => {
+  results.sort((a: any, b: any) => {
     if (b.avgWinningBid !== a.avgWinningBid) return b.avgWinningBid - a.avgWinningBid;
     return a.name.localeCompare(b.name);
   });
-  results.forEach((r, i) => (r.rank = i + 1));
+  results.forEach((r: any, i: any) => (r.rank = i + 1));
 
-  return results;
+  return results as PokemonAggregate[];
 }
 
 
