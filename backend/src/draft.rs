@@ -428,7 +428,7 @@ impl Draft {
             ));
         };
         // always randomize order
-        pokemon.shuffle(&mut rand::rng());
+        pokemon::weighted_shuffle(&mut pokemon);
         let db_writer = DbWriter::new(pool.clone(), draft_id, settings.starting_money);
 
         println!("pokemon len:, {}", pokemon.len());

@@ -201,6 +201,54 @@ pub struct Pokemon {
     pub obtain_method: Option<String>,
 }
 
+/// Pokemon that are drawn into a draft's auction list more often than baseline,
+/// by name. Anything not listed here has a rate of 1.
+const APPEARANCE_RATES: &[(&str, i32)] = &[
+    ("Wooloo", 3),
+    ("Basculin", 3),
+    ("Slugma", 3),
+    ("Tangela", 3),
+    ("Klink", 3),
+    ("Maschiff", 2),
+];
+
+pub fn appearance_rate(name: &str) -> i32 {
+    APPEARANCE_RATES
+        .iter()
+        .find(|(entry, _)| entry.eq_ignore_ascii_case(name))
+        .map_or(1, |(_, rate)| *rate)
+        .max(1)
+}
+
+/// Weighted (Efraimidis-Spirakis) shuffle: each entry gets key `u ^ (1 / weight)`
+/// for `u` uniform on (0, 1], sorted descending, where `weight` is the pokemon's
+/// appearance rate. A rate of 2 therefore lands a pokemon in the auction list
+/// twice as often as the baseline, while it still occupies only one slot.
+pub fn weighted_shuffle(pokemon: &mut [Arc<Pokemon>]) {
+    use rand::Rng;
+
+    let mut rng = rand::rng();
+    let mut keyed: Vec<(f64, usize, Arc<Pokemon>)> = pokemon
+        .iter()
+        .enumerate()
+        .map(|(index, p)| {
+            let weight = f64::from(appearance_rate(&p.name));
+            let u = 1.0 - rng.random::<f64>();
+            (u.powf(1.0 / weight), index, p.clone())
+        })
+        .collect();
+
+    keyed.sort_by(|a, b| {
+        b.0.partial_cmp(&a.0)
+            .unwrap_or(std::cmp::Ordering::Equal)
+            .then_with(|| a.1.cmp(&b.1))
+    });
+
+    for (slot, (_, _, p)) in pokemon.iter_mut().zip(keyed) {
+        *slot = p;
+    }
+}
+
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct KeyMoveRow {
     pub pokedex_id: i32,
