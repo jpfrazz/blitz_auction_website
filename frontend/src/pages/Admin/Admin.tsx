@@ -1,4 +1,4 @@
-import React, { ChangeEvent, Dispatch, SetStateAction, useEffect, useMemo, useState } from 'react';
+﻿import React, { ChangeEvent, Dispatch, SetStateAction, useEffect, useMemo, useState } from 'react';
 import Header from '../../shared/components/Header';
 import Footer from '../../shared/components/Footer';
 import {
@@ -32,8 +32,10 @@ import './Admin.scss';
 import { fetchCurrentUser } from '../../shared/api/draftData';
 import { getIconName } from '../../utils/speciesUtils';
 import HallOfFameTeamEditorModal from './HallOfFameTeamEditorModal';
+import CostBreakdownExportPanel from './CostBreakdownExportPanel';
 
-type AdminTab = 'draft-results' | 'discord-users' | 'upload-pokemon-data' | 'boss-battle-history' | 'boss-battle-submissions' | 'hall-of-fame' | 'race-results' | 'metrics';
+
+type AdminTab = 'draft-results' | 'discord-users' | 'upload-pokemon-data' | 'boss-battle-history' | 'boss-battle-submissions' | 'hall-of-fame' | 'race-results' | 'metrics' | 'cost-breakdown-export';
 
 const Admin: React.FC = () => {
   const [hasRefereeRole, setHasRefereeRole] = useState<boolean | null>(null);
@@ -614,6 +616,13 @@ const Admin: React.FC = () => {
                   type="button"
                 >
                   Metrics
+                </button>
+                <button
+                  className={`admin-tab ${tab === 'cost-breakdown-export' ? 'active' : ''}`}
+                  onClick={() => setTab('cost-breakdown-export')}
+                  type="button"
+                >
+                  Cost Breakdown Export
                 </button>
               </div>
 
@@ -1288,6 +1297,16 @@ const Admin: React.FC = () => {
                   )}
                 </div>
               )}
+
+              {tab === 'cost-breakdown-export' && (
+                <div className="admin-tab-content">
+                  <h2>Cost Breakdown Export</h2>
+                  <p style={{ color: '#94a3b8', marginBottom: '1rem' }}>
+                    Download the current Cost Breakdown data as CSV.
+                  </p>
+                  <CostBreakdownExportPanel />
+                </div>
+              )}
             </>
           )}
         </section>
@@ -1298,3 +1317,6 @@ const Admin: React.FC = () => {
 };
 
 export default Admin;
+
+
+
