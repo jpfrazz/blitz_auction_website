@@ -1302,7 +1302,7 @@ const PlayerSearchStatsTab: React.FC<PlayerSearchStatsTabProps> = ({
                                    if (!finished) {
                                      return (
                                        <div className="boss-submission-empty">
-                                         <span>Add boss battles to finish run</span>
+                                         <span>Add boss battles played on local emulator</span>
                                          <button
                                            type="button"
                                            className="boss-submission-add"
