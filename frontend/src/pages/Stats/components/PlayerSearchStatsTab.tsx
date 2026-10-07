@@ -269,6 +269,20 @@ function getRunResult(battles: BossBattleHistoryEntry[]): { result: string; trai
   return null;
 }
 
+function isRunFinished(battles: BossBattleHistoryEntry[] | undefined): boolean {
+  if (!battles || battles.length === 0) return false;
+  const lastBattle = battles[battles.length - 1];
+  // Forfeit: any battle entry with hours===5 && minutes===0 && seconds===0
+  if (lastBattle.hours === 5 && lastBattle.minutes === 0 && lastBattle.seconds === 0) {
+    return true;
+  }
+  const result = getRunResult(battles);
+  if (result !== null) {
+    return true;
+  }
+  return false;
+}
+
 const PlayerSearchStatsTab: React.FC<PlayerSearchStatsTabProps> = ({
   stats,
   loading = false,
@@ -296,6 +310,7 @@ const PlayerSearchStatsTab: React.FC<PlayerSearchStatsTabProps> = ({
     draftId: string;
     battles: BossBattleSubmissionBattle[];
     note: string;
+    lockedCount?: number;
   } | null>(null);
   const [uploadSaving, setUploadSaving] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
@@ -318,12 +333,29 @@ const PlayerSearchStatsTab: React.FC<PlayerSearchStatsTabProps> = ({
     };
   }, [currentUserId]);
 
-  const openUploadModal = (teamId: number, draftId: string, existing?: BossBattleSubmission) => {
+  const openUploadModal = (
+    teamId: number,
+    draftId: string,
+    existing?: BossBattleSubmission,
+    additive?: boolean
+  ) => {
+    const existingBattles = existing ? existing.battles.map((battle) => ({ ...battle })) : [];
+    const battlesFromExistingHistory = additive
+      ? (bossBattleHistory.get(teamId) ?? []).map((battle) => ({
+          trainer_id: battle.trainer_id,
+          version: battle.version ?? null,
+          hours: battle.hours,
+          minutes: battle.minutes,
+          seconds: battle.seconds,
+          is_loss: battle.is_loss,
+        }))
+      : existingBattles;
     setUploadTeam({
       teamId,
       draftId,
-      battles: existing ? existing.battles.map((battle) => ({ ...battle })) : [],
+      battles: battlesFromExistingHistory,
       note: existing?.note ?? '',
+      lockedCount: additive && battlesFromExistingHistory.length > 0 ? battlesFromExistingHistory.length : undefined,
     });
     setUploadError(null);
   };
@@ -1216,50 +1248,75 @@ const PlayerSearchStatsTab: React.FC<PlayerSearchStatsTabProps> = ({
                                   <span>Boss Battles</span>
                                   <span>Time</span>
                                 </div>
-                                {bossBattleHistory.get(team.team_id)?.length === 0 && (
-                                  selectedPlayer?.user_id === currentUserId && !mySubmissionsLoading ? (
-                                    (() => {
-                                      const pending = mySubmissions.get(team.team_id);
-                                      if (pending) {
-                                        return (
-                                          <div className="boss-submission-status">
-                                            <span className="boss-submission-pending">Pending Confirmation</span>
-                                            <button
-                                              type="button"
-                                              className="boss-submission-action"
-                                              onClick={() => openUploadModal(team.team_id, team.draft_id, pending)}
-                                            >
-                                              Edit
-                                            </button>
-                                            <button
-                                              type="button"
-                                              className="boss-submission-action"
-                                              onClick={() => handleWithdraw(team.team_id)}
-                                            >
-                                              Withdraw
-                                            </button>
-                                          </div>
-                                        );
-                                      }
-                                      return (
-                                        <div className="boss-submission-empty">
-                                          <span>No boss battles recorded</span>
-                                          <button
-                                            type="button"
-                                            className="boss-submission-add"
-                                            title="Upload boss battle history"
-                                            aria-label="Upload boss battle history"
-                                            onClick={() => openUploadModal(team.team_id, team.draft_id)}
-                                          >
-                                            +
-                                          </button>
-                                        </div>
-                                      );
-                                    })()
-                                  ) : (
-                                    <div className="match-draft-details-empty">No boss battles recorded</div>
-                                  )
-                                )}
+                                 {(() => {
+                                   const battles = bossBattleHistory.get(team.team_id);
+                                   const hasBattles = battles && battles.length > 0;
+                                   const finished = isRunFinished(battles);
+                                   const pending = mySubmissions.get(team.team_id);
+                                   const isOwnProfile = selectedPlayer?.user_id === currentUserId;
+                                   if (pending && isOwnProfile && !mySubmissionsLoading) {
+                                     return (
+                                       <div className="boss-submission-status">
+                                         <span className="boss-submission-pending">Pending Confirmation</span>
+                                         <button
+                                           type="button"
+                                           className="boss-submission-action"
+                                           onClick={() => openUploadModal(team.team_id, team.draft_id, pending)}
+                                         >
+                                           Edit
+                                         </button>
+                                         <button
+                                           type="button"
+                                           className="boss-submission-action"
+                                           onClick={() => handleWithdraw(team.team_id)}
+                                         >
+                                           Withdraw
+                                         </button>
+                                       </div>
+                                     );
+                                   }
+                                   if (!isOwnProfile || mySubmissionsLoading) {
+                                     if (!hasBattles) {
+                                       return <div className="match-draft-details-empty">No boss battles recorded</div>;
+                                     }
+                                     return null;
+                                   }
+                                   // Own profile, no pending submission
+                                   if (!hasBattles) {
+                                     return (
+                                       <div className="boss-submission-empty">
+                                         <span>No boss battles recorded</span>
+                                         <button
+                                           type="button"
+                                           className="boss-submission-add"
+                                           title="Upload boss battle history"
+                                           aria-label="Upload boss battle history"
+                                           onClick={() => openUploadModal(team.team_id, team.draft_id)}
+                                         >
+                                           +
+                                         </button>
+                                       </div>
+                                     );
+                                   }
+                                   // Has battles; show + only if not finished (additive case)
+                                   if (!finished) {
+                                     return (
+                                       <div className="boss-submission-empty">
+                                         <span>Add boss battles to finish run</span>
+                                         <button
+                                           type="button"
+                                           className="boss-submission-add"
+                                           title="Upload boss battle history"
+                                           aria-label="Upload boss battle history"
+                                           onClick={() => openUploadModal(team.team_id, team.draft_id, undefined, true)}
+                                         >
+                                           +
+                                         </button>
+                                       </div>
+                                     );
+                                   }
+                                   return null;
+                                 })()}
                                 {bossBattleHistory.get(team.team_id)?.map((battle, idx) => (
                                   <div className="match-draft-details-row" key={idx}>
                                     <div className="match-draft-details-pokemon">
@@ -1306,6 +1363,7 @@ const PlayerSearchStatsTab: React.FC<PlayerSearchStatsTabProps> = ({
               </p>
               <BossBattleEditor
                 battles={uploadTeam.battles}
+                lockedCount={uploadTeam.lockedCount}
                 onChange={(battles) => setUploadTeam((prev) => (prev ? { ...prev, battles } : prev))}
               />
               <input

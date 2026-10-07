@@ -530,7 +530,7 @@ dex_number,name,form,evolves_from_id,evolves_from_form,type1,type2,stage,ability
 938,Tadbulb,,,,Electric,,base,Own Tempo,Static,Damp,61,31,41,59,35,45,,,,
 939,Bellibolt,,938,,Electric,,evo,Electromorphosis,Static,Damp,109,64,91,103,83,45,"Thunder Stone",,,
 114,Tangela,,,,Grass,,base,Chlorophyll,Leaf Guard,Regenerator,65,55,115,100,40,60,,,,
-465,Tangrowth,,114,,Grass,,evo,Chlorophyll,Leaf Guard,Regenerator,100,100,125,110,50,50,"Move Relearn Ancient Power",,,
+465,Tangrowth,,114,,Grass,,evo,Chlorophyll,Leaf Guard,Regenerator,100,100,125,110,50,50,"Learn Ancient Power",,,
 917,Tarountula,,,,Bug,,base,Insomnia,,Stakeout,35,41,45,29,40,20,,,,
 918,Spidops,,917,,Bug,,evo,Insomnia,,Stakeout,60,79,92,52,86,35,"Level 15",,,
 216,Teddiursa,,,,Normal,,base,Pickup,Quick Feet,Honey Gather,60,80,50,50,50,40,,,,
