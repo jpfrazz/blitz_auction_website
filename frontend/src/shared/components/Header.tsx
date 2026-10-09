@@ -6,6 +6,7 @@ import { fetchPendingBossBattleSubmissionCount } from '../api/users';
 import { UserRole } from '../../types';
 import SettingsModal from './SettingsModal';
 import { scrollToTop } from '../utils/scroll';
+import { getCachedAvatarUrl, getDiscordAvatarUrl, onAvatarError } from '../utils/user';
 
 const navButtons = [
   { label: "Leaderboard", link: "/Leaderboard" },
@@ -406,12 +407,12 @@ function Header() {
             <div className="userDropdown">
               <button className="userDropdownTrigger" type="button">
                 <img
-                  src={`https://cdn.discordapp.com/avatars/${user.user_id}/${user.avatar}.png`}
+                  src={user.avatar
+                    ? getDiscordAvatarUrl(user.user_id!, user.avatar)
+                    : getCachedAvatarUrl(user.user_id!, user.avatar)}
                   alt="avatar"
                   className="userAvatar"
-                  onError={(e) => {
-                    (e.target as HTMLImageElement).src = '/generic/DiscordAvatar.png';
-                  }}
+                  onError={(e) => onAvatarError(e, user.user_id!, user.avatar)}
                 />
                 <h1>{user.username}</h1>
               </button>

@@ -155,6 +155,7 @@ pub struct AuthBackend {
     http_client: reqwest::Client,
     discord_client: Arc<twilight_http::Client>,
     discord_role_map: DashMap<Id<RoleMarker>, DiscordRole>,
+    avatar_http_client: reqwest::Client,
 }
 
 #[derive(Clone, Debug, Deserialize, Serialize, PartialEq, Eq, sqlx::FromRow, sqlx::Type)]
@@ -175,12 +176,18 @@ impl AuthBackend {
             .build()
             .expect("http_client should build");
 
+        let avatar_http_client: reqwest::Client = reqwest::Client::builder()
+            .user_agent("blitz-auction-backend")
+            .build()
+            .expect("avatar_http_client should build");
+
         Self {
             db_pool,
             client,
             http_client,
             discord_client,
             discord_role_map,
+            avatar_http_client,
         }
     }
 
@@ -273,6 +280,105 @@ impl AuthBackend {
         );
 
         Ok(())
+    }
+
+    /// Download the user's most recent Discord avatar and stash a copy in
+    /// `user_avatars` so it keeps rendering even after the user changes their
+    /// avatar, deletes it, or leaves the server (which can eventually make the
+    /// Discord CDN URL for a frozen hash stop resolving).
+    async fn cache_user_avatar(&self, user_id: &str, avatar_hash: &str) {
+        let stored_hash: Option<String> = sqlx::query_scalar(
+            "SELECT avatar_hash FROM user_avatars WHERE user_id = $1",
+        )
+        .bind(user_id)
+        .fetch_optional(&self.db_pool)
+        .await
+        .ok()
+        .flatten();
+
+        if stored_hash.as_deref() == Some(avatar_hash) {
+            return;
+        }
+
+        let ext = if avatar_hash.starts_with("a_") {
+            "gif"
+        } else {
+            "png"
+        };
+        let url = format!(
+            "https://cdn.discordapp.com/avatars/{}/{}.{}?size=128",
+            user_id, avatar_hash, ext
+        );
+
+        let resp = match self.avatar_http_client.get(&url).send().await {
+            Ok(resp) => resp,
+            Err(e) => {
+                eprintln!(
+                    "failed to download avatar for user {}: {}",
+                    user_id, e
+                );
+                return;
+            }
+        };
+
+        if !resp.status().is_success() {
+            eprintln!(
+                "avatar download returned {} for user {}",
+                resp.status(),
+                user_id
+            );
+            return;
+        }
+
+        let content_type = resp
+            .headers()
+            .get(reqwest::header::CONTENT_TYPE)
+            .and_then(|v| v.to_str().ok())
+            .unwrap_or("image/png")
+            .to_string();
+
+        let bytes = match resp.bytes().await {
+            Ok(bytes) => bytes.to_vec(),
+            Err(e) => {
+                eprintln!(
+                    "failed to read avatar body for user {}: {}",
+                    user_id, e
+                );
+                return;
+            }
+        };
+
+        if bytes.is_empty() || bytes.len() > 2_000_000 {
+            eprintln!(
+                "skipping avatar for user {}: unexpected size {}",
+                user_id,
+                bytes.len()
+            );
+            return;
+        }
+
+        if let Err(e) = sqlx::query(
+            r#"
+            INSERT INTO user_avatars (user_id, data, content_type, avatar_hash)
+            VALUES ($1, $2, $3, $4)
+            ON CONFLICT (user_id) DO UPDATE
+            SET data = EXCLUDED.data,
+                content_type = EXCLUDED.content_type,
+                avatar_hash = EXCLUDED.avatar_hash
+            "#,
+        )
+        .bind(user_id)
+        .bind(&bytes)
+        .bind(&content_type)
+        .bind(avatar_hash)
+        .execute(&self.db_pool)
+        .await
+        {
+            eprintln!(
+                "failed to store avatar for user {}: {}",
+                user_id, e
+            );
+        }
     }
 
     pub fn authorize_url(&self) -> (Url, CsrfToken) {
@@ -435,6 +541,12 @@ impl AuthnBackend for AuthBackend {
         let Ok(_) = self.insert_user_in_db(&user).await else {
             return Err(Self::Error::PgError);
         };
+
+        if let User::DiscordUser(discord_user) = &user {
+            if let Some(hash) = &discord_user.avatar {
+                self.cache_user_avatar(&discord_user.user_id, hash).await;
+            }
+        }
 
         Ok(Some(user))
     }

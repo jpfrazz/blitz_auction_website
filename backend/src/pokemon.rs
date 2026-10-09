@@ -204,12 +204,12 @@ pub struct Pokemon {
 /// Pokemon that are drawn into a draft's auction list more often than baseline,
 /// by name. Anything not listed here has a rate of 1.
 const APPEARANCE_RATES: &[(&str, i32)] = &[
-    ("Wooloo", 3),
-    ("Basculin", 3),
-    ("Slugma", 3),
-    ("Tangela", 3),
-    ("Klink", 3),
-    ("Maschiff", 2),
+    ("Wooloo", 2),
+    ("Basculin", 2),
+    ("Slugma", 2),
+    ("Tangela", 2),
+    ("Klink", 2),
+    ("Anorith", 2),
 ];
 
 pub fn appearance_rate(name: &str) -> i32 {

@@ -22,7 +22,7 @@ use axum::{
         ws::{Message, WebSocket, close_code::STATUS},
     },
     http::StatusCode,
-    response::{Redirect, Response},
+    response::{IntoResponse, Redirect, Response},
 };
 use axum_login::AuthSession;
 use chrono::Utc;
@@ -1718,6 +1718,67 @@ pub async fn get_hall_of_fame(
 ) -> Result<Json<Vec<AdminHallOfFameEligibleEntry>>, AppError> {
     let entries = fetch_hall_of_fame_eligible(&state).await?;
     Ok(Json(entries))
+}
+
+pub fn discord_avatar_cdn_url(user_id: &str, avatar_hash: &str) -> String {
+    let ext = if avatar_hash.starts_with("a_") {
+        "gif"
+    } else {
+        "png"
+    };
+    format!(
+        "https://cdn.discordapp.com/avatars/{}/{}.{}",
+        user_id, avatar_hash, ext
+    )
+}
+
+/// Serves a user's most recently cached Discord avatar. Falls back to a
+/// redirect to the live Discord CDN URL when we haven't cached a copy yet, and
+/// 404s when there's nothing at all (letting the frontend render its fallback).
+pub async fn get_user_avatar(
+    State(state): State<ServerState>,
+    Path(user_id): Path<String>,
+) -> Response {
+    let cached = match sqlx::query("SELECT data, content_type FROM user_avatars WHERE user_id = $1")
+        .bind(&user_id)
+        .fetch_optional(&state.db_pool)
+        .await
+    {
+        Ok(row) => row,
+        Err(e) => {
+            return (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()).into_response();
+        }
+    };
+
+    if let Some(row) = cached {
+        let data: Vec<u8> = row.get("data");
+        let content_type: String = row.get("content_type");
+        return (
+            StatusCode::OK,
+            [
+                (axum::http::header::CONTENT_TYPE, content_type),
+                (
+                    axum::http::header::CACHE_CONTROL,
+                    "public, max-age=604800".to_string(),
+                ),
+            ],
+            data,
+        )
+            .into_response();
+    }
+
+    let stored_hash: Option<Option<String>> = sqlx::query_scalar("SELECT avatar FROM users WHERE user_id = $1")
+        .bind(&user_id)
+        .fetch_optional(&state.db_pool)
+        .await
+        .ok()
+        .flatten();
+
+    if let Some(Some(hash)) = stored_hash {
+        return Redirect::temporary(&discord_avatar_cdn_url(&user_id, &hash)).into_response();
+    }
+
+    StatusCode::NOT_FOUND.into_response()
 }
 
 #[derive(Debug, Deserialize)]

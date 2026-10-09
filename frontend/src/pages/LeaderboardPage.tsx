@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { fetchLeaderboard, LeaderboardEntry } from '../shared/api/users';
 import { fetchStatsPageData } from '../shared/api/stats';
+import { getDiscordAvatarUrl, onAvatarError } from '../shared/utils/user';
 import Header from '../shared/components/Header';
 import { StatsPageResponse } from '../types';
 import './LeaderboardPage.scss';
@@ -230,12 +231,10 @@ const LeaderboardPage = () => {
                                 <div className="leaderboard-username-cell">
                                     {player.avatar ? (
                                         <img
-                                            src={`https://cdn.discordapp.com/avatars/${player.user_id}/${player.avatar}.png`}
+                                            src={getDiscordAvatarUrl(player.user_id, player.avatar)}
                                             alt=""
                                             className="leaderboard-avatar"
-                                            onError={(e) => {
-                                                (e.target as HTMLImageElement).src = '/generic/DiscordAvatar.png';
-                                            }}
+                                            onError={(e) => onAvatarError(e, player.user_id, player.avatar)}
                                         />
                                     ) : (
                                         <div className="leaderboard-avatar-placeholder" />

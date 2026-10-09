@@ -15,6 +15,7 @@ import { MatchHistoryTeam, StatsAuction, StatsPagePlayer, StatsPageResponse } fr
 import type { PlayerStatPill } from './playerStatPills';
 import { getPlayerStatPills } from './playerStatPills';
 import { getIconName } from '../../../utils/speciesUtils';
+import { getDiscordAvatarUrl, onAvatarError } from '../../../shared/utils/user';
 import '../Stats.scss';
 import './PlayerSearchStatsTab.scss';
 
@@ -935,12 +936,10 @@ const PlayerSearchStatsTab: React.FC<PlayerSearchStatsTabProps> = ({
                   >
                     {(player as any).avatar ? (
                       <img
-                        src={`https://cdn.discordapp.com/avatars/${player.user_id}/${(player as any).avatar}.png`}
+                        src={getDiscordAvatarUrl(player.user_id, (player as any).avatar)}
                         alt=""
                         style={{ width: '32px', height: '32px', borderRadius: '50%' }}
-                        onError={(e) => {
-                          (e.target as HTMLImageElement).src = '/generic/DiscordAvatar.png';
-                        }}
+                        onError={(e) => onAvatarError(e, player.user_id, (player as any).avatar)}
                       />
                     ) : (
                       <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: '#333' }} />
@@ -976,12 +975,10 @@ const PlayerSearchStatsTab: React.FC<PlayerSearchStatsTabProps> = ({
                           <div className="player-draft-overview-profile-name" style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '8px' }}>
                             {(selectedPlayer as any).avatar && (
                               <img
-                                src={`https://cdn.discordapp.com/avatars/${selectedPlayer.user_id}/${(selectedPlayer as any).avatar}.png`}
+                                src={getDiscordAvatarUrl(selectedPlayer.user_id, (selectedPlayer as any).avatar)}
                                 alt=""
                                 style={{ width: '40px', height: '40px', borderRadius: '50%', border: '2px solid rgba(255,255,255,0.2)' }}
-                                onError={(e) => {
-                                  (e.target as HTMLImageElement).src = '/generic/DiscordAvatar.png';
-                                }}
+                                onError={(e) => onAvatarError(e, selectedPlayer.user_id, (selectedPlayer as any).avatar)}
                               />
                             )}
                             <div>
