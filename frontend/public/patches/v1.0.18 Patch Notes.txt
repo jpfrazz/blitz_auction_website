@@ -1,0 +1,27 @@
+10/10/2026
+
+-----------------------------------------------
+QoL
+-----------------------------------------------
+
+Flying to Dewford Town now automatically moves Briney to Dewford
+//In the early game, you can no longer be in Dewford Town without Briney and his boat waiting for you.
+//Previously, it was possible to take the boat to Slateport, then immediately fly back to Dewford without earning the Fly location at Slateport.
+
+Added a Med Kit sprite
+//I found a suitcase from a free asset pack online and drew a PokeCenter logo on it. So long Booster Energy...
+
+
+-----------------------------------------------
+Bug Fixes
+-----------------------------------------------
+
+Added HM Cut as a learnable move to Slakoth, Buneary and Bunnelby's evolution lines
+//Cut was purged from learnsets in v1.0.0 to try to clean out useless moves from the learnset files. It's not useless on these three lines though (and I hadn't meant to take it off of them in the first place), so it's added back.
+
+Porygon Z now learns Flash Cannon
+//Previously, only regular Porygon and Porygon 2 learned this TM. This was a bug.
+
+Fixed a bug where the enemy AI wasn't always sending out a Pokemon that knows Protect or Fake Out after a KO if your Pokemon is mega evolved
+//This behavior was added in v1.0.0 but wasn't working until now.
+//Thanks Flippy for reporting
