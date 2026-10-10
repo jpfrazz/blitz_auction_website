@@ -249,21 +249,21 @@ function getRunResult(battles: BossBattleHistoryEntry[]): { result: string; trai
 
   const lastBattle = battles[battles.length - 1];
 
+  // A wipe to any trainer (including Steven/Wally) ends the run as a loss
+  if (lastBattle.is_loss) {
+    return {
+      result: 'Wiped to',
+      trainer: getTrainerNameById(lastBattle.trainer_id, lastBattle.version),
+      isWin: false,
+    };
+  }
+
   // Check if it's a win (Steven/Wally are the final bosses)
   if (lastBattle.trainer_id === 804 || lastBattle.trainer_id === 656) {
     return {
       result: 'Beat',
       trainer: lastBattle.trainer_id === 804 ? 'Steven' : 'Wally',
       isWin: true,
-    };
-  }
-
-  // Otherwise it's a wipe - find the trainer that caused the wipe
-  if (lastBattle.is_loss) {
-    return {
-      result: 'Wiped to',
-      trainer: getTrainerNameById(lastBattle.trainer_id, lastBattle.version),
-      isWin: false,
     };
   }
 
@@ -1000,10 +1000,12 @@ const PlayerSearchStatsTab: React.FC<PlayerSearchStatsTabProps> = ({
                               <h3>{getPokemonLabel(signaturePokemon.name, signaturePokemon.form)} ({signaturePokemon.pctDrafted}%)</h3>
                             </div>
                           )}
-                          <div className="player-draft-overview-kicker-group">
-                            <span className="player-draft-overview-kicker">Personal Best Time</span>
-                            <h3>{personalBestTime ?? '---'}</h3>
-                          </div>
+                          {personalBestTime && (
+                            <div className="player-draft-overview-kicker-group">
+                              <span className="player-draft-overview-kicker">Personal Best Time</span>
+                              <h3>{personalBestTime}</h3>
+                            </div>
+                          )}
                           <div className="player-draft-overview-kicker-group">
                             <span className="player-draft-overview-kicker">Total Races Played</span>
                             <h3>{totalGames}</h3>

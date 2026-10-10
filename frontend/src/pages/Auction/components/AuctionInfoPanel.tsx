@@ -47,6 +47,7 @@ const AuctionInfoPanel: React.FC<AuctionInfoPanelProps> = ({
   const [bidNotification, setBidNotification] = useState<string | null>(null);
   const isInitialBid = useRef(true);
   const bidNotificationTimerRef = useRef<number | null>(null);
+  const bidWarningTriggerEventRef = useRef<Event | null>(null);
   const [showAutoBidModal, setShowAutoBidModal] = useState(false);
   const [autoBidValue, setAutoBidValue] = useState('');
   const [autoBidEnabled, setAutoBidEnabled] = useState(false);
@@ -301,6 +302,27 @@ const AuctionInfoPanel: React.FC<AuctionInfoPanelProps> = ({
     }
   };
 
+  const confirmBidWarning = async () => {
+    if (pendingBid) await actuallyPlaceBid(pendingBid);
+    setShowBidWarning(false);
+    setPendingBid(null);
+  };
+
+  useEffect(() => {
+    if (!showBidWarning) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key !== 'Enter' || e.repeat) return;
+      if (e === bidWarningTriggerEventRef.current) {
+        bidWarningTriggerEventRef.current = null;
+        return;
+      }
+      e.preventDefault();
+      void confirmBidWarning();
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [showBidWarning, pendingBid]);
+
   const getIconName = (name: string) => {
     if (name.toLowerCase().startsWith('egg')) return 'egg';
     return name.toLowerCase();
@@ -397,6 +419,8 @@ const AuctionInfoPanel: React.FC<AuctionInfoPanelProps> = ({
           onKeyDown={(e) => {
             if (e.key === 'Enter') {
               e.preventDefault();
+              if (showBidWarning) return;
+              bidWarningTriggerEventRef.current = e.nativeEvent;
               void handleCustomBid();
             }
           }}
@@ -423,17 +447,13 @@ const AuctionInfoPanel: React.FC<AuctionInfoPanelProps> = ({
     {/* Bid Warning Modal */}
     {showBidWarning && (
       <div className="auction-modal-overlay">
-        <div className="auction-modal-content">
+        <div className="auction-modal-content big-bid-modal">
           <h3>Whoa, that's a big bid!</h3>
           <p>Your bid is more than $3000 above the current bid. Are you sure you want to bid so much?</p>
           <div className="auction-modal-actions">
             <button
               className="auction-modal-confirm"
-              onClick={async () => {
-                if (pendingBid) await actuallyPlaceBid(pendingBid);
-                setShowBidWarning(false);
-                setPendingBid(null);
-              }}
+              onClick={() => void confirmBidWarning()}
             >
               Yes, Place Bid
             </button>

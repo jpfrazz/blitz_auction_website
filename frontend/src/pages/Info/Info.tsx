@@ -254,6 +254,7 @@ const Info = () => (
               <summary className='slateport-market-dropdown'>Ability Capsule</summary>
               <div className="evo-icons">
                 <img src="/MiniIcons/azurill.png" alt="Azurill" />
+                <img src="/MiniIcons/basculin.png" alt="Basculin" />
                 <img src="/MiniIcons/chewtle.png" alt="Chewtle" />
                 <img src="/MiniIcons/chinchou.png" alt="Chinchou" />
                 <img src="/MiniIcons/gossifleur.png" alt="Gossifleur" />
@@ -261,15 +262,18 @@ const Info = () => (
                 <img src="/MiniIcons/helioptile.png" alt="Helioptile" />
                 <img src="/MiniIcons/litwick.png" alt="Litwick" />
                 <img src="/MiniIcons/joltik.png" alt="Joltik" />
+                <img src="/MiniIcons/maschiff.png" alt="Maschiff" />
                 <img src="/MiniIcons/mawile.png" alt="Mawile" />
                 <img src="/MiniIcons/minccino.png" alt="Minccino" />
                 <img src="/MiniIcons/mudbray.png" alt="Mudbray" />
                 <img src="/MiniIcons/scatterbug.png" alt="Scatterbug" />
+                <img src="/MiniIcons/scyther.png" alt="Scyther" />
                 <img src="/MiniIcons/shellder.png" alt="Shellder" />
                 <img src="/MiniIcons/shellos.png" alt="Shellos" />
                 <img src="/MiniIcons/shinx.png" alt="Shinx" />
                 <img src="/MiniIcons/shroomish.png" alt="Shroomish" />
                 <img src="/MiniIcons/snubbull.png" alt="Snubbull" />
+                <img src="/MiniIcons/stantler.png" alt="Stantler" />
                 <img src="/MiniIcons/stufful.png" alt="Stufful" />
                 <img src="/MiniIcons/teddiursa.png" alt="Teddiursa" />
                 <img src="/MiniIcons/wattrel.png" alt="Wattrel" />
@@ -280,6 +284,7 @@ const Info = () => (
               </div>
               <ul>
                 <li>Azurill (Huge Power)</li>
+                <li>Basculin (Adaptability)</li>
                 <li>Chewtle (Strong Jaw)</li>
                 <li>Chinchou (Volt Absorb)</li>
                 <li>Gossifleur (Cotton Down)</li>
@@ -287,15 +292,18 @@ const Info = () => (
                 <li>Helioptile (Dry Skin)</li>
                 <li>Litwick (Flash Fire)</li>
                 <li>Joltik (Compound Eyes)</li>
+                <li>Maschiff (Intimidate)</li>
                 <li>Mawile (Intimidate)</li>
                 <li>Minccino (Technician)</li>
                 <li>Mudbray (Stamina)</li>
                 <li>Scatterbug (Compound Eyes)</li>
+                <li>Scyther (Technician)</li>
                 <li>Shellder (Skill Link)</li>
                 <li>Shellos (Storm Drain)</li>
                 <li>Shinx (Intimidate)</li>
                 <li>Shroomish (Poison Heal)</li>
                 <li>Snubbull (Intimidate)</li>
+                <li>Stantler (Intimidate)</li>
                 <li>Stufful (Fluffy)</li>
                 <li>Teddiursa (Guts)</li>
                 <li>Wattrel (Volt Absorb)</li>
@@ -316,6 +324,7 @@ const Info = () => (
                 <img src="/MiniIcons/litten.png" alt="Litten" />
                 <img src="/MiniIcons/meowth.png" alt="Meowth" />
                 <img src="/MiniIcons/minccino.png" alt="Minccino" />
+                <img src="/MiniIcons/tangela.png" alt="Tangela" />
                 <img src="/MiniIcons/skrelp.png" alt="Skrelp" />
                 <img src="/MiniIcons/slowpoke.png" alt="Slowpoke" />
                 <img src="/MiniIcons/totodile.png" alt="Totodile" />
@@ -335,6 +344,7 @@ const Info = () => (
                 <li>Minccino (Skill Link)</li>
                 <li>Skrelp (Adaptability)</li>
                 <li>Slowpoke (Regenerator)</li>
+                <li>Tangela (Regenerator)</li>
                 <li>Totodile (Sheer Force)</li>
                 <li>Vulpix (Snow Warning)</li>
                 <li>Corsola (Regenerator, Perish Body on Cursola)</li>

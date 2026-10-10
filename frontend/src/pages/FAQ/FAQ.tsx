@@ -30,6 +30,7 @@ const FAQ = () => (
             <li><a href="#how-do-i-play">How do I play?</a></li>
             <li><a href="#how-do-i-race-my-friends">How do I race my friends?</a></li>
             <li><a href="#what-do-i-do-if-i-dont-have-any-friends-who-like-pokemon">What if I don't have any friends who like Pokémon?</a></li>
+            <li><a href="#this-game-is-tough-any-tips">This game is tough! Any tips?</a></li>
           </ul>
         </div>
         <div className="faq-toc-group">
@@ -38,6 +39,7 @@ const FAQ = () => (
             <li><a href="#whats-a-draft">What's a draft?</a></li>
             <li><a href="#can-i-play-by-myself">Can I play by myself without drafting?</a></li>
             <li><a href="#can-you-add-a-skip-button">Can you add a skip button to the draft?</a></li>
+            <li><a href="#can-i-play-competitively">Can I play competitively?</a></li>
           </ul>
         </div>
         <div className="faq-toc-group">
@@ -52,6 +54,7 @@ const FAQ = () => (
           <h3 className="faq-toc-subheading"><a href="#blitz-changes">Blitz Changes</a></h3>
           <ul className="info-toc-list">
             <li><a href="#how-does-this-mechanic-work">How does [this] mechanic work?</a></li>
+            <li><a href="#why-is-my-pokemon-green">Why is my Pokémon green?</a></li>
             <li><a href="#whats-changed">What's changed from vanilla Emerald?</a></li>
             <li><a href="#what-do-the-new-items-do">What do the new items do?</a></li>
           </ul>
@@ -73,7 +76,7 @@ const FAQ = () => (
           <h2 className="faq-question">What's Emerald Blitz?</h2>
           <hr />
           <p className="faq-answer">
-            Emerald Blitz is a revamped version of Pokémon Emerald streamlined for nuzlocke draft racing. Despite playing through the entire Hoenn region, a playthrough takes just 90 minutes. Emerald Blitz is customized with new features and quality-of-life improvements geared toward making the game as fast as possible; it's all of the good with none of the tedium.
+            Emerald Blitz is a revamped version of Pokémon Emerald streamlined for nuzlocke draft racing. Despite playing through the entire Hoenn region, a playthrough takes just 90 minutes. Draft a team and race through a randomized gym order to see how how far you can get or how fast you can win!
           </p>
         </section>
 
@@ -187,6 +190,22 @@ const FAQ = () => (
             The discord community is super friendly and hosts multiple public races every day. Even if you've never played before, we'd love to have you. Join the discord to get notified any time a community race is happening!
           </p>
         </section>
+
+        <section id="this-game-is-tough-any-tips" className="faq-section" style={{ scrollMarginTop: '120px' }}>
+          <h2 className="faq-question">This game is tough! Any tips?</h2>
+          <hr />
+          <ul className="faq-answer">
+            <li>
+              <b>Draft around power spikes:</b> While it's important to draft a diverse range of types, it's equally as important to draft Pokémon that are powerful at different points. If you don't have any Pokémon who evolve by the third gym, those fights are going to be tough! In draft, keep track of if your early, mid, or late game are particularly weak, and try to pick options that help to even out your curve.
+            </li>
+            <li>
+              <b>Use Baby-Doll Eyes:</b> Eevee is the one constant across all Blitz runs, and many early-game fights are designed around having access to its priority attack dropping move. Using Baby-Doll Eyes against physical attackers like Norman's Vigoroth, Winona's Tropius, and Juan's Dondozo is essential for making these fights manageable! (Just remember, if a Pokémon is dropped to -3 or more in their primary attack stat, the enemy might swap them out!)
+            </li>
+            <li>
+              <b>Don't forget to rent!:</b> Of Blitz's mechanics, renting is the one that's most often ignored by new players, but also the one that's most useful for helping to get runs through the gym phase. An ¥8000 power spike is well worth it if it helps get you through a difficult early game, and renting in the mid game can help extend runs that take heavy losses early.
+            </li>
+          </ul>
+        </section>
       </div>
 
       <div className="faq-subsection">
@@ -228,6 +247,14 @@ const FAQ = () => (
           </p>
           <p className="faq-answer" style={{ marginTop: '1rem' }}>
             For this reason, the draft forces players to make a decision: do you want to play with fewer than eight pokemon with lots of powerful top tiers, or more than eight with some low tier heroes?
+          </p>
+        </section>
+
+        <section id="can-i-play-competitively" className="faq-section" style={{ scrollMarginTop: '120px' }}>
+          <h2 className="faq-question">Can I play competitively?</h2>
+          <hr />
+          <p className="faq-answer">
+            Yes! The leaderboard in the header tracks Ever Grande Prix races, a seasonal competitive circuit with in-game rewards. Season Two runs October 18th through December 23rd and is open to anyone. Join the Discord to sign up!
           </p>
         </section>
       </div>
@@ -288,6 +315,14 @@ const FAQ = () => (
           <hr />
           <p className="faq-answer">
             The <a href="/Info">Info page</a> has all of the at-a-glance information you need for finding items, learning mechanics, and understanding AI behavior.
+          </p>
+        </section>
+
+        <section id="why-is-my-pokemon-green" className="faq-section" style={{ scrollMarginTop: '120px' }}>
+          <h2 className="faq-question">Why is my Pokémon green?</h2>
+          <hr />
+          <p className="faq-answer">
+            It can evolve! If a Pokémon is highlighted green in the party menu, its evolution mechanic is accessible (whether it be the Energy Guru or just an evolution stone).
           </p>
         </section>
 
@@ -406,7 +441,7 @@ const FAQ = () => (
           <h2 className="faq-question">How do I update the website's key moves list?</h2>
           <hr />
           <p className="faq-answer">
-            Use <a href="https://docs.getgrist.com/4y7M7jMoYfYo/pokemonmoves" target="_blank" rel="noopener noreferrer">the Grist spreadsheet</a> to add changes to the key moves list.
+            Use <a href="https://docs.getgrist.com/4y7M7jMoYfYo/pokemonmoves" target="_blank" rel="noopener noreferrer">the Grist spreadsheet</a> to make changes to the key moves list.
           </p>
         </section>
       </div>

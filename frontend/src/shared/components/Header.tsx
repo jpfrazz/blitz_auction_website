@@ -555,7 +555,7 @@ function Header() {
                 suppressContentEditableWarning
                 onInput={(e) => setNotes(e.currentTarget.innerHTML)}
                 onKeyDown={(e) => {
-                  // Stop propagation so Home.tsx space bar listener doesn't trigger
+                  // Stop propagation so Home.tsx spacebar listener doesn't trigger
                   e.stopPropagation();
                 }}
                 style={{ fontSize: `${fontSize}px` }}
