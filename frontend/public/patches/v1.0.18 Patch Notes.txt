@@ -4,12 +4,11 @@
 QoL
 -----------------------------------------------
 
-Flying to Dewford Town now automatically moves Briney to Dewford
-//In the early game, you can no longer be in Dewford Town without Briney and his boat waiting for you.
-//Previously, it was possible to take the boat to Slateport, then immediately fly back to Dewford without earning the Fly location at Slateport.
+Flying to Dewford Town while Briney is on the Route 109 beach now automatically moves Briney to Dewford
+//Previously, it was possible to take the boat to Slateport, then immediately fly back to Dewford without earning the Fly location at Slateport. Doing so would strand you in Dewford and force you to fly to Rustboro and loop around through Meteor Falls to continue.
 
 Added a Med Kit sprite
-//I found a suitcase from a free asset pack online and drew a PokeCenter logo on it. So long Booster Energy...
+//I nabbed a suitcase sprite from a free asset pack online and drew a PokeCenter logo on it. So long Booster Energy...
 
 
 -----------------------------------------------
