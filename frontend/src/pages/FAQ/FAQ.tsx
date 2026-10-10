@@ -196,13 +196,13 @@ const FAQ = () => (
           <hr />
           <ul className="faq-answer">
             <li>
-              <b>Draft around power spikes:</b> While it's important to draft a diverse range of types, it's equally as important to draft Pokémon that are powerful at different points. If you don't have any Pokémon who evolve by the third gym, those fights are going to be tough! In draft, keep track of if your early, mid, or late game are particularly weak, and try to pick options that help to even out your curve.
+              <b>Draft around power spikes:</b> While it's important to draft a diverse range of types, it's equally as important to draft Pokémon that are powerful at different points. If you don't have any Pokémon who evolve by the third gym, those fights are going to be difficult! In draft, keep track of if your early, mid, or late game is particularly weak, and try to pick options that help to even out your curve.
             </li>
             <li>
               <b>Use Baby-Doll Eyes:</b> Eevee is the one constant across all Blitz runs, and many early-game fights are designed around having access to its priority attack dropping move. Using Baby-Doll Eyes against physical attackers like Norman's Vigoroth, Winona's Tropius, and Juan's Dondozo is essential for making these fights manageable! (Just remember, if a Pokémon is dropped to -3 or more in their primary attack stat, the enemy might swap them out!)
             </li>
             <li>
-              <b>Don't forget to rent!:</b> Of Blitz's mechanics, renting is the one that's most often ignored by new players, but also the one that's most useful for helping to get runs through the gym phase. An ¥8000 power spike is well worth it if it helps get you through a difficult early game, and renting in the mid game can help extend runs that take heavy losses early.
+              <b>Don't forget to rent:</b> Of Blitz's mechanics, renting is the one that's most often ignored by new players, but also the one that's most useful for helping to get runs through the gym phase. An ¥8000 power spike is well worth it if it helps get you through a difficult early game, and renting in the mid game can help extend runs that take heavy losses early.
             </li>
           </ul>
         </section>
@@ -254,7 +254,7 @@ const FAQ = () => (
           <h2 className="faq-question">Can I play competitively?</h2>
           <hr />
           <p className="faq-answer">
-            Yes! The leaderboard in the header tracks Ever Grande Prix races, a seasonal competitive circuit with in-game rewards. Season Two runs October 18th through December 23rd and is open to anyone. Join the Discord to sign up!
+            Yes! The leaderboard in the header tracks Ever Grande Prix races, a seasonal competitive circuit with in-game rewards. Season two runs October 18th through December 23rd and is open to anyone. Join the Discord to sign up!
           </p>
         </section>
       </div>
