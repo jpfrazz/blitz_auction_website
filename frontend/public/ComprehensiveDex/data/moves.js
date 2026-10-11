@@ -1071,8 +1071,8 @@ exports.BattleMovedex = {
         "priority": 0,
         "category": "Special",
         "contestType": "Beauty",
-        "desc": "Has a 10% chance to freeze the target. If the weather is Snow, this move does not check accuracy.",
-        "shortDesc": "10% chance to freeze foe(s). Can't miss in Snow."
+        "desc": "Has a 10% chance to freeze the target. If the weather is Hail, this move does not check accuracy.",
+        "shortDesc": "10% chance to freeze foe(s). Can't miss in Hail."
     },
     "psybeam": {
         "num": 60,
@@ -1367,7 +1367,7 @@ exports.BattleMovedex = {
         "priority": 0,
         "category": "Special",
         "contestType": "Cool",
-        "desc": "This attack charges on the first turn and executes on the second. Power is halved if the weather is Primordial Sea, Rain Dance, Sandstorm, or Snow and the user is not holding Utility Umbrella. If the user is holding a Power Herb or the weather is Desolate Land or Sunny Day, the move completes in one turn. If the user is holding Utility Umbrella and the weather is Desolate Land or Sunny Day, the move still requires a turn to charge.",
+        "desc": "This attack charges on the first turn and executes on the second. Power is halved if the weather is Primordial Sea, Rain Dance, Sandstorm, or Hail and the user is not holding Utility Umbrella. If the user is holding a Power Herb or the weather is Desolate Land or Sunny Day, the move completes in one turn. If the user is holding Utility Umbrella and the weather is Desolate Land or Sunny Day, the move still requires a turn to charge.",
         "shortDesc": "Charges turn 1. Hits turn 2. No charge in sunlight."
     },
     "poisonpowder": {
@@ -3641,8 +3641,8 @@ exports.BattleMovedex = {
         "priority": 0,
         "category": "Status",
         "contestType": "Cute",
-        "desc": "The user restores 1/2 of its maximum HP, rounded half up.",
-        "shortDesc": "Heals the user by 50% of its max HP."
+        "desc": "The user or its ally restores 1/2 of its maximum HP, rounded half up.",
+        "shortDesc": "Heals the user or its ally by 50% of its max HP."
     },
     "spark": {
         "num": 209,
@@ -4095,7 +4095,7 @@ exports.BattleMovedex = {
         "priority": 0,
         "category": "Status",
         "contestType": "Beauty",
-        "desc": "The user restores 1/2 of its maximum HP if Delta Stream or no weather conditions are in effect or if the user is holding Utility Umbrella, 2/3 of its maximum HP if the weather is Desolate Land or Sunny Day, and 1/4 of its maximum HP if the weather is Primordial Sea, Rain Dance, Sandstorm, or Snow, all rounded half down.",
+        "desc": "The user restores 1/2 of its maximum HP if Delta Stream or no weather conditions are in effect or if the user is holding Utility Umbrella, 2/3 of its maximum HP if the weather is Desolate Land or Sunny Day, and 1/4 of its maximum HP if the weather is Primordial Sea, Rain Dance, Sandstorm, or Hail, all rounded half down.",
         "shortDesc": "Heals the user by a weather-dependent amount."
     },
     "synthesis": {
@@ -4111,7 +4111,7 @@ exports.BattleMovedex = {
         "priority": 0,
         "category": "Status",
         "contestType": "Smart",
-        "desc": "The user restores 1/2 of its maximum HP if Delta Stream or no weather conditions are in effect or if the user is holding Utility Umbrella, 2/3 of its maximum HP if the weather is Desolate Land or Sunny Day, and 1/4 of its maximum HP if the weather is Primordial Sea, Rain Dance, Sandstorm, or Snow, all rounded half down.",
+        "desc": "The user restores 1/2 of its maximum HP if Delta Stream or no weather conditions are in effect or if the user is holding Utility Umbrella, 2/3 of its maximum HP if the weather is Desolate Land or Sunny Day, and 1/4 of its maximum HP if the weather is Primordial Sea, Rain Dance, Sandstorm, or Hail, all rounded half down.",
         "shortDesc": "Heals the user by a weather-dependent amount."
     },
     "moonlight": {
@@ -4127,7 +4127,7 @@ exports.BattleMovedex = {
         "priority": 0,
         "category": "Status",
         "contestType": "Beauty",
-        "desc": "The user restores 1/2 of its maximum HP if Delta Stream or no weather conditions are in effect or if the user is holding Utility Umbrella, 2/3 of its maximum HP if the weather is Desolate Land or Sunny Day, and 1/4 of its maximum HP if the weather is Primordial Sea, Rain Dance, Sandstorm, or Snow, all rounded half down.",
+        "desc": "The user restores 1/2 of its maximum HP if Delta Stream or no weather conditions are in effect or if the user is holding Utility Umbrella, 2/3 of its maximum HP if the weather is Desolate Land or Sunny Day, and 1/4 of its maximum HP if the weather is Primordial Sea, Rain Dance, Sandstorm, or Hail, all rounded half down.",
         "shortDesc": "Heals the user by a weather-dependent amount."
     },
     "hiddenpower": {
@@ -5404,7 +5404,7 @@ exports.BattleMovedex = {
         "priority": 0,
         "category": "Special",
         "contestType": "Beauty",
-        "desc": "Power doubles if a weather condition other than Delta Stream is active, and this move's type changes to match. Ice type during Snow, Water type during Primordial Sea or Rain Dance, Rock type during Sandstorm, and Fire type during Desolate Land or Sunny Day. If the user is holding Utility Umbrella and uses Weather Ball during Primordial Sea, Rain Dance, Desolate Land, or Sunny Day, this move remains Normal type and does not double in power.",
+        "desc": "Power doubles if a weather condition other than Delta Stream is active, and this move's type changes to match. Ice type during Hail, Water type during Primordial Sea or Rain Dance, Rock type during Sandstorm, and Fire type during Desolate Land or Sunny Day. If the user is holding Utility Umbrella and uses Weather Ball during Primordial Sea, Rain Dance, Desolate Land, or Sunny Day, this move remains Normal type and does not double in power.",
         "shortDesc": "Power doubles and type varies in each weather."
     },
     "aromatherapy": {
@@ -7703,8 +7703,8 @@ exports.BattleMovedex = {
         "priority": 0,
         "category": "Physical",
         "contestType": "Tough",
-        "desc": "Has a 30% chance to make the target flinch.",
-        "shortDesc": "30% chance to make the target flinch."
+        "desc": "Has a 20% chance to make the target flinch.",
+        "shortDesc": "20% chance to make the target flinch."
     },
     "magnetbomb": {
         "num": 443,
@@ -9962,8 +9962,8 @@ exports.BattleMovedex = {
         "priority": 0,
         "category": "Special",
         "contestType": "Beauty",
-        "desc": "Has a 10% chance to freeze the target. This move's type effectiveness against Water is changed to be super effective no matter what this move's type is.",
-        "shortDesc": "10% chance to freeze. Super effective on Water."
+        "desc": "This move's type effectiveness against Water is changed to be super effective no matter what this move's type is.",
+        "shortDesc": "Super effective on Water."
     },
     "disarmingvoice": {
         "num": 574,
@@ -10161,8 +10161,8 @@ exports.BattleMovedex = {
         "priority": 0,
         "category": "Special",
         "contestType": "Beauty",
-        "desc": "Has a 30% chance to lower the target's Special Attack by 1 stage.",
-        "shortDesc": "30% chance to lower the target's Sp. Atk by 1."
+        "desc": "Has a 10% chance to lower the target's Special Attack by 1 stage.",
+        "shortDesc": "10% chance to lower the target's Sp. Atk by 1."
     },
     "boomburst": {
         "num": 586,
@@ -11400,7 +11400,7 @@ exports.BattleMovedex = {
         "category": "Status",
         "contestType": "Beauty",
         "desc": "For 5 turns, the user and its party members take 0.5x damage from physical and special attacks, or 0.66x damage if in a Double Battle; does not reduce damage further with Reflect or Light Screen. Critical hits ignore this protection. It is removed from the user's side if the user or an ally is successfully hit by Brick Break, Psychic Fangs, or Defog. Brick Break and Psychic Fangs remove the effect before damage is calculated. Lasts for 8 turns if the user is holding Light Clay. Fails unless the weather is Hail.",
-        "shortDesc": "For 5 turns, damage to allies halved. Snow only."
+        "shortDesc": "For 5 turns, damage to allies halved. Hail only."
     },
     "shelltrap": {
         "num": 658,
@@ -13925,8 +13925,8 @@ exports.BattleMovedex = {
         "pp": 10,
         "priority": 0,
         "category": "Status",
-        "desc": "For 5 turns, the weather becomes Snow. The user switches out even if it is trapped and is replaced immediately by a selected party member. The user does not switch out if there are no unfainted party members.",
-        "shortDesc": "Starts Snow. User switches out."
+        "desc": "For 5 turns, the weather becomes Hail. The user switches out even if it is trapped and is replaced immediately by a selected party member. The user does not switch out if there are no unfainted party members.",
+        "shortDesc": "Starts Hail. User switches out."
     },
     "tidyup": {
         "num": 808,
@@ -13952,8 +13952,8 @@ exports.BattleMovedex = {
         "priority": 0,
         "category": "Status",
         "contestType": "Beauty",
-        "desc": "For 5 turns, the weather becomes Snow. During the effect, the Defense of Ice-type Pokemon is multiplied by 1.5 when taking damage from a physical attack. Lasts for 8 turns if the user is holding Icy Rock. Fails if the current weather is Snow.",
-        "shortDesc": "For 5 turns, snow falls. Ice: 1.5x Def."
+        "desc": "For 5 turns, the weather becomes Hail. During the effect, the Defense of Ice-type Pokemon is multiplied by 1.5 when taking damage from a physical attack. Lasts for 8 turns if the user is holding Icy Rock. Fails if the current weather is Hail.",
+        "shortDesc": "For 5 turns, hail falls. Ice: 1.5x Def."
     },
     "pounce": {
         "num": 810,

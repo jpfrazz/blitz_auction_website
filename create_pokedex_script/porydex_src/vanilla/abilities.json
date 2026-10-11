@@ -74,8 +74,8 @@
     "name": "Anticipation",
     "rating": 0.5,
     "num": 107,
-    "desc": "On switch-in, Raises the user's Evasiveness by 1 stage when the opposing Pokémon has a super-effective move, or an OHKO move. This effect considers any move that deals direct damage as an attacking move of its respective type, Hidden Power counts as its determined type, and Judgment, Multi-Attack, Natural Gift, Revelation Dance, Techno Blast, and Weather Ball are considered Normal-type moves.",
-    "shortDesc": "On switch-in, Raises the user's Evasiveness by 1 stage when the opposing Pokémon has a super-effective move."
+    "desc": "Raises the user's Evasiveness by 1 stage when the opposing Pokémon has a super-effective move.",
+    "shortDesc": "Raises the user's Evasiveness by 1 stage when the opposing Pokémon has a super-effective move."
   },
   "arenatrap": {
     "flags": {},
@@ -771,8 +771,8 @@
     "name": "Forecast",
     "rating": 2,
     "num": 59,
-    "desc": "If this Pokemon is a Castform, its type changes to the current weather condition's type, except Sandstorm and Sets weather on entry based on the first move in the Pokémon's learnset (sun for fire, rain for water, hail for ice).",
-    "shortDesc": "Castform's type changes to the current weather condition's type, except Sandstorm and Sets weather on entry based on the first move in the Pokémon's learnset (sun for fire, rain for water, hail for ice)."
+    "desc": "Sets weather on entry based on the first move in the Pokémon's learnset (sun for fire, rain for water, hail for ice). Only works at level 20 or higher.",
+    "shortDesc": "Sets weather on entry based on the first move in the Pokémon's learnset (sun for fire, rain for water, hail for ice). Only works at level 20 or higher."
   },
   "forewarn": {
     "flags": {},
@@ -1058,8 +1058,8 @@
     "name": "Ice Body",
     "rating": 1,
     "num": 115,
-    "desc": "If Snow is active, this Pokemon restores 1/16 of its maximum HP, rounded down, at the end of each turn.",
-    "shortDesc": "If Snow is active, this Pokemon heals 1/16 of its max HP each turn."
+    "desc": "If Hail is active, this Pokemon restores 1/16 of its maximum HP, rounded down, at the end of each turn.",
+    "shortDesc": "If Hail is active, this Pokemon heals 1/16 of its max HP each turn."
   },
   "iceface": {
     "onDamagePriority": 1,
@@ -1076,8 +1076,8 @@
     "name": "Ice Face",
     "rating": 3,
     "num": 248,
-    "desc": "If this Pokemon is an Eiscue, the first physical hit it takes in battle deals 0 neutral damage. Its ice face is then broken and it changes forme to Noice Face. Eiscue regains its Ice Face forme when Snow begins or when Eiscue switches in while Snow is active. Confusion damage also breaks the ice face.",
-    "shortDesc": "If Eiscue, the first physical hit it takes deals 0 damage. Effect is restored in Snow."
+    "desc": "If this Pokemon is an Eiscue, the first physical hit it takes in battle deals 0 neutral damage. Its ice face is then broken and it changes forme to Noice Face. Eiscue regains its Ice Face forme when Hail begins or when Eiscue switches in while Hail is active. Confusion damage also breaks the ice face.",
+    "shortDesc": "If Eiscue, the first physical hit it takes deals 0 damage. Effect is restored in Hail."
   },
   "icescales": {
     "flags": {
@@ -2280,8 +2280,8 @@
     "name": "Slush Rush",
     "rating": 3,
     "num": 202,
-    "desc": "If Snow is active, this Pokemon's Speed is doubled.",
-    "shortDesc": "If Snow is active, this Pokemon's Speed is doubled."
+    "desc": "If Hail is active, this Pokemon's Speed is doubled.",
+    "shortDesc": "If Hail is active, this Pokemon's Speed is doubled."
   },
   "sniper": {
     "flags": {},
@@ -2299,16 +2299,16 @@
     "name": "Snow Cloak",
     "rating": 1.5,
     "num": 81,
-    "desc": "If Snow is active, the accuracy of moves used against this Pokemon is multiplied by 0.8.",
-    "shortDesc": "If Snow is active, this Pokemon's evasiveness is 1.25x."
+    "desc": "If Hail is active, the accuracy of moves used against this Pokemon is multiplied by 0.8.",
+    "shortDesc": "If Hail is active, this Pokemon's evasiveness is 1.25x."
   },
   "snowwarning": {
     "flags": {},
     "name": "Snow Warning",
     "rating": 4,
     "num": 117,
-    "desc": "On switch-in, this Pokemon summons Snow.",
-    "shortDesc": "On switch-in, this Pokemon summons Snow."
+    "desc": "On switch-in, this Pokemon summons Hail.",
+    "shortDesc": "On switch-in, this Pokemon summons Hail."
   },
   "solarpower": {
     "onModifySpAPriority": 5,

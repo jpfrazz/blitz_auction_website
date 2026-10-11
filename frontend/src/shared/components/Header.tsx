@@ -5,8 +5,11 @@ import { fetchCurrentUser, changeGuestName } from '../api/draftData';
 import { fetchPendingBossBattleSubmissionCount } from '../api/users';
 import { UserRole } from '../../types';
 import SettingsModal from './SettingsModal';
+import NotesEditor from './NotesEditor';
+import NotesToolbar from './NotesToolbar';
 import { scrollToTop } from '../utils/scroll';
 import { getCachedAvatarUrl, getDiscordAvatarUrl, onAvatarError } from '../utils/user';
+import { useUserNotes } from '../utils/userNotes';
 
 const navButtons = [
   { label: "Leaderboard", link: "/Leaderboard" },
@@ -59,9 +62,8 @@ function Header() {
   const [changingName, setChangingName] = useState(false);
   const [showNotes, setShowNotes] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
-  const [notes, setNotes] = useState('');
-  const [fontSize, setFontSize] = useState(16);
-  const editorRef = useRef<HTMLDivElement>(null);
+  const { notes, fontSize, setNotes, setFontSize } = useUserNotes(user?.user_id ?? null);
+  const notesEditorRef = useRef<HTMLDivElement>(null);
 
   const [modalPos, setModalPos] = useState({ x: 0, y: 0 });
   const [modalSize, setModalSize] = useState({ width: 560, height: 640 });
@@ -123,14 +125,6 @@ function Header() {
 
   useEffect(() => {
     if (user?.user_id) {
-      const savedNotes = localStorage.getItem(`user_notes_${user.user_id}`);
-      setNotes(savedNotes || '');
-
-      const savedFontSize = localStorage.getItem(`user_notes_font_size_${user.user_id}`);
-      if (savedFontSize) {
-        setFontSize(parseInt(savedFontSize, 10));
-      }
-
       const savedPos = localStorage.getItem(`user_notes_pos_${user.user_id}`);
       if (savedPos) {
         try {
@@ -162,22 +156,6 @@ function Header() {
       localStorage.setItem(`user_notes_size_${user.user_id}`, JSON.stringify(modalSize));
     }
   }, [modalSize, user?.user_id]);
-
-  useEffect(() => {
-    if (user?.user_id) {
-      localStorage.setItem(`user_notes_font_size_${user.user_id}`, fontSize.toString());
-    }
-  }, [fontSize, user?.user_id]);
-
-  useEffect(() => {
-    if (user?.user_id) {
-      const timer = setTimeout(() => {
-        localStorage.setItem(`user_notes_${user.user_id}`, notes);
-      }, 500); // Wait for 500ms of inactivity before saving
-
-      return () => clearTimeout(timer);
-    }
-  }, [notes, user?.user_id]);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -417,6 +395,9 @@ function Header() {
                 <h1>{user.username}</h1>
               </button>
               <div className="userDropdownMenu navDropdownMenu">
+                <button className="navButton userDropdownItem" onClick={() => { window.location.href = `/Stats/PlayerProfiles/${encodeURIComponent(user.username ?? '')}?userId=${encodeURIComponent(user.user_id ?? '')}`; handleNavLinkClick(); }}>
+                  Profile
+                </button>
                 <button className="navButton userDropdownItem hide-on-mobile" onClick={() => { setShowNotes(true); handleNavLinkClick(); }}>
                   Notes
                 </button>
@@ -519,51 +500,19 @@ function Header() {
                 _
               </button>
             </div>
-            <div className="notes-toolbar">
-              <button 
-                type="button" 
-                onMouseDown={e => e.preventDefault()} 
-                onClick={() => document.execCommand('bold', false)}
-                title="Bold"
-              >B</button>
-              <button 
-                type="button" 
-                onMouseDown={e => e.preventDefault()} 
-                onClick={() => document.execCommand('italic', false)}
-                title="Italic"
-              >I</button>
-              <button 
-                type="button" 
-                onMouseDown={e => e.preventDefault()} 
-                onClick={() => document.execCommand('underline', false)}
-                title="Underline"
-              >U</button>
-              <select 
-                value={fontSize} 
-                onChange={(e) => setFontSize(parseInt(e.target.value, 10))}
-                title="Font Size"
-              >
-                {[14, 16, 18, 20, 24, 28, 32].map(size => (
-                  <option key={size} value={size}>{size}px</option>
-                ))}
-              </select>
-            </div>
+            <NotesToolbar
+              className="notes-toolbar"
+              fontSize={fontSize}
+              onFontSizeChange={setFontSize}
+              editorRef={notesEditorRef}
+            />
             <div className="notes-modal-content">
-              <div
+              <NotesEditor
+                ref={notesEditorRef}
                 className="notes-editor"
-                contentEditable
-                suppressContentEditableWarning
-                onInput={(e) => setNotes(e.currentTarget.innerHTML)}
-                onKeyDown={(e) => {
-                  // Stop propagation so Home.tsx spacebar listener doesn't trigger
-                  e.stopPropagation();
-                }}
-                style={{ fontSize: `${fontSize}px` }}
-                ref={(el) => {
-                  if (el && !el.innerHTML && notes) {
-                    el.innerHTML = notes;
-                  }
-                }}
+                notes={notes}
+                fontSize={fontSize}
+                onChange={setNotes}
               />
             </div>
             <div 

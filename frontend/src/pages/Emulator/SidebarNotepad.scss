@@ -1,0 +1,74 @@
+@import '../../shared/style/theme.scss';
+
+// Embedded notepad under the player cards in the emulator sidebar. Mirrors the
+// header "Notes" modal styling but flows to fill the remaining vertical space.
+.sidebar-notepad {
+  display: flex;
+  flex-direction: column;
+  min-height: 220px;
+  background: rgba(255, 255, 255, 0.02);
+
+  &.collapsed {
+    min-height: 0;
+  }
+}
+
+.sidebar-notepad-toolbar {
+  padding: 0.4rem 0.6rem;
+  display: flex;
+  gap: 0.4rem;
+  align-items: center;
+  border-bottom: 1px solid $eb-border;
+  background: rgba(255, 255, 255, 0.04);
+
+  button {
+    background: transparent;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: $eb-text;
+    width: 1.9rem;
+    height: 1.9rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    border-radius: 4px;
+    font-weight: bold;
+    transition: all 0.2s;
+
+    &:hover {
+      background: rgba(255, 255, 255, 0.1);
+      border-color: $eb-primary;
+    }
+  }
+
+  select {
+    background: $eb-surface;
+    color: $eb-text;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    padding: 0.2rem 0.4rem;
+    border-radius: 4px;
+    cursor: pointer;
+    outline: none;
+    margin-left: auto;
+  }
+}
+
+.sidebar-notepad-content {
+  flex: 1 1 auto;
+  min-height: 0;
+  padding: 0.8rem 1rem;
+  overflow-y: auto;
+  scrollbar-width: thin;
+
+  .sidebar-notes-editor {
+    width: 100%;
+    min-height: 100%;
+    background: transparent;
+    border: none;
+    color: $eb-text;
+    font-family: inherit;
+    outline: none;
+    line-height: 1.6;
+    cursor: text;
+  }
+}

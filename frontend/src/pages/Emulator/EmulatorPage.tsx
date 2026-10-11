@@ -10,7 +10,25 @@ import { fetchCurrentUser, fetchDraftById, claimEeveelution, unclaimEeveelution,
 import { fetchPokemonList } from '../../shared/api/pokemon';
 import EeveelutionClaimButton from './EeveelutionClaimButton';
 import NotebookWithdrawButton from './NotebookWithdrawButton';
+import SidebarNotepad from './SidebarNotepad';
+import SortableSidebarSection from './SortableSidebarSection';
 import HoverTip from '../../shared/components/HoverTip';
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent,
+} from '@dnd-kit/core';
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  verticalListSortingStrategy,
+} from '@dnd-kit/sortable';
+import { restrictToVerticalAxis } from '@dnd-kit/modifiers';
 import './EmulatorPage.scss';
 
 (function () {
@@ -663,13 +681,25 @@ const SidebarPlayerCard = React.memo(function SidebarPlayerCard({
   const showDisconnected =
     isPlayerDisconnected(uid, saveData) && !isWiped && !championName;
   const currentMap = mapName ?? saveData?.map_name;
+  const [isCollapsed, setIsCollapsed] = useState(false);
 
   return (
-    <div className={`sidebar-player-card ${isReady ? 'race-ready' : ''}`}>
+    <div className={`sidebar-player-card ${isReady ? 'race-ready' : ''}${isCollapsed ? ' collapsed' : ''}`}>
       <div className="sidebar-player-header">
-        <span className={`sidebar-username ${showDisconnected ? 'disconnected' : ''} ${isWiped ? 'wiped' : ''} ${championName ? 'winner' : ''}`}>
-          {displayName}
-        </span>
+        <div className="sidebar-player-header-row">
+          <span className={`sidebar-username ${showDisconnected ? 'disconnected' : ''} ${isWiped ? 'wiped' : ''} ${championName ? 'winner' : ''}`}>
+            {displayName}
+          </span>
+          <button
+            type="button"
+            className="sidebar-toggle"
+            onClick={() => setIsCollapsed((prev) => !prev)}
+            title={isCollapsed ? 'Expand player' : 'Collapse player'}
+            aria-expanded={!isCollapsed}
+          >
+            {isCollapsed ? '+' : '\u2212'}
+          </button>
+        </div>
         <span className="sidebar-player-meta">
           <span className="sidebar-badges">
             {saveData ? `${saveData.badge_count} ${saveData.badge_count === 1 ? 'badge' : 'badges'}` : '— badges'}
@@ -685,13 +715,13 @@ const SidebarPlayerCard = React.memo(function SidebarPlayerCard({
           )}
         </span>
       </div>
-      {currentMap && (
+      {!isCollapsed && currentMap && (
         <div className="sidebar-map" title={`${currentMap} (map)`}>
           {formatMapName(currentMap)}
           {inBattle && <span className="in-battle-suffix"> (In battle)</span>}
         </div>
       )}
-      {saveData ? (
+      {!isCollapsed && (saveData ? (
         <div className="sidebar-mon-icons">
           {sortPokemon(uid, cardEntries(saveData)).map((mon: any, i: number, arr: any[]) => {
             const speciesId = mon.species_id ?? mon.speciesId;
@@ -720,7 +750,7 @@ const SidebarPlayerCard = React.memo(function SidebarPlayerCard({
         </div>
       ) : (
         <p className="sidebar-no-save">Waiting for save…</p>
-      )}
+      ))}
     </div>
   );
 });
@@ -864,6 +894,24 @@ const EmulatorPage: React.FC = () => {
   const [saveLastSynced, setSaveLastSynced] = useState<Date | null>(null);
   const [isPanelMinimized, setIsPanelMinimized] = useState(false);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+  const [isPlayersCollapsed, setIsPlayersCollapsed] = useState(false);
+  // Order of the draggable sidebar sections. Default keeps the player list on
+  // top and the notepad filling the space below it.
+  const [sidebarOrder, setSidebarOrder] = useState<Array<'players' | 'notes'>>(['players', 'notes']);
+  const sidebarSensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
+  );
+  const handleSidebarDragEnd = useCallback((event: DragEndEvent) => {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+    setSidebarOrder((prev) => {
+      const oldIndex = prev.indexOf(active.id as 'players' | 'notes');
+      const newIndex = prev.indexOf(over.id as 'players' | 'notes');
+      if (oldIndex === -1 || newIndex === -1) return prev;
+      return arrayMove(prev, oldIndex, newIndex);
+    });
+  }, []);
 
   // Emulator resize: drag the bottom / right / corner edges. Null means "use
   // the CSS default" (75% width, calc height) so nothing changes until the
@@ -3134,6 +3182,10 @@ const EmulatorPage: React.FC = () => {
     };
   }, [isResizing, onResizeMove, onResizeEnd]);
 
+  // Once the player beats the champion (Steven/Wally) and warps into the
+  // Lilycove Museum the run is over, so there's nothing left to forfeit to.
+  const runIsOver = !!getChampionName(mySaveData) && mySaveData?.map_name === 'LilycoveCity_LilycoveMuseum_1F';
+
   return (
     <div className="emulator-page">
       <Header />
@@ -3399,7 +3451,7 @@ const EmulatorPage: React.FC = () => {
                     ) : (
                       <span className="save-panel-trainer" style={{ opacity: 0.5 }}>Save the game to display game data</span>
                     )}
-                    {draftId && mySaveData && (
+                    {draftId && mySaveData && !runIsOver && (
                       <button
                         className="forfeit-btn"
                         onClick={openForfeitConfirm}
@@ -3588,24 +3640,55 @@ const EmulatorPage: React.FC = () => {
                 className="emulator-sidebar"
                 style={emulatorWidthPx !== null ? { flex: '1 1 0', maxWidth: 'none' } : undefined}
               >
-                {sidebarEntries.map(([uid, { displayName, save, mapName, inBattle }]) => {
-                  const isCurrentUser = uid === currentUserId;
-                  return (
-                    <SidebarPlayerCard
-                      key={uid}
-                      uid={uid}
-                      displayName={isCurrentUser ? (currentUsername || 'You') : displayName}
-                      saveData={isCurrentUser ? mySaveData : save}
-                      mapName={isCurrentUser ? undefined : mapName}
-                      inBattle={isCurrentUser ? myInBattle : !!inBattle}
-                      isReady={readyPlayers.has(uid)}
-                      sortPokemon={sortPokemon}
-                      isMonFainted={isMonFainted}
-                      isPlayerDisconnected={isPlayerDisconnected}
-                      resolveMetadata={resolveMetadata}
-                    />
-                  );
-                })}
+                <DndContext
+                  sensors={sidebarSensors}
+                  collisionDetection={closestCenter}
+                  onDragEnd={handleSidebarDragEnd}
+                  modifiers={[restrictToVerticalAxis]}
+                >
+                  <SortableContext
+                    items={currentUserId ? sidebarOrder : sidebarOrder.filter((id) => id === 'players')}
+                    strategy={verticalListSortingStrategy}
+                  >
+                    {(currentUserId ? sidebarOrder : sidebarOrder.filter((id) => id === 'players')).map((sectionId, index, arr) => {
+                      const isLast = index === arr.length - 1;
+                      if (sectionId === 'notes' && currentUserId) {
+                        return <SidebarNotepad key="notes" userId={currentUserId} isLast={isLast} />;
+                      }
+                      return (
+                        <SortableSidebarSection
+                          key="players"
+                          id="players"
+                          title="Players"
+                          collapsed={isPlayersCollapsed}
+                          onToggleCollapsed={() => setIsPlayersCollapsed((prev) => !prev)}
+                          isLast={isLast}
+                        >
+                          <div className="sidebar-players-list">
+                            {sidebarEntries.map(([uid, { displayName, save, mapName, inBattle }]) => {
+                              const isCurrentUser = uid === currentUserId;
+                              return (
+                                <SidebarPlayerCard
+                                  key={uid}
+                                  uid={uid}
+                                  displayName={isCurrentUser ? (currentUsername || 'You') : displayName}
+                                  saveData={isCurrentUser ? mySaveData : save}
+                                  mapName={isCurrentUser ? undefined : mapName}
+                                  inBattle={isCurrentUser ? myInBattle : !!inBattle}
+                                  isReady={readyPlayers.has(uid)}
+                                  sortPokemon={sortPokemon}
+                                  isMonFainted={isMonFainted}
+                                  isPlayerDisconnected={isPlayerDisconnected}
+                                  resolveMetadata={resolveMetadata}
+                                />
+                              );
+                            })}
+                          </div>
+                        </SortableSidebarSection>
+                      );
+                    })}
+                  </SortableContext>
+                </DndContext>
               </aside>
             )}
           </div>
