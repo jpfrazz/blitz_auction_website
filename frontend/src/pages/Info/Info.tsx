@@ -848,8 +848,7 @@ const Info = () => (
         <h3 className="info-subheading"><strong>Mega Evolution</strong></h3>
         <ul>
           <li>Mega Evolution lasts three turns</li>
-          <li>At the end of the three turns, a mega-evolved Pokemon reverts to its base form</li>
-          <li>When a Pokemon reverts to its base form, any entrance ability (like Intimidate, Protean) resets and triggers again</li>
+          <li>At the end of the three turns, or when swapped out, a mega-evolved Pokemon reverts to its base form</li>
         </ul>
         <h3 className="info-subheading"><strong>Healing Moves</strong></h3>
         <ul>
@@ -889,7 +888,7 @@ const Info = () => (
         <ul className="info-answer">
           <li><strong>Anticipation:</strong> Raises the user's Evasiveness by 1 stage when the opposing Pokémon has a super-effective move.</li>
           <li><strong>Ball Fetch:</strong> Finds a held Sitrus Berry at the end of a boss battle.</li>
-          <li><strong>Forecast:</strong> Sets weather on entry based on the first move in the Pokémon's learnset (sun for fire, rain for water, hail for ice).</li>
+          <li><strong>Forecast:</strong> Starting at level 20, sets weather on entry based on the first move in the Pokémon's learnset (sun for fire, rain for water, hail for ice).</li>
           <li><strong>Frisk:</strong> Steals the opponent's held item on switch in.</li>
           <li><strong>Gluttony:</strong> Consuming a berry causes the pokemon to ransack the bag, eating 2-3 additional Oran Berries.</li>
           <li><strong>Grassy Pelt:</strong> Boosts 1.5x defense in Sun, not in Grassy Terrain.</li>
@@ -978,9 +977,16 @@ const Info = () => (
           <li>Moves where the attacker doesn't outspeed but KOs get +4</li>
           <li>If no move KOs, moves where the attacker KOs in fewest turns get +1</li>
           <li>In the event of a tie where multiple moves KO in the same number of turns, both moves get +1</li>
+          <li>In the event of a tie where multiple moves KO in the same number of turns, the AI will break the tie based on these factors, in the following priority order...</li>
+            <ul>
+              <li>Speed: If the Enemy AI is slower, has multiple moves that KO, but one is a priority move, it will choose that move</li>
+              <li>Accuracy: If the Enemy AI has multiple moves that KO at the same speed, it will pick the one that is most accurate</li>
+              <li>Minimum Damage Roll: Usually, the enemy AI calculates damage using the median roll. However, if the KOing moves are still tied at this point, it will check to make sure both still KO at minimum roll. If not, it will prefer the move that always KOs, even at minimum roll</li>
+              <li>Secondary Effect: Finally, if it's still tied, the AI will break the tie by priotizing moves with positive secondary effects (moves that can boost the user's stats, etc.) or by deprioritizing moves with negative secondary effects (self stat drops, recoil, etc.) </li>
+            </ul>
         </ul>
         <p className="info-answer">
-          Notably, this means if you have a Pokémon at just 1HP, and the opponent has four attacking moves of different types, it will pick between them randomly. They all KO.
+          Notably, this means if you have a Pokémon at just 1HP, and the opponent has four attacking moves of different types, and none of the above tie breaks apply, it will pick between them randomly. They're all equally good.
         </p>
         <p className="info-answer">
           Also, it means that if your opponent knows just two attacking moves which each 3HKO your Pokémon, it will pick between them randomly.
