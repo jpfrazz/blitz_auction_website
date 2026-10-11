@@ -59,7 +59,9 @@
 }
 
 .admin-controls-row select,
-.admin-table-wrap input {
+.admin-controls-row input,
+.admin-table-wrap input,
+.admin-table-wrap select {
   background: #0d1620;
   color: #eef4fb;
   border: 1px solid #32485f;

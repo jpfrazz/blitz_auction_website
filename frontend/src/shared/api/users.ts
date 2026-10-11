@@ -3,6 +3,7 @@ import {
   AdminDiscordUser,
   AdminDraftSummary,
   AdminDraftTeamPlacement,
+  AdminGuestAccount,
   AdminHallOfFameEligibleEntry,
   AdminHallOfFameTeamEntry,
   AdminRaceResult,
@@ -266,6 +267,18 @@ export async function updateAdminDiscordUser(
   payload: { mmr: number; wins: number; losses: number },
 ): Promise<void> {
   await axios.post(`/api/admin/users/${user_id}/update`, payload);
+}
+
+export async function fetchAdminGuests(): Promise<AdminGuestAccount[]> {
+  const response = await axios.get('/api/admin/guests');
+  return response.data;
+}
+
+export async function updateAdminGuestLink(
+  guest_id: string,
+  discord_user_id: string | null,
+): Promise<void> {
+  await axios.post(`/api/admin/guests/${guest_id}/link`, { discord_user_id });
 }
 
 export interface AdminBossBattleSubmission {

@@ -5,11 +5,13 @@ import {
   fetchAdminCompletedDrafts,
   fetchAdminDiscordUsers,
   fetchAdminDraftTeamPlacements,
+  fetchAdminGuests,
   fetchAdminHallOfFameEligible,
   fetchAdminRaceResults,
   removeAdminDraftTeam,
   updateAdminDiscordUser,
   updateAdminDraftPlacements,
+  updateAdminGuestLink,
   updateAdminHallOfFameTeam,
   approveBossBattleSubmission,
   fetchAdminBossBattleSubmissions,
@@ -23,6 +25,7 @@ import {
   AdminDiscordUser,
   AdminDraftSummary,
   AdminDraftTeamPlacement,
+  AdminGuestAccount,
   AdminHallOfFameEligibleEntry,
   AdminRaceResult,
   HallOfFamePokemon,
@@ -35,7 +38,7 @@ import HallOfFameTeamEditorModal from './HallOfFameTeamEditorModal';
 import CostBreakdownExportPanel from './CostBreakdownExportPanel';
 
 
-type AdminTab = 'draft-results' | 'discord-users' | 'upload-pokemon-data' | 'boss-battle-history' | 'boss-battle-submissions' | 'hall-of-fame' | 'race-results' | 'metrics' | 'cost-breakdown-export';
+type AdminTab = 'draft-results' | 'discord-users' | 'guest-linking' | 'upload-pokemon-data' | 'boss-battle-history' | 'boss-battle-submissions' | 'hall-of-fame' | 'race-results' | 'metrics' | 'cost-breakdown-export';
 
 const Admin: React.FC = () => {
   const [hasRefereeRole, setHasRefereeRole] = useState<boolean | null>(null);
@@ -53,6 +56,13 @@ const Admin: React.FC = () => {
   const [usersLoading, setUsersLoading] = useState(false);
   const [usersError, setUsersError] = useState<string | null>(null);
   const [usersSuccess, setUsersSuccess] = useState<string | null>(null);
+
+  const [guests, setGuests] = useState<AdminGuestAccount[]>([]);
+  const [guestsLoading, setGuestsLoading] = useState(false);
+  const [guestsError, setGuestsError] = useState<string | null>(null);
+  const [guestsSuccess, setGuestsSuccess] = useState<string | null>(null);
+  const [guestSearch, setGuestSearch] = useState('');
+  const [linkingGuestId, setLinkingGuestId] = useState<string | null>(null);
 
   const [uploadingPokemon, setUploadingPokemon] = useState(false);
   const [uploadingMoves, setUploadingMoves] = useState(false);
@@ -266,6 +276,58 @@ const Admin: React.FC = () => {
       .catch((err: any) => setUsersError(err?.message ?? 'Failed to load users.'))
       .finally(() => setUsersLoading(false));
   }, [hasRefereeRole, tab]);
+
+  const loadGuests = () => {
+    setGuestsLoading(true);
+    setGuestsError(null);
+    fetchAdminGuests()
+      .then((rows) => setGuests(rows))
+      .catch((err: any) => setGuestsError(err?.message ?? 'Failed to load guest accounts.'))
+      .finally(() => setGuestsLoading(false));
+  };
+
+  useEffect(() => {
+    if (!hasRefereeRole || tab !== 'guest-linking') return;
+
+    loadGuests();
+    if (discordUsers.length === 0) {
+      fetchAdminDiscordUsers()
+        .then((rows) => setDiscordUsers(rows))
+        .catch((err: any) => setGuestsError(err?.message ?? 'Failed to load users.'));
+    }
+  }, [hasRefereeRole, tab]);
+
+  const handleGuestLinkChange = async (guestId: string, discordUserId: string) => {
+    setGuestsError(null);
+    setGuestsSuccess(null);
+    setLinkingGuestId(guestId);
+    const target = discordUserId === '' ? null : discordUserId;
+    try {
+      await updateAdminGuestLink(guestId, target);
+      setGuests((current) =>
+        current.map((guest) => {
+          if (guest.user_id !== guestId) return guest;
+          const linkedUser = discordUsers.find((user) => user.user_id === target) ?? null;
+          return {
+            ...guest,
+            discord_user_id: target,
+            discord_user_name: linkedUser ? linkedUser.user_name : null,
+          };
+        }),
+      );
+      const guestName = guests.find((guest) => guest.user_id === guestId)?.user_name ?? guestId;
+      const userLabel = discordUsers.find((user) => user.user_id === target)?.user_name;
+      setGuestsSuccess(
+        target
+          ? `Linked ${guestName} to ${userLabel ?? target}.`
+          : `Unlinked ${guestName}.`,
+      );
+    } catch (err: any) {
+      setGuestsError(err?.response?.data ?? err?.message ?? 'Failed to update guest link.');
+    } finally {
+      setLinkingGuestId(null);
+    }
+  };
 
   useEffect(() => {
     if (!hasRefereeRole || tab !== 'boss-battle-history') return;
@@ -576,6 +638,13 @@ const Admin: React.FC = () => {
                   Discord Users
                 </button>
                 <button
+                  className={`admin-tab ${tab === 'guest-linking' ? 'active' : ''}`}
+                  onClick={() => setTab('guest-linking')}
+                  type="button"
+                >
+                  Guest Linking
+                </button>
+                <button
                   className={`admin-tab ${tab === 'upload-pokemon-data' ? 'active' : ''}`}
                   onClick={() => setTab('upload-pokemon-data')}
                   type="button"
@@ -763,6 +832,94 @@ const Admin: React.FC = () => {
                               </td>
                             </tr>
                           ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {tab === 'guest-linking' && (
+                <div className="admin-tab-content">
+                  <h2>Guest Linking</h2>
+                  <p className="admin-submissions-hint">
+                    Link a guest account to a Discord account so the runs played on that guest account
+                    also appear on the Discord account&apos;s player profile. This only affects how runs
+                    are displayed, not the underlying race data.
+                  </p>
+                  {guestsError && <div className="admin-message admin-error">{guestsError}</div>}
+                  {guestsSuccess && <div className="admin-message admin-success">{guestsSuccess}</div>}
+
+                  <div className="admin-controls-row">
+                    <label>
+                      Search:
+                      <input
+                        type="text"
+                        placeholder="Guest or Discord name"
+                        value={guestSearch}
+                        onChange={(e) => setGuestSearch(e.target.value)}
+                      />
+                    </label>
+                    <button type="button" className="button" onClick={loadGuests} disabled={guestsLoading}>
+                      {guestsLoading ? 'Refreshing...' : 'Refresh'}
+                    </button>
+                  </div>
+
+                  {guestsLoading && guests.length === 0 ? (
+                    <div className="admin-message">Loading guest accounts...</div>
+                  ) : guests.length === 0 ? (
+                    <div className="admin-message">No guest accounts found.</div>
+                  ) : (
+                    <div className="admin-table-wrap">
+                      <table>
+                        <thead>
+                          <tr>
+                            <th>Guest Name</th>
+                            <th>Guest ID</th>
+                            <th>Runs</th>
+                            <th>Linked Discord Account</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {guests
+                            .filter((guest) => {
+                              const query = guestSearch.trim().toLowerCase();
+                              if (!query) return true;
+                              return (
+                                guest.user_name.toLowerCase().includes(query) ||
+                                (guest.discord_user_name ?? '').toLowerCase().includes(query) ||
+                                guest.user_id.toLowerCase().includes(query) ||
+                                (guest.discord_user_id ?? '').toLowerCase().includes(query)
+                              );
+                            })
+                            .map((guest) => (
+                              <tr key={guest.user_id}>
+                                <td>{guest.user_name}</td>
+                                <td>{guest.user_id}</td>
+                                <td>{guest.run_count}</td>
+                                <td>
+                                  <select
+                                    value={guest.discord_user_id ?? ''}
+                                    disabled={linkingGuestId === guest.user_id}
+                                    onChange={(e) => handleGuestLinkChange(guest.user_id, e.target.value)}
+                                  >
+                                    <option value="">Not linked</option>
+                                    {discordUsers.map((user) => (
+                                      <option key={user.user_id} value={user.user_id}>
+                                        {user.user_name}
+                                        {user.global_name ? ` (${user.global_name})` : ''}
+                                      </option>
+                                    ))}
+                                    {guest.discord_user_id &&
+                                      !discordUsers.some((user) => user.user_id === guest.discord_user_id) && (
+                                        <option value={guest.discord_user_id}>
+                                          {guest.discord_user_name ?? guest.discord_user_id}
+                                        </option>
+                                      )}
+                                  </select>
+                                </td>
+                              </tr>
+                            ))}
                         </tbody>
                       </table>
                     </div>

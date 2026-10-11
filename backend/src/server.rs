@@ -240,6 +240,11 @@ impl Server {
                 "/admin/users/{user_id}/update",
                 post(handlers::update_admin_discord_user),
             )
+            .route("/admin/guests", get(handlers::get_admin_guests))
+            .route(
+                "/admin/guests/{guest_id}/link",
+                post(handlers::update_admin_guest_link),
+            )
             .route("/admin/boss-battle-history", get(handlers::get_admin_boss_battle_history))
             .route(
                 "/admin/boss-battle-history/{id}/trainer",

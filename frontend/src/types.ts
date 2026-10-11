@@ -345,6 +345,15 @@ export interface AdminDiscordUser {
   created_at: string;
 }
 
+export interface AdminGuestAccount {
+  user_id: string;
+  user_name: string;
+  discord_user_id: string | null;
+  discord_user_name: string | null;
+  run_count: number;
+  created_at: string;
+}
+
 export interface AdminMetricSummary {
   path: string;
   method: string;

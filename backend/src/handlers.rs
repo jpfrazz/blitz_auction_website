@@ -251,6 +251,22 @@ pub struct AdminUpdateDiscordUserRequest {
     pub losses: i32,
 }
 
+#[derive(Clone, Debug, Serialize)]
+pub struct AdminGuestAccount {
+    pub user_id: String,
+    pub user_name: String,
+    pub discord_user_id: Option<String>,
+    pub discord_user_name: Option<String>,
+    pub run_count: i64,
+    pub created_at: chrono::DateTime<chrono::Utc>,
+}
+
+#[derive(Clone, Debug, Deserialize)]
+pub struct AdminLinkGuestRequest {
+    /// Discord user id to link the guest account to. `None` unlinks the guest.
+    pub discord_user_id: Option<String>,
+}
+
 #[derive(serde::Serialize, serde::Deserialize)]
 pub struct AdminUpdateBossBattleTrainerRequest {
     pub trainer_id: i32,
@@ -296,7 +312,7 @@ fn require_referee_user(user: Option<User>) -> Result<User, AppError> {
 async fn get_user_won_auctions_for_draft(
     state: &ServerState,
     draft_id: Uuid,
-    user_id: &str,
+    account_ids: &[String],
 ) -> Result<Vec<MatchHistoryAuction>, AppError> {
     let auction_rows = sqlx::query(
         "SELECT a.auction_id, a.pokedex_id, p.name, a.form, a.draft_id, a.draft_order, a.state,
@@ -305,11 +321,11 @@ async fn get_user_won_auctions_for_draft(
          FROM auctions a
          JOIN pokemon p ON p.pokedex_id = a.pokedex_id AND p.form = a.form
          WHERE a.draft_id = $1
-           AND a.winning_user_id = $2
+           AND (a.winning_user_id = ANY($2) OR a.winning_guest_id = ANY($2))
          ORDER BY a.draft_order ASC",
     )
     .bind(draft_id)
-    .bind(user_id)
+    .bind(account_ids)
     .fetch_all(&state.db_pool)
     .await
     .map_err(|e: sqlx::Error| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
@@ -851,6 +867,25 @@ pub async fn get_match_history_by_user_id(
     State(state): State<ServerState>,
     Path(user_id): Path<String>,
 ) -> Result<Json<Vec<MatchHistoryTeam>>, AppError> {
+    // A player's profile should also include runs they played on any guest
+    // account an admin has linked to their Discord account (guests.discord_user_id).
+    // The passed id itself is always included so a guest viewing their own
+    // profile (or a direct guest id lookup) still works.
+    let linked_guest_rows = sqlx::query("SELECT user_id FROM guests WHERE discord_user_id = $1")
+        .bind(&user_id)
+        .fetch_all(&state.db_pool)
+        .await
+        .map_err(|e: sqlx::Error| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    let mut account_ids: Vec<String> = Vec::with_capacity(linked_guest_rows.len() + 1);
+    account_ids.push(user_id.clone());
+    for row in linked_guest_rows {
+        account_ids.push(
+            row.try_get("user_id")
+                .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?,
+        );
+    }
+
     let team_rows = sqlx::query(
         "SELECT t.team_id, t.user_id, t.guest_id, t.draft_id,
                 d.ranked, d.draft_type, (SELECT COUNT(*)::INT FROM teams team_counts WHERE team_counts.draft_id = t.draft_id) AS team_count,
@@ -858,11 +893,11 @@ pub async fn get_match_history_by_user_id(
                 t.pre_match_mmr, t.hall_of_fame_team, t.updated_at, d.created_at
          FROM teams t
           JOIN drafts d ON d.draft_id = t.draft_id
-                 WHERE (t.user_id = $1 OR t.guest_id = $1)
+                 WHERE (t.user_id = ANY($1) OR t.guest_id = ANY($1))
             AND d.state = 'COMPLETED'
          ORDER BY d.created_at DESC",
     )
-    .bind(&user_id)
+    .bind(&account_ids)
     .fetch_all(&state.db_pool)
     .await
     .map_err(|e: sqlx::Error| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
@@ -872,7 +907,7 @@ pub async fn get_match_history_by_user_id(
         let draft_uuid: Uuid = row
             .try_get("draft_id")
             .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-        let auctions_won = get_user_won_auctions_for_draft(&state, draft_uuid, &user_id).await?;
+        let auctions_won = get_user_won_auctions_for_draft(&state, draft_uuid, &account_ids).await?;
 
         let hall_of_fame_value: Option<serde_json::Value> = row
             .try_get("hall_of_fame_team")
@@ -4263,6 +4298,91 @@ pub async fn update_admin_discord_user(
     .execute(&state.db_pool)
     .await
     .map_err(|e: sqlx::Error| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    Ok(())
+}
+
+#[debug_handler]
+pub async fn get_admin_guests(
+    State(state): State<ServerState>,
+    auth_session: AuthSession<AuthBackend>,
+) -> Result<Json<Vec<AdminGuestAccount>>, AppError> {
+    let _ = require_referee_user(auth_session.user)?;
+
+    let rows = sqlx::query(
+        "SELECT g.user_id, g.user_name, g.discord_user_id, g.created_at,
+                u.user_name AS discord_user_name,
+                (SELECT COUNT(*)::BIGINT FROM teams t WHERE t.guest_id = g.user_id) AS run_count
+         FROM guests g
+         LEFT JOIN users u ON u.user_id = g.discord_user_id
+         ORDER BY g.created_at DESC",
+    )
+    .fetch_all(&state.db_pool)
+    .await
+    .map_err(|e: sqlx::Error| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    let mut guests = Vec::with_capacity(rows.len());
+    for row in rows {
+        guests.push(AdminGuestAccount {
+            user_id: row
+                .try_get("user_id")
+                .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?,
+            user_name: row
+                .try_get("user_name")
+                .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?,
+            discord_user_id: row
+                .try_get("discord_user_id")
+                .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?,
+            discord_user_name: row
+                .try_get("discord_user_name")
+                .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?,
+            run_count: row
+                .try_get("run_count")
+                .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?,
+            created_at: row
+                .try_get("created_at")
+                .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?,
+        });
+    }
+
+    Ok(Json(guests))
+}
+
+#[debug_handler]
+pub async fn update_admin_guest_link(
+    State(state): State<ServerState>,
+    Path(guest_id): Path<String>,
+    auth_session: AuthSession<AuthBackend>,
+    Json(request): Json<AdminLinkGuestRequest>,
+) -> Result<(), AppError> {
+    let _ = require_referee_user(auth_session.user)?;
+
+    if let Some(discord_user_id) = request.discord_user_id.as_deref() {
+        // Guard against linking to a non-existent / mistyped Discord user id.
+        let exists = sqlx::query("SELECT 1 FROM users WHERE user_id = $1")
+            .bind(discord_user_id)
+            .fetch_optional(&state.db_pool)
+            .await
+            .map_err(|e: sqlx::Error| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+        if exists.is_none() {
+            return Err((
+                StatusCode::NOT_FOUND,
+                "discord user does not exist".to_string(),
+            ));
+        }
+    }
+
+    let result = sqlx::query("UPDATE guests SET discord_user_id = $1 WHERE user_id = $2")
+        .bind(&request.discord_user_id)
+        .bind(&guest_id)
+        .execute(&state.db_pool)
+        .await
+        .map_err(|e: sqlx::Error| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    if result.rows_affected() == 0 {
+        return Err((StatusCode::NOT_FOUND, "guest does not exist".to_string()));
+    }
 
     Ok(())
 }
