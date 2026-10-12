@@ -7,6 +7,7 @@ import {
   CartesianGrid,
   Tooltip,
   ResponsiveContainer,
+  ReferenceLine,
 } from 'recharts';
 import { StatsPageResponse } from '../../types';
 
@@ -39,6 +40,16 @@ const resolveIdentity = (name: string, form: string) => {
   const key = `${currentName}${effectiveForm ? '-' + effectiveForm : ''}`;
   return { name: currentName, form: effectiveForm, key };
 };
+
+function calculateQuantile(sortedData: number[], q: number) {
+  const pos = (sortedData.length - 1) * q;
+  const base = Math.floor(pos);
+  const rest = pos - base;
+  if (sortedData[base + 1] !== undefined) {
+    return sortedData[base] + rest * (sortedData[base + 1] - sortedData[base]);
+  }
+  return sortedData[base];
+}
 
 const PickHistoryTooltip = ({ active, payload, label }: any) => {
   if (active && payload && payload.length) {
@@ -140,13 +151,34 @@ const PokemonPickHistoryChartBody: React.FC<PokemonHistoryChartProps> = ({ pokem
 
     if (events.length === 0) return null;
 
-    const data = events.map((e, index) => ({
-      pointNumber: index + 1,
-      pickNumber: e.pickNumber as number,
-      date: e.formattedDate,
-      draftId: e.draftId,
-      player: e.player,
-    }));
+    // Statistical outlier detection using IQR "fences", mirroring the Sale
+    // History chart. Pick/ban numbers below Q1 - 1.5 x IQR (lower fence) or
+    // above Q3 + 2.0 x IQR (upper fence) are treated as outliers.
+    const picksForBounds = events.map(e => e.pickNumber as number);
+    let lowerBound: number | null = null;
+    let upperBound: number | null = null;
+
+    if (picksForBounds.length > 1) {
+      const sortedPicks = [...picksForBounds].sort((a, b) => a - b);
+      const q1 = calculateQuantile(sortedPicks, 0.25);
+      const q3 = calculateQuantile(sortedPicks, 0.75);
+      const iqr = q3 - q1;
+
+      lowerBound = q1 - 1.5 * iqr;
+      upperBound = q3 + 2.0 * iqr;
+    }
+
+    const data = events.map((e, index) => {
+      const pickNumber = e.pickNumber as number;
+      return {
+        pointNumber: index + 1,
+        pickNumber,
+        isOutlier: (lowerBound !== null && pickNumber < lowerBound) || (upperBound !== null && pickNumber > upperBound),
+        date: e.formattedDate,
+        draftId: e.draftId,
+        player: e.player,
+      };
+    });
 
     const xAxisTicks = [];
     const tickInterval = data.length > 50 ? 10 : 5;
@@ -155,12 +187,12 @@ const PokemonPickHistoryChartBody: React.FC<PokemonHistoryChartProps> = ({ pokem
     }
     if (xAxisTicks.length === 0 && data.length > 0) xAxisTicks.push(1);
 
-    return { data, xAxisTicks };
+    return { data, lowerBound, upperBound, xAxisTicks };
   }, [pokemonKey, stats]);
 
   if (!chartData || chartData.data.length === 0) return null;
 
-  const { data, xAxisTicks } = chartData;
+  const { data, lowerBound, upperBound, xAxisTicks } = chartData;
 
   return (
     <ResponsiveContainer width="100%" height="100%">
@@ -182,12 +214,22 @@ const PokemonPickHistoryChartBody: React.FC<PokemonHistoryChartProps> = ({ pokem
           label={{ value: 'Pick/Ban #', angle: -90, position: 'insideLeft', fill: '#666', fontSize: 11 }}
         />
         <Tooltip content={<PickHistoryTooltip />} />
+
+        {(upperBound !== null && upperBound > 1 && upperBound < 29) && <ReferenceLine y={upperBound} stroke="#8B0000" strokeDasharray="5 5" label={{ value: 'Outlier Bound', position: 'right', fill: '#8B0000', fontSize: 10 }} />}
+        {(lowerBound !== null && lowerBound > 1 && lowerBound < 29) && <ReferenceLine y={lowerBound} stroke="#8B0000" strokeDasharray="5 5" />}
+
         <Line
           type="monotone"
           dataKey="pickNumber"
           stroke="#7CB946"
           strokeWidth={0}
-          dot={{ r: 4, fill: '#7CB946' }}
+          dot={(props: any) => {
+            const { cx, cy, payload } = props;
+            const fill = payload.isOutlier ? '#8B0000' : '#7CB946';
+            return (
+              <circle key={`dot-${payload.pointNumber}`} cx={cx} cy={cy} r={4} fill={fill} stroke="none" />
+            );
+          }}
           activeDot={{ r: 6, fill: '#fff', stroke: '#7CB946' }}
         />
       </LineChart>
