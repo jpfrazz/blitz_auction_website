@@ -63,6 +63,16 @@ function badgeReachSeconds(save: SaveData | null | undefined, badgeCount: number
   return gym.hours * 3600 + gym.minutes * 60 + gym.seconds;
 }
 
+const getHpBarInfo = (mon: any, fainted: boolean): { pct: number; tone: 'green' | 'yellow' | 'red' | 'grey' } => {
+  const maxHp = typeof mon.max_hp === 'number' && mon.max_hp > 0 ? mon.max_hp : 0;
+  const hp = typeof mon.hp === 'number' ? Math.max(0, mon.hp) : 0;
+  const pct = maxHp > 0 ? Math.max(0, Math.min(1, hp / maxHp)) : 0;
+  if (fainted || hp <= 0) return { pct: 1, tone: 'grey' };
+  if (pct > 0.5) return { pct, tone: 'green' };
+  if (pct > 0.2) return { pct, tone: 'yellow' };
+  return { pct, tone: 'red' };
+};
+
 const SpectatePage: React.FC = () => {
   const { draftId } = useParams<{ draftId?: string }>();
   const [draft, setDraft] = useState<any>(null);
@@ -231,8 +241,8 @@ const SpectatePage: React.FC = () => {
           // Lightweight live location ping from an emulator's heap read.
           if (msg.type === 'LocationUpdate') {
             const { user_id, map_name, in_battle } = msg.data as { user_id: string; map_name: string; in_battle?: boolean };
-            setLiveMaps((prev) => ({ ...prev, [user_id]: map_name }));
-            setLiveBattles((prev) => ({ ...prev, [user_id]: !!in_battle }));
+            setLiveMaps((prev) => (prev[user_id] === map_name ? prev : { ...prev, [user_id]: map_name }));
+            setLiveBattles((prev) => (!!prev[user_id] === !!in_battle ? prev : { ...prev, [user_id]: !!in_battle }));
           }
           if (msg.type === 'DraftUpdate') {
             const teams = (msg.data?.teams ?? []) as Array<{
@@ -432,9 +442,10 @@ const SpectatePage: React.FC = () => {
                           const abilityName = speciesData?.abilities?.[mon.ability_num] || 'Unknown';
                           const fainted = isMonFainted(uid, mon);
                           const hasNickname = isActuallyNicknamed(mon.nickname, speciesId, realName);
+                          const inBattleHp = !!liveBattles[uid] && mon._isParty ? getHpBarInfo(mon, fainted) : null;
 
                           return (
-                            <span key={`icon-${i}`} className="mini-icon-wrapper spectate">
+                            <span key={`icon-${i}`} className={`mini-icon-wrapper spectate${inBattleHp ? ' has-hp-bar' : ''}`}>
                               <img
                                 src={`/MiniIcons/${iconName}.png`}
                                 alt={mon.nickname || realName}
@@ -443,6 +454,11 @@ const SpectatePage: React.FC = () => {
                                 title={`${hasNickname ? `${mon.nickname} (${realName})` : realName} (${abilityName}) - ${mon.nature || 'Unknown'} Nature${mon.nature ? NATURE_EFFECTS[mon.nature] : ''}${mon.ivs ? `\nIVs: ${mon.ivs.hp}/${mon.ivs.atk}/${mon.ivs.def}/${mon.ivs.spa}/${mon.ivs.spd}/${mon.ivs.spe}` : ''}${mon.moves && mon.moves.some((id: number) => id > 0) ? `\nMoves: ${mon.moves.filter((id: number) => id > 0).map((id: number) => MOVES[id]?.name).filter(Boolean).join(', ')}` : ''}`}
                                 onError={(e) => { (e.target as HTMLImageElement).src = '/MiniIcons/question.png'; }}
                               />
+                              {inBattleHp && (
+                                <span className={`mini-hp-bar ${inBattleHp.tone}`}>
+                                  <span className="mini-hp-fill" style={{ width: `${inBattleHp.pct * 100}%` }} />
+                                </span>
+                              )}
                             </span>
                           );
                         })}

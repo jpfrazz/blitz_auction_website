@@ -588,6 +588,16 @@ const cardEntries = (saveData: SaveData | null): any[] => [
   ...(saveData?.box ?? []).map((m: any) => ({ ...m, _isParty: false })),
 ];
 
+const getHpBarInfo = (mon: any, fainted: boolean): { pct: number; tone: 'green' | 'yellow' | 'red' | 'grey' } => {
+  const maxHp = typeof mon.max_hp === 'number' && mon.max_hp > 0 ? mon.max_hp : 0;
+  const hp = typeof mon.hp === 'number' ? Math.max(0, mon.hp) : 0;
+  const pct = maxHp > 0 ? Math.max(0, Math.min(1, hp / maxHp)) : 0;
+  if (fainted || hp <= 0) return { pct: 1, tone: 'grey' };
+  if (pct > 0.5) return { pct, tone: 'green' };
+  if (pct > 0.2) return { pct, tone: 'yellow' };
+  return { pct, tone: 'red' };
+};
+
 const OverlayPlayerCard = React.memo(function OverlayPlayerCard({
   uid,
   displayName,
@@ -640,9 +650,10 @@ const OverlayPlayerCard = React.memo(function OverlayPlayerCard({
             const fainted = isMonFainted(uid, mon);
             const prevFainted = i > 0 ? isMonFainted(uid, arr[i - 1]) : false;
             const isFirstFainted = fainted && !prevFainted;
+            const inBattleHp = inBattle && mon._isParty ? getHpBarInfo(mon, fainted) : null;
 
             return (
-              <span key={`overlay-icon-${i}`} className={`mini-icon-wrapper overlay ${isFirstFainted ? 'first-fainted' : ''}`}>
+              <span key={`overlay-icon-${i}`} className={`mini-icon-wrapper overlay ${isFirstFainted ? 'first-fainted' : ''}${inBattleHp ? ' has-hp-bar' : ''}`}>
                 <img
                   src={`/MiniIcons/${iconName}.png`}
                   alt={mon.nickname || realName}
@@ -651,6 +662,11 @@ const OverlayPlayerCard = React.memo(function OverlayPlayerCard({
                   title={`${realName}`}
                   onError={(e) => { (e.target as HTMLImageElement).src = '/MiniIcons/question.png'; }}
                 />
+                {inBattleHp && (
+                  <span className={`mini-hp-bar ${inBattleHp.tone}`}>
+                    <span className="mini-hp-fill" style={{ width: `${inBattleHp.pct * 100}%` }} />
+                  </span>
+                )}
               </span>
             );
           })}
@@ -733,9 +749,10 @@ const SidebarPlayerCard = React.memo(function SidebarPlayerCard({
             const prevFainted = i > 0 ? isMonFainted(uid, arr[i - 1]) : false;
             const isFirstFainted = fainted && !prevFainted;
             const hasNickname = isActuallyNicknamed(mon.nickname, speciesId, realName);
+            const inBattleHp = inBattle && mon._isParty ? getHpBarInfo(mon, fainted) : null;
 
             return (
-              <span key={`icon-${i}`} className={`mini-icon-wrapper sidebar ${isFirstFainted ? 'first-fainted' : ''}`}>
+              <span key={`icon-${i}`} className={`mini-icon-wrapper sidebar ${isFirstFainted ? 'first-fainted' : ''}${inBattleHp ? ' has-hp-bar' : ''}`}>
                 <img
                   src={`/MiniIcons/${iconName}.png`}
                   alt={mon.nickname || realName}
@@ -744,6 +761,11 @@ const SidebarPlayerCard = React.memo(function SidebarPlayerCard({
                   title={`${hasNickname ? `${mon.nickname} (${realName})` : realName} (${abilityName}) - ${mon.nature || 'Unknown'} Nature${mon.nature ? NATURE_EFFECTS[mon.nature] : ''}${mon.ivs ? `\nIVs: ${mon.ivs.hp}/${mon.ivs.atk}/${mon.ivs.def}/${mon.ivs.spa}/${mon.ivs.spd}/${mon.ivs.spe}` : ''}${mon.moves && mon.moves.some((id: number) => id > 0) ? `\nMoves: ${mon.moves.filter((id: number) => id > 0).map((id: number) => MOVES[id]?.name).filter(Boolean).join(', ')}` : ''}`}
                   onError={(e) => { (e.target as HTMLImageElement).src = '/MiniIcons/question.png'; }}
                 />
+                {inBattleHp && (
+                  <span className={`mini-hp-bar ${inBattleHp.tone}`}>
+                    <span className="mini-hp-fill" style={{ width: `${inBattleHp.pct * 100}%` }} />
+                  </span>
+                )}
               </span>
             );
           })}
@@ -1085,6 +1107,7 @@ const EmulatorPage: React.FC = () => {
   const ewramScanRetryAtRef = useRef(0);
   const lastPostedMapRef = useRef<string | null>(null);
   const lastPostedBattleRef = useRef(false);
+  const lastBattlePingAtRef = useRef(0);
   const LIVE_MAP_SCAN_CHUNK = 2 * 1024 * 1024;
   const LIVE_MAP_SCAN_RETRY_MS = 10000;
   // Inferred PC box. Blitz only writes the flash on manual saves, so the .sav
@@ -1101,6 +1124,11 @@ const EmulatorPage: React.FC = () => {
   const lastPartyPidsRef = useRef<Set<number>>(new Set());
   const LIVE_POLL_MS = 750;
   const LIVE_SCAN_BUDGET_MS = 120;
+  // While a player is in a battle, re-announce to the DB-free /location
+  // endpoint on this cadence. The battle-enter LocationUpdate is one-shot, so
+  // without this a viewer who loads mid-battle never learns the player is
+  // fighting and their HP bars stay hidden.
+  const LIVE_BATTLE_PING_MS = 10000;
   // A full pass is only restarted once per LIVE_SCAN_MIN_INTERVAL_MS — the
   // backoff is the cost saver while no party exists (brand-new file, still in
   // the bedroom): every pass over the whole heap eats up to the budget per
@@ -1768,6 +1796,16 @@ const EmulatorPage: React.FC = () => {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ map_name: rawName, in_battle: inBattle }),
+            credentials: 'include',
+          }).catch(() => { });
+        }
+      } else if (inBattle && Date.now() - lastBattlePingAtRef.current >= LIVE_BATTLE_PING_MS) {
+        lastBattlePingAtRef.current = Date.now();
+        if (draftId) {
+          fetch(`/api/drafts/${draftId}/location`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ map_name: rawName, in_battle: true }),
             credentials: 'include',
           }).catch(() => { });
         }
