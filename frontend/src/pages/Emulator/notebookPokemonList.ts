@@ -444,7 +444,7 @@ export function buildNotebookWithdrawSequence(
 
   if (batches.length === 0) return [];
 
-  const totalItems = NOTEBOOK_POKEMON_LIST.length + 3;
+  const totalItems = NOTEBOOK_POKEMON_LIST.length + 4;
   const maxScroll = totalItems - PAGE_SIZE;
   const inputs: ButtonInput[] = [];
 

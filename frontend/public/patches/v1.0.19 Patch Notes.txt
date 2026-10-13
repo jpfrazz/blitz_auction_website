@@ -1,0 +1,49 @@
+10/13/2026
+
+-----------------------------------------------
+Random Team
+-----------------------------------------------
+
+There's now a new option at the bottom of the notebook: Random Team
+
+Choosing it randomly generates you a diverse, balanced team of 8 Pokémon. You can repeatedly select it to keep generating teams until you get one that you like.
+
+This option is meant to offer a casual way to create a team for players looking for a single player experience. There aren't any hard rules associated with it--there's nothing stopping you from choosing Random Team, then also hand picking a couple of your favorites as 9th and 10th additions to round out the comp.
+
+For those curious about how the random team is generated, see below.
+
+//Extended Commentary Start
+Internally, each Pokémon in the notebook now has an entry that looks like this:
+    {SPECIES_CHEWTLE, 14, GIFT_POOL_FLANNERY, TYPE_WATER, TYPE_ROCK},
+
+The 2nd field is the number of "points" the Pokémon costs. All Random Teams will have a total points cost between 78 and 82. This makes it so that, in general, all random teams are at roughly the same raw power level. The average Pokémon costs 10 points. Chewtle is pretty strong, so he costs 14.
+
+The 3rd field is the gym leader that the Pokémon is considered to have a favorable matchup against. All teams are guaranteed at least one "favorable matchup" Pokémon into Brawly, Norman, Flannery and Juan/Wallace.
+
+The 4th and 5th fields are type. All teams are guaranteed to have no more than 2 Pokémon of the same type.
+
+For the full list of all Pokémon and their costs, you can check out sGiftPokemonList on the github.
+
+I know that this system is not perfect. I'm sure that somebody will comb through the list and show a theoretical team of 8 that leaves a particular fight unwinnable. But as far as a simple system for generating a balanced team goes, this is a vast improvement over just picking Random 8 times, and it will suffice for now.
+//Extended Commentary End
+
+-----------------------------------------------
+QoL
+-----------------------------------------------
+
+After exiting Scott's shop, Scott now asks if you're sure you're finished
+//Gives you a chance to return to the shop in case you accidentally exit out prematurely
+
+
+-----------------------------------------------
+Bug Fixes
+-----------------------------------------------
+
+Basculin and Basculegion learn the TM Scald
+
+Fixed Mega Ability Tracking
+//Previously, the enemy AI didn't update its internal tracking of your Mega Pokémon's ability until the start of the next turn after it mega evolved. This could lead to weird switch-in AI behavior where the enemy didn't considering Salamence Aerialate or Feraligatr Dragonize.
+
+Fixed Mimikyu Disguise regenerating
+//Mimikyu's Disguise no longer resets when swapped out
+//Thanks Certified for reporting

@@ -232,7 +232,7 @@ const FAQ = () => (
           <h2 className="faq-question">Can I play by myself without drafting?</h2>
           <hr />
           <p className="faq-answer">
-            Yes! The notebook includes a "Random" option at the bottom of its list. Choose this option eight times to generate yourself a random team of Pokémon, then get racing! (Or, pick your team manually if you want to play with your favorites!)
+            Yes! The notebook in the player's room includes a "Random Team" option at the bottom of its list. Choose this option to generate yourself a random team of Pokémon, then get racing! (And, if you'd like to make things a bit easier, pick a couple of your favorites to round out the team.)
           </p>
         </section>
 
