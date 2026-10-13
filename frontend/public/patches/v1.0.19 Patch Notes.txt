@@ -4,7 +4,7 @@
 Random Team
 -----------------------------------------------
 
-There's now a new option at the bottom of the notebook: Random Team
+There's a new option at the bottom of the notebook: Random Team
 
 Choosing it randomly generates you a diverse, balanced team of 8 Pokémon. You can repeatedly select it to keep generating teams until you get one that you like.
 
@@ -42,7 +42,7 @@ Bug Fixes
 Basculin and Basculegion learn the TM Scald
 
 Fixed Mega Ability Tracking
-//Previously, the enemy AI didn't update its internal tracking of your Mega Pokémon's ability until the start of the next turn after it mega evolved. This could lead to weird switch-in AI behavior where the enemy didn't considering Salamence Aerialate or Feraligatr Dragonize.
+//Previously, the enemy AI didn't update its internal tracking of your Mega Pokémon's ability until the start of the next turn after it mega evolved. This could lead to weird switch-in AI behavior where the enemy didn't consider Salamence Aerialate or Feraligatr Dragonize.
 
 Fixed Mimikyu Disguise regenerating
 //Mimikyu's Disguise no longer resets when swapped out
