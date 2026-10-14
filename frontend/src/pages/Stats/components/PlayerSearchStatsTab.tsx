@@ -478,7 +478,7 @@ const PlayerSearchStatsTab: React.FC<PlayerSearchStatsTabProps> = ({
       .map((p) => ({ ...p, gamesPlayed: playerGamesMap.get(p.user_id) || 0 }))
       .filter((p) => p.gamesPlayed > 0)
       .sort((a, b) => b.gamesPlayed - a.gamesPlayed)
-      .slice(0, 50);
+      .slice(0, 70);
   }, [stats?.players, playerGamesMap]);
 
   const pokemonDraftSummary = useMemo<PokemonDraftSummary[]>(() => {

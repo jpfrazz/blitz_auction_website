@@ -10,6 +10,7 @@ Runs the full pipeline:
      (e.g. all Gigantamax formes, every Arceus/Silvally type forme,
      Calyrex-Ice, Kommo-o-Totem, Pikachu-Rock-Star, Pikachu-Starter, etc.)
   5. Applies obtainable tiers from pokemon.csv
+  5b. Applies dex-only obtainability overrides for entries the CSV can't express
   6. Applies correct evolution methods from pokemon.csv (including Guru / Oracle items)
   7. Applies egg moves from egg_moves.h
 
@@ -300,6 +301,51 @@ def apply_obtainable(data: dict) -> int:
     return updated
 
 # ══════════════════════════════════════════════════════════════════════════════
+#  STEP 5b – Dex-only obtainability overrides
+# ══════════════════════════════════════════════════════════════════════════════
+#
+# A few in-game Pokémon can't be expressed through pokemon.csv because that CSV
+# also seeds the auction database, which deliberately combines or omits some
+# entries (e.g. a single "Plusle and Minun" row, base rows for regional formes).
+# These overrides adjust ONLY the ComprehensiveDex tier; pokemon.csv and the
+# auction DB are left untouched.
+#
+#   True  = obtainable (green check mark, present in the game)
+#   False = not-in-game ("X")
+#
+_OBTAINABILITY_OVERRIDES = {
+    # Combined in pokemon.csv as the single "Plusle and Minun" row (num 311),
+    # so Minun (num 312) never matches on its own.
+    "minun": True,
+    # Battle formes whose base species is already obtainable.
+    "mimikyubusted": True,
+    "cherrimsunshine": True,
+    # Only the regional forme is obtainable in-game, not the base forme. The
+    # pokemon.csv rows carry the regional typing but leave the form blank, so
+    # the base forme would otherwise receive the check mark.
+    "zigzagoongalar": True,
+    "zigzagoon": False,
+    "basculinwhitestriped": True,
+    "basculin": False,
+}
+
+
+def apply_obtainability_overrides(data: dict) -> int:
+    step("Applying dex-only obtainability overrides")
+
+    applied = 0
+    for key, obtainable in _OBTAINABILITY_OVERRIDES.items():
+        entry = data.get(key)
+        if entry is None:
+            print(f"  ! override target not found in dex, skipping: {key}")
+            continue
+        entry["tier"] = "obtainable" if obtainable else "not-in-game"
+        applied += 1
+
+    print(f"  ✓ Applied {applied} dex-only override(s)")
+    return applied
+
+# ══════════════════════════════════════════════════════════════════════════════
 #  STEP 6 – Apply evolution methods from pokemon.csv
 # ══════════════════════════════════════════════════════════════════════════════
 
@@ -548,6 +594,7 @@ def main():
     removed_keys = remove_hidden_species(species_data)
 
     apply_obtainable(species_data)
+    apply_obtainability_overrides(species_data)
     apply_evo_methods(species_data)
 
     # Write back species.js

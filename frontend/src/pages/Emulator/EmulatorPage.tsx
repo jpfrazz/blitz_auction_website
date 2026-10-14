@@ -1875,17 +1875,24 @@ const EmulatorPage: React.FC = () => {
       }
     }
 
-    // Hot-detection: while the live region is unproven, watch every copy. The
-    // first one whose bytes change is gPlayerParty (gameplay writes to it, the
-    // buffers don't) — unless it merely converged to another copy (a manual
-    // save copying the live party into the slot buffer), in which case the
-    // other copy is the source of truth. Multiple simultaneous changes are left
-    // for the fast path and resolve on the next interaction. Copies living in
-    // the flash save-slot buffer are the ROTATING save image, not live RAM —
-    // they must never be pinned or watched, or a mid-battle save rotation reads
-    // garbage shapes as the party. Re-splice in place: the region can be
-    // located after the candidates list was finalized, and this keeps the
-    // per-copy hash array aligned.
+    // Hot-detection: watch every copy of the party on EVERY poll. Gameplay
+    // writes to the LIVE party (gPlayerParty) constantly — HP, PP, exp, levels
+    // — while the dormant twins (EWRAM gSaveBlock1's snapshot and any save-slot
+    // buffer copy) only change on a manual save. So whichever copy's bytes
+    // changed since the last poll is the live one; re-pin to it even after the
+    // offset is "proven". This is essential because Blitz's auto-heal
+    // (MedKitSemiHealParty) writes ONLY gPlayerParty at battle start: a save
+    // made while the party was full leaves gSaveBlock1 also full, so when the
+    // auto-heal brings the live party back to full the two twins momentarily
+    // match. The old code saw a single changed copy, found an equal twin, and
+    // pinned the twin — after which gPlayerParty detached (took damage) and the
+    // sidebar froze. We no longer prefer a "converged" twin: the copy that
+    // changed is the one gameplay writes. Multiple simultaneous changes (e.g. a
+    // save updating several twins at once) are left for the next poll to
+    // disambiguate. Copies inside the rotating flash save-slot buffer are the
+    // save image, never live RAM — re-spliced in place here (the region may have
+    // been located after the candidate list was finalized) to keep the per-copy
+    // hash array aligned.
     for (let i = livePartyCandidatesRef.current.length - 1; i >= 0; i--) {
       if (isInSaveBuffer(livePartyCandidatesRef.current[i])) {
         livePartyCandidatesRef.current.splice(i, 1);
@@ -1893,7 +1900,7 @@ const EmulatorPage: React.FC = () => {
       }
     }
     const cands = livePartyCandidatesRef.current;
-    if (!livePartyProvenLiveRef.current && cands.length >= 2) {
+    if (cands.length >= 1) {
       const prev = livePartyCandHashesRef.current;
       const cur: string[] = [];
       const hot: number[] = [];
@@ -1908,17 +1915,21 @@ const EmulatorPage: React.FC = () => {
       }
       livePartyCandHashesRef.current = cur;
       if (hot.length === 1) {
-        const i = hot[0];
-        const converged = cands.findIndex((_, j) => j !== i && cur[j] === cur[i]);
-        const target = cands[converged >= 0 ? converged : i];
-        livePartyOffsetRef.current = target;
-        livePartyHashRef.current = hashRamParty(heap, target);
-        livePartyMissesRef.current = 0;
-        livePartySessionValidatedRef.current = true;
-        livePartyProvenLiveRef.current = true;
-        livePartySigScanRef.current = { ids: [], next: 0 };
-        applyLiveParty(parseRamParty(heap, target, false));
-        return;
+        const target = cands[hot[0]];
+        // Only act here when the changed copy is NOT the current pin (the fast
+        // path below already applies a changing pin) or when we haven't yet
+        // proven a live offset. If the pin is the changed copy and already
+        // proven, fall through so the fast path handles it without re-pinning.
+        if (target !== livePartyOffsetRef.current || !livePartyProvenLiveRef.current) {
+          livePartyOffsetRef.current = target;
+          livePartyHashRef.current = hashRamParty(heap, target);
+          livePartyMissesRef.current = 0;
+          livePartySessionValidatedRef.current = true;
+          livePartyProvenLiveRef.current = true;
+          livePartySigScanRef.current = { ids: [], next: 0 };
+          applyLiveParty(parseRamParty(heap, target, false));
+          return;
+        }
       }
     }
 
