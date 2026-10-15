@@ -1020,7 +1020,7 @@ const PlayerSearchStatsTab: React.FC<PlayerSearchStatsTabProps> = ({
                               <span className="rmv-info-icon" tabIndex={0}>
                                 i
                                 <span className="rmv-tooltip">
-                                  Roster Market Value is the sum of the average price of every Pokemon you won in a given draft. For example, if you purchase 10 Pokemon, and each of them have an average sale price of 2,500, your RMV for that draft is $25,000.
+                                  Roster Market Value is the sum of the average price of every Pokemon you win in a given draft. For example, if you purchase 10 Pokemon, and each of them have an average sale price of 2,500, your RMV for that draft is $25,000.
                                   <br /><br />
                                   Average RMV is calculated using exclusively competitive auction data. 1v1 and casual draft data isn't considered.
                                 </span>
