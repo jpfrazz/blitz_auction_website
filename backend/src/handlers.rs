@@ -3576,14 +3576,12 @@ pub async fn get_admin_season2_drafts(
     let _ = require_referee_user(auth_session.user)?;
 
     let rows = sqlx::query(
-        "SELECT d.draft_id, d.draft_name, d.created_at, d.season,
+                "SELECT d.draft_id, d.draft_name, d.created_at, d.season,
                 COUNT(t.team_id)::INT AS team_count,
                 COALESCE(BOOL_OR(t.placement IS NOT NULL), FALSE) AS results_submitted
          FROM drafts d
          LEFT JOIN teams t ON t.draft_id = d.draft_id
          WHERE d.state = 'COMPLETED'
-           AND d.ranked = TRUE
-           AND d.created_at >= '2026-10-15T00:00:00Z'
          GROUP BY d.draft_id
          ORDER BY d.created_at DESC",
     )
@@ -3632,7 +3630,7 @@ pub async fn set_admin_draft_season2(
         .map_err(|_| (StatusCode::BAD_REQUEST, "invalid draft id".to_string()))?;
 
     let draft_row = sqlx::query(
-        "SELECT state, ranked, created_at
+        "SELECT state
          FROM drafts
          WHERE draft_id = $1",
     )
@@ -3648,31 +3646,10 @@ pub async fn set_admin_draft_season2(
     let ranked: bool = draft_row
         .try_get("ranked")
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-    let created_at: chrono::DateTime<chrono::Utc> = draft_row
-        .try_get("created_at")
-        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-
     if draft_state != DraftState::COMPLETED.to_string() || !ranked {
         return Err((
             StatusCode::PRECONDITION_FAILED,
             "only completed, ranked drafts can be designated as Season 2 races".to_string(),
-        ));
-    }
-
-    let cutoff = chrono::DateTime::parse_from_rfc3339("2026-10-15T00:00:00Z")
-        .map(|dt| dt.with_timezone(&chrono::Utc))
-        .map_err(|_| {
-            (
-                StatusCode::INTERNAL_SERVER_ERROR,
-                "invalid season 2 cutoff".to_string(),
-            )
-        })?;
-
-    if created_at < cutoff {
-        return Err((
-            StatusCode::PRECONDITION_FAILED,
-            "only drafts created on or after October 15th can be designated as Season 2 races"
-                .to_string(),
         ));
     }
 
@@ -3773,14 +3750,10 @@ pub async fn update_admin_draft_team_placements(
     let draft_state: String = draft_row
         .try_get("state")
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-    let is_ranked: bool = draft_row
-        .try_get("ranked")
-        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-    let season: i32 = draft_row
-        .try_get("season")
+    if draft_state != DraftState::COMPLETED.to_string() {
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
     let is_season2 = season == 2;
-
+            "only completed drafts can be designated as Season 2 races".to_string(),
     if draft_state != DraftState::COMPLETED.to_string() {
         return Err((
             StatusCode::PRECONDITION_FAILED,

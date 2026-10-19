@@ -1391,7 +1391,7 @@ const Admin: React.FC = () => {
                 <div className="admin-tab-content">
                   <h2>Season 2 Races</h2>
                   <p style={{ color: '#94a3b8', marginBottom: '1rem' }}>
-                    Mark completed races created on or after October 15th as Season 2 races. Only Season 2 races earn points on the
+                    Mark any completed race as Season 2. Only Season 2 races earn points on the
                     Season 2 Standings leaderboard, and they never affect ELO.
                   </p>
                   {season2DraftsError && <div className="admin-message admin-error">{season2DraftsError}</div>}
@@ -1399,7 +1399,7 @@ const Admin: React.FC = () => {
                   {season2DraftsLoading ? (
                     <div className="admin-message">Loading drafts...</div>
                   ) : season2Drafts.length === 0 ? (
-                    <div className="admin-message">No completed drafts found after October 15th.</div>
+                    <div className="admin-message">No completed races found.</div>
                   ) : (
                     <div className="admin-table-wrap">
                       <table className="admin-race-results-table">
