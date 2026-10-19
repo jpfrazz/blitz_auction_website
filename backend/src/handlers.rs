@@ -3643,13 +3643,10 @@ pub async fn set_admin_draft_season2(
     let draft_state: String = draft_row
         .try_get("state")
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-    let ranked: bool = draft_row
-        .try_get("ranked")
-        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-    if draft_state != DraftState::COMPLETED.to_string() || !ranked {
+    if draft_state != DraftState::COMPLETED.to_string() {
         return Err((
             StatusCode::PRECONDITION_FAILED,
-            "only completed, ranked drafts can be designated as Season 2 races".to_string(),
+            "only completed drafts can be designated as Season 2 races".to_string(),
         ));
     }
 
@@ -3750,10 +3747,14 @@ pub async fn update_admin_draft_team_placements(
     let draft_state: String = draft_row
         .try_get("state")
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-    if draft_state != DraftState::COMPLETED.to_string() {
+    let is_ranked: bool = draft_row
+        .try_get("ranked")
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let season: i32 = draft_row
+        .try_get("season")
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
     let is_season2 = season == 2;
-            "only completed drafts can be designated as Season 2 races".to_string(),
+
     if draft_state != DraftState::COMPLETED.to_string() {
         return Err((
             StatusCode::PRECONDITION_FAILED,
