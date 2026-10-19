@@ -691,9 +691,9 @@ pokedex_id,pokemon_name,form,move_name,learn_method,species,display_order
 133,Eevee,,Flare Blitz,45,Flareon,21
 133,Eevee,,Scorching Sands,TM,Flareon,22
 133,Eevee,,Psybeam,20,Espeon,23
-133,Eevee,,Psychic,TM,Espeon,24
-133,Eevee,,Dazzling Gleam,TM,Espeon,25
-133,Eevee,,Morning Sun,33,Espeon,26
+133,Eevee,,Morning Sun,33,Espeon,24
+133,Eevee,,Psychic,37/TM,Espeon,25
+133,Eevee,,Dazzling Gleam,TM,Espeon,26
 133,Eevee,,Calm Mind,TM,Espeon,27
 133,Eevee,,Snarl,Evo.,Umbreon,28
 133,Eevee,,Assurance,MR,Umbreon,29
@@ -1128,7 +1128,7 @@ pokedex_id,pokemon_name,form,move_name,learn_method,species,display_order
 599,Klink,,Gear Grind,16,,3
 599,Klink,,Charge Beam,26,,4
 599,Klink,,Discharge,44,,5
-599,Klink,,Gear Up,MR,Klinklang,6
+599,Klink,,Shift Gear,54,,6
 599,Klink,,Thunderbolt,TM,,7
 246,Larvitar,,Bite,1,,1
 246,Larvitar,,Rock Throw,3,,2
@@ -1804,7 +1804,7 @@ pokedex_id,pokemon_name,form,move_name,learn_method,species,display_order
 223,Remoraid,,Flash Cannon,TM,,11
 223,Remoraid,,Psychic,TM,,12
 223,Remoraid,,Sludge Bomb,TM,,13
-223,Remoraid,,Acid Spray,TM,,14
+223,Remoraid,,Acid Spray,Egg,,14
 447,Riolu,,Force Palm,15,,1
 447,Riolu,,Aura Sphere,Evo.,,2
 447,Riolu,,Bone Rush,MR,,3
@@ -2056,19 +2056,19 @@ pokedex_id,pokemon_name,form,move_name,learn_method,species,display_order
 403,Shinx,,Play Rough,TM,,7
 403,Shinx,,Facade,TM,,8
 403,Shinx,,Ice Fang,Egg,,9
-948,Shroodle,,Acid Spray,5,,1
-948,Shroodle,,Poison Fang,14,,2
-948,Shroodle,,Super Fang,18,,3
-948,Shroodle,,Taunt,TM,,4
-948,Shroodle,,Slash,21,,5
-948,Shroodle,,U-turn,25,,6
-948,Shroodle,,Doodle,Evo.,,7
-948,Shroodle,,Poison Jab,Evo.,,8
-948,Shroodle,,Knock Off,45,,9
-948,Shroodle,,Gunk Shot,51,,10
-948,Shroodle,,Return,TM,,11
-948,Shroodle,,Seed Bomb,TM,,12
-948,Shroodle,,Parting Shot,Egg,,13
+944,Shroodle,,Acid Spray,5,,1
+944,Shroodle,,Poison Fang,14,,2
+944,Shroodle,,Super Fang,18,,3
+944,Shroodle,,Taunt,TM,,4
+944,Shroodle,,Slash,21,,5
+944,Shroodle,,U-turn,25,,6
+944,Shroodle,,Doodle,Evo.,,7
+944,Shroodle,,Poison Jab,Evo.,,8
+944,Shroodle,,Knock Off,45,,9
+944,Shroodle,,Gunk Shot,51,,10
+944,Shroodle,,Return,TM,,11
+944,Shroodle,,Seed Bomb,TM,,12
+944,Shroodle,,Parting Shot,Egg,,13
 285,Shroomish,,Leech Seed,8,,1
 285,Shroomish,,Mega Drain,12,,2
 285,Shroomish,,Bullet Seed,TM,,3
@@ -2455,10 +2455,11 @@ pokedex_id,pokemon_name,form,move_name,learn_method,species,display_order
 283,Surskit,,Silver Wind,32,,4
 283,Surskit,,Surf,HM,,5
 283,Surskit,,Air Slash,38/TM,,6
-283,Surskit,,Bug Buzz,42/TM,,7
-283,Surskit,,Quiver Dance,52,,8
-283,Surskit,,Ice Beam,TM,,9
-283,Surskit,,Lunge,Egg,,10
+283,Surskit,,Giga Drain,38/TM,,7
+283,Surskit,,Bug Buzz,42/TM,,8
+283,Surskit,,Quiver Dance,52,,9
+283,Surskit,,Ice Beam,TM,,10
+283,Surskit,,Lunge,Egg,,11
 220,Swinub,,Powder Snow,8,,1
 220,Swinub,,Mud-Slap,11,,2
 220,Swinub,,Mud Bomb,18,,3
@@ -2575,11 +2576,11 @@ pokedex_id,pokemon_name,form,move_name,learn_method,species,display_order
 564,Tirtouga,,Iron Tail,TM,,11
 564,Tirtouga,,Zen Headbutt,TM,,12
 564,Tirtouga,,Liquidation,Egg,,13
-175,Togepi,,Yawn,13,,1
-175,Togepi,,Fairy Wind,Evo.,,2
-175,Togepi,,Encore,17,,3
-175,Togepi,,Wish,29,,4
-175,Togepi,,Ancient Power,33,,5
+175,Togepi,,Fairy Wind,Evo.,,1
+175,Togepi,,Encore,17,,2
+175,Togepi,,Wish,29,,3
+175,Togepi,,Ancient Power,33,,4
+175,Togepi,,Yawn,MR,,5
 175,Togepi,,Aura Sphere,MR,Togekiss,6
 175,Togepi,,Air Slash,MR/TM,,7
 175,Togepi,,Dazzling Gleam,TM,,8
@@ -2663,11 +2664,12 @@ pokedex_id,pokemon_name,form,move_name,learn_method,species,display_order
 387,Turtwig,,Earthquake,32,,4
 387,Turtwig,,Wood Hammer,MR,,5
 387,Turtwig,,Crunch,45/TM,,6
-387,Turtwig,,Leaf Storm,57,,7
-387,Turtwig,,Body Press,TM,,8
-387,Turtwig,,Rock Slide,TM,,9
-387,Turtwig,,Zen Headbutt,TM,,10
-387,Turtwig,,Growth,Egg,,11
+387,Turtwig,,Giga Drain,51/TM,,7
+387,Turtwig,,Leaf Storm,57,,8
+387,Turtwig,,Body Press,TM,,9
+387,Turtwig,,Rock Slide,TM,,10
+387,Turtwig,,Zen Headbutt,TM,,11
+387,Turtwig,,Growth,Egg,,12
 535,Tympole,,Bubble Beam,12,,1
 535,Tympole,,Mud Shot,16,,2
 535,Tympole,,Muddy Water,28,,3
@@ -3208,6 +3210,22 @@ pokedex_id,pokemon_name,form,move_name,learn_method,species,display_order
 874,Stonjourner,,Heavy Slam,54,,9
 874,Stonjourner,,Stone Edge,60,,10
 874,Stonjourner,,Mega Kick,66,,11
+618,Stunfisk,,Camouflage,1,,1
+618,Stunfisk,,Water Gun,1,,2
+618,Stunfisk,,Mud-Slap,1,,3
+618,Stunfisk,,Mud Sport,1,,4
+618,Stunfisk,,Thunder Shock,9,,5
+618,Stunfisk,,Mud Shot,13,,6
+618,Stunfisk,,Mud Bomb,21,,7
+618,Stunfisk,,Discharge,25,,8
+618,Stunfisk,,Surf,HM,,9
+618,Stunfisk,,Bounce,35,,10
+618,Stunfisk,,Muddy Water,40,,11
+618,Stunfisk,,Thunderbolt,45/TM,,12
+618,Stunfisk,,Revenge,50,,12
+618,Stunfisk,,Flail,55,,14
+618,Stunfisk,,Fissure,MR!,,15
+618,Stunfisk,,Eerie Impulse,Egg,,16
 777,Togedemaru,,Thunder Shock,1,,1
 777,Togedemaru,,Defense Curl,5,,2
 777,Togedemaru,,Rollout,9,,3
@@ -3237,18 +3255,19 @@ pokedex_id,pokemon_name,form,move_name,learn_method,species,display_order
 324,Torkoal,,Heat Wave,45,,14
 324,Torkoal,,Shell Smash,47,,15
 324,Torkoal,,Inferno,50,,16
-357,Tropius,,Leer,1,,1
-357,Tropius,,Gust,1,,2
-357,Tropius,,Growth,1,,3
-357,Tropius,,Razor Leaf,1,,4
-357,Tropius,,Stomp,10,,5
-357,Tropius,,Magical Leaf,16,,6
-357,Tropius,,Leaf Tornado,26,,7
-357,Tropius,,Air Slash,36,,8
-357,Tropius,,Body Slam,41,,9
-357,Tropius,,Synthesis,50,,10
-357,Tropius,,Solar Beam,56,,11
-357,Tropius,,Leaf Storm,61,,12
+357,Tropius,,Natural Gift,1,,1
+357,Tropius,,Leer,1,,2
+357,Tropius,,Gust,1,,3
+357,Tropius,,Growth,1,,4
+357,Tropius,,Razor Leaf,1,,5
+357,Tropius,,Stomp,10,,6
+357,Tropius,,Magical Leaf,16,,7
+357,Tropius,,Leaf Tornado,26,,8
+357,Tropius,,Air Slash,36,,9
+357,Tropius,,Body Slam,41,,10
+357,Tropius,,Synthesis,50,,11
+357,Tropius,,Solar Beam,56,,12
+357,Tropius,,Leaf Storm,61,,13
 776,Turtonator,,Explosion,1,,1
 776,Turtonator,,Smog,5,,2
 776,Turtonator,,Protect,9,,3

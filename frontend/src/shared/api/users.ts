@@ -7,6 +7,7 @@ import {
   AdminHallOfFameEligibleEntry,
   AdminHallOfFameTeamEntry,
   AdminRaceResult,
+  AdminSeason2Draft,
   AdminTeamPlacementUpdate,
   HallOfFamePokemon,
   Pokemon,
@@ -22,6 +23,18 @@ export interface LeaderboardEntry {
 	loss: number;
 	mmr: number;
 	games_played: number;
+	most_drafted_pokemon: Pokemon[];
+}
+
+export interface Season2LeaderboardEntry {
+	user_id: string;
+	username: string;
+	global_name?: string | null;
+	avatar?: string | null;
+	win: number;
+	loss: number;
+	total_points: number;
+	races_played: number;
 	most_drafted_pokemon: Pokemon[];
 }
 
@@ -214,9 +227,28 @@ export async function fetchLeaderboard(): Promise<LeaderboardEntry[]> {
 	return response.data;
 }
 
+export async function fetchSeason2Leaderboard(): Promise<Season2LeaderboardEntry[]> {
+	const response = await axios.get('/api/leaderboard/season2');
+
+	if (response.status !== 200) {
+		throw new Error(`Failed to fetch season 2 leaderboard: ${response.statusText}`);
+	}
+
+	return response.data;
+}
+
 export async function fetchAdminCompletedDrafts(): Promise<AdminDraftSummary[]> {
   const response = await axios.get('/api/admin/drafts/completed');
   return response.data;
+}
+
+export async function fetchAdminSeason2Drafts(): Promise<AdminSeason2Draft[]> {
+  const response = await axios.get('/api/admin/season2/drafts');
+  return response.data;
+}
+
+export async function setAdminDraftSeason2(draft_id: string, season2: boolean): Promise<void> {
+  await axios.post(`/api/admin/season2/drafts/${draft_id}`, { season2 });
 }
 
 export async function fetchAdminDraftTeamPlacements(draft_id: string): Promise<AdminDraftTeamPlacement[]> {

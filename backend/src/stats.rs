@@ -31,6 +31,7 @@ pub struct StatsTeam {
     pub host: Option<String>,
     pub ranked: bool,
     pub draft_type: String,
+    pub season: i32,
     pub placement: Option<i32>,
     pub race_placement: Option<i32>,
     pub has_save: bool,
@@ -51,6 +52,7 @@ pub struct StatsAuction {
     pub host: Option<String>,
     pub ranked: bool,
     pub draft_type: String,
+    pub season: i32,
     pub action: Option<String>,
     pub created_at: Option<chrono::DateTime<chrono::Utc>>,
 }
@@ -103,6 +105,31 @@ struct UserPokemonRow {
     pub count: i32,
 }
 
+#[derive(Serialize)]
+pub struct Season2LeaderboardEntry {
+    pub user_id: String,
+    pub username: String,
+    pub global_name: Option<String>,
+    pub avatar: Option<String>,
+    pub win: i32,
+    pub loss: i32,
+    pub total_points: i32,
+    pub races_played: i32,
+    pub most_drafted_pokemon: Vec<LeaderboardPokemon>,
+}
+
+#[derive(FromRow)]
+struct Season2UserRow {
+    pub user_id: String,
+    pub user_name: String,
+    pub global_name: Option<String>,
+    pub avatar: Option<String>,
+    pub win: i32,
+    pub loss: i32,
+    pub total_points: i32,
+    pub races_played: i32,
+}
+
 pub async fn get_stats_page_data(
     State(state): State<ServerState>,
 ) -> Result<Json<StatsPageResponse>, AppError> {
@@ -120,7 +147,7 @@ pub async fn get_stats_page_data(
         sqlx::query_as::<_, StatsTeam>(
             "SELECT t.user_id, t.guest_id, t.draft_id, t.placement, t.race_placement,
                     (t.save_data IS NOT NULL) AS has_save,
-                    d.draft_name, COALESCE(d.host_user_id, d.host_guest_id) AS host, d.ranked, d.draft_type
+                    d.draft_name, COALESCE(d.host_user_id, d.host_guest_id) AS host, d.ranked, d.draft_type, d.season
              FROM teams t
              JOIN drafts d ON t.draft_id = d.draft_id
              WHERE d.state = 'COMPLETED'"
@@ -149,6 +176,7 @@ pub async fn get_stats_page_data(
             COALESCE(d.host_user_id, d.host_guest_id) AS host,
             d.ranked,
             d.draft_type,
+            d.season,
             a.action
         FROM auctions AS a
         JOIN pokemon AS p ON a.pokedex_id = p.pokedex_id AND COALESCE(a.form, '') = p.form
@@ -212,6 +240,7 @@ pub async fn get_leaderboard(
             JOIN pokemon p ON a.pokedex_id = p.pokedex_id AND COALESCE(a.form, '') = p.form
             JOIN drafts d ON d.draft_id = a.draft_id
             WHERE a.winning_user_id IS NOT NULL
+              AND d.season = 1
               AND d.ranked = TRUE
               AND d.state = 'COMPLETED'
             GROUP BY a.winning_user_id, a.pokedex_id, p.name, a.form
@@ -252,6 +281,134 @@ pub async fn get_leaderboard(
                 loss: u.losses,
                 mmr: u.mmr,
                 games_played,
+                most_drafted_pokemon: pokemon_map.remove(&user_id).unwrap_or_default(),
+            }
+        })
+        .collect();
+
+    Ok(Json(leaderboard))
+}
+
+pub async fn get_season2_leaderboard(
+    State(state): State<ServerState>,
+) -> Result<Json<Vec<Season2LeaderboardEntry>>, AppError> {
+    let user_rows = sqlx::query_as::<_, Season2UserRow>(
+        r#"
+        WITH race_sizes AS (
+            SELECT t.draft_id, COUNT(*)::INT AS n
+            FROM teams t
+            JOIN drafts d ON d.draft_id = t.draft_id
+            WHERE d.season = 2
+              AND d.state = 'COMPLETED'
+            GROUP BY t.draft_id
+        ),
+        per_race AS (
+            SELECT
+                t.user_id,
+                t.draft_id,
+                (CASE
+                    WHEN t.race_placement = 1 THEN 5
+                    WHEN t.race_placement = 2 THEN 4
+                    WHEN t.race_placement = 3 THEN 3
+                    ELSE 0
+                 END + (rs.n - t.race_placement))::INT AS points,
+                (rs.n - t.race_placement)::INT AS wins,
+                (t.race_placement - 1)::INT AS losses
+            FROM teams t
+            JOIN drafts d ON d.draft_id = t.draft_id
+            JOIN race_sizes rs ON rs.draft_id = t.draft_id
+            WHERE d.season = 2
+              AND d.state = 'COMPLETED'
+              AND t.user_id IS NOT NULL
+              AND t.race_placement IS NOT NULL
+        ),
+        best_performances AS (
+            SELECT user_id, points,
+                   ROW_NUMBER() OVER (
+                       PARTITION BY user_id
+                       ORDER BY points DESC, draft_id
+                   ) AS rn
+            FROM per_race
+        ),
+        totals AS (
+            SELECT user_id, SUM(points)::INT AS total_points
+            FROM best_performances
+            WHERE rn <= 10
+            GROUP BY user_id
+        ),
+        counts AS (
+            SELECT user_id,
+                   COUNT(*)::INT AS races_played,
+                   SUM(wins)::INT AS win,
+                   SUM(losses)::INT AS loss
+            FROM per_race
+            GROUP BY user_id
+        )
+        SELECT u.user_id, u.user_name, u.global_name, u.avatar,
+               c.win, c.loss, t.total_points, c.races_played
+        FROM counts c
+        JOIN totals t ON t.user_id = c.user_id
+        JOIN users u ON u.user_id = c.user_id
+        ORDER BY t.total_points DESC, c.win DESC, u.user_name ASC
+        "#,
+    )
+    .fetch_all(&state.db_pool)
+    .await
+    .map_err(|e| (axum::http::StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    let pokemon_rows = sqlx::query_as::<_, UserPokemonRow>(
+        r#"
+        WITH user_pokemon_counts AS (
+            SELECT
+                a.winning_user_id as user_id,
+                a.pokedex_id as id,
+                p.name,
+                COALESCE(a.form, '') as form,
+                COUNT(*)::INT as count,
+                ROW_NUMBER() OVER(PARTITION BY a.winning_user_id ORDER BY COUNT(*) DESC, p.name ASC) as rank
+            FROM auctions a
+            JOIN pokemon p ON a.pokedex_id = p.pokedex_id AND COALESCE(a.form, '') = p.form
+            JOIN drafts d ON d.draft_id = a.draft_id
+            WHERE a.winning_user_id IS NOT NULL
+              AND d.season = 2
+              AND d.state = 'COMPLETED'
+            GROUP BY a.winning_user_id, a.pokedex_id, p.name, a.form
+        )
+        SELECT user_id, id, name, form, count
+        FROM user_pokemon_counts
+        WHERE rank <= 10
+        "#,
+    )
+    .fetch_all(&state.db_pool)
+    .await
+    .map_err(|e| (axum::http::StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    let mut pokemon_map: HashMap<String, Vec<LeaderboardPokemon>> = HashMap::new();
+    for row in pokemon_rows {
+        pokemon_map
+            .entry(row.user_id)
+            .or_default()
+            .push(LeaderboardPokemon {
+                id: row.id,
+                name: row.name,
+                form: row.form,
+                count: row.count,
+            });
+    }
+
+    let leaderboard = user_rows
+        .into_iter()
+        .map(|u| {
+            let user_id = u.user_id.clone();
+            Season2LeaderboardEntry {
+                user_id: u.user_id,
+                username: u.user_name,
+                global_name: u.global_name,
+                avatar: u.avatar,
+                win: u.win,
+                loss: u.loss,
+                total_points: u.total_points,
+                races_played: u.races_played,
                 most_drafted_pokemon: pokemon_map.remove(&user_id).unwrap_or_default(),
             }
         })

@@ -1,0 +1,45 @@
+10/19/2026
+
+-----------------------------------------------
+Gym Changes
+-----------------------------------------------
+
+Wattson 3-5 Manectric Bite > Pounce
+Wattson 6 Manectric Bite > Crunch
+//Wattson took a trip to Slateport and stopped by the market. Good deal!
+
+Flannery 5 Marowak Shadow Bone > Shadow Punch
+//We'll say that pre-Surf-HM Marowaks are a bit weaker
+
+
+-----------------------------------------------
+QoL
+-----------------------------------------------
+
+Added some lighting changes from merrp's branch here: https://github.com/aarant/pokeemerald
+//Makes it so that Rustboro lamps and house windows glow at night
+
+You can now use Ability Capsules, Patches and Serious Mints on PC Pokémon from the party menu
+//Slowly and steadily implementing the new party menu functionality to all relevant actions
+
+
+-----------------------------------------------
+Bug Fixes
+-----------------------------------------------
+
+Fixed a bug where pressing A+B at the same time while learning a move could crash the game
+
+Piloswine learns Ice Shard at level 24
+//Previously was Swinub exclusive at level 24. This stops you from accidentally missing the move by evolving via Guru, which is standard across other learnsets.
+
+Vibrava learns Crunch at level 22
+//Same situation
+
+
+-----------------------------------------------
+Rental Addition
+-----------------------------------------------
+
++Stunfisk
+//It wouldn't be EGP Season 2 without black market Stunfisk
+//Someday he'll even be nicknamed...

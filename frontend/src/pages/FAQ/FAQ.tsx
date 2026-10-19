@@ -286,7 +286,7 @@ const FAQ = () => (
             <li>Total Pokémon sold is not equal to 8 times the total number of players</li>
           </ol>
           <p className="faq-answer" style={{ marginTop: '1rem' }}>
-            That said, all drafts are still preserved in the draft tab for you and your friends to look at! They just don't contribute to the stats spreadsheet.
+            That said, all drafts are still preserved in the draft tab for you and your friends to look at! They just don't contribute to the cost breakdown chart.
           </p>
           <p className="faq-answer" style={{ marginTop: '1rem' }}>
             Drafts that don't meet these four criteria are marked as "Casual Drafts" in the stats tab.

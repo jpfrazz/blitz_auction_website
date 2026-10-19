@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Team } from '../../types';
 import { FaArrowRight } from 'react-icons/fa';
 import HoverTip from '../../shared/components/HoverTip';
@@ -35,6 +35,10 @@ const EeveelutionClaimButton: React.FC<EeveelutionClaimButtonProps> = ({
   const [isClosing, setIsClosing] = useState(false);
   const mainButtonRef = useRef<HTMLButtonElement>(null);
   const [tipHover, setTipHover] = useState(false);
+
+  useEffect(() => {
+    setTipHover(false);
+  }, [isExpanded]);
 
   // Determine which eeveelutions are already claimed by checking all teams
   const getClaimedInfo = (pokedexId: number, form: string | null): { username: string; userId: string } | null => {

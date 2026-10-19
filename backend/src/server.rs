@@ -165,6 +165,7 @@ impl Server {
             .route("/auth/discord/callback", get(handlers::discord_callback))
             .route("/me", get(handlers::me))
             .route("/leaderboard", get(stats::get_leaderboard))
+            .route("/leaderboard/season2", get(stats::get_season2_leaderboard))
             .route("/stats", get(stats::get_stats_page_data))
             .route("/hall-of-fame-teams", get(handlers::get_hall_of_fame))
             .route("/avatar/{user_id}", get(handlers::get_user_avatar))
@@ -218,6 +219,14 @@ impl Server {
             .route(
                 "/admin/drafts/completed",
                 get(handlers::get_admin_completed_drafts),
+            )
+            .route(
+                "/admin/season2/drafts",
+                get(handlers::get_admin_season2_drafts),
+            )
+            .route(
+                "/admin/season2/drafts/{draft_id}",
+                post(handlers::set_admin_draft_season2),
             )
             .route(
                 "/admin/drafts/{draft_id}/teams",

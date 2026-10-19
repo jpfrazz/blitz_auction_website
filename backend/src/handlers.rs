@@ -208,6 +208,21 @@ pub struct AdminDraftSummary {
 }
 
 #[derive(Clone, Debug, Serialize)]
+pub struct AdminSeason2Draft {
+    pub draft_id: String,
+    pub draft_name: String,
+    pub created_at: chrono::DateTime<chrono::Utc>,
+    pub season: i32,
+    pub team_count: i32,
+    pub results_submitted: bool,
+}
+
+#[derive(Clone, Debug, Deserialize)]
+pub struct AdminSetSeasonRequest {
+    pub season2: bool,
+}
+
+#[derive(Clone, Debug, Serialize)]
 pub struct AdminDraftTeamPlacement {
     pub team_id: i64,
     pub draft_id: String,
@@ -3220,7 +3235,7 @@ pub async fn submit_race_results(
     })?;
 
     let draft_row = sqlx::query(
-        "SELECT state, ranked
+        "SELECT state, ranked, season
          FROM drafts
          WHERE draft_id = $1",
     )
@@ -3236,6 +3251,10 @@ pub async fn submit_race_results(
     let is_ranked: bool = draft_row
         .try_get("ranked")
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let season: i32 = draft_row
+        .try_get("season")
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let is_season2 = season == 2;
 
     if draft_state != DraftState::COMPLETED.to_string() {
         return Err((
@@ -3324,6 +3343,41 @@ pub async fn submit_race_results(
         }
     }
 
+    // Season 2 races earn points on the Season 2 Standings leaderboard only:
+    // record the finishing placements but never touch ELO / win-loss.
+    if is_season2 {
+        let mut tx = state
+            .db_pool
+            .begin()
+            .await
+            .map_err(|e: sqlx::Error| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+        for user_id in &team_user_ids {
+            let Some(place) = placements.get(user_id) else {
+                return Err((StatusCode::BAD_REQUEST, "missing placement".to_string()));
+            };
+
+            sqlx::query(
+                "UPDATE teams
+                 SET placement = $1
+                 WHERE draft_id = $2
+                   AND user_id = $3",
+            )
+            .bind(*place as i32)
+            .bind(draft_uuid)
+            .bind(user_id)
+            .execute(&mut *tx)
+            .await
+            .map_err(|e: sqlx::Error| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+        }
+
+        tx.commit()
+            .await
+            .map_err(|e: sqlx::Error| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+        return Ok(());
+    }
+
     let mmr_rows = sqlx::query("SELECT user_id, mmr FROM users WHERE user_id = ANY($1)")
         .bind(&team_user_ids)
         .fetch_all(&state.db_pool)
@@ -3356,6 +3410,7 @@ pub async fn submit_race_results(
          WHERE t.user_id = ANY($1)
            AND d.state = 'COMPLETED'
            AND d.ranked = TRUE
+           AND d.season = 1
          GROUP BY t.user_id"
     )
     .bind(&team_user_ids)
@@ -3514,6 +3569,125 @@ pub async fn get_admin_completed_drafts(
 }
 
 #[debug_handler]
+pub async fn get_admin_season2_drafts(
+    State(state): State<ServerState>,
+    auth_session: AuthSession<AuthBackend>,
+) -> Result<Json<Vec<AdminSeason2Draft>>, AppError> {
+    let _ = require_referee_user(auth_session.user)?;
+
+    let rows = sqlx::query(
+        "SELECT d.draft_id, d.draft_name, d.created_at, d.season,
+                COUNT(t.team_id)::INT AS team_count,
+                COALESCE(BOOL_OR(t.placement IS NOT NULL), FALSE) AS results_submitted
+         FROM drafts d
+         LEFT JOIN teams t ON t.draft_id = d.draft_id
+         WHERE d.state = 'COMPLETED'
+           AND d.ranked = TRUE
+           AND d.created_at >= '2026-10-15T00:00:00Z'
+         GROUP BY d.draft_id
+         ORDER BY d.created_at DESC",
+    )
+    .fetch_all(&state.db_pool)
+    .await
+    .map_err(|e: sqlx::Error| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    let mut drafts = Vec::with_capacity(rows.len());
+    for row in rows {
+        drafts.push(AdminSeason2Draft {
+            draft_id: row
+                .try_get::<Uuid, _>("draft_id")
+                .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?
+                .to_string(),
+            draft_name: row
+                .try_get("draft_name")
+                .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?,
+            created_at: row
+                .try_get("created_at")
+                .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?,
+            season: row
+                .try_get("season")
+                .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?,
+            team_count: row
+                .try_get("team_count")
+                .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?,
+            results_submitted: row
+                .try_get("results_submitted")
+                .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?,
+        });
+    }
+
+    Ok(Json(drafts))
+}
+
+#[debug_handler]
+pub async fn set_admin_draft_season2(
+    State(state): State<ServerState>,
+    Path(draft_id): Path<String>,
+    auth_session: AuthSession<AuthBackend>,
+    Json(request): Json<AdminSetSeasonRequest>,
+) -> Result<(), AppError> {
+    let _ = require_referee_user(auth_session.user)?;
+
+    let draft_uuid = Uuid::from_str(&draft_id)
+        .map_err(|_| (StatusCode::BAD_REQUEST, "invalid draft id".to_string()))?;
+
+    let draft_row = sqlx::query(
+        "SELECT state, ranked, created_at
+         FROM drafts
+         WHERE draft_id = $1",
+    )
+    .bind(draft_uuid)
+    .fetch_optional(&state.db_pool)
+    .await
+    .map_err(|e: sqlx::Error| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?
+    .ok_or((StatusCode::NOT_FOUND, "draft does not exist".to_string()))?;
+
+    let draft_state: String = draft_row
+        .try_get("state")
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let ranked: bool = draft_row
+        .try_get("ranked")
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let created_at: chrono::DateTime<chrono::Utc> = draft_row
+        .try_get("created_at")
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    if draft_state != DraftState::COMPLETED.to_string() || !ranked {
+        return Err((
+            StatusCode::PRECONDITION_FAILED,
+            "only completed, ranked drafts can be designated as Season 2 races".to_string(),
+        ));
+    }
+
+    let cutoff = chrono::DateTime::parse_from_rfc3339("2026-10-15T00:00:00Z")
+        .map(|dt| dt.with_timezone(&chrono::Utc))
+        .map_err(|_| {
+            (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                "invalid season 2 cutoff".to_string(),
+            )
+        })?;
+
+    if created_at < cutoff {
+        return Err((
+            StatusCode::PRECONDITION_FAILED,
+            "only drafts created on or after October 15th can be designated as Season 2 races"
+                .to_string(),
+        ));
+    }
+
+    let season: i32 = if request.season2 { 2 } else { 1 };
+    sqlx::query("UPDATE drafts SET season = $1 WHERE draft_id = $2")
+        .bind(season)
+        .bind(draft_uuid)
+        .execute(&state.db_pool)
+        .await
+        .map_err(|e: sqlx::Error| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    Ok(())
+}
+
+#[debug_handler]
 pub async fn get_admin_draft_team_placements(
     State(state): State<ServerState>,
     Path(draft_id): Path<String>,
@@ -3586,7 +3760,7 @@ pub async fn update_admin_draft_team_placements(
         .map_err(|_| (StatusCode::BAD_REQUEST, "invalid draft id".to_string()))?;
 
     let draft_row = sqlx::query(
-        "SELECT state, ranked
+        "SELECT state, ranked, season
          FROM drafts
          WHERE draft_id = $1",
     )
@@ -3602,6 +3776,10 @@ pub async fn update_admin_draft_team_placements(
     let is_ranked: bool = draft_row
         .try_get("ranked")
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let season: i32 = draft_row
+        .try_get("season")
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let is_season2 = season == 2;
 
     if draft_state != DraftState::COMPLETED.to_string() {
         return Err((
@@ -3784,38 +3962,56 @@ pub async fn update_admin_draft_team_placements(
 
     for entry in &request.placements {
         // 1. Update teams table
-        sqlx::query(
-            "UPDATE teams
-             SET placement = $1,
-                 pre_match_mmr = $2
-             WHERE team_id = $3
-               AND draft_id = $4",
-        )
-        .bind(entry.placement)
-        .bind(entry.pre_match_mmr)
-        .bind(entry.team_id)
-        .bind(draft_uuid)
-        .execute(&mut *tx)
-        .await
-        .map_err(|e: sqlx::Error| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+        if is_season2 {
+            // Season 2 races never track ELO: record placement only.
+            sqlx::query(
+                "UPDATE teams
+                 SET placement = $1
+                 WHERE team_id = $2
+                   AND draft_id = $3",
+            )
+            .bind(entry.placement)
+            .bind(entry.team_id)
+            .bind(draft_uuid)
+            .execute(&mut *tx)
+            .await
+            .map_err(|e: sqlx::Error| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+        } else {
+            sqlx::query(
+                "UPDATE teams
+                 SET placement = $1,
+                     pre_match_mmr = $2
+                 WHERE team_id = $3
+                   AND draft_id = $4",
+            )
+            .bind(entry.placement)
+            .bind(entry.pre_match_mmr)
+            .bind(entry.team_id)
+            .bind(draft_uuid)
+            .execute(&mut *tx)
+            .await
+            .map_err(|e: sqlx::Error| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+        }
 
         // 2. Update users table with new MMR and win/loss tallies
-        if let (Some(uid), _) = old_team_data.get(&entry.team_id).unwrap() {
-            if let Some((net_adjustment, w_adj, l_adj, _pre_mmr)) = user_updates.get(uid) {
-                sqlx::query(
-                    "UPDATE users
-                     SET mmr = mmr + $1,
-                         wins = wins + $2,
-                         losses = losses + $3
-                     WHERE user_id = $4",
-                )
-                .bind(net_adjustment)
-                .bind(w_adj)
-                .bind(l_adj)
-                .bind(uid)
-                .execute(&mut *tx)
-                .await
-                .map_err(|e: sqlx::Error| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+        if !is_season2 {
+            if let (Some(uid), _) = old_team_data.get(&entry.team_id).unwrap() {
+                if let Some((net_adjustment, w_adj, l_adj, _pre_mmr)) = user_updates.get(uid) {
+                    sqlx::query(
+                        "UPDATE users
+                         SET mmr = mmr + $1,
+                             wins = wins + $2,
+                             losses = losses + $3
+                         WHERE user_id = $4",
+                    )
+                    .bind(net_adjustment)
+                    .bind(w_adj)
+                    .bind(l_adj)
+                    .bind(uid)
+                    .execute(&mut *tx)
+                    .await
+                    .map_err(|e: sqlx::Error| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+                }
             }
         }
     }
@@ -4125,7 +4321,7 @@ pub async fn admin_recalculate_all_stats(
 
     // 2. Fetch all completed ranked drafts in chronological order
     let drafts = sqlx::query(
-        "SELECT draft_id FROM drafts WHERE state = 'COMPLETED' AND ranked = TRUE ORDER BY created_at ASC"
+        "SELECT draft_id FROM drafts WHERE state = 'COMPLETED' AND ranked = TRUE AND season = 1 ORDER BY created_at ASC"
     )
     .fetch_all(&mut *tx)
     .await

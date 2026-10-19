@@ -182,6 +182,7 @@ export interface StatsAuction {
   updated_at: string;
   created_at: string;
   draft_type: string;
+  season: number;
   action: 'PICK' | 'BAN' | 'LEFTOVER' | null;
 }
 
@@ -223,6 +224,7 @@ export interface StatsPageTeamRow {
   updated_at: string;
   created_at: string;
   draft_type?: string;
+  season?: number;
   has_save?: boolean;
 }
 
@@ -314,6 +316,15 @@ export interface AdminDraftSummary {
   ranked: boolean;
   state: string;
   created_at: string;
+}
+
+export interface AdminSeason2Draft {
+  draft_id: string;
+  draft_name: string;
+  created_at: string;
+  season: number;
+  team_count: number;
+  results_submitted: boolean;
 }
 
 export interface AdminDraftTeamPlacement {

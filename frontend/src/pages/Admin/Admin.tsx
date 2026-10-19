@@ -8,7 +8,9 @@ import {
   fetchAdminGuests,
   fetchAdminHallOfFameEligible,
   fetchAdminRaceResults,
+  fetchAdminSeason2Drafts,
   removeAdminDraftTeam,
+  setAdminDraftSeason2,
   updateAdminDiscordUser,
   updateAdminDraftPlacements,
   updateAdminGuestLink,
@@ -28,6 +30,7 @@ import {
   AdminGuestAccount,
   AdminHallOfFameEligibleEntry,
   AdminRaceResult,
+  AdminSeason2Draft,
   HallOfFamePokemon,
   AdminMetricSummary,
 } from '../../types';
@@ -38,7 +41,7 @@ import HallOfFameTeamEditorModal from './HallOfFameTeamEditorModal';
 import CostBreakdownExportPanel from './CostBreakdownExportPanel';
 
 
-type AdminTab = 'draft-results' | 'discord-users' | 'guest-linking' | 'upload-pokemon-data' | 'boss-battle-history' | 'boss-battle-submissions' | 'hall-of-fame' | 'race-results' | 'metrics' | 'cost-breakdown-export';
+type AdminTab = 'draft-results' | 'discord-users' | 'guest-linking' | 'upload-pokemon-data' | 'boss-battle-history' | 'boss-battle-submissions' | 'hall-of-fame' | 'race-results' | 'season-2-races' | 'metrics' | 'cost-breakdown-export';
 
 const Admin: React.FC = () => {
   const [hasRefereeRole, setHasRefereeRole] = useState<boolean | null>(null);
@@ -92,6 +95,12 @@ const Admin: React.FC = () => {
   const [raceResultsError, setRaceResultsError] = useState<string | null>(null);
   const [autoFillRaceRunning, setAutoFillRaceRunning] = useState(false);
   const [autoFillRaceMessage, setAutoFillRaceMessage] = useState<string | null>(null);
+
+  const [season2Drafts, setSeason2Drafts] = useState<AdminSeason2Draft[]>([]);
+  const [season2DraftsLoading, setSeason2DraftsLoading] = useState(false);
+  const [season2DraftsError, setSeason2DraftsError] = useState<string | null>(null);
+  const [season2DraftsMessage, setSeason2DraftsMessage] = useState<string | null>(null);
+  const [season2ActingDraftId, setSeason2ActingDraftId] = useState<string | null>(null);
 
   const [metrics, setMetrics] = useState<AdminMetricSummary[]>([]);
   const [metricsLoading, setMetricsLoading] = useState(false);
@@ -375,6 +384,22 @@ const Admin: React.FC = () => {
       .finally(() => setRaceResultsLoading(false));
   }, [hasRefereeRole, tab]);
 
+  const loadSeason2Drafts = () => {
+    setSeason2DraftsLoading(true);
+    setSeason2DraftsError(null);
+    fetchAdminSeason2Drafts()
+      .then((rows) => setSeason2Drafts(rows))
+      .catch((err: any) =>
+        setSeason2DraftsError(err?.response?.data ?? err?.message ?? 'Failed to load Season 2 drafts.')
+      )
+      .finally(() => setSeason2DraftsLoading(false));
+  };
+
+  useEffect(() => {
+    if (!hasRefereeRole || tab !== 'season-2-races') return;
+    loadSeason2Drafts();
+  }, [hasRefereeRole, tab]);
+
   const sortedTeams = useMemo(
     () => [...draftTeams].sort((a, b) => (a.placement ?? 9999) - (b.placement ?? 9999)),
     [draftTeams],
@@ -453,6 +478,31 @@ const Admin: React.FC = () => {
       setAutoFillRaceMessage(err?.message ?? 'Auto-fill failed.');
     } finally {
       setAutoFillRaceRunning(false);
+    }
+  };
+
+  const handleToggleSeason2 = async (draft: AdminSeason2Draft) => {
+    const marking = draft.season !== 2;
+    const confirmMessage = marking
+      ? draft.results_submitted
+        ? 'Results have already been submitted for this draft. Marking it as Season 2 will NOT roll back the ELO/win-loss it already contributed. Mark as Season 2 anyway?'
+        : 'Mark this draft as a Season 2 race?'
+      : 'Remove this draft from Season 2? Its points will disappear from the Season 2 Standings.';
+    if (!window.confirm(confirmMessage)) return;
+
+    setSeason2ActingDraftId(draft.draft_id);
+    setSeason2DraftsMessage(null);
+    setSeason2DraftsError(null);
+    try {
+      await setAdminDraftSeason2(draft.draft_id, marking);
+      setSeason2DraftsMessage(
+        `${draft.draft_name || draft.draft_id.slice(0, 8)} ${marking ? 'marked as' : 'removed from'} Season 2.`
+      );
+      loadSeason2Drafts();
+    } catch (err: any) {
+      setSeason2DraftsError(err?.response?.data ?? err?.message ?? 'Failed to update Season 2 designation.');
+    } finally {
+      setSeason2ActingDraftId(null);
     }
   };
 
@@ -678,6 +728,13 @@ const Admin: React.FC = () => {
                   type="button"
                 >
                   Race Results
+                </button>
+                <button
+                  className={`admin-tab ${tab === 'season-2-races' ? 'active' : ''}`}
+                  onClick={() => setTab('season-2-races')}
+                  type="button"
+                >
+                  Season 2 Races
                 </button>
                 <button
                   className={`admin-tab ${tab === 'metrics' ? 'active' : ''}`}
@@ -1320,6 +1377,83 @@ const Admin: React.FC = () => {
                                     ))}
                                   </div>
                                 )}
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {tab === 'season-2-races' && (
+                <div className="admin-tab-content">
+                  <h2>Season 2 Races</h2>
+                  <p style={{ color: '#94a3b8', marginBottom: '1rem' }}>
+                    Mark completed races created on or after October 15th as Season 2 races. Only Season 2 races earn points on the
+                    Season 2 Standings leaderboard, and they never affect ELO.
+                  </p>
+                  {season2DraftsError && <div className="admin-message admin-error">{season2DraftsError}</div>}
+                  {season2DraftsMessage && <div className="admin-message admin-success">{season2DraftsMessage}</div>}
+                  {season2DraftsLoading ? (
+                    <div className="admin-message">Loading drafts...</div>
+                  ) : season2Drafts.length === 0 ? (
+                    <div className="admin-message">No completed drafts found after October 15th.</div>
+                  ) : (
+                    <div className="admin-table-wrap">
+                      <table className="admin-race-results-table">
+                        <thead>
+                          <tr>
+                            <th>Draft ID</th>
+                            <th>Draft Name</th>
+                            <th>Date</th>
+                            <th>Participants</th>
+                            <th>Status</th>
+                            <th>Action</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {season2Drafts.map((draft) => (
+                            <tr key={draft.draft_id}>
+                              <td>{draft.draft_id.slice(0, 8)}</td>
+                              <td>{draft.draft_name || '-'}</td>
+                              <td>
+                                {new Date(draft.created_at).toLocaleDateString('en-US', {
+                                  month: 'numeric',
+                                  day: 'numeric',
+                                  year: '2-digit',
+                                })}
+                              </td>
+                              <td>{draft.team_count}</td>
+                              <td>
+                                {draft.season === 2 ? (
+                                  <span style={{ color: '#4ade80', fontWeight: 'bold' }}>Season 2</span>
+                                ) : (
+                                  <span style={{ color: '#94a3b8' }}>Season 1</span>
+                                )}
+                                {draft.results_submitted && (
+                                  <span
+                                    style={{ color: '#fbbf24', marginLeft: '0.5rem', fontSize: '0.8rem' }}
+                                    title="Placements already submitted — marking Season 2 will not roll back existing ELO."
+                                  >
+                                    (results submitted)
+                                  </span>
+                                )}
+                              </td>
+                              <td>
+                                <button
+                                  type="button"
+                                  className="button"
+                                  onClick={() => handleToggleSeason2(draft)}
+                                  disabled={season2ActingDraftId === draft.draft_id}
+                                >
+                                  {season2ActingDraftId === draft.draft_id
+                                    ? 'Saving...'
+                                    : draft.season === 2
+                                      ? 'Remove from Season 2'
+                                      : 'Mark as Season 2'}
+                                </button>
                               </td>
                             </tr>
                           ))}

@@ -205,8 +205,8 @@ pub struct Pokemon {
 /// by name. Anything not listed here has a rate of 1.
 const APPEARANCE_RATES: &[(&str, i32)] = &[
     //("Basculin", 2),
-    ("Slugma", 2),
-    //("Tangela", 2),
+    //("Slugma", 2),
+    ("Tangela", 2),
     //("Klink", 2),
 ];
 
