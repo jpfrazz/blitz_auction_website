@@ -607,7 +607,7 @@ const PlayerSearchStatsTab: React.FC<PlayerSearchStatsTabProps> = ({
 
   const playerOneVOnePickStats = useMemo(() => {
     const map = new Map<string, PlayerOneVOnePickStats>();
-    if (!selectedPlayer) return map;
+    if (!selectedPlayer || !displayMatchHistory) return map;
 
     const playedDraftIds = new Set(
       (stats?.teams ?? [])
