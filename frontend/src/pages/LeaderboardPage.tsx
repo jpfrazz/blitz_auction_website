@@ -286,7 +286,7 @@ const LeaderboardPage = () => {
                         <th style={{ width: '250px' }}>Username</th>
                         <th style={{ width: '250px' }}>Display Name</th>
                         <th style={{ width: '110px' }}>Total Points</th>
-                        <th style={{ width: '150px' }}>Win-Loss</th>
+                        <th style={{ width: '150px' }}>Races Played</th>
                         <th>Most Drafted Pokémon</th>
                     </tr>
                 </thead>
@@ -328,7 +328,7 @@ const LeaderboardPage = () => {
                             </td>
                             <td>{player.global_name ?? '-'}</td>
                             <td>{player.total_points}</td>
-                            <td>{`${player.win} - ${player.loss}`}</td>
+                            <td>{player.races_played}</td>
                             <td>
                                 <div className="pokemon-list">
                                     {player.most_drafted_pokemon.map((p) => (

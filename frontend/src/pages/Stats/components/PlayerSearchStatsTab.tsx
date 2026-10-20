@@ -38,6 +38,11 @@ interface PokemonDraftSummary {
   avgSpend: number;
 }
 
+interface PlayerOneVOnePickStats {
+  timesPicked: number;
+  pickPositions: number[];
+}
+
 function formatPokemonName(name: string | undefined): string {
   if (!name) return '';
   const lower = name.toLowerCase();
@@ -600,6 +605,63 @@ const PlayerSearchStatsTab: React.FC<PlayerSearchStatsTabProps> = ({
     return map;
   }, [stats?.auctions, stats?.legacy, validDraftIds]);
 
+  const globalOneVOnePickAverages = useMemo(() => {
+    const playedDraftIds = new Set(
+      (stats?.teams ?? []).filter((team) => team.has_save).map((team) => team.draft_id),
+    );
+    const positionsByPokemon = new Map<string, number[]>();
+
+    (stats?.auctions ?? []).forEach((auction) => {
+      if (auction.draft_type !== '1v1' || !playedDraftIds.has(auction.draft_id)) return;
+
+      let position: number;
+      if (auction.action === 'LEFTOVER') {
+        position = 29;
+      } else if ((auction.action === 'PICK' || auction.action === 'BAN') && auction.draft_order >= 1 && auction.draft_order <= 28) {
+        position = auction.draft_order;
+      } else {
+        return;
+      }
+
+      const { key } = resolveIdentity(auction.name, auction.form || '');
+      const positions = positionsByPokemon.get(key) ?? [];
+      positions.push(position);
+      positionsByPokemon.set(key, positions);
+    });
+
+    return new Map(
+      Array.from(positionsByPokemon, ([key, positions]) => [
+        key,
+        positions.reduce((sum, position) => sum + position, 0) / positions.length,
+      ]),
+    );
+  }, [stats?.auctions, stats?.teams]);
+
+  const playerOneVOnePickStats = useMemo(() => {
+    const map = new Map<string, PlayerOneVOnePickStats>();
+    if (!selectedPlayer || !displayMatchHistory) return map;
+
+    const playedDraftIds = new Set(
+      (stats?.teams ?? [])
+        .filter((team) => team.user_id === selectedPlayer.user_id && team.draft_type === '1v1' && team.has_save)
+        .map((team) => team.draft_id),
+    );
+
+    displayMatchHistory.forEach((team) => {
+      if (team.draft_type !== '1v1' || !playedDraftIds.has(team.draft_id)) return;
+      (team.pokemon_drafted ?? []).forEach((auction) => {
+        if (auction.action !== 'PICK' || auction.draft_order < 1 || auction.draft_order > 28) return;
+        const { key } = resolveIdentity(auction.name, auction.form || '');
+        const row = map.get(key) ?? { timesPicked: 0, pickPositions: [] };
+        row.timesPicked += 1;
+        row.pickPositions.push(auction.draft_order);
+        map.set(key, row);
+      });
+    });
+
+    return map;
+  }, [displayMatchHistory, selectedPlayer, stats?.teams]);
+
   const draftRmvMap = useMemo(() => {
     const map = new Map<number, number>();
     displayMatchHistory?.forEach((team) => {
@@ -633,6 +695,9 @@ const PlayerSearchStatsTab: React.FC<PlayerSearchStatsTabProps> = ({
     avgPaid: number | null;
     avgPrice: number | null;
     diff: number | null;
+    timesPicked: number;
+    avgPicked: number | null;
+    pickedDiff: number | null;
   }
 
   const allPokemonList = useMemo<AllPokemonRow[]>(() => {
@@ -667,6 +732,13 @@ const PlayerSearchStatsTab: React.FC<PlayerSearchStatsTabProps> = ({
       const avgPrice = globalPokemonPrices.get(key) ?? null;
       const avgPaid = player ? Math.round(player.avgSpend) : null;
       const diff = avgPaid !== null && avgPrice !== null ? avgPaid - avgPrice : null;
+      const playerPicks = playerOneVOnePickStats.get(key);
+      const timesPicked = playerPicks?.timesPicked ?? 0;
+      const avgPicked = playerPicks && playerPicks.pickPositions.length > 0
+        ? playerPicks.pickPositions.reduce((sum, position) => sum + position, 0) / playerPicks.pickPositions.length
+        : null;
+      const globalAvgPicked = globalOneVOnePickAverages.get(key);
+      const pickedDiff = avgPicked !== null && globalAvgPicked !== undefined ? avgPicked - globalAvgPicked : null;
 
       const draftSets = pokemonDraftAppearances.get(key);
       const appearances = draftSets ? Array.from(draftSets).filter((id) => playerDraftIds.has(id)).length : 0;
@@ -683,6 +755,9 @@ const PlayerSearchStatsTab: React.FC<PlayerSearchStatsTabProps> = ({
         avgPaid,
         avgPrice,
         diff,
+        timesPicked,
+        avgPicked,
+        pickedDiff,
       });
     });
 
@@ -692,7 +767,7 @@ const PlayerSearchStatsTab: React.FC<PlayerSearchStatsTabProps> = ({
     });
 
     return rows;
-  }, [pokemonDraftSummary, stats?.auctions, validDraftIds, globalPokemonPrices, auctionMatchHistory]);
+  }, [pokemonDraftSummary, stats?.auctions, validDraftIds, globalPokemonPrices, auctionMatchHistory, playerOneVOnePickStats, globalOneVOnePickAverages]);
 
   const signaturePokemon = useMemo(() => {
     const candidates = allPokemonList.filter((p) => p.pctDrafted !== null && p.pctDrafted > 0 && p.playerGames >= 3);
@@ -700,7 +775,7 @@ const PlayerSearchStatsTab: React.FC<PlayerSearchStatsTabProps> = ({
     return candidates.reduce((best, p) => (p.pctDrafted! > best.pctDrafted! ? p : best), candidates[0]);
   }, [allPokemonList]);
 
-  type TableSortKey = 'name' | 'playerGames' | 'appearances' | 'pctDrafted' | 'avgPaid' | 'avgPrice' | 'diff';
+  type TableSortKey = 'name' | 'playerGames' | 'appearances' | 'pctDrafted' | 'avgPaid' | 'avgPrice' | 'diff' | 'timesPicked' | 'avgPicked' | 'pickedDiff';
   const [tableSortConfig, setTableSortConfig] = useState<{ key: TableSortKey; direction: 'asc' | 'desc' }>({ key: 'playerGames', direction: 'desc' });
 
   const handleTableSort = (key: TableSortKey) => {
@@ -734,6 +809,12 @@ const PlayerSearchStatsTab: React.FC<PlayerSearchStatsTabProps> = ({
           return mult * ((a.avgPrice ?? -Infinity) - (b.avgPrice ?? -Infinity));
         case 'diff':
           return mult * ((a.diff ?? -Infinity) - (b.diff ?? -Infinity));
+        case 'timesPicked':
+          return mult * (a.timesPicked - b.timesPicked);
+        case 'avgPicked':
+          return mult * ((a.avgPicked ?? -Infinity) - (b.avgPicked ?? -Infinity));
+        case 'pickedDiff':
+          return mult * ((a.pickedDiff ?? -Infinity) - (b.pickedDiff ?? -Infinity));
         default:
           return 0;
       }
@@ -1064,6 +1145,15 @@ const PlayerSearchStatsTab: React.FC<PlayerSearchStatsTabProps> = ({
                         <span className="sortable" onClick={() => handleTableSort('diff')}>
                           Diff{renderSortArrow('diff')}
                         </span>
+                        <span className="sortable" onClick={() => handleTableSort('timesPicked')}>
+                          Times Picked{renderSortArrow('timesPicked')}
+                        </span>
+                        <span className="sortable" onClick={() => handleTableSort('avgPicked')}>
+                          Avg Picked{renderSortArrow('avgPicked')}
+                        </span>
+                        <span className="sortable" onClick={() => handleTableSort('pickedDiff')}>
+                          Diff{renderSortArrow('pickedDiff')}
+                        </span>
                       </div>
 
                       {filteredPokemonList.map((pokemon) => (
@@ -1099,6 +1189,13 @@ const PlayerSearchStatsTab: React.FC<PlayerSearchStatsTabProps> = ({
                           <span className={pokemon.diff !== null ? (pokemon.diff < 0 ? 'diff-negative' : pokemon.diff > 0 ? 'diff-positive' : '') : ''} style={{ padding: '2px 6px' }}>
                             {pokemon.diff !== null
                               ? (pokemon.diff < 0 ? `-$${Math.abs(pokemon.diff).toLocaleString()}` : pokemon.diff > 0 ? `+$${pokemon.diff.toLocaleString()}` : '$0')
+                              : '---'}
+                          </span>
+                          <span>{pokemon.timesPicked}</span>
+                          <span>{pokemon.avgPicked !== null ? pokemon.avgPicked.toFixed(1) : '---'}</span>
+                          <span className={pokemon.pickedDiff !== null ? (pokemon.pickedDiff < 0 ? 'diff-negative' : pokemon.pickedDiff > 0 ? 'diff-positive' : '') : ''} style={{ padding: '2px 6px' }}>
+                            {pokemon.pickedDiff !== null
+                              ? `${pokemon.pickedDiff > 0 ? '+' : ''}${pokemon.pickedDiff.toFixed(1)}`
                               : '---'}
                           </span>
                         </div>
