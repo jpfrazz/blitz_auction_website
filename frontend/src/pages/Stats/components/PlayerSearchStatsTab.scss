@@ -283,7 +283,7 @@
 
     .player-draft-overview-table-wrapper {
         max-height: 480px;
-        max-width: 940px;
+        max-width: 920px;
         overflow: auto;
         scrollbar-gutter: stable;
         scrollbar-width: thin;
@@ -328,7 +328,7 @@
     .player-draft-overview-table {
         display: grid;
         gap: 0.4rem;
-        min-width: 960px;
+        min-width: 920px;
     }
 
     .player-draft-overview-row:nth-child(even) {
@@ -338,7 +338,7 @@
     .player-draft-overview-table-header,
     .player-draft-overview-row {
         display: grid;
-        grid-template-columns: minmax(170px, 1fr) 64px 86px 70px 78px 78px 68px 74px 78px 68px;
+        grid-template-columns: 160px 64px 86px 70px 78px 78px 68px 74px 78px 68px;
         gap: 0.75rem;
         align-items: center;
 
