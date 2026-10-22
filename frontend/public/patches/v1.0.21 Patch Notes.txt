@@ -1,6 +1,6 @@
 10/21/2026
 
-//Heads Up: This is an small patch whose notes are extremely in the weeds. If you play Blitz casually, you can ignore it and be fine.
+//Heads Up: This is a small patch whose notes are extremely in the weeds. If you play Blitz casually, you can ignore it and be fine.
 
 -----------------------------------------------
 Bug Fixes
