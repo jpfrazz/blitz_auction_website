@@ -490,7 +490,6 @@ const Info = () => (
               <summary className='slateport-market-dropdown'>Leaf Stone</summary>
               <ul>
                 <li>Gloom &gt; Vileplume</li>
-                <li>Cottonee &gt; Whimsicott</li>
                 <li>Exeggcute &gt; Exeggutor</li>
                 <li>Voltorb &gt; Electrode</li>
                 <li>Eevee &gt; Leafeon</li>
@@ -519,6 +518,7 @@ const Info = () => (
                 <li>Exeggcute &gt; Exeggutor-Alola</li>
                 <li>Helioptile &gt; Heliolisk</li>
                 <li>Pikachu &gt; Raichu-Alola</li>
+                <li>Cottonee &gt; Whimsicott</li>
                 <li>Eevee &gt; Espeon</li>
               </ul>
             </details>
@@ -731,7 +731,7 @@ const Info = () => (
           Each TM costs $4000. In addition to TMs, for $2000, you can choose to "invert" the shop, swapping all TMs with their same-type counterpart.
         </p>
         <p className="info-answer">
-          If, at gym 8, there's a TM-type that you've yet to see, Scott is guaranteed to offer you a TM of that type.
+          Across a full run, Scott is guaranteed to offer you a TM of every type. He'll never offer you the same TM twice.
         </p>
         <p className="info-answer">
           Buying a TM causes all other TMs in the shop to have their price reduced by half.

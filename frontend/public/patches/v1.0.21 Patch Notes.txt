@@ -1,0 +1,45 @@
+10/21/2026
+
+//Heads Up: This is an small patch whose notes are extremely in the weeds. If you play Blitz casually, you can ignore it and be fine.
+
+-----------------------------------------------
+Bug Fixes
+-----------------------------------------------
+
+Fixed a bug where enemy speed drop moves were always receiving +1 to their score
+//This effectively made the enemy AI value speed-dropping moves like Rock Tomb and Pounce at the same level of fewest-hits-to-kill moves, so long as they didn't have a 1- or 2-hit KO.
+
+Modified AI tie-breaking to no longer consider Speed-reduction as a positive effect if the AI's Pokémon already outspeeds yours.
+//Currently, if the AI determines that two moves are equally good, one of the tiebreaks it considers can be prioritizing moves which have a "positive effect," which includes stat reductions. There's now a unique case for speed reduction to stop the enemy from caring about lowering the speed of your Pokémon that's already slower.
+
+
+Modified Scott to guarantee that all 18 TM-types now appear on every run
+//Previously, there was a less than 1% chance that over the course of a run Scott would fail to offer the player a TM of a specific type. For a detailed explanation of what's changed under the hood, see below...
+
+//Extended Commentary Start
+When I first designed Scott, the idea was that sometimes you'd get offered certain TMs early, sometimes you'd be offered them late, and sometimes you wouldn't be offered them at all. Under that system, it made sense that Scott would determine each "batch" of TMs he sold dynamically based on what he sold previously.
+
+However, after release, I changed it so that each TM-type was guaranteed... kind of. The problem is that I didn't modify the underlying system to stop generating dynamically. This meant that even after 8th-badge Scott started prioritizing offering TMs of types the player hadn't yet seen, there was still a slim chance that there were 6 unseen types at this final threshold, and that therefore one would go unoffered.
+
+Now, Scott sets all 25 TMs at once. In other words, when Scott first talks to you, he determines all five "batches" that you'll be offered at the same time. While this new system will appear similar to the old one in practice, it is fundamentally reworked under the hood.
+
+The rules of Scott's TM generation are as follows (also updated on the Blitz Info page):
+
+- Across the 25 TMs Scott offers you, you're guaranteed to see one of every type (All 18 types will be offered at some point)
+- You can't be offered two TMs of the same type in the same batch (You can't be offered Ice Beam and Ice Punch in the same batch of 5)
+- You can't be offered the same TM twice (If you're offered Ice Beam once, you'll never be offered it again. You can, however, obtain two Ice Beam by inverting Ice Punch if Ice Punch ends up being one of your seven non-unique-type TMs)
+- No two consecutive batches can contain TMs of the same type (If you're offered Ice Beam after Badge 4, you can't see another Ice TM until Badge 6 at the earliest)
+
+Ultimately, this change doesn't matter much in terms of how you interact with the game, which is why I've plopped it in bug fix. But I wanted to make sure it was fully documented here for posterity's sake.
+//Extended Commentary End
+
+Fixed a bug where swapping a Pokémon into hazards and fainting to them instantly ended the turn
+//In modern games, a Pokémon fainting doesn't instantly end the turn. Instead, the opponent is still able to use the move they input (even if it just misses)
+//This is specifically useful against Steven. It's now possible to swap a Pokémon at low health onto Skarmory's Spikes the same turn Metagross mega evolves, sacrificing your Pokémon to waste its first turn of mega evolution.
+//Thanks spring for reporting
+
+Fixed a bug where Mimikyu with Disguise hitting itself in confusion caused glitched behavior
+//Thanks manthief for reporting
+
+Fixed a bug where Mega Evolution sprites didn't properly devolve after their final turn while behind a Substitute doll
+//Thanks manthief for reporting
