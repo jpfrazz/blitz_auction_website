@@ -21,7 +21,7 @@ When I first designed Scott, the idea was that sometimes you'd get offered certa
 
 However, after release, I changed it so that each TM-type was guaranteed... kind of. The problem is that I didn't modify the underlying system to stop generating dynamically. This meant that even after 8th-badge Scott started prioritizing offering TMs of types the player hadn't yet seen, there was still a slim chance that there were 6 unseen types at this final threshold, and that therefore one would go unoffered.
 
-Now, Scott sets all 25 TMs at once. In other words, when Scott first talks to you, he determines all five "batches" that you'll be offered at the same time. While this new system will appear similar to the old one in practice, it is fundamentally reworked under the hood.
+Now, Scott sets all 25 TMs at once. In other words, when Scott first talks to you, he determines all five "batches" that you'll be offered at the same time. This removes the chance to not be offered a TM of every type. While this new system will appear similar to the old one in practice, it is fundamentally reworked under the hood.
 
 The rules of Scott's TM generation are as follows (also updated on the Blitz Info page):
 
