@@ -54,6 +54,7 @@ const FAQ = () => (
           <h3 className="faq-toc-subheading"><a href="#blitz-changes">Blitz Changes</a></h3>
           <ul className="info-toc-list">
             <li><a href="#how-does-this-mechanic-work">How does [this] mechanic work?</a></li>
+            <li><a href="#how-does-this-pokemon-evolve">How does [this] Pokémon evolve?</a></li>
             <li><a href="#why-is-my-pokemon-green">Why is my Pokémon green?</a></li>
             <li><a href="#whats-changed">What's changed from vanilla Emerald?</a></li>
             <li><a href="#what-do-the-new-items-do">What do the new items do?</a></li>
@@ -76,7 +77,7 @@ const FAQ = () => (
           <h2 className="faq-question">What's Emerald Blitz?</h2>
           <hr />
           <p className="faq-answer">
-            Emerald Blitz is a revamped version of Pokémon Emerald streamlined for nuzlocke draft racing. Despite playing through the entire Hoenn region, a playthrough takes just 90 minutes. Draft a team and race through a randomized gym order to see how far you can get!
+            Emerald Blitz is a revamped version of Pokémon Emerald streamlined for nuzlocke draft racing. Despite playing through the entire Hoenn region, a playthrough takes just 90 minutes. Draft a team and race through Blitz's randomized gym order to see how far you can get!
           </p>
         </section>
 
@@ -87,10 +88,10 @@ const FAQ = () => (
             I did! I'm Nathan. I also made this website with the help of JPFrazz and Plutonium98.
           </p>
           <p className="faq-answer" style={{ marginTop: '1rem' }}>
-            Twelve years ago, my friends and I used to get together every weekend to draft race Pokémon Emerald in my basement. We would take turns picking Pokémon via a giant spreadsheet, then stay up all night to see who could beat the game first.
+            Twelve years ago, my friends and I would get together every weekend to draft race Pokémon Emerald in my basement. We'd take turns picking Pokémon via a giant spreadsheet, then stay up all night to see who could beat the game first.
           </p>
           <p className="faq-answer" style={{ marginTop: '1rem' }}>
-            ...And we never stopped! Suffice to say, we've had a lot of time to refine the experience. I truly believe that draft nuzlocke races are the most fun way to play Pokémon, and I hope Blitz can show you why!
+            ...And we never stopped! Suffice to say, we've had a lot of time to refine the experience. I truly believe that draft nuzlocke races are the most fun way to play Pokémon, and I hope Blitz can show you why.
           </p>
         </section>
       </div>
@@ -155,7 +156,7 @@ const FAQ = () => (
             </li>
           </ol>
           <p className="faq-answer">
-            From there, the website will automatically patch your game, and the <UiRef>Auto Withdraw</UiRef> button will give you your chosen team!
+            From there, the website will automatically patch your game. In the sparkling notebook at the top of your room, pick either "Random Team" to have the game assign you a squad, or use the website's <UiRef>Auto Withdraw</UiRef> button to instantly obtain your team planner Pokemon.
           </p>
         </section>
 
@@ -187,7 +188,9 @@ const FAQ = () => (
           <hr />
           <p className="faq-answer">Play in community races!</p>
           <p className="faq-answer" style={{ marginTop: '1rem' }}>
-            The discord community is super friendly and hosts multiple public races every day. Even if you've never played before, we'd love to have you. Join the discord to get notified any time a community race is happening!
+            The discord community is super friendly and hosts multiple public auctions and 1v1s every day. Even if 
+you've never played before, we'd love to have you. <a href="https://discord.com/invite/CsUSZ5UhzW" target="_blank" rel="noopener noreferrer">Join the Discord</a> to get notified any time a community race is 
+happening!
           </p>
         </section>
 
@@ -254,7 +257,9 @@ const FAQ = () => (
           <h2 className="faq-question">Can I play competitively?</h2>
           <hr />
           <p className="faq-answer">
-            Yes! The leaderboard in the header tracks Ever Grande Prix races, a seasonal competitive circuit with in-game rewards. Season two runs October 18th through December 23rd and is open to anyone. Join the Discord to sign up!
+            Yes! The leaderboard in the header tracks Ever Grande Prix races, a seasonal competitive circuit with 
+in-game rewards. Season two runs October 18th through December 23rd and is open to anyone. <a href="https://discord.com/invite/CsUSZ5UhzW" target="_blank" rel="noopener noreferrer">Join the Discord</a> to 
+participate!
           </p>
         </section>
       </div>
@@ -315,6 +320,17 @@ const FAQ = () => (
           <hr />
           <p className="faq-answer">
             The <a href="/Info">Info page</a> has all of the at-a-glance information you need for finding items, learning mechanics, and understanding AI behavior.
+          </p>
+        </section>
+
+        <section id="how-does-this-pokemon-evolve" className="faq-section" style={{ scrollMarginTop: '120px' }}>
+          <h2 className="faq-question">How does [this] Pokémon evolve?</h2>
+          <hr />
+          <p className="faq-answer">
+            The website's <a href="https://emeraldblitz.com/Pokedex">Pokedex page</a> includes evolution methods for every Pokémon.
+          </p>
+          <p className="faq-answer" style={{ marginTop: '1rem' }}>
+            In the Pokedex, Pokémon with unique mechanics also have a star button to the right of their name. Click this button to read more about specific evolution methods for Pokémon like Applin, Basculin, Corsola, and more!
           </p>
         </section>
 

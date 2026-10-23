@@ -117,7 +117,7 @@ const Info = () => (
         <h2 className="info-question">Key NPCs</h2>
         <hr />
         <p className="info-answer">
-          Locations of important NPCs.
+          Locations of important NPCs:
         </p>
 
         <div className="location-scale-grid">
