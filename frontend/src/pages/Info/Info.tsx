@@ -617,7 +617,6 @@ const Info = () => (
               <li>Abomasite</li>
               <li>Banettite</li>
               <li>Barbaracite</li>
-              <li>Beedrillite</li>
               <li>Cameruptite</li>
               <li>Chimechite</li>
               <li>Dragalgyite</li>
@@ -646,6 +645,7 @@ const Info = () => (
               <li>Aggronite</li>
               <li>Ampharosite</li>
               <li>Baxcalibrite</li>
+              <li>Beedrillite</li>
               <li>Blastoisinite</li>
               <li>Blazikenite</li>
               <li>Chandelurite</li>

@@ -154,7 +154,7 @@ const LeaderboardPage = () => {
     }, [season2Leaderboard, season2MinRaces]);
 
     const draftsInfo = useMemo(() => {
-        if (!activeStats) return new Map<string, { date: string, participants: { userId: string, username: string, placement: number }[] }>();
+        if (!activeStats) return new Map<string, { date: string, participants: { userId: string, username: string, placement: number, points: number | null }[] }>();
         const map = new Map<string, { date: string, participants: { userId: string, username: string, placement: number, points: number | null }[] }>();
 
         const playersMap = new Map();

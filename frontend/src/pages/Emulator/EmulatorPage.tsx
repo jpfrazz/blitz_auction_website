@@ -2592,6 +2592,33 @@ const EmulatorPage: React.FC = () => {
       // We use a "double-tap" save to fix mgba core buffer lag.
       window.EJS_onGameStart = () => {
 
+        // Add "Download .sav" right below "Take Screenshot" in the emulator menu.
+        try {
+          const emuAny = window.EJS_emulator as any;
+          const screenshotLi: HTMLElement | undefined = emuAny?.elements?.contextMenu?.screenshot;
+          if (screenshotLi?.parentElement && !screenshotLi.parentElement.querySelector('.ejs_download_sav')) {
+            const li = document.createElement('li');
+            li.className = 'ejs_download_sav';
+            li.hidden = !latestSaveBytesRef.current;
+            const a = document.createElement('a');
+            a.href = '#';
+            a.innerText = 'Download .sav';
+            li.appendChild(a);
+            li.addEventListener('click', (e) => {
+              e.preventDefault();
+              if (emuAny.elements?.contextmenu) emuAny.elements.contextmenu.style.display = 'none';
+              handleDownloadSave();
+            });
+            screenshotLi.insertAdjacentElement('afterend', li);
+            // Reveal the item as soon as the first .sav exists.
+            const gameEl = document.querySelector('#game');
+            const syncVisibility = () => { li.hidden = !latestSaveBytesRef.current; };
+            gameEl?.addEventListener('contextmenu', syncVisibility, true);
+          }
+        } catch (e) {
+          console.error('Failed to add download save menu item:', e);
+        }
+
         // Apply + heal saved bindings once the game is running. EmulatorJS
         // hydrates `emulator.controls` from `EJS_defaultControls` and/or a stale
         // localStorage `ejs-*-settings` key; normalize the live controls
@@ -3507,20 +3534,6 @@ const EmulatorPage: React.FC = () => {
                         title="Forfeit your run and record a loss"
                       >
                         Forfeit
-                      </button>
-                    )}
-                    {mySaveData && (
-                      <button
-                        className="autosave-btn"
-                        onClick={handleDownloadSave}
-                        title="Download .sav file"
-                      >
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ verticalAlign: 'middle', marginRight: 4 }}>
-                          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-                          <polyline points="7 10 12 15 17 10" />
-                          <line x1="12" y1="15" x2="12" y2="3" />
-                        </svg>
-                        .sav
                       </button>
                     )}
                     {autosaveHistory.length > 0 && (
