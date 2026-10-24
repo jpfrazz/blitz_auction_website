@@ -155,10 +155,14 @@ const LeaderboardPage = () => {
 
     const draftsInfo = useMemo(() => {
         if (!activeStats) return new Map<string, { date: string, participants: { userId: string, username: string, placement: number }[] }>();
-        const map = new Map<string, { date: string, participants: { userId: string, username: string, placement: number }[] }>();
+        const map = new Map<string, { date: string, participants: { userId: string, username: string, placement: number, points: number | null }[] }>();
 
         const playersMap = new Map();
         activeStats.players.forEach(p => playersMap.set(p.user_id, p));
+        const draftTeamCounts = new Map<string, number>();
+        activeStats.teams.forEach(t => {
+            draftTeamCounts.set(t.draft_id, (draftTeamCounts.get(t.draft_id) || 0) + 1);
+        });
 
         activeStats.teams.forEach(t => {
             // Season 2 standings are driven by race placements, not ELO placements.
@@ -173,7 +177,10 @@ const LeaderboardPage = () => {
             draft.participants.push({
                 userId: uid,
                 username: pInfo?.global_name || pInfo?.user_name || uid || 'Guest',
-                placement: position
+                placement: position,
+                points: activeTab === 'season2'
+                    ? (position <= 3 ? 6 - position : 0) + ((draftTeamCounts.get(t.draft_id) || 0) - position)
+                    : null
             });
         });
 
@@ -196,7 +203,11 @@ const LeaderboardPage = () => {
         if (!expandedUserId || !activeStats) return [];
         return Array.from(draftsInfo.entries())
             .filter(([_, info]) => info.participants.some(p => p.userId === expandedUserId))
-            .map(([id, info]) => ({ draftId: id, ...info }))
+            .map(([id, info]) => ({
+                draftId: id,
+                ...info,
+                points: info.participants.find(p => p.userId === expandedUserId)?.points ?? null
+            }))
             .sort((a, b) => (b.date || '').localeCompare(a.date || ''));
     }, [expandedUserId, draftsInfo, activeStats]);
 
@@ -372,7 +383,8 @@ const LeaderboardPage = () => {
                                         stats,
                                         userMatches,
                                         player.user_id,
-                                        userTeamsByDraft
+                                        userTeamsByDraft,
+                                        true
                                     )}
                                 </td>
                             </tr>
@@ -461,7 +473,8 @@ const LeaderboardPage = () => {
                                         stats,
                                         userMatches,
                                         player.user_id,
-                                        userTeamsByDraft
+                                        userTeamsByDraft,
+                                        false
                                     )}
                                 </td>
                             </tr>
@@ -479,9 +492,10 @@ const LeaderboardPage = () => {
 function renderMatchHistory(
     statsLoading: boolean,
     stats: StatsPageResponse | null,
-    userMatches: { draftId: string, date: string, participants: { userId: string, username: string, placement: number }[] }[],
+    userMatches: { draftId: string, date: string, participants: { userId: string, username: string, placement: number, points: number | null }[], points: number | null }[],
     playerUserId: string,
-    userTeamsByDraft: Map<string, Map<string, any[]>>
+    userTeamsByDraft: Map<string, Map<string, any[]>>,
+    showPoints: boolean
 ) {
     return (
         <div style={{
@@ -501,6 +515,7 @@ function renderMatchHistory(
                     <thead>
                         <tr style={{ textAlign: 'left', color: '#666', borderBottom: '1px solid rgba(255, 255, 255, 0.1)' }}>
                             <th style={{ padding: '12px', width: '80px' }}>Date</th>
+                            {showPoints && <th style={{ padding: '12px', width: '80px' }}>Points</th>}
                             <th style={{ padding: '12px', minWidth: '300px' }}>Race Standings</th>
                             <th style={{ padding: '12px', minWidth: '450px' }}>Draft</th>
                         </tr>
@@ -511,6 +526,7 @@ function renderMatchHistory(
                                 <td style={{ padding: '12px', whiteSpace: 'nowrap', verticalAlign: 'top' }}>
                                     {match.date ? new Date(match.date).toLocaleDateString('en-US', { month: 'numeric', day: 'numeric', year: '2-digit' }) : '-'}
                                 </td>
+                                {showPoints && <td style={{ padding: '12px', verticalAlign: 'top' }}>{match.points ?? '-'}</td>}
                                 <td style={{ padding: '12px' }}>
                                     <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
                                             {match.participants.map(p => (
