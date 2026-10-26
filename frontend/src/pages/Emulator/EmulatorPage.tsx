@@ -1810,6 +1810,7 @@ const EmulatorPage: React.FC = () => {
           nickname: m.nickname,
           hp: m.hp,
           max_hp: m.max_hp,
+          stats: m.stats,
         }))
         : [];
     const enemySig = JSON.stringify(enemyParty);

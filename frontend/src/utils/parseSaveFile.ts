@@ -593,10 +593,26 @@ export function readLiveMapFrame(bytes: Uint8Array, ewramBase: number): LiveMapF
 // the Blitz build's pokeemerald.map). Must be re-checked if the ROM's EWRAM layout changes.
 const ENEMY_PARTY_EWRAM_OFFSET = 0x2eae4;
 
-export function readLiveEnemyParty(bytes: Uint8Array, ewramBase: number): SavePokemon[] {
+export interface LiveMonStats { atk: number; def: number; spa: number; spd: number; spe: number }
+
+// Party-slot stats sit after status(4)/level/mail/hp/maxHP in struct Pokemon
+// (hp +102, maxHP +104, then attack, defense, speed, spAttack, spDefense).
+export function readLiveEnemyParty(bytes: Uint8Array, ewramBase: number): Array<SavePokemon & { stats: LiveMonStats }> {
   const off = ewramBase + ENEMY_PARTY_EWRAM_OFFSET;
   if (getRamPartyCount(bytes, off, false) === null) return [];
-  return parseRamParty(bytes, off, false);
+  return parseRamParty(bytes, off, false).map((m, i) => {
+    const s = off + i * RAM_POKEMON_SIZE;
+    return {
+      ...m,
+      stats: {
+        atk: readU16(bytes, s + 106),
+        def: readU16(bytes, s + 108),
+        spe: readU16(bytes, s + 110),
+        spa: readU16(bytes, s + 112),
+        spd: readU16(bytes, s + 114),
+      },
+    };
+  });
 }
 
 export function findLiveMapEwramBase(

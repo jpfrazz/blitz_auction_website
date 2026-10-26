@@ -6,6 +6,7 @@ export interface EnemyMon {
   nickname?: string;
   hp: number;
   max_hp: number;
+  stats?: { atk: number; def: number; spa: number; spd: number; spe: number } | null;
 }
 
 interface Props {
@@ -29,12 +30,16 @@ const EnemyTeamIcons: React.FC<Props> = ({ enemyParty, variant, resolveMetadata 
         const name = meta?.name || `ID ${mon.species_id}`;
         const fainted = mon.hp <= 0;
         const { pct, tone } = hpTone(mon);
+        const s = mon.stats;
+        const tip = s
+          ? `${name}\nHP: ${mon.max_hp}\nAtk: ${s.atk}\nDef: ${s.def}\nSpAtk: ${s.spa}\nSpDef: ${s.spd}\nSpe: ${s.spe}`
+          : name;
         return (
           <span key={i} className={`mini-icon-wrapper ${variant} has-hp-bar`}>
             <img
               src={`/MiniIcons/${getIconName(name, mon.species_id)}.png`}
               alt={name}
-              title={name}
+              title={tip}
               className={`${variant}-mini-icon ${fainted ? 'fainted' : ''}`}
               style={fainted ? { filter: 'grayscale(100%)', opacity: 0.6 } : {}}
               onError={(e) => { (e.target as HTMLImageElement).src = '/MiniIcons/question.png'; }}

@@ -123,6 +123,18 @@ pub struct EnemyPartyMon {
     pub nickname: String,
     pub hp: u16,
     pub max_hp: u16,
+    #[serde(default)]
+    pub stats: Option<EnemyPartyStats>,
+}
+
+/// Non-HP stats of an opposing Pokemon, shown on hover.
+#[derive(Clone, Debug, Deserialize, Serialize)]
+pub struct EnemyPartyStats {
+    pub atk: u16,
+    pub def: u16,
+    pub spa: u16,
+    pub spd: u16,
+    pub spe: u16,
 }
 
 /// Body of the `POST /api/drafts/{draft_id}/forfeit` endpoint. Records an
