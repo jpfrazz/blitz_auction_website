@@ -589,6 +589,16 @@ export function readLiveMapFrame(bytes: Uint8Array, ewramBase: number): LiveMapF
   };
 }
 
+// gEnemyParty's offset from the start of EWRAM (0x0202eae4 - 0x02000000, from
+// the Blitz build's pokeemerald.map). Must be re-checked if the ROM's EWRAM layout changes.
+const ENEMY_PARTY_EWRAM_OFFSET = 0x2eae4;
+
+export function readLiveEnemyParty(bytes: Uint8Array, ewramBase: number): SavePokemon[] {
+  const off = ewramBase + ENEMY_PARTY_EWRAM_OFFSET;
+  if (getRamPartyCount(bytes, off, false) === null) return [];
+  return parseRamParty(bytes, off, false);
+}
+
 export function findLiveMapEwramBase(
   bytes: Uint8Array,
   startOff: number,

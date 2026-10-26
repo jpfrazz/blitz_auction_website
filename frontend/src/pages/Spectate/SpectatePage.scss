@@ -161,6 +161,10 @@
   position: relative;
 }
 
+.enemy-team {
+  padding-top: 0;
+}
+
 .spectate-mini-icon {
   width: 26px;
   height: 26px;
@@ -200,6 +204,18 @@
 
 .mini-hp-bar.grey .mini-hp-fill {
   background: #6b7280;
+}
+
+.enemy-team .mini-hp-bar.green .mini-hp-fill {
+  background: #fca55a;
+}
+
+.enemy-team .mini-hp-bar.yellow .mini-hp-fill {
+  background: #f4772c;
+}
+
+.enemy-team .mini-hp-bar.red .mini-hp-fill {
+  background: #b9501f;
 }
 
 .spectate-no-save {

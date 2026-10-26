@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { useParams, useSearchParams } from 'react-router-dom';
 import Header from '../../shared/components/Header';
-import { parseSaveFile, SaveData, SavePokemon, SaveBoxPokemon, getTrainerNameById, parseRamParty, getRamPartyCount, ramPartyScore, findRamPartyOffset, findRamPartyCopies, hashRamParty, formatMapName, findLiveMapEwramBase, readLiveMapFrame, LIVE_WARP_EWRAM_BASE_OFFSET, RAM_PARTY_BYTES, SECTION_SIZE, SLOT_SIZE, NUM_SECTIONS, FOOTER_OFFSET, SIGNATURE } from '../../utils/parseSaveFile';
+import { parseSaveFile, SaveData, SavePokemon, SaveBoxPokemon, getTrainerNameById, parseRamParty, getRamPartyCount, ramPartyScore, findRamPartyOffset, findRamPartyCopies, hashRamParty, formatMapName, findLiveMapEwramBase, readLiveMapFrame, readLiveEnemyParty, LIVE_WARP_EWRAM_BASE_OFFSET, RAM_PARTY_BYTES, SECTION_SIZE, SLOT_SIZE, NUM_SECTIONS, FOOTER_OFFSET, SIGNATURE } from '../../utils/parseSaveFile';
 import { MAP_NAMES } from '../Auction/mapNames';
 import { getIconName, createResolveMetadata, isActuallyNicknamed } from '../../utils/speciesUtils';
 import { SPECIES_BY_ID } from '../../utils/speciesIdMap';
@@ -13,6 +13,7 @@ import NotebookWithdrawButton from './NotebookWithdrawButton';
 import SidebarNotepad from './SidebarNotepad';
 import SortableSidebarSection from './SortableSidebarSection';
 import HoverTip from '../../shared/components/HoverTip';
+import EnemyTeamIcons, { EnemyMon } from './EnemyTeamIcons';
 import {
   DndContext,
   closestCenter,
@@ -538,7 +539,7 @@ async function deleteStoredSave(key: string): Promise<void> {
 }
 
 // Map of user_id → latest parsed save for other draft players
-type OtherPlayerSaves = Record<string, { displayName: string; save: SaveData | null; mapName?: string; inBattle?: boolean }>;
+type OtherPlayerSaves = Record<string, { displayName: string; save: SaveData | null; mapName?: string; inBattle?: boolean; enemyParty?: EnemyMon[] }>;
 
 // Returns "Wally" or "Steven" when the player has a champion win on their
 // trainer card (Wally = 656, Steven = 804), otherwise null. Used to display
@@ -577,6 +578,7 @@ interface PlayerCardProps {
   saveData: SaveData | null;
   mapName: string | undefined;
   inBattle: boolean;
+  enemyParty?: EnemyMon[];
   sortPokemon: (uid: string, mons: any[]) => any[];
   isMonFainted: (uid: string, mon: any) => boolean;
   isPlayerDisconnected: (uid: string, saveData: SaveData | null) => boolean;
@@ -604,6 +606,7 @@ const OverlayPlayerCard = React.memo(function OverlayPlayerCard({
   saveData,
   mapName,
   inBattle,
+  enemyParty,
   sortPokemon,
   isMonFainted,
   isPlayerDisconnected,
@@ -674,6 +677,9 @@ const OverlayPlayerCard = React.memo(function OverlayPlayerCard({
       ) : (
         <p className="overlay-no-save">Waiting for save…</p>
       )}
+      {inBattle && enemyParty && (
+        <EnemyTeamIcons enemyParty={enemyParty} variant="overlay" resolveMetadata={resolveMetadata} />
+      )}
     </div>
   );
 });
@@ -684,6 +690,7 @@ const SidebarPlayerCard = React.memo(function SidebarPlayerCard({
   saveData,
   mapName,
   inBattle,
+  enemyParty,
   isReady,
   sortPokemon,
   isMonFainted,
@@ -773,6 +780,9 @@ const SidebarPlayerCard = React.memo(function SidebarPlayerCard({
       ) : (
         <p className="sidebar-no-save">Waiting for save…</p>
       ))}
+      {!isCollapsed && inBattle && enemyParty && (
+        <EnemyTeamIcons enemyParty={enemyParty} variant="sidebar" resolveMetadata={resolveMetadata} />
+      )}
     </div>
   );
 });
@@ -947,11 +957,13 @@ const EmulatorPage: React.FC = () => {
   // explained by a small load bar bottom-right instead of looking like a
   // freeze. null = not scanning / hidden.
   const [scanProgress, setScanProgress] = useState<number | null>(null);
+  const [scanDismissed, setScanDismissed] = useState(false);
 
   // Whether THIS player is mid-battle, read live from the game's EWRAM buffer
   // (byte +0x05 of gLiveWarpStatus, mirrored from gMain.inBattle every frame).
   // Drives the "(In battle)" suffix on the player's own location card.
   const [myInBattle, setMyInBattle] = useState(false);
+  const [myEnemyParty, setMyEnemyParty] = useState<EnemyMon[]>([]);
 
   const [autosaveHistory, setAutosaveHistory] = useState<{ id: string; ts: number }[]>([]);
   const [isAutosaveModalOpen, setIsAutosaveModalOpen] = useState(false);
@@ -1108,6 +1120,7 @@ const EmulatorPage: React.FC = () => {
   const lastPostedMapRef = useRef<string | null>(null);
   const lastPostedBattleRef = useRef(false);
   const lastBattlePingAtRef = useRef(0);
+  const lastPostedEnemyRef = useRef('[]');
   const LIVE_MAP_SCAN_CHUNK = 2 * 1024 * 1024;
   const LIVE_MAP_SCAN_RETRY_MS = 10000;
   // Inferred PC box. Blitz only writes the flash on manual saves, so the .sav
@@ -1349,12 +1362,18 @@ const EmulatorPage: React.FC = () => {
           // poster included) and on messages that don't change anything, so a
           // redundant ping doesn't re-render the sidebar player cards.
           if (msg.type === 'LocationUpdate') {
-            const { user_id, map_name, in_battle } = msg.data as { user_id: string; map_name: string; in_battle?: boolean };
+            const { user_id, map_name, in_battle, enemy_party } = msg.data as { user_id: string; map_name: string; in_battle?: boolean; enemy_party?: EnemyMon[] };
             if (user_id === currentUserId) return;
             const nextInBattle = !!in_battle;
+            const nextEnemy = nextInBattle ? (enemy_party ?? []) : [];
             setOtherSaves((prev) => {
               const prevEntry = prev[user_id];
-              if (prevEntry && prevEntry.mapName === map_name && !!prevEntry.inBattle === nextInBattle) {
+              if (
+                prevEntry &&
+                prevEntry.mapName === map_name &&
+                !!prevEntry.inBattle === nextInBattle &&
+                JSON.stringify(prevEntry.enemyParty ?? []) === JSON.stringify(nextEnemy)
+              ) {
                 return prev;
               }
               return {
@@ -1364,6 +1383,7 @@ const EmulatorPage: React.FC = () => {
                   save: prevEntry?.save ?? null,
                   mapName: map_name,
                   inBattle: nextInBattle,
+                  enemyParty: nextEnemy,
                 },
               };
             });
@@ -1535,7 +1555,7 @@ const EmulatorPage: React.FC = () => {
       });
     };
 
-    if (currentUserId) processSave(currentUserId, mySaveData);
+    if (currentUserId || !draftId) processSave(currentUserId ?? 'me', mySaveData);
     Object.entries(otherSaves).forEach(([uid, entry]) => processSave(uid, entry.save));
 
     if (changed) setFaintedPids(newFainted);
@@ -1782,34 +1802,46 @@ const EmulatorPage: React.FC = () => {
     if (inBattle !== myInBattle) {
       setMyInBattle(inBattle);
     }
+    // Opposing party HP, only meaningful (and only read) mid-battle.
+    const enemyParty: EnemyMon[] =
+      inBattle && ewramBaseRef.current !== null
+        ? readLiveEnemyParty(heap, ewramBaseRef.current).map((m) => ({
+          species_id: m.species_id,
+          nickname: m.nickname,
+          hp: m.hp,
+          max_hp: m.max_hp,
+        }))
+        : [];
+    const enemySig = JSON.stringify(enemyParty);
+    if (enemySig !== lastPostedEnemyRef.current) setMyEnemyParty(enemyParty);
     if (rawName !== null) {
       const base = mySaveDataRef.current;
       if (base && base.map_name !== rawName) {
         mySaveDataRef.current = { ...base, map_name: rawName };
         setMySaveData(mySaveDataRef.current);
       }
-      if (lastPostedMapRef.current !== rawName || lastPostedBattleRef.current !== inBattle) {
+      const periodicPing = inBattle && Date.now() - lastBattlePingAtRef.current >= LIVE_BATTLE_PING_MS;
+      if (
+        lastPostedMapRef.current !== rawName ||
+        lastPostedBattleRef.current !== inBattle ||
+        enemySig !== lastPostedEnemyRef.current ||
+        periodicPing
+      ) {
         lastPostedMapRef.current = rawName;
         lastPostedBattleRef.current = inBattle;
+        lastPostedEnemyRef.current = enemySig;
+        if (inBattle) lastBattlePingAtRef.current = Date.now();
         if (draftId) {
           fetch(`/api/drafts/${draftId}/location`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ map_name: rawName, in_battle: inBattle }),
-            credentials: 'include',
-          }).catch(() => { });
-        }
-      } else if (inBattle && Date.now() - lastBattlePingAtRef.current >= LIVE_BATTLE_PING_MS) {
-        lastBattlePingAtRef.current = Date.now();
-        if (draftId) {
-          fetch(`/api/drafts/${draftId}/location`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ map_name: rawName, in_battle: true }),
+            body: JSON.stringify({ map_name: rawName, in_battle: inBattle, enemy_party: enemyParty }),
             credentials: 'include',
           }).catch(() => { });
         }
       }
+    } else if (enemySig !== lastPostedEnemyRef.current) {
+      lastPostedEnemyRef.current = enemySig;
     }
 
     // Applies a freshly read live party on top of the latest parsed save,
@@ -3144,9 +3176,14 @@ const EmulatorPage: React.FC = () => {
       // Players without a recorded time sort below everyone they're tied with.
       return badgeReachSeconds(a.save, badgesA) - badgeReachSeconds(b.save, badgesB);
     });
-  // Show every player in the sidebar (the sidebar scrolls if they don't fit)
-  const sidebarEntries = allPlayerEntries;
-  const hasSidebar = draftId !== undefined;
+  // Show every player in the sidebar (the sidebar scrolls if they don't fit).
+  // Solo play (no draft) shows just the player's own card.
+  const soloUid = currentUserId ?? 'me';
+  const sidebarEntries: Array<[string, OtherPlayerSaves[string]]> = draftId !== undefined
+    ? allPlayerEntries
+    : [[soloUid, { displayName: currentUsername || 'You', save: null }]];
+  const hasSidebar = true;
+  const showNotepad = draftId === undefined || !!currentUserId;
 
   // Once any player has earned at least 1 badge, the race has effectively
   // started and the "Ready to Race" button is no longer needed.
@@ -3375,8 +3412,17 @@ const EmulatorPage: React.FC = () => {
                   </>
                 )}
               </div>
-              {scanProgress !== null && (
+              {scanProgress !== null && !scanDismissed && (
                 <div className="scan-load-bar">
+                  <button
+                    type="button"
+                    className="scan-load-bar-close"
+                    onClick={() => setScanDismissed(true)}
+                    aria-label="Dismiss"
+                    title="Dismiss"
+                  >
+                    ×
+                  </button>
                   <div className="scan-load-bar-track">
                     <div className="scan-load-bar-fill" style={{ width: `${Math.round(scanProgress * 100)}%` }} />
                   </div>
@@ -3492,7 +3538,7 @@ const EmulatorPage: React.FC = () => {
                       </div>
                     )}
                     {/* Race standings */}
-                    {sidebarEntries.map(([uid, { displayName, save, mapName, inBattle }]) => {
+                    {sidebarEntries.map(([uid, { displayName, save, mapName, inBattle, enemyParty }]) => {
                       const isCurrentUser = uid === currentUserId;
                       return (
                         <OverlayPlayerCard
@@ -3502,6 +3548,7 @@ const EmulatorPage: React.FC = () => {
                           saveData={isCurrentUser ? mySaveData : save}
                           mapName={isCurrentUser ? undefined : mapName}
                           inBattle={isCurrentUser ? myInBattle : !!inBattle}
+                          enemyParty={isCurrentUser ? myEnemyParty : enemyParty}
                           sortPokemon={sortPokemon}
                           isMonFainted={isMonFainted}
                           isPlayerDisconnected={isPlayerDisconnected}
@@ -3709,12 +3756,12 @@ const EmulatorPage: React.FC = () => {
                   modifiers={[restrictToVerticalAxis]}
                 >
                   <SortableContext
-                    items={currentUserId ? sidebarOrder : sidebarOrder.filter((id) => id === 'players')}
+                    items={showNotepad ? sidebarOrder : sidebarOrder.filter((id) => id === 'players')}
                     strategy={verticalListSortingStrategy}
                   >
-                    {(currentUserId ? sidebarOrder : sidebarOrder.filter((id) => id === 'players')).map((sectionId, index, arr) => {
+                    {(showNotepad ? sidebarOrder : sidebarOrder.filter((id) => id === 'players')).map((sectionId, index, arr) => {
                       const isLast = index === arr.length - 1;
-                      if (sectionId === 'notes' && currentUserId) {
+                      if (sectionId === 'notes' && showNotepad) {
                         return <SidebarNotepad key="notes" userId={currentUserId} isLast={isLast} />;
                       }
                       return (
@@ -3727,8 +3774,8 @@ const EmulatorPage: React.FC = () => {
                           isLast={isLast}
                         >
                           <div className="sidebar-players-list">
-                            {sidebarEntries.map(([uid, { displayName, save, mapName, inBattle }]) => {
-                              const isCurrentUser = uid === currentUserId;
+                            {sidebarEntries.map(([uid, { displayName, save, mapName, inBattle, enemyParty }]) => {
+                              const isCurrentUser = draftId === undefined || uid === currentUserId;
                               return (
                                 <SidebarPlayerCard
                                   key={uid}
@@ -3737,6 +3784,7 @@ const EmulatorPage: React.FC = () => {
                                   saveData={isCurrentUser ? mySaveData : save}
                                   mapName={isCurrentUser ? undefined : mapName}
                                   inBattle={isCurrentUser ? myInBattle : !!inBattle}
+                                  enemyParty={isCurrentUser ? myEnemyParty : enemyParty}
                                   isReady={readyPlayers.has(uid)}
                                   sortPokemon={sortPokemon}
                                   isMonFainted={isMonFainted}

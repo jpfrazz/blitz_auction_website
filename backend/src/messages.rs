@@ -110,6 +110,19 @@ pub struct PostLocationRequest {
     /// can append "(In battle)" to a player's location.
     #[serde(default)]
     pub in_battle: bool,
+    /// HP summary of the opposing party while `in_battle`, read from gEnemyParty.
+    #[serde(default)]
+    pub enemy_party: Vec<EnemyPartyMon>,
+}
+
+/// One opposing Pokemon as shown in the spectator/sidebar HP row.
+#[derive(Clone, Debug, Deserialize, Serialize)]
+pub struct EnemyPartyMon {
+    pub species_id: u16,
+    #[serde(default)]
+    pub nickname: String,
+    pub hp: u16,
+    pub max_hp: u16,
 }
 
 /// Body of the `POST /api/drafts/{draft_id}/forfeit` endpoint. Records an
@@ -248,6 +261,7 @@ pub enum ServerMessage {
         user_id: String,
         map_name: String,
         in_battle: bool,
+        enemy_party: Vec<EnemyPartyMon>,
     },
     StateLoadNotification {
         user_id: String,

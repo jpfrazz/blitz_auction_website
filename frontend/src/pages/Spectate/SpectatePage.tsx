@@ -8,6 +8,7 @@ import { SaveData, formatMapName } from '../../utils/parseSaveFile';
 import { fetchDraftById } from '../../shared/api/draftData';
 import { fetchPokemonList, fetchRentalPokemonList } from '../../shared/api/pokemon';
 import './SpectatePage.scss';
+import EnemyTeamIcons, { EnemyMon } from '../Emulator/EnemyTeamIcons';
 
 const NATURE_EFFECTS: Record<string, string> = {
   "Hardy": "",
@@ -85,6 +86,7 @@ const SpectatePage: React.FC = () => {
   // Mirror of LocationUpdate's in_battle flag, keyed by user id, so spectators
   // can append "(In battle)" to a player's location.
   const [liveBattles, setLiveBattles] = useState<Record<string, boolean>>({});
+  const [liveEnemyParties, setLiveEnemyParties] = useState<Record<string, EnemyMon[]>>({});
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [pokemonMetadata, setPokemonMetadata] = useState<Record<string, any>>({});
@@ -240,9 +242,15 @@ const SpectatePage: React.FC = () => {
           }
           // Lightweight live location ping from an emulator's heap read.
           if (msg.type === 'LocationUpdate') {
-            const { user_id, map_name, in_battle } = msg.data as { user_id: string; map_name: string; in_battle?: boolean };
+            const { user_id, map_name, in_battle, enemy_party } = msg.data as { user_id: string; map_name: string; in_battle?: boolean; enemy_party?: EnemyMon[] };
             setLiveMaps((prev) => (prev[user_id] === map_name ? prev : { ...prev, [user_id]: map_name }));
             setLiveBattles((prev) => (!!prev[user_id] === !!in_battle ? prev : { ...prev, [user_id]: !!in_battle }));
+            const nextEnemy = in_battle ? (enemy_party ?? []) : [];
+            setLiveEnemyParties((prev) => {
+              const cur = prev[user_id] ?? [];
+              if (cur.length === nextEnemy.length && JSON.stringify(cur) === JSON.stringify(nextEnemy)) return prev;
+              return { ...prev, [user_id]: nextEnemy };
+            });
           }
           if (msg.type === 'DraftUpdate') {
             const teams = (msg.data?.teams ?? []) as Array<{
@@ -465,6 +473,13 @@ const SpectatePage: React.FC = () => {
                       </div>
                     ) : (
                       <p className="spectate-no-save">Waiting for save…</p>
+                    )}
+                    {liveBattles[uid] && (
+                      <EnemyTeamIcons
+                        enemyParty={liveEnemyParties[uid] ?? []}
+                        variant="spectate"
+                        resolveMetadata={resolveMetadata}
+                      />
                     )}
                   </div>
                 );

@@ -2978,6 +2978,7 @@ pub async fn post_player_location(
             user_id: user_id.clone(),
             map_name: request.map_name,
             in_battle: request.in_battle,
+            enemy_party: request.enemy_party.into_iter().take(6).collect(),
         });
     }
 

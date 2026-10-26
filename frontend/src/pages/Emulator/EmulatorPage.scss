@@ -251,13 +251,31 @@
   align-items: flex-end;
   gap: 0.35rem;
   min-width: 220px;
-  padding: 0.6rem 0.8rem;
+  padding: 1.4rem 0.8rem 0.6rem;
   background: rgba($eb-bg, 0.85);
   border: 1px solid $eb-border;
   border-radius: 8px;
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.45);
   pointer-events: none;
   user-select: none;
+
+  .scan-load-bar-close {
+    position: absolute;
+    top: 0.15rem;
+    right: 0.4rem;
+    padding: 0;
+    background: none;
+    border: none;
+    color: $eb-text-muted;
+    font-size: 1.2rem;
+    line-height: 1;
+    cursor: pointer;
+    pointer-events: auto;
+
+    &:hover {
+      color: $eb-text;
+    }
+  }
 
   .scan-load-bar-track {
     width: 100%;
@@ -768,6 +786,10 @@
   position: relative;
 }
 
+.enemy-team {
+  padding-top: 0;
+}
+
 .mini-icon-wrapper.first-fainted {
   margin-left: calc(2px - 0.4rem);
   padding-left: 2px;
@@ -819,6 +841,18 @@
 
 .mini-hp-bar.grey .mini-hp-fill {
   background: #6b7280;
+}
+
+.enemy-team .mini-hp-bar.green .mini-hp-fill {
+  background: #fca55a;
+}
+
+.enemy-team .mini-hp-bar.yellow .mini-hp-fill {
+  background: #f4772c;
+}
+
+.enemy-team .mini-hp-bar.red .mini-hp-fill {
+  background: #b9501f;
 }
 
 .sidebar-mon-name {
