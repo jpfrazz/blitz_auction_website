@@ -10,6 +10,8 @@ import { fetchCurrentUser, fetchDraftById, claimEeveelution, unclaimEeveelution,
 import { fetchPokemonList } from '../../shared/api/pokemon';
 import EeveelutionClaimButton from './EeveelutionClaimButton';
 import NotebookWithdrawButton from './NotebookWithdrawButton';
+
+import { useAutoObtainSetting, useAutoObtainInjector, toAutoObtainDexNums } from './autoObtainPokemon';
 import SidebarNotepad from './SidebarNotepad';
 import SortableSidebarSection from './SortableSidebarSection';
 import HoverTip from '../../shared/components/HoverTip';
@@ -1213,6 +1215,14 @@ const EmulatorPage: React.FC = () => {
     livePartyCandHashesRef.current = [];
     livePartyMissesRef.current = 0;
   };
+
+  // ── Auto Obtain Pokémon: hand the drafted team to the ROM before the Eevee gift ──
+  const [autoObtain, setAutoObtain] = useAutoObtainSetting();
+  const ownDraftedPokemon: { name: string; pokedex_id?: number; form?: string | null }[] = draftId
+    ? (draftData?.teams.find((t: any) => t.user_id === currentUserId)?.auctions_won ?? [])
+    : urlPokemon;
+  const ownDraftedDexNums = toAutoObtainDexNums(ownDraftedPokemon);
+  useAutoObtainInjector(autoObtain && ownDraftedDexNums.length > 0, ownDraftedDexNums, ewramBaseRef);
 
   // ── Fetch current user to filter self from sidebar ───────────────────────
   useEffect(() => {
@@ -3612,7 +3622,7 @@ const EmulatorPage: React.FC = () => {
                         bannedPokedexIds={draftData.one_v_one?.banned_eeveelutions ?? []}
                       />
                     )}
-                    {draftId && draftData && !mySaveData && (
+                    {!autoObtain && draftId && draftData && !mySaveData && (
                       <NotebookWithdrawButton
                         pokemon={
                           draftData.teams.find((t: any) => t.user_id === currentUserId)
@@ -3621,7 +3631,7 @@ const EmulatorPage: React.FC = () => {
                         onWithdrawingChange={(val) => { isWithdrawingRef.current = val; }}
                       />
                     )}
-                    {!draftId && urlPokemon.length > 0 && !mySaveData && (
+                    {!autoObtain && !draftId && urlPokemon.length > 0 && !mySaveData && (
                       <NotebookWithdrawButton
                         pokemon={urlPokemon}
                         onWithdrawingChange={(val) => { isWithdrawingRef.current = val; }}
