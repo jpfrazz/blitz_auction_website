@@ -11,7 +11,7 @@ import { fetchPokemonList } from '../../shared/api/pokemon';
 import EeveelutionClaimButton from './EeveelutionClaimButton';
 import NotebookWithdrawButton from './NotebookWithdrawButton';
 
-import { useAutoObtainSetting, useAutoObtainInjector, toAutoObtainDexNums } from './autoObtainPokemon';
+import { useAutoObtainInjector, toAutoObtainDexNums } from './autoObtainPokemon';
 import SidebarNotepad from './SidebarNotepad';
 import SortableSidebarSection from './SortableSidebarSection';
 import HoverTip from '../../shared/components/HoverTip';
@@ -1217,12 +1217,12 @@ const EmulatorPage: React.FC = () => {
   };
 
   // ── Auto Obtain Pokémon: hand the drafted team to the ROM before the Eevee gift ──
-  const [autoObtain, setAutoObtain] = useAutoObtainSetting();
+  // Currently disabled (setting removed; always off). Re-implement internally later.
   const ownDraftedPokemon: { name: string; pokedex_id?: number; form?: string | null }[] = draftId
     ? (draftData?.teams.find((t: any) => t.user_id === currentUserId)?.auctions_won ?? [])
     : urlPokemon;
   const ownDraftedDexNums = toAutoObtainDexNums(ownDraftedPokemon);
-  useAutoObtainInjector(autoObtain && ownDraftedDexNums.length > 0, ownDraftedDexNums, ewramBaseRef);
+  useAutoObtainInjector(false, ownDraftedDexNums, ewramBaseRef);
 
   // ── Fetch current user to filter self from sidebar ───────────────────────
   useEffect(() => {

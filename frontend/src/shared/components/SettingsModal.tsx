@@ -48,10 +48,6 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ onClose }) => {
     return stored === null ? true : stored === 'true';
   });
 
-  const [autoObtain, setAutoObtain] = useState(() => {
-    return localStorage.getItem('blitz_auto_obtain_pokemon') === 'true';
-  });
-
   const [playerCardColor, setPlayerCardColor] = useState(() => {
     return localStorage.getItem('eb-player-card-color') || '';
   });
@@ -86,11 +82,6 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ onClose }) => {
     localStorage.setItem('eb-tip-messages', String(tipMessages));
     window.dispatchEvent(new CustomEvent('eb-settings-changed'));
   }, [tipMessages]);
-
-  useEffect(() => {
-    localStorage.setItem('blitz_auto_obtain_pokemon', String(autoObtain));
-    window.dispatchEvent(new CustomEvent('eb-settings-changed'));
-  }, [autoObtain]);
 
   useEffect(() => {
     localStorage.setItem('eb-player-card-color', playerCardColor);
@@ -280,31 +271,6 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ onClose }) => {
 
           {activeTab === 'accessibility' && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', background: 'rgba(255,255,255,0.05)', padding: '1rem', borderRadius: '8px' }}>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                  <span className="settings-label">Auto Obtain Pokémon</span>
-                  <button
-                    onClick={() => setAutoObtain(!autoObtain)}
-                    style={{
-                      padding: '8px 16px',
-                      background: autoObtain ? 'var(--eb-primary, #7CB946)' : '#555',
-                      color: '#f1f1f1',
-                      border: 'none',
-                      borderRadius: '6px',
-                      cursor: 'pointer',
-                      fontSize: '0.95rem',
-                      fontWeight: 'bold',
-                      transition: 'background 0.2s'
-                    }}
-                  >
-                    {autoObtain ? 'ON' : 'OFF'}
-                  </button>
-                </div>
-                <div style={{ fontSize: '0.95rem', color: '#b3b3b3', marginTop: '-0.6rem' }}>
-                  Automatically start the game with your drafted Pokémon
-                </div>
-              </div>
-
               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', background: 'rgba(255,255,255,0.05)', padding: '1rem', borderRadius: '8px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                   <span className="settings-label">Tip Messages</span>

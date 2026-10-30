@@ -10,33 +10,20 @@ const AUTO_OBTAIN_MAGIC = 0xb17a;
 const AUTO_OBTAIN_MAX_MONS = 12;
 export const AUTO_OBTAIN_EGG_ID = 0xffff;
 
-const SETTING_KEY = 'blitz_auto_obtain_pokemon';
 const POLL_MS = 100;
 const SCAN_MAX_BYTES = 32 * 1024 * 1024;
 
 export function useAutoObtainSetting(): [boolean, (v: boolean) => void] {
-  const [enabled, setEnabled] = useState<boolean>(() => readSetting());
+  // Auto Obtain Pokémon setting is currently disabled (buggy);
+  // always return false until re-implemented internally.
+  const [enabled, setEnabled] = useState<boolean>(false);
   const update = (v: boolean) => {
     setEnabled(v);
-    try {
-      localStorage.setItem(SETTING_KEY, String(v));
-    } catch { /* storage unavailable */ }
+    // Setting is disabled; do not persist to localStorage.
   };
-  useEffect(() => {
-    const onChange = () => setEnabled(readSetting());
-    window.addEventListener('eb-settings-changed', onChange);
-    return () => window.removeEventListener('eb-settings-changed', onChange);
-  }, []);
+  // No event listener — setting is fixed at off.
   return [enabled, update];
 }
-
-const readSetting = (): boolean => {
-  try {
-    return localStorage.getItem(SETTING_KEY) === 'true';
-  } catch {
-    return false;
-  }
-};
 
 const norm = (s: string) =>
   s
