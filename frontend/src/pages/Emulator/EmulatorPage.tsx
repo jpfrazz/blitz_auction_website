@@ -3622,7 +3622,7 @@ const EmulatorPage: React.FC = () => {
                         bannedPokedexIds={draftData.one_v_one?.banned_eeveelutions ?? []}
                       />
                     )}
-                    {!autoObtain && draftId && draftData && !mySaveData && (
+                    {draftId && draftData && !mySaveData && (
                       <NotebookWithdrawButton
                         pokemon={
                           draftData.teams.find((t: any) => t.user_id === currentUserId)
@@ -3631,7 +3631,7 @@ const EmulatorPage: React.FC = () => {
                         onWithdrawingChange={(val) => { isWithdrawingRef.current = val; }}
                       />
                     )}
-                    {!autoObtain && !draftId && urlPokemon.length > 0 && !mySaveData && (
+                    {!draftId && urlPokemon.length > 0 && !mySaveData && (
                       <NotebookWithdrawButton
                         pokemon={urlPokemon}
                         onWithdrawingChange={(val) => { isWithdrawingRef.current = val; }}
