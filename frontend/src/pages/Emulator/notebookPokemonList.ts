@@ -76,6 +76,7 @@ export const NOTEBOOK_POKEMON_LIST: string[] = [
   'Gastly',
   'Geodude',
   'Gible',
+  'Golett',
   'Goomy',
   'Gossifleur',
   'Gothita',

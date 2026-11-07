@@ -257,6 +257,7 @@ const Info = () => (
                 <img src="/MiniIcons/basculin.png" alt="Basculin" />
                 <img src="/MiniIcons/chewtle.png" alt="Chewtle" />
                 <img src="/MiniIcons/chinchou.png" alt="Chinchou" />
+                <img src="/MiniIcons/golett.png" alt="Golett" />
                 <img src="/MiniIcons/gossifleur.png" alt="Gossifleur" />
                 <img src="/MiniIcons/growlithe.png" alt="Growlithe" />
                 <img src="/MiniIcons/helioptile.png" alt="Helioptile" />
@@ -287,6 +288,7 @@ const Info = () => (
                 <li>Basculin (Adaptability)</li>
                 <li>Chewtle (Strong Jaw)</li>
                 <li>Chinchou (Volt Absorb)</li>
+                <li>Golett (Iron Fist)</li>
                 <li>Gossifleur (Cotton Down)</li>
                 <li>Growlithe (Intimidate)</li>
                 <li>Helioptile (Dry Skin)</li>
@@ -623,6 +625,7 @@ const Info = () => (
               <li>Excadillite</li>
               <li>Froslassite</li>
               <li>Glalitite</li>
+              <li>Golurkite</li>
               <li>Houndoominite</li>
               <li>Lopunnite</li>
               <li>Lucarionite</li>

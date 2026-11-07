@@ -1,0 +1,62 @@
+11/7/2026
+
+-----------------------------------------------
+AI Changes
+-----------------------------------------------
+
+Stat-boosting moves that raise speed (Agility, Dragon Dance, Quiver Dance) receive a +3 boost to their score if...
+ • The enemy Pokémon is currently slower than your Pokemon
+ • The enemy Pokémon would be faster than your Pokémon at +1 speed
+ • The enemy Pokémon isn't already at +1 speed
+ • Your Pokémon hasn't revealed a speed-lowering move (like Icy Wind)
+//Gives a chance for Viola's Masqueraine/Beautifly and Winona's Tropius/Altaria to boost up
+//Both of these fights are relatively weak after gym 4. This gives them an extra wrinkle. I've never liked how underwhelming the Beautifly and Altaria are as aces--this forces you to respect them.
+
+
+-----------------------------------------------
+Boss Battle Changes
+-----------------------------------------------
+
+Roxanne 1-3 Nosepass Block > Rock Smash
+
+Viola 4 Masqueraine Silver Wind > Bug Bite
+Viola 4 Masqueraine Quiver Dance > Agility
+
+Winona 4 Tropius Dragon Dance > Sunny Day
+Winona 8 Altaria Moonblast > Dragon Dance
+
+Flannery 5 Slugma Ancient Power > Body Slam
+//Lore accurate
+
+Wattson 7 Manectric Shock Wave > Discharge
+Wattson 8 Manectric Shock Wave > Discharge
+Wattson 7 Golem Shock Wave > Thunder Punch
+Wattson 8 Golem Shock Wave > Thunder Punch
+//Normalizing this fight with late Violas and Winonas by saying its flagship TM doesn't need to be on every Pokémon.
+
+Steven Metagross Zen Headbutt > Hyper Beam
+//Wow, doesn't this make you want to pick Steven!?
+
+
+-----------------------------------------------
+QoL
+-----------------------------------------------
+
+In double battles, moves that lower the stats of multiple Pokémon no longer trigger a text box after each stat drop
+//For example, using Growl, Tail Whip, or Bulldoze in double battles now just prints "The Pokémons' stats were lowered" once instead of printing that message for each individual Pokémon.
+
+
+-----------------------------------------------
+Bug Fix
+-----------------------------------------------
+
+Fixed a bug where after KOing an enemy Pokémon, certain messages would appear multiple times
+//The one that seemed to pop up most often was "The Pokémon was hit X times!" after Bullet Seed, but there were several that could print additional times erroneously.
+
+
+-----------------------------------------------
+Pool Addition
+-----------------------------------------------
+
++Golett
+//Hello my son.
