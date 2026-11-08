@@ -51,6 +51,9 @@ body, html {
 
 html {
   overflow-x: hidden;
+  // Header +/- page zoom. Scaling the root font size (rather than CSS `zoom`)
+  // makes the rem-based layout reflow inside the viewport instead of clipping.
+  font-size: calc(67% * var(--eb-page-zoom, 1));
 }
 
 main {

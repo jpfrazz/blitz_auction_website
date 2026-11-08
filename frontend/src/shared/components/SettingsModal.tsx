@@ -39,6 +39,16 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ onClose }) => {
     return stored === null ? true : stored === 'true';
   });
 
+  const [auctionSoundEnabled, setAuctionSoundEnabled] = useState(() => {
+    const stored = localStorage.getItem('auction_alert_sound_muted');
+    return stored === 'false';
+  });
+
+  const [headerPinned, setHeaderPinned] = useState(() => {
+    const stored = localStorage.getItem('header_pinned');
+    return stored === null ? true : stored === 'true';
+  });
+
   const [notesHotkey, setNotesHotkey] = useState(() => {
     return localStorage.getItem('eb-notes-hotkey') || 'n';
   });
@@ -74,6 +84,19 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ onClose }) => {
   }, [autoSortByFunds]);
 
   useEffect(() => {
+    const muted = !auctionSoundEnabled;
+    localStorage.setItem('auction_alert_sound_muted', String(muted));
+    window.dispatchEvent(new CustomEvent('auction-alert-muted-changed', { detail: muted }));
+    window.dispatchEvent(new CustomEvent('eb-settings-changed'));
+  }, [auctionSoundEnabled]);
+
+  useEffect(() => {
+    localStorage.setItem('header_pinned', String(headerPinned));
+    window.dispatchEvent(new CustomEvent('header-pinned-changed', { detail: headerPinned }));
+    window.dispatchEvent(new CustomEvent('eb-settings-changed'));
+  }, [headerPinned]);
+
+  useEffect(() => {
     localStorage.setItem('eb-notes-hotkey', notesHotkey);
     window.dispatchEvent(new CustomEvent('eb-settings-changed'));
   }, [notesHotkey]);
@@ -100,7 +123,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ onClose }) => {
 
   return (
     <div className="notes-modal-overlay" onClick={onClose} style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'center' }}>
-      <div className="notes-modal" style={{ position: 'relative', width: '380px', marginTop: '10vh' }} onClick={e => e.stopPropagation()}>
+      <div className="notes-modal" style={{ position: 'relative', width: '420px', marginTop: '10vh' }} onClick={e => e.stopPropagation()}>
         <div className="notes-modal-header" style={{ cursor: 'default' }}>
           <h2 className="notes-modal-title">Settings</h2>
           <button className="notes-modal-minimize" onClick={onClose}>×</button>
@@ -215,6 +238,52 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ onClose }) => {
               </div>
               <div style={{ fontSize: '0.95rem', color: '#b3b3b3', marginTop: '-0.6rem' }}>
                 Automatically sort players by remaining funds
+              </div>
+
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '0.4rem' }}>
+                <span className="settings-label">Auction Alert Sound</span>
+                <button
+                  onClick={() => setAuctionSoundEnabled(!auctionSoundEnabled)}
+                  style={{
+                    padding: '8px 16px',
+                    background: auctionSoundEnabled ? 'var(--eb-primary, #7CB946)' : '#555',
+                    color: '#f1f1f1',
+                    border: 'none',
+                    borderRadius: '6px',
+                    cursor: 'pointer',
+                    fontSize: '0.95rem',
+                    fontWeight: 'bold',
+                    transition: 'background 0.2s'
+                  }}
+                >
+                  {auctionSoundEnabled ? 'ON' : 'OFF'}
+                </button>
+              </div>
+              <div style={{ fontSize: '0.95rem', color: '#b3b3b3', marginTop: '-0.6rem' }}>
+                Play a sound when a new Pokemon appears
+              </div>
+
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '0.4rem' }}>
+                <span className="settings-label">Pin Header During Auction</span>
+                <button
+                  onClick={() => setHeaderPinned(!headerPinned)}
+                  style={{
+                    padding: '8px 16px',
+                    background: headerPinned ? 'var(--eb-primary, #7CB946)' : '#555',
+                    color: '#f1f1f1',
+                    border: 'none',
+                    borderRadius: '6px',
+                    cursor: 'pointer',
+                    fontSize: '0.95rem',
+                    fontWeight: 'bold',
+                    transition: 'background 0.2s'
+                  }}
+                >
+                  {headerPinned ? 'ON' : 'OFF'}
+                </button>
+              </div>
+              <div style={{ fontSize: '0.95rem', color: '#b3b3b3', marginTop: '-0.6rem' }}>
+                Keep the header fixed at the top during auctions
               </div>
 
               <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginTop: '0.4rem' }}>

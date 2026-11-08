@@ -31,6 +31,16 @@ function getPlacementLabel(placement: number | null): string {
 
 type LeaderboardTab = 'season2' | 'table' | 'progression';
 
+const FORMAT_OVERVIEWS: Record<'season2' | 'table', string[]> = {
+    season2: [
+        'The Ever Grande Prix is Emerald Blitz\'s competitive "ranked" circuit. In season 2, players gain points based on their performance in races. Only their top 10 performances earn them points, so once a player has played 10 races, subsequent races can only serve to "drop" their lowest score.',
+        'At the end of the regular season, the top 8 players are seeded into a 1v1, single elimination bracket.',
+    ],
+    table: [
+        'The Ever Grande Prix is Emerald Blitz\'s competitive "ranked" circuit. In season 1, players gained or lost ELO based on their performance in races. For example, in an 8-person race, a player who finished 2nd would earn 6 wins, 1 loss, and gain ELO based on the skill level of the opponents they defeated. At the end of the 36-race season, the highest ELO players were immortalized in the Lilycove Museum.',
+    ],
+};
+
 const LeaderboardPage = () => {
     const [activeTab, setActiveTab] = useState<LeaderboardTab>('season2');
     const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
@@ -46,6 +56,7 @@ const LeaderboardPage = () => {
     const [stats, setStats] = useState<StatsPageResponse | null>(null);
     const [statsLoading, setStatsLoading] = useState(false);
     const [expandedUserId, setExpandedUserId] = useState<string | null>(null);
+    const [formatOverviewOpen, setFormatOverviewOpen] = useState(false);
 
     useEffect(() => {
         const getLeaderboard = async () => {
@@ -268,7 +279,29 @@ const LeaderboardPage = () => {
             </div>
             <div className="leaderboard-container">
             <div className="leaderboard-header">
-                <h1>{activeTab === 'season2' ? 'Ever Grande Prix Season Two Leaderboard' : 'Ever Grande Prix Season One Leaderboard'}</h1>
+                <div className="leaderboard-header-title">
+                    <h1>{activeTab === 'season2' ? 'Ever Grande Prix Season Two Leaderboard' : 'Ever Grande Prix Season One Leaderboard'}</h1>
+                    {(activeTab === 'table' || activeTab === 'season2') && (
+                        <div className={`format-overview${formatOverviewOpen ? ' open' : ''}`}>
+                            <button
+                                type="button"
+                                className="format-overview-toggle"
+                                onClick={() => setFormatOverviewOpen((prev) => !prev)}
+                                aria-expanded={formatOverviewOpen}
+                            >
+                                <span>Format Overview</span>
+                                <span className="format-overview-chevron">{formatOverviewOpen ? '▲' : '▼'}</span>
+                            </button>
+                            {formatOverviewOpen && (
+                                <div className="format-overview-content">
+                                    {FORMAT_OVERVIEWS[activeTab].map((paragraph) => (
+                                        <p key={paragraph}>{paragraph}</p>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+                    )}
+                </div>
                 {(activeTab === 'table' || activeTab === 'season2') && (
                     <div className="leaderboard-controls">
                         <div className="filter-container">

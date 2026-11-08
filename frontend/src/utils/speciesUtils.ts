@@ -110,6 +110,23 @@ export const getIconName = (name: string, speciesId?: number) => {
 };
 
 /**
+ * Enemy trainer sprite overrides. A few evolution lines have a form that only
+ * enemy trainers use (Kanto Vulpix/Ninetales, Unovan Zorua/Zoroark), while the
+ * player-accessible form of the same line uses a different sprite. Those
+ * enemy-only sprites ship in /MiniIcons/enemies so the two forms don't share
+ * one image.
+ */
+const ENEMY_ICON_LINES = ['vulpix', 'ninetales', 'zorua', 'zoroark'] as const;
+
+export const getEnemyIconName = (name: string, speciesId?: number) => {
+  const icon = getIconName(name, speciesId);
+  const line = ENEMY_ICON_LINES.find(
+    (base) => icon === base || icon.startsWith(`${base}-`)
+  );
+  return line ? `enemies/${line}` : icon;
+};
+
+/**
  * Determine whether a save-file nickname is a real player-given nickname.
  *
  * Un-nicknamed Pokemon store the species name (or its base form's name) in the

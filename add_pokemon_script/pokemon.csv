@@ -196,7 +196,7 @@ dex_number,name,form,evolves_from_id,evolves_from_form,type1,type2,stage,ability
 445,Garchomp,,444,,Dragon,Ground,evo,Sand Veil,,Rough Skin,108,130,95,80,85,102,"Level 48","Stage 2",,
 445,Mega Garchomp,Mega,445,,Dragon,Ground,mega,Sand Force,,,108,170,115,120,95,92,Garchompite,"Stage 2",,
 622,Golett,,,,Ground,Ghost,base,Iron Fist,Klutz,No Guard,59,74,50,35,50,35,,"Stage 2",,
-623,Golurk,,622,,Ground,Ghost,evo,Iron Fist,Klutz,No Guard,89,124,80,55,80,55,"Level 43","Stage 2",,
+623,Golurk,,622,,Ground,Ghost,evo,Iron Fist,Klutz,No Guard,89,124,80,55,80,55,"Level 43 (Oracle)","Stage 2",,
 623,Mega Golurk,Mega,623,,Ground,Ghost,mega,Unseen Fist,,,89,159,105,70,105,55,Golurkite,"Stage 2",,
 704,Goomy,,,,Dragon,,base,Sap Sipper,Hydration,Gooey,45,50,35,55,75,40,,,,"Tip: Rain Evolution\nBoth forms of Sliggoo require you find some rain to evolve them. Luckily, just east of Fortree City, Route 119 has a permanent rain shower. Use the "Evolution" option in the party menu to evolve Sliggoo when standing in the rain."
 705,Sliggoo,,704,,Dragon,,evo,Sap Sipper,Hydration,Gooey,68,75,53,83,113,60,"Level 40 (Guru)",,,

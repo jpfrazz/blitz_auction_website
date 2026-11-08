@@ -8,6 +8,7 @@ import SettingsModal from './SettingsModal';
 import NotesEditor from './NotesEditor';
 import NotesToolbar from './NotesToolbar';
 import { scrollToTop } from '../utils/scroll';
+import { applyPageZoom, DEFAULT_PAGE_ZOOM, getNextPageZoom, getStoredPageZoom } from '../utils/pageZoom';
 import { getCachedAvatarUrl, getDiscordAvatarUrl, onAvatarError } from '../utils/user';
 import { useUserNotes } from '../utils/userNotes';
 
@@ -24,9 +25,8 @@ function Header() {
   const linkTarget = (isAuctionPage || isEmulatorPage) ? '_blank' : undefined;
   const linkRel = (isAuctionPage || isEmulatorPage) ? 'noopener noreferrer' : undefined;
 
-  const AUCTION_ALERT_SOUND_MUTED_KEY = 'auction_alert_sound_muted';
-  const AUCTION_ALERT_SOUND_MUTED_EVENT = 'auction-alert-muted-changed';
   const HEADER_PINNED_KEY = 'header_pinned';
+  const HEADER_PINNED_EVENT = 'header-pinned-changed';
 
   const handleLogoClick = () => {
     scrollToTop();
@@ -62,6 +62,11 @@ function Header() {
   const [changingName, setChangingName] = useState(false);
   const [showNotes, setShowNotes] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
+  const [pageZoom, setPageZoom] = useState<number>(() => getStoredPageZoom());
+
+  useEffect(() => {
+    applyPageZoom(pageZoom);
+  }, [pageZoom]);
   const { notes, fontSize, setNotes, setFontSize } = useUserNotes(user?.user_id ?? null);
   const notesEditorRef = useRef<HTMLDivElement>(null);
 
@@ -71,18 +76,28 @@ function Header() {
   const [isResizing, setIsResizing] = useState(false);
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
 
-  const [isAuctionSoundMuted, setIsAuctionSoundMuted] = useState<boolean>(() => {
-    if (typeof window === 'undefined') {
-      return true;
-    }
-    return localStorage.getItem(AUCTION_ALERT_SOUND_MUTED_KEY) !== 'false';
-  });
   const [isHeaderPinned, setIsHeaderPinned] = useState<boolean>(() => {
     if (typeof window === 'undefined') {
       return true;
     }
     return localStorage.getItem(HEADER_PINNED_KEY) !== 'false';
   });
+
+  useEffect(() => {
+    const handleHeaderPinnedChanged = (event: Event) => {
+      const customEvent = event as CustomEvent<boolean>;
+      if (typeof customEvent.detail === 'boolean') {
+        setIsHeaderPinned(customEvent.detail);
+      }
+    };
+
+    window.addEventListener(HEADER_PINNED_EVENT, handleHeaderPinnedChanged as EventListener);
+
+    return () => {
+      window.removeEventListener(HEADER_PINNED_EVENT, handleHeaderPinnedChanged as EventListener);
+    };
+  }, []);
+
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
   const [pendingSubmissionCount, setPendingSubmissionCount] = useState(0);
@@ -221,20 +236,20 @@ function Header() {
     };
   }, [isDragging, isResizing, dragOffset, modalPos]);
 
-  const toggleAuctionSoundMuted = () => {
-    const nextMuted = !isAuctionSoundMuted;
-    setIsAuctionSoundMuted(nextMuted);
-    localStorage.setItem(AUCTION_ALERT_SOUND_MUTED_KEY, String(nextMuted));
-    window.dispatchEvent(new CustomEvent(AUCTION_ALERT_SOUND_MUTED_EVENT, { detail: nextMuted }));
-  };
-  const toggleHeaderPinned = () => {
-    const nextPinned = !isHeaderPinned;
-    setIsHeaderPinned(nextPinned);
-    localStorage.setItem(HEADER_PINNED_KEY, String(nextPinned));
-  };
-
   const toggleMobileMenu = () => {
     setIsMobileMenuOpen(prev => !prev);
+  };
+
+  const zoomInPage = () => {
+    setPageZoom((prev) => getNextPageZoom(prev, 'in'));
+  };
+
+  const zoomOutPage = () => {
+    setPageZoom((prev) => getNextPageZoom(prev, 'out'));
+  };
+
+  const resetPageZoom = () => {
+    setPageZoom(DEFAULT_PAGE_ZOOM);
   };
 
   const handleNavLinkClick = () => {
@@ -425,28 +440,35 @@ function Header() {
               </div>
             </div>
           )}
-          {isAuctionPage && (
-            <div style={{ display: 'flex', gap: '3px' }}>
-              <button
-                type="button"
-                className="headerSoundToggle"
-                onClick={toggleAuctionSoundMuted}
-                title={isAuctionSoundMuted ? 'Unmute auction sound' : 'Mute auction sound'}
-                aria-label={isAuctionSoundMuted ? 'Unmute auction sound' : 'Mute auction sound'}
-              >
-                {isAuctionSoundMuted ? '🔇' : '🔊'}
-              </button>
-              <button
-                type="button"
-                className="headerSoundToggle"
-                onClick={toggleHeaderPinned}
-                title={isHeaderPinned ? 'Unpin header' : 'Pin header'}
-                aria-label={isHeaderPinned ? 'Unpin header' : 'Pin header'}
-              >
-                {isHeaderPinned ? '📌' : '📍'}
-              </button>
-            </div>
-          )}
+          <div className="headerZoomControls hide-on-mobile">
+            <button
+              type="button"
+              className="headerZoomButton"
+              onClick={zoomInPage}
+              title="Zoom in (Ctrl +)"
+              aria-label="Zoom in"
+            >
+              +
+            </button>
+            <button
+              type="button"
+              className="headerZoomButton headerZoomReset"
+              onClick={resetPageZoom}
+              title="Reset zoom (Ctrl 0)"
+              aria-label="Reset zoom to 100%"
+            >
+              ↺
+            </button>
+            <button
+              type="button"
+              className="headerZoomButton"
+              onClick={zoomOutPage}
+              title="Zoom out (Ctrl -)"
+              aria-label="Zoom out"
+            >
+              −
+            </button>
+          </div>
         </nav>
       </div>
       {showNameModal && (

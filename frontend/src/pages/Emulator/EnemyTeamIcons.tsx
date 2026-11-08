@@ -1,5 +1,5 @@
 import React from 'react';
-import { getIconName } from '../../utils/speciesUtils';
+import { getEnemyIconName } from '../../utils/speciesUtils';
 
 export interface EnemyMon {
   species_id: number;
@@ -37,7 +37,7 @@ const EnemyTeamIcons: React.FC<Props> = ({ enemyParty, variant, resolveMetadata 
         return (
           <span key={i} className={`mini-icon-wrapper ${variant} has-hp-bar`}>
             <img
-              src={`/MiniIcons/${getIconName(name, mon.species_id)}.png`}
+              src={`/MiniIcons/${getEnemyIconName(name, mon.species_id)}.png`}
               alt={name}
               title={tip}
               className={`${variant}-mini-icon ${fainted ? 'fainted' : ''}`}
