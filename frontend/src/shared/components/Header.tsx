@@ -457,7 +457,7 @@ function Header() {
               title="Reset zoom (Ctrl 0)"
               aria-label="Reset zoom to 100%"
             >
-              ↺
+              ⟳
             </button>
             <button
               type="button"

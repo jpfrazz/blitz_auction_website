@@ -84,3 +84,11 @@
 		margin-bottom: 0;
 	}
 }
+
+// Mobile: the five tabs are wider than a phone screen, so let them wrap onto a
+// second row instead of overflowing. Desktop keeps the single row.
+@media (max-width: 1024px) {
+	.pokemon-table-tabs {
+		flex-wrap: wrap;
+	}
+}

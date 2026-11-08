@@ -628,7 +628,7 @@ const AuctionPage: React.FC = () => {
   };
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: '100vh' }}>
+    <div className="auction-page-shell" style={{ display: 'flex', flexDirection: 'column', height: '100vh' }}>
       <Header />
       <main className="auction-main-layout">
         {loading && <div>Loading draft...</div>}

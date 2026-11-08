@@ -252,3 +252,50 @@ html, body, #root {
   width: calc(100% - 2rem);
   align-self: center;
 }
+
+// Mobile: the auction panels are split left/right on desktop, which leaves no
+// room on a phone. Below the header's mobile breakpoint, stack every panel at
+// full width and let the page scroll instead of clipping. Nothing in this block
+// applies above the breakpoint, so the desktop layout is unchanged.
+@media (max-width: 1024px) {
+  .auction-page-shell {
+    // The shell is height: 100vh inline; let it grow so stacked panels can
+    // overflow the viewport and be reached by scrolling.
+    height: auto !important;
+    min-height: 100vh;
+  }
+
+  .auction-main-layout {
+    overflow: visible;
+  }
+
+  .auction-content-grid {
+    flex-direction: column;
+  }
+
+  .auction-left-panel,
+  .auction-right-panel {
+    display: contents;
+  }
+
+  .auction-right-panel > .auction-info-box,
+  .auction-right-panel > .draft-completed-panel {
+    order: 1;
+  }
+
+  .auction-left-panel > .auction-current-pokemon-box {
+    order: 2;
+  }
+
+  .auction-right-panel > .auction-stats-panel {
+    order: 3;
+  }
+
+  .auction-right-panel > .auction-chat-box {
+    order: 4;
+  }
+
+  .auction-left-panel > .pokemon-table-panel-outer {
+    order: 5;
+  }
+}

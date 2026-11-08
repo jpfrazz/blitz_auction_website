@@ -133,3 +133,11 @@
   font-size: 1.1rem;
   min-width: 5.5rem;
 }
+
+// Mobile: panels stack into one long column, so cap the message list height and
+// let it scroll internally rather than pushing the input row far down the page.
+@media (max-width: 1024px) {
+  .auction-chat-box {
+    max-height: 60vh;
+  }
+}
