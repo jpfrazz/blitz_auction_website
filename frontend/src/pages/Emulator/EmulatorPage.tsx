@@ -998,6 +998,8 @@ const EmulatorPage: React.FC = () => {
 
   const [autosaveHistory, setAutosaveHistory] = useState<{ id: string; ts: number }[]>([]);
   const [isAutosaveModalOpen, setIsAutosaveModalOpen] = useState(false);
+  const [hasInitialState, setHasInitialState] = useState(false);
+  const initialStateCapturedRef = useRef(false);
 
   // The Gamepad API is unavailable on some browsers (e.g. iOS Safari / older
   // Safari). Physical controllers can never work there, so surface that instead
@@ -1777,7 +1779,9 @@ const EmulatorPage: React.FC = () => {
     // scan entirely. Before the player makes the initial in-game save there is
     // also no party in RAM, so scanning would burn main-thread time and starve
     // the emulator for zero benefit (this was the stutter at new-game boot).
-    if (!mySaveDataRef.current) return;
+    // Before the first save, only the (chunked) live-map read below runs, to
+    // detect the spawn into the player's room for the Initial State.
+    if (!mySaveDataRef.current && initialStateCapturedRef.current) return;
     const gm = window.EJS_emulator?.gameManager;
     const heap = gm?.Module?.HEAPU8;
     if (!heap || heap.length < RAM_PARTY_BYTES + 3) return;
@@ -1804,6 +1808,26 @@ const EmulatorPage: React.FC = () => {
           inBattle = frame.inBattle;
           const nm = MAP_NAMES[frame.mapGroup]?.[frame.mapNum];
           if (typeof nm === 'string') rawName = nm;
+          if (
+            !initialStateCapturedRef.current &&
+            (rawName === 'LittlerootTown_BrendansHouse_2F' || rawName === 'LittlerootTown_MaysHouse_2F')
+          ) {
+            initialStateCapturedRef.current = true;
+            try {
+              const stateData = gm?.getState();
+              if (stateData && stateData.length > 0) {
+                const k = draftId || 'standalone';
+                void setStoredSave(`state_${k}_initial`, stateData);
+                localStorage.setItem(`initial_state_${k}`, String(Date.now()));
+                setHasInitialState(true);
+              } else {
+                initialStateCapturedRef.current = false;
+              }
+            } catch (e) {
+              initialStateCapturedRef.current = false;
+              console.warn('Failed to capture initial state:', e);
+            }
+          }
         }
       } else if (ewramScanDoneRef.current) {
         // A finished pass with no buffer yet (pre-first-warp, or the buffer was
@@ -1838,6 +1862,7 @@ const EmulatorPage: React.FC = () => {
         }
       }
     }
+    if (!mySaveDataRef.current) return;
     if (inBattle !== myInBattle) {
       setMyInBattle(inBattle);
     }
@@ -2310,6 +2335,10 @@ const EmulatorPage: React.FC = () => {
       setAutosaveHistory([]);
       const metaKey = `autosaves_meta_${draftId || 'standalone'}`;
       try { localStorage.removeItem(metaKey); } catch (e) {}
+      try { localStorage.removeItem(`initial_state_${draftId || 'standalone'}`); } catch (e) {}
+      void deleteStoredSave(`state_${draftId || 'standalone'}_initial`);
+      setHasInitialState(false);
+      initialStateCapturedRef.current = false;
       // Also clear individual autosave states
       try {
         const keys = Object.keys(localStorage);
@@ -2888,6 +2917,8 @@ const EmulatorPage: React.FC = () => {
 
         // Autosave state every 60 seconds
         stateIntervalRef.current = setInterval(() => {
+          // No autosaves until the Initial State exists, so it is always the oldest.
+          if (!initialStateCapturedRef.current) return;
           try {
             const stateData = window.EJS_emulator?.gameManager?.getState();
             if (stateData && stateData.length > 0) {
@@ -3086,7 +3117,12 @@ const EmulatorPage: React.FC = () => {
       if (bytes && bytes.length > 0) {
         try {
           window.EJS_emulator?.gameManager?.loadState(bytes);
-          window.EJS_emulator?.displayMessage('Loaded autosave state!');
+          window.EJS_emulator?.displayMessage(id === 'initial' ? 'Loaded initial state!' : 'Loaded autosave state!');
+          if (id === 'initial') {
+            // Back before any save: re-show Auto Withdraw until the next save parse.
+            mySaveDataRef.current = null;
+            setMySaveData(null);
+          }
           setIsAutosaveModalOpen(false);
           // Notify other players in the race that we loaded a previous state
           postStateLoadRef.current?.();
@@ -3175,8 +3211,12 @@ const EmulatorPage: React.FC = () => {
   useEffect(() => {
     if (!romUrl) {
       setAutosaveHistory([]);
+      setHasInitialState(false);
       return;
     }
+    const hasInitial = !!localStorage.getItem(`initial_state_${draftId || 'standalone'}`);
+    setHasInitialState(hasInitial);
+    initialStateCapturedRef.current = hasInitial;
     const metaKey = `autosaves_meta_${draftId || 'standalone'}`;
     const storedMeta = localStorage.getItem(metaKey);
     if (storedMeta) {
@@ -3531,7 +3571,11 @@ const EmulatorPage: React.FC = () => {
                               {label}
                             </div>
                           );
-                        });
+                        }).concat(hasInitialState ? [
+                          <div key="initial" className="autosave-list-item" onClick={() => handleLoadAutosave('initial')}>
+                            Initial State
+                          </div>
+                        ] : []);
                       })()}
                     </div>
                   </div>
@@ -3657,7 +3701,7 @@ const EmulatorPage: React.FC = () => {
                         Forfeit
                       </button>
                     )}
-                    {autosaveHistory.length > 0 && (
+                    {(autosaveHistory.length > 0 || hasInitialState) && (
                       <button
                         className="autosave-btn"
                         onClick={() => setIsAutosaveModalOpen(true)}
