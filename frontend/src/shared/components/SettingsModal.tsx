@@ -39,6 +39,10 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ onClose }) => {
     return stored === null ? true : stored === 'true';
   });
 
+  const [manualPokemonCardOrder, setManualPokemonCardOrder] = useState(() => {
+    return localStorage.getItem('eb-manual-pokemon-card-order') === 'true';
+  });
+
   const [auctionSoundEnabled, setAuctionSoundEnabled] = useState(() => {
     const stored = localStorage.getItem('auction_alert_sound_muted');
     return stored === 'false';
@@ -82,6 +86,11 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ onClose }) => {
     localStorage.setItem('eb-auto-sort-by-funds', String(autoSortByFunds));
     window.dispatchEvent(new CustomEvent('eb-settings-changed'));
   }, [autoSortByFunds]);
+
+  useEffect(() => {
+    localStorage.setItem('eb-manual-pokemon-card-order', String(manualPokemonCardOrder));
+    window.dispatchEvent(new CustomEvent('eb-settings-changed'));
+  }, [manualPokemonCardOrder]);
 
   useEffect(() => {
     const muted = !auctionSoundEnabled;
@@ -218,7 +227,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ onClose }) => {
               </div>
 
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '0.4rem' }}>
-                <span className="settings-label">Auto-Sort by Funds</span>
+                <span className="settings-label">Sort by Funds</span>
                 <button
                   onClick={() => setAutoSortByFunds(!autoSortByFunds)}
                   style={{
@@ -340,6 +349,33 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ onClose }) => {
 
           {activeTab === 'accessibility' && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', background: 'rgba(255,255,255,0.05)', padding: '1rem', borderRadius: '8px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <span className="settings-label">Manually Order Pokemon Cards</span>
+                  <button
+                    onClick={() => setManualPokemonCardOrder(!manualPokemonCardOrder)}
+                    aria-label="Manually Order Pokemon Cards"
+                    aria-pressed={manualPokemonCardOrder}
+                    style={{
+                      padding: '8px 16px',
+                      background: manualPokemonCardOrder ? 'var(--eb-primary, #7CB946)' : '#555',
+                      color: '#f1f1f1',
+                      border: 'none',
+                      borderRadius: '6px',
+                      cursor: 'pointer',
+                      fontSize: '0.95rem',
+                      fontWeight: 'bold',
+                      transition: 'background 0.2s'
+                    }}
+                  >
+                    {manualPokemonCardOrder ? 'ON' : 'OFF'}
+                  </button>
+                </div>
+                <div style={{ fontSize: '0.95rem', color: '#b3b3b3', marginTop: '-0.6rem' }}>
+                  Beneath the emulator, drag your Pokemon to arrange them instead of following the in-game order
+                </div>
+              </div>
+
               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', background: 'rgba(255,255,255,0.05)', padding: '1rem', borderRadius: '8px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                   <span className="settings-label">Tip Messages</span>

@@ -238,7 +238,7 @@ const PlayerRow: React.FC<PlayerRowProps> = ({ teams, numPlayers, highestBidderI
     if (positionColors) {
       // Intentionally left in the order the caller supplied.
     } else if (autoSortByFunds) {
-      // Auto-sort by funds if enabled
+      // Sort by funds if enabled
       baseTeams.sort((a, b) => {
         const aFunds = a.budget_remaining ?? 0;
         const bFunds = b.budget_remaining ?? 0;
@@ -321,7 +321,7 @@ const PlayerRow: React.FC<PlayerRowProps> = ({ teams, numPlayers, highestBidderI
   // Resolves a card's P1/P2 colour from which team it actually is, never from
   // where it happens to sit in the row. Keying this off the render index was
   // the source of a bug where 1v1 players saw each other's colours, because
-  // the row reorders itself (auto-sort by funds, "me first", dragging).
+  // the row reorders itself (sort by funds, "me first", dragging).
   const getPositionColorClass = (team: any, idx: number): string => {
     if (!positionColors || team.isPlaceholder) return '';
     if (positionOneId) {

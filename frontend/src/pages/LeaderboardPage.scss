@@ -121,7 +121,7 @@
     padding: 0 0.75rem 0.75rem;
     font-size: 1.1rem;
     line-height: 1.5;
-    color: $eb-text-muted;
+    color: #fff;
 
     p {
         margin: 0 0 0.5rem;
@@ -136,6 +136,10 @@
     color: $eb-text-muted;
     font-size: 2.4rem;
     font-weight: bold;
+}
+
+.leaderboard-header-title h1:has(+ .format-overview) {
+    margin-bottom: 0;
 }
 
 .filter-container {

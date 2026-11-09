@@ -29,9 +29,12 @@ import {
   arrayMove,
   SortableContext,
   sortableKeyboardCoordinates,
+  rectSortingStrategy,
+  useSortable,
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable';
 import { restrictToVerticalAxis } from '@dnd-kit/modifiers';
+import { CSS } from '@dnd-kit/utilities';
 import './EmulatorPage.scss';
 
 (function () {
@@ -893,6 +896,21 @@ const filterLiveParty = (party: SavePokemon[], trainerName: string | undefined):
   return clean.length > 0 ? clean : null;
 };
 
+const SortablePokemonCard: React.FC<{ id: number; enabled: boolean; className: string; children: React.ReactNode }> = ({ id, enabled, className, children }) => {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id, disabled: !enabled });
+  return (
+    <div
+      ref={setNodeRef}
+      className={`${className}${enabled ? ' manually-sortable' : ''}`}
+      style={{ transform: CSS.Transform.toString(transform), transition, opacity: isDragging ? 0.5 : undefined, zIndex: isDragging ? 2 : undefined }}
+      {...(enabled ? attributes : {})}
+      {...(enabled ? listeners : {})}
+    >
+      {children}
+    </div>
+  );
+};
+
 const EmulatorPage: React.FC = () => {
   const { draftId } = useParams<{ draftId?: string }>();
   const [searchParams] = useSearchParams();
@@ -925,6 +943,17 @@ const EmulatorPage: React.FC = () => {
 
   // Own parsed save data shown below the emulator
   const [mySaveData, setMySaveData] = useState<SaveData | null>(null);
+  const [manualPokemonCardOrder, setManualPokemonCardOrder] = useState(() => localStorage.getItem('eb-manual-pokemon-card-order') === 'true');
+  const [pokemonCardOrder, setPokemonCardOrder] = useState<number[]>([]);
+  useEffect(() => {
+    const updateSetting = () => setManualPokemonCardOrder(localStorage.getItem('eb-manual-pokemon-card-order') === 'true');
+    window.addEventListener('eb-settings-changed', updateSetting);
+    window.addEventListener('storage', updateSetting);
+    return () => {
+      window.removeEventListener('eb-settings-changed', updateSetting);
+      window.removeEventListener('storage', updateSetting);
+    };
+  }, []);
   const [saveLastSynced, setSaveLastSynced] = useState<Date | null>(null);
   const [isPanelMinimized, setIsPanelMinimized] = useState(false);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
@@ -3232,6 +3261,40 @@ const EmulatorPage: React.FC = () => {
     });
   }, [isMonFainted]);
 
+  const ownPokemon = useMemo(() => sortPokemon(currentUserId || 'me', [
+    ...(mySaveData?.party ?? []).map(mon => ({ ...mon, _isParty: true })),
+    ...(mySaveData?.box ?? []).map(mon => ({ ...mon, _isParty: false })),
+  ]), [mySaveData, currentUserId, sortPokemon]);
+
+  useEffect(() => {
+    if (!manualPokemonCardOrder) {
+      setPokemonCardOrder([]);
+      return;
+    }
+    setPokemonCardOrder(previous => {
+      const newIds = ownPokemon.map(mon => mon.personality).filter(id => !previous.includes(id));
+      return newIds.length ? [...previous, ...newIds] : previous;
+    });
+  }, [manualPokemonCardOrder, ownPokemon]);
+
+  const displayedPokemon = useMemo(() => {
+    if (!manualPokemonCardOrder) return ownPokemon;
+    const positions = new Map(pokemonCardOrder.map((id, index) => [id, index]));
+    return [...ownPokemon].sort((first, second) =>
+      (positions.get(first.personality) ?? positions.size) - (positions.get(second.personality) ?? positions.size)
+    );
+  }, [manualPokemonCardOrder, ownPokemon, pokemonCardOrder]);
+
+  const handlePokemonCardDragEnd = (event: DragEndEvent) => {
+    if (!event.over || event.active.id === event.over.id) return;
+    const ids = displayedPokemon.map(mon => mon.personality);
+    const oldIndex = ids.indexOf(Number(event.active.id));
+    const newIndex = ids.indexOf(Number(event.over.id));
+    if (oldIndex < 0 || newIndex < 0) return;
+    const reordered = arrayMove(ids, oldIndex, newIndex);
+    setPokemonCardOrder(previous => [...reordered, ...previous.filter(id => !ids.includes(id))]);
+  };
+
   // True when a player had joined the race (has a save or we've seen them
   // connected) but no longer has a live emulator WebSocket — i.e. they closed
   // their tab or left. Never applies to our own entry, and only once we know
@@ -3677,11 +3740,10 @@ const EmulatorPage: React.FC = () => {
                     </div>
                   </div>
                   {!isPanelMinimized && mySaveData && (
+                    <DndContext sensors={sidebarSensors} collisionDetection={closestCenter} onDragEnd={handlePokemonCardDragEnd}>
+                    <SortableContext items={displayedPokemon.map(mon => mon.personality)} strategy={rectSortingStrategy}>
                     <div className="save-party-grid">
-                      {sortPokemon(currentUserId || 'me', [
-                        ...(mySaveData.party ?? []).map((m: any) => ({ ...m, _isParty: true })),
-                        ...(mySaveData.box ?? []).map((m: any) => ({ ...m, _isParty: false })),
-                      ]).map((mon: any, i: number) => {
+                      {displayedPokemon.map((mon: any) => {
                         const speciesId = mon.species_id ?? mon.speciesId;
                         const speciesData = resolveMetadata(speciesId, mon.nickname);
                         const realName = (speciesId === 412 && mon.nickname?.toLowerCase() === 'egg') ? "Egg" : (speciesData?.name || `ID ${speciesId}`);
@@ -3691,11 +3753,13 @@ const EmulatorPage: React.FC = () => {
                         const hasNickname = isActuallyNicknamed(mon.nickname, speciesId, realName);
 
                         return (
-                          <div key={`combined-${i}`} className={`save-mon-card${fainted ? ' fainted' : ''}${markedPids.has(mon.personality) ? ' marked' : ''}`}>
+                          <SortablePokemonCard key={mon.personality} id={mon.personality} enabled={manualPokemonCardOrder} className={`save-mon-card${fainted ? ' fainted' : ''}${markedPids.has(mon.personality) ? ' marked' : ''}`}>
                             <div className="mon-name-row">
                               <span className="mon-name" style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
                                 <a
                                   className="mon-name-link"
+                                  onPointerDown={(event) => event.stopPropagation()}
+                                  onKeyDown={(event) => event.stopPropagation()}
                                   href={`https://emeraldblitz.com/pokemon/${realName}`}
                                   target="_blank"
                                   rel="noopener noreferrer"
@@ -3721,6 +3785,8 @@ const EmulatorPage: React.FC = () => {
                               >
                                 <input
                                   type="checkbox"
+                                  onPointerDown={(event) => event.stopPropagation()}
+                                  onKeyDown={(event) => event.stopPropagation()}
                                   checked={markedPids.has(mon.personality)}
                                   onChange={() => toggleMarked(mon.personality)}
                                 />
@@ -3744,10 +3810,12 @@ const EmulatorPage: React.FC = () => {
                                 })}
                               </div>
                             )}
-                          </div>
+                          </SortablePokemonCard>
                         );
                       })}
                     </div>
+                    </SortableContext>
+                    </DndContext>
                   )}
                 </div>
               </div>

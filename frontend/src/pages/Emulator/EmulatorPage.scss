@@ -392,6 +392,11 @@
   flex-direction: column;
   gap: 0.5rem;
 
+  &.manually-sortable {
+    cursor: grab;
+    touch-action: none;
+  }
+
   &.fainted {
     opacity: 0.45;
     border-color: $eb-danger;
