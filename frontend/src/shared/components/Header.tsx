@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useLayoutEffect, useState, useRef } from 'react';
 import './Header.scss';
 import { Link, useLocation } from 'react-router-dom';
 import { fetchCurrentUser, changeGuestName } from '../api/draftData';
@@ -8,7 +8,7 @@ import SettingsModal from './SettingsModal';
 import NotesEditor from './NotesEditor';
 import NotesToolbar from './NotesToolbar';
 import { scrollToTop } from '../utils/scroll';
-import { applyPageZoom, DEFAULT_PAGE_ZOOM, getNextPageZoom, getStoredPageZoom } from '../utils/pageZoom';
+import { applyPageZoom, DEFAULT_PAGE_ZOOM, getNextPageZoom, getStoredPageZoom, PAGE_ZOOM_LEVELS, storePageZoom } from '../utils/pageZoom';
 import { getCachedAvatarUrl, getDiscordAvatarUrl, onAvatarError } from '../utils/user';
 import { useUserNotes } from '../utils/userNotes';
 
@@ -62,9 +62,11 @@ function Header() {
   const [changingName, setChangingName] = useState(false);
   const [showNotes, setShowNotes] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
-  const [pageZoom, setPageZoom] = useState<number>(() => getStoredPageZoom());
+  const [pageZoom, setPageZoom] = useState<number>(() => getStoredPageZoom() ?? DEFAULT_PAGE_ZOOM);
+  const automaticZoom = useRef(getStoredPageZoom() === null);
+  const headerRef = useRef<HTMLElement>(null);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     applyPageZoom(pageZoom);
   }, [pageZoom]);
   const { notes, fontSize, setNotes, setFontSize } = useUserNotes(user?.user_id ?? null);
@@ -110,6 +112,23 @@ function Header() {
       user.username === 'Jason' ||
       user.username === 'mfrazz' ||
       user.username === 'jpfrazz');
+
+  useLayoutEffect(() => {
+    const updateDefault = () => {
+      if (!automaticZoom.current) return;
+      const zoom = getDefaultPageZoom();
+      applyPageZoom(zoom);
+      setPageZoom(zoom);
+    };
+    const logo = headerRef.current?.querySelector('.logoImg');
+    updateDefault();
+    window.addEventListener('resize', updateDefault);
+    logo?.addEventListener('load', updateDefault);
+    return () => {
+      window.removeEventListener('resize', updateDefault);
+      logo?.removeEventListener('load', updateDefault);
+    };
+  }, [user, isAdminUser]);
 
   useEffect(() => {
     if (!isAdminUser) {
@@ -240,16 +259,54 @@ function Header() {
     setIsMobileMenuOpen(prev => !prev);
   };
 
+  const pageZoomFits = (zoom: number) => {
+    const header = headerRef.current;
+    if (!header) return false;
+
+    const rootStyle = document.documentElement.style;
+    const previousZoom = rootStyle.getPropertyValue('--eb-page-zoom');
+    const previousPriority = rootStyle.getPropertyPriority('--eb-page-zoom');
+    rootStyle.setProperty('--eb-page-zoom', String(zoom));
+    const viewportWidth = document.documentElement.clientWidth;
+    const fits = Array.from(header.querySelectorAll('.logoLink, .logoImg, .nav > *, .userDropdownTrigger'))
+      .filter((element) => element.getClientRects().length > 0)
+      .every((element) => {
+        const bounds = element.getBoundingClientRect();
+        return bounds.left >= 0 && bounds.right <= viewportWidth;
+      });
+    if (previousZoom) {
+      rootStyle.setProperty('--eb-page-zoom', previousZoom, previousPriority);
+    } else {
+      rootStyle.removeProperty('--eb-page-zoom');
+    }
+    return fits;
+  };
+
+  const getDefaultPageZoom = () => {
+    if (window.matchMedia('(max-width: 1024px)').matches) return DEFAULT_PAGE_ZOOM;
+    const largestFit = PAGE_ZOOM_LEVELS.reduce((largest, zoom, index) => pageZoomFits(zoom) ? index : largest, 0);
+    return PAGE_ZOOM_LEVELS[Math.max(0, largestFit - 1)];
+  };
+
+  const setManualPageZoom = (zoom: number) => {
+    automaticZoom.current = false;
+    storePageZoom(zoom);
+    setPageZoom(zoom);
+  };
+
   const zoomInPage = () => {
-    setPageZoom((prev) => getNextPageZoom(prev, 'in'));
+    const nextZoom = getNextPageZoom(pageZoom, 'in');
+    if (nextZoom !== pageZoom && pageZoomFits(nextZoom)) setManualPageZoom(nextZoom);
   };
 
   const zoomOutPage = () => {
-    setPageZoom((prev) => getNextPageZoom(prev, 'out'));
+    setManualPageZoom(getNextPageZoom(pageZoom, 'out'));
   };
 
   const resetPageZoom = () => {
-    setPageZoom(DEFAULT_PAGE_ZOOM);
+    automaticZoom.current = true;
+    storePageZoom(null);
+    setPageZoom(getDefaultPageZoom());
   };
 
   const handleNavLinkClick = () => {
@@ -279,7 +336,7 @@ function Header() {
   };
 
   return (
-    <header className={`header${isAuctionPage && isHeaderPinned ? ' header-pinned' : ''}`}>
+    <header ref={headerRef} className={`header${isAuctionPage && isHeaderPinned ? ' header-pinned' : ''}`}>
       <div className="headerInner">
         <Link to="/" className="logoLink" onClick={handleLogoClick} target={linkTarget} rel={linkRel}>
           <img
@@ -444,29 +501,29 @@ function Header() {
             <button
               type="button"
               className="headerZoomButton"
-              onClick={zoomInPage}
-              title="Zoom in (Ctrl +)"
-              aria-label="Zoom in"
+              onClick={zoomOutPage}
+              title="Zoom out (Ctrl -)"
+              aria-label="Zoom out"
             >
-              +
+              −
             </button>
             <button
               type="button"
               className="headerZoomButton headerZoomReset"
               onClick={resetPageZoom}
-              title="Reset zoom (Ctrl 0)"
-              aria-label="Reset zoom to 100%"
+              title="Reset zoom to fit"
+              aria-label="Reset zoom to fit"
             >
               ⟳
             </button>
             <button
               type="button"
               className="headerZoomButton"
-              onClick={zoomOutPage}
-              title="Zoom out (Ctrl -)"
-              aria-label="Zoom out"
+              onClick={zoomInPage}
+              title="Zoom in (Ctrl +)"
+              aria-label="Zoom in"
             >
-              −
+              +
             </button>
           </div>
         </nav>

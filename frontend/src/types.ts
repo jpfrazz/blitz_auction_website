@@ -233,6 +233,7 @@ export interface StatsPagePlayer {
   user_name: string;
   global_name?: string | null;
   is_guest: boolean;
+  linked_user_id?: string | null;
 }
 
 export interface StatsLegacyPick {

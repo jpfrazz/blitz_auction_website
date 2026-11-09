@@ -24,14 +24,14 @@ import EmulatorPage from './pages/Emulator/EmulatorPage';
 import SpectatePage from './pages/Spectate/SpectatePage';
 import SaveUploaderPage from './pages/SaveUploader/SaveUploaderPage';
 import ScrollToTop from './shared/components/ScrollToTop';
-import { applyPageZoom, getStoredPageZoom } from './shared/utils/pageZoom';
+import { applyPageZoom, DEFAULT_PAGE_ZOOM, getStoredPageZoom } from './shared/utils/pageZoom';
 
 if ('scrollRestoration' in window.history) {
   window.history.scrollRestoration = 'manual';
 }
 
 // Restore the header +/- page zoom before the first paint.
-applyPageZoom(getStoredPageZoom());
+applyPageZoom(getStoredPageZoom() ?? DEFAULT_PAGE_ZOOM);
 
 const container = document.getElementById('root');
 if (container) {

@@ -31,6 +31,16 @@ function getPlacementLabel(placement: number | null): string {
 
 type LeaderboardTab = 'season2' | 'table' | 'progression';
 
+type RaceParticipant = {
+    userId: string;
+    sourceUserId: string;
+    teamId: number;
+    isRegistered: boolean;
+    username: string;
+    placement: number;
+    points: number | null;
+};
+
 const FORMAT_OVERVIEWS: Record<'season2' | 'table', string[]> = {
     season2: [
         'The Ever Grande Prix is Emerald Blitz\'s competitive "ranked" circuit. In season 2, players gain points based on their performance in races. Only their top 10 performances earn them points, so once a player has played 10 races, subsequent races can only serve to "drop" their lowest score.',
@@ -165,8 +175,8 @@ const LeaderboardPage = () => {
     }, [season2Leaderboard, season2MinRaces]);
 
     const draftsInfo = useMemo(() => {
-        if (!activeStats) return new Map<string, { date: string, participants: { userId: string, username: string, placement: number, points: number | null }[] }>();
-        const map = new Map<string, { date: string, participants: { userId: string, username: string, placement: number, points: number | null }[] }>();
+        if (!activeStats) return new Map<string, { date: string, participants: RaceParticipant[] }>();
+        const map = new Map<string, { date: string, participants: RaceParticipant[] }>();
 
         const playersMap = new Map();
         activeStats.players.forEach(p => playersMap.set(p.user_id, p));
@@ -186,7 +196,10 @@ const LeaderboardPage = () => {
             const uid = t.user_id || t.guest_id || '';
             const pInfo = playersMap.get(uid);
             draft.participants.push({
-                userId: uid,
+                userId: activeTab === 'season2' && !t.user_id ? pInfo?.linked_user_id || uid : uid,
+                sourceUserId: uid,
+                teamId: t.team_id,
+                isRegistered: Boolean(t.user_id),
                 username: pInfo?.global_name || pInfo?.user_name || uid || 'Guest',
                 placement: position,
                 points: activeTab === 'season2'
@@ -214,11 +227,17 @@ const LeaderboardPage = () => {
         if (!expandedUserId || !activeStats) return [];
         return Array.from(draftsInfo.entries())
             .filter(([_, info]) => info.participants.some(p => p.userId === expandedUserId))
-            .map(([id, info]) => ({
-                draftId: id,
-                ...info,
-                points: info.participants.find(p => p.userId === expandedUserId)?.points ?? null
-            }))
+            .map(([id, info]) => {
+                const participant = info.participants
+                    .filter(p => p.userId === expandedUserId)
+                    .sort((first, second) => Number(second.isRegistered) - Number(first.isRegistered) || first.teamId - second.teamId)[0];
+                return {
+                    draftId: id,
+                    ...info,
+                    points: participant.points,
+                    sourceUserId: participant.sourceUserId,
+                };
+            })
             .sort((a, b) => (b.date || '').localeCompare(a.date || ''));
     }, [expandedUserId, draftsInfo, activeStats]);
 
@@ -525,7 +544,7 @@ const LeaderboardPage = () => {
 function renderMatchHistory(
     statsLoading: boolean,
     stats: StatsPageResponse | null,
-    userMatches: { draftId: string, date: string, participants: { userId: string, username: string, placement: number, points: number | null }[], points: number | null }[],
+    userMatches: { draftId: string, date: string, participants: RaceParticipant[], points: number | null, sourceUserId: string }[],
     playerUserId: string,
     userTeamsByDraft: Map<string, Map<string, any[]>>,
     showPoints: boolean
@@ -564,15 +583,15 @@ function renderMatchHistory(
                                     <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
                                             {match.participants.map(p => (
                                                 <span
-                                                    key={p.userId}
+                                                    key={p.teamId}
                                                     style={{
-                                                        color: p.userId === playerUserId ? '#fff' : 'inherit',
-                                                        opacity: p.userId === playerUserId ? 1 : 0.7,
-                                                        fontWeight: p.userId === playerUserId ? 'bold' : 'normal',
-                                                        backgroundColor: p.userId === playerUserId ? 'rgba(76, 175, 80, 0.2)' : 'rgba(255, 255, 255, 0.05)',
+                                                        color: p.sourceUserId === match.sourceUserId ? '#fff' : 'inherit',
+                                                        opacity: p.sourceUserId === match.sourceUserId ? 1 : 0.7,
+                                                        fontWeight: p.sourceUserId === match.sourceUserId ? 'bold' : 'normal',
+                                                        backgroundColor: p.sourceUserId === match.sourceUserId ? 'rgba(76, 175, 80, 0.2)' : 'rgba(255, 255, 255, 0.05)',
                                                         padding: '2px 6px',
                                                         borderRadius: '4px',
-                                                        border: p.userId === playerUserId ? '1px solid rgba(76, 175, 80, 0.3)' : '1px solid transparent'
+                                                        border: p.sourceUserId === match.sourceUserId ? '1px solid rgba(76, 175, 80, 0.3)' : '1px solid transparent'
                                                     }}
                                                 >
                                                     {getPlacementLabel(p.placement)}: {p.username}
@@ -582,7 +601,7 @@ function renderMatchHistory(
                                     </td>
                                     <td style={{ padding: '12px' }}>
                                         <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
-                                            {(userTeamsByDraft.get(match.draftId)?.get(playerUserId) || [])
+                                            {(userTeamsByDraft.get(match.draftId)?.get(match.sourceUserId) || [])
                                                 .sort((a, b) => (b.winning_bid ?? 0) - (a.winning_bid ?? 0))
                                                 .map(a => (
                                                 <div

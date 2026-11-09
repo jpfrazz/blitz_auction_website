@@ -120,30 +120,16 @@ const Info = () => (
           Locations of important NPCs:
         </p>
 
-        <div className="location-scale-grid">
+        <div className="key-npc-layout">
+          <div className="location-scale-grid key-npc-grid">
           <div className="location-scale-card">
             <img src="/KeyNPCLocations/KeyNPC2.png" alt="Berry Saleswoman - Route 104" />
             <div className="location-scale-caption">Berry Saleswoman - Route 104</div>
           </div>
 
           <div className="location-scale-card">
-            <img src="/KeyNPCLocations/KeyNPC10.png" alt="Energy Guru - Slateport City" />
+            <img src="/KeyNPCLocations/KeyNPC10.png" alt="Burmy Binders - Route 104" />
             <div className="location-scale-caption">Burmy Binders - Route 104</div>
-          </div>
-
-          <div className="location-scale-card">
-            <img src="/KeyNPCLocations/KeyNPC1.png" alt="Status Chef - Slateport Market" />
-            <div className="location-scale-caption">Status Chef - Slateport Market</div>
-          </div>
-
-          <div className="location-scale-card">
-            <img src="/KeyNPCLocations/KeyNPC9.png" alt="Black Market Renter - Slateport City" />
-            <div className="location-scale-caption">Black Market Renter - Slateport City</div>
-          </div>
-
-          <div className="location-scale-card">
-            <img src="/KeyNPCLocations/KeyNPC8.png" alt="Energy Guru - Slateport City" />
-            <div className="location-scale-caption">Energy Guru - Slateport City</div>
           </div>
 
           <div className="location-scale-card">
@@ -174,6 +160,22 @@ const Info = () => (
           <div className="location-scale-card">
             <img src="/KeyNPCLocations/KeyNPC6.png" alt="Day Care - Route 117" />
             <div className="location-scale-caption">Day Care - Route 117</div>
+          </div>
+          </div>
+          <div className="key-npc-slateport">
+            <div className="location-scale-card key-npc-slateport-image">
+              <img src="/KeyNPCLocations/Slateport.png" alt="Numbered locations of key NPCs in Slateport City" />
+              <ol>
+                <li>Black Market Renter</li>
+                <li>Status Chef</li>
+                <li>Energy Oracle</li>
+                <li>Energy Guru</li>
+                <li>Mega Stone Salesman</li>
+                <li>Hidden Power Guy</li>
+                <li>Evo. Item Saleswoman</li>
+                <li>TM Saleswoman</li>
+              </ol>
+            </div>
           </div>
         </div>
       </section>

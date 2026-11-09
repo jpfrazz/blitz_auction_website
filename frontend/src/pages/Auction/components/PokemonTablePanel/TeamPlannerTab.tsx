@@ -20,7 +20,7 @@ const TeamPlannerTab: React.FC<TeamPlannerTabProps> = ({ teams, currentUserId, a
   const currentUserTeam = teams.find(team => team.user_id === currentUserId);
 
   if (!currentUserTeam) {
-    return <div className="auction-team-planner-placeholder">You are not on a team in this draft.</div>;
+    return <div className="auction-team-planner-placeholder">You're not on a team in this draft.</div>;
   }
 
   const teamPokemon = currentUserTeam.auctions_won ?? currentUserTeam.pokemon ?? [];

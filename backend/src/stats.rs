@@ -20,10 +20,12 @@ pub struct StatsPlayer {
     pub global_name: Option<String>,
     pub avatar: Option<String>,
     pub is_guest: bool,
+    pub linked_user_id: Option<String>,
 }
 
 #[derive(Serialize, FromRow)]
 pub struct StatsTeam {
+    pub team_id: i64,
     pub user_id: Option<String>,
     pub guest_id: Option<String>,
     pub draft_id: uuid::Uuid,
@@ -135,9 +137,9 @@ pub async fn get_stats_page_data(
 ) -> Result<Json<StatsPageResponse>, AppError> {
     // Combine registered users and guests into a single player list
     let players = sqlx::query_as::<_, StatsPlayer>(
-        "SELECT user_id, user_name, global_name, avatar, false AS is_guest FROM users
+        "SELECT user_id, user_name, global_name, avatar, false AS is_guest, NULL::TEXT AS linked_user_id FROM users
          UNION ALL
-         SELECT user_id, user_name, NULL AS global_name, NULL AS avatar, true AS is_guest FROM guests",
+         SELECT user_id, user_name, NULL AS global_name, NULL AS avatar, true AS is_guest, discord_user_id AS linked_user_id FROM guests",
     )
     .fetch_all(&state.db_pool)
     .await
@@ -145,7 +147,7 @@ pub async fn get_stats_page_data(
 
     let teams =
         sqlx::query_as::<_, StatsTeam>(
-            "SELECT t.user_id, t.guest_id, t.draft_id, t.placement, t.race_placement,
+            "SELECT t.team_id, t.user_id, t.guest_id, t.draft_id, t.placement, t.race_placement,
                     (t.save_data IS NOT NULL) AS has_save,
                     d.draft_name, COALESCE(d.host_user_id, d.host_guest_id) AS host, d.ranked, d.draft_type, d.season
              FROM teams t
@@ -303,8 +305,8 @@ pub async fn get_season2_leaderboard(
             GROUP BY t.draft_id
         ),
         per_race AS (
-            SELECT
-                t.user_id,
+            SELECT DISTINCT ON (COALESCE(t.user_id, g.discord_user_id), t.draft_id)
+                COALESCE(t.user_id, g.discord_user_id) AS user_id,
                 t.draft_id,
                 (CASE
                     WHEN t.race_placement = 1 THEN 5
@@ -317,10 +319,13 @@ pub async fn get_season2_leaderboard(
             FROM teams t
             JOIN drafts d ON d.draft_id = t.draft_id
             JOIN race_sizes rs ON rs.draft_id = t.draft_id
+                        LEFT JOIN guests g ON g.user_id = t.guest_id
             WHERE d.season = 2
               AND d.state = 'COMPLETED'
-              AND t.user_id IS NOT NULL
+                            AND COALESCE(t.user_id, g.discord_user_id) IS NOT NULL
               AND t.race_placement IS NOT NULL
+                        ORDER BY COALESCE(t.user_id, g.discord_user_id), t.draft_id,
+                                         (t.user_id IS NULL), t.team_id
         ),
         best_performances AS (
             SELECT user_id, points,
@@ -360,19 +365,20 @@ pub async fn get_season2_leaderboard(
         r#"
         WITH user_pokemon_counts AS (
             SELECT
-                a.winning_user_id as user_id,
+                COALESCE(a.winning_user_id, g.discord_user_id) as user_id,
                 a.pokedex_id as id,
                 p.name,
                 COALESCE(a.form, '') as form,
                 COUNT(*)::INT as count,
-                ROW_NUMBER() OVER(PARTITION BY a.winning_user_id ORDER BY COUNT(*) DESC, p.name ASC) as rank
+                                ROW_NUMBER() OVER(PARTITION BY COALESCE(a.winning_user_id, g.discord_user_id) ORDER BY COUNT(*) DESC, p.name ASC) as rank
             FROM auctions a
             JOIN pokemon p ON a.pokedex_id = p.pokedex_id AND COALESCE(a.form, '') = p.form
             JOIN drafts d ON d.draft_id = a.draft_id
-            WHERE a.winning_user_id IS NOT NULL
+                        LEFT JOIN guests g ON g.user_id = a.winning_guest_id
+                        WHERE COALESCE(a.winning_user_id, g.discord_user_id) IS NOT NULL
               AND d.season = 2
               AND d.state = 'COMPLETED'
-            GROUP BY a.winning_user_id, a.pokedex_id, p.name, a.form
+                        GROUP BY COALESCE(a.winning_user_id, g.discord_user_id), a.pokedex_id, p.name, a.form
         )
         SELECT user_id, id, name, form, count
         FROM user_pokemon_counts

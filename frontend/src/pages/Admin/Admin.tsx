@@ -901,8 +901,9 @@ const Admin: React.FC = () => {
                   <h2>Guest Linking</h2>
                   <p className="admin-submissions-hint">
                     Link a guest account to a Discord account so the runs played on that guest account
-                    also appear on the Discord account&apos;s player profile. This only affects how runs
-                    are displayed, not the underlying race data.
+                    appear on the Discord account&apos;s player profile and count toward its Season 2
+                    leaderboard. All eligible Season 2 races for that guest are included; unlinking
+                    removes the attribution. The underlying race data is not changed.
                   </p>
                   {guestsError && <div className="admin-message admin-error">{guestsError}</div>}
                   {guestsSuccess && <div className="admin-message admin-success">{guestsSuccess}</div>}

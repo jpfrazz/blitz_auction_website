@@ -169,6 +169,49 @@
   margin-top: 4px;
 }
 
+.key-npc-layout {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 24px;
+  margin: 24px 0 32px;
+}
+
+.key-npc-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  margin: 0;
+}
+
+.key-npc-slateport-image img {
+  display: block;
+  width: calc(100% - 12px);
+  max-width: 100%;
+  height: auto;
+  margin-bottom: 0;
+}
+
+.key-npc-slateport-image ol {
+  display: grid;
+  grid-auto-flow: column;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-rows: repeat(4, auto);
+  column-gap: 24px;
+  width: 100%;
+  box-sizing: border-box;
+  padding-left: 2rem;
+}
+
+@media (max-width: 700px) {
+  .key-npc-layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 400px) {
+  .key-npc-slateport-image ol {
+    display: block;
+  }
+}
+
 // Add to frontend/src/pages/Info/Info.scss
 
 .slateport-market-grid {

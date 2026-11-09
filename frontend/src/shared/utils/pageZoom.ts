@@ -6,6 +6,7 @@
 // overflowing it. The steps below mirror the browser (Chrome/Edge) Ctrl +/-
 // zoom ladder.
 const PAGE_ZOOM_STORAGE_KEY = 'eb-page-zoom';
+const PAGE_ZOOM_EXPLICIT_KEY = 'eb-page-zoom-explicit';
 
 export const DEFAULT_PAGE_ZOOM = 1;
 
@@ -14,11 +15,16 @@ export const PAGE_ZOOM_LEVELS = [
   1.1, 1.25, 1.5, 1.75, 2, 2.5, 3, 4, 5,
 ];
 
-export const getStoredPageZoom = (): number => {
-  if (typeof window === 'undefined') return DEFAULT_PAGE_ZOOM;
+export const getStoredPageZoom = (): number | null => {
+  if (typeof window === 'undefined') return null;
 
-  const stored = Number.parseFloat(localStorage.getItem(PAGE_ZOOM_STORAGE_KEY) ?? '');
-  return Number.isFinite(stored) && stored > 0 ? stored : DEFAULT_PAGE_ZOOM;
+  try {
+    const stored = Number.parseFloat(localStorage.getItem(PAGE_ZOOM_STORAGE_KEY) ?? '');
+    const explicit = localStorage.getItem(PAGE_ZOOM_EXPLICIT_KEY) === 'true';
+    return Number.isFinite(stored) && stored > 0 && (explicit || stored !== DEFAULT_PAGE_ZOOM) ? stored : null;
+  } catch {
+    return null;
+  }
 };
 
 export const applyPageZoom = (zoom: number) => {
@@ -28,10 +34,18 @@ export const applyPageZoom = (zoom: number) => {
   // Drop the old CSS zoom implementation in case it was set before an HMR update.
   document.documentElement.style.removeProperty('zoom');
 
+};
+
+export const storePageZoom = (zoom: number | null) => {
   try {
-    localStorage.setItem(PAGE_ZOOM_STORAGE_KEY, String(zoom));
+    if (zoom === null) {
+      localStorage.removeItem(PAGE_ZOOM_STORAGE_KEY);
+      localStorage.removeItem(PAGE_ZOOM_EXPLICIT_KEY);
+    } else {
+      localStorage.setItem(PAGE_ZOOM_STORAGE_KEY, String(zoom));
+      localStorage.setItem(PAGE_ZOOM_EXPLICIT_KEY, 'true');
+    }
   } catch {
-    // Ignore storage failures (private mode, quota, etc.)
   }
 };
 

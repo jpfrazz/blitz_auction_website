@@ -118,7 +118,7 @@
 }
 
 .format-overview-content {
-    padding: 0 0.75rem 0.75rem;
+    padding: 0.25rem 0.75rem 0.75rem;
     font-size: 1.1rem;
     line-height: 1.5;
     color: #fff;
@@ -140,6 +140,10 @@
 
 .leaderboard-header-title h1:has(+ .format-overview) {
     margin-bottom: 0;
+}
+
+.leaderboard-controls {
+    align-self: flex-start;
 }
 
 .filter-container {
@@ -303,6 +307,10 @@
 
     .leaderboard-header-title {
         width: 100%;
+    }
+
+    .leaderboard-controls {
+        order: -1;
     }
 
     .filter-container {
