@@ -1,6 +1,7 @@
 const ADJECTIVES = [
 "All Too Convenient",
 "Alluring",
+"Auspicious",
 "Awfully Peculiar",
 "Beautiful",
 "Bodacious",
@@ -26,6 +27,7 @@ const ADJECTIVES = [
 "Fiery",
 "Formidable",
 "Funky Fresh",
+"Groovy",
 "Highly Anticipated",
 "Incredible",
 "Infamous",
@@ -36,6 +38,7 @@ const ADJECTIVES = [
 "Mighty",
 "Mysterious",
 "Mystical",
+"Not Half Bad",
 "Ominous",
 "Phantasmal",
 "Pretty Neat",

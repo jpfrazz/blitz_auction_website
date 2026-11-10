@@ -109,6 +109,9 @@
 
     &:hover {
         background: rgba(255, 255, 255, 0.06);
+        // Beat the global `button:hover` rule in theme.scss so the label stays
+        // white instead of flipping to black.
+        color: $eb-text;
     }
 }
 
