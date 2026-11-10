@@ -1155,7 +1155,15 @@ const EmulatorPage: React.FC = () => {
   const lastBattlePingAtRef = useRef(0);
   const lastPostedEnemyRef = useRef('[]');
   const LIVE_MAP_SCAN_CHUNK = 2 * 1024 * 1024;
-  const LIVE_MAP_SCAN_RETRY_MS = 10000;
+  // Fast retry while we're still waiting for the Initial State; the old, slow
+  // backoff is restored once it has been captured.
+  const LIVE_MAP_SCAN_RETRY_MS = 1000;
+  const LIVE_MAP_SCAN_RETRY_SLOW_MS = 10000;
+  // Map-base discovery is a cheap magic-word scan, so while waiting for the
+  // Initial State let it burn a short slice per tick instead of exactly one
+  // chunk. That lets a full 32 MB pass finish in about a second rather than
+  // ~12 s. After the Initial State exists we go back to one chunk per tick.
+  const LIVE_MAP_SCAN_BUDGET_MS = 50;
   // Inferred PC box. Blitz only writes the flash on manual saves, so the .sav
   // box goes stale the moment the player moves mons around in storage. Since a
   // mon that leaves the live party must have gone to the box, we carry
@@ -1817,9 +1825,13 @@ const EmulatorPage: React.FC = () => {
               const stateData = gm?.getState();
               if (stateData && stateData.length > 0) {
                 const k = draftId || 'standalone';
-                void setStoredSave(`state_${k}_initial`, stateData);
-                localStorage.setItem(`initial_state_${k}`, String(Date.now()));
-                setHasInitialState(true);
+                // Only advertise the Initial State once its write has actually
+                // finished, so Auto Notebook Withdraw can't appear before the
+                // state needed to recover from a missed input exists.
+                void setStoredSave(`state_${k}_initial`, stateData).then(() => {
+                  localStorage.setItem(`initial_state_${k}`, String(Date.now()));
+                  setHasInitialState(true);
+                });
               } else {
                 initialStateCapturedRef.current = false;
               }
@@ -1837,28 +1849,49 @@ const EmulatorPage: React.FC = () => {
           ewramScanStartRef.current = 0;
         }
       } else {
-        const start = ewramScanStartRef.current;
+        // Scan several chunks per tick within a small time budget so the base
+        // is located as soon as the game writes its first warp frame. Without
+        // this, a full pass took ~12 s (2 MB every 750 ms) and then sat out the
+        // old 10 s retry, which is why Initial State could take 20+ seconds to
+        // appear after spawning into the room.
+        //
+        // This aggressive pass is only used until the Initial State exists. A
+        // session that already has one (e.g. after a reload) falls back to one
+        // chunk per tick with the long retry, so gameplay isn't affected.
+        const aggressive = !initialStateCapturedRef.current;
+        const retryMs = aggressive ? LIVE_MAP_SCAN_RETRY_MS : LIVE_MAP_SCAN_RETRY_SLOW_MS;
+        const deadline = performance.now() + (aggressive ? LIVE_MAP_SCAN_BUDGET_MS : 0);
         const endLimit = Math.min(heap.length - LIVE_WARP_EWRAM_BASE_OFFSET, LIVE_SCAN_MAX_BYTES);
-        const next = Math.min(start + LIVE_MAP_SCAN_CHUNK, endLimit);
-        const base = findLiveMapEwramBase(
-          heap,
-          start,
-          next,
-          // Accept only a real LiveWarp buffer: valid map. The scan walks the
-          // heap from low addresses and can otherwise latch a false positive
-          // (random bytes that coincidentally carry the magic + a nonzero
-          // sequence + a valid-looking map) before reaching the real struct.
-          (g, n) => typeof MAP_NAMES[g]?.[n] === 'string'
-        );
-        if (base !== null) {
-          ewramBaseRef.current = base;
-          ewramScanDoneRef.current = true;
-          ewramScanRetryAtRef.current = 0;
-        } else if (next >= endLimit) {
-          ewramScanDoneRef.current = true;
-          ewramScanRetryAtRef.current = Date.now() + LIVE_MAP_SCAN_RETRY_MS;
-        } else {
+        while (true) {
+          const start = ewramScanStartRef.current;
+          const next = Math.min(start + LIVE_MAP_SCAN_CHUNK, endLimit);
+          const base = findLiveMapEwramBase(
+            heap,
+            start,
+            next,
+            // Accept only a real LiveWarp buffer: valid map. The scan walks the
+            // heap from low addresses and can otherwise latch a false positive
+            // (random bytes that coincidentally carry the magic + a nonzero
+            // sequence + a valid-looking map) before reaching the real struct.
+            (g, n) => typeof MAP_NAMES[g]?.[n] === 'string'
+          );
+          if (base !== null) {
+            ewramBaseRef.current = base;
+            ewramScanDoneRef.current = true;
+            ewramScanRetryAtRef.current = 0;
+            break;
+          }
+          if (next >= endLimit) {
+            // A complete pass found no warp buffer yet (still on the title
+            // screen or intro). Retry shortly while waiting for Initial State;
+            // otherwise keep the old long backoff.
+            ewramScanStartRef.current = 0;
+            ewramScanDoneRef.current = true;
+            ewramScanRetryAtRef.current = Date.now() + retryMs;
+            break;
+          }
           ewramScanStartRef.current = next;
+          if (performance.now() >= deadline) break;
         }
       }
     }
@@ -3729,7 +3762,7 @@ const EmulatorPage: React.FC = () => {
                         bannedPokedexIds={draftData.one_v_one?.banned_eeveelutions ?? []}
                       />
                     )}
-                    {draftId && draftData && !mySaveData && (
+                    {draftId && draftData && !mySaveData && hasInitialState && (
                       <NotebookWithdrawButton
                         pokemon={
                           draftData.teams.find((t: any) => t.user_id === currentUserId)
@@ -3738,7 +3771,7 @@ const EmulatorPage: React.FC = () => {
                         onWithdrawingChange={(val) => { isWithdrawingRef.current = val; }}
                       />
                     )}
-                    {!draftId && urlPokemon.length > 0 && !mySaveData && (
+                    {!draftId && urlPokemon.length > 0 && !mySaveData && hasInitialState && (
                       <NotebookWithdrawButton
                         pokemon={urlPokemon}
                         onWithdrawingChange={(val) => { isWithdrawingRef.current = val; }}

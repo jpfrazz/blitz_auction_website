@@ -625,7 +625,10 @@ export function findLiveMapEwramBase(
   for (let base = startOff; base <= endOff; base += 4) {
     const off = base + LIVE_WARP_EWRAM_BASE_OFFSET;
     if (off + LIVE_WARP_BUFFER_SIZE > bytes.length) break;
-    if (view.getUint16(off, true) !== LIVE_WARP_MAGIC) continue;
+    // Fast byte check for the little-endian magic before touching the DataView,
+    // which keeps a full heap pass cheap.
+    if (bytes[off] !== (LIVE_WARP_MAGIC & 0xff)
+        || bytes[off + 1] !== ((LIVE_WARP_MAGIC >> 8) & 0xff)) continue;
     if (view.getUint32(off + LIVE_WARP_SEQUENCE_OFFSET, true) === 0) continue;
     const mapGroup = view.getInt8(off + 2);
     const mapNum = view.getInt8(off + 3);

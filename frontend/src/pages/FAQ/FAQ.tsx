@@ -61,6 +61,13 @@ const FAQ = () => (
           </ul>
         </div>
         <div className="faq-toc-group">
+          <h3 className="faq-toc-subheading"><a href="#troubleshooting">Troubleshooting</a></h3>
+          <ul className="info-toc-list">
+            <li><a href="#why-didnt-the-auto-withdraw-pokemon-button-give-me-all-of-my-pokemon">Why didn't the Auto-Withdraw Pokémon button give me all of my Pokémon?</a></li>
+            <li><a href="#why-cant-i-log-into-this-website">Why can't I log into this website?</a></li>
+          </ul>
+        </div>
+        <div className="faq-toc-group">
           <h3 className="faq-toc-subheading"><a href="#making-contributions">Making Contributions</a></h3>
           <ul className="info-toc-list">
             <li><a href="#can-i-add-features">Can I add features to the game or the website?</a></li>
@@ -431,6 +438,29 @@ participate!
               </li>
             </ul>
           </div>
+        </section>
+      </div>
+
+      <div className="faq-subsection">
+        <h2 id="troubleshooting" className="faq-subsection-heading" style={{ scrollMarginTop: '120px' }}>Troubleshooting</h2>
+
+        <section id="why-didnt-the-auto-withdraw-pokemon-button-give-me-all-of-my-pokemon" className="faq-section" style={{ scrollMarginTop: '120px' }}>
+          <h2 className="faq-question">Why didn't the Auto Withdraw button give me all of my Pokémon?</h2>
+          <hr />
+          <p className="faq-answer">
+            If you press the <UiRef>Auto Withdraw</UiRef> button while interacting with the notebook (and your cursor is hovering Amaura), the website calculates the most efficient set of inputs to withdraw your team, then executes that sequence of inputs.
+          </p>
+          <p className="faq-answer" style={{ marginTop: '1rem' }}>
+            This means, though, that if your computer lags and misses an input, you'll end up with an incorrect team. If this happens, simply click <UiRef>Load Previous State</UiRef> &gt; <UiRef>Initial State</UiRef> and try again.
+          </p>
+        </section>
+
+        <section id="why-cant-i-log-into-this-website" className="faq-section" style={{ scrollMarginTop: '120px' }}>
+          <h2 className="faq-question">Why can't I log into this website?</h2>
+          <hr />
+          <p className="faq-answer">
+            This site uses Discord to handle authentication. This makes it so that I don't have to store any of your data (emails, passwords, etc.). If you're having trouble logging in, try first logging into Discord itself through your browser. If this doesn't work, try using <a href="https://support.discord.com/hc/en-us/articles/360057027354-How-to-Log-In-to-your-Discord-Account" target="_blank" rel="noopener noreferrer">Discord's login support page</a> for help.
+          </p>
         </section>
       </div>
 
