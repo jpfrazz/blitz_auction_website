@@ -139,6 +139,7 @@ export interface Draft {
   completed_auctions: Auction[];
   current_server_time?: string;
   auction_length: number;
+  one_v_one_pool_size?: number;
   one_v_one?: OneVOneState | null;
 }
 

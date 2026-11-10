@@ -27,6 +27,7 @@ export interface CreateDraftRequest {
     nanos: number;
   };
   draft_type?: string;
+  one_v_one_pool_size?: number;
 }
 
 // Create a draft via POST /drafts (proxied to backend)

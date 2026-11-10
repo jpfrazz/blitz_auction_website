@@ -606,6 +606,7 @@ const Draft1v1Page: React.FC = () => {
                   {tab === TAB_PLAYER && <PlayerSearchTab />}
                   {tab === TAB_PICK_ORDER && (
                     <PickOrderTab
+                      poolSize={oneVOne?.pool.length || draft.one_v_one_pool_size || 32}
                       player1Name={oneVOne ? orderedTeams[0]?.global_name || orderedTeams[0]?.username || null : null}
                       player2Name={oneVOne ? orderedTeams[1]?.global_name || orderedTeams[1]?.username || null : null}
                       currentPickNumber={

@@ -5,6 +5,7 @@ import { Pokemon, StatsAuction, StatsPageResponse } from '../../../types';
 import { TbSettings, TbRefresh } from 'react-icons/tb';
 import '../Stats.scss';
 import './PokemonStatsTab.scss';
+import { casualOneVOneDraftIds, oneVOneLeftoverOrders, oneVOnePickSlot } from '../oneVOneHistory';
 
 type SortKey = 'rank' | 'name' | 'avgWinningBid' | 'minBid' | 'maxBid' | 'priceVariance' | 'bidsWon' | 'recentMovement' | 'priceMovement' | 'avgOneVOnePick' | 'total1v1Picks' | 'pickMovement';
 
@@ -92,23 +93,14 @@ function buildOneVOnePickMap(
   excludeDraftIds: Set<string>,
 ): Map<string, number[]> {
   const map = new Map<string, number[]>();
+  const leftoverOrders = oneVOneLeftoverOrders(auctions ?? []);
   (auctions ?? []).forEach((a) => {
     if (a.draft_type !== '1v1') return;
     if (!playedDraftIds.has(a.draft_id)) return;
     if (excludeDraftIds.has(a.draft_id)) return;
 
-    let slot: number;
-    if (a.action === 'LEFTOVER') {
-      // The four unused pool pokemon never get an actual pick slot, so the
-      // four that weren't picked or banned count as 29.
-      slot = 29;
-    } else if ((a.action === 'PICK' || a.action === 'BAN') && a.draft_order >= 1 && a.draft_order <= 28) {
-      // The main 1v1 phase is exactly 28 picks/bans, and draft_order tracks
-      // the pick slot. Eeveelution-phase bans (draft_order >= 29) are skipped.
-      slot = a.draft_order;
-    } else {
-      return;
-    }
+    const slot = oneVOnePickSlot(a, leftoverOrders);
+    if (slot === null) return;
 
     const { key } = resolveIdentity(a.name, a.form || '');
     if (!map.has(key)) map.set(key, []);
@@ -291,11 +283,12 @@ const PokemonStatsTab: React.FC<PokemonStatsTabProps> = ({
 
   const played1v1DraftIds = useMemo(() => {
     const played = new Set<string>();
+    const casualDrafts = casualOneVOneDraftIds(stats?.auctions ?? []);
     (stats?.teams ?? []).forEach((t) => {
-      if (t.has_save) played.add(t.draft_id);
+      if (t.has_save && !casualDrafts.has(t.draft_id)) played.add(t.draft_id);
     });
     return played;
-  }, [stats?.teams]);
+  }, [stats?.teams, stats?.auctions]);
 
   const oneVOnePickMap = useMemo(
     () => buildOneVOnePickMap(stats?.auctions, played1v1DraftIds, new Set()),

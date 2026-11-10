@@ -65,6 +65,8 @@ pub struct DraftResponse {
     completed_auctions: Vec<AuctionResponse>,
     current_server_time: chrono::DateTime<Utc>,
     auction_length: u32,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    one_v_one_pool_size: Option<u32>,
     /// 1v1 drafts only: the shared pick/ban pool and current turn state.
     #[serde(skip_serializing_if = "Option::is_none")]
     one_v_one: Option<OneVOneState>,
@@ -190,9 +192,8 @@ pub struct OneVOneState {
 /// The full 1v1 pick/ban order. Each tuple is (player, action).
 /// P1 opens with a lone pick, P2 takes a double pick with no ban, then P1
 /// picks and bans once. After that the players alternate Pick+Ban turns
-/// (starting with P2) until each player has 8 picks and 6 bans.
-/// 16 picks + 12 bans = 28 actions. After this, 4 pool pokemon are left over.
-fn one_v_one_action_sequence() -> Vec<(OneVOnePlayer, OneVOneAction)> {
+/// (starting with P2). Four pool pokemon are left over.
+fn one_v_one_action_sequence(pool_size: usize) -> Vec<(OneVOnePlayer, OneVOneAction)> {
     use OneVOneAction::*;
     use OneVOnePlayer::*;
     let mut seq = vec![
@@ -202,10 +203,7 @@ fn one_v_one_action_sequence() -> Vec<(OneVOnePlayer, OneVOneAction)> {
         (P1, Pick), // pick 4: P1
         (P1, Ban),  // ban 1: P1
     ];
-    // P1 burned its opening ban, so its ban count runs one ahead of P2's.
-    // After 5 alternating rounds P1 has all 6 bans but only 7 picks, so a
-    // 6th round finishes P2 (8 picks, 6 bans) and P1 closes with pick 8.
-    for _ in 0..5 {
+    for _ in 0..(5 + (pool_size - 32) / 4) {
         seq.push((P2, Pick));
         seq.push((P2, Ban));
         seq.push((P1, Pick));
@@ -215,6 +213,23 @@ fn one_v_one_action_sequence() -> Vec<(OneVOnePlayer, OneVOneAction)> {
     seq.push((P2, Ban));
     seq.push((P1, Pick));
     seq
+}
+
+#[cfg(test)]
+mod one_v_one_sequence_tests {
+    use super::{one_v_one_action_sequence, OneVOneAction, OneVOnePlayer};
+
+    #[test]
+    fn pool_sizes_leave_four_and_give_equal_picks_and_bans() {
+        for pool_size in [32, 36, 40] {
+            let sequence = one_v_one_action_sequence(pool_size);
+            assert_eq!(sequence.len(), pool_size - 4);
+            for player in [OneVOnePlayer::P1, OneVOnePlayer::P2] {
+                assert_eq!(sequence.iter().filter(|entry| **entry == (player, OneVOneAction::Pick)).count(), pool_size / 4);
+                assert_eq!(sequence.iter().filter(|entry| **entry == (player, OneVOneAction::Ban)).count(), pool_size / 4 - 2);
+            }
+        }
+    }
 }
 
 /// Linear-interpolation quantile over a sorted slice, matching the stats page.
@@ -314,6 +329,8 @@ pub struct DraftSettings {
     pub excluded_pokemon: Vec<ExcludedPokemon>,
     pub num_auctions: u32,
     pub auction_length: u32,
+    #[serde(default = "default_one_v_one_pool_size")]
+    pub one_v_one_pool_size: u32,
     /// 'auction' (default) or '1v1'. Determines the lobby format.
     #[serde(default = "default_draft_type")]
     pub draft_type: String,
@@ -321,6 +338,10 @@ pub struct DraftSettings {
 
 fn default_draft_type() -> String {
     "auction".to_string()
+}
+
+fn default_one_v_one_pool_size() -> u32 {
+    32
 }
 
 pub const DRAFT_TYPE_1V1: &str = "1v1";
@@ -402,6 +423,9 @@ impl Draft {
     ) -> Result<Arc<Draft>, AppError> {
         // Normalize settings for 1v1 drafts.
         if settings.draft_type == DRAFT_TYPE_1V1 {
+            if ![32, 36, 40].contains(&settings.one_v_one_pool_size) {
+                return Err((StatusCode::BAD_REQUEST, "1v1 pool size must be 32, 36, or 40".to_string()));
+            }
             settings.num_teams = 2;
             settings.num_auctions = 0;
             settings.starting_money = 0;
@@ -1505,7 +1529,8 @@ impl DraftActor {
         let player1 = player_ids[0].clone();
         let player2 = player_ids[1].clone();
 
-        // Choose 32 base, non-rental pokemon at random from the draft pool.
+        // Choose base, non-rental pokemon at random from the draft pool.
+        let pool_size = self.settings.one_v_one_pool_size as usize;
         let mut candidates: Vec<Arc<Pokemon>> = self
             .draft
             .pokemon
@@ -1514,13 +1539,13 @@ impl DraftActor {
             .cloned()
             .collect();
         candidates.shuffle(&mut rand::rng());
-        if candidates.len() < 32 {
+        if candidates.len() < pool_size {
             return Err((
                 StatusCode::INTERNAL_SERVER_ERROR,
                 format!("not enough pokemon to build a 1v1 pool"),
             ));
         }
-        let chosen: Vec<Arc<Pokemon>> = candidates.into_iter().take(32).collect();
+        let chosen: Vec<Arc<Pokemon>> = candidates.into_iter().take(pool_size).collect();
 
         // Attach avg prices (from auction stats) for ordering + auto-pick.
         let avg_prices = self.load_avg_prices().await;
@@ -1542,13 +1567,14 @@ impl DraftActor {
         pool.sort_by(|a, b| b.avg_price.cmp(&a.avg_price));
 
         let eeveelutions = self.one_v_one_eeveelutions(&avg_prices);
+        let sequence = one_v_one_action_sequence(pool.len());
 
         self.one_v_one = Some(OneVOneEngine {
             pool,
             player1,
             player2,
             action_index: 0,
-            sequence: one_v_one_action_sequence(),
+            sequence,
             p1_picks: 0,
             p2_picks: 0,
             history: vec![],
@@ -2972,6 +2998,7 @@ impl From<&DraftActor> for DraftResponse {
             completed_auctions: value.completed_auctions.clone(),
             current_server_time: Utc::now(),
             auction_length: value.settings.auction_length,
+            one_v_one_pool_size: (value.settings.draft_type == DRAFT_TYPE_1V1).then_some(value.settings.one_v_one_pool_size),
             one_v_one: value.one_v_one.as_ref().map(|e| e.to_state(value)),
         }
     }

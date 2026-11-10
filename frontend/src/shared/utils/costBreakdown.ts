@@ -1,4 +1,5 @@
 import { StatsAuction } from '../../types';
+import { casualOneVOneDraftIds } from '../../pages/Stats/oneVOneHistory';
 
 export interface PokemonAggregate {
   key: string;
@@ -79,8 +80,9 @@ export function computeCostBreakdown({
   }
 
   const pickRows: Array<{ key: string; name: string; form: string }> = [];
+  const casualDrafts = casualOneVOneDraftIds(auctions);
   for (const a of auctions) {
-    if (a.draft_type !== '1v1') continue;
+    if (a.draft_type !== '1v1' || casualDrafts.has(a.draft_id)) continue;
     const name = a.name || '';
     const form = a.form || '';
     const key = form ? name + '-' + form : name;

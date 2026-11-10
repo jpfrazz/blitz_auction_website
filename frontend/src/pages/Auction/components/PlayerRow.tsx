@@ -264,6 +264,8 @@ const PlayerRow: React.FC<PlayerRowProps> = ({ teams, numPlayers, highestBidderI
   // Sync local items with props when the underlying data changes (e.g. someone joins/leaves)
   React.useEffect(() => {
     setItems(prevItems => {
+      if (positionColors) return sortedTeams;
+
       const prevIds = new Set(prevItems.map(i => i.dragId));
       const nextIds = new Set(sortedTeams.map(i => i.dragId));
 
@@ -333,6 +335,7 @@ const PlayerRow: React.FC<PlayerRowProps> = ({ teams, numPlayers, highestBidderI
   };
 
   const containerClassName = `auction-players-row ${twoRowMode ? 'two-row-mode' : ''} ${equalWidth ? 'equal-width' : ''}${highlightId ? ' players-turn-highlight' : ''}`;
+  const displayedItems = positionColors ? sortedTeams : items;
 
   return (
     <DndContext
@@ -342,11 +345,11 @@ const PlayerRow: React.FC<PlayerRowProps> = ({ teams, numPlayers, highestBidderI
       modifiers={!twoRowMode ? [restrictToHorizontalAxis] : undefined}
     >
       <SortableContext
-        items={items.map(item => item.dragId)}
+        items={displayedItems.map(item => item.dragId)}
         strategy={horizontalListSortingStrategy}
       >
         <div className={containerClassName} style={{ ['--out-of-money-color' as any]: outOfMoneyColor }}>
-          {items.map((team, idx) => (
+          {displayedItems.map((team, idx) => (
             <SortableItem
               key={team.dragId}
               team={team}

@@ -8,6 +8,7 @@ import { Pokemon } from '../../types';
 import '../AuctionSetup/AuctionSetup.scss';
 import { generateRandomDraftName } from '../../shared/utils/draftNameGenerator';
 import LobbyLimitModal from '../../shared/components/LobbyLimitModal';
+import './Draft1v1Setup.scss';
 
 const Draft1v1Setup = () => (
   <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
@@ -23,6 +24,7 @@ const Draft1v1SetupForm: React.FC = () => {
   const navigate = useNavigate();
   const [draftName, setDraftName] = useState('');
   const [password, setPassword] = useState('');
+  const [poolSize, setPoolSize] = useState(32);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [showLobbyLimit, setShowLobbyLimit] = useState(false);
   const [pokemonList, setPokemonList] = useState<Pokemon[]>([]);
@@ -50,6 +52,7 @@ const Draft1v1SetupForm: React.FC = () => {
       num_auctions: 30,
       auction_length: 10,
       draft_type: '1v1',
+      one_v_one_pool_size: poolSize,
     };
 
     try {
@@ -114,6 +117,18 @@ const Draft1v1SetupForm: React.FC = () => {
               />
             </label>
           </div>
+        </div>
+        <div className="auction-setup-field">
+          <span className="auction-setup-label" id="pool-size-label">Pool Size</span>
+          <div className="pool-size-options" role="group" aria-labelledby="pool-size-label">
+            {[32, 36, 40].map((size) => (
+              <button key={size} type="button" aria-pressed={poolSize === size}
+                className={poolSize === size ? 'selected' : ''} onClick={() => setPoolSize(size)}>
+                {size}
+              </button>
+            ))}
+          </div>
+          <span className="pool-size-description">{poolSize / 4} Pokemon per player</span>
         </div>
         <div className="auction-setup-field auction-setup-btn-row">
           <button type="submit" className="auction-setup-btn navButton">

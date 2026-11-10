@@ -18,6 +18,7 @@ import { getIconName } from '../../../utils/speciesUtils';
 import { getDiscordAvatarUrl, onAvatarError } from '../../../shared/utils/user';
 import '../Stats.scss';
 import './PlayerSearchStatsTab.scss';
+import { casualOneVOneDraftIds, oneVOneLeftoverOrders, oneVOnePickSlot } from '../oneVOneHistory';
 
 interface PlayerSearchStatsTabProps {
   stats: StatsPageResponse | null;
@@ -299,6 +300,9 @@ const PlayerSearchStatsTab: React.FC<PlayerSearchStatsTabProps> = ({
   currentUserId,
 }) => {
   const navigate = useNavigate();
+  const casual1v1DraftIds = useMemo(() => {
+    return casualOneVOneDraftIds(stats?.auctions ?? []);
+  }, [stats?.auctions]);
   const [searchInput, setSearchInput] = useState('');
   const [isAutocompleteOpen, setIsAutocompleteOpen] = useState(false);
   const [expandedTeamId, setExpandedTeamId] = useState<number | null>(null);
@@ -608,15 +612,17 @@ const PlayerSearchStatsTab: React.FC<PlayerSearchStatsTabProps> = ({
   const playerOneVOnePickStats = useMemo(() => {
     const map = new Map<string, PlayerOneVOnePickStats>();
     if (!selectedPlayer || !displayMatchHistory) return map;
+    const leftoverOrders = oneVOneLeftoverOrders(stats?.auctions ?? []);
 
     const playedDraftIds = new Set(
       (stats?.teams ?? [])
-        .filter((team) => team.user_id === selectedPlayer.user_id && team.draft_type === '1v1' && team.has_save)
+        .filter((team) => team.user_id === selectedPlayer.user_id && team.draft_type === '1v1' && team.has_save && !casual1v1DraftIds.has(team.draft_id))
         .map((team) => team.draft_id),
     );
 
     (stats?.auctions ?? []).forEach((auction) => {
       if (auction.draft_type !== '1v1' || !playedDraftIds.has(auction.draft_id)) return;
+      if (oneVOnePickSlot(auction, leftoverOrders) === null) return;
       const { key } = resolveIdentity(auction.name, auction.form || '');
       const row = map.get(key) ?? { timesPicked: 0, appearedDraftIds: new Set<string>() };
       row.appearedDraftIds.add(auction.draft_id);
@@ -626,7 +632,7 @@ const PlayerSearchStatsTab: React.FC<PlayerSearchStatsTabProps> = ({
     displayMatchHistory.forEach((team) => {
       if (team.draft_type !== '1v1' || !playedDraftIds.has(team.draft_id)) return;
       (team.pokemon_drafted ?? []).forEach((auction) => {
-        if (auction.action !== 'PICK' || auction.draft_order < 1 || auction.draft_order > 28) return;
+        if (auction.action !== 'PICK' || oneVOnePickSlot(auction, leftoverOrders) === null) return;
         const { key } = resolveIdentity(auction.name, auction.form || '');
         const row = map.get(key) ?? { timesPicked: 0, appearedDraftIds: new Set<string>() };
         row.timesPicked += 1;
@@ -635,7 +641,7 @@ const PlayerSearchStatsTab: React.FC<PlayerSearchStatsTabProps> = ({
     });
 
     return map;
-  }, [displayMatchHistory, selectedPlayer, stats?.auctions, stats?.teams]);
+  }, [displayMatchHistory, selectedPlayer, stats?.auctions, stats?.teams, casual1v1DraftIds]);
 
   const draftRmvMap = useMemo(() => {
     const map = new Map<number, number>();
@@ -1186,7 +1192,7 @@ const PlayerSearchStatsTab: React.FC<PlayerSearchStatsTabProps> = ({
                   const isCasual = isCasualTeam(team);
                   const listAuctions = is1v1 ? auctions.filter(a => a.action === 'PICK') : auctions;
                   const isRanked = team.pre_match_mmr !== null || team.placement !== null;
-                  const result = is1v1 ? '1v1' : isCasual ? 'Casual' : getPlacementLabel(team.placement, isRanked);
+                  const result = is1v1 ? (casual1v1DraftIds.has(team.draft_id) ? 'Casual 1v1 Draft' : '1v1') : isCasual ? 'Casual' : getPlacementLabel(team.placement, isRanked);
                   const resultClass = getPlacementClass(team.placement, isRanked);
                   const isExpanded = expandedTeamId === team.team_id;
                   const battles = bossBattleHistory.get(team.team_id);

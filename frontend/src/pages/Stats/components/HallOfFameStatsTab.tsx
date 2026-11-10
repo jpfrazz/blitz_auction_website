@@ -6,6 +6,7 @@ import { getIconName } from '../../../utils/speciesUtils';
 
 interface HallOfFameStatsTabProps {
   validDraftIds: Set<string>;
+  casual1v1DraftIds: Set<string>;
 }
 
 function parseTimeToSeconds(input: string): number | null {
@@ -28,7 +29,7 @@ function parseTimeToSeconds(input: string): number | null {
   return seconds;
 }
 
-const HallOfFameStatsTab: React.FC<HallOfFameStatsTabProps> = ({ validDraftIds }) => {
+const HallOfFameStatsTab: React.FC<HallOfFameStatsTabProps> = ({ validDraftIds, casual1v1DraftIds }) => {
   const [entries, setEntries] = useState<AdminHallOfFameEligibleEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -257,7 +258,9 @@ const HallOfFameStatsTab: React.FC<HallOfFameStatsTabProps> = ({ validDraftIds }
             {filteredEntries.map((entry) => (
               <div className="admin-hof-entry" key={entry.team_id}>
                 {entry.draft_type === '1v1' ? (
-                  <div className="admin-hof-draft-type one-v-one">1v1 Draft</div>
+                  <div className={`admin-hof-draft-type ${casual1v1DraftIds.has(entry.draft_id) ? 'casual' : 'one-v-one'}`}>
+                    {casual1v1DraftIds.has(entry.draft_id) ? 'Casual 1v1 Draft' : '1v1 Draft'}
+                  </div>
                 ) : (
                   <div
                     className={`admin-hof-draft-type ${validDraftIds.has(entry.draft_id) ? 'competitive' : 'casual'}`}

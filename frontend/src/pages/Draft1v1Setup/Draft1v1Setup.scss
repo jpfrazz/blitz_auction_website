@@ -1,0 +1,25 @@
+.pool-size-options {
+  display: inline-flex;
+  align-self: flex-start;
+
+  button {
+    min-width: 62px;
+    padding: 8px 14px;
+    border: 1px solid #5b6065;
+    border-radius: 0;
+    background: #1c1e20;
+    color: #e6e6e6;
+    cursor: pointer;
+
+    & + button { border-left: 0; }
+    &:first-child { border-radius: 4px 0 0 4px; }
+    &:last-child { border-radius: 0 4px 4px 0; }
+    &.selected { background: #317b58; color: #fff; }
+    &:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
+  }
+}
+
+.pool-size-description {
+  color: #b0b0b0;
+  font-size: 1.4rem;
+}

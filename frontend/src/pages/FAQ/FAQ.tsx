@@ -234,7 +234,7 @@ happening!
             By the end of the draft, everybody will have won a team of Pokémon, but some will be stronger or have more Pokémon than others!
           </p>
           <p className="faq-answer" style={{ marginTop: '1rem' }}>
-            Additionally, there's also a 1v1 Draft mode. In this format, instead of an auction where you bid with money, you and a friend instead take turns picking and banning from a pool of 36. This mode offers a wider pool of Pokémon than you'd get if you hosted an auction with just 2 people.
+            Additionally, there's also a 1v1 Draft mode. In this format, instead of an auction where you bid with money, you and a friend take turns picking and banning from a pool of 32, 36, or 40 Pokémon. The larger pools are casual 1v1 drafts.
           </p>
         </section>
 

@@ -10,6 +10,7 @@ import {
   ReferenceLine,
 } from 'recharts';
 import { StatsPageResponse } from '../../types';
+import { casualOneVOneDraftIds, oneVOneLeftoverOrders, oneVOnePickSlot } from './oneVOneHistory';
 
 const formOverrides: Record<string, { form: string; key: string }> = {
   'Wooper': { form: 'Paldea', key: 'Wooper-Paldea' },
@@ -90,13 +91,13 @@ interface PokemonHistoryChartProps {
   cutoffDate?: string;
 }
 
-const PICK_HISTORY_Y_TICKS = [1, 5, 9, 13, 17, 21, 25, 29];
-
-// Tracks the 1-29 pick/ban slot of a pokemon across every played 1v1 draft.
+// Tracks the pick/ban slot of a pokemon across every played 1v1 draft.
 // Mirrors the Sale History chart formatting, including its tooltip layout.
 const PokemonPickHistoryChartBody: React.FC<PokemonHistoryChartProps> = ({ pokemonKey, stats, cutoffDate }) => {
   const chartData = useMemo(() => {
     const cutoff = cutoffDate ? new Date(cutoffDate).getTime() : 0;
+    const leftoverOrders = oneVOneLeftoverOrders(stats.auctions ?? []);
+    const casualDrafts = casualOneVOneDraftIds(stats.auctions ?? []);
 
     // Map of players for easy name lookup
     const playersMap = new Map<string, string>();
@@ -109,7 +110,7 @@ const PokemonPickHistoryChartBody: React.FC<PokemonHistoryChartProps> = ({ pokem
     // Only 1v1 drafts that were actually played (produced a save) count.
     const played1v1DraftIds = new Set<string>();
     (stats.teams ?? []).forEach(t => {
-      if (t.has_save) played1v1DraftIds.add(t.draft_id);
+      if (t.has_save && !casualDrafts.has(t.draft_id)) played1v1DraftIds.add(t.draft_id);
     });
 
     const events = (stats.auctions ?? [])
@@ -124,15 +125,7 @@ const PokemonPickHistoryChartBody: React.FC<PokemonHistoryChartProps> = ({ pokem
         return true;
       })
       .map(a => {
-        let pickNumber: number | null = null;
-        if (a.action === 'LEFTOVER') {
-          // The four unused pool pokemon count as 29.
-          pickNumber = 29;
-        } else if ((a.action === 'PICK' || a.action === 'BAN') && a.draft_order >= 1 && a.draft_order <= 28) {
-          // The main 1v1 phase is exactly 28 picks/bans. Eeveelution-phase
-          // bans (draft_order >= 29) are skipped.
-          pickNumber = a.draft_order;
-        }
+        const pickNumber = oneVOnePickSlot(a, leftoverOrders);
 
         const actorKey = a.winning_user_id || '';
         const actorName = actorKey ? playersMap.get(actorKey) || null : null;
@@ -188,11 +181,14 @@ const PokemonPickHistoryChartBody: React.FC<PokemonHistoryChartProps> = ({ pokem
     if (xAxisTicks.length === 0 && data.length > 0) xAxisTicks.push(1);
 
     return { data, lowerBound, upperBound, xAxisTicks };
-  }, [pokemonKey, stats]);
+  }, [pokemonKey, stats, cutoffDate]);
 
   if (!chartData || chartData.data.length === 0) return null;
 
   const { data, lowerBound, upperBound, xAxisTicks } = chartData;
+  const maxSlot = Math.max(29, ...data.map((point) => point.pickNumber));
+  const yMax = Math.ceil((maxSlot - 1) / 4) * 4 + 1;
+  const yTicks = Array.from({ length: (yMax - 1) / 4 + 1 }, (_, index) => 1 + index * 4);
 
   return (
     <ResponsiveContainer width="100%" height="100%">
@@ -207,16 +203,16 @@ const PokemonPickHistoryChartBody: React.FC<PokemonHistoryChartProps> = ({ pokem
         />
         <YAxis
           type="number"
-          domain={[1, 29]}
-          ticks={PICK_HISTORY_Y_TICKS}
+          domain={[1, yMax]}
+          ticks={yTicks}
           stroke="#666"
           tick={{ fontSize: 11 }}
           label={{ value: 'Pick/Ban #', angle: -90, position: 'insideLeft', fill: '#666', fontSize: 11 }}
         />
         <Tooltip content={<PickHistoryTooltip />} />
 
-        {(upperBound !== null && upperBound > 1 && upperBound < 29) && <ReferenceLine y={upperBound} stroke="#8B0000" strokeDasharray="5 5" label={{ value: 'Outlier Bound', position: 'right', fill: '#8B0000', fontSize: 10 }} />}
-        {(lowerBound !== null && lowerBound > 1 && lowerBound < 29) && <ReferenceLine y={lowerBound} stroke="#8B0000" strokeDasharray="5 5" />}
+        {(upperBound !== null && upperBound > 1 && upperBound < yMax) && <ReferenceLine y={upperBound} stroke="#8B0000" strokeDasharray="5 5" label={{ value: 'Outlier Bound', position: 'right', fill: '#8B0000', fontSize: 10 }} />}
+        {(lowerBound !== null && lowerBound > 1 && lowerBound < yMax) && <ReferenceLine y={lowerBound} stroke="#8B0000" strokeDasharray="5 5" />}
 
         <Line
           type="monotone"

@@ -9,6 +9,7 @@ import PlayerSearchStatsTab from './components/PlayerSearchStatsTab';
 import TierListTab from './components/TierListTab';
 import RaceResultsTab from './components/RaceResultsTab';
 import HallOfFameStatsTab from './components/HallOfFameStatsTab';
+import { casualOneVOneDraftIds } from './oneVOneHistory';
 import { fetchCurrentUser } from '../../shared/api/draftData';
 import './Stats.scss';
 
@@ -301,6 +302,10 @@ const Stats: React.FC = () => {
     });
     return valid;
   }, [draftStats]);
+
+  const casual1v1DraftIds = useMemo(() => {
+    return casualOneVOneDraftIds(stats?.auctions ?? []);
+  }, [stats?.auctions]);
 
   const sortedAuctions = useMemo(() => {
     const sorted = [...(stats?.auctions ?? [])]
@@ -1161,7 +1166,7 @@ const Stats: React.FC = () => {
         )}
 
         {activeTab === 'hall-of-fame' && (
-          <HallOfFameStatsTab validDraftIds={validDraftIds} />
+          <HallOfFameStatsTab validDraftIds={validDraftIds} casual1v1DraftIds={casual1v1DraftIds} />
         )}
 
         {activeTab === 'tier-list' && (
