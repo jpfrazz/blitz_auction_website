@@ -17,8 +17,8 @@ const HoppingIcons = () => {
   const iconsRef = useRef<any[]>([]);
   const requestRef = useRef<number>(0);
   const [availablePokemon, setAvailablePokemon] = useState<any[]>([]);
-  const [showHint, setShowHint] = useState(false);
-  const hasPressedSpace = useRef(false);
+  // const [showHint, setShowHint] = useState(false);
+  // const hasPressedSpace = useRef(false);
 
   useEffect(() => {
     let mounted = true;
@@ -70,6 +70,7 @@ const HoppingIcons = () => {
     };
   }, []);
 
+  /*
   const spawnIcons = () => {
     if (availablePokemon.length === 0) return;
     const p = availablePokemon[Math.floor(Math.random() * availablePokemon.length)];
@@ -84,7 +85,9 @@ const HoppingIcons = () => {
     iconsRef.current = [...iconsRef.current, newIcon];
     setIcons([...iconsRef.current]);
   };
+  */
 
+  /*
   useEffect(() => {
     const timer = setTimeout(() => {
       if (!hasPressedSpace.current) {
@@ -106,6 +109,7 @@ const HoppingIcons = () => {
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
   }, [availablePokemon]);
+  */
 
   return (
     <div style={{
@@ -118,9 +122,9 @@ const HoppingIcons = () => {
       zIndex: 100,
       overflow: 'hidden'
     }}>
-      <div className={`space-hint ${showHint ? 'visible' : ''}`}>
+      {/* <div className={`space-hint ${showHint ? 'visible' : ''}`}>
         Press the spacebar!
-      </div>
+      </div> */}
       {icons.map(icon => (
         <img
           key={icon.id}
@@ -143,32 +147,11 @@ const Home = () => {
   const [isLoaded, setIsLoaded] = useState(false);
   const imgRef = useRef<HTMLImageElement>(null);
   const pageRef = useRef<HTMLDivElement>(null);
-  const footerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (imgRef.current?.complete) {
       setIsLoaded(true);
     }
-  }, []);
-
-  useEffect(() => {
-    const page = pageRef.current;
-    const wrapper = footerRef.current;
-    if (!page || !wrapper) return;
-    const footEl = wrapper.querySelector('footer');
-    if (!footEl) return;
-    const update = () => {
-      const distFromBottom = window.innerHeight - footEl.getBoundingClientRect().top;
-      page.style.setProperty('--footer-h', `${Math.max(distFromBottom, 0)}px`);
-    };
-    update();
-    if (typeof ResizeObserver !== 'undefined') {
-      const observer = new ResizeObserver(update);
-      observer.observe(footEl);
-      return () => observer.disconnect();
-    }
-    window.addEventListener('resize', update);
-    return () => window.removeEventListener('resize', update);
   }, []);
 
   return (
@@ -198,8 +181,17 @@ const Home = () => {
             Once downloaded, apply the patch online using <a href="https://www.marcrobledo.com/RomPatcher.js/" target="_blank" rel="noopener noreferrer">this ROM Patcher</a>
           </div>
         </div>
+        <section className="home-discord" aria-labelledby="home-discord-title">
+          <iframe
+            title="Emerald Blitz Discord server"
+            src="https://e.widgetbot.io/channels/1436799517121843272/1451724100757229698"
+            allow="clipboard-write; fullscreen"
+            loading="lazy"
+          />
+          <h2 id="home-discord-title">Looking for friends to race? Try the Discord!</h2>
+        </section>
       </main>
-      <div ref={footerRef}>
+      <div className="home-footer">
         <Footer />
       </div>
     </div>

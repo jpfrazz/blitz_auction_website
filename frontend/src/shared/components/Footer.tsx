@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import PokeCommunityIcon from './PokeCommunityIcon';
 import './Footer.scss';
@@ -23,6 +23,7 @@ function Footer() {
   const { pathname } = useLocation();
   const [showDisclaimer, setShowDisclaimer] = useState(() => pathname === '/');
 
+  /*
   useEffect(() => {
     if (pathname !== '/') return;
     const onKeyDown = (e: KeyboardEvent) => {
@@ -34,6 +35,7 @@ function Footer() {
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
   }, [pathname]);
+  */
 
   return (
     <footer className={`footer ${showDisclaimer ? 'with-disclaimer' : 'no-disclaimer'}`}>

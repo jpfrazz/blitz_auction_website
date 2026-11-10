@@ -11,6 +11,32 @@
     $eb-bg;
 }
 
+.home-discord {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  align-self: stretch;
+  box-sizing: border-box;
+  gap: 1rem;
+  padding: 4rem 1rem;
+
+  h2 {
+    margin: 0;
+    color: $eb-text;
+    font-size: 1.5rem;
+  }
+
+  iframe {
+    display: block;
+    width: min(100%, 1100px);
+    height: min(72vh, 760px);
+    min-height: 480px;
+    border: 1px solid $eb-border;
+    border-radius: 4px;
+    background: $eb-surface;
+  }
+}
+
 .home-logo {
   width: 26vw;
   height: auto;
@@ -65,20 +91,16 @@
 .home-main {
   flex: 1;
   min-height: 0;
+  width: 100%;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: safe center;
-  padding: 4rem 16px 0;
+  padding: 8rem 16px 0;
   box-sizing: border-box;
   overflow-y: auto;
   overflow-x: hidden;
-  scrollbar-width: none;
   visibility: hidden;
-
-  &::-webkit-scrollbar {
-    display: none;
-  }
 
   &.visible {
     visibility: visible;
@@ -151,26 +173,7 @@
 
   a {
     color: $eb-accent;
-    position: relative;
     font-weight: 600;
-    
-    &::after {
-      content: '';
-      position: absolute;
-      left: 0;
-      bottom: -2px;
-      width: 100%;
-      height: 1px;
-      background: $eb-accent;
-      transform: scaleX(0);
-      transform-origin: right;
-      transition: transform 0.3s ease;
-    }
-
-    &:hover::after {
-      transform: scaleX(1);
-      transform-origin: left;
-    }
   }
 }
 
@@ -202,11 +205,10 @@
     height: 100dvh; /* Use dynamic viewport height to account for mobile browser bars */
     display: flex;
     flex-direction: column; /* Arrange children vertically */
-    overflow: hidden; /* Prevent page scroll; home-main scrolls internally */
   }
 
   .home-main {
-    padding: 10dvh 1rem 0; /* Less reserved space so the footer fits on screen */
+    padding: calc(10dvh + 2rem) 1rem 0; /* Keep extra space above the logo on mobile */
     justify-content: flex-start; /* Move content up */
     flex: 1; /* Allow main content to grow and fill available space */
     min-height: 0; /* Allow main to shrink so the footer stays visible */
@@ -230,5 +232,18 @@
 
   .space-hint {
     display: none;
+  }
+
+  .home-discord iframe {
+    height: 70dvh;
+    min-height: 420px;
+  }
+}
+
+.home-footer {
+  flex: 0 0 auto;
+
+  .footer {
+    margin-top: 0;
   }
 }
