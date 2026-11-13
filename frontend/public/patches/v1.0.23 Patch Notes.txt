@@ -1,0 +1,26 @@
+11/12/2026
+
+-----------------------------------------------
+Boss Battle Changes
+-----------------------------------------------
+
+Viola 5 Beautifly Psychic > Quiver Dance
+Viola 5/6 Masquerain Quiver Dance > Whirlwind
+//Standardizing these Violas with her final iterations. I hadn't intended her 5-6 Masquerains to be more threatening than her 7-8s.
+//...It is a bug patch, after all
+
+
+-----------------------------------------------
+Bug Fixes
+-----------------------------------------------
+
+Fixed Barbaracle's Abilities
+//Barbaracle and Mega Barbaracle's abilities were swapped
+//Thanks manthief and certified for reporting
+
+Energy Guru and Oracle are now free in Nathan's Lair (Blitz's sandbox testing environment)
+//They no longer charge you $1000 like they do in Slateport
+
+Fixed Mega Pidgeot's perfect accuracy setting in Nathan's Lair
+//Enabling perfect accuracy no longer allows Pokémon to land attacks against invulnerable states
+//Enabling perfect accuracy no longer affects enemy AI move scoring
