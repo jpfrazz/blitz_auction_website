@@ -48,29 +48,12 @@ export function getUserId(user: string | SerializedUser | null | undefined): str
   return null;
 }
 
-export function getDiscordAvatarUrl(userId: string, hash: string): string {
-  const ext = hash.startsWith('a_') ? 'gif' : 'png';
-  return `https://cdn.discordapp.com/avatars/${userId}/${hash}.${ext}`;
+export function getAvatarUrl(userId: string): string {
+  return `/api/avatar/${encodeURIComponent(userId)}`;
 }
 
-export function getCachedAvatarUrl(userId: string, hash?: string | null): string {
-  return hash ? `/api/avatar/${userId}?v=${hash}` : `/api/avatar/${userId}`;
-}
-
-/**
- * Fallback chain for avatar <img> tags: the live Discord CDN URL first, then
- * the cached copy served by /api/avatar/{user_id}, and finally the placeholder.
- */
-export function onAvatarError(
-  e: { currentTarget: HTMLImageElement },
-  userId: string,
-  hash?: string | null,
-): void {
+export function onAvatarError(e: { currentTarget: HTMLImageElement }): void {
   const img = e.currentTarget;
-  if (!img.dataset.fallback) {
-    img.dataset.fallback = 'cached';
-    img.src = getCachedAvatarUrl(userId, hash);
-  } else {
-    img.src = '/generic/DiscordAvatar.png';
-  }
+  img.onerror = null;
+  img.src = '/generic/DiscordAvatar.png';
 }

@@ -175,6 +175,7 @@ impl Server {
             );
 
         let private_routes = Router::new()
+            .route("/avatar/{user_id}", post(handlers::upload_profile_avatar))
             .route(
                 "/drafts",
                 get(handlers::list_open_drafts).post(handlers::create_draft),

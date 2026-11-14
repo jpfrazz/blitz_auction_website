@@ -10,7 +10,7 @@ import {
   ResponsiveContainer
 } from 'recharts';
 import { LeaderboardEntry } from '../shared/api/users';
-import { getDiscordAvatarUrl, onAvatarError } from '../shared/utils/user';
+import { getAvatarUrl, onAvatarError } from '../shared/utils/user';
 import { StatsPageResponse } from '../types';
 
 interface MMRChartProps {
@@ -244,10 +244,10 @@ const MMRChart: React.FC<MMRChartProps> = ({ leaderboard, stats, minRaces }) => 
                     }}
                   >
                     <img 
-                      src={player.avatar ? getDiscordAvatarUrl(player.user_id, player.avatar) : ''} 
+                      src={getAvatarUrl(player.user_id)}
                       style={{ width: '20px', height: '20px', borderRadius: '50%', background: '#444' }}
                       alt=""
-                      onError={(e) => onAvatarError(e, player.user_id, player.avatar)}
+                      onError={onAvatarError}
                     />
                     <span style={{ fontSize: '1rem', fontWeight: highlightedUser === player.user_id ? 'bold' : 'normal', textDecoration: highlightedUser === player.user_id ? 'underline' : 'none' }}>
                       {player.global_name || player.username}

@@ -1782,10 +1782,80 @@ pub fn discord_avatar_cdn_url(user_id: &str, avatar_hash: &str) -> String {
     )
 }
 
+pub async fn get_user_avatar(
+    State(state): State<ServerState>,
+    Path(user_id): Path<String>,
+) -> Response {
+    let avatar = sqlx::query("SELECT data, content_type FROM profile_avatars WHERE user_id = $1")
+        .bind(&user_id)
+        .fetch_optional(&state.db_pool)
+        .await;
+    let mut response = match avatar {
+        Ok(Some(row)) => (
+            StatusCode::OK,
+            [(axum::http::header::CONTENT_TYPE, row.get::<String, _>("content_type"))],
+            row.get::<Vec<u8>, _>("data"),
+        ).into_response(),
+        Ok(None) => get_discord_avatar(State(state), Path(user_id)).await,
+        Err(_) => StatusCode::INTERNAL_SERVER_ERROR.into_response(),
+    };
+    response.headers_mut().insert(axum::http::header::CACHE_CONTROL, "no-store".parse().unwrap());
+    response.headers_mut().insert(axum::http::header::X_CONTENT_TYPE_OPTIONS, "nosniff".parse().unwrap());
+    response
+}
+
+pub async fn upload_profile_avatar(
+    State(state): State<ServerState>,
+    Path(user_id): Path<String>,
+    auth_session: AuthSession<AuthBackend>,
+    bytes: axum::body::Bytes,
+) -> Result<StatusCode, AppError> {
+    let user = auth_session.user.ok_or((StatusCode::UNAUTHORIZED, "Login required".to_string()))?;
+    let discord = match &user {
+        User::DiscordUser(discord) => discord,
+        User::GuestUser(_) => return Err((StatusCode::FORBIDDEN, "Discord login required".to_string())),
+    };
+    if discord.user_id != user_id && discord.user_id != "270029441999175681" {
+        return Err((StatusCode::FORBIDDEN, "Cannot update this profile picture".to_string()));
+    }
+    let exists: bool = sqlx::query_scalar("SELECT EXISTS(SELECT 1 FROM users WHERE user_id = $1 UNION ALL SELECT 1 FROM guests WHERE user_id = $1)")
+        .bind(&user_id).fetch_one(&state.db_pool).await
+        .map_err(|_| (StatusCode::INTERNAL_SERVER_ERROR, "Could not check profile".to_string()))?;
+    if !exists {
+        return Err((StatusCode::NOT_FOUND, "Profile not found".to_string()));
+    }
+    if bytes.is_empty() || bytes.len() > 2_000_000 {
+        return Err((StatusCode::BAD_REQUEST, "Image must be under 2 MB".to_string()));
+    }
+    let image_bytes = bytes.clone();
+    let content_type = tokio::task::spawn_blocking(move || {
+        let mut reader = image::ImageReader::new(std::io::Cursor::new(image_bytes)).with_guessed_format().ok()?;
+        let content_type = match reader.format()? {
+            image::ImageFormat::Png => "image/png",
+            image::ImageFormat::Jpeg => "image/jpeg",
+            image::ImageFormat::Gif => "image/gif",
+            image::ImageFormat::WebP => "image/webp",
+            _ => return None,
+        };
+        let mut limits = image::Limits::default();
+        limits.max_image_width = Some(4096);
+        limits.max_image_height = Some(4096);
+        limits.max_alloc = Some(64 * 1024 * 1024);
+        reader.limits(limits);
+        reader.decode().ok()?;
+        Some(content_type)
+    }).await.map_err(|_| (StatusCode::INTERNAL_SERVER_ERROR, "Could not process image".to_string()))?
+        .ok_or((StatusCode::BAD_REQUEST, "Choose a valid PNG, JPEG, GIF, or WebP image up to 4096 pixels".to_string()))?;
+    sqlx::query("INSERT INTO profile_avatars (user_id, data, content_type) VALUES ($1, $2, $3) ON CONFLICT (user_id) DO UPDATE SET data = EXCLUDED.data, content_type = EXCLUDED.content_type, updated_at = now()")
+        .bind(&user_id).bind(bytes.as_ref()).bind(content_type).execute(&state.db_pool).await
+        .map_err(|_| (StatusCode::INTERNAL_SERVER_ERROR, "Could not save profile picture".to_string()))?;
+    Ok(StatusCode::NO_CONTENT)
+}
+
 /// Serves a user's most recently cached Discord avatar. Falls back to a
 /// redirect to the live Discord CDN URL when we haven't cached a copy yet, and
 /// 404s when there's nothing at all (letting the frontend render its fallback).
-pub async fn get_user_avatar(
+async fn get_discord_avatar(
     State(state): State<ServerState>,
     Path(user_id): Path<String>,
 ) -> Response {

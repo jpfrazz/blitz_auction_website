@@ -9,7 +9,7 @@ import NotesEditor from './NotesEditor';
 import NotesToolbar from './NotesToolbar';
 import { scrollToTop } from '../utils/scroll';
 import { applyPageZoom, DEFAULT_PAGE_ZOOM, getNextPageZoom, getStoredPageZoom, PAGE_ZOOM_LEVELS, storePageZoom } from '../utils/pageZoom';
-import { getCachedAvatarUrl, getDiscordAvatarUrl, onAvatarError } from '../utils/user';
+import { getAvatarUrl, onAvatarError } from '../utils/user';
 import { useUserNotes } from '../utils/userNotes';
 
 const navButtons = [
@@ -46,6 +46,16 @@ function Header() {
       roles?: UserRole[];
     };
   const [user, setUser] = useState<UserState | null>(null);
+  const [avatarVersion, setAvatarVersion] = useState(0);
+  useEffect(() => {
+    const refreshAvatar = (event: Event) => {
+      if ((event as CustomEvent<string>).detail === user?.user_id) {
+        setAvatarVersion((version) => version + 1);
+      }
+    };
+    window.addEventListener('avatar-updated', refreshAvatar);
+    return () => window.removeEventListener('avatar-updated', refreshAvatar);
+  }, [user?.user_id]);
   useEffect(() => {
     fetchCurrentUser().then(user => {
       if(user.user_id && user.username) {
@@ -457,12 +467,11 @@ function Header() {
             <div className="userDropdown">
               <button className="userDropdownTrigger" type="button">
                 <img
-                  src={user.avatar
-                    ? getDiscordAvatarUrl(user.user_id!, user.avatar)
-                    : getCachedAvatarUrl(user.user_id!, user.avatar)}
+                  key={`${user.user_id}-${avatarVersion}`}
+                  src={`${getAvatarUrl(user.user_id!)}?v=${avatarVersion}`}
                   alt="avatar"
                   className="userAvatar"
-                  onError={(e) => onAvatarError(e, user.user_id!, user.avatar)}
+                  onError={onAvatarError}
                 />
                 <h1>{user.username}</h1>
               </button>

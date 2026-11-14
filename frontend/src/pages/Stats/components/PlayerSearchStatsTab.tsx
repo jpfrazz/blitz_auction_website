@@ -15,7 +15,9 @@ import { MatchHistoryTeam, StatsAuction, StatsPagePlayer, StatsPageResponse } fr
 import type { PlayerStatPill } from './playerStatPills';
 import { getPlayerStatPills } from './playerStatPills';
 import { getIconName } from '../../../utils/speciesUtils';
-import { getDiscordAvatarUrl, onAvatarError } from '../../../shared/utils/user';
+import { getAvatarUrl, onAvatarError } from '../../../shared/utils/user';
+import { fetchCurrentUser } from '../../../shared/api/draftData';
+import { FiCamera } from 'react-icons/fi';
 import '../Stats.scss';
 import './PlayerSearchStatsTab.scss';
 import { casualOneVOneDraftIds, oneVOneLeftoverOrders, oneVOnePickSlot } from '../oneVOneHistory';
@@ -307,6 +309,11 @@ const PlayerSearchStatsTab: React.FC<PlayerSearchStatsTabProps> = ({
   const [isAutocompleteOpen, setIsAutocompleteOpen] = useState(false);
   const [expandedTeamId, setExpandedTeamId] = useState<number | null>(null);
   const [selectedPlayer, setSelectedPlayer] = useState<StatsPagePlayer | null>(null);
+  const [avatarEditor, setAvatarEditor] = useState<{ userId: string; isFranklyNathan: boolean } | null>(null);
+  const [avatarVersion, setAvatarVersion] = useState(0);
+  const [avatarUploading, setAvatarUploading] = useState(false);
+  const [avatarError, setAvatarError] = useState<string | null>(null);
+  const avatarInputRef = useRef<HTMLInputElement>(null);
   const [playerMatchHistory, setPlayerMatchHistory] = useState<MatchHistoryTeam[] | null>(null);
   const [playerMatchHistoryLoading, setPlayerMatchHistoryLoading] = useState(false);
   const [playerMatchHistoryError, setPlayerMatchHistoryError] = useState<string | null>(null);
@@ -324,6 +331,48 @@ const PlayerSearchStatsTab: React.FC<PlayerSearchStatsTabProps> = ({
   } | null>(null);
   const [uploadSaving, setUploadSaving] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let active = true;
+    fetchCurrentUser().then((user) => {
+      if (active && !user.is_guest && user.user_id) {
+        setAvatarEditor({ userId: user.user_id, isFranklyNathan: user.user_id === '270029441999175681' });
+      }
+    }).catch(() => {});
+    return () => { active = false; };
+  }, []);
+
+  const uploadAvatar = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    event.target.value = '';
+    if (!file || !selectedPlayer) return;
+    setAvatarError(null);
+    if (file.size > 2_000_000) {
+      setAvatarError('Choose an image smaller than 2 MB.');
+      return;
+    }
+    setAvatarUploading(true);
+    try {
+      const response = await fetch(getAvatarUrl(selectedPlayer.user_id), {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/octet-stream' },
+        body: file,
+      });
+      if (!response.ok) {
+        if (response.status === 413) throw new Error('Image is too large. Please choose a smaller picture.');
+        const contentType = response.headers.get('content-type') || '';
+        const message = contentType.includes('text/plain') ? await response.text() : '';
+        throw new Error(message || 'Could not upload profile picture. Please try again.');
+      }
+      setAvatarVersion((version) => version + 1);
+      window.dispatchEvent(new CustomEvent('avatar-updated', { detail: selectedPlayer.user_id }));
+    } catch (error) {
+      setAvatarError(error instanceof Error ? error.message : 'Could not upload profile picture.');
+    } finally {
+      setAvatarUploading(false);
+    }
+  };
 
   useEffect(() => {
     if (!currentUserId) return;
@@ -993,16 +1042,12 @@ const PlayerSearchStatsTab: React.FC<PlayerSearchStatsTabProps> = ({
                     className="suggestion-item"
                     onClick={() => handleSelectPlayer(player as any)}
                   >
-                    {(player as any).avatar ? (
                       <img
-                        src={getDiscordAvatarUrl(player.user_id, (player as any).avatar)}
+                        src={getAvatarUrl(player.user_id)}
                         alt=""
                         style={{ width: '32px', height: '32px', borderRadius: '50%' }}
-                        onError={(e) => onAvatarError(e, player.user_id, (player as any).avatar)}
+                        onError={onAvatarError}
                       />
-                    ) : (
-                      <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: '#333' }} />
-                    )}
                     <div style={{ display: 'flex', flexDirection: 'column' }}>
                       <span style={{ fontWeight: 'bold', fontSize: '1.1rem' }}>{player.global_name || player.user_name}</span>
                       <span style={{ fontSize: '0.95rem', opacity: 0.7 }}>{player.gamesPlayed} games</span>
@@ -1015,7 +1060,7 @@ const PlayerSearchStatsTab: React.FC<PlayerSearchStatsTabProps> = ({
 
           {selectedPlayer && !playerMatchHistoryLoading && displayMatchHistory && (
             <>
-              {displayMatchHistory.length > 0 && (
+              {(
                 <div className="player-draft-overview">
                  {featuredPokemon && (
                     <div
@@ -1032,20 +1077,30 @@ const PlayerSearchStatsTab: React.FC<PlayerSearchStatsTabProps> = ({
                       <div>
                         {selectedPlayer && (
                           <div className="player-draft-overview-profile-name" style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '8px' }}>
-                            {(selectedPlayer as any).avatar && (
+                            <div className="profile-avatar-wrapper">
                               <img
-                                src={getDiscordAvatarUrl(selectedPlayer.user_id, (selectedPlayer as any).avatar)}
+                                key={`${selectedPlayer.user_id}-${avatarVersion}`}
+                                src={`${getAvatarUrl(selectedPlayer.user_id)}?v=${avatarVersion}`}
                                 alt=""
-                                style={{ width: '40px', height: '40px', borderRadius: '50%', border: '2px solid rgba(255,255,255,0.2)' }}
-                                onError={(e) => onAvatarError(e, selectedPlayer.user_id, (selectedPlayer as any).avatar)}
+                                className="profile-avatar-image"
+                                onError={onAvatarError}
                               />
-                            )}
+                              {avatarEditor && (avatarEditor.userId === selectedPlayer.user_id || avatarEditor.isFranklyNathan) && (
+                                <>
+                                  <button type="button" className="profile-avatar-edit" title="Change profile picture" aria-label="Change profile picture" disabled={avatarUploading} onClick={() => avatarInputRef.current?.click()}>
+                                    <FiCamera aria-hidden="true" />
+                                  </button>
+                                  <input ref={avatarInputRef} type="file" accept="image/png,image/jpeg,image/gif,image/webp" className="profile-avatar-input" onChange={uploadAvatar} />
+                                </>
+                              )}
+                            </div>
                             <div>
                               <div style={{ fontSize: '1.2rem', fontWeight: 'bold' }}>{selectedPlayer.user_name}</div>
                               {selectedPlayer.global_name && <div style={{ fontSize: '1rem', opacity: 0.8 }}>({selectedPlayer.global_name})</div>}
                             </div>
                           </div>
                         )}
+                        {avatarError && <div className="profile-avatar-error" role="alert">{avatarError}</div>}
                         <div className="player-draft-overview-kickers">
                           <div className="player-draft-overview-kicker-group">
                             <span className="player-draft-overview-kicker">Most Drafted</span>

@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { fetchLeaderboard, fetchSeason2Leaderboard, LeaderboardEntry, Season2LeaderboardEntry } from '../shared/api/users';
 import { fetchStatsPageData } from '../shared/api/stats';
-import { getDiscordAvatarUrl, onAvatarError } from '../shared/utils/user';
+import { getAvatarUrl, onAvatarError } from '../shared/utils/user';
 import Header from '../shared/components/Header';
 import { StatsPageResponse } from '../types';
 import './LeaderboardPage.scss';
@@ -376,16 +376,7 @@ const LeaderboardPage = () => {
                                 <td>{index + 1}</td>
                             <td>
                                 <div className="leaderboard-username-cell">
-                                    {player.avatar ? (
-                                        <img
-                                            src={getDiscordAvatarUrl(player.user_id, player.avatar)}
-                                            alt=""
-                                            className="leaderboard-avatar"
-                                            onError={(e) => onAvatarError(e, player.user_id, player.avatar)}
-                                        />
-                                    ) : (
-                                        <div className="leaderboard-avatar-placeholder" />
-                                    )}
+                                    <img src={getAvatarUrl(player.user_id)} alt="" className="leaderboard-avatar" onError={onAvatarError} />
                                     <span>{player.username}</span>
                                 </div>
                             </td>
@@ -467,16 +458,7 @@ const LeaderboardPage = () => {
                                 <td>{index + 1}</td>
                             <td>
                                 <div className="leaderboard-username-cell">
-                                    {player.avatar ? (
-                                        <img
-                                            src={getDiscordAvatarUrl(player.user_id, player.avatar)}
-                                            alt=""
-                                            className="leaderboard-avatar"
-                                            onError={(e) => onAvatarError(e, player.user_id, player.avatar)}
-                                        />
-                                    ) : (
-                                        <div className="leaderboard-avatar-placeholder" />
-                                    )}
+                                    <img src={getAvatarUrl(player.user_id)} alt="" className="leaderboard-avatar" onError={onAvatarError} />
                                     <span>{player.username}</span>
                                 </div>
                             </td>
