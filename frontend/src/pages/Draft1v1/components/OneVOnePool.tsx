@@ -1,5 +1,6 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { OneVOnePoolSlot, OneVOnePlayer, OneVOneHistoryEntry, Pokemon, Team, OneVOneState } from '../../../types';
+import { getMysteryDungeonPortrait, loadPortraitMetadata } from './mysteryDungeonArt';
 import './OneVOnePool.scss';
 
 interface OneVOnePoolProps {
@@ -121,8 +122,27 @@ const OneVOnePool: React.FC<OneVOnePoolProps> = ({
   currentUserTeam,
   oneVOne,
 }) => {
+  const [mysteryDungeon, setMysteryDungeon] = useState(() => localStorage.getItem('eb-1v1-pokemon-art') === 'mystery-dungeon');
+  const [metadata, setMetadata] = useState<Awaited<ReturnType<typeof loadPortraitMetadata>> | null>(null);
+  const [loadedDizzy, setLoadedDizzy] = useState<Set<string>>(() => new Set());
+  useEffect(() => {
+    const refresh = () => setMysteryDungeon(localStorage.getItem('eb-1v1-pokemon-art') === 'mystery-dungeon');
+    window.addEventListener('eb-settings-changed', refresh);
+    window.addEventListener('storage', refresh);
+    return () => {
+      window.removeEventListener('eb-settings-changed', refresh);
+      window.removeEventListener('storage', refresh);
+    };
+  }, []);
+  useEffect(() => {
+    let active = true;
+    if (mysteryDungeon) loadPortraitMetadata().then((data) => { if (active) setMetadata(data); }).catch(() => { if (active) setMetadata(null); });
+    return () => { active = false; };
+  }, [mysteryDungeon]);
   const sortedPool = orderPool(pool, history);
   const hoverClass = getHoverClass(isActive, currentPlayer, currentAction, currentUserTeam, oneVOne);
+  const portraits = mysteryDungeon && metadata ? sortedPool.map((slot) => getMysteryDungeonPortrait(slot.pokemon, metadata)) : [];
+  const dizzyPortraits = mysteryDungeon && metadata ? sortedPool.map((slot) => getMysteryDungeonPortrait(slot.pokemon, metadata, true)) : [];
 
   return (
     <div className="one-v-one-pool">
@@ -132,10 +152,12 @@ const OneVOnePool: React.FC<OneVOnePoolProps> = ({
           const isSelected = selectedSlot && sameSlot(selectedSlot, slot);
           const label = slotLabels?.get(slotKey(slot));
           const isAvailable = slot.status === 'Available';
-          const baseClasses = `one-v-one-pool-square ${status.cls} ${isActive && isAvailable ? 'clickable' : ''} ${isSelected ? 'selected' : ''} ${isAvailable && hoverClass ? hoverClass : ''} ${isSelected && isAvailable && hoverClass ? `${hoverClass}-persistent` : ''}`;
+          const portrait = portraits[idx];
+          const dizzyPortrait = dizzyPortraits[idx]?.url !== portrait?.url ? dizzyPortraits[idx] : null;
+          const baseClasses = `one-v-one-pool-square ${status.cls} ${portrait ? 'mystery-dungeon' : ''} ${dizzyPortrait && loadedDizzy.has(dizzyPortrait.url) ? 'has-dizzy' : ''} ${isActive && isAvailable ? 'clickable' : ''} ${isSelected ? 'selected' : ''} ${isAvailable && hoverClass ? hoverClass : ''} ${isSelected && isAvailable && hoverClass ? `${hoverClass}-persistent` : ''}`;
           return (
             <div
-              key={`${slot.pokemon.pokedex_id}-${slot.pokemon.form ?? ''}-${idx}`}
+              key={slotKey(slot)}
               className="one-v-one-pool-cell"
             >
               <div
@@ -148,18 +170,48 @@ const OneVOnePool: React.FC<OneVOnePoolProps> = ({
                 title={displayName(slot)}
               >
                 <img
-                  src={`/baseforms/${imageName(slot.pokemon)}.png`}
+                  key={portrait?.url || 'standard'}
+                  className={portrait ? 'portrait-normal' : undefined}
+                  src={portrait?.url || `/baseforms/${imageName(slot.pokemon)}.png`}
                   alt={displayName(slot)}
                   onError={(e) => {
-                    (e.target as HTMLImageElement).src = '/baseforms/egg.png';
+                    const image = e.currentTarget;
+                    image.onerror = null;
+                    image.src = `/baseforms/${imageName(slot.pokemon)}.png`;
+                    const alternate = image.parentElement?.querySelector<HTMLImageElement>('.portrait-dizzy');
+                    if (alternate) alternate.style.display = 'none';
+                    image.parentElement?.classList.remove('mystery-dungeon');
                   }}
                 />
+                {dizzyPortrait && (
+                  <img
+                    className="portrait-dizzy"
+                    src={dizzyPortrait.url}
+                    alt=""
+                    aria-hidden="true"
+                    onLoad={() => setLoadedDizzy((loaded) => {
+                      if (loaded.has(dizzyPortrait.url)) return loaded;
+                      return new Set(loaded).add(dizzyPortrait.url);
+                    })}
+                    onError={(event) => {
+                      event.currentTarget.parentElement?.classList.remove('has-dizzy');
+                      event.currentTarget.style.display = 'none';
+                    }}
+                  />
+                )}
               </div>
               {label && <span className="one-v-one-pool-badge">{label}</span>}
             </div>
           );
         })}
       </div>
+      {portraits.some(Boolean) && (
+        <details className="one-v-one-portrait-credits">
+          <summary>Mystery Dungeon portrait credits</summary>
+          <p>Portraits from <a href="https://sprites.pmdcollab.org/" target="_blank" rel="noreferrer">PMDCollab SpriteCollab</a>, <a href="https://creativecommons.org/licenses/by-nc/4.0/" target="_blank" rel="noreferrer">CC BY-NC 4.0</a>.</p>
+          <ul>{sortedPool.map((slot, index) => portraits[index] && <li key={slotKey(slot)}><a href={portraits[index]!.source} target="_blank" rel="noreferrer">{displayName(slot)}</a>: {portraits[index]!.credits.join(', ')}</li>)}</ul>
+        </details>
+      )}
     </div>
   );
 };

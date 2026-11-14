@@ -62,6 +62,10 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ onClose }) => {
     return stored === null ? true : stored === 'true';
   });
 
+  const [oneVOneArt, setOneVOneArt] = useState(() =>
+    localStorage.getItem('eb-1v1-pokemon-art') === 'mystery-dungeon' ? 'mystery-dungeon' : 'standard'
+  );
+
   const [playerCardColor, setPlayerCardColor] = useState(() => {
     return localStorage.getItem('eb-player-card-color') || '';
   });
@@ -114,6 +118,11 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ onClose }) => {
     localStorage.setItem('eb-tip-messages', String(tipMessages));
     window.dispatchEvent(new CustomEvent('eb-settings-changed'));
   }, [tipMessages]);
+
+  useEffect(() => {
+    localStorage.setItem('eb-1v1-pokemon-art', oneVOneArt);
+    window.dispatchEvent(new CustomEvent('eb-settings-changed'));
+  }, [oneVOneArt]);
 
   useEffect(() => {
     localStorage.setItem('eb-player-card-color', playerCardColor);
@@ -349,6 +358,13 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ onClose }) => {
 
           {activeTab === 'accessibility' && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', background: 'rgba(255,255,255,0.05)', padding: '1rem', borderRadius: '8px' }}>
+                <label className="settings-label" htmlFor="one-v-one-art">1v1 Pokémon Art</label>
+                <select id="one-v-one-art" value={oneVOneArt} onChange={(event) => setOneVOneArt(event.target.value)} style={{ padding: '8px', background: '#333', color: '#f1f1f1', border: '1px solid #666', borderRadius: '4px' }}>
+                  <option value="standard">Standard</option>
+                  <option value="mystery-dungeon">Mystery Dungeon</option>
+                </select>
+              </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', background: 'rgba(255,255,255,0.05)', padding: '1rem', borderRadius: '8px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                   <span className="settings-label">Manually Order Pokemon Cards</span>
