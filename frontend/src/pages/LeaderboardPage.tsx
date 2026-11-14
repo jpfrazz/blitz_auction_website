@@ -15,6 +15,15 @@ function formatPokemonName(name: string): string {
   return lower.replace(/'/g, '');
 }
 
+// Season 2 only counts a player's top 10 races, so extra races can only
+// replace a lower score. Show the counted races plus how many are extra.
+const SEASON2_MAX_COUNTED_RACES = 10;
+
+function formatSeason2RacesPlayed(racesPlayed: number): string {
+    if (racesPlayed <= SEASON2_MAX_COUNTED_RACES) return `${racesPlayed}`;
+    return `${SEASON2_MAX_COUNTED_RACES} (+${racesPlayed - SEASON2_MAX_COUNTED_RACES})`;
+}
+
 function getPlacementLabel(placement: number | null): string {
   if (placement === null) return '-';
 
@@ -254,6 +263,11 @@ const LeaderboardPage = () => {
         }
     };
 
+    // Ranks 4-8 qualify for the season-ending 8-player bracket.
+    const getSeason2BracketClass = (index: number) => (
+        index >= 3 && index <= 7 ? 'bracket-row' : ''
+    );
+
     const handleMinRacesChange = (value: number) => {
         const parsed = Number(value) >= 0 ? Number(value) : 0;
         if (activeTab === 'season2') {
@@ -369,7 +383,7 @@ const LeaderboardPage = () => {
                     ) : filteredSeason2Leaderboard.map((player, index) => (
                         <React.Fragment key={player.user_id}>
                             <tr
-                                className={`${getRowClass(index)} ${expandedUserId === player.user_id ? 'expanded' : ''}`}
+                                className={`${getRowClass(index)} ${getSeason2BracketClass(index)} ${expandedUserId === player.user_id ? 'expanded' : ''}`}
                                 onClick={() => handleRowClick(player.user_id)}
                                 style={{ cursor: 'pointer' }}
                             >
@@ -382,7 +396,9 @@ const LeaderboardPage = () => {
                             </td>
                             <td>{player.global_name ?? '-'}</td>
                             <td>{player.total_points}</td>
-                            <td>{player.races_played}</td>
+                            <td title={`${player.races_played} races played; only the top ${SEASON2_MAX_COUNTED_RACES} count`}>
+                                {formatSeason2RacesPlayed(player.races_played)}
+                            </td>
                             <td>
                                 <div className="pokemon-list">
                                     {player.most_drafted_pokemon.map((p) => (

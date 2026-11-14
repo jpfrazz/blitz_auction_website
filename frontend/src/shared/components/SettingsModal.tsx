@@ -63,7 +63,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ onClose }) => {
   });
 
   const [oneVOneArt, setOneVOneArt] = useState(() =>
-    localStorage.getItem('eb-1v1-pokemon-art') === 'mystery-dungeon' ? 'mystery-dungeon' : 'standard'
+    localStorage.getItem('eb-1v1-pokemon-art') || 'standard'
   );
 
   const [playerCardColor, setPlayerCardColor] = useState(() => {
@@ -141,7 +141,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ onClose }) => {
 
   return (
     <div className="notes-modal-overlay" onClick={onClose} style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'center' }}>
-      <div className="notes-modal" style={{ position: 'relative', width: '420px', marginTop: '10vh' }} onClick={e => e.stopPropagation()}>
+      <div className="notes-modal" style={{ position: 'relative', width: '480px', maxWidth: '92vw', marginTop: '10vh' }} onClick={e => e.stopPropagation()}>
         <div className="notes-modal-header" style={{ cursor: 'default' }}>
           <h2 className="notes-modal-title">Settings</h2>
           <button className="notes-modal-minimize" onClick={onClose}>×</button>
@@ -359,10 +359,11 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ onClose }) => {
           {activeTab === 'accessibility' && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', background: 'rgba(255,255,255,0.05)', padding: '1rem', borderRadius: '8px' }}>
-                <label className="settings-label" htmlFor="one-v-one-art">1v1 Pokémon Art</label>
+                <label className="settings-label" htmlFor="one-v-one-art">1v1 Pokémon Images</label>
                 <select id="one-v-one-art" value={oneVOneArt} onChange={(event) => setOneVOneArt(event.target.value)} style={{ padding: '8px', background: '#333', color: '#f1f1f1', border: '1px solid #666', borderRadius: '4px' }}>
                   <option value="standard">Standard</option>
                   <option value="mystery-dungeon">Mystery Dungeon</option>
+                  <option value="tcg">TCG Art</option>
                 </select>
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', background: 'rgba(255,255,255,0.05)', padding: '1rem', borderRadius: '8px' }}>

@@ -199,7 +199,7 @@
 .leaderboard-table tbody tr {
     background: $eb-surface;
 
-    &:not(.gold-row):not(.silver-row):not(.bronze-row):not(.leaderboard-history-dropdown-row):nth-child(even):not(:hover) {
+    &:not(.gold-row):not(.silver-row):not(.bronze-row):not(.bracket-row):not(.leaderboard-history-dropdown-row):nth-child(even):not(:hover) {
         background: rgba(255, 255, 255, 0.02);
     }
 }
@@ -214,6 +214,11 @@
 
 .leaderboard-table > tbody > tr.bronze-row {
     background-color: #4B3B2F;
+}
+
+// Season 2 ranks 4-8: the slots that qualify for the final bracket.
+.leaderboard-table > tbody > tr.bracket-row {
+    background-color: rgba(120, 180, 255, 0.16);
 }
 
 .leaderboard-table > tbody > tr.gold-row:hover,

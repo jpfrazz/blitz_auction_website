@@ -89,6 +89,10 @@ const Draft1v1Page: React.FC = () => {
   const [selectedSlot, setSelectedSlot] = useState<OneVOnePoolSlot | null>(null);
   const [hoveredSlot, setHoveredSlot] = useState<OneVOnePoolSlot | null>(null);
   const [poolCollapsed, setPoolCollapsed] = useState(false);
+  const [poolTileSize, setPoolTileSize] = useState(() => {
+    const stored = Number(localStorage.getItem('eb-1v1-tile-size'));
+    return stored >= 48 && stored <= 160 ? stored : 80;
+  });
   const [eggRevealId, setEggRevealId] = useState<number | null>(null);
   const wsRef = useRef<WebSocket | null>(null);
 
@@ -491,6 +495,11 @@ const Draft1v1Page: React.FC = () => {
               {oneVOne && (
                 <OneVOnePool
                   pool={oneVOne.pool}
+                  tileSize={poolTileSize}
+                  onTileSizeChange={(size) => {
+                    setPoolTileSize(size);
+                    localStorage.setItem('eb-1v1-tile-size', String(size));
+                  }}
                   history={oneVOne.history}
                   slotLabels={slotLabels}
                   currentPlayer={oneVOne.current_player}
@@ -507,6 +516,7 @@ const Draft1v1Page: React.FC = () => {
                 <div className="one-v-one-pool-container-sub">
                   <OneVOnePool
                     pool={oneVOne.eeveelutions}
+                    tileSize={poolTileSize}
                     history={oneVOne.history}
                     slotLabels={slotLabels}
                     currentPlayer={oneVOne.current_player}

@@ -1,10 +1,13 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { OneVOnePoolSlot, OneVOnePlayer, OneVOneHistoryEntry, Pokemon, Team, OneVOneState } from '../../../types';
 import { getMysteryDungeonPortrait, loadPortraitMetadata } from './mysteryDungeonArt';
+import { getTcgArt } from './tcgArt';
 import './OneVOnePool.scss';
 
 interface OneVOnePoolProps {
   pool: OneVOnePoolSlot[];
+  tileSize: number;
+  onTileSizeChange?: (size: number) => void;
   history: OneVOneHistoryEntry[];
   slotLabels?: Map<string, string>;
   currentPlayer?: OneVOnePlayer | null;
@@ -109,8 +112,21 @@ function teamMatchesId(t: Team, id: string): boolean {
   return [t.user_id, t.guest_id].includes(id);
 }
 
+export function maxTileSize(width: number, height: number, count: number): number {
+  const contentWidth = Math.max(0, width - 12);
+  for (let size = 160; size >= 48; size -= 4) {
+    const columns = Math.max(1, Math.floor((contentWidth + 6) / (size + 6)));
+    const tileWidth = (contentWidth - (columns - 1) * 6) / columns;
+    const rows = Math.ceil(count / columns);
+    if (rows * tileWidth + Math.max(0, rows - 1) * 6 + 12 <= height) return size;
+  }
+  return 48;
+}
+
 const OneVOnePool: React.FC<OneVOnePoolProps> = ({
   pool,
+  tileSize,
+  onTileSizeChange,
   history,
   slotLabels,
   currentPlayer,
@@ -122,11 +138,45 @@ const OneVOnePool: React.FC<OneVOnePoolProps> = ({
   currentUserTeam,
   oneVOne,
 }) => {
-  const [mysteryDungeon, setMysteryDungeon] = useState(() => localStorage.getItem('eb-1v1-pokemon-art') === 'mystery-dungeon');
+  const [artMode, setArtMode] = useState(() => localStorage.getItem('eb-1v1-pokemon-art') || 'standard');
+  const [tcgArtSeed] = useState(() => Math.floor(Math.random() * 0x100000000));
+  const mysteryDungeon = artMode === 'mystery-dungeon';
   const [metadata, setMetadata] = useState<Awaited<ReturnType<typeof loadPortraitMetadata>> | null>(null);
   const [loadedDizzy, setLoadedDizzy] = useState<Set<string>>(() => new Set());
+  const gridRef = useRef<HTMLDivElement>(null);
+  const [gridSpace, setGridSpace] = useState<{ max: number; height: number } | null>(null);
   useEffect(() => {
-    const refresh = () => setMysteryDungeon(localStorage.getItem('eb-1v1-pokemon-art') === 'mystery-dungeon');
+    const grid = gridRef.current;
+    if (!grid || !onTileSizeChange) return;
+    const update = () => {
+      const bounds = grid.getBoundingClientRect();
+      const parent = grid.closest('.auction-left-panel');
+      const parentBottom = parent && getComputedStyle(parent).display !== 'contents'
+        ? parent.getBoundingClientRect().bottom : window.innerHeight;
+      const container = grid.closest('.one-v-one-pool-container');
+      const containerMaxHeight = container ? parseFloat(getComputedStyle(container).maxHeight) : NaN;
+      const containerBottom = container && Number.isFinite(containerMaxHeight)
+        ? container.getBoundingClientRect().top + containerMaxHeight : window.innerHeight;
+      const bottom = Math.min(window.innerHeight, parentBottom, containerBottom);
+      const height = Math.max(80, bottom - bounds.top - 44);
+      const max = maxTileSize(bounds.width, height, pool.length);
+      setGridSpace((previous) => previous?.max === max && previous.height === height ? previous : { max, height });
+    };
+    update();
+    const observer = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(update);
+    observer?.observe(grid);
+    const parent = grid.closest('.auction-left-panel');
+    if (parent) observer?.observe(parent);
+    window.addEventListener('resize', update);
+    window.addEventListener('scroll', update, true);
+    return () => {
+      observer?.disconnect();
+      window.removeEventListener('resize', update);
+      window.removeEventListener('scroll', update, true);
+    };
+  }, [pool.length, !!onTileSizeChange]);
+  useEffect(() => {
+    const refresh = () => setArtMode(localStorage.getItem('eb-1v1-pokemon-art') || 'standard');
     window.addEventListener('eb-settings-changed', refresh);
     window.addEventListener('storage', refresh);
     return () => {
@@ -146,15 +196,16 @@ const OneVOnePool: React.FC<OneVOnePoolProps> = ({
 
   return (
     <div className="one-v-one-pool">
-      <div className="one-v-one-pool-grid">
+      <div ref={gridRef} className="one-v-one-pool-grid" style={{ '--pool-tile-size': `${Math.min(tileSize, gridSpace?.max ?? 160)}px`, ...(gridSpace ? { maxHeight: gridSpace.height, overflowY: 'auto' } : {}) } as React.CSSProperties}>
         {sortedPool.map((slot, idx) => {
           const status = statusClass(slot.status);
           const isSelected = selectedSlot && sameSlot(selectedSlot, slot);
           const label = slotLabels?.get(slotKey(slot));
           const isAvailable = slot.status === 'Available';
           const portrait = portraits[idx];
+          const tcgArt = artMode === 'tcg' ? getTcgArt(slot.pokemon, tcgArtSeed) : undefined;
           const dizzyPortrait = dizzyPortraits[idx]?.url !== portrait?.url ? dizzyPortraits[idx] : null;
-          const baseClasses = `one-v-one-pool-square ${status.cls} ${portrait ? 'mystery-dungeon' : ''} ${dizzyPortrait && loadedDizzy.has(dizzyPortrait.url) ? 'has-dizzy' : ''} ${isActive && isAvailable ? 'clickable' : ''} ${isSelected ? 'selected' : ''} ${isAvailable && hoverClass ? hoverClass : ''} ${isSelected && isAvailable && hoverClass ? `${hoverClass}-persistent` : ''}`;
+          const baseClasses = `one-v-one-pool-square ${status.cls} ${portrait ? 'mystery-dungeon' : ''} ${tcgArt ? 'tcg-art' : ''} ${dizzyPortrait && loadedDizzy.has(dizzyPortrait.url) ? 'has-dizzy' : ''} ${isActive && isAvailable ? 'clickable' : ''} ${isSelected ? 'selected' : ''} ${isAvailable && hoverClass ? hoverClass : ''} ${isSelected && isAvailable && hoverClass ? `${hoverClass}-persistent` : ''}`;
           return (
             <div
               key={slotKey(slot)}
@@ -170,9 +221,9 @@ const OneVOnePool: React.FC<OneVOnePoolProps> = ({
                 title={displayName(slot)}
               >
                 <img
-                  key={portrait?.url || 'standard'}
+                  key={portrait?.url || tcgArt || 'standard'}
                   className={portrait ? 'portrait-normal' : undefined}
-                  src={portrait?.url || `/baseforms/${imageName(slot.pokemon)}.png`}
+                  src={portrait?.url || tcgArt || `/baseforms/${imageName(slot.pokemon)}.png`}
                   alt={displayName(slot)}
                   onError={(e) => {
                     const image = e.currentTarget;
@@ -181,6 +232,7 @@ const OneVOnePool: React.FC<OneVOnePoolProps> = ({
                     const alternate = image.parentElement?.querySelector<HTMLImageElement>('.portrait-dizzy');
                     if (alternate) alternate.style.display = 'none';
                     image.parentElement?.classList.remove('mystery-dungeon');
+                    image.parentElement?.classList.remove('tcg-art');
                   }}
                 />
                 {dizzyPortrait && (
@@ -205,6 +257,7 @@ const OneVOnePool: React.FC<OneVOnePoolProps> = ({
           );
         })}
       </div>
+      <div className="one-v-one-pool-footer">
       {portraits.some(Boolean) && (
         <details className="one-v-one-portrait-credits">
           <summary>Mystery Dungeon portrait credits</summary>
@@ -212,6 +265,18 @@ const OneVOnePool: React.FC<OneVOnePoolProps> = ({
           <ul>{sortedPool.map((slot, index) => portraits[index] && <li key={slotKey(slot)}><a href={portraits[index]!.source} target="_blank" rel="noreferrer">{displayName(slot)}</a>: {portraits[index]!.credits.join(', ')}</li>)}</ul>
         </details>
       )}
+      {artMode === 'tcg' && (
+        <div className="one-v-one-portrait-credits">
+          TCG artwork via <a href="https://www.pokeos.com/tcg/textless" target="_blank" rel="noreferrer">Pokéos</a>.
+        </div>
+      )}
+      {onTileSizeChange && (
+        <label className="one-v-one-tile-size">
+          <span>Tile size</span>
+          <input type="range" min="48" max={gridSpace?.max ?? 160} step="4" value={Math.min(tileSize, gridSpace?.max ?? 160)} onChange={(event) => onTileSizeChange(Number(event.target.value))} aria-label="Tile size" />
+        </label>
+      )}
+      </div>
     </div>
   );
 };

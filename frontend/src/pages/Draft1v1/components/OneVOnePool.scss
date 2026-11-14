@@ -4,7 +4,7 @@
 
 .one-v-one-pool-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, var(--pool-tile-size, 80px)), 1fr));
   gap: 6px;
   padding: 6px;
 }
@@ -110,11 +110,11 @@
 
   &.p1::after,
   &.hover-p1-pick:hover::after,
-  &.hover-p1-pick-persistent::after { background: rgba(47, 95, 143, 0.12); }
+  &.hover-p1-pick-persistent::after { background: rgba(47, 95, 143, 0.18); }
 
   &.p2::after,
   &.hover-p2-pick:hover::after,
-  &.hover-p2-pick-persistent::after { background: rgba(143, 47, 47, 0.12); }
+  &.hover-p2-pick-persistent::after { background: rgba(143, 47, 47, 0.18); }
 }
 
 .one-v-one-pool-square.mystery-dungeon.banned .portrait-normal:only-child {
@@ -125,8 +125,49 @@
   opacity: 0;
 }
 
-.one-v-one-portrait-credits {
+.one-v-one-pool-square.tcg-art {
+  padding: 0;
+
+  img { object-fit: cover; }
+
+  &::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+  }
+
+  &.p1::after,
+  &.hover-p1-pick:hover::after,
+  &.hover-p1-pick-persistent::after { background: rgba(47, 95, 143, 0.18); }
+
+  &.p2::after,
+  &.hover-p2-pick:hover::after,
+  &.hover-p2-pick-persistent::after { background: rgba(143, 47, 47, 0.18); }
+}
+
+.one-v-one-pool-footer {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
   padding: 6px;
+}
+
+.one-v-one-tile-size {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: auto;
+  color: #b3b3b3;
+  font-size: 0.8rem;
+  white-space: nowrap;
+
+  input { width: 96px; accent-color: #7cb946; }
+}
+
+.one-v-one-portrait-credits {
+  min-width: 0;
   font-size: 0.8rem;
   color: #b3b3b3;
 
