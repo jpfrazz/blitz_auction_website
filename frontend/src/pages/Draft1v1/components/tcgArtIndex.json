@@ -128,7 +128,9 @@
   "sawsbuck": "https://s3.pokeos.com/pokeos-uploads/tcg/textless/599/10.png",
   "bulbasaur": "https://s3.pokeos.com/pokeos-uploads/tcg/textless/599/1.png",
   "quaxly": "https://s3.pokeos.com/pokeos-uploads/tcg/textless/603/27.png",
-  "fennekin": "https://s3.pokeos.com/pokeos-uploads/tcg/textless/603/17.png",
+  "fennekin": [
+    "/tcgArt/fennekin.jpg"
+  ],
   "sprigatito": "https://s3.pokeos.com/pokeos-uploads/tcg/textless/603/25.png",
   "chespin": "https://s3.pokeos.com/pokeos-uploads/tcg/textless/569/8.png",
   "litten": "https://s3.pokeos.com/pokeos-uploads/tcg/textless/475/11.png",
@@ -140,9 +142,11 @@
     "https://s3.pokeos.com/pokeos-uploads/tcg/textless/465/46.png"
   ],
   "oshawott": ["https://s3.pokeos.com/pokeos-uploads/tcg/textless/583/42.png"],
-  "stantler": ["https://s3.pokeos.com/pokeos-uploads/tcg/textless/479/147.png"],
+  "stantler": [
+    "/tcgArt/stantler.jpg"
+  ],
   "chimchar": "https://s3.pokeos.com/pokeos-uploads/tcg/textless/546/71.png",
-  "turtwig": "https://s3.pokeos.com/pokeos-uploads/tcg/textless/441/35.png",
+  "turtwig": "https://s3.pokeos.com/pokeos-uploads/tcg/textless/443/35.png",
   "piplup": "https://s3.pokeos.com/pokeos-uploads/tcg/textless/571/18.png",
   "delibird": "https://s3.pokeos.com/pokeos-uploads/tcg/textless/602/12.png",
   "inkay": "https://s3.pokeos.com/pokeos-uploads/tcg/textless/602/4.png",
@@ -153,7 +157,7 @@
   "varoom": "https://s3.pokeos.com/pokeos-uploads/tcg/textless/551/44.png",
   "electrike": "https://s3.pokeos.com/pokeos-uploads/tcg/textless/551/43.png",
   "slowpoke": "https://s3.pokeos.com/pokeos-uploads/tcg/textless/551/42.png",
-  "galarian-slowpoke": ["/tcgArt/galarian-slowpoke.webp"],
+  "galarian-slowpoke": ["/tcgArt/galarian-slowpoke.png"],
   "nincada": ["/tcgArt/nincada.webp"],
   "falinks": "https://s3.pokeos.com/pokeos-uploads/tcg/textless/551/96.png",
   "gabite": "https://s3.pokeos.com/pokeos-uploads/tcg/textless/551/98.png",
@@ -168,7 +172,9 @@
   "helioptile": "https://s3.pokeos.com/pokeos-uploads/tcg/textless/594/94.png",
   "magneton": "https://s3.pokeos.com/pokeos-uploads/tcg/textless/594/85.png",
   "flaaffy": "https://s3.pokeos.com/pokeos-uploads/tcg/textless/594/89.png",
-  "fidough": "https://s3.pokeos.com/pokeos-uploads/tcg/textless/594/406.png",
+  "fidough": [
+    "/tcgArt/fidough.jpg"
+  ],
   "celebi": "https://s3.pokeos.com/pokeos-uploads/tcg/textless/594/9.png",
   "frigibax": "https://s3.pokeos.com/pokeos-uploads/tcg/textless/594/78.png",
   "raichu": "https://s3.pokeos.com/pokeos-uploads/tcg/textless/594/83.png",
@@ -192,6 +198,9 @@
   "skeledirge": "https://s3.pokeos.com/pokeos-uploads/tcg/textless/594/48.png",
   "victini": "https://s3.pokeos.com/pokeos-uploads/tcg/textless/594/44.png",
   "caterpie": "https://s3.pokeos.com/pokeos-uploads/tcg/textless/594/4.png",
+  "blipbug": [
+    "/tcgArt/blipbug.jpg"
+  ],
   "numel": [
     "/tcgArt/numel.png"
   ],
@@ -441,7 +450,7 @@
   "palossand": "https://s3.pokeos.com/pokeos-uploads/tcg/textless/584/40.png",
   "wooper": "https://s3.pokeos.com/pokeos-uploads/tcg/textless/584/36.png",
   "cacnea": "https://s3.pokeos.com/pokeos-uploads/tcg/textless/584/4.png",
-  "snorunt": "https://s3.pokeos.com/pokeos-uploads/tcg/textless/584/16.png",
+  "snorunt": "https://s3.pokeos.com/pokeos-uploads/tcg/textless/461/18.png",
   "flutter-mane": "https://s3.pokeos.com/pokeos-uploads/tcg/textless/584/35.png",
   "seaking": "https://s3.pokeos.com/pokeos-uploads/tcg/textless/584/13.png",
   "munna": "https://s3.pokeos.com/pokeos-uploads/tcg/textless/584/28.png",
@@ -813,12 +822,17 @@
   "mienfoo": "https://s3.pokeos.com/pokeos-uploads/tcg/textless/553/43.png",
   "nosepass": "https://s3.pokeos.com/pokeos-uploads/tcg/textless/553/41.png",
   "farfetch-d": "https://s3.pokeos.com/pokeos-uploads/tcg/textless/546/359.png",
+  "galarian-farfetch-d": [
+    "/tcgArt/galarian-farfetchd.jpg"
+  ],
   "aromatisse": "https://s3.pokeos.com/pokeos-uploads/tcg/textless/553/36.png",
   "slurpuff": "https://s3.pokeos.com/pokeos-uploads/tcg/textless/546/358.png",
   "spritzee": "https://s3.pokeos.com/pokeos-uploads/tcg/textless/553/35.png",
   "duosion": "https://s3.pokeos.com/pokeos-uploads/tcg/textless/553/33.png",
   "dartrix": "https://s3.pokeos.com/pokeos-uploads/tcg/textless/546/40.png",
-  "solosis": "https://s3.pokeos.com/pokeos-uploads/tcg/textless/553/32.png",
+  "solosis": [
+    "/tcgArt/solosis.jpg"
+  ],
   "mismagius": "https://s3.pokeos.com/pokeos-uploads/tcg/textless/553/31.png",
   "greninja": "https://s3.pokeos.com/pokeos-uploads/tcg/textless/546/356.png",
   "clawitzer": "https://s3.pokeos.com/pokeos-uploads/tcg/textless/553/23.png",
