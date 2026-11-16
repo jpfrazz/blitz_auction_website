@@ -1,5 +1,6 @@
 import { StatsAuction } from '../../types';
 import { casualOneVOneDraftIds } from '../../pages/Stats/oneVOneHistory';
+import { resolvePokemonIdentity } from './pokemonIdentity';
 
 export interface PokemonAggregate {
   key: string;
@@ -71,11 +72,10 @@ export function computeCostBreakdown({
     if (cutoff && auctionDate && auctionDate > cutoff) continue;
     if (lookbackDate && auctionDate && auctionDate < lookbackDate) continue;
 
-    const name = a.name || '';
+    const rawName = a.name || '';
     // Remove Larvesta from cost breakdown
-    if (name.toLowerCase() === 'larvesta') continue;
-    const form = a.form || '';
-    const key = form ? name + '-' + form : name;
+    if (rawName.toLowerCase() === 'larvesta') continue;
+    const { key, name, form } = resolvePokemonIdentity(rawName, a.form || '');
     saleRows.push({ key, name, form, bid, types: [] });
   }
 
@@ -83,9 +83,7 @@ export function computeCostBreakdown({
   const casualDrafts = casualOneVOneDraftIds(auctions);
   for (const a of auctions) {
     if (a.draft_type !== '1v1' || casualDrafts.has(a.draft_id)) continue;
-    const name = a.name || '';
-    const form = a.form || '';
-    const key = form ? name + '-' + form : name;
+    const { key, name, form } = resolvePokemonIdentity(a.name || '', a.form || '');
     pickRows.push({ key, name, form });
   }
 
@@ -112,20 +110,12 @@ export function computeCostBreakdown({
 
   if (includeLegacy) {
     for (const l of legacy) {
-      const name = l.pokemon || '';
-      let form = '';
-      let baseName = name;
-      const dashIndex = name.indexOf('-');
-      if (dashIndex >= 0 && name.slice(dashIndex + 1)) {
-        baseName = name.slice(0, dashIndex);
-        form = name.slice(dashIndex + 1);
-      }
-      const key = form ? baseName + '-' + form : baseName;
+      const { key, name, form } = resolvePokemonIdentity(l.pokemon || '', '');
       const costNum = parseFloat(l.cost || '0');
       if (!Number.isNaN(costNum) && costNum > 0) {
         let g = grouped.get(key);
         if (!g) {
-          g = { key, name: baseName, form, bids: [], types: new Set<string>() };
+          g = { key, name, form, bids: [], types: new Set<string>() };
           grouped.set(key, g);
         }
         g.bids.push(costNum);

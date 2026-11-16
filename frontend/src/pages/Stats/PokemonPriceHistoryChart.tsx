@@ -10,6 +10,7 @@ import {
   ReferenceLine,
 } from 'recharts';
 import { StatsPageResponse } from '../../types';
+import { resolvePokemonIdentity } from '../../shared/utils/pokemonIdentity';
 
 const excludedPokemonNames = new Set([
   'Bombirdier',
@@ -22,36 +23,6 @@ const excludedPokemonNames = new Set([
   'Klawf',
   'Turtonator',
 ]);
-
-const formOverrides: Record<string, { form: string; key: string }> = {
-  'Wooper': { form: 'Paldea', key: 'Wooper-Paldea' },
-  'Vulpix': { form: 'Alola', key: 'Vulpix-Alola' },
-  'Voltorb': { form: 'Hisui', key: 'Voltorb-Hisui' },
-  "Farfetch'd": { form: 'Galar', key: "Farfetch'd-Galar" },
-  'Sandshrew': { form: 'Alola', key: 'Sandshrew-Alola' },
-  'Meowth': { form: 'Galar', key: 'Meowth-Galar' },
-  'Slowpoke': { form: 'Galar', key: 'Slowpoke-Galar' },
-  'Zigzagoon': { form: 'Galar', key: 'Zigzagoon-Galar' },
-};
-
-const resolveIdentity = (name: string, form: string) => {
-  let currentName = name;
-  let currentForm = form;
-  const knownForms = ['Alola', 'Galar', 'Hisui', 'Paldea'];
-  for (const f of knownForms) {
-    if (currentName.endsWith(`-${f}`)) {
-      currentName = currentName.slice(0, -(f.length + 1));
-      currentForm = f;
-      break;
-    }
-  }
-  if ((!currentForm || currentForm === 'base') && formOverrides[currentName]) {
-    return { name: currentName, ...formOverrides[currentName] };
-  }
-  const effectiveForm = currentForm && currentForm !== 'base' ? currentForm : '';
-  const key = `${currentName}${effectiveForm ? '-' + effectiveForm : ''}`;
-  return { name: currentName, form: effectiveForm, key };
-};
 
 function calculateQuantile(sortedData: number[], q: number) {
   const pos = (sortedData.length - 1) * q;
@@ -172,7 +143,7 @@ const PokemonPriceHistoryChartBody: React.FC<PokemonHistoryChartProps> = ({ poke
     // 1. Gather all sales including auctions and legacy data
     const auctionSales = stats.auctions
       .filter(a => {
-        const isMatch = a.winning_bid !== null && validDraftIds.has(a.draft_id) && !excludedPokemonNames.has(a.name) && resolveIdentity(a.name, a.form || '').key === pokemonKey;
+        const isMatch = a.winning_bid !== null && validDraftIds.has(a.draft_id) && !excludedPokemonNames.has(a.name) && resolvePokemonIdentity(a.name, a.form || '').key === pokemonKey;
         if (!isMatch) return false;
         if (cutoff > 0) {
           const ts = a.created_at ? new Date(a.created_at).getTime() : 0;
@@ -193,7 +164,7 @@ const PokemonPriceHistoryChartBody: React.FC<PokemonHistoryChartProps> = ({ poke
 
     const legacySales = (stats.legacy || [])
       .filter(l => {
-        const isMatch = !excludedPokemonNames.has(l.pokemon) && resolveIdentity(l.pokemon, '').key === pokemonKey;
+        const isMatch = !excludedPokemonNames.has(l.pokemon) && resolvePokemonIdentity(l.pokemon, '').key === pokemonKey;
         if (!isMatch) return false;
         if (cutoff > 0 && l.date) {
           return new Date(l.date).getTime() >= cutoff;

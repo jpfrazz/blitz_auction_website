@@ -612,8 +612,8 @@ dex_number,name,form,evolves_from_id,evolves_from_form,type1,type2,stage,ability
 836,Boltund,,835,,Electric,,evo,Strong Jaw,,Competitive,69,90,60,90,60,121,"Level 25",,,
 193,Yanma,,,,Bug,Flying,base,Speed Boost,Compound Eyes,Frisk,65,65,45,75,45,95,,,,
 469,Yanmega,,193,,Bug,Flying,evo,Speed Boost,Tinted Lens,Frisk,86,76,86,116,56,95,"Learn Ancient Power",,,
-263,Zigzagoon,,,,Dark,Normal,base,Pickup,Gluttony,Quick Feet,38,30,41,30,41,60,,,,
-264,Linoone,Galar,263,,Dark,Normal,evo,Pickup,Gluttony,Quick Feet,78,70,61,50,61,100,"Level 20",,,
+263,Zigzagoon,Galar,,,Dark,Normal,base,Pickup,Gluttony,Quick Feet,38,30,41,30,41,60,,,,
+264,Linoone,Galar,263,Galar,Dark,Normal,evo,Pickup,Gluttony,Quick Feet,78,70,61,50,61,100,"Level 20",,,
 862,Obstagoon,,264,Galar,Dark,Normal,evo,Reckless,Guts,Defiant,93,90,101,60,81,95,"Level 35",,,
 570,Zorua,,,,Dark,,base,Illusion,,,40,65,40,80,40,65,,,,"Tip: Illusion\nZorua and Zoroark's signature ability causes them to take on the appearance of the last Pokemon in your party. The AI treats the Illusioned Pokemon as the Pokemon it's disguised as, but if it uses a Psychic-type move and fails to deal damage, it will realize it's up against an Illusion Pokemon and attack accordingly on subsequent turns. Similarly, if your Zoroark uses a move that the Pokemon its disguised as cannot learn, the AI will know that it's a Zoroark."
 571,Zoroark,,570,,Dark,,evo,Illusion,,,60,105,60,120,60,105,"Level 30",,,

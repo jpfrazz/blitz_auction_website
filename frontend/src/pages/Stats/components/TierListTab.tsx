@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo, useRef } from 'react';
 import * as htmlToImage from 'html-to-image';
 import { FaCog, FaArrowUp, FaArrowDown, FaCopy, FaTrash } from 'react-icons/fa';
 import { StatsPageResponse, StatsPagePlayer } from '../../../types';
+import { resolvePokemonIdentity } from '../../../shared/utils/pokemonIdentity';
 import './TierListTab.scss';
 
 interface TierRow {
@@ -34,36 +35,6 @@ const excludedPokemonNames = new Set([
     'Klawf',
     'Turtonator',
 ]);
-
-const formOverrides: Record<string, { form: string; key: string }> = {
-  'Wooper': { form: 'Paldea', key: 'Wooper-Paldea' },
-  'Vulpix': { form: 'Alola', key: 'Vulpix-Alola' },
-  'Voltorb': { form: 'Hisui', key: 'Voltorb-Hisui' },
-  "Farfetch'd": { form: 'Galar', key: "Farfetch'd-Galar" },
-  'Sandshrew': { form: 'Alola', key: 'Sandshrew-Alola' },
-  'Meowth': { form: 'Galar', key: 'Meowth-Galar' },
-  'Slowpoke': { form: 'Galar', key: 'Slowpoke-Galar' },
-  'Zigzagoon': { form: 'Galar', key: 'Zigzagoon-Galar' },
-};
-
-const resolveIdentity = (name: string, form: string) => {
-  let currentName = name;
-  let currentForm = form;
-  const knownForms = ['Alola', 'Galar', 'Hisui', 'Paldea'];
-  for (const f of knownForms) {
-    if (currentName.endsWith(`-${f}`)) {
-      currentName = currentName.slice(0, -(f.length + 1));
-      currentForm = f;
-      break;
-    }
-  }
-  if ((!currentForm || currentForm === 'base') && formOverrides[currentName]) {
-    return { name: currentName, ...formOverrides[currentName] };
-  }
-  const effectiveForm = currentForm && currentForm !== 'base' ? currentForm : '';
-  const key = `${currentName}${effectiveForm ? '-' + effectiveForm : ''}`;
-  return { name: currentName, form: effectiveForm, key };
-};
 
 const TIER_COLORS = [
     '#ff7f7f', // Red (S)
@@ -215,7 +186,7 @@ const TierListTab: React.FC<TierListTabProps> = ({ stats }) => {
         stats.auctions.forEach(a => {
             if (a.winning_bid === null || !validDraftIds.has(a.draft_id) || excludedPokemonNames.has(a.name)) return;
             
-            const { name, key } = resolveIdentity(a.name, a.form || '');
+            const { name, key } = resolvePokemonIdentity(a.name, a.form || '');
             const entry = pokemonBidsMap.get(key) || { name, bids: [] };
             entry.bids.push(a.winning_bid);
             pokemonBidsMap.set(key, entry);
@@ -227,7 +198,7 @@ const TierListTab: React.FC<TierListTabProps> = ({ stats }) => {
             const cost = parseInt(l.cost.toString().replace(/[^0-9]/g, ''), 10);
             if (isNaN(cost)) return;
 
-            const { name, key } = resolveIdentity(l.pokemon, '');
+            const { name, key } = resolvePokemonIdentity(l.pokemon, '');
             const entry = pokemonBidsMap.get(key) || { name, bids: [] };
             entry.bids.push(cost);
             pokemonBidsMap.set(key, entry);

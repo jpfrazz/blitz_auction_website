@@ -6,6 +6,7 @@ import { TbSettings, TbRefresh } from 'react-icons/tb';
 import '../Stats.scss';
 import './PokemonStatsTab.scss';
 import { casualOneVOneDraftIds, oneVOneLeftoverOrders, oneVOnePickSlot } from '../oneVOneHistory';
+import { resolvePokemonIdentity } from '../../../shared/utils/pokemonIdentity';
 
 type SortKey = 'rank' | 'name' | 'avgWinningBid' | 'minBid' | 'maxBid' | 'priceVariance' | 'bidsWon' | 'recentMovement' | 'priceMovement' | 'avgOneVOnePick' | 'total1v1Picks' | 'pickMovement';
 
@@ -54,39 +55,6 @@ const excludedPokemonNames = new Set([
   'Turtonator',
 ]);
 
-const formOverrides: Record<string, { form: string; key: string }> = {
-  'Wooper': { form: 'Paldea', key: 'Wooper-Paldea' },
-  'Vulpix': { form: 'Alola', key: 'Vulpix-Alola' },
-  'Voltorb': { form: 'Hisui', key: 'Voltorb-Hisui' },
-  "Farfetch'd": { form: 'Galar', key: "Farfetch'd-Galar" },
-  'Sandshrew': { form: 'Alola', key: 'Sandshrew-Alola' },
-  'Meowth': { form: 'Galar', key: 'Meowth-Galar' },
-  'Slowpoke': { form: 'Galar', key: 'Slowpoke-Galar' },
-  'Zigzagoon': { form: 'Galar', key: 'Zigzagoon-Galar' },
-};
-
-const resolveIdentity = (name: string, form: string) => {
-  let currentName = name;
-  let currentForm = form;
-
-  // Handle names that include the form, e.g., "Farfetch'd-Galar"
-  const knownForms = ['Alola', 'Galar', 'Hisui', 'Paldea'];
-  for (const f of knownForms) {
-    if (currentName.endsWith(`-${f}`)) {
-      currentName = currentName.slice(0, -(f.length + 1));
-      currentForm = f;
-      break;
-    }
-  }
-
-  if ((!currentForm || currentForm === 'base') && formOverrides[currentName]) {
-    return { name: currentName, ...formOverrides[currentName] };
-  }
-  const effectiveForm = currentForm && currentForm !== 'base' ? currentForm : '';
-  const key = `${currentName}${effectiveForm ? '-' + effectiveForm : ''}`;
-  return { name: currentName, form: effectiveForm, key };
-};
-
 function buildOneVOnePickMap(
   auctions: StatsAuction[] | undefined,
   playedDraftIds: Set<string>,
@@ -102,7 +70,7 @@ function buildOneVOnePickMap(
     const slot = oneVOnePickSlot(a, leftoverOrders);
     if (slot === null) return;
 
-    const { key } = resolveIdentity(a.name, a.form || '');
+    const { key } = resolvePokemonIdentity(a.name, a.form || '');
     if (!map.has(key)) map.set(key, []);
     map.get(key)!.push(slot);
   });
@@ -362,7 +330,7 @@ const PokemonStatsTab: React.FC<PokemonStatsTabProps> = ({
     };
 
     pokemonList.forEach(p => {
-      const resolved = resolveIdentity(p.name, p.form || '');
+      const resolved = resolvePokemonIdentity(p.name, p.form || '');
       // Only process entries that are canonical for their key (handling formOverrides)
       const isCanonical = resolved.form === (p.form || '') || 
                           (resolved.form === '' && (p.form === 'base' || !p.form));
@@ -383,7 +351,7 @@ const PokemonStatsTab: React.FC<PokemonStatsTabProps> = ({
       if (bid === null) {
         return;
       }
-      const { key, name, form } = resolveIdentity(auction.name, auction.form || '');
+      const { key, name, form } = resolvePokemonIdentity(auction.name, auction.form || '');
       const types = typeLookup.get(key) || [];
 
       sales.push({
@@ -405,7 +373,7 @@ const PokemonStatsTab: React.FC<PokemonStatsTabProps> = ({
         return;
       }
 
-      const { name, form, key } = resolveIdentity(legacyRow.pokemon, '');
+      const { name, form, key } = resolvePokemonIdentity(legacyRow.pokemon, '');
       const types = typeLookup.get(key) || [];
 
       sales.push({
@@ -447,14 +415,14 @@ const PokemonStatsTab: React.FC<PokemonStatsTabProps> = ({
       if (cutoffDate && legacyRow.date && new Date(legacyRow.date).getTime() < new Date(cutoffDate).getTime()) return;
       const bid = parseLegacyCost(legacyRow.cost);
       if (bid === null || excludedPokemonNames.has(legacyRow.pokemon) || (legacyRow.date && recentDraftInfo.legacy.has(legacyRow.date))) return;
-      const { key } = resolveIdentity(legacyRow.pokemon, '');
+      const { key } = resolvePokemonIdentity(legacyRow.pokemon, '');
       if (!historicGrouped.has(key)) historicGrouped.set(key, []);
       historicGrouped.get(key)!.push(bid);
     });
 
     sortedAuctions.forEach((auction) => {
       if (!recentDraftInfo.modern.has(auction.draft_id) && auction.winning_bid !== null) {
-        const { key } = resolveIdentity(auction.name, auction.form || '');
+        const { key } = resolvePokemonIdentity(auction.name, auction.form || '');
         if (!historicGrouped.has(key)) historicGrouped.set(key, []);
         historicGrouped.get(key)!.push(auction.winning_bid);
       }

@@ -17,6 +17,7 @@ import { getPlayerStatPills } from './playerStatPills';
 import { getIconName } from '../../../utils/speciesUtils';
 import { getAvatarUrl, onAvatarError } from '../../../shared/utils/user';
 import { fetchCurrentUser } from '../../../shared/api/draftData';
+import { resolvePokemonIdentity } from '../../../shared/utils/pokemonIdentity';
 import { FiCamera } from 'react-icons/fi';
 import '../Stats.scss';
 import './PlayerSearchStatsTab.scss';
@@ -64,38 +65,6 @@ function calculateQuantile(sortedData: number[], q: number) {
   }
   return sortedData[base];
 }
-
-const formOverrides: Record<string, { form: string; key: string }> = {
-  'Wooper': { form: 'Paldea', key: 'Wooper-Paldea' },
-  'Vulpix': { form: 'Alola', key: 'Vulpix-Alola' },
-  'Voltorb': { form: 'Hisui', key: 'Voltorb-Hisui' },
-  "Farfetch'd": { form: 'Galar', key: "Farfetch'd-Galar" },
-  'Sandshrew': { form: 'Alola', key: 'Sandshrew-Alola' },
-  'Meowth': { form: 'Galar', key: 'Meowth-Galar' },
-  'Slowpoke': { form: 'Galar', key: 'Slowpoke-Galar' },
-  'Zigzagoon': { form: 'Galar', key: 'Zigzagoon-Galar' },
-};
-
-const resolveIdentity = (name: string, form: string) => {
-  let currentName = name;
-  let currentForm = form;
-
-  const knownForms = ['Alola', 'Galar', 'Hisui', 'Paldea'];
-  for (const f of knownForms) {
-    if (currentName.endsWith(`-${f}`)) {
-      currentName = currentName.slice(0, -(f.length + 1));
-      currentForm = f;
-      break;
-    }
-  }
-
-  if ((!currentForm || currentForm === 'base') && formOverrides[currentName]) {
-    return { name: currentName, ...formOverrides[currentName] };
-  }
-  const effectiveForm = currentForm && currentForm !== 'base' ? currentForm : '';
-  const key = `${currentName}${effectiveForm ? '-' + effectiveForm : ''}`;
-  return { name: currentName, form: effectiveForm, key };
-};
 
 function getPlacementLabel(placement: number | null, isRanked: boolean): string {
   if (!isRanked || placement === null) {
@@ -624,7 +593,7 @@ const PlayerSearchStatsTab: React.FC<PlayerSearchStatsTabProps> = ({
     stats.auctions.forEach((auction) => {
       if (auction.winning_bid === null) return;
       if (!validDraftIds.has(auction.draft_id)) return;
-      const { key } = resolveIdentity(auction.name, auction.form || '');
+      const { key } = resolvePokemonIdentity(auction.name, auction.form || '');
       if (!grouped.has(key)) grouped.set(key, []);
       grouped.get(key)!.push(auction.winning_bid);
     });
@@ -633,7 +602,7 @@ const PlayerSearchStatsTab: React.FC<PlayerSearchStatsTabProps> = ({
       const normalized = legacyRow.cost.trim().replace(/,/g, '');
       if (!/^\d+$/.test(normalized)) return;
       const bid = Number(normalized);
-      const { key } = resolveIdentity(legacyRow.pokemon, '');
+      const { key } = resolvePokemonIdentity(legacyRow.pokemon, '');
       if (!grouped.has(key)) grouped.set(key, []);
       grouped.get(key)!.push(bid);
     });
@@ -672,7 +641,7 @@ const PlayerSearchStatsTab: React.FC<PlayerSearchStatsTabProps> = ({
     (stats?.auctions ?? []).forEach((auction) => {
       if (auction.draft_type !== '1v1' || !playedDraftIds.has(auction.draft_id)) return;
       if (oneVOnePickSlot(auction, leftoverOrders) === null) return;
-      const { key } = resolveIdentity(auction.name, auction.form || '');
+      const { key } = resolvePokemonIdentity(auction.name, auction.form || '');
       const row = map.get(key) ?? { timesPicked: 0, appearedDraftIds: new Set<string>() };
       row.appearedDraftIds.add(auction.draft_id);
       map.set(key, row);
@@ -682,7 +651,7 @@ const PlayerSearchStatsTab: React.FC<PlayerSearchStatsTabProps> = ({
       if (team.draft_type !== '1v1' || !playedDraftIds.has(team.draft_id)) return;
       (team.pokemon_drafted ?? []).forEach((auction) => {
         if (auction.action !== 'PICK' || oneVOnePickSlot(auction, leftoverOrders) === null) return;
-        const { key } = resolveIdentity(auction.name, auction.form || '');
+        const { key } = resolvePokemonIdentity(auction.name, auction.form || '');
         const row = map.get(key) ?? { timesPicked: 0, appearedDraftIds: new Set<string>() };
         row.timesPicked += 1;
         map.set(key, row);
@@ -698,7 +667,7 @@ const PlayerSearchStatsTab: React.FC<PlayerSearchStatsTabProps> = ({
       const is1v1 = team.draft_type === '1v1';
       const rmv = (team.pokemon_drafted ?? []).reduce((sum, auction) => {
         if (is1v1 && auction.action !== 'PICK') return sum;
-        const { key } = resolveIdentity(auction.name, auction.form || '');
+        const { key } = resolvePokemonIdentity(auction.name, auction.form || '');
         return sum + (globalPokemonPrices.get(key) ?? 0);
       }, 0);
       map.set(team.team_id, rmv);
@@ -733,7 +702,7 @@ const PlayerSearchStatsTab: React.FC<PlayerSearchStatsTabProps> = ({
   const allPokemonList = useMemo<AllPokemonRow[]>(() => {
     const playerMap = new Map<string, PokemonDraftSummary>();
     pokemonDraftSummary.forEach((p) => {
-      const { key } = resolveIdentity(p.name, p.form);
+      const { key } = resolvePokemonIdentity(p.name, p.form);
       playerMap.set(key, p);
     });
 
@@ -741,7 +710,7 @@ const PlayerSearchStatsTab: React.FC<PlayerSearchStatsTabProps> = ({
     const pokemonDraftAppearances = new Map<string, Set<string>>();
     stats?.auctions.forEach((auction) => {
       if (!validDraftIds.has(auction.draft_id)) return;
-      const { key } = resolveIdentity(auction.name, auction.form || '');
+      const { key } = resolvePokemonIdentity(auction.name, auction.form || '');
       if (!pokemonDraftAppearances.has(key)) pokemonDraftAppearances.set(key, new Set());
       pokemonDraftAppearances.get(key)!.add(auction.draft_id);
     });
@@ -752,7 +721,7 @@ const PlayerSearchStatsTab: React.FC<PlayerSearchStatsTabProps> = ({
     const globalPokemonKeys = new Map<string, { name: string; form: string }>();
     stats?.auctions.forEach((auction) => {
       if (!validDraftIds.has(auction.draft_id)) return;
-      const { key, name, form } = resolveIdentity(auction.name, auction.form || '');
+      const { key, name, form } = resolvePokemonIdentity(auction.name, auction.form || '');
       if (!globalPokemonKeys.has(key)) globalPokemonKeys.set(key, { name, form });
     });
 

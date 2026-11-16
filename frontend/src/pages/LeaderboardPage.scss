@@ -216,9 +216,14 @@
     background-color: #4B3B2F;
 }
 
-// Season 2 ranks 4-8: the slots that qualify for the final bracket.
+// Season 2 ranks 4-8: the slots that qualify for the final bracket. Two light
+// blue shades alternate between even and odd ranks, mirroring the grey zebra rows.
 .leaderboard-table > tbody > tr.bracket-row {
-    background-color: rgba(120, 180, 255, 0.16);
+    background-color: rgba(120, 180, 255, 0.2);
+}
+
+.leaderboard-table > tbody > tr.bracket-row.bracket-row-alt {
+    background-color: rgba(120, 180, 255, 0.12);
 }
 
 .leaderboard-table > tbody > tr.gold-row:hover,

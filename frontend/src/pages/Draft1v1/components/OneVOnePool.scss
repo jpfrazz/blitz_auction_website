@@ -117,6 +117,12 @@
   &.hover-p2-pick-persistent::after { background: rgba(143, 47, 47, 0.18); }
 }
 
+.one-v-one-pool-square.mystery-dungeon.local-art {
+  img {
+    image-rendering: auto;
+  }
+}
+
 .one-v-one-pool-square.mystery-dungeon.banned .portrait-normal:only-child {
   opacity: 1;
 }

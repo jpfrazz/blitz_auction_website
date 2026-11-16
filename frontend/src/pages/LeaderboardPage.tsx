@@ -263,10 +263,12 @@ const LeaderboardPage = () => {
         }
     };
 
-    // Ranks 4-8 qualify for the season-ending 8-player bracket.
-    const getSeason2BracketClass = (index: number) => (
-        index >= 3 && index <= 7 ? 'bracket-row' : ''
-    );
+    // Ranks 4-8 qualify for the season-ending 8-player bracket. Even ranks use
+    // a slightly lighter blue so the tint alternates like the grey rows do.
+    const getSeason2BracketClass = (index: number) => {
+        if (index < 3 || index > 7) return '';
+        return index % 2 === 0 ? 'bracket-row bracket-row-alt' : 'bracket-row';
+    };
 
     const handleMinRacesChange = (value: number) => {
         const parsed = Number(value) >= 0 ? Number(value) : 0;

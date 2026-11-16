@@ -11,6 +11,7 @@ import RaceResultsTab from './components/RaceResultsTab';
 import HallOfFameStatsTab from './components/HallOfFameStatsTab';
 import { casualOneVOneDraftIds } from './oneVOneHistory';
 import { fetchCurrentUser } from '../../shared/api/draftData';
+import { resolvePokemonIdentity } from '../../shared/utils/pokemonIdentity';
 import './Stats.scss';
 
 type StatsTab = 'pokemon' | 'drafts' | 'player-search' | 'hall-of-fame' | 'tier-list';
@@ -46,38 +47,6 @@ const excludedPokemonNames = new Set([
   'Turtonator',
   "Farfetch'd-Galar",
 ]);
-
-const formOverrides: Record<string, { form: string; key: string }> = {
-  'Wooper': { form: 'Paldea', key: 'Wooper-Paldea' },
-  'Vulpix': { form: 'Alola', key: 'Vulpix-Alola' },
-  'Voltorb': { form: 'Hisui', key: 'Voltorb-Hisui' },
-  "Farfetch'd": { form: 'Galar', key: "Farfetch'd-Galar" },
-  'Sandshrew': { form: 'Alola', key: 'Sandshrew-Alola' },
-  'Meowth': { form: 'Galar', key: 'Meowth-Galar' },
-  'Slowpoke': { form: 'Galar', key: 'Slowpoke-Galar' },
-  'Zigzagoon': { form: 'Galar', key: 'Zigzagoon-Galar' },
-};
-
-const resolveIdentity = (name: string, form: string) => {
-  let currentName = name;
-  let currentForm = form;
-
-  const knownForms = ['Alola', 'Galar', 'Hisui', 'Paldea'];
-  for (const f of knownForms) {
-    if (currentName.endsWith(`-${f}`)) {
-      currentName = currentName.slice(0, -(f.length + 1));
-      currentForm = f;
-      break;
-    }
-  }
-
-  if ((!currentForm || currentForm === 'base') && formOverrides[currentName]) {
-    return { name: currentName, ...formOverrides[currentName] };
-  }
-  const effectiveForm = currentForm && currentForm !== 'base' ? currentForm : '';
-  const key = `${currentName}${effectiveForm ? '-' + effectiveForm : ''}`;
-  return { name: currentName, form: effectiveForm, key };
-};
 
 const getUserColor = (userId: string | null) => {
   if (!userId) return 'transparent';
@@ -979,7 +948,7 @@ const Stats: React.FC = () => {
                                   const is1v1 = auction.draft_type === '1v1';
                                   const winnerKey = auction.winning_user_id || auction.winning_guest_id || '';
                                   const winnerName = playersById.get(winnerKey)?.user_name || winnerKey || '-';
-                                  const identity = resolveIdentity(auction.name, auction.form || '');
+                                  const identity = resolvePokemonIdentity(auction.name, auction.form || '');
                                   const displayName = `${identity.name}${identity.form && identity.form !== 'base' ? ` (${toLabel(identity.form)})` : ''}`;
                                   const isSelected = selectedPokemonForChart?.key === identity.key;
                                   const actionLabel = is1v1 ? (auction.action || 'PICK') : undefined;
@@ -1050,7 +1019,7 @@ const Stats: React.FC = () => {
                                   .filter((a) => a.draft_id === draft.draftId && (a.draft_type === '1v1' || a.winning_bid !== null));
 
                                 const renderListWithChart = (auctions: any[]) => {
-                                  const selectedAuctionIndex = auctions.findIndex(a => resolveIdentity(a.name, a.form || '').key === selectedPokemonForChart?.key);
+                                  const selectedAuctionIndex = auctions.findIndex(a => resolvePokemonIdentity(a.name, a.form || '').key === selectedPokemonForChart?.key);
                                   
                                   let chartAfterIndex = -1;
                                   if (selectedAuctionIndex !== -1 && gridColumns > 0) {

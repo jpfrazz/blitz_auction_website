@@ -1693,17 +1693,23 @@ impl DraftActor {
             }
         }
 
-        // --- 3. Pokemon base name -> pokedex_id lookup (for legacy rows) ------
-        let mut base_id_by_name: HashMap<String, i32> = HashMap::new();
-        if let Ok(rows) = sqlx::query("SELECT pokedex_id, name FROM pokemon WHERE form = ''")
+        // --- 3. Pokemon name -> identity lookup (for legacy rows) -------------
+        let mut legacy_identity_by_name: HashMap<String, (i32, Option<String>)> = HashMap::new();
+        if let Ok(rows) = sqlx::query(
+            "SELECT pokedex_id, name, form FROM pokemon ORDER BY (form = '') DESC, form",
+        )
             .fetch_all(self.db_writer.pool())
             .await
         {
             for row in rows {
-                if let (Ok(id), Ok(name)) =
-                    (row.try_get::<i32, _>("pokedex_id"), row.try_get::<String, _>("name"))
+                if let (Ok(id), Ok(name), Ok(form)) = (
+                    row.try_get::<i32, _>("pokedex_id"),
+                    row.try_get::<String, _>("name"),
+                    row.try_get::<String, _>("form"),
+                )
                 {
-                    base_id_by_name.entry(name).or_insert(id);
+                    let form = if form.trim().is_empty() { None } else { Some(form) };
+                    legacy_identity_by_name.entry(name).or_insert((id, form));
                 }
             }
         }
@@ -1770,9 +1776,9 @@ impl DraftActor {
                 legacy_by_name.entry(name).or_default().push(bid);
             }
             for (name, bids) in legacy_by_name {
-                if let Some(&id) = base_id_by_name.get(&name) {
+                if let Some((id, form)) = legacy_identity_by_name.get(&name) {
                     bids_by_key
-                        .entry((id as u32, None))
+                        .entry((*id as u32, form.clone()))
                         .or_default()
                         .extend(bids);
                 }

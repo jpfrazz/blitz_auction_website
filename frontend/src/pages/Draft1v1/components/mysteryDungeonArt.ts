@@ -2,6 +2,11 @@ import { Pokemon } from '../../../types';
 
 const ROOT = 'https://raw.githubusercontent.com/PMDCollab/SpriteCollab/master';
 
+const EGG_ART = {
+  normal: '/1v1/egg_icon.webp',
+  dizzy: '/1v1/egg_icon_dizzy.webp',
+};
+
 interface PortraitNode {
   name: string;
   portrait_files: Record<string, boolean>;
@@ -18,6 +23,8 @@ export interface MysteryDungeonPortrait {
   url: string;
   credits: string[];
   source: string;
+  /** Local art that is not from SpriteCollab (e.g. the egg), so it is left out of the credits list. */
+  local?: boolean;
 }
 
 let metadataPromise: Promise<PortraitMetadata> | undefined;
@@ -48,7 +55,15 @@ export function loadPortraitMetadata(): Promise<PortraitMetadata> {
   return metadataPromise;
 }
 
+function isEgg(pokemon: Pokemon): boolean {
+  const name = pokemon.name.trim().toLowerCase();
+  return name === 'egg' || name === '???';
+}
+
 export function getMysteryDungeonPortrait(pokemon: Pokemon, metadata: PortraitMetadata, banned = false): MysteryDungeonPortrait | null {
+  if (isEgg(pokemon)) {
+    return { url: banned ? EGG_ART.dizzy : EGG_ART.normal, credits: [], source: '', local: true };
+  }
   const dexId = pokemon.pokedex_id ?? pokemon.id;
   if (!Number.isInteger(dexId) || dexId < 1) return null;
   const dex = String(dexId).padStart(4, '0');

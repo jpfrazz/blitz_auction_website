@@ -205,7 +205,7 @@ const OneVOnePool: React.FC<OneVOnePoolProps> = ({
           const portrait = portraits[idx];
           const tcgArt = artMode === 'tcg' ? getTcgArt(slot.pokemon, tcgArtSeed) : undefined;
           const dizzyPortrait = dizzyPortraits[idx]?.url !== portrait?.url ? dizzyPortraits[idx] : null;
-          const baseClasses = `one-v-one-pool-square ${status.cls} ${portrait ? 'mystery-dungeon' : ''} ${tcgArt ? 'tcg-art' : ''} ${dizzyPortrait && loadedDizzy.has(dizzyPortrait.url) ? 'has-dizzy' : ''} ${isActive && isAvailable ? 'clickable' : ''} ${isSelected ? 'selected' : ''} ${isAvailable && hoverClass ? hoverClass : ''} ${isSelected && isAvailable && hoverClass ? `${hoverClass}-persistent` : ''}`;
+          const baseClasses = `one-v-one-pool-square ${status.cls} ${portrait ? 'mystery-dungeon' : ''} ${portrait?.local ? 'local-art' : ''} ${tcgArt ? 'tcg-art' : ''} ${dizzyPortrait && loadedDizzy.has(dizzyPortrait.url) ? 'has-dizzy' : ''} ${isActive && isAvailable ? 'clickable' : ''} ${isSelected ? 'selected' : ''} ${isAvailable && hoverClass ? hoverClass : ''} ${isSelected && isAvailable && hoverClass ? `${hoverClass}-persistent` : ''}`;
           return (
             <div
               key={slotKey(slot)}
@@ -258,11 +258,11 @@ const OneVOnePool: React.FC<OneVOnePoolProps> = ({
         })}
       </div>
       <div className="one-v-one-pool-footer">
-      {portraits.some(Boolean) && (
+      {portraits.some((portrait) => portrait && !portrait.local) && (
         <details className="one-v-one-portrait-credits">
           <summary>Mystery Dungeon portrait credits</summary>
           <p>Portraits from <a href="https://sprites.pmdcollab.org/" target="_blank" rel="noreferrer">PMDCollab SpriteCollab</a>, <a href="https://creativecommons.org/licenses/by-nc/4.0/" target="_blank" rel="noreferrer">CC BY-NC 4.0</a>.</p>
-          <ul>{sortedPool.map((slot, index) => portraits[index] && <li key={slotKey(slot)}><a href={portraits[index]!.source} target="_blank" rel="noreferrer">{displayName(slot)}</a>: {portraits[index]!.credits.join(', ')}</li>)}</ul>
+          <ul>{sortedPool.map((slot, index) => portraits[index] && !portraits[index]!.local && <li key={slotKey(slot)}><a href={portraits[index]!.source} target="_blank" rel="noreferrer">{displayName(slot)}</a>: {portraits[index]!.credits.join(', ')}</li>)}</ul>
         </details>
       )}
       {artMode === 'tcg' && (
