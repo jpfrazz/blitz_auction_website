@@ -240,6 +240,58 @@
         }
     }
 
+    .player-draft-overview-kicker-group.stat-with-breakdown {
+        position: relative;
+
+        // Reserve room beside the number only, so the stat container keeps its
+        // original width and the collapsed layout is unchanged.
+        h3 { padding-right: 20px; }
+
+        .stat-breakdown-toggle {
+            position: absolute;
+            right: 5px;
+            bottom: 5px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 18px;
+            height: 18px;
+            padding: 0;
+            border: 0;
+            border-radius: 3px;
+            background: transparent;
+            color: $eb-primary;
+            font-size: 15px;
+            line-height: 1;
+            cursor: pointer;
+            transition: transform 0.15s ease, background-color 0.15s ease;
+
+            svg { transition: transform 0.15s ease; }
+
+            &:hover { background: rgba(255, 255, 255, 0.08); }
+            &:focus-visible { outline: 2px solid $eb-primary; outline-offset: 1px; }
+            &.open svg { transform: rotate(180deg); }
+        }
+    }
+
+    .player-draft-overview-sub-kickers {
+        gap: 1rem;
+        margin-top: 0.75rem;
+        padding-top: 0.75rem;
+        border-top: 1px dashed $eb-border;
+
+        .player-draft-overview-kicker {
+            font-size: 0.78rem;
+            white-space: nowrap;
+        }
+
+        .player-draft-overview-kicker-group {
+            padding: 0.3rem 0.6rem;
+
+            h3 { font-size: 1.15rem; }
+        }
+    }
+
     .rmv-info-icon {
         position: relative;
         display: inline-flex;

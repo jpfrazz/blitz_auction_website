@@ -18,7 +18,7 @@ import { getIconName } from '../../../utils/speciesUtils';
 import { getAvatarUrl, onAvatarError } from '../../../shared/utils/user';
 import { fetchCurrentUser } from '../../../shared/api/draftData';
 import { resolvePokemonIdentity } from '../../../shared/utils/pokemonIdentity';
-import { FiCamera } from 'react-icons/fi';
+import { FiCamera, FiChevronDown } from 'react-icons/fi';
 import '../Stats.scss';
 import './PlayerSearchStatsTab.scss';
 import { casualOneVOneDraftIds, oneVOneLeftoverOrders, oneVOnePickSlot } from '../oneVOneHistory';
@@ -46,6 +46,8 @@ interface PlayerOneVOnePickStats {
   timesPicked: number;
   appearedDraftIds: Set<string>;
 }
+
+type RaceCategory = 'auction' | 'casualAuction' | 'oneVOne' | 'casualOneVOne';
 
 function formatPokemonName(name: string | undefined): string {
   if (!name) return '';
@@ -94,6 +96,20 @@ function getPlacementClass(placement: number | null, isRanked: boolean): string 
 
 function getPokemonLabel(name: string, form: string): string {
   return form ? `${name} (${form})` : name;
+}
+
+// Every race falls into exactly one of these four buckets. Auctions are
+// "competitive" when the draft passes the site's validation rules; 1v1s use
+// their own casual detection based on the leftover pick order.
+function getRaceCategory(
+  team: MatchHistoryTeam,
+  validDraftIds: Set<string>,
+  casual1v1DraftIds: Set<string>
+): RaceCategory {
+  if (team.draft_type === '1v1') {
+    return casual1v1DraftIds.has(team.draft_id) ? 'casualOneVOne' : 'oneVOne';
+  }
+  return validDraftIds.has(team.draft_id) ? 'auction' : 'casualAuction';
 }
 
 // Mapping of trainer IDs to trainer names (from parseSaveFile.ts and opponents.h)
@@ -277,6 +293,8 @@ const PlayerSearchStatsTab: React.FC<PlayerSearchStatsTabProps> = ({
   const [searchInput, setSearchInput] = useState('');
   const [isAutocompleteOpen, setIsAutocompleteOpen] = useState(false);
   const [expandedTeamId, setExpandedTeamId] = useState<number | null>(null);
+  const [showGamesBreakdown, setShowGamesBreakdown] = useState(false);
+  const [showHofBreakdown, setShowHofBreakdown] = useState(false);
   const [selectedPlayer, setSelectedPlayer] = useState<StatsPagePlayer | null>(null);
   const [avatarEditor, setAvatarEditor] = useState<{ userId: string; isFranklyNathan: boolean } | null>(null);
   const [avatarVersion, setAvatarVersion] = useState(0);
@@ -572,18 +590,55 @@ const PlayerSearchStatsTab: React.FC<PlayerSearchStatsTabProps> = ({
 
   const totalGames = displayMatchHistory?.length ?? 0;
 
-  const hallOfFameCount = useMemo(() => {
-    if (!displayMatchHistory) return 0;
-    let count = 0;
-    for (const team of displayMatchHistory) {
-      if (isCasualTeam(team)) continue;
+  const gamesBreakdown = useMemo(() => {
+    const counts: Record<RaceCategory, number> = {
+      auction: 0,
+      casualAuction: 0,
+      oneVOne: 0,
+      casualOneVOne: 0,
+    };
+    (displayMatchHistory ?? []).forEach((team) => {
+      counts[getRaceCategory(team, validDraftIds, casual1v1DraftIds)]++;
+    });
+    return counts;
+  }, [displayMatchHistory, validDraftIds, casual1v1DraftIds]);
+
+  const hofBreakdown = useMemo(() => {
+    const counts: Record<RaceCategory, number> = {
+      auction: 0,
+      casualAuction: 0,
+      oneVOne: 0,
+      casualOneVOne: 0,
+    };
+    (displayMatchHistory ?? []).forEach((team) => {
       const battles = bossBattleHistory.get(team.team_id);
-      if (!battles) continue;
-      const runResult = getRunResult(battles);
-      if (runResult?.isWin) count++;
-    }
-    return count;
-  }, [displayMatchHistory, bossBattleHistory]);
+      if (!battles || !getRunResult(battles)?.isWin) return;
+      counts[getRaceCategory(team, validDraftIds, casual1v1DraftIds)]++;
+    });
+    return counts;
+  }, [displayMatchHistory, bossBattleHistory, validDraftIds, casual1v1DraftIds]);
+
+  // Include casual auctions and casual 1v1s so the headline number matches the
+  // four tiles in the breakdown row.
+  const hallOfFameCount =
+    hofBreakdown.auction +
+    hofBreakdown.casualAuction +
+    hofBreakdown.oneVOne +
+    hofBreakdown.casualOneVOne;
+
+  const gamesBreakdownItems = [
+    { label: 'Auctions Played', value: gamesBreakdown.auction },
+    { label: 'Casual Auctions Played', value: gamesBreakdown.casualAuction },
+    { label: '1v1s Played', value: gamesBreakdown.oneVOne },
+    { label: 'Casual 1v1s Played', value: gamesBreakdown.casualOneVOne },
+  ];
+
+  const hofBreakdownItems = [
+    { label: 'Auction HoFs', value: hofBreakdown.auction },
+    { label: 'Casual Auction HoFs', value: hofBreakdown.casualAuction },
+    { label: '1v1 HoFs', value: hofBreakdown.oneVOne },
+    { label: 'Casual 1v1 HoFs', value: hofBreakdown.casualOneVOne },
+  ];
 
   const globalPokemonPrices = useMemo(() => {
     const map = new Map<string, number>();
@@ -1089,13 +1144,33 @@ const PlayerSearchStatsTab: React.FC<PlayerSearchStatsTabProps> = ({
                               <h3>{personalBestTime}</h3>
                             </div>
                           )}
-                          <div className="player-draft-overview-kicker-group">
+                          <div className="player-draft-overview-kicker-group stat-with-breakdown">
                             <span className="player-draft-overview-kicker">Total Races Played</span>
                             <h3>{totalGames}</h3>
+                            <button
+                              type="button"
+                              className={`stat-breakdown-toggle ${showGamesBreakdown ? 'open' : ''}`}
+                              aria-label={`${showGamesBreakdown ? 'Hide' : 'Show'} races played breakdown`}
+                              aria-expanded={showGamesBreakdown}
+                              aria-controls="races-played-breakdown"
+                              onClick={() => setShowGamesBreakdown((open) => !open)}
+                            >
+                              <FiChevronDown aria-hidden="true" />
+                            </button>
                           </div>
-                          <div className="player-draft-overview-kicker-group">
+                          <div className="player-draft-overview-kicker-group stat-with-breakdown">
                             <span className="player-draft-overview-kicker">Hall of Fames</span>
                             <h3>{hallOfFameCount}</h3>
+                            <button
+                              type="button"
+                              className={`stat-breakdown-toggle ${showHofBreakdown ? 'open' : ''}`}
+                              aria-label={`${showHofBreakdown ? 'Hide' : 'Show'} Hall of Fames breakdown`}
+                              aria-expanded={showHofBreakdown}
+                              aria-controls="hall-of-fames-breakdown"
+                              onClick={() => setShowHofBreakdown((open) => !open)}
+                            >
+                              <FiChevronDown aria-hidden="true" />
+                            </button>
                           </div>
                           <div className="player-draft-overview-kicker-group">
                             <span className="player-draft-overview-kicker">
@@ -1112,6 +1187,34 @@ const PlayerSearchStatsTab: React.FC<PlayerSearchStatsTabProps> = ({
                             <h3>{averageRmv !== null ? `$${averageRmv.toLocaleString()}` : '---'}</h3>
                           </div>
                         </div>
+
+                        {showGamesBreakdown && (
+                          <div
+                            id="races-played-breakdown"
+                            className="player-draft-overview-kickers player-draft-overview-sub-kickers"
+                          >
+                            {gamesBreakdownItems.map((item) => (
+                              <div className="player-draft-overview-kicker-group" key={item.label}>
+                                <span className="player-draft-overview-kicker">{item.label}</span>
+                                <h3>{item.value}</h3>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+
+                        {showHofBreakdown && (
+                          <div
+                            id="hall-of-fames-breakdown"
+                            className="player-draft-overview-kickers player-draft-overview-sub-kickers"
+                          >
+                            {hofBreakdownItems.map((item) => (
+                              <div className="player-draft-overview-kicker-group" key={item.label}>
+                                <span className="player-draft-overview-kicker">{item.label}</span>
+                                <h3>{item.value}</h3>
+                              </div>
+                            ))}
+                          </div>
+                        )}
                       </div>
                     </div>
 
