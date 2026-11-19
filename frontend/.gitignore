@@ -11,6 +11,9 @@
 # production
 /build
 
+# Local Shuffle Icons sprite folders (gen 1-7 downloads + gen 8-9 user-supplied art)
+/public/Pokemon Shuffle Icons/
+
 # misc
 .DS_Store
 .env.local

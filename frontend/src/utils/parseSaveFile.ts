@@ -169,6 +169,9 @@ export interface SavePokemon {
   ability_num: number;
   ivs: SaveIvs;
   moves: number[];
+  /** Lifetime battle stats from the encrypted misc substructure. */
+  total_turns?: number | null;
+  ko_count?: number | null;
 }
 
 export interface SaveBoxPokemon {
@@ -179,6 +182,22 @@ export interface SaveBoxPokemon {
   nature: string;
   ivs: SaveIvs;
   moves: number[];
+  /** Lifetime battle stats from the encrypted misc substructure. */
+  total_turns?: number | null;
+  ko_count?: number | null;
+}
+
+/**
+ * The game's misc substructure stores `u16 koCount; u16 totalTurns;` in the
+ * low and high halves of the encrypted word at offset 12 (see pokemon.h).
+ * The word at offset 8 holds ribbons/ability instead.
+ */
+export function decodeMonBattleCounts(battleCountsWord: number): { ko_count: number; total_turns: number } {
+  const word = battleCountsWord >>> 0;
+  return {
+    ko_count: word & 0xffff,
+    total_turns: (word >>> 16) & 0xffff,
+  };
 }
 
 export interface TrainerCardWin {
@@ -401,6 +420,8 @@ export function parseRamParty(
     const species_id = (readU32(bytes, growthOff) ^ key) & 0x7ff;
     const packedIvs = (readU32(bytes, miscOff + 4) ^ key) >>> 0;
     const miscWord2 = (readU32(bytes, miscOff + 8) ^ key) >>> 0;
+    const battleCountsWord = (readU32(bytes, miscOff + 12) ^ key) >>> 0;
+    const { ko_count, total_turns } = decodeMonBattleCounts(battleCountsWord);
 
     const ivs: SaveIvs = {
       hp: packedIvs & 0x1f,
@@ -424,6 +445,8 @@ export function parseRamParty(
       nature: NATURES[(personality % 25) ^ hiddenNatureModifier],
       ivs,
       moves: readMoves(bytes, slotOff, key, order),
+      ko_count,
+      total_turns,
     });
   }
   return party;
@@ -729,6 +752,8 @@ export function parseSaveFile(
     const miscOffset = pStart + 32 + miscIdx * SUBSTRUCTURE_SIZE;
     const miscWord2 = (view.getUint32(miscOffset + 8, true) ^ key) >>> 0;
     const decryptedMisc = (view.getUint32(miscOffset + 4, true) ^ key) >>> 0;
+    const battleCountsWord = (view.getUint32(miscOffset + 12, true) ^ key) >>> 0;
+    const { ko_count, total_turns } = decodeMonBattleCounts(battleCountsWord);
 
     const ability_num = (miscWord2 >> 29) & 3;
     const ivs: SaveIvs = {
@@ -758,6 +783,8 @@ export function parseSaveFile(
         nature: NATURES[(personality % 25) ^ hiddenNatureModifier],
         ivs,
         moves: readMoves(data, pStart, key, order),
+        ko_count,
+        total_turns,
       });
     }
   }
@@ -805,6 +832,8 @@ export function parseSaveFile(
       const miscOffset = pStart + 32 + miscIdx * SUBSTRUCTURE_SIZE;
       const miscWord2 = (storageView.getUint32(miscOffset + 8, true) ^ key) >>> 0;
       const decryptedMisc = (storageView.getUint32(miscOffset + 4, true) ^ key) >>> 0;
+      const battleCountsWord = (storageView.getUint32(miscOffset + 12, true) ^ key) >>> 0;
+      const { ko_count, total_turns } = decodeMonBattleCounts(battleCountsWord);
 
       const ability_num = (miscWord2 >> 29) & 3;
       const ivs: SaveIvs = {
@@ -827,6 +856,8 @@ export function parseSaveFile(
           nature: NATURES[(personality % 25) ^ hiddenNatureModifier],
           ivs,
           moves: readMoves(storageData, pStart, key, order),
+          ko_count,
+          total_turns,
         });
       }
     }

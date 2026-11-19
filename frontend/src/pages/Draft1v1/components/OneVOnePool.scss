@@ -152,6 +152,31 @@
   &.hover-p2-pick-persistent::after { background: rgba(143, 47, 47, 0.18); }
 }
 
+.one-v-one-pool-square.shuffle-art {
+  padding: 0;
+
+  img {
+    position: absolute;
+    inset: 0;
+    object-fit: contain;
+  }
+
+  &::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+  }
+
+  &.p1::after,
+  &.hover-p1-pick:hover::after,
+  &.hover-p1-pick-persistent::after { background: rgba(47, 95, 143, 0.18); }
+
+  &.p2::after,
+  &.hover-p2-pick:hover::after,
+  &.hover-p2-pick-persistent::after { background: rgba(143, 47, 47, 0.18); }
+}
+
 .one-v-one-pool-footer {
   display: flex;
   align-items: flex-start;
@@ -179,6 +204,7 @@
 
   summary { cursor: pointer; }
   ul { columns: 2; padding-left: 1.5rem; }
+  .shuffle-credits { white-space: nowrap; }
 }
 
 @keyframes pool-pop {

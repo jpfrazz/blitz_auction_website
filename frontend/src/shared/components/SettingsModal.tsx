@@ -363,6 +363,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ onClose }) => {
                 <select id="one-v-one-art" value={oneVOneArt} onChange={(event) => setOneVOneArt(event.target.value)} style={{ padding: '8px', background: '#333', color: '#f1f1f1', border: '1px solid #666', borderRadius: '4px' }}>
                   <option value="standard">Standard</option>
                   <option value="mystery-dungeon">Mystery Dungeon</option>
+                  <option value="shuffle">Shuffle Icons</option>
                   <option value="tcg">TCG Art</option>
                 </select>
               </div>

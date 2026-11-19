@@ -1,5 +1,6 @@
 import React from 'react';
 import { getEnemyIconName } from '../../utils/speciesUtils';
+import { formatEnemyMonTooltip } from '../../utils/monTooltip';
 
 export interface EnemyMon {
   species_id: number;
@@ -7,6 +8,9 @@ export interface EnemyMon {
   hp: number;
   max_hp: number;
   stats?: { atk: number; def: number; spa: number; spd: number; spe: number } | null;
+  ability_num?: number;
+  nature?: string | null;
+  moves?: number[] | null;
 }
 
 interface Props {
@@ -30,10 +34,18 @@ const EnemyTeamIcons: React.FC<Props> = ({ enemyParty, variant, resolveMetadata 
         const name = meta?.name || `ID ${mon.species_id}`;
         const fainted = mon.hp <= 0;
         const { pct, tone } = hpTone(mon);
-        const s = mon.stats;
-        const tip = s
-          ? `${name}\nHP: ${mon.max_hp}\nAtk: ${s.atk}\nDef: ${s.def}\nSpAtk: ${s.spa}\nSpDef: ${s.spd}\nSpe: ${s.spe}`
-          : name;
+        const abilityName =
+          typeof mon.ability_num === 'number'
+            ? meta?.abilities?.[mon.ability_num] || 'Unknown'
+            : 'Unknown';
+        const tip = formatEnemyMonTooltip({
+          name,
+          ability: abilityName,
+          nature: mon.nature,
+          max_hp: mon.max_hp,
+          stats: mon.stats,
+          moves: mon.moves,
+        });
         return (
           <span key={i} className={`mini-icon-wrapper ${variant} has-hp-bar`}>
             <img

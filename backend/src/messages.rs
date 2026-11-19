@@ -29,6 +29,11 @@ pub struct SavePokemon {
     /// Move IDs (0 = empty slot). Defaults keep old stored saves deserializable.
     #[serde(default)]
     pub moves: Vec<u16>,
+    /// Lifetime battle stats tracked in the Gen III misc substructure.
+    #[serde(default)]
+    pub total_turns: Option<u16>,
+    #[serde(default)]
+    pub ko_count: Option<u16>,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -43,6 +48,11 @@ pub struct SaveBoxPokemon {
     /// Move IDs (0 = empty slot). Defaults keep old stored saves deserializable.
     #[serde(default)]
     pub moves: Vec<u16>,
+    /// Lifetime battle stats tracked in the Gen III misc substructure.
+    #[serde(default)]
+    pub total_turns: Option<u16>,
+    #[serde(default)]
+    pub ko_count: Option<u16>,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]

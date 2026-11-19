@@ -523,7 +523,7 @@ const PlayerSearchStatsTab: React.FC<PlayerSearchStatsTabProps> = ({
       .map((p) => ({ ...p, gamesPlayed: playerGamesMap.get(p.user_id) || 0 }))
       .filter((p) => p.gamesPlayed > 0)
       .sort((a, b) => b.gamesPlayed - a.gamesPlayed)
-      .slice(0, 105);
+      .slice(0, 150);
   }, [stats?.players, playerGamesMap]);
 
   const pokemonDraftSummary = useMemo<PokemonDraftSummary[]>(() => {
@@ -1057,7 +1057,7 @@ const PlayerSearchStatsTab: React.FC<PlayerSearchStatsTabProps> = ({
 
           {!selectedPlayer && !playerMatchHistoryLoading && topPlayers.length > 0 && (
             <div className="player-search-suggestions" style={{ marginTop: '0.3rem' }}>
-              <p style={{ opacity: 0.6, fontSize: '1.2rem', marginBottom: '1rem' }}>Active Racers (Top Games Played)</p>
+              <p style={{ opacity: 0.6, fontSize: '1.2rem', marginBottom: '1rem' }}>Blitz Racers (Top Games Played)</p>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '10px' }}>
                 {topPlayers.map((player) => (
                   <button

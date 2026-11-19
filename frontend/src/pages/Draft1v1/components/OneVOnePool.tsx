@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { OneVOnePoolSlot, OneVOnePlayer, OneVOneHistoryEntry, Pokemon, Team, OneVOneState } from '../../../types';
 import { getMysteryDungeonPortrait, loadPortraitMetadata } from './mysteryDungeonArt';
 import { getTcgArt } from './tcgArt';
+import { getShuffleIcon } from './shuffleIcons';
 import './OneVOnePool.scss';
 
 interface OneVOnePoolProps {
@@ -141,6 +142,7 @@ const OneVOnePool: React.FC<OneVOnePoolProps> = ({
   const [artMode, setArtMode] = useState(() => localStorage.getItem('eb-1v1-pokemon-art') || 'standard');
   const [tcgArtSeed] = useState(() => Math.floor(Math.random() * 0x100000000));
   const mysteryDungeon = artMode === 'mystery-dungeon';
+  const shuffleMode = artMode === 'shuffle';
   const [metadata, setMetadata] = useState<Awaited<ReturnType<typeof loadPortraitMetadata>> | null>(null);
   const [loadedDizzy, setLoadedDizzy] = useState<Set<string>>(() => new Set());
   const gridRef = useRef<HTMLDivElement>(null);
@@ -204,8 +206,9 @@ const OneVOnePool: React.FC<OneVOnePoolProps> = ({
           const isAvailable = slot.status === 'Available';
           const portrait = portraits[idx];
           const tcgArt = artMode === 'tcg' ? getTcgArt(slot.pokemon, tcgArtSeed) : undefined;
+          const shuffleArt = shuffleMode ? getShuffleIcon(slot.pokemon) : undefined;
           const dizzyPortrait = dizzyPortraits[idx]?.url !== portrait?.url ? dizzyPortraits[idx] : null;
-          const baseClasses = `one-v-one-pool-square ${status.cls} ${portrait ? 'mystery-dungeon' : ''} ${portrait?.local ? 'local-art' : ''} ${tcgArt ? 'tcg-art' : ''} ${dizzyPortrait && loadedDizzy.has(dizzyPortrait.url) ? 'has-dizzy' : ''} ${isActive && isAvailable ? 'clickable' : ''} ${isSelected ? 'selected' : ''} ${isAvailable && hoverClass ? hoverClass : ''} ${isSelected && isAvailable && hoverClass ? `${hoverClass}-persistent` : ''}`;
+          const baseClasses = `one-v-one-pool-square ${status.cls} ${portrait ? 'mystery-dungeon' : ''} ${portrait?.local ? 'local-art' : ''} ${tcgArt ? 'tcg-art' : ''} ${shuffleArt ? 'shuffle-art' : ''} ${dizzyPortrait && loadedDizzy.has(dizzyPortrait.url) ? 'has-dizzy' : ''} ${isActive && isAvailable ? 'clickable' : ''} ${isSelected ? 'selected' : ''} ${isAvailable && hoverClass ? hoverClass : ''} ${isSelected && isAvailable && hoverClass ? `${hoverClass}-persistent` : ''}`;
           return (
             <div
               key={slotKey(slot)}
@@ -221,9 +224,9 @@ const OneVOnePool: React.FC<OneVOnePoolProps> = ({
                 title={displayName(slot)}
               >
                 <img
-                  key={portrait?.url || tcgArt || 'standard'}
+                  key={portrait?.url || tcgArt || shuffleArt || 'standard'}
                   className={portrait ? 'portrait-normal' : undefined}
-                  src={portrait?.url || tcgArt || `/baseforms/${imageName(slot.pokemon)}.png`}
+                  src={portrait?.url || tcgArt || shuffleArt || `/baseforms/${imageName(slot.pokemon)}.png`}
                   alt={displayName(slot)}
                   onError={(e) => {
                     const image = e.currentTarget;
@@ -233,6 +236,7 @@ const OneVOnePool: React.FC<OneVOnePoolProps> = ({
                     if (alternate) alternate.style.display = 'none';
                     image.parentElement?.classList.remove('mystery-dungeon');
                     image.parentElement?.classList.remove('tcg-art');
+                    image.parentElement?.classList.remove('shuffle-art');
                   }}
                 />
                 {dizzyPortrait && (
@@ -269,6 +273,18 @@ const OneVOnePool: React.FC<OneVOnePoolProps> = ({
         <div className="one-v-one-portrait-credits">
           TCG artwork via <a href="https://www.pokeos.com/tcg/textless" target="_blank" rel="noreferrer">Pokéos</a>.
         </div>
+      )}
+      {shuffleMode && (
+        <details className="one-v-one-portrait-credits">
+          <summary>Shuffle icon credits</summary>
+          <p className="shuffle-credits">
+            <span>Generations 1–7: <strong>Official Games</strong></span>
+            {' · '}
+            <span>Generation 8: <strong>Haunted Cactus</strong></span>
+            {' · '}
+            <span>Generations 8–9: <strong>Loran-Hemlock</strong></span>
+          </p>
+        </details>
       )}
       {onTileSizeChange && (
         <label className="one-v-one-tile-size">
