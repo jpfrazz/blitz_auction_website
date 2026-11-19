@@ -31,6 +31,8 @@ interface PlayerSearchStatsTabProps {
   validDraftIds: Set<string>;
   initialUserId?: string;
   initialUserName?: string;
+  /** Team id to auto-expand when the profile is opened from a race's results. */
+  initialTeamId?: number;
   currentUserId?: string | null;
 }
 
@@ -217,6 +219,38 @@ function getTrainerNameById(trainerId: number, version?: number | null): string 
   return baseName;
 }
 
+// Front-facing trainer sprites from Pokemon Showdown (Gen 3 where available).
+// Rematch IDs reuse the base trainer's sprite; "Juan & Wallace" uses Juan,
+// matching the trainer card in the game.
+const TRAINER_SPRITE_BY_NAME: Record<string, string> = {
+  Roxanne: 'roxanne',
+  Viola: 'viola',
+  Brawly: 'brawly',
+  Wattson: 'wattson',
+  Flannery: 'flannery',
+  Norman: 'norman',
+  Winona: 'winona',
+  'Tate & Liza': 'tate',
+  'Juan & Wallace': 'juan',
+  Maxie: 'maxie',
+  Archie: 'archie',
+  Sidney: 'sidney',
+  Phoebe: 'phoebe',
+  Glacia: 'glacia',
+  Drake: 'drake',
+  Tucker: 'tucker',
+  Spenser: 'spenser',
+  Lucy: 'lucy',
+  Brandon: 'brandon',
+  Steven: 'steven',
+  Wally: 'wally',
+};
+
+function getTrainerSpriteName(trainerId: number, version?: number | null): string | null {
+  const name = getTrainerNameById(trainerId, version).replace(/ \d+$/, '');
+  return TRAINER_SPRITE_BY_NAME[name] ?? null;
+}
+
 function getBossBattleVictory(battles: BossBattleHistoryEntry[] | undefined): string | null {
   if (!battles || battles.length === 0) return null;
 
@@ -348,6 +382,7 @@ const PlayerSearchStatsTab: React.FC<PlayerSearchStatsTabProps> = ({
   validDraftIds,
   initialUserId,
   initialUserName,
+  initialTeamId,
   currentUserId,
 }) => {
   const navigate = useNavigate();
@@ -978,6 +1013,22 @@ const PlayerSearchStatsTab: React.FC<PlayerSearchStatsTabProps> = ({
         })
       );
       setBossBattleHistory(bossHistoryMap);
+
+      // Open the specific race linked from the Draft Breakdown page. The row
+      // is scrolled into view because the timeline is its own scroll area.
+      if (initialTeamId != null) {
+        const linkedTeam = history.find(
+          (team) => team.team_id === initialTeamId && !junkDraftIds.has(team.draft_id)
+        );
+        if (linkedTeam) {
+          setExpandedTeamId(linkedTeam.team_id);
+          window.setTimeout(() => {
+            document
+              .querySelector(`[data-team-id="${linkedTeam.team_id}"]`)
+              ?.scrollIntoView({ block: 'center' });
+          }, 0);
+        }
+      }
     } catch (e: any) {
       console.error('[PlayerSearchStatsTab] Error fetching player match history:', e);
       setPlayerMatchHistoryError('Failed to load player match history.');
@@ -1401,7 +1452,7 @@ const PlayerSearchStatsTab: React.FC<PlayerSearchStatsTabProps> = ({
                   const sortedRunRows = sortRunRows(listAuctions, runStatsByIcon, runSort);
 
                   return (
-                    <div className="match-timeline-entry" key={team.team_id}>
+                    <div className="match-timeline-entry" key={team.team_id} data-team-id={team.team_id}>
                       <button
                         type="button"
                         className={`match-timeline-row ${resultClass} ${isExpanded ? 'expanded' : ''}`}
@@ -1510,7 +1561,7 @@ const PlayerSearchStatsTab: React.FC<PlayerSearchStatsTabProps> = ({
                                         ? monStats.faintedLevel != null
                                           ? `lvl ${monStats.faintedLevel}`
                                           : '—'
-                                        : 'N/A'}
+                                        : '—'}
                                   </span>
                                 </div>
                               ))}
@@ -1543,7 +1594,7 @@ const PlayerSearchStatsTab: React.FC<PlayerSearchStatsTabProps> = ({
                             )}
                             {!bossBattleHistoryLoading && bossBattleHistory.has(team.team_id) && (
                               <>
-                                <div className="match-draft-details-header">
+                                <div className="match-draft-details-header boss-battle-header">
                                   <span>Boss Battles</span>
                                   <span>Time</span>
                                 </div>
@@ -1616,22 +1667,35 @@ const PlayerSearchStatsTab: React.FC<PlayerSearchStatsTabProps> = ({
                                    }
                                    return null;
                                  })()}
-                                {bossBattleHistory.get(team.team_id)?.map((battle, idx) => (
-                                  <div className="match-draft-details-row" key={idx}>
-                                    <div className="match-draft-details-pokemon">
-                                      <span className={battle.is_loss ? 'loss' : 'win'}>
-                                        {getTrainerNameById(battle.trainer_id, battle.version)}
+                                {bossBattleHistory.get(team.team_id)?.map((battle, idx) => {
+                                  const sprite = getTrainerSpriteName(battle.trainer_id, battle.version);
+                                  return (
+                                    <div className="match-draft-details-row boss-battle-row" key={idx}>
+                                      <div className="match-draft-details-pokemon trainer-name">
+                                        {sprite && (
+                                          <img
+                                            className="trainer-sprite"
+                                            src={`/TrainerSprites/${sprite}.png`}
+                                            alt=""
+                                            onError={(ev) => {
+                                              (ev.currentTarget as HTMLImageElement).style.display = 'none';
+                                            }}
+                                          />
+                                        )}
+                                        <span className={battle.is_loss ? 'loss' : 'win'}>
+                                          {getTrainerNameById(battle.trainer_id, battle.version)}
+                                        </span>
+                                      </div>
+                                      <span
+                                        className={`match-draft-details-cost ${battle.hours === 5 && battle.minutes === 0 && battle.seconds === 0 ? 'forfeit' : ''}`}
+                                      >
+                                        {battle.hours === 5 && battle.minutes === 0 && battle.seconds === 0
+                                          ? 'Forfeit'
+                                          : `${battle.hours > 0 ? `${battle.hours}h ` : ''}${battle.minutes}m ${battle.seconds}s`}
                                       </span>
                                     </div>
-                                    <span
-                                      className={`match-draft-details-cost ${battle.hours === 5 && battle.minutes === 0 && battle.seconds === 0 ? 'forfeit' : ''}`}
-                                    >
-                                      {battle.hours === 5 && battle.minutes === 0 && battle.seconds === 0
-                                        ? 'Forfeit'
-                                        : `${battle.hours > 0 ? `${battle.hours}h ` : ''}${battle.minutes}m ${battle.seconds}s`}
-                                    </span>
-                                  </div>
-                                ))}
+                                  );
+                                })}
                               </>
                             )}
                           </div>

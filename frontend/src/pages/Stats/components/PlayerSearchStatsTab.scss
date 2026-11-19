@@ -632,7 +632,7 @@
     .match-draft-details-header,
     .match-draft-details-row {
         display: grid;
-        grid-template-columns: minmax(0, 1fr) 88px 90px 64px 80px;
+        grid-template-columns: minmax(120px, 0.75fr) minmax(64px, 1fr) minmax(72px, 1.1fr) minmax(56px, 0.9fr) minmax(64px, 1fr);
         gap: 0.75rem;
         align-items: center;
     }
@@ -677,6 +677,11 @@
         }
     }
 
+    .match-draft-details-header.boss-battle-header,
+    .match-draft-details-row.boss-battle-row {
+        grid-template-columns: minmax(0, 1fr) 80px;
+    }
+
     .match-draft-details-pokemon {
         display: flex;
         align-items: center;
@@ -694,6 +699,16 @@
             overflow: hidden;
             text-overflow: ellipsis;
             white-space: nowrap;
+        }
+    }
+
+    .match-draft-details-pokemon.trainer-name {
+        gap: 0.4rem;
+
+        img.trainer-sprite {
+            width: auto;
+            height: 2rem;
+            image-rendering: pixelated;
         }
     }
 

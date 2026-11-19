@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   DraftRaceResults,
   RaceResultTeam,
@@ -28,6 +29,7 @@ function formatEntry(team: RaceResultTeam): string {
 }
 
 const RaceResultsTab: React.FC<RaceResultsTabProps> = ({ draftId }) => {
+  const navigate = useNavigate();
   const [results, setResults] = useState<DraftRaceResults | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -61,6 +63,17 @@ const RaceResultsTab: React.FC<RaceResultsTabProps> = ({ draftId }) => {
     } finally {
       setSaving(false);
     }
+  };
+
+  const openFullRaceStats = (team: RaceResultTeam) => {
+    const userId = team.user_id ?? team.guest_id;
+    if (!userId) return;
+    const params = new URLSearchParams({
+      userId,
+      teamId: String(team.team_id),
+    });
+    const displayName = team.user_name || 'Guest User';
+    navigate(`/Stats/PlayerProfiles/${encodeURIComponent(displayName)}?${params.toString()}`);
   };
 
   if (loading) {
@@ -98,6 +111,13 @@ const RaceResultsTab: React.FC<RaceResultsTabProps> = ({ draftId }) => {
               {team.placement !== null ? `${team.placement}.` : '-'}
             </span>
             <span className="race-results-user">{formatEntry(team)}</span>
+            <button
+              type="button"
+              className="tab-chip race-results-full-stats-button"
+              onClick={() => openFullRaceStats(team)}
+            >
+              Full Race Stats
+            </button>
           </div>
         ))}
       </div>

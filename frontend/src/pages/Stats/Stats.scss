@@ -424,7 +424,8 @@
 
 .race-results-entry {
   display: flex;
-  align-items: baseline;
+  align-items: center;
+  justify-content: space-between;
   gap: 0.6rem;
   padding: 0.45rem 0.7rem;
   border: 1px solid $eb-border;
@@ -445,10 +446,19 @@
 }
 
 .race-results-user {
+  flex: 1;
+  min-width: 0;
   color: $eb-text;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+.race-results-full-stats-button {
+  flex-shrink: 0;
+  margin-left: auto;
+  font-size: 1rem;
+  padding: 0.3rem 0.6rem;
 }
 
 .race-results-message {

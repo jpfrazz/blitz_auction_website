@@ -125,6 +125,9 @@ const Stats: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const initialUserId = searchParams.get('userId') ?? undefined;
+  const teamIdParam = searchParams.get('teamId');
+  const parsedTeamId = teamIdParam ? Number(teamIdParam) : NaN;
+  const initialTeamId = Number.isFinite(parsedTeamId) ? parsedTeamId : undefined;
   const [expandedDraftId, setExpandedDraftId] = useState<string | null>(null);
   const [draftSortMode, setDraftSortMode] = useState<'order' | 'price' | 'user' | 'race'>('order');
   const [selectedPokemonForChart, setSelectedPokemonForChart] = useState<{ key: string; name: string } | null>(null);
@@ -1130,6 +1133,7 @@ const Stats: React.FC = () => {
             validDraftIds={validDraftIds}
             initialUserId={initialUserId}
             initialUserName={username}
+            initialTeamId={initialTeamId}
             currentUserId={currentUserId}
           />
         )}
