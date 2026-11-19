@@ -3110,6 +3110,7 @@ pub async fn post_player_forfeit(
             most_recent_loss: None,
             most_recent_loss_name: None,
             fainted_pids: Vec::new(),
+            fainted_keys: Vec::new(),
         },
     };
 

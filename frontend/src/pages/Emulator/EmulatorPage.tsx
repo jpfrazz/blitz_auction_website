@@ -5,6 +5,14 @@ import { parseSaveFile, SaveData, SavePokemon, SaveBoxPokemon, getTrainerNameByI
 import { MAP_NAMES } from '../Auction/mapNames';
 import { getIconName, createResolveMetadata, isActuallyNicknamed } from '../../utils/speciesUtils';
 import { SPECIES_BY_ID } from '../../utils/speciesIdMap';
+import { getMonIdentity } from '../../utils/pokemonIdentity';
+import {
+  createPartyInferenceState,
+  resetPartyInferenceState,
+  setPartyInferenceEvolutionMetadata,
+  applyPartyInference as applyPartyInferenceToState,
+  reconcileBoxFromSave as reconcileBoxFromSaveInState,
+} from '../../utils/partyBoxInference';
 import { MOVES, MOVE_TYPE_COLORS } from '../../utils/movesData';
 import { fetchCurrentUser, fetchDraftById, claimEeveelution, unclaimEeveelution, fetchControlBindings, saveControlBindings, forfeitDraft } from '../../shared/api/draftData';
 import { fetchPokemonList } from '../../shared/api/pokemon';
@@ -864,9 +872,9 @@ const isForeignSpeciesNickname = (mon: SavePokemon): boolean => {
   if (mon.species_id === 412 && nick.toLowerCase() === 'egg') return false;
   const n = normalizeName(nick);
   if (!n) return false;
-  // Gen III Nincada→Ninjask+Shedinja copies the source mon's struct and only
-  // overwrites the species, so Shedinja's raw nickname field legitimately holds
-  // the pre-evolution's species name ("NINCADA"/"NINJASK") instead of "SHEDINJA".
+  // Gen III Nincada→Ninjask+Shedinja copies the source mon's struct. Some ROM
+  // builds leave the inherited pre-evolution nickname in place; this one sets
+  // "SHEDINJA", but keep the exception so older saves aren't misread as garbage.
   if (mon.species_id === 292 && (n === 'nincada' || n === 'ninjask')) return false;
   const ownInfo = SPECIES_BY_ID[mon.species_id];
   const ownName = ownInfo ? normalizeName(ownInfo.name) : '';
@@ -896,7 +904,7 @@ const filterLiveParty = (party: SavePokemon[], trainerName: string | undefined):
   return clean.length > 0 ? clean : null;
 };
 
-const SortablePokemonCard: React.FC<{ id: number; enabled: boolean; className: string; children: React.ReactNode }> = ({ id, enabled, className, children }) => {
+const SortablePokemonCard: React.FC<{ id: string; enabled: boolean; className: string; children: React.ReactNode }> = ({ id, enabled, className, children }) => {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id, disabled: !enabled });
   return (
     <div
@@ -944,7 +952,7 @@ const EmulatorPage: React.FC = () => {
   // Own parsed save data shown below the emulator
   const [mySaveData, setMySaveData] = useState<SaveData | null>(null);
   const [manualPokemonCardOrder, setManualPokemonCardOrder] = useState(() => localStorage.getItem('eb-manual-pokemon-card-order') === 'true');
-  const [pokemonCardOrder, setPokemonCardOrder] = useState<number[]>([]);
+  const [pokemonCardOrder, setPokemonCardOrder] = useState<string[]>([]);
   useEffect(() => {
     const updateSetting = () => setManualPokemonCardOrder(localStorage.getItem('eb-manual-pokemon-card-order') === 'true');
     window.addEventListener('eb-settings-changed', updateSetting);
@@ -1039,11 +1047,12 @@ const EmulatorPage: React.FC = () => {
   const [readyRaceTipHover, setReadyRaceTipHover] = useState(false);
   const [raceStarted, setRaceStarted] = useState(false);
 
-  // Persist fainted state via Personality ID (User ID -> Set of PIDs)
-  const [faintedPids, setFaintedPids] = useState<Record<string, Set<number>>>({});
+  // Persist fainted state by composite identity (User ID -> Set of keys).
+  // A raw PID is not unique: Nincada's split produces same-PID Ninjask/Shedinja.
+  const [faintedPids, setFaintedPids] = useState<Record<string, Set<string>>>({});
   // Pokémon the player has marked (checked) so they remember to buy items for
-  // them. Keyed by personality ID, same as faintedPids.
-  const [markedPids, setMarkedPids] = useState<Set<number>>(new Set());
+  // them. Keyed by the same composite identity as faintedPids.
+  const [markedPids, setMarkedPids] = useState<Set<string>>(new Set());
 
   // Toast notifications for state load events from other players
   const [notifications, setNotifications] = useState<ToastNotification[]>([]);
@@ -1172,10 +1181,14 @@ const EmulatorPage: React.FC = () => {
   // traded, rented). `departedSinceSave` tracks departures that happened after
   // the last .sav snapshot was written so a stale snapshot can't resurrect or
   // erase them.
-  const inferredBoxRef = useRef<Map<number, SavePokemon>>(new Map());
-  const departedSinceSaveRef = useRef<Map<number, SavePokemon>>(new Map());
-  const lastSeenPartyRef = useRef<Map<number, SavePokemon>>(new Map());
-  const lastPartyPidsRef = useRef<Set<number>>(new Set());
+  const inferenceRef = useRef(createPartyInferenceState());
+
+  // The catalog arrives asynchronously. Until then the helper falls back to
+  // same-PID species changes = evolutions (plus the local Nincada split map).
+  useEffect(() => {
+    setPartyInferenceEvolutionMetadata(inferenceRef.current, pokemonById);
+  }, [pokemonById]);
+
   const LIVE_POLL_MS = 750;
   const LIVE_SCAN_BUDGET_MS = 120;
   // While a player is in a battle, re-announce to the DB-free /location
@@ -1243,10 +1256,7 @@ const EmulatorPage: React.FC = () => {
       }).catch(() => { });
     }
     // Reset inference state when a state is loaded - the game state has gone back in time
-    inferredBoxRef.current.clear();
-    departedSinceSaveRef.current.clear();
-    lastSeenPartyRef.current.clear();
-    lastPartyPidsRef.current.clear();
+    resetPartyInferenceState(inferenceRef.current);
     // Also reset live party state to force re-detection of current party
     livePartyHashRef.current = '';
     livePartyProvenLiveRef.current = false;
@@ -1579,28 +1589,32 @@ const EmulatorPage: React.FC = () => {
     }
   }, [currentUserId]);
 
-  // Track which Personalities have hit 0 HP to keep them fainted in the box
+  // Track which mons have hit 0 HP so they stay fainted in the box. Composite
+  // keys keep same-PID Ninjask/Shedinja from sharing a fainted state.
   useEffect(() => {
-    const newFainted: Record<string, Set<number>> = { ...faintedPids };
+    const newFainted: Record<string, Set<string>> = { ...faintedPids };
     let changed = false;
+
+    const addKey = (uid: string, key: string) => {
+      if (!newFainted[uid].has(key)) {
+        newFainted[uid].add(key);
+        changed = true;
+      }
+    };
 
     const processSave = (uid: string, data: SaveData | null) => {
       if (!data) return;
       if (!newFainted[uid]) newFainted[uid] = new Set();
-      // Restore fainted personalities persisted by the backend (survives reload)
-      if (Array.isArray(data.fainted_pids)) {
-        data.fainted_pids.forEach(pid => {
-          if (!newFainted[uid].has(pid)) {
-            newFainted[uid].add(pid);
-            changed = true;
-          }
-        });
+      // Prefer composite keys persisted by the current client. Older rows only
+      // have raw PIDs; those are kept as legacy string keys and still matched
+      // by isMonFainted below.
+      if (Array.isArray(data.fainted_keys) && data.fainted_keys.length > 0) {
+        data.fainted_keys.forEach(key => addKey(uid, key));
+      } else if (Array.isArray(data.fainted_pids)) {
+        data.fainted_pids.forEach(pid => addKey(uid, String(pid)));
       }
       data.party?.forEach(mon => {
-        if (mon.hp === 0 && !newFainted[uid].has(mon.personality)) {
-          newFainted[uid].add(mon.personality);
-          changed = true;
-        }
+        if (mon.hp === 0) addKey(uid, getMonIdentity(mon));
       });
     };
 
@@ -1618,15 +1632,15 @@ const EmulatorPage: React.FC = () => {
   const isMonFainted = useCallback((uid: string, mon: any) => {
     if (mon.hp === 0) return true;
     const deadSet = faintedPids[uid];
-    if (deadSet && deadSet.has(mon.personality)) return true;
+    if (deadSet && (deadSet.has(getMonIdentity(mon)) || deadSet.has(String(mon.personality)))) return true;
     return false;
   }, [faintedPids]);
 
-  const toggleMarked = useCallback((pid: number) => {
+  const toggleMarked = useCallback((key: string) => {
     setMarkedPids(prev => {
       const next = new Set(prev);
-      if (next.has(pid)) next.delete(pid);
-      else next.add(pid);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
       return next;
     });
   }, []);
@@ -1635,11 +1649,14 @@ const EmulatorPage: React.FC = () => {
   // Shared POST helper used by both the .sav flush path and the live heap path.
   const postSaveToBackend = (parsed: SaveData, extra?: Record<string, unknown>) => {
     if (!draftId) return;
+    const faintedKeys = currentUserId ? Array.from(faintedPids[currentUserId] ?? []) : [];
     const body: Record<string, unknown> = {
       ...parsed,
-      // Persist which Pokemon have been seen fainted so a reload doesn't
-      // forget boxed fainted Pokemon and reset their grayed-out look.
-      fainted_pids: currentUserId ? Array.from(faintedPids[currentUserId] ?? []) : [],
+      // Persist which mons have been seen fainted so a reload doesn't forget
+      // boxed fainted mons. `fainted_pids` stays empty for old clients; the
+      // composite keys are the authoritative field going forward.
+      fainted_pids: [],
+      fainted_keys: faintedKeys,
       ...extra,
     };
     fetch(`/api/drafts/${draftId}/save`, {
@@ -1719,63 +1736,16 @@ const EmulatorPage: React.FC = () => {
     return off >= r.start && off < r.end;
   };
 
-  // Tracks party ↔ box movements from live party reads. Withdrawals (a mon
-  // arriving in the live party) leave the box; departures (a mon that was in
-  // the party but no longer is) enter it at their most recent seen stats.
-  const applyPartyInference = (party: SavePokemon[]) => {
-    const box = inferredBoxRef.current;
-    const departed = departedSinceSaveRef.current;
-    const newPids = new Set<number>();
-    for (const mon of party) {
-      newPids.add(mon.personality);
-      lastSeenPartyRef.current.set(mon.personality, mon);
-      box.delete(mon.personality);
-      departed.delete(mon.personality);
-    }
-    for (const pid of Array.from(lastPartyPidsRef.current)) {
-      if (!newPids.has(pid) && !box.has(pid)) {
-        const data = lastSeenPartyRef.current.get(pid);
-        if (data) {
-          box.set(pid, data);
-          departed.set(pid, data);
-        }
-      }
-    }
-    lastPartyPidsRef.current = newPids;
-  };
+  // Party/box inference lives in a pure helper so the same-PID Ninjask/Shedinja
+  // case has a regression test. See partyBoxInference.ts.
+  const applyPartyInference = (party: SavePokemon[]) =>
+    applyPartyInferenceToState(inferenceRef.current, party);
 
-  // Rebuilds the box whenever a .sav is parsed. The .sav box snapshot is the
-  // authoritative possession list at save time: mons it no longer contains are
-  // erased — except departures that happened after it was written, which the
-  // live party proves were still possessed. Mons the snapshot still had in the
-  // party but that have since left it are boxed (they had to go somewhere).
   const reconcileBoxFromSave = (
     saveBox: SaveBoxPokemon[],
     saveParty: SavePokemon[],
     liveParty: SavePokemon[] | null
-  ) => {
-    const saveBoxPids = new Set(saveBox.map((m) => m.personality));
-    const savePartyPids = new Set(saveParty.map((m) => m.personality));
-    const livePids = liveParty ? new Set(liveParty.map((m) => m.personality)) : savePartyPids;
-
-    // Anything the snapshot accounts for is no longer an unconfirmed departure.
-    for (const pid of Array.from(departedSinceSaveRef.current.keys())) {
-      if (saveBoxPids.has(pid) || savePartyPids.has(pid)) departedSinceSaveRef.current.delete(pid);
-    }
-
-    const rebuilt = new Map<number, SavePokemon>();
-    for (const m of saveBox) rebuilt.set(m.personality, m as unknown as SavePokemon);
-    for (const [pid, data] of Array.from(departedSinceSaveRef.current)) rebuilt.set(pid, data);
-    // Mons the snapshot still listed in the party that have since left it.
-    for (const m of saveParty) {
-      if (!livePids.has(m.personality)) rebuilt.set(m.personality, m);
-    }
-    // Whatever is in the party right now is not in the box.
-    for (const pid of Array.from(livePids)) rebuilt.delete(pid);
-
-    inferredBoxRef.current = rebuilt;
-    lastPartyPidsRef.current = livePids;
-  };
+  ) => reconcileBoxFromSaveInState(inferenceRef.current, saveBox, saveParty, liveParty);
 
   // Reads the live party out of the emulator's WASM heap and merges it into
   // mySaveData whenever it changes. Falls back to scanning the heap (spread
@@ -1953,7 +1923,7 @@ const EmulatorPage: React.FC = () => {
       const clean = filterLiveParty(party, base.trainer_name);
       if (!clean) return;
       applyPartyInference(clean);
-      const merged: SaveData = { ...base, party: clean, box: Array.from(inferredBoxRef.current.values()) };
+      const merged: SaveData = { ...base, party: clean, box: Array.from(inferenceRef.current.inferredBox.values()) };
       mySaveDataRef.current = merged;
       setMySaveData(merged);
       postSaveToBackend(merged);
@@ -2265,7 +2235,7 @@ const EmulatorPage: React.FC = () => {
       // shows through and recovers the display.
       ...(lastPostedMapRef.current ? { map_name: lastPostedMapRef.current } : {}),
       ...(livePartyClean ? { party: livePartyClean } : {}),
-      box: Array.from(inferredBoxRef.current.values()),
+      box: Array.from(inferenceRef.current.inferredBox.values()),
     };
     setMySaveData(syncedSave);
     const now = new Date();
@@ -2345,10 +2315,7 @@ const EmulatorPage: React.FC = () => {
       setOtherSaves({});
       setFaintedPids({});
       setMarkedPids(new Set());
-      inferredBoxRef.current.clear();
-      departedSinceSaveRef.current.clear();
-      lastSeenPartyRef.current.clear();
-      lastPartyPidsRef.current.clear();
+      resetPartyInferenceState(inferenceRef.current);
       livePartyOffsetRef.current = null;
       livePartyHashRef.current = '';
       livePartyProvenLiveRef.current = false;
@@ -3345,7 +3312,7 @@ const EmulatorPage: React.FC = () => {
       return;
     }
     setPokemonCardOrder(previous => {
-      const newIds = ownPokemon.map(mon => mon.personality).filter(id => !previous.includes(id));
+      const newIds = ownPokemon.map(getMonIdentity).filter(id => !previous.includes(id));
       return newIds.length ? [...previous, ...newIds] : previous;
     });
   }, [manualPokemonCardOrder, ownPokemon]);
@@ -3354,15 +3321,15 @@ const EmulatorPage: React.FC = () => {
     if (!manualPokemonCardOrder) return ownPokemon;
     const positions = new Map(pokemonCardOrder.map((id, index) => [id, index]));
     return [...ownPokemon].sort((first, second) =>
-      (positions.get(first.personality) ?? positions.size) - (positions.get(second.personality) ?? positions.size)
+      (positions.get(getMonIdentity(first)) ?? positions.size) - (positions.get(getMonIdentity(second)) ?? positions.size)
     );
   }, [manualPokemonCardOrder, ownPokemon, pokemonCardOrder]);
 
   const handlePokemonCardDragEnd = (event: DragEndEvent) => {
     if (!event.over || event.active.id === event.over.id) return;
-    const ids = displayedPokemon.map(mon => mon.personality);
-    const oldIndex = ids.indexOf(Number(event.active.id));
-    const newIndex = ids.indexOf(Number(event.over.id));
+    const ids = displayedPokemon.map(getMonIdentity);
+    const oldIndex = ids.indexOf(String(event.active.id));
+    const newIndex = ids.indexOf(String(event.over.id));
     if (oldIndex < 0 || newIndex < 0) return;
     const reordered = arrayMove(ids, oldIndex, newIndex);
     setPokemonCardOrder(previous => [...reordered, ...previous.filter(id => !ids.includes(id))]);
@@ -3818,7 +3785,7 @@ const EmulatorPage: React.FC = () => {
                   </div>
                   {!isPanelMinimized && mySaveData && (
                     <DndContext sensors={sidebarSensors} collisionDetection={closestCenter} onDragEnd={handlePokemonCardDragEnd}>
-                    <SortableContext items={displayedPokemon.map(mon => mon.personality)} strategy={rectSortingStrategy}>
+                    <SortableContext items={displayedPokemon.map(getMonIdentity)} strategy={rectSortingStrategy}>
                     <div className="save-party-grid">
                       {displayedPokemon.map((mon: any) => {
                         const speciesId = mon.species_id ?? mon.speciesId;
@@ -3828,9 +3795,10 @@ const EmulatorPage: React.FC = () => {
                         const abilityName = speciesData?.abilities?.[mon.ability_num] || 'Unknown';
                         const fainted = isMonFainted(currentUserId || 'me', mon);
                         const hasNickname = isActuallyNicknamed(mon.nickname, speciesId, realName);
+                        const identity = getMonIdentity(mon);
 
                         return (
-                          <SortablePokemonCard key={mon.personality} id={mon.personality} enabled={manualPokemonCardOrder} className={`save-mon-card${fainted ? ' fainted' : ''}${markedPids.has(mon.personality) ? ' marked' : ''}`}>
+                          <SortablePokemonCard key={identity} id={identity} enabled={manualPokemonCardOrder} className={`save-mon-card${fainted ? ' fainted' : ''}${markedPids.has(identity) ? ' marked' : ''}`}>
                             <div className="mon-name-row">
                               <span className="mon-name" style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
                                 <a
@@ -3864,8 +3832,8 @@ const EmulatorPage: React.FC = () => {
                                   type="checkbox"
                                   onPointerDown={(event) => event.stopPropagation()}
                                   onKeyDown={(event) => event.stopPropagation()}
-                                  checked={markedPids.has(mon.personality)}
-                                  onChange={() => toggleMarked(mon.personality)}
+                                  checked={markedPids.has(identity)}
+                                  onChange={() => toggleMarked(identity)}
                                 />
                               </label>
                             </div>

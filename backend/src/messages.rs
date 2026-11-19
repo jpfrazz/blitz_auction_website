@@ -61,10 +61,14 @@ pub struct SaveData {
     pub most_recent_loss: Option<TrainerCardWin>,
     #[serde(default)]
     pub most_recent_loss_name: Option<String>,
-    /// Personalities of Pokemon that have been seen fainted. Persisted with each
-    /// save so boxed fainted Pokemon keep their grayed-out look after a reload.
+    /// Legacy PIDs of Pokemon that have been seen fainted. Kept so saves written
+    /// before composite identities can still be read.
     #[serde(default)]
     pub fainted_pids: Vec<u32>,
+    /// Composite `personality-species` keys of fainted Pokemon. Persisted with
+    /// each save so same-PID split evolutions (Ninjask/Shedinja) stay distinct.
+    #[serde(default)]
+    pub fainted_keys: Vec<String>,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]

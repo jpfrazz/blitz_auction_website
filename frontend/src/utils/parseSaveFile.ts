@@ -201,8 +201,10 @@ export interface SaveData {
   most_recent_loss: TrainerCardWin | null;
   most_recent_loss_name: string | null;
   player_faint_counter: number | null;
-  /** Personalities previously seen fainted, persisted by the backend. */
+  /** Legacy PIDs previously seen fainted, kept for old stored saves. */
   fainted_pids?: number[];
+  /** Composite `personality-species` keys, persisted by the backend. */
+  fainted_keys?: string[];
   /** Save file encryption key (from section 0), needed to decode the .sav's
    *  encrypted money and trainer-card data. */
   encryptionKey?: number;
