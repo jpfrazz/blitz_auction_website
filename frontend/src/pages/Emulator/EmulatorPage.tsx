@@ -2292,7 +2292,11 @@ const EmulatorPage: React.FC = () => {
         const speciesId = mon.species_id ?? mon.speciesId;
         const speciesData = resolveMetadata(speciesId, mon.nickname);
         const realName = (speciesId === 412 && mon.nickname?.toLowerCase() === 'egg') ? "Egg" : (speciesData?.name || `ID ${speciesId}`);
-        return { name: realName, icon: getIconName(realName, speciesId) };
+        return {
+          name: realName,
+          icon: getIconName(realName, speciesId),
+          ko_count: mon.ko_count ?? null,
+        };
       })
       : undefined;
 

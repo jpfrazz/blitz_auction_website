@@ -632,7 +632,7 @@
     .match-draft-details-header,
     .match-draft-details-row {
         display: grid;
-        grid-template-columns: minmax(0, 1fr) 88px;
+        grid-template-columns: minmax(0, 1fr) 88px 90px 64px 80px;
         gap: 0.75rem;
         align-items: center;
     }
@@ -647,8 +647,24 @@
         letter-spacing: 0.04em;
         text-transform: uppercase;
 
-        span:last-child {
+        > *:not(:first-child) {
             text-align: right;
+        }
+
+        button.match-draft-details-sort {
+            padding: 0;
+            border: 0;
+            background: none;
+            color: inherit;
+            font: inherit;
+            letter-spacing: inherit;
+            text-transform: inherit;
+            cursor: pointer;
+
+            &:hover,
+            &.sorted {
+                color: $eb-text;
+            }
         }
     }
 
@@ -688,6 +704,11 @@
         &.forfeit {
             color: #f85149;
         }
+    }
+
+    .match-draft-details-stat {
+        text-align: right;
+        font-variant-numeric: tabular-nums;
     }
 
     .match-draft-details-empty {

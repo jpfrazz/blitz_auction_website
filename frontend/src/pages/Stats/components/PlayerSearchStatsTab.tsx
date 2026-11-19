@@ -11,10 +11,11 @@ import {
   BossBattleSubmissionBattle,
 } from '../../../shared/api/stats';
 import BossBattleEditor from '../../../shared/components/BossBattleEditor';
-import { MatchHistoryTeam, StatsAuction, StatsPagePlayer, StatsPageResponse } from '../../../types';
+import { MatchHistoryTeam, RunMonStat, StatsAuction, StatsPagePlayer, StatsPageResponse } from '../../../types';
 import type { PlayerStatPill } from './playerStatPills';
 import { getPlayerStatPills } from './playerStatPills';
 import { getIconName } from '../../../utils/speciesUtils';
+import { SPECIES_BY_ID } from '../../../utils/speciesIdMap';
 import { getAvatarUrl, onAvatarError } from '../../../shared/utils/user';
 import { fetchCurrentUser } from '../../../shared/api/draftData';
 import { resolvePokemonIdentity } from '../../../shared/utils/pokemonIdentity';
@@ -237,6 +238,69 @@ function getBossBattleVictory(battles: BossBattleHistoryEntry[] | undefined): st
   return null;
 }
 
+interface RunStatSummary {
+  koCount: number | null;
+  totalTurns: number | null;
+  fainted: boolean;
+  faintedLevel: number | null;
+}
+
+type RunSort = { column: 'turns' | 'kos'; direction: 'asc' | 'desc' } | null;
+
+// Key by MiniIcons name so save-file species ids line up with the drafted
+// Pokémon list (which carries display names and forms instead of ROM ids).
+function getRunStatsByIcon(stats: RunMonStat[] | null | undefined): Map<string, RunStatSummary> {
+  const byIcon = new Map<string, RunStatSummary>();
+  (stats ?? []).forEach((mon) => {
+    const speciesName = SPECIES_BY_ID[mon.species_id]?.name ?? '';
+    const icon = getIconName(speciesName, mon.species_id);
+    const existing = byIcon.get(icon);
+    if (!existing) {
+      byIcon.set(icon, {
+        koCount: mon.ko_count,
+        totalTurns: mon.total_turns,
+        fainted: mon.fainted,
+        faintedLevel: mon.fainted ? mon.level : null,
+      });
+      return;
+    }
+    if (mon.ko_count != null) existing.koCount = (existing.koCount ?? 0) + mon.ko_count;
+    if (mon.total_turns != null) existing.totalTurns = (existing.totalTurns ?? 0) + mon.total_turns;
+    if (mon.fainted) {
+      existing.fainted = true;
+      if (existing.faintedLevel == null && mon.level != null) existing.faintedLevel = mon.level;
+    }
+  });
+  return byIcon;
+}
+
+// Missing stats always stay at the bottom so sorting doesn't hide the useful
+// rows behind Pokémon without a recorded save.
+function sortRunRows(
+  auctions: StatsAuction[],
+  statsByIcon: Map<string, RunStatSummary>,
+  sort: RunSort
+): Array<{ auction: StatsAuction; pickIdx: number; monStats?: RunStatSummary }> {
+  const rows = auctions.map((auction, pickIdx) => {
+    const icon = getIconName(auction.form ? `${auction.name}-${auction.form}` : auction.name);
+    return { auction, pickIdx, monStats: statsByIcon.get(icon) };
+  });
+  if (!sort) return rows;
+
+  const valueOf = (monStats: RunStatSummary | undefined) =>
+    sort.column === 'kos' ? monStats?.koCount : monStats?.totalTurns;
+
+  return rows.sort((a, b) => {
+    const aValue = valueOf(a.monStats);
+    const bValue = valueOf(b.monStats);
+    if (aValue == null && bValue == null) return a.pickIdx - b.pickIdx;
+    if (aValue == null) return 1;
+    if (bValue == null) return -1;
+    const diff = aValue - bValue;
+    return (sort.direction === 'asc' ? diff : -diff) || a.pickIdx - b.pickIdx;
+  });
+}
+
 function getRunResult(battles: BossBattleHistoryEntry[]): { result: string; trainer: string; isWin: boolean } | null {
   if (!battles || battles.length === 0) return null;
 
@@ -295,6 +359,7 @@ const PlayerSearchStatsTab: React.FC<PlayerSearchStatsTabProps> = ({
   const [expandedTeamId, setExpandedTeamId] = useState<number | null>(null);
   const [showGamesBreakdown, setShowGamesBreakdown] = useState(false);
   const [showHofBreakdown, setShowHofBreakdown] = useState(false);
+  const [runSort, setRunSort] = useState<RunSort>(null);
   const [selectedPlayer, setSelectedPlayer] = useState<StatsPagePlayer | null>(null);
   const [avatarEditor, setAvatarEditor] = useState<{ userId: string; isFranklyNathan: boolean } | null>(null);
   const [avatarVersion, setAvatarVersion] = useState(0);
@@ -975,6 +1040,13 @@ const PlayerSearchStatsTab: React.FC<PlayerSearchStatsTabProps> = ({
     }
   };
 
+  const toggleRunSort = (column: 'turns' | 'kos') => {
+    setRunSort((current) => {
+      if (current?.column !== column) return { column, direction: 'desc' };
+      return { column, direction: current.direction === 'desc' ? 'asc' : 'desc' };
+    });
+  };
+
   const handleClearSelectedPlayer = () => {
     setSearchInput('');
     setSelectedPlayer(null);
@@ -1325,6 +1397,8 @@ const PlayerSearchStatsTab: React.FC<PlayerSearchStatsTabProps> = ({
                   const battles = bossBattleHistory.get(team.team_id);
                   const bossVictory = getBossBattleVictory(battles);
                   const hallOfFameTeam = team.hall_of_fame_team;
+                  const runStatsByIcon = getRunStatsByIcon(team.run_stats);
+                  const sortedRunRows = sortRunRows(listAuctions, runStatsByIcon, runSort);
 
                   return (
                     <div className="match-timeline-entry" key={team.team_id}>
@@ -1391,11 +1465,28 @@ const PlayerSearchStatsTab: React.FC<PlayerSearchStatsTabProps> = ({
                               <div className="match-draft-details-header">
                                 <span>Pokemon</span>
                                 <span>{is1v1 ? 'Pick' : 'Paid'}</span>
+                                <button
+                                  type="button"
+                                  className={`match-draft-details-sort ${runSort?.column === 'turns' ? 'sorted' : ''}`}
+                                  onClick={() => toggleRunSort('turns')}
+                                  title="Sort by turn count"
+                                >
+                                  Turn Count{runSort?.column === 'turns' ? (runSort.direction === 'desc' ? ' ▼' : ' ▲') : ''}
+                                </button>
+                                <button
+                                  type="button"
+                                  className={`match-draft-details-sort ${runSort?.column === 'kos' ? 'sorted' : ''}`}
+                                  onClick={() => toggleRunSort('kos')}
+                                  title="Sort by KOs"
+                                >
+                                  KOs{runSort?.column === 'kos' ? (runSort.direction === 'desc' ? ' ▼' : ' ▲') : ''}
+                                </button>
+                                <span>Fainted</span>
                               </div>
                               {listAuctions.length === 0 && (
                                 <div className="match-draft-details-empty">{is1v1 ? 'No Pokemon picked in this draft.' : 'No Pokemon won in this draft.'}</div>
                               )}
-                              {listAuctions.map((auction, pickIdx) => (
+                              {sortedRunRows.map(({ auction, pickIdx, monStats }) => (
                                 <div className="match-draft-details-row" key={auction.auction_id}>
                                   <div className="match-draft-details-pokemon">
                                     <img
@@ -1409,6 +1500,17 @@ const PlayerSearchStatsTab: React.FC<PlayerSearchStatsTabProps> = ({
                                   </div>
                                   <span className="match-draft-details-cost">
                                     {is1v1 ? `#${pickIdx + 1}` : `$${(auction.winning_bid ?? 0).toLocaleString()}`}
+                                  </span>
+                                  <span className="match-draft-details-stat">{monStats?.totalTurns ?? '—'}</span>
+                                  <span className="match-draft-details-stat">{monStats?.koCount ?? '—'}</span>
+                                  <span className="match-draft-details-stat">
+                                    {!monStats
+                                      ? '—'
+                                      : monStats.fainted
+                                        ? monStats.faintedLevel != null
+                                          ? `lvl ${monStats.faintedLevel}`
+                                          : '—'
+                                        : 'N/A'}
                                   </span>
                                 </div>
                               ))}

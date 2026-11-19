@@ -5,7 +5,7 @@ use crate::{
     draft::{Draft, DraftLobbyResponse, DraftResponse, DraftSettings, DraftState, AutoBidResponse},
     messages::{
         ChatMessage, ClientBidRequest, ClientBidResponse, ClientJoinResponse, ForfeitRequest,
-        HallOfFamePokemon, PostLocationRequest, PostSaveRequest, SaveData, ServerMessage,
+        HallOfFamePokemon, PostLocationRequest, PostSaveRequest, RunMonStat, SaveData, ServerMessage,
         TrainerCardWin, get_trainer_name_by_id,
     },
     pokemon::{self, Pokemon},
@@ -155,6 +155,7 @@ pub struct MatchHistoryTeam {
     pub placement: Option<i32>,
     pub pre_match_mmr: Option<i32>,
     pub hall_of_fame_team: Option<Vec<HallOfFamePokemon>>,
+    pub run_stats: Vec<RunMonStat>,
     pub updated_at: chrono::DateTime<chrono::Utc>,
     pub created_at: chrono::DateTime<chrono::Utc>,
 }
@@ -883,6 +884,49 @@ pub async fn get_stats_page_data(
     }))
 }
 
+/// Pull the small set of numbers the run summary needs out of a stored save.
+/// Saves written before KO/turn tracking (or with no save at all) simply yield
+/// no stats, and the UI falls back to dashes for those columns.
+fn build_run_stats(save_value: Option<serde_json::Value>) -> Vec<RunMonStat> {
+    let Some(value) = save_value else {
+        return Vec::new();
+    };
+    let Ok(save) = serde_json::from_value::<SaveData>(value) else {
+        return Vec::new();
+    };
+
+    let is_fainted = |personality: u32, species_id: u16| {
+        save.fainted_keys
+            .iter()
+            .any(|key| key == &format!("{}-{}", personality, species_id))
+            || save.fainted_pids.iter().any(|pid| *pid == personality)
+    };
+
+    let mut stats: Vec<RunMonStat> = save
+        .party
+        .iter()
+        .map(|mon| RunMonStat {
+            species_id: mon.species_id,
+            personality: mon.personality,
+            ko_count: mon.ko_count,
+            total_turns: mon.total_turns,
+            level: Some(mon.level),
+            fainted: is_fainted(mon.personality, mon.species_id),
+        })
+        .collect();
+
+    stats.extend(save.r#box.iter().map(|mon| RunMonStat {
+        species_id: mon.species_id,
+        personality: mon.personality,
+        ko_count: mon.ko_count,
+        total_turns: mon.total_turns,
+        level: None,
+        fainted: is_fainted(mon.personality, mon.species_id),
+    }));
+
+    stats
+}
+
 #[debug_handler]
 pub async fn get_match_history_by_user_id(
     State(state): State<ServerState>,
@@ -911,7 +955,7 @@ pub async fn get_match_history_by_user_id(
         "SELECT t.team_id, t.user_id, t.guest_id, t.draft_id,
                 d.ranked, d.draft_type, (SELECT COUNT(*)::INT FROM teams team_counts WHERE team_counts.draft_id = t.draft_id) AS team_count,
                 t.money_remaining, t.placement,
-                t.pre_match_mmr, t.hall_of_fame_team, t.updated_at, d.created_at
+                t.pre_match_mmr, t.hall_of_fame_team, t.save_data, t.updated_at, d.created_at
          FROM teams t
           JOIN drafts d ON d.draft_id = t.draft_id
                  WHERE (t.user_id = ANY($1) OR t.guest_id = ANY($1))
@@ -935,6 +979,10 @@ pub async fn get_match_history_by_user_id(
             .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
         let hall_of_fame_team = hall_of_fame_value
             .and_then(|v| serde_json::from_value::<Vec<HallOfFamePokemon>>(v).ok());
+        let save_value: Option<serde_json::Value> = row
+            .try_get("save_data")
+            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+        let run_stats = build_run_stats(save_value);
         history.push(MatchHistoryTeam {
             team_id: row
                 .try_get("team_id")
@@ -966,6 +1014,7 @@ pub async fn get_match_history_by_user_id(
                 .try_get("pre_match_mmr")
                 .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?,
             hall_of_fame_team,
+            run_stats,
             updated_at: row
                 .try_get("updated_at")
                 .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?,
@@ -1961,6 +2010,33 @@ pub async fn update_admin_hall_of_fame_team(
         .into_iter()
         .take(6)
         .collect();
+
+    // The admin editor only sends names and icons. Keep the KO counts that
+    // were captured with the original team so that data survives an edit.
+    if let Some(existing_row) = sqlx::query("SELECT hall_of_fame_team FROM teams WHERE team_id = $1")
+        .bind(team_id)
+        .fetch_optional(&state.db_pool)
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?
+    {
+        let existing_value: Option<serde_json::Value> = existing_row
+            .try_get("hall_of_fame_team")
+            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+        if let Some(existing) = existing_value
+            .and_then(|v| serde_json::from_value::<Vec<HallOfFamePokemon>>(v).ok())
+        {
+            for (idx, mon) in hall_of_fame_team.iter_mut().enumerate() {
+                if mon.ko_count.is_some() {
+                    continue;
+                }
+                mon.ko_count = existing
+                    .get(idx)
+                    .filter(|old| old.name.eq_ignore_ascii_case(&mon.name))
+                    .and_then(|old| old.ko_count);
+            }
+        }
+    }
+
     for mon in &mut hall_of_fame_team {
         mon.name = mon.name.trim().to_string();
         if mon.name.is_empty() {

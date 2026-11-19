@@ -190,6 +190,18 @@ export interface StatsAuction {
 export interface HallOfFamePokemon {
   name: string;
   icon: string;
+  /** Lifetime KO count captured from the save at the time of the Hall of Fame. */
+  ko_count?: number | null;
+}
+
+export interface RunMonStat {
+  species_id: number;
+  personality: number;
+  ko_count: number | null;
+  total_turns: number | null;
+  /** Box Pokémon don't carry a level in the save layout. */
+  level: number | null;
+  fainted: boolean;
 }
 
 export interface MatchHistoryTeam {
@@ -205,6 +217,7 @@ export interface MatchHistoryTeam {
   placement: number | null;
   pre_match_mmr: number | null;
   hall_of_fame_team?: HallOfFamePokemon[] | null;
+  run_stats?: RunMonStat[] | null;
   updated_at: string;
   created_at: string;
 }

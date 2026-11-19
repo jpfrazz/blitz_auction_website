@@ -99,6 +99,23 @@ pub struct TrainerCardWin {
 pub struct HallOfFamePokemon {
     pub name: String,
     pub icon: String,
+    /// Lifetime KO count from the save at the time of the Hall of Fame.
+    /// Older stored teams (and admin-entered ones) won't have it.
+    #[serde(default)]
+    pub ko_count: Option<u16>,
+}
+
+/// Compact lifetime run stats for one Pokémon, derived from a team's stored
+/// save data so the match-history response doesn't have to ship whole saves.
+#[derive(Clone, Debug, Serialize)]
+pub struct RunMonStat {
+    pub species_id: u16,
+    pub personality: u32,
+    pub ko_count: Option<u16>,
+    pub total_turns: Option<u16>,
+    /// Box Pokémon don't carry a level in the save layout.
+    pub level: Option<u8>,
+    pub fainted: bool,
 }
 
 /// Body of the `POST /api/drafts/{draft_id}/save` endpoint. The emulator sends
