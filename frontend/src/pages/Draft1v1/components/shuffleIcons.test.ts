@@ -21,6 +21,15 @@ test('maps generations 8-9 by name through the generated index', () => {
   );
 });
 
+test('uses Alolan form art for every Alolan form in the pool', () => {
+  for (const dex of [26, 27, 28, 37, 38, 103, 105]) {
+    expect(getShuffleIcon(pokemon(dex, 'Alolan', 'Alola'))).toBe(
+      `/Pokemon%20Shuffle%20Icons/Shuffle${String(dex).padStart(3, '0')}A.png`,
+    );
+  }
+  expect(getShuffleIcon(pokemon(37, 'Vulpix'))).toBe('/Pokemon%20Shuffle%20Icons/Shuffle037.png');
+});
+
 test('uses form-specific art without falling back to the base form', () => {
   expect(getShuffleIcon(pokemon(83, "Farfetch'd", 'Galar'))).toBe(
     '/Pokemon%20Shuffle%20Icons/G%20-%20Farfetchd.png',

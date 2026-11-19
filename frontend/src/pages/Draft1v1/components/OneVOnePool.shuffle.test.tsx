@@ -17,6 +17,7 @@ test('renders Shuffle icons, form-specific art, and fallback art in Shuffle Icon
       pool={[
         slot(25, 'Pikachu'),
         slot(263, 'Zigzagoon', 'Galar'),
+        slot(37, 'Vulpix', 'Alola'),
         slot(824, 'Blipbug'),
         slot(65536, 'Egg'),
       ]}
@@ -32,6 +33,9 @@ test('renders Shuffle icons, form-specific art, and fallback art in Shuffle Icon
   );
   expect(screen.getByAltText('Zigzagoon (Galar)').getAttribute('src')).toBe(
     '/Pokemon%20Shuffle%20Icons/G%20-%20Zigzagoon.png',
+  );
+  expect(screen.getByAltText('Vulpix (Alola)').getAttribute('src')).toBe(
+    '/Pokemon%20Shuffle%20Icons/Shuffle037A.png',
   );
   expect(screen.getByAltText('Blipbug').getAttribute('src')).toBe(
     '/Pokemon%20Shuffle%20Icons/Blipbug.png',

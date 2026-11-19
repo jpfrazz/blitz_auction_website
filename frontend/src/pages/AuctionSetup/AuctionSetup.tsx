@@ -13,7 +13,7 @@ import { generateRandomDraftName } from '../../shared/utils/draftNameGenerator';
 import { getTipMessagesEnabled } from '../../shared/utils/tipMessages';
 import LobbyLimitModal from '../../shared/components/LobbyLimitModal';
 
-const MIN_TEAM_SIZE = 2;
+const MIN_TEAM_SIZE = 1;
 const MAX_TEAM_SIZE = 10;
 const DEFAULT_STARTING_MONEY = 20000;
 const DEFAULT_AUCTION_SECONDS = 10;
@@ -84,11 +84,11 @@ const AuctionSetupForm: React.FC = () => {
     setCreatedAuctionId(null);
 
     // Validate required fields (userId and password are optional)
-    if (
-      !numTeams ||
-      !numPokemon ||
-      !draftName.trim()
-    ) {
+    if (numTeams < MIN_TEAM_SIZE) {
+      setSubmitError(`At least ${MIN_TEAM_SIZE} player is required.`);
+      return;
+    }
+    if (!numPokemon || !draftName.trim()) {
       setSubmitError('Please fill out all required fields.');
       return;
     }
@@ -185,7 +185,7 @@ const AuctionSetupForm: React.FC = () => {
               <input
                 className="auction-setup-input"
                 type="number"
-                min={ranked ? MIN_TEAM_SIZE : 2}
+                min={MIN_TEAM_SIZE}
                 max={ranked ? MAX_TEAM_SIZE : 16}
                 value={numTeams}
                 onChange={e => {

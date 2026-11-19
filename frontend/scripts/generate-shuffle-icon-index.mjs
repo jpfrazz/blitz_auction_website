@@ -14,6 +14,11 @@ for (let dex = 1; dex <= 802; dex += 1) {
   index[String(dex)] = `Shuffle${pad(dex)}.png`;
 }
 
+// Alolan forms use Bulbagarden's "A" suffixed files.
+for (const dex of [26, 27, 28, 37, 38, 103, 105]) {
+  index[`${dex}|Alola`] = `Shuffle${pad(dex)}A.png`;
+}
+
 // Key format is "<pokedex_id>" for base forms and "<pokedex_id>|<form>" for
 // alternate forms. A Pokémon with a form never reuses its base icon.
 const curated = [
@@ -23,7 +28,6 @@ const curated = [
   ['83|Galar', 'G - Farfetchd.png'],
   ['100|Hisui', 'H-Voltorb.png'],
   ['101|Hisui', 'H-Electrode.png'],
-  ['105|Alola', 'Lavender Ghost - Marowak.png'],
   ['149|Mega', 'M-Dragonite.png'],
   ['157|Hisui', 'H- Typhlosion.png'],
   ['194|Paldea', 'Paldean Wooper2.png'],

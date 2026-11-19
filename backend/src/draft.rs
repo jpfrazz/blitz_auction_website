@@ -35,10 +35,14 @@ pub struct Draft {
     /// and the count is decremented when its socket drops; the Spectate page
     /// never registers, so it doesn't count as a player connection.
     pub presence: Arc<DashMap<String, usize>>,
-    /// Number of live anonymous viewer (Spectate page / lobby) WebSocket
-    /// connections for this draft. Emulator sockets register presence and are
-    /// excluded, so this counts actual spectators, unlike the spectator roster
-    /// below (teams moved out of a player slot while the draft is pending).
+    /// Number of live viewer WebSocket connections per spectator identity.
+    /// Multiple tabs from the same signed-in or guest session share one entry,
+    /// so the reported count reflects people rather than open tabs.
+    pub spectator_presence: Arc<DashMap<String, usize>>,
+    /// Number of distinct live spectators watching this draft. Emulator sockets
+    /// register player presence and are excluded, so this counts actual
+    /// spectators, unlike the spectator roster below (teams moved out of a
+    /// player slot while the draft is pending).
     pub spectator_count: Arc<AtomicUsize>,
     pub created_at: chrono::DateTime<Utc>,
     actor_sender: mpsc::Sender<DraftCommand>,
@@ -411,6 +415,7 @@ impl Draft {
             broadcast_tx,
             actor_sender,
             presence: Arc::new(DashMap::new()),
+            spectator_presence: Arc::new(DashMap::new()),
             spectator_count: Arc::new(AtomicUsize::new(0)),
             created_at,
         }

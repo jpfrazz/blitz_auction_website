@@ -325,8 +325,9 @@ pub enum ServerMessage {
     /// Snapshot of the player emulator connections currently online for this
     /// draft, sent once when a WebSocket first connects so a freshly loaded
     /// spectator/emulator page knows who is connected before any events fire.
-    /// `spectator_count` is the current number of live spectator/lobby viewer
-    /// sockets so a freshly loaded page shows the right header immediately.
+    /// `spectator_count` is the current number of distinct spectators watching
+    /// (multiple tabs from the same person count once) so a freshly loaded page
+    /// shows the right header immediately.
     PresenceSnapshot {
         user_ids: Vec<String>,
         spectator_count: usize,
@@ -337,8 +338,9 @@ pub enum ServerMessage {
     PlayerDisconnected {
         user_id: String,
     },
-    /// The number of live anonymous spectator/lobby viewer WebSockets on this
-    /// draft changed (someone opened or closed the Spectate page).
+    /// The number of distinct spectators watching this draft changed (someone
+    /// opened or closed a Spectate tab). Multiple tabs from the same person do
+    /// not change this count.
     SpectatorCount {
         count: usize,
     },

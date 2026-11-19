@@ -243,7 +243,9 @@
   "klefki": "https://s3.pokeos.com/pokeos-uploads/tcg/textless/594/311.png",
   "trapinch": "https://s3.pokeos.com/pokeos-uploads/tcg/textless/594/317.png",
   "wynaut": "https://s3.pokeos.com/pokeos-uploads/tcg/textless/594/306.png",
-  "chingling": "https://s3.pokeos.com/pokeos-uploads/tcg/textless/594/307.png",
+  "chingling": [
+    "/tcgArt/Chingling.png"
+  ],
   "brambleghast": "https://s3.pokeos.com/pokeos-uploads/tcg/textless/594/314.png",
   "sylveon": "https://s3.pokeos.com/pokeos-uploads/tcg/textless/594/310.png",
   "mime-jr": "https://s3.pokeos.com/pokeos-uploads/tcg/textless/594/308.png",

@@ -14,15 +14,23 @@ const pngSignature = '89504e470d0a1a0a';
 await mkdir(folder, { recursive: true });
 
 const pad = (value) => String(value).padStart(3, '0');
-const ids = Array.from({ length: 802 }, (_, index) => index + 1);
+const baseNames = Array.from({ length: 802 }, (_, index) => `Shuffle${pad(index + 1)}.png`);
+// Alternate variants from the same Bulbagarden category. "A" is the Alolan
+// form suffix; these fill in the regional forms that the pool can contain.
+const alternateNames = [
+  '019A', '020A', '025A', '026A', '027A', '028A', '037A', '038A',
+  '050A', '051A', '052A', '053A', '074A', '075A', '076A', '088A',
+  '089A', '103A', '105A', '386A', '585A', '586A', '658A',
+].map((suffix) => `Shuffle${suffix}.png`);
+const names = [...baseNames, ...alternateNames];
 let next = 0;
 let downloaded = 0;
 let skipped = 0;
 let failed = 0;
 
 async function worker() {
-  while (next < ids.length) {
-    const name = `Shuffle${pad(ids[next++])}.png`;
+  while (next < names.length) {
+    const name = names[next++];
     const destination = path.join(folder, name);
 
     try {

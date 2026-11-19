@@ -47,6 +47,7 @@ test('uses locally hosted art over the PokeOS catalog', () => {
   expect(getTcgArt({ id: 824, name: 'Blipbug' } as Pokemon, 0)).toBe('/tcgArt/blipbug.jpg');
   expect(getTcgArt({ id: 234, name: 'Stantler' } as Pokemon, 0)).toBe('/tcgArt/stantler.jpg');
   expect(getTcgArt({ id: 653, name: 'Fennekin' } as Pokemon, 0)).toBe('/tcgArt/fennekin.jpg');
+  expect(getTcgArt({ id: 433, name: 'Chingling' } as Pokemon, 0)).toBe('/tcgArt/Chingling.png');
   expect(getTcgArt({ id: 65536, name: 'Egg' } as Pokemon, 0)).toBe('/tcgArt/Egg.png');
 });
 

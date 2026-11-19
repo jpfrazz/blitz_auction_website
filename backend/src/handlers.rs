@@ -410,6 +410,12 @@ pub async fn create_draft(
             "Draft name contains prohibited language".to_string(),
         ));
     }
+    if draft_settings.num_teams < 1 {
+        return Err((
+            StatusCode::BAD_REQUEST,
+            "A lobby requires at least 1 player".to_string(),
+        ));
+    }
 
     let host = auth_session.user.expect("user should exist");
 
@@ -5040,6 +5046,7 @@ pub async fn get_control_bindings(
 pub async fn websocket_handler(
     State(state): State<ServerState>,
     Path(draft_id): Path<String>,
+    auth_session: AuthSession<AuthBackend>,
     ws: WebSocketUpgrade,
 ) -> Result<Response<Body>, (StatusCode, String)> {
     let draft_uuid = Uuid::from_str(&draft_id).map_err(|e| {
@@ -5057,7 +5064,65 @@ pub async fn websocket_handler(
     let tx = draft.broadcast_tx.clone();
     let presence = draft.presence.clone();
     let spectator_count = draft.spectator_count.clone();
-    Ok(ws.on_upgrade(move |socket| handle_websocket(socket, tx, presence, spectator_count)))
+    let spectator_presence = draft.spectator_presence.clone();
+    // Every tab sharing this session gets the same id, so it contributes to
+    // the spectator count only once. Fall back to a per-socket id when there is
+    // no session user so unauthenticated sockets still count individually.
+    let spectator_identity = auth_session
+        .user
+        .map(|user| user.get_user_id_string())
+        .unwrap_or_else(|| Uuid::new_v4().to_string());
+    Ok(ws.on_upgrade(move |socket| {
+        handle_websocket(
+            socket,
+            tx,
+            presence,
+            spectator_count,
+            spectator_presence,
+            spectator_identity,
+        )
+    }))
+}
+
+/// Registers a viewer socket for `identity`. Returns the new distinct spectator
+/// count only when this is the identity's first open tab.
+fn add_spectator_connection(
+    spectator_presence: &dashmap::DashMap<String, usize>,
+    spectator_count: &AtomicUsize,
+    identity: &str,
+) -> Option<usize> {
+    let mut count = spectator_presence.entry(identity.to_string()).or_insert(0);
+    *count += 1;
+    if *count == 1 {
+        Some(spectator_count.fetch_add(1, Ordering::SeqCst) + 1)
+    } else {
+        None
+    }
+}
+
+/// Releases a viewer socket for `identity`. Returns the new distinct spectator
+/// count only when this was the identity's last open tab.
+fn remove_spectator_connection(
+    spectator_presence: &dashmap::DashMap<String, usize>,
+    spectator_count: &AtomicUsize,
+    identity: &str,
+) -> Option<usize> {
+    let removed_last = match spectator_presence.entry(identity.to_string()) {
+        entry::Entry::Occupied(mut e) => {
+            *e.get_mut() = e.get().saturating_sub(1);
+            let remaining = *e.get();
+            if remaining == 0 {
+                e.remove();
+            }
+            remaining == 0
+        }
+        entry::Entry::Vacant(_) => false,
+    };
+    removed_last.then(|| {
+        spectator_count
+            .fetch_sub(1, Ordering::SeqCst)
+            .saturating_sub(1)
+    })
 }
 
 async fn handle_websocket(
@@ -5065,6 +5130,8 @@ async fn handle_websocket(
     tx: broadcast::Sender<ServerMessage>,
     presence: Arc<dashmap::DashMap<String, usize>>,
     spectator_count: Arc<AtomicUsize>,
+    spectator_presence: Arc<dashmap::DashMap<String, usize>>,
+    spectator_identity: String,
 ) {
     let mut rx = tx.subscribe();
     // The player user_id this socket registered itself as (via PresenceRegister).
@@ -5072,11 +5139,14 @@ async fn handle_websocket(
     // is a spectator (Spectate page / lobby viewer).
     let mut registered_user: Option<String> = None;
     // Every socket starts as a viewer; an emulator socket converts to a player
-    // the moment it registers presence (briefly ticking the count up then down
-    // on connect, which is imperceptible in practice).
+    // the moment it registers presence. Identity-based counting means extra
+    // tabs from the same person never tick the spectator count up twice.
     let mut is_viewer = true;
-    let count = spectator_count.fetch_add(1, Ordering::SeqCst) + 1;
-    let _ = tx.send(ServerMessage::SpectatorCount { count });
+    if let Some(count) =
+        add_spectator_connection(&spectator_presence, &spectator_count, &spectator_identity)
+    {
+        let _ = tx.send(ServerMessage::SpectatorCount { count });
+    }
 
     // Tell a freshly connected client who is already online so it can render
     // connected/disconnected state immediately instead of waiting for events,
@@ -5098,8 +5168,13 @@ async fn handle_websocket(
         {
             // Socket died before the loop started; release this viewer's count
             // so the negotiated count doesn't leak +1.
-            let count = spectator_count.fetch_sub(1, Ordering::SeqCst).saturating_sub(1);
-            let _ = tx.send(ServerMessage::SpectatorCount { count });
+            if let Some(count) = remove_spectator_connection(
+                &spectator_presence,
+                &spectator_count,
+                &spectator_identity,
+            ) {
+                let _ = tx.send(ServerMessage::SpectatorCount { count });
+            }
             return;
         }
     }
@@ -5146,11 +5221,14 @@ async fn handle_websocket(
                                     // undo the viewer count increment above.
                                     if is_viewer {
                                         is_viewer = false;
-                                        let count = spectator_count
-                                            .fetch_sub(1, Ordering::SeqCst)
-                                            .saturating_sub(1);
-                                        let _ = tx
-                                            .send(ServerMessage::SpectatorCount { count });
+                                        if let Some(count) = remove_spectator_connection(
+                                            &spectator_presence,
+                                            &spectator_count,
+                                            &spectator_identity,
+                                        ) {
+                                            let _ = tx
+                                                .send(ServerMessage::SpectatorCount { count });
+                                        }
                                     }
                                     if was_offline {
                                         let _ = tx.send(ServerMessage::PlayerConnected { user_id });
@@ -5216,8 +5294,13 @@ async fn handle_websocket(
     // didn't recover). Release this socket's presence registration and tell the
     // lobby the player left once their last connection is gone.
     if is_viewer {
-        let count = spectator_count.fetch_sub(1, Ordering::SeqCst).saturating_sub(1);
-        let _ = tx.send(ServerMessage::SpectatorCount { count });
+        if let Some(count) = remove_spectator_connection(
+            &spectator_presence,
+            &spectator_count,
+            &spectator_identity,
+        ) {
+            let _ = tx.send(ServerMessage::SpectatorCount { count });
+        }
     }
     if let Some(user_id) = registered_user {
         let remaining = match presence.entry(user_id.clone()) {
@@ -5423,5 +5506,40 @@ pub async fn get_admin_metrics(
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, format!("failed to fetch metrics: {}", e)))?;
 
     Ok(Json(metrics))
+}
+
+#[cfg(test)]
+mod spectator_count_tests {
+    use super::{add_spectator_connection, remove_spectator_connection};
+    use dashmap::DashMap;
+    use std::sync::atomic::{AtomicUsize, Ordering};
+
+    #[test]
+    fn multiple_tabs_for_same_identity_count_as_one() {
+        let presence = DashMap::new();
+        let count = AtomicUsize::new(0);
+
+        assert_eq!(add_spectator_connection(&presence, &count, "user-1"), Some(1));
+        assert_eq!(add_spectator_connection(&presence, &count, "user-1"), None);
+        assert_eq!(count.load(Ordering::SeqCst), 1);
+
+        assert_eq!(remove_spectator_connection(&presence, &count, "user-1"), None);
+        assert_eq!(count.load(Ordering::SeqCst), 1);
+        assert_eq!(remove_spectator_connection(&presence, &count, "user-1"), Some(0));
+        assert_eq!(count.load(Ordering::SeqCst), 0);
+    }
+
+    #[test]
+    fn different_identities_are_counted_separately() {
+        let presence = DashMap::new();
+        let count = AtomicUsize::new(0);
+
+        assert_eq!(add_spectator_connection(&presence, &count, "user-1"), Some(1));
+        assert_eq!(add_spectator_connection(&presence, &count, "user-2"), Some(2));
+        assert_eq!(count.load(Ordering::SeqCst), 2);
+
+        assert_eq!(remove_spectator_connection(&presence, &count, "user-1"), Some(1));
+        assert_eq!(remove_spectator_connection(&presence, &count, "user-2"), Some(0));
+    }
 }
 
