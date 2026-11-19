@@ -259,7 +259,7 @@ const HallOfFameStatsTab: React.FC<HallOfFameStatsTabProps> = ({ validDraftIds, 
               <div className="admin-hof-entry" key={entry.team_id}>
                 {entry.draft_type === '1v1' ? (
                   <div className={`admin-hof-draft-type ${casual1v1DraftIds.has(entry.draft_id) ? 'casual' : 'one-v-one'}`}>
-                    {casual1v1DraftIds.has(entry.draft_id) ? 'Casual 1v1 Draft' : '1v1 Draft'}
+                    {casual1v1DraftIds.has(entry.draft_id) ? 'Casual 1v1' : '1v1 Draft'}
                   </div>
                 ) : (
                   <div

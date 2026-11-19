@@ -1442,7 +1442,7 @@ const PlayerSearchStatsTab: React.FC<PlayerSearchStatsTabProps> = ({
                   const isCasual = isCasualTeam(team);
                   const listAuctions = is1v1 ? auctions.filter(a => a.action === 'PICK') : auctions;
                   const isRanked = team.pre_match_mmr !== null || team.placement !== null;
-                  const result = is1v1 ? (casual1v1DraftIds.has(team.draft_id) ? 'Casual 1v1 Draft' : '1v1') : isCasual ? 'Casual' : getPlacementLabel(team.placement, isRanked);
+                  const result = is1v1 ? (casual1v1DraftIds.has(team.draft_id) ? 'Casual 1v1' : '1v1') : isCasual ? 'Casual' : getPlacementLabel(team.placement, isRanked);
                   const resultClass = getPlacementClass(team.placement, isRanked);
                   const isExpanded = expandedTeamId === team.team_id;
                   const battles = bossBattleHistory.get(team.team_id);
