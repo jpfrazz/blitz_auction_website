@@ -977,6 +977,48 @@ fn build_run_stats(save_value: Option<serde_json::Value>) -> Vec<RunMonStat> {
     stats
 }
 
+/// Faint records are cumulative: once a Pokémon has fainted it stays fainted
+/// even after being healed or moved to the PC. A client that reloaded mid-race
+/// posts an empty `fainted_keys` array, so replacing the stored save outright
+/// would silently erase faints from earlier saves. Union the arrays instead.
+fn merge_fainted_state(new_save: &mut serde_json::Value, old_save: Option<&serde_json::Value>) {
+    let (Some(old), Some(obj)) = (old_save, new_save.as_object_mut()) else {
+        return;
+    };
+    let Some(old_obj) = old.as_object() else {
+        return;
+    };
+
+    let collect_strings = |value: Option<&serde_json::Value>| -> Vec<String> {
+        value
+            .and_then(|v| v.as_array())
+            .map(|arr| arr.iter().filter_map(|v| v.as_str().map(str::to_string)).collect())
+            .unwrap_or_default()
+    };
+    let collect_numbers = |value: Option<&serde_json::Value>| -> Vec<u64> {
+        value
+            .and_then(|v| v.as_array())
+            .map(|arr| arr.iter().filter_map(|v| v.as_u64()).collect())
+            .unwrap_or_default()
+    };
+
+    let mut keys = collect_strings(old_obj.get("fainted_keys"));
+    for key in collect_strings(obj.get("fainted_keys")) {
+        if !keys.contains(&key) {
+            keys.push(key);
+        }
+    }
+    obj.insert("fainted_keys".to_string(), serde_json::json!(keys));
+
+    let mut pids = collect_numbers(old_obj.get("fainted_pids"));
+    for pid in collect_numbers(obj.get("fainted_pids")) {
+        if !pids.contains(&pid) {
+            pids.push(pid);
+        }
+    }
+    obj.insert("fainted_pids".to_string(), serde_json::json!(pids));
+}
+
 #[debug_handler]
 pub async fn get_match_history_by_user_id(
     State(state): State<ServerState>,
@@ -2967,10 +3009,25 @@ pub async fn post_player_save(
     let user_id = user.get_user_id_string();
     let (user_db_id, guest_db_id) = user.get_user_and_guest_id();
 
-    // Persist to the teams table
-    let json_value = serde_json::to_value(&save_data).map_err(|e| {
+    // Persist to the teams table. Merge the faint arrays with the previous
+    // save so a reloaded client posting `fainted_keys: []` cannot erase faints
+    // it no longer has in memory (e.g. a mon already sitting in the PC).
+    let old_save: Option<serde_json::Value> = sqlx::query_scalar(
+        "SELECT save_data FROM teams
+         WHERE draft_id = $1
+           AND (user_id = $2 OR guest_id = $3)"
+    )
+    .bind(draft_uuid)
+    .bind(&user_db_id)
+    .bind(&guest_db_id)
+    .fetch_optional(&state.db_pool)
+    .await
+    .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, format!("db error: {}", e)))?;
+
+    let mut json_value = serde_json::to_value(&save_data).map_err(|e| {
         (StatusCode::INTERNAL_SERVER_ERROR, format!("failed to serialize save data: {}", e))
     })?;
+    merge_fainted_state(&mut json_value, old_save.as_ref());
     sqlx::query(
         "UPDATE teams SET save_data = $1, updated_at = now()
          WHERE draft_id = $2
@@ -5666,6 +5723,45 @@ mod spectator_count_tests {
 
         assert_eq!(remove_spectator_connection(&presence, &count, "user-1"), Some(1));
         assert_eq!(remove_spectator_connection(&presence, &count, "user-2"), Some(0));
+    }
+}
+
+#[cfg(test)]
+mod fainted_state_tests {
+    use super::merge_fainted_state;
+    use serde_json::json;
+
+    #[test]
+    fn an_empty_post_does_not_erase_stored_faints() {
+        let old = json!({ "fainted_keys": ["123-678-15"], "fainted_pids": [123] });
+        let mut new = json!({ "map_name": "LilycoveCity", "fainted_keys": [], "fainted_pids": [] });
+
+        merge_fainted_state(&mut new, Some(&old));
+
+        assert_eq!(new["fainted_keys"], json!(["123-678-15"]));
+        assert_eq!(new["fainted_pids"], json!([123]));
+        assert_eq!(new["map_name"], json!("LilycoveCity"));
+    }
+
+    #[test]
+    fn arrays_are_unioned_without_duplicates() {
+        let old = json!({ "fainted_keys": ["1-133-5", "2-678-19"], "fainted_pids": [1, 2] });
+        let mut new = json!({ "fainted_keys": ["2-678-19", "3-134-7"], "fainted_pids": [2, 3] });
+
+        merge_fainted_state(&mut new, Some(&old));
+
+        assert_eq!(new["fainted_keys"], json!(["1-133-5", "2-678-19", "3-134-7"]));
+        assert_eq!(new["fainted_pids"], json!([1, 2, 3]));
+    }
+
+    #[test]
+    fn a_missing_old_save_leaves_the_post_untouched() {
+        let mut new = json!({ "fainted_keys": ["9-197-40"], "fainted_pids": [9] });
+
+        merge_fainted_state(&mut new, None);
+
+        assert_eq!(new["fainted_keys"], json!(["9-197-40"]));
+        assert_eq!(new["fainted_pids"], json!([9]));
     }
 }
 

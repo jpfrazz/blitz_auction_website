@@ -17,6 +17,7 @@ import { getPlayerStatPills } from './playerStatPills';
 import { getIconName } from '../../../utils/speciesUtils';
 import { SPECIES_BY_ID } from '../../../utils/speciesIdMap';
 import { getRunStatLineage, RunStatLineage } from '../../../utils/runStatLineage';
+import { EEVEELUTION_IDS } from '../../../utils/eevee';
 import { getAvatarUrl, onAvatarError } from '../../../shared/utils/user';
 import { fetchCurrentUser } from '../../../shared/api/draftData';
 import { resolvePokemonIdentity } from '../../../shared/utils/pokemonIdentity';
@@ -320,26 +321,99 @@ function getRunStatsByIcon(
   return byIcon;
 }
 
+interface EeveeGiftStats {
+  speciesId: number;
+  summary: RunStatSummary;
+}
+
+interface RunDisplayRow {
+  key: string;
+  icon: string;
+  name: string;
+  form: string;
+  pickIdx: number;
+  /** Pick number in 1v1s, cost in auctions; null for the gifted Eevee. */
+  slotValue: number | null;
+  pickLabel: string;
+  monStats?: RunStatSummary;
+  isEeveeGift: boolean;
+}
+
+// Everyone receives an Eevee, but it never appears in the auction rows. Its
+// numbers live in the run save, so surface it as its own row. If it evolved,
+// use the evolved species' name and icon while keeping the same battle stats.
+function getEeveeGiftStats(stats: RunMonStat[] | null | undefined): EeveeGiftStats | null {
+  const eeveeStats = (stats ?? []).filter((mon) => EEVEELUTION_IDS.has(mon.species_id));
+  if (eeveeStats.length === 0) return null;
+
+  const summary: RunStatSummary = {
+    koCount: null,
+    totalTurns: null,
+    fainted: false,
+    faintedLevel: null,
+  };
+  eeveeStats.forEach((mon) => {
+    if (mon.ko_count != null) summary.koCount = (summary.koCount ?? 0) + mon.ko_count;
+    if (mon.total_turns != null) summary.totalTurns = (summary.totalTurns ?? 0) + mon.total_turns;
+    if (mon.fainted) {
+      summary.fainted = true;
+      if (summary.faintedLevel == null && mon.level != null) summary.faintedLevel = mon.level;
+    }
+  });
+
+  // An evolved save normally has exactly one entry; prefer the last one if a
+  // stale Eevee entry is also present.
+  const speciesId = eeveeStats[eeveeStats.length - 1].species_id;
+  return { speciesId, summary };
+}
+
 // Missing stats always stay at the bottom so sorting doesn't hide the useful
 // rows behind Pokémon without a recorded save.
 function sortRunRows(
   auctions: StatsAuction[],
   statsByIcon: Map<string, RunStatSummary>,
   sort: RunSort,
-  is1v1: boolean
-): Array<{ auction: StatsAuction; pickIdx: number; monStats?: RunStatSummary }> {
-  const rows = auctions.map((auction, pickIdx) => {
-    const icon = getIconName(auction.form ? `${auction.name}-${auction.form}` : auction.name);
-    return { auction, pickIdx, monStats: statsByIcon.get(icon) };
+  is1v1: boolean,
+  eeveeGift: EeveeGiftStats | null
+): RunDisplayRow[] {
+  const rows: RunDisplayRow[] = auctions.map((auction, pickIdx) => {
+    const fullName = auction.form ? `${auction.name}-${auction.form}` : auction.name;
+    return {
+      key: String(auction.auction_id),
+      icon: formatPokemonName(fullName),
+      name: auction.name,
+      form: auction.form ?? '',
+      pickIdx,
+      slotValue: is1v1 ? pickIdx : (auction.winning_bid ?? 0),
+      pickLabel: is1v1 ? `#${pickIdx + 1}` : `$${(auction.winning_bid ?? 0).toLocaleString()}`,
+      monStats: statsByIcon.get(getIconName(fullName)),
+      isEeveeGift: false,
+    };
   });
+
+  if (eeveeGift) {
+    const species = SPECIES_BY_ID[eeveeGift.speciesId];
+    const name = species?.name ?? 'Eevee';
+    rows.push({
+      key: 'eevee-gift',
+      icon: formatPokemonName(getIconName(name, eeveeGift.speciesId)),
+      name,
+      form: species?.form ?? '',
+      pickIdx: rows.length,
+      slotValue: null,
+      pickLabel: '—',
+      monStats: eeveeGift.summary,
+      isEeveeGift: true,
+    });
+  }
+
   if (!sort) return rows;
 
-  type RunRow = (typeof rows)[number];
-  const valueOf = (row: RunRow): number | null | undefined => {
-    if (sort.column === 'slot') {
-      return is1v1 ? row.pickIdx : (row.auction.winning_bid ?? 0);
-    }
-    return sort.column === 'kos' ? row.monStats?.koCount : row.monStats?.totalTurns;
+  const valueOf = (row: RunDisplayRow): number | null => {
+    if (sort.column === 'slot') return row.slotValue;
+    return sort.column === 'kos'
+      ? (row.monStats?.koCount ?? null)
+      : (row.monStats?.totalTurns ?? null);
   };
 
   return rows.sort((a, b) => {
@@ -1476,7 +1550,8 @@ const PlayerSearchStatsTab: React.FC<PlayerSearchStatsTabProps> = ({
                   const bossVictory = getBossBattleVictory(battles);
                   const hallOfFameTeam = team.hall_of_fame_team;
                   const runStatsByIcon = getRunStatsByIcon(team.run_stats, runStatLineage);
-                  const sortedRunRows = sortRunRows(listAuctions, runStatsByIcon, runSort, is1v1);
+                  const eeveeGift = getEeveeGiftStats(team.run_stats);
+                  const sortedRunRows = sortRunRows(listAuctions, runStatsByIcon, runSort, is1v1, eeveeGift);
 
                   return (
                     <div className="match-timeline-entry" key={team.team_id} data-team-id={team.team_id}>
@@ -1568,24 +1643,22 @@ const PlayerSearchStatsTab: React.FC<PlayerSearchStatsTabProps> = ({
                                 </button>
                                 <span>Fainted</span>
                               </div>
-                              {listAuctions.length === 0 && (
+                              {sortedRunRows.length === 0 && (
                                 <div className="match-draft-details-empty">{is1v1 ? 'No Pokemon picked in this draft.' : 'No Pokemon won in this draft.'}</div>
                               )}
-                              {sortedRunRows.map(({ auction, pickIdx, monStats }) => (
-                                <div className="match-draft-details-row" key={auction.auction_id}>
+                              {sortedRunRows.map(({ key, icon, name, form, pickLabel, monStats }) => (
+                                <div className="match-draft-details-row" key={key}>
                                   <div className="match-draft-details-pokemon">
                                     <img
-                                      src={`/MiniIcons/${formatPokemonName(auction.name)}.png`}
-                                      alt={auction.name}
+                                      src={`/MiniIcons/${icon}.png`}
+                                      alt={name}
                                       onError={(ev) => {
                                         (ev.currentTarget as HTMLImageElement).style.display = 'none';
                                       }}
                                     />
-                                    <span>{getPokemonLabel(auction.name, auction.form)}</span>
+                                    <span>{getPokemonLabel(name, form)}</span>
                                   </div>
-                                  <span className="match-draft-details-cost">
-                                    {is1v1 ? `#${pickIdx + 1}` : `$${(auction.winning_bid ?? 0).toLocaleString()}`}
-                                  </span>
+                                  <span className="match-draft-details-cost">{pickLabel}</span>
                                   <span className="match-draft-details-stat">{monStats?.totalTurns ?? '—'}</span>
                                   <span className="match-draft-details-stat">{monStats?.koCount ?? '—'}</span>
                                   <span className="match-draft-details-stat">

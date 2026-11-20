@@ -10,6 +10,7 @@ import TierListTab from './components/TierListTab';
 import RaceResultsTab from './components/RaceResultsTab';
 import HallOfFameStatsTab from './components/HallOfFameStatsTab';
 import { casualOneVOneDraftIds } from './oneVOneHistory';
+import { EEVEELUTION_IDS } from '../../utils/eevee';
 import { fetchCurrentUser } from '../../shared/api/draftData';
 import { resolvePokemonIdentity } from '../../shared/utils/pokemonIdentity';
 import './Stats.scss';
@@ -77,8 +78,6 @@ function parseLegacyCost(cost: string): number | null {
   const normalized = cost.trim().replace(/,/g, '');
   return /^\d+$/.test(normalized) ? Number(normalized) : null;
 }
-
-const EEVEELUTION_IDS = new Set([133, 134, 135, 136, 196, 197, 470, 471, 700]);
 
 // How many mini icons to eagerly warm before revealing the table, and the longest
 // we will wait for them. Roughly covers the rows visible in the 750px scroller

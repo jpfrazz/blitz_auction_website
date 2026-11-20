@@ -1055,6 +1055,10 @@ const EmulatorPage: React.FC = () => {
   // Mirrors the state so a save POST can record new faints/evolutions before
   // React has committed the state update from the tracking effect.
   const faintedPidsRef = useRef<FaintedMap>({});
+  // Keys are restored from the backend save before the first POST. Until then
+  // the client must not send its empty array over stored faint records.
+  const faintedHydratedRef = useRef<Set<string>>(new Set());
+  const faintedHydratePromisesRef = useRef<Record<string, Promise<void>>>({});
   // Pokémon the player has marked (checked) so they remember to buy items for
   // them. Keyed by the same composite identity as faintedPids.
   const [markedPids, setMarkedPids] = useState<Set<string>>(new Set());
@@ -1631,21 +1635,64 @@ const EmulatorPage: React.FC = () => {
   }, []);
 
   // ── Save bytes handler: parse + POST to backend ──────────────────────────
+  // Restore faint keys recorded by earlier saves before posting a new one. The
+  // page starts with no keys in memory, so without this a save made right after
+  // a reload would overwrite the stored list with an empty array — exactly what
+  // happens when a fainted mon is sitting in the PC (no HP left to re-detect).
+  const hydrateFaintedKeys = (uid: string): Promise<void> => {
+    if (faintedHydratedRef.current.has(uid)) return Promise.resolve();
+
+    // fetchDraftById already puts the backend save on the page for spectators.
+    const loaded = otherSaves[uid]?.save;
+    if (loaded) {
+      if (recordFaintedFromSave(faintedPidsRef.current, uid, loaded)) {
+        setFaintedPids(cloneFaintedMap(faintedPidsRef.current));
+      }
+      faintedHydratedRef.current.add(uid);
+      return Promise.resolve();
+    }
+
+    const pending = faintedHydratePromisesRef.current[uid];
+    if (pending) return pending;
+
+    if (!draftId) {
+      faintedHydratedRef.current.add(uid);
+      return Promise.resolve();
+    }
+
+    const hydration = fetchDraftById(draftId)
+      .then((draft) => {
+        const team = draft.teams.find((t) => (t.user_id ?? t.guest_id) === uid);
+        if (team?.save_data) {
+          if (recordFaintedFromSave(faintedPidsRef.current, uid, team.save_data as SaveData)) {
+            setFaintedPids(cloneFaintedMap(faintedPidsRef.current));
+          }
+        }
+        faintedHydratedRef.current.add(uid);
+      })
+      .finally(() => {
+        delete faintedHydratePromisesRef.current[uid];
+      });
+    faintedHydratePromisesRef.current[uid] = hydration;
+    return hydration;
+  };
+
   // Shared POST helper used by both the .sav flush path and the live heap path.
-  const postSaveToBackend = (parsed: SaveData, extra?: Record<string, unknown>) => {
+  const postSaveToBackend = async (parsed: SaveData, extra?: Record<string, unknown>) => {
     if (!draftId) return;
+    if (currentUserId) await hydrateFaintedKeys(currentUserId);
     // Capture faints/evolutions from this exact save before building the body;
     // the React effect runs too late for the POST that accompanies this parse.
     if (currentUserId && recordFaintedFromSave(faintedPidsRef.current, currentUserId, parsed)) {
       setFaintedPids(cloneFaintedMap(faintedPidsRef.current));
     }
-    const faintedKeys = currentUserId ? Array.from(faintedPidsRef.current[currentUserId] ?? []) : [];
+    // Merge with any keys still carried by this save instead of replacing them.
+    // The backend also unions with its stored copy as a second line of defense.
+    const storedKeys = currentUserId ? Array.from(faintedPidsRef.current[currentUserId] ?? []) : [];
+    const faintedKeys = Array.from(new Set([...(parsed.fainted_keys ?? []), ...storedKeys]));
     const body: Record<string, unknown> = {
       ...parsed,
-      // Persist which mons have been seen fainted so a reload doesn't forget
-      // boxed fainted mons. `fainted_pids` stays empty for old clients; the
-      // composite keys are the authoritative field going forward.
-      fainted_pids: [],
+      fainted_pids: parsed.fainted_pids ?? [],
       fainted_keys: faintedKeys,
       ...extra,
     };
@@ -2311,6 +2358,9 @@ const EmulatorPage: React.FC = () => {
       setMySaveData(null);
       setOtherSaves({});
       setFaintedPids({});
+      faintedPidsRef.current = {};
+      faintedHydratedRef.current.clear();
+      faintedHydratePromisesRef.current = {};
       setMarkedPids(new Set());
       resetPartyInferenceState(inferenceRef.current);
       livePartyOffsetRef.current = null;

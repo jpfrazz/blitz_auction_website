@@ -724,6 +724,14 @@
         }
     }
 
+    // Boss completion times can be longer than the narrow Time column. Keep
+    // their right edge pinned and let the text extend left instead of wrapping
+    // onto a second row.
+    .match-draft-details-row.boss-battle-row .match-draft-details-cost {
+        white-space: nowrap;
+        justify-self: end;
+    }
+
     .match-draft-details-stat {
         text-align: right;
         font-variant-numeric: tabular-nums;
