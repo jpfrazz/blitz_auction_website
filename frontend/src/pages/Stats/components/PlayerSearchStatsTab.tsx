@@ -26,6 +26,8 @@ import '../Stats.scss';
 import './PlayerSearchStatsTab.scss';
 import { casualOneVOneDraftIds, oneVOneLeftoverOrders, oneVOnePickSlot } from '../oneVOneHistory';
 
+const SITE_ADMIN_USER_ID = '270029441999175681';
+
 interface PlayerSearchStatsTabProps {
   stats: StatsPageResponse | null;
   loading?: boolean;
@@ -524,7 +526,7 @@ const PlayerSearchStatsTab: React.FC<PlayerSearchStatsTabProps> = ({
     let active = true;
     fetchCurrentUser().then((user) => {
       if (active && !user.is_guest && user.user_id) {
-        setAvatarEditor({ userId: user.user_id, isFranklyNathan: user.user_id === '270029441999175681' });
+        setAvatarEditor({ userId: user.user_id, isFranklyNathan: user.user_id === SITE_ADMIN_USER_ID });
       }
     }).catch(() => {});
     return () => { active = false; };
@@ -1714,7 +1716,12 @@ const PlayerSearchStatsTab: React.FC<PlayerSearchStatsTabProps> = ({
                                    const finished = isRunFinished(battles);
                                    const pending = mySubmissions.get(team.team_id);
                                    const isOwnProfile = selectedPlayer?.user_id === currentUserId;
-                                   if (pending && isOwnProfile && !mySubmissionsLoading) {
+                                   // The site admin can add splits to any player's unfinished run,
+                                   // the same way they can edit any profile's avatar.
+                                   const canSubmitBattles =
+                                     !mySubmissionsLoading &&
+                                     (isOwnProfile || currentUserId === SITE_ADMIN_USER_ID);
+                                   if (pending && canSubmitBattles) {
                                      return (
                                        <div className="boss-submission-status">
                                          <span className="boss-submission-pending">Pending Confirmation</span>
@@ -1735,13 +1742,13 @@ const PlayerSearchStatsTab: React.FC<PlayerSearchStatsTabProps> = ({
                                        </div>
                                      );
                                    }
-                                   if (!isOwnProfile || mySubmissionsLoading) {
+                                   if (!canSubmitBattles) {
                                      if (!hasBattles) {
                                        return <div className="match-draft-details-empty">No boss battles recorded</div>;
                                      }
                                      return null;
                                    }
-                                   // Own profile, no pending submission
+                                   // Owner (or site admin), no pending submission
                                    if (!hasBattles) {
                                      return (
                                        <div className="boss-submission-empty">

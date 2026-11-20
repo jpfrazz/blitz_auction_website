@@ -77,6 +77,12 @@ impl User {
         }
     }
 
+    /// The site owner may manage boss battle splits on any player's profile.
+    /// Matched against the immutable Discord user id (snowflake).
+    pub fn is_site_admin(&self) -> bool {
+        self.get_user_id_string().as_str() == "270029441999175681"
+    }
+
     /// Users who may edit race results in the stats page even when they are
     /// not the host of the race. This does NOT grant access to the admin panel.
     /// Matched against the immutable Discord user id (snowflake).

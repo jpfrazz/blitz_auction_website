@@ -1454,14 +1454,23 @@ pub async fn post_boss_battle_submission(
         ));
     }
 
-    let row = sqlx::query(
-        "SELECT draft_id FROM teams WHERE team_id = $1 AND (user_id = $2 OR guest_id = $3)",
-    )
-    .bind(request.team_id)
-    .bind(&user_db_id)
-    .bind(&guest_db_id)
-    .fetch_optional(&state.db_pool)
-    .await
+    // The site admin can add splits to any team; everyone else can only
+    // submit splits for their own (or linked guest) teams.
+    let row = if user.is_site_admin() {
+        sqlx::query("SELECT draft_id FROM teams WHERE team_id = $1")
+            .bind(request.team_id)
+            .fetch_optional(&state.db_pool)
+            .await
+    } else {
+        sqlx::query(
+            "SELECT draft_id FROM teams WHERE team_id = $1 AND (user_id = $2 OR guest_id = $3)",
+        )
+        .bind(request.team_id)
+        .bind(&user_db_id)
+        .bind(&guest_db_id)
+        .fetch_optional(&state.db_pool)
+        .await
+    }
     .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, format!("db error: {}", e)))?;
 
     let Some(row) = row else {
@@ -1481,6 +1490,7 @@ pub async fn post_boss_battle_submission(
             let submission = occupied.get_mut();
             submission.battles = request.battles.clone();
             submission.note = request.note.clone();
+            submission.owner_user_id = user_id.clone();
         }
         entry::Entry::Vacant(vacant) => {
             vacant.insert(PendingBossBattleSubmission {
@@ -1488,7 +1498,7 @@ pub async fn post_boss_battle_submission(
                 draft_id: draft_id.clone(),
                 battles: request.battles.clone(),
                 note: request.note.clone(),
-                owner_user_id: user_id,
+                owner_user_id: user_id.clone(),
                 created_at: now,
             });
         }
