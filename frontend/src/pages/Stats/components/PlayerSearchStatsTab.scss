@@ -696,9 +696,12 @@
         }
 
         span {
-            overflow: hidden;
-            text-overflow: ellipsis;
+            // Keep the name on one line and let it paint into the empty space
+            // of the neighboring columns instead of being ellipsized. The grid
+            // track stays the same width; only the text overflows it.
             white-space: nowrap;
+            overflow: visible;
+            flex-shrink: 0;
         }
     }
 
