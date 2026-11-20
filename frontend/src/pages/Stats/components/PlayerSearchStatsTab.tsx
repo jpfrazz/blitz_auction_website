@@ -280,7 +280,9 @@ interface RunStatSummary {
   faintedLevel: number | null;
 }
 
-type RunSort = { column: 'turns' | 'kos'; direction: 'asc' | 'desc' } | null;
+// `slot` is the second column: pick number in 1v1s, cost in auctions.
+type RunSortColumn = 'slot' | 'turns' | 'kos';
+type RunSort = { column: RunSortColumn; direction: 'asc' | 'desc' } | null;
 
 // Key by MiniIcons name so save-file species ids line up with the drafted
 // Pokémon list (which carries display names and forms instead of ROM ids).
@@ -323,7 +325,8 @@ function getRunStatsByIcon(
 function sortRunRows(
   auctions: StatsAuction[],
   statsByIcon: Map<string, RunStatSummary>,
-  sort: RunSort
+  sort: RunSort,
+  is1v1: boolean
 ): Array<{ auction: StatsAuction; pickIdx: number; monStats?: RunStatSummary }> {
   const rows = auctions.map((auction, pickIdx) => {
     const icon = getIconName(auction.form ? `${auction.name}-${auction.form}` : auction.name);
@@ -331,12 +334,17 @@ function sortRunRows(
   });
   if (!sort) return rows;
 
-  const valueOf = (monStats: RunStatSummary | undefined) =>
-    sort.column === 'kos' ? monStats?.koCount : monStats?.totalTurns;
+  type RunRow = (typeof rows)[number];
+  const valueOf = (row: RunRow): number | null | undefined => {
+    if (sort.column === 'slot') {
+      return is1v1 ? row.pickIdx : (row.auction.winning_bid ?? 0);
+    }
+    return sort.column === 'kos' ? row.monStats?.koCount : row.monStats?.totalTurns;
+  };
 
   return rows.sort((a, b) => {
-    const aValue = valueOf(a.monStats);
-    const bValue = valueOf(b.monStats);
+    const aValue = valueOf(a);
+    const bValue = valueOf(b);
     if (aValue == null && bValue == null) return a.pickIdx - b.pickIdx;
     if (aValue == null) return 1;
     if (bValue == null) return -1;
@@ -1110,7 +1118,7 @@ const PlayerSearchStatsTab: React.FC<PlayerSearchStatsTabProps> = ({
     }
   };
 
-  const toggleRunSort = (column: 'turns' | 'kos') => {
+  const toggleRunSort = (column: RunSortColumn) => {
     setRunSort((current) => {
       if (current?.column !== column) return { column, direction: 'desc' };
       return { column, direction: current.direction === 'desc' ? 'asc' : 'desc' };
@@ -1468,7 +1476,7 @@ const PlayerSearchStatsTab: React.FC<PlayerSearchStatsTabProps> = ({
                   const bossVictory = getBossBattleVictory(battles);
                   const hallOfFameTeam = team.hall_of_fame_team;
                   const runStatsByIcon = getRunStatsByIcon(team.run_stats, runStatLineage);
-                  const sortedRunRows = sortRunRows(listAuctions, runStatsByIcon, runSort);
+                  const sortedRunRows = sortRunRows(listAuctions, runStatsByIcon, runSort, is1v1);
 
                   return (
                     <div className="match-timeline-entry" key={team.team_id} data-team-id={team.team_id}>
@@ -1534,7 +1542,14 @@ const PlayerSearchStatsTab: React.FC<PlayerSearchStatsTabProps> = ({
                             <div>
                               <div className="match-draft-details-header">
                                 <span>Pokemon</span>
-                                <span>{is1v1 ? 'Pick' : 'Paid'}</span>
+                                <button
+                                  type="button"
+                                  className={`match-draft-details-sort ${runSort?.column === 'slot' ? 'sorted' : ''}`}
+                                  onClick={() => toggleRunSort('slot')}
+                                  title={is1v1 ? 'Sort by pick number' : 'Sort by cost'}
+                                >
+                                  {is1v1 ? 'Pick' : 'Paid'}{runSort?.column === 'slot' ? (runSort.direction === 'desc' ? ' ▼' : ' ▲') : ''}
+                                </button>
                                 <button
                                   type="button"
                                   className={`match-draft-details-sort ${runSort?.column === 'turns' ? 'sorted' : ''}`}
@@ -1579,7 +1594,7 @@ const PlayerSearchStatsTab: React.FC<PlayerSearchStatsTabProps> = ({
                                       : monStats.fainted
                                         ? monStats.faintedLevel != null
                                           ? `lvl ${monStats.faintedLevel}`
-                                          : '—'
+                                          : 'Fainted'
                                         : '—'}
                                   </span>
                                 </div>

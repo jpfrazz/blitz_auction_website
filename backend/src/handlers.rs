@@ -895,33 +895,83 @@ fn build_run_stats(save_value: Option<serde_json::Value>) -> Vec<RunMonStat> {
         return Vec::new();
     };
 
-    let is_fainted = |personality: u32, species_id: u16| {
-        save.fainted_keys
-            .iter()
-            .any(|key| key == &format!("{}-{}", personality, species_id))
-            || save.fainted_pids.iter().any(|pid| *pid == personality)
+    // Species currently present for each PID. A mon can faint before it evolves,
+    // leaving a stale `pid-old_species` key behind.
+    let mut species_by_pid: HashMap<u32, HashSet<u16>> = HashMap::new();
+    save.party
+        .iter()
+        .map(|mon| (mon.personality, mon.species_id))
+        .chain(save.r#box.iter().map(|mon| (mon.personality, mon.species_id)))
+        .for_each(|(pid, species)| {
+            species_by_pid.entry(pid).or_default().insert(species);
+        });
+
+    // `pid-species` is the legacy format; the current client also records the
+    // level so a healed/boxed mon still shows the level it fainted at.
+    let parse_key = |key: &str| -> Option<(u32, u16, Option<u8>)> {
+        let mut parts = key.splitn(3, '-');
+        let pid = parts.next()?.parse::<u32>().ok()?;
+        let species = parts.next()?.parse::<u16>().ok()?;
+        let level = parts.next().and_then(|level| level.parse::<u8>().ok());
+        Some((pid, species, level))
+    };
+
+    // Returns (fainted, level captured when it fainted, if the key recorded it).
+    let resolve_faint = |personality: u32, species_id: u16| -> (bool, Option<u8>) {
+        for key in &save.fainted_keys {
+            if let Some((pid, key_species, level)) = parse_key(key) {
+                if pid == personality && key_species == species_id {
+                    return (true, level);
+                }
+            }
+        }
+        if save.fainted_pids.iter().any(|pid| *pid == personality) {
+            return (true, None);
+        }
+
+        // Fall back to a stale key from before an evolution. Only do this when
+        // the old species is gone and the PID has a single species in the save —
+        // split evolutions share a PID and must stay distinct.
+        let present = match species_by_pid.get(&personality) {
+            Some(species) if species.len() == 1 => species,
+            _ => return (false, None),
+        };
+        for key in &save.fainted_keys {
+            if let Some((pid, old_species, level)) = parse_key(key) {
+                if pid == personality && !present.contains(&old_species) {
+                    return (true, level);
+                }
+            }
+        }
+        (false, None)
     };
 
     let mut stats: Vec<RunMonStat> = save
         .party
         .iter()
-        .map(|mon| RunMonStat {
+        .map(|mon| {
+            let (fainted, faint_level) = resolve_faint(mon.personality, mon.species_id);
+            RunMonStat {
+                species_id: mon.species_id,
+                personality: mon.personality,
+                ko_count: mon.ko_count,
+                total_turns: mon.total_turns,
+                level: faint_level.or(Some(mon.level)),
+                fainted,
+            }
+        })
+        .collect();
+
+    stats.extend(save.r#box.iter().map(|mon| {
+        let (fainted, faint_level) = resolve_faint(mon.personality, mon.species_id);
+        RunMonStat {
             species_id: mon.species_id,
             personality: mon.personality,
             ko_count: mon.ko_count,
             total_turns: mon.total_turns,
-            level: Some(mon.level),
-            fainted: is_fainted(mon.personality, mon.species_id),
-        })
-        .collect();
-
-    stats.extend(save.r#box.iter().map(|mon| RunMonStat {
-        species_id: mon.species_id,
-        personality: mon.personality,
-        ko_count: mon.ko_count,
-        total_turns: mon.total_turns,
-        level: None,
-        fainted: is_fainted(mon.personality, mon.species_id),
+            level: faint_level,
+            fainted,
+        }
     }));
 
     stats

@@ -6,6 +6,7 @@ import { MAP_NAMES } from '../Auction/mapNames';
 import { getIconName, createResolveMetadata, isActuallyNicknamed } from '../../utils/speciesUtils';
 import { SPECIES_BY_ID } from '../../utils/speciesIdMap';
 import { getMonIdentity } from '../../utils/pokemonIdentity';
+import { cloneFaintedMap, hasFaintedKey, recordFaintedFromSave, type FaintedMap } from '../../utils/faintedTracking';
 import { formatMonTotalsLine } from '../../utils/monTooltip';
 import {
   createPartyInferenceState,
@@ -1050,7 +1051,10 @@ const EmulatorPage: React.FC = () => {
 
   // Persist fainted state by composite identity (User ID -> Set of keys).
   // A raw PID is not unique: Nincada's split produces same-PID Ninjask/Shedinja.
-  const [faintedPids, setFaintedPids] = useState<Record<string, Set<string>>>({});
+  const [faintedPids, setFaintedPids] = useState<FaintedMap>({});
+  // Mirrors the state so a save POST can record new faints/evolutions before
+  // React has committed the state update from the tracking effect.
+  const faintedPidsRef = useRef<FaintedMap>({});
   // Pokémon the player has marked (checked) so they remember to buy items for
   // them. Keyed by the same composite identity as faintedPids.
   const [markedPids, setMarkedPids] = useState<Set<string>>(new Set());
@@ -1591,38 +1595,18 @@ const EmulatorPage: React.FC = () => {
   }, [currentUserId]);
 
   // Track which mons have hit 0 HP so they stay fainted in the box. Composite
-  // keys keep same-PID Ninjask/Shedinja from sharing a fainted state.
+  // keys keep same-PID Ninjask/Shedinja from sharing a fainted state, and are
+  // migrated forward when a fainted mon evolves.
   useEffect(() => {
-    const newFainted: Record<string, Set<string>> = { ...faintedPids };
     let changed = false;
-
-    const addKey = (uid: string, key: string) => {
-      if (!newFainted[uid].has(key)) {
-        newFainted[uid].add(key);
-        changed = true;
-      }
-    };
-
     const processSave = (uid: string, data: SaveData | null) => {
-      if (!data) return;
-      if (!newFainted[uid]) newFainted[uid] = new Set();
-      // Prefer composite keys persisted by the current client. Older rows only
-      // have raw PIDs; those are kept as legacy string keys and still matched
-      // by isMonFainted below.
-      if (Array.isArray(data.fainted_keys) && data.fainted_keys.length > 0) {
-        data.fainted_keys.forEach(key => addKey(uid, key));
-      } else if (Array.isArray(data.fainted_pids)) {
-        data.fainted_pids.forEach(pid => addKey(uid, String(pid)));
-      }
-      data.party?.forEach(mon => {
-        if (mon.hp === 0) addKey(uid, getMonIdentity(mon));
-      });
+      if (recordFaintedFromSave(faintedPidsRef.current, uid, data)) changed = true;
     };
 
     if (currentUserId || !draftId) processSave(currentUserId ?? 'me', mySaveData);
     Object.entries(otherSaves).forEach(([uid, entry]) => processSave(uid, entry.save));
 
-    if (changed) setFaintedPids(newFainted);
+    if (changed) setFaintedPids(cloneFaintedMap(faintedPidsRef.current));
   }, [mySaveData, otherSaves, currentUserId]);
 
   // Keep the live poll in sync with the latest parsed save.
@@ -1633,7 +1617,7 @@ const EmulatorPage: React.FC = () => {
   const isMonFainted = useCallback((uid: string, mon: any) => {
     if (mon.hp === 0) return true;
     const deadSet = faintedPids[uid];
-    if (deadSet && (deadSet.has(getMonIdentity(mon)) || deadSet.has(String(mon.personality)))) return true;
+    if (hasFaintedKey(deadSet, mon)) return true;
     return false;
   }, [faintedPids]);
 
@@ -1650,7 +1634,12 @@ const EmulatorPage: React.FC = () => {
   // Shared POST helper used by both the .sav flush path and the live heap path.
   const postSaveToBackend = (parsed: SaveData, extra?: Record<string, unknown>) => {
     if (!draftId) return;
-    const faintedKeys = currentUserId ? Array.from(faintedPids[currentUserId] ?? []) : [];
+    // Capture faints/evolutions from this exact save before building the body;
+    // the React effect runs too late for the POST that accompanies this parse.
+    if (currentUserId && recordFaintedFromSave(faintedPidsRef.current, currentUserId, parsed)) {
+      setFaintedPids(cloneFaintedMap(faintedPidsRef.current));
+    }
+    const faintedKeys = currentUserId ? Array.from(faintedPidsRef.current[currentUserId] ?? []) : [];
     const body: Record<string, unknown> = {
       ...parsed,
       // Persist which mons have been seen fainted so a reload doesn't forget

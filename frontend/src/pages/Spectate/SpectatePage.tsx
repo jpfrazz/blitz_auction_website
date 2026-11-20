@@ -5,7 +5,7 @@ import Footer from '../../shared/components/Footer';
 import { getIconName, createResolveMetadata, isActuallyNicknamed } from '../../utils/speciesUtils';
 import { MOVES } from '../../utils/movesData';
 import { SaveData, formatMapName } from '../../utils/parseSaveFile';
-import { getMonIdentity } from '../../utils/pokemonIdentity';
+import { cloneFaintedMap, hasFaintedKey, recordFaintedFromSave, type FaintedMap } from '../../utils/faintedTracking';
 import { formatMonTotalsLine } from '../../utils/monTooltip';
 import { fetchDraftById } from '../../shared/api/draftData';
 import { fetchPokemonList, fetchRentalPokemonList } from '../../shared/api/pokemon';
@@ -95,7 +95,8 @@ const SpectatePage: React.FC = () => {
   const [pokemonById, setPokemonById] = useState<Map<number, any[]>>(new Map());
 
   // Persist fainted state via Personality ID (User ID -> Set of PIDs)
-  const [faintedPids, setFaintedPids] = useState<Record<string, Set<string>>>({});
+  const [faintedPids, setFaintedPids] = useState<FaintedMap>({});
+  const faintedPidsRef = useRef<FaintedMap>({});
 
   // Which players currently have a live emulator WebSocket open, plus anyone
   // we've ever seen connected, so a player who closes their tab shows up as
@@ -304,40 +305,20 @@ const SpectatePage: React.FC = () => {
   }, [draftId]);
 
   // Track which mons have hit 0 HP so they stay fainted in the box. Composite
-  // keys keep same-PID Ninjask/Shedinja from sharing a fainted state.
+  // keys keep same-PID Ninjask/Shedinja from sharing a fainted state, and are
+  // migrated forward when a fainted mon evolves.
   useEffect(() => {
-    const newFainted: Record<string, Set<string>> = { ...faintedPids };
     let changed = false;
-
-    const addKey = (uid: string, key: string) => {
-      if (!newFainted[uid].has(key)) {
-        newFainted[uid].add(key);
-        changed = true;
-      }
-    };
-
-    const processSave = (uid: string, data: SaveData | null) => {
-      if (!data) return;
-      if (!newFainted[uid]) newFainted[uid] = new Set();
-      if (Array.isArray(data.fainted_keys) && data.fainted_keys.length > 0) {
-        data.fainted_keys.forEach(key => addKey(uid, key));
-      } else if (Array.isArray(data.fainted_pids)) {
-        data.fainted_pids.forEach(pid => addKey(uid, String(pid)));
-      }
-      data.party?.forEach(mon => {
-        if (mon.hp === 0) addKey(uid, getMonIdentity(mon));
-      });
-    };
-
-    Object.entries(playerSaves).forEach(([uid, entry]) => processSave(uid, entry.save));
-
-    if (changed) setFaintedPids(newFainted);
+    Object.entries(playerSaves).forEach(([uid, entry]) => {
+      if (recordFaintedFromSave(faintedPidsRef.current, uid, entry.save)) changed = true;
+    });
+    if (changed) setFaintedPids(cloneFaintedMap(faintedPidsRef.current));
   }, [playerSaves]);
 
   const isMonFainted = (uid: string, mon: any) => {
     if (mon.hp === 0) return true;
     const deadSet = faintedPids[uid];
-    if (deadSet && (deadSet.has(getMonIdentity(mon)) || deadSet.has(String(mon.personality)))) return true;
+    if (hasFaintedKey(deadSet, mon)) return true;
     return false;
   };
 
