@@ -78,7 +78,7 @@ const RENTAL_POOL = [
     'Absol', 'Drampa', 'Falinks', 'Hawlucha', 'Heracross', 'Kangaskhan', 'Pinsir', 'Skarmory',
     'Alomomola', 'Bombirdier', 'Bouffalant', 'Carnivine', 'Comfey', 'Cryogonal', 'Dhelmise',
     'Durant', 'Heatmor', 'Lapras', 'Miltank', 'Mimikyu', 'Relicanth', 'Seviper',
-    'Stonjourner', 'Togedemaru', 'Torkoal', 'Tropius', 'Turtonator', 'Zangoose'
+    'Stonjourner', 'Stunfisk', 'Togedemaru', 'Torkoal', 'Tropius', 'Turtonator', 'Zangoose'
 ];
 
 function formatPokemonName(name: string): string {
