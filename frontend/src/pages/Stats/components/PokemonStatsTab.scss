@@ -1,6 +1,10 @@
 @import '../../../shared/style/theme.scss';
 
 .pokemon-stats-tab {
+    table {
+        min-width: 880px;
+    }
+
     .pokemon-stats-controls {
         display: flex;
         justify-content: space-between;

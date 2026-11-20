@@ -7,8 +7,10 @@ import '../Stats.scss';
 import './PokemonStatsTab.scss';
 import { casualOneVOneDraftIds, oneVOneLeftoverOrders, oneVOnePickSlot } from '../oneVOneHistory';
 import { resolvePokemonIdentity } from '../../../shared/utils/pokemonIdentity';
+import { buildRunStatLineage } from '../../../utils/runStatLineage';
+import { computeAverageKosByPokemonKey } from '../costBreakdownKos';
 
-type SortKey = 'rank' | 'name' | 'avgWinningBid' | 'minBid' | 'maxBid' | 'priceVariance' | 'bidsWon' | 'recentMovement' | 'priceMovement' | 'avgOneVOnePick' | 'total1v1Picks' | 'pickMovement';
+type SortKey = 'rank' | 'name' | 'avgWinningBid' | 'minBid' | 'maxBid' | 'priceVariance' | 'bidsWon' | 'recentMovement' | 'priceMovement' | 'avgOneVOnePick' | 'total1v1Picks' | 'pickMovement' | 'avgKOs';
 
 interface PokemonAggregate {
   key: string;
@@ -26,6 +28,7 @@ interface PokemonAggregate {
   avgOneVOnePick: number | null;
   total1v1Picks: number;
   pickMovement: number;
+  avgKOs: number | null;
   types: string[];
 }
 
@@ -343,6 +346,18 @@ const PokemonStatsTab: React.FC<PokemonStatsTabProps> = ({
     return map;
   }, [pokemonList]);
 
+  const runStatLineage = useMemo(() => buildRunStatLineage(pokemonList), [pokemonList]);
+
+  const avgKOsByKey = useMemo(() => {
+    return computeAverageKosByPokemonKey(
+      stats?.winning_run_kos ?? [],
+      stats?.auctions ?? [],
+      stats?.teams ?? [],
+      stats?.players ?? [],
+      runStatLineage,
+    );
+  }, [stats?.winning_run_kos, stats?.auctions, stats?.teams, stats?.players, runStatLineage]);
+
   const aggregatedPokemon = useMemo<PokemonAggregate[]>(() => {
     const sales: PokemonSaleRow[] = [];
 
@@ -509,6 +524,7 @@ const PokemonStatsTab: React.FC<PokemonStatsTabProps> = ({
         avgOneVOnePick,
         total1v1Picks: picks.length,
         pickMovement,
+        avgKOs: avgKOsByKey.get(entry.key) ?? null,
         types: entry.types,
       };
     });
@@ -532,7 +548,7 @@ const PokemonStatsTab: React.FC<PokemonStatsTabProps> = ({
       p.priceMovement = histData ? p.avgWinningBid - histData.avg : 0;
     });
     return results;
-  }, [sortedAuctions, stats?.legacy, recentDraftInfo, typeLookup, oneVOnePickMap, oneVOneHistoricPickMap]);
+  }, [sortedAuctions, stats?.legacy, recentDraftInfo, typeLookup, oneVOnePickMap, oneVOneHistoricPickMap, avgKOsByKey]);
 
   const pokemonSummary = useMemo<PokemonAggregate[]>(() => {
     return [...aggregatedPokemon].sort((a, b) => {
@@ -762,6 +778,9 @@ const PokemonStatsTab: React.FC<PokemonStatsTabProps> = ({
                   <th className="sortable" onClick={() => handleSort('total1v1Picks')}>
                     Total Picks {sortConfig.key === 'total1v1Picks' ? (sortConfig.direction === 'asc' ? '↑' : '↓') : ''}
                   </th>
+                  <th className="sortable" onClick={() => handleSort('avgKOs')} title="Average KOs from completed runs that beat Steven or Wally">
+                    Average KOs {sortConfig.key === 'avgKOs' ? (sortConfig.direction === 'asc' ? '↑' : '↓') : ''}
+                  </th>
                 </tr>
               </thead>
               <tbody
@@ -837,10 +856,11 @@ const PokemonStatsTab: React.FC<PokemonStatsTabProps> = ({
                           : '-'}
                     </td>
                     <td>{entry.total1v1Picks}</td>
+                    <td>{entry.avgKOs !== null ? parseFloat(entry.avgKOs.toFixed(1)).toLocaleString() : '-'}</td>
                   </tr>
                     {expandedPokemon === entry.key && (
                       <tr className="price-history-dropdown-row">
-                        <td colSpan={9}>
+                        <td colSpan={10}>
                           <div className="price-history-container">
                             <PokemonHistoryChart 
                               pokemonKey={entry.key} 
@@ -857,7 +877,7 @@ const PokemonStatsTab: React.FC<PokemonStatsTabProps> = ({
                 })}
                 {filteredPokemonSummary.length === 0 && (
                   <tr>
-                    <td colSpan={9} className="empty-cell">No pokemon stats available.</td>
+                    <td colSpan={10} className="empty-cell">No pokemon stats available.</td>
                   </tr>
                 )}
               </tbody>

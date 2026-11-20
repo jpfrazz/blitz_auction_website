@@ -21,6 +21,11 @@ const catalog: Pokemon[] = [
   mon(194, 'Wooper', 'Paldea'),
   mon(226, 'Mantine', '', '458'),
   mon(285, 'Shroomish'),
+  mon(412, 'Burmy'),
+  mon(413, 'Wormadam', 'Plant', '412'),
+  mon(413, 'Wormadam', 'Sandy', '412'),
+  mon(413, 'Wormadam', 'Trash', '412'),
+  mon(479, 'Rotom'),
   mon(286, 'Breloom', '', '285'),
   mon(290, 'Nincada'),
   mon(291, 'Ninjask', '', '290'),
@@ -73,6 +78,35 @@ describe('run stat evolution lineage', () => {
       )
     );
     expect(withoutShedinjaParent.getIcons(292)).toContain('nincada');
+  });
+
+  it('shares stats across Burmy and Wormadam cloak forms', () => {
+    // Burmy Binder can change the cloak without changing the drafted mon.
+    expect(lineage.getIcons(1057)).toEqual(expect.arrayContaining(['burmy', 'burmy-sandy', 'burmy-trash']));
+    expect(lineage.getIcons(413)).toEqual(expect.arrayContaining([
+      'burmy',
+      'wormadam-plant',
+      'wormadam-sandy',
+      'wormadam-trash',
+    ]));
+    expect(lineage.getIcons(1059)).toEqual(expect.arrayContaining([
+      'burmy',
+      'wormadam-plant',
+      'wormadam-sandy',
+      'wormadam-trash',
+    ]));
+  });
+
+  it('shares stats across Rotom Catalog forms', () => {
+    const rotomIcons = lineage.getIcons(1065);
+    expect(rotomIcons).toEqual(expect.arrayContaining([
+      'rotom',
+      'rotom-heat',
+      'rotom-wash',
+      'rotom-frost',
+      'rotom-fan',
+      'rotom-mow',
+    ]));
   });
 
   it('returns no icons for an unknown species so the caller can fall back', () => {

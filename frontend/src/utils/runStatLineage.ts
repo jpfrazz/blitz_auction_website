@@ -17,6 +17,11 @@ export interface RunStatLineage {
 
 const NINCADA_DEX_ID = 290;
 
+// These families can change form mid-run with an item (Burmy Binder / Rotom
+// Catalog). The save stores whichever form the mon currently has, so a saved
+// form has to map back to every drafted form of that species too.
+const FORM_CHANGING_BASE_IDS = new Set([412, 413, 414, 479]);
+
 let lineagePromise: Promise<RunStatLineage> | null = null;
 
 export function buildRunStatLineage(list: Pokemon[]): RunStatLineage {
@@ -62,6 +67,14 @@ export function buildRunStatLineage(list: Pokemon[]): RunStatLineage {
     const form = (pokemon.form ?? '').trim();
     return getIconName(form ? `${pokemon.name}-${form}` : pokemon.name);
   };
+
+  const formFamilyIconsByBaseId = new Map<number, string[]>();
+  for (const formInfo of Object.values(SPECIES_BY_ID)) {
+    if (!FORM_CHANGING_BASE_IDS.has(formInfo.baseId)) continue;
+    const icons = formFamilyIconsByBaseId.get(formInfo.baseId) ?? [];
+    if (!icons.includes(formInfo.icon)) icons.push(formInfo.icon);
+    formFamilyIconsByBaseId.set(formInfo.baseId, icons);
+  }
 
   const cache = new Map<number, string[]>();
 
@@ -117,6 +130,10 @@ export function buildRunStatLineage(list: Pokemon[]): RunStatLineage {
           : undefined) ??
         candidates.find((candidate) => !(candidate.form ?? '').trim()) ??
         candidates[0];
+    }
+
+    for (const icon of formFamilyIconsByBaseId.get(info.baseId) ?? []) {
+      push(icon);
     }
 
     const result = icons.length > 0 ? icons : [getIconName(info.name, romSpeciesId)];

@@ -256,11 +256,22 @@ export interface StatsLegacyPick {
   cost: string;
 }
 
+export interface WinningRunKoSample {
+  team_id: number;
+  draft_id: string;
+  user_id: string | null;
+  guest_id: string | null;
+  draft_type: string;
+  species_id: number;
+  ko_count: number;
+}
+
 export interface StatsPageResponse {
   players: StatsPagePlayer[];
   teams: StatsPageTeamRow[];
   auctions: StatsAuction[];
   legacy: StatsLegacyPick[];
+  winning_run_kos: WinningRunKoSample[];
 }
 
 export interface AdminHallOfFameTeamEntry {

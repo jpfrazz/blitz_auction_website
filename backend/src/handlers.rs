@@ -887,7 +887,7 @@ pub async fn get_stats_page_data(
 /// Pull the small set of numbers the run summary needs out of a stored save.
 /// Saves written before KO/turn tracking (or with no save at all) simply yield
 /// no stats, and the UI falls back to dashes for those columns.
-fn build_run_stats(save_value: Option<serde_json::Value>) -> Vec<RunMonStat> {
+pub(crate) fn build_run_stats(save_value: Option<serde_json::Value>) -> Vec<RunMonStat> {
     let Some(value) = save_value else {
         return Vec::new();
     };

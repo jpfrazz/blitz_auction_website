@@ -1,9 +1,9 @@
 use axum::{Json, extract::State};
 use serde::Serialize;
-use sqlx::FromRow;
+use sqlx::{FromRow, Row};
 use std::collections::HashMap;
 
-use crate::{AppError, server::ServerState};
+use crate::{AppError, handlers::build_run_stats, server::ServerState};
 
 #[derive(Serialize)]
 pub struct StatsPageResponse {
@@ -11,6 +11,9 @@ pub struct StatsPageResponse {
     pub teams: Vec<StatsTeam>,
     pub auctions: Vec<StatsAuction>,
     pub legacy: Vec<StatsLegacyPick>,
+    /// One row per Pokémon in a winning run, used for Cost Breakdown's
+    /// Average KOs column. The frontend matches these to drafted Pokémon.
+    pub winning_run_kos: Vec<WinningRunKoSample>,
 }
 
 #[derive(Serialize, FromRow)]
@@ -64,6 +67,17 @@ pub struct StatsLegacyPick {
     pub date: Option<chrono::NaiveDateTime>,
     pub pokemon: String,
     pub cost: String,
+}
+
+#[derive(Serialize)]
+pub struct WinningRunKoSample {
+    pub team_id: i64,
+    pub draft_id: uuid::Uuid,
+    pub user_id: Option<String>,
+    pub guest_id: Option<String>,
+    pub draft_type: String,
+    pub species_id: u16,
+    pub ko_count: u16,
 }
 
 #[derive(Serialize)]
@@ -130,6 +144,80 @@ struct Season2UserRow {
     pub loss: i32,
     pub total_points: i32,
     pub races_played: i32,
+}
+
+/// One row per Pokémon in each completed run that ended by beating Steven or
+/// Wally. KOs are parsed from the stored save with the same helper that builds
+/// the player profile's run stats.
+async fn fetch_winning_run_kos(
+    state: &ServerState,
+) -> Result<Vec<WinningRunKoSample>, (axum::http::StatusCode, String)> {
+    let rows = sqlx::query(
+        r#"
+        WITH winning_teams AS (
+            SELECT DISTINCT ON (bbh.team_id)
+                   t.team_id,
+                   t.user_id,
+                   t.guest_id,
+                   t.draft_id,
+                   d.draft_type,
+                   t.save_data
+            FROM boss_battle_history bbh
+            JOIN drafts d ON d.draft_id = bbh.draft_id
+            JOIN teams t ON t.team_id = bbh.team_id
+            WHERE d.state = 'COMPLETED'
+              AND bbh.trainer_id IN (804, 656)
+              AND NOT bbh.is_loss
+            ORDER BY bbh.team_id, bbh.hours DESC, bbh.minutes DESC, bbh.seconds DESC
+        )
+        SELECT team_id, user_id, guest_id, draft_id, draft_type, save_data
+        FROM winning_teams
+        "#,
+    )
+    .fetch_all(&state.db_pool)
+    .await
+    .map_err(|e| (axum::http::StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    let mut samples = Vec::new();
+    for row in rows {
+        let team_id: i64 = row
+            .try_get("team_id")
+            .map_err(|e| (axum::http::StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+        let draft_id: uuid::Uuid = row
+            .try_get("draft_id")
+            .map_err(|e| (axum::http::StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+        let user_id: Option<String> = row
+            .try_get("user_id")
+            .map_err(|e| (axum::http::StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+        let guest_id: Option<String> = row
+            .try_get("guest_id")
+            .map_err(|e| (axum::http::StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+        let draft_type: String = row
+            .try_get("draft_type")
+            .map_err(|e| (axum::http::StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+        let save_data: Option<serde_json::Value> = row
+            .try_get("save_data")
+            .map_err(|e| (axum::http::StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+        let mons = build_run_stats(save_data);
+
+        for mon in mons {
+            let Some(ko_count) = mon.ko_count else {
+                continue;
+            };
+            samples.push(WinningRunKoSample {
+                team_id,
+                draft_id,
+                user_id: user_id.clone(),
+                guest_id: guest_id.clone(),
+                draft_type: draft_type.clone(),
+                species_id: mon.species_id,
+                ko_count,
+            });
+        }
+    }
+
+    Ok(samples)
 }
 
 pub async fn get_stats_page_data(
@@ -210,11 +298,14 @@ pub async fn get_stats_page_data(
         }
     };
 
+    let winning_run_kos = fetch_winning_run_kos(&state).await?;
+
     Ok(Json(StatsPageResponse {
         players,
         teams,
         auctions,
         legacy,
+        winning_run_kos,
     }))
 }
 
