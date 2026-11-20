@@ -1574,7 +1574,10 @@ const PlayerSearchStatsTab: React.FC<PlayerSearchStatsTabProps> = ({
 
                         <div className="match-info">
                           <div className="match-row-details">
-                            <span className="draft-id">{draftDateMap.get(team.draft_id) || 'Unknown Date'}</span>
+                            <span className="draft-id">
+                              {draftDateMap.get(team.draft_id)
+                                || (team.created_at ? new Date(team.created_at).toLocaleDateString() : 'Unknown Date')}
+                            </span>
                             <span className="separator">•</span>
                             <span className="team-count">{team.team_count} players</span>
                             <span className="separator">•</span>
