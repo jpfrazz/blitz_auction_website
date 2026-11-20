@@ -2888,22 +2888,22 @@ pokedex_id,pokemon_name,form,move_name,learn_method,species,display_order
 193,Yanma,,Psychic,TM,,8
 193,Yanma,,Shadow Ball,TM,,9
 193,Yanma,,Signal Beam,Egg,,10
-263,Zigzagoon,,Snarl,9,,1
-263,Zigzagoon,,Headbutt,12,,2
-263,Zigzagoon,,Baby-Doll Eyes,15,,3
-263,Zigzagoon,,Taunt,TM,,4
-263,Zigzagoon,,Night Slash,Evo.,,5
-263,Zigzagoon,,Hone Claws,MR,,6
-263,Zigzagoon,,Obstruct,49,Obstagoon,7
-263,Zigzagoon,,Bulk Up,TM,,8
-263,Zigzagoon,,Facade,TM,,9
-263,Zigzagoon,,Body Press,TM,Obstagoon,10
-263,Zigzagoon,,Brick Break,TM,Obstagoon,11
-263,Zigzagoon,,Fire Punch,TM,Obstagoon,12
-263,Zigzagoon,,Ice Punch,TM,Obstagoon,13
-263,Zigzagoon,,Seed Bomb,TM,,14
-263,Zigzagoon,,Thunder Punch,TM,Obstagoon,15
-263,Zigzagoon,,Knock Off,Egg,,16
+263,Zigzagoon,Galar,Snarl,9,,1
+263,Zigzagoon,Galar,Headbutt,12,,2
+263,Zigzagoon,Galar,Baby-Doll Eyes,15,,3
+263,Zigzagoon,Galar,Taunt,TM,,4
+263,Zigzagoon,Galar,Night Slash,Evo.,,5
+263,Zigzagoon,Galar,Hone Claws,MR,,6
+263,Zigzagoon,Galar,Obstruct,49,Obstagoon,7
+263,Zigzagoon,Galar,Bulk Up,TM,,8
+263,Zigzagoon,Galar,Facade,TM,,9
+263,Zigzagoon,Galar,Body Press,TM,Obstagoon,10
+263,Zigzagoon,Galar,Brick Break,TM,Obstagoon,11
+263,Zigzagoon,Galar,Fire Punch,TM,Obstagoon,12
+263,Zigzagoon,Galar,Ice Punch,TM,Obstagoon,13
+263,Zigzagoon,Galar,Seed Bomb,TM,,14
+263,Zigzagoon,Galar,Thunder Punch,TM,Obstagoon,15
+263,Zigzagoon,Galar,Knock Off,Egg,,16
 570,Zorua,,Pursuit,5,,1
 570,Zorua,,Thief,TM,,2
 570,Zorua,,Taunt,25/TM,,3

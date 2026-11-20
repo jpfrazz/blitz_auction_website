@@ -473,7 +473,7 @@ pub async fn get_season2_leaderboard(
         )
         SELECT user_id, id, name, form, count
         FROM user_pokemon_counts
-        WHERE rank <= 10
+        WHERE rank <= 8
           AND count >= 2
         "#,
     )

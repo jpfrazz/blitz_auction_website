@@ -550,6 +550,16 @@ function renderMatchHistory(
     userTeamsByDraft: Map<string, Map<string, any[]>>,
     showPoints: boolean
 ) {
+    // Season 2 only counts the top 10 races. Use the same ranking as the
+    // backend (points desc, then draft id asc) to find the dropped races.
+    const droppedRaceIds = new Set<string>();
+    if (showPoints) {
+        [...userMatches]
+            .sort((a, b) => (b.points ?? 0) - (a.points ?? 0) || a.draftId.localeCompare(b.draftId))
+            .slice(SEASON2_MAX_COUNTED_RACES)
+            .forEach(match => droppedRaceIds.add(match.draftId));
+    }
+
     return (
         <div style={{
             maxHeight: '400px',
@@ -579,7 +589,20 @@ function renderMatchHistory(
                                 <td style={{ padding: '12px', whiteSpace: 'nowrap', verticalAlign: 'top' }}>
                                     {match.date ? new Date(match.date).toLocaleDateString('en-US', { month: 'numeric', day: 'numeric', year: '2-digit' }) : '-'}
                                 </td>
-                                {showPoints && <td style={{ padding: '12px', verticalAlign: 'top' }}>{match.points ?? '-'}</td>}
+                                {showPoints && (
+                                    <td style={{ padding: '12px', verticalAlign: 'top' }}>
+                                        <span
+                                            style={droppedRaceIds.has(match.draftId)
+                                                ? { textDecoration: 'line-through', opacity: 0.6 }
+                                                : undefined}
+                                            title={droppedRaceIds.has(match.draftId)
+                                                ? `Not counted in total — only the top ${SEASON2_MAX_COUNTED_RACES} races count`
+                                                : undefined}
+                                        >
+                                            {match.points ?? '-'}
+                                        </span>
+                                    </td>
+                                )}
                                 <td style={{ padding: '12px' }}>
                                     <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
                                             {match.participants.map(p => (
