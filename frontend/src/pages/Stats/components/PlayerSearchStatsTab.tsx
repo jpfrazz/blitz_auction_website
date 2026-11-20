@@ -16,6 +16,7 @@ import type { PlayerStatPill } from './playerStatPills';
 import { getPlayerStatPills } from './playerStatPills';
 import { getIconName } from '../../../utils/speciesUtils';
 import { SPECIES_BY_ID } from '../../../utils/speciesIdMap';
+import { getRunStatLineage, RunStatLineage } from '../../../utils/runStatLineage';
 import { getAvatarUrl, onAvatarError } from '../../../shared/utils/user';
 import { fetchCurrentUser } from '../../../shared/api/draftData';
 import { resolvePokemonIdentity } from '../../../shared/utils/pokemonIdentity';
@@ -283,27 +284,36 @@ type RunSort = { column: 'turns' | 'kos'; direction: 'asc' | 'desc' } | null;
 
 // Key by MiniIcons name so save-file species ids line up with the drafted
 // Pokémon list (which carries display names and forms instead of ROM ids).
-function getRunStatsByIcon(stats: RunMonStat[] | null | undefined): Map<string, RunStatSummary> {
+// A save holds the species a mon has *become*, so each mon is attributed to
+// every species in its evolution line — that keeps an evolved mon's numbers on
+// the row for the Pokémon that was actually drafted.
+function getRunStatsByIcon(
+  stats: RunMonStat[] | null | undefined,
+  lineage: RunStatLineage | null
+): Map<string, RunStatSummary> {
   const byIcon = new Map<string, RunStatSummary>();
   (stats ?? []).forEach((mon) => {
     const speciesName = SPECIES_BY_ID[mon.species_id]?.name ?? '';
-    const icon = getIconName(speciesName, mon.species_id);
-    const existing = byIcon.get(icon);
-    if (!existing) {
-      byIcon.set(icon, {
-        koCount: mon.ko_count,
-        totalTurns: mon.total_turns,
-        fainted: mon.fainted,
-        faintedLevel: mon.fainted ? mon.level : null,
-      });
-      return;
-    }
-    if (mon.ko_count != null) existing.koCount = (existing.koCount ?? 0) + mon.ko_count;
-    if (mon.total_turns != null) existing.totalTurns = (existing.totalTurns ?? 0) + mon.total_turns;
-    if (mon.fainted) {
-      existing.fainted = true;
-      if (existing.faintedLevel == null && mon.level != null) existing.faintedLevel = mon.level;
-    }
+    const mappedIcons = lineage?.getIcons(mon.species_id) ?? [];
+    const icons = mappedIcons.length > 0 ? mappedIcons : [getIconName(speciesName, mon.species_id)];
+    icons.forEach((icon) => {
+      const existing = byIcon.get(icon);
+      if (!existing) {
+        byIcon.set(icon, {
+          koCount: mon.ko_count,
+          totalTurns: mon.total_turns,
+          fainted: mon.fainted,
+          faintedLevel: mon.fainted ? mon.level : null,
+        });
+        return;
+      }
+      if (mon.ko_count != null) existing.koCount = (existing.koCount ?? 0) + mon.ko_count;
+      if (mon.total_turns != null) existing.totalTurns = (existing.totalTurns ?? 0) + mon.total_turns;
+      if (mon.fainted) {
+        existing.fainted = true;
+        if (existing.faintedLevel == null && mon.level != null) existing.faintedLevel = mon.level;
+      }
+    });
   });
   return byIcon;
 }
@@ -395,6 +405,7 @@ const PlayerSearchStatsTab: React.FC<PlayerSearchStatsTabProps> = ({
   const [showGamesBreakdown, setShowGamesBreakdown] = useState(false);
   const [showHofBreakdown, setShowHofBreakdown] = useState(false);
   const [runSort, setRunSort] = useState<RunSort>(null);
+  const [runStatLineage, setRunStatLineage] = useState<RunStatLineage | null>(null);
   const [selectedPlayer, setSelectedPlayer] = useState<StatsPagePlayer | null>(null);
   const [avatarEditor, setAvatarEditor] = useState<{ userId: string; isFranklyNathan: boolean } | null>(null);
   const [avatarVersion, setAvatarVersion] = useState(0);
@@ -418,6 +429,14 @@ const PlayerSearchStatsTab: React.FC<PlayerSearchStatsTabProps> = ({
   } | null>(null);
   const [uploadSaving, setUploadSaving] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let active = true;
+    getRunStatLineage()
+      .then((lineage) => { if (active) setRunStatLineage(lineage); })
+      .catch(() => { /* without catalog metadata, exact-species matching still works */ });
+    return () => { active = false; };
+  }, []);
 
   useEffect(() => {
     let active = true;
@@ -1448,7 +1467,7 @@ const PlayerSearchStatsTab: React.FC<PlayerSearchStatsTabProps> = ({
                   const battles = bossBattleHistory.get(team.team_id);
                   const bossVictory = getBossBattleVictory(battles);
                   const hallOfFameTeam = team.hall_of_fame_team;
-                  const runStatsByIcon = getRunStatsByIcon(team.run_stats);
+                  const runStatsByIcon = getRunStatsByIcon(team.run_stats, runStatLineage);
                   const sortedRunRows = sortRunRows(listAuctions, runStatsByIcon, runSort);
 
                   return (
