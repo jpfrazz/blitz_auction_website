@@ -156,6 +156,15 @@ pub struct EnemyPartyMon {
     pub max_hp: u16,
     #[serde(default)]
     pub stats: Option<EnemyPartyStats>,
+    /// Details the hover tooltip needs. The emulator reads these from the live
+    /// enemy party but they used to be dropped when the location ping was
+    /// rebroadcast, leaving spectators with "Unknown" ability/nature/moves.
+    #[serde(default)]
+    pub ability_num: Option<u8>,
+    #[serde(default)]
+    pub nature: Option<String>,
+    #[serde(default)]
+    pub moves: Option<Vec<u16>>,
 }
 
 /// Non-HP stats of an opposing Pokemon, shown on hover.
