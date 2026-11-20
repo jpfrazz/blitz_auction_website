@@ -1651,19 +1651,28 @@ const EmulatorPage: React.FC = () => {
   // Shared POST helper used by both the .sav flush path and the live heap path.
   const postSaveToBackend = (parsed: SaveData, extra?: Record<string, unknown>) => {
     if (!draftId) return;
-    if (currentUserId) hydrateFaintedKeys(currentUserId);
-    // Capture faints/evolutions from this exact save before building the body;
-    // the React effect runs too late for the POST that accompanies this parse.
-    if (currentUserId && recordFaintedFromSave(faintedPidsRef.current, currentUserId, parsed)) {
-      setFaintedPids(cloneFaintedMap(faintedPidsRef.current));
+    // Faint bookkeeping is display-only. It must never be able to throw before
+    // the fetch below, or a save would silently never reach the other players.
+    let storedKeys: string[] = [];
+    if (currentUserId) {
+      try {
+        hydrateFaintedKeys(currentUserId);
+        // Capture faints/evolutions from this exact save before building the
+        // body; the React effect runs too late for the POST of this parse.
+        if (recordFaintedFromSave(faintedPidsRef.current, currentUserId, parsed)) {
+          setFaintedPids(cloneFaintedMap(faintedPidsRef.current));
+        }
+        storedKeys = Array.from(faintedPidsRef.current[currentUserId] ?? []);
+      } catch (e) {
+        console.warn('faint tracking failed; posting save without it', e);
+      }
     }
     // Merge with any keys still carried by this save instead of replacing them.
     // The backend also unions with its stored copy as a second line of defense.
-    const storedKeys = currentUserId ? Array.from(faintedPidsRef.current[currentUserId] ?? []) : [];
     const faintedKeys = Array.from(new Set([...(parsed.fainted_keys ?? []), ...storedKeys]));
     const body: Record<string, unknown> = {
       ...parsed,
-      fainted_pids: parsed.fainted_pids ?? [],
+      fainted_pids: [],
       fainted_keys: faintedKeys,
       ...extra,
     };
@@ -1672,7 +1681,9 @@ const EmulatorPage: React.FC = () => {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(body),
       credentials: 'include',
-    }).catch(() => { });
+    }).then((res) => {
+      if (!res.ok) console.warn(`save POST failed: ${res.status}`);
+    }).catch((e) => console.warn('save POST failed', e));
   };
 
   // Stable ref so the poll interval always calls the freshest handler.

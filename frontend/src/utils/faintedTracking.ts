@@ -34,6 +34,9 @@ export function hasFaintedKey(
 type ParsedFaintKey = { pid: number; species: number; level?: number };
 
 function parseFaintedKey(key: string): ParsedFaintKey | null {
+  // Stored saves from older clients can contain numeric PIDs in this array.
+  // They are harmless as raw keys, but must not throw while we inspect them.
+  if (typeof key !== 'string') return null;
   const [pidText, speciesText, levelText] = key.split('-');
   // A raw PID is the legacy format and already matches every species.
   if (speciesText === undefined) return null;

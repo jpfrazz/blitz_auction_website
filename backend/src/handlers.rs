@@ -3009,24 +3009,32 @@ pub async fn post_player_save(
     let user_id = user.get_user_id_string();
     let (user_db_id, guest_db_id) = user.get_user_and_guest_id();
 
-    // Persist to the teams table. Merge the faint arrays with the previous
-    // save so a reloaded client posting `fainted_keys: []` cannot erase faints
-    // it no longer has in memory (e.g. a mon already sitting in the PC).
-    let old_save: Option<serde_json::Value> = sqlx::query_scalar(
+    let mut json_value = serde_json::to_value(&save_data).map_err(|e| {
+        (StatusCode::INTERNAL_SERVER_ERROR, format!("failed to serialize save data: {}", e))
+    })?;
+
+    // Union faint records with the previous save so a reloaded client posting
+    // `fainted_keys: []` cannot erase faints for a mon already in the PC. This
+    // is bookkeeping only: a failed lookup must never reject the save itself,
+    // or nobody else's team would ever appear in the sidebar/spectator view.
+    let old_save: Option<serde_json::Value> = match sqlx::query_scalar(
         "SELECT save_data FROM teams
          WHERE draft_id = $1
-           AND (user_id = $2 OR guest_id = $3)"
+           AND (user_id = $2 OR guest_id = $3)
+         LIMIT 1"
     )
     .bind(draft_uuid)
     .bind(&user_db_id)
     .bind(&guest_db_id)
     .fetch_optional(&state.db_pool)
     .await
-    .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, format!("db error: {}", e)))?;
-
-    let mut json_value = serde_json::to_value(&save_data).map_err(|e| {
-        (StatusCode::INTERNAL_SERVER_ERROR, format!("failed to serialize save data: {}", e))
-    })?;
+    {
+        Ok(save) => save,
+        Err(e) => {
+            eprintln!("[post_player_save] could not load previous save for faint merge: {}", e);
+            None
+        }
+    };
     merge_fainted_state(&mut json_value, old_save.as_ref());
     sqlx::query(
         "UPDATE teams SET save_data = $1, updated_at = now()
