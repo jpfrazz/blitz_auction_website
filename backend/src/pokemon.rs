@@ -206,7 +206,9 @@ pub struct Pokemon {
 const APPEARANCE_RATES: &[(&str, i32)] = &[
     //("Basculin", 2),
     //("Slugma", 2),
-    //("Klink", 2),
+    ("Klink", 2),
+    ("Barboach", 3),
+    ("Golett", 2),
 ];
 
 pub fn appearance_rate(name: &str) -> i32 {

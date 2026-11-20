@@ -779,7 +779,7 @@ const PokemonStatsTab: React.FC<PokemonStatsTabProps> = ({
                     Total Picks {sortConfig.key === 'total1v1Picks' ? (sortConfig.direction === 'asc' ? '↑' : '↓') : ''}
                   </th>
                   <th className="sortable" onClick={() => handleSort('avgKOs')} title="Average KOs from completed runs that beat Steven or Wally">
-                    Average KOs {sortConfig.key === 'avgKOs' ? (sortConfig.direction === 'asc' ? '↑' : '↓') : ''}
+                    AVG KOS {sortConfig.key === 'avgKOs' ? (sortConfig.direction === 'asc' ? '↑' : '↓') : ''}
                   </th>
                 </tr>
               </thead>

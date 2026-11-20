@@ -1,0 +1,45 @@
+11/21/2026
+
+
+-----------------------------------------------
+Champions Changes
+-----------------------------------------------
+
+//Implementing the changes from the upcoming Champions balance patch.
+
+Screech: 85% → 100% accuracy
+Rock Slide: 90% → 95% accuracy, 30% → 20% chance to make targets flinch 
+Steel Wing: 90% → 100% accuracy
+Metal Sound: 85% → 100% accuracy
+Frost Breath: 90% → 100% accuracy
+
+Play Rough TM > Learnable by all Eeveelutions
+
+//We keep getting lucky with changes that are healthy for Blitz. Hopefully it stays that way.
+
+-----------------------------------------------
+Bug Fixes
+-----------------------------------------------
+
+Truant now matches generation 5+ Behavior
+//The main change is that if Norman heals his Slaking on a loafing turn, Slaking's next turn is now a loafing turn. (Previously, Slaking could Attack > Potion > Attack.)
+//...But this is a large change under the hood that fundamentally changes how the ability is tracked. For the full list of changes, see the write up here: https://github.com/rh-hideout/pokeemerald-expansion/pull/10719/commits/2d11d57c011c5f7d248f7ad405432883dd8d636d
+//Thanks Oriolten2 for reporting
+//Also, if you're interested, there's been aproximately one trillion commits upstream in Expansion over the past year. If anybody is bored and wants to peruse through them, feel free to find ones you think would be neat in Blitz and send them in #Feature-Requests
+
+
+-----------------------------------------------
+QoL
+-----------------------------------------------
+
+Return now always plays the "Medium" friendship length animation
+//Removes the overly-long Return animation for high friendship Pokemon
+
+
+-----------------------------------------------
+Pool Addition
+-----------------------------------------------
+
++Barboach
+//You can never have too much water, sport!
+//To add some serious commentary on a pool addition for once, since v1.0.0, I've added 15 Pokémon, 2 of which were waters. It's seemed to me that even with a pool so large, this slight relative decrease in water types has been noticeable. There've been lots of drafts recently where there were *just* enough water types for each player to get one. I don't want it to be common that auctions come down to the wire on if everyone gets a water type or not.

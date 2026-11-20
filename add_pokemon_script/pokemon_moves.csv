@@ -104,6 +104,16 @@ pokedex_id,pokemon_name,form,move_name,learn_method,species,display_order
 371,Bagon,,Steel Wing,TM,,15
 371,Bagon,,Double-Edge,MR!,,16
 371,Bagon,,Hydro Pump,Egg,,17
+339,Barboach,,Water Sport,6,,1
+339,Barboach,,Mud Bomb,13,,2
+339,Barboach,,Aqua Tail,28,,3
+339,Barboach,,Earthquake,32,,4
+339,Barboach,,Surf,HM,,5
+339,Barboach,,Zen Headbutt,MR,,6
+339,Barboach,,Future Sight,45,,7
+339,Barboach,,Waterfall,HM,,8
+339,Barboach,,Ice Beam,TM,,9
+339,Barboach,,Dragon Dance,Egg,,10
 550,Basculin,,Aqua Jet,12,,1
 550,Basculin,,Crunch,32,,2
 550,Basculin,,Surf,HM,,3
@@ -573,7 +583,7 @@ pokedex_id,pokemon_name,form,move_name,learn_method,species,display_order
 155,Cyndaquil,,Lava Plume,43,,5
 155,Cyndaquil,,Flamethrower,TM/48,,6
 155,Cyndaquil,,Eruption,MR!,,7
-155,Cyndaquil,,Scorching Sands,TM,,8
+155,Cyndaquil,,Scorching Sands,TM,Typhlosion,8
 155,Cyndaquil,,Shadow Ball,TM,,9
 155,Cyndaquil,,Extrasensory,Egg,,10
 585,Deerling,,Double Kick,10,,1
@@ -690,29 +700,31 @@ pokedex_id,pokemon_name,form,move_name,learn_method,species,display_order
 133,Eevee,,Overheat,TM,Flareon,20
 133,Eevee,,Flare Blitz,45,Flareon,21
 133,Eevee,,Scorching Sands,TM,Flareon,22
-133,Eevee,,Psybeam,20,Espeon,23
-133,Eevee,,Morning Sun,33,Espeon,24
-133,Eevee,,Psychic,37/TM,Espeon,25
-133,Eevee,,Dazzling Gleam,TM,Espeon,26
-133,Eevee,,Calm Mind,TM,Espeon,27
-133,Eevee,,Snarl,Evo.,Umbreon,28
-133,Eevee,,Assurance,MR,Umbreon,29
-133,Eevee,,Screech,29,Umbreon,30
-133,Eevee,,Moonlight,33,Umbreon,31
-133,Eevee,,Dark Pulse,TM,Umbreon,32
-133,Eevee,,Razor Leaf,Evo.,Leafeon,33
-133,Eevee,,Leech Seed,MR,Leafeon,34
-133,Eevee,,Swords Dance,29,Leafeon,35
-133,Eevee,,X-Scissor,TM,Leafeon,36
-133,Eevee,,Giga Drain,MR,Leafeon,37
-133,Eevee,,Leaf Blade,45,Leafeon,38
-133,Eevee,,Ice Beam,37,Glaceon,39
-133,Eevee,,Freeze-Dry,40,Glaceon,40
-133,Eevee,,Water Pulse,TM,Glaceon,41
-133,Eevee,,Moonblast,37,Sylveon,42
-133,Eevee,,Draining Kiss,41,Sylveon,43
-133,Eevee,,Calm Mind,TM,Sylveon,44
-133,Eevee,,Hyper Voice,TM,Sylveon,45
+133,Eevee,,Play Rough,TM,Flareon,23
+133,Eevee,,Psybeam,20,Espeon,24
+133,Eevee,,Morning Sun,33,Espeon,25
+133,Eevee,,Psychic,37/TM,Espeon,26
+133,Eevee,,Dazzling Gleam,TM,Espeon,27
+133,Eevee,,Calm Mind,TM,Espeon,28
+133,Eevee,,Snarl,Evo.,Umbreon,29
+133,Eevee,,Assurance,MR,Umbreon,30
+133,Eevee,,Screech,29,Umbreon,31
+133,Eevee,,Moonlight,33,Umbreon,32
+133,Eevee,,Dark Pulse,TM,Umbreon,33
+133,Eevee,,Razor Leaf,Evo.,Leafeon,34
+133,Eevee,,Leech Seed,MR,Leafeon,35
+133,Eevee,,Swords Dance,29,Leafeon,36
+133,Eevee,,X-Scissor,TM,Leafeon,37
+133,Eevee,,Play Rough,TM,Leafeon,38
+133,Eevee,,Giga Drain,MR,Leafeon,39
+133,Eevee,,Leaf Blade,45,Leafeon,40
+133,Eevee,,Ice Beam,37,Glaceon,41
+133,Eevee,,Freeze-Dry,40,Glaceon,42
+133,Eevee,,Water Pulse,TM,Glaceon,43
+133,Eevee,,Moonblast,37,Sylveon,44
+133,Eevee,,Draining Kiss,41,Sylveon,45
+133,Eevee,,Calm Mind,TM,Sylveon,46
+133,Eevee,,Hyper Voice,TM,Sylveon,47
 23,Ekans,,Bite,9,,1
 23,Ekans,,Glare,12,,2
 23,Ekans,,Crunch,Evo.,,3
@@ -935,6 +947,18 @@ pokedex_id,pokemon_name,form,move_name,learn_method,species,display_order
 443,Gible,,Rock Slide,TM,,7
 443,Gible,,Poison Jab,TM,,8
 443,Gible,,Iron Head,Egg,,9
+622,Golett,,Shadow Punch,13,,1
+622,Golett,,Rock Smash,HM,,2
+622,Golett,,Stomping Tantrum,24,,3
+622,Golett,,Heavy Slam,Evo.,,4
+622,Golett,,High Horsepower,MR,,5
+622,Golett,,Earthquake,54/TM,,6
+622,Golett,,Hammer Arm,MR!,,7
+622,Golett,,Phantom Force,MR!,,8
+622,Golett,,Fire Punch,TM,,9
+622,Golett,,Ice Punch,TM,,10
+622,Golett,,Rock Slide,TM,,11
+622,Golett,,Thunder Punch,TM,,12
 704,Goomy,,Protect,9,,1
 704,Goomy,,Dragon Breath,18,,2
 704,Goomy,,Mud Shot,TM,,3
@@ -2115,8 +2139,8 @@ pokedex_id,pokemon_name,form,move_name,learn_method,species,display_order
 690,Skrelp,,Shadow Ball,TM,,8
 690,Skrelp,,Acid Armor,Egg,,9
 819,Skwovet,,Bullet Seed,TM/41,,1
-819,Skwovet,,Thief,TM,,2
-819,Skwovet,,Body Slam,20,,3
+819,Skwovet,,Body Slam,20,,2
+819,Skwovet,,Covet,Evo.,,3
 819,Skwovet,,Counter,34,,4
 819,Skwovet,,Super Fang,48,,5
 819,Skwovet,,Body Press,TM,,6
@@ -2864,22 +2888,22 @@ pokedex_id,pokemon_name,form,move_name,learn_method,species,display_order
 193,Yanma,,Psychic,TM,,8
 193,Yanma,,Shadow Ball,TM,,9
 193,Yanma,,Signal Beam,Egg,,10
-263,Zigzagoon,Galar,,Snarl,9,,1
-263,Zigzagoon,Galar,,Headbutt,12,,2
-263,Zigzagoon,Galar,,Baby-Doll Eyes,15,,3
-263,Zigzagoon,Galar,,Taunt,TM,,4
-263,Zigzagoon,Galar,,Night Slash,Evo.,,5
-263,Zigzagoon,Galar,,Hone Claws,MR,,6
-263,Zigzagoon,Galar,,Obstruct,49,Obstagoon,7
-263,Zigzagoon,Galar,,Bulk Up,TM,,8
-263,Zigzagoon,Galar,,Facade,TM,,9
-263,Zigzagoon,Galar,,Body Press,TM,Obstagoon,10
-263,Zigzagoon,Galar,,Brick Break,TM,Obstagoon,11
-263,Zigzagoon,Galar,,Fire Punch,TM,Obstagoon,12
-263,Zigzagoon,Galar,,Ice Punch,TM,Obstagoon,13
-263,Zigzagoon,Galar,,Seed Bomb,TM,,14
-263,Zigzagoon,Galar,,Thunder Punch,TM,Obstagoon,15
-263,Zigzagoon,Galar,,Knock Off,Egg,,16
+263,Zigzagoon,,Snarl,9,,1
+263,Zigzagoon,,Headbutt,12,,2
+263,Zigzagoon,,Baby-Doll Eyes,15,,3
+263,Zigzagoon,,Taunt,TM,,4
+263,Zigzagoon,,Night Slash,Evo.,,5
+263,Zigzagoon,,Hone Claws,MR,,6
+263,Zigzagoon,,Obstruct,49,Obstagoon,7
+263,Zigzagoon,,Bulk Up,TM,,8
+263,Zigzagoon,,Facade,TM,,9
+263,Zigzagoon,,Body Press,TM,Obstagoon,10
+263,Zigzagoon,,Brick Break,TM,Obstagoon,11
+263,Zigzagoon,,Fire Punch,TM,Obstagoon,12
+263,Zigzagoon,,Ice Punch,TM,Obstagoon,13
+263,Zigzagoon,,Seed Bomb,TM,,14
+263,Zigzagoon,,Thunder Punch,TM,Obstagoon,15
+263,Zigzagoon,,Knock Off,Egg,,16
 570,Zorua,,Pursuit,5,,1
 570,Zorua,,Thief,TM,,2
 570,Zorua,,Taunt,25/TM,,3

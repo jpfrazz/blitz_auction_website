@@ -362,8 +362,9 @@ const LeaderboardPage = () => {
                 <thead>
                     <tr>
                         <th style={{ width: '80px' }}>Rank</th>
-                        <th style={{ width: '250px' }}>Username</th>
-                        <th style={{ width: '250px' }}>Display Name</th>
+                        {/* Narrower name columns; fixed table layout gives the reclaimed 50px to Most Drafted Pokémon. */}
+                        <th style={{ width: '225px' }}>Username</th>
+                        <th style={{ width: '225px' }}>Display Name</th>
                         <th style={{ width: '110px' }}>Total Points</th>
                         <th style={{ width: '150px' }}>Races Played</th>
                         <th>Most Drafted Pokémon</th>

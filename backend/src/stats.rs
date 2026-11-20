@@ -474,6 +474,7 @@ pub async fn get_season2_leaderboard(
         SELECT user_id, id, name, form, count
         FROM user_pokemon_counts
         WHERE rank <= 10
+          AND count >= 2
         "#,
     )
     .fetch_all(&state.db_pool)

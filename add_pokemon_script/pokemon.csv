@@ -16,6 +16,8 @@ dex_number,name,form,evolves_from_id,evolves_from_form,type1,type2,stage,ability
 372,Shelgon,,371,,Dragon,,evo,Rock Head,,Overcoat,65,95,100,60,50,50,"Level 30","Stage 2",,
 373,Salamence,,372,,Dragon,Flying,evo,Intimidate,,Moxie,95,135,80,110,80,100,"Level 50","Stage 2",,
 373,Mega Salamence,Mega,373,,Dragon,Flying,mega,Aerilate,,,95,145,130,120,90,120,Salamencite,"Stage 2",,
+339,Barboach,,,,Water,Ground,base,Oblivious,Anticipation,Hydration,50,48,43,46,41,60,,,,
+340,Whiscash,,339,,Water,Ground,evo,Oblivious,Anticipation,Hydration,110,78,73,76,71,60,"Level 30",,,
 550,Basculin,,,,Water,,base,Rattled,Adaptability,Mold Breaker,70,92,65,80,55,98,,,,"Unique Mechanic: Fallen Friends Evolution\nBasculin evolves into Basculegion when the total levels of all your fainted Pokemon is 100 or more."
 902,Basculegion-M,M,550,,Water,Ghost,evo,Swift Swim,Adaptability,Mold Breaker,120,112,65,80,75,78,"Fainted Levels >= 100 (Male)",,,
 902,Basculegion-F,F,550,,Water,Ghost,evo,Swift Swim,Adaptability,Mold Breaker,120,92,65,100,75,78,"Fainted Levels >= 100 (Female)",,,

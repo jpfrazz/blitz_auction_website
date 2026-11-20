@@ -11,6 +11,7 @@ export const NOTEBOOK_POKEMON_LIST: string[] = [
   'Archen',
   'Aron',
   'Bagon',
+  'Barboach',
   'Basculin',
   'Beldum',
   'Binacle',
