@@ -266,12 +266,22 @@ export interface WinningRunKoSample {
   ko_count: number;
 }
 
+export interface WinningRace {
+  team_id: number;
+  draft_id: string;
+  user_id: string | null;
+  guest_id: string | null;
+  draft_type: string;
+  ranked: boolean;
+}
+
 export interface StatsPageResponse {
   players: StatsPagePlayer[];
   teams: StatsPageTeamRow[];
   auctions: StatsAuction[];
   legacy: StatsLegacyPick[];
   winning_run_kos: WinningRunKoSample[];
+  winning_races: WinningRace[];
 }
 
 export interface AdminHallOfFameTeamEntry {

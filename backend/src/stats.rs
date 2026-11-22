@@ -14,6 +14,10 @@ pub struct StatsPageResponse {
     /// One row per Pokémon in a winning run, used for Cost Breakdown's
     /// Average KOs column. The frontend matches these to drafted Pokémon.
     pub winning_run_kos: Vec<WinningRunKoSample>,
+    /// One row per race that ended with a win over Steven or Wally, used for
+    /// Cost Breakdown's Wins column. Unlike the KO samples this is present even
+    /// when the team has no saved run stats.
+    pub winning_races: Vec<WinningRace>,
 }
 
 #[derive(Serialize, FromRow)]
@@ -78,6 +82,16 @@ pub struct WinningRunKoSample {
     pub draft_type: String,
     pub species_id: u16,
     pub ko_count: u16,
+}
+
+#[derive(Serialize)]
+pub struct WinningRace {
+    pub team_id: i64,
+    pub draft_id: uuid::Uuid,
+    pub user_id: Option<String>,
+    pub guest_id: Option<String>,
+    pub draft_type: String,
+    pub ranked: bool,
 }
 
 #[derive(Serialize)]
@@ -220,6 +234,61 @@ async fn fetch_winning_run_kos(
     Ok(samples)
 }
 
+/// One row per completed race whose team beat Steven or Wally. This is kept
+/// separate from the KO samples so a win still counts when the stored save has
+/// no usable KO/turn data.
+async fn fetch_winning_races(
+    state: &ServerState,
+) -> Result<Vec<WinningRace>, (axum::http::StatusCode, String)> {
+    let rows = sqlx::query(
+        r#"
+        SELECT DISTINCT ON (bbh.team_id)
+               t.team_id,
+               t.user_id,
+               t.guest_id,
+               t.draft_id,
+               d.draft_type,
+               d.ranked
+        FROM boss_battle_history bbh
+        JOIN drafts d ON d.draft_id = bbh.draft_id
+        JOIN teams t ON t.team_id = bbh.team_id
+        WHERE d.state = 'COMPLETED'
+          AND bbh.trainer_id IN (804, 656)
+          AND NOT bbh.is_loss
+        ORDER BY bbh.team_id, bbh.hours DESC, bbh.minutes DESC, bbh.seconds DESC
+        "#,
+    )
+    .fetch_all(&state.db_pool)
+    .await
+    .map_err(|e| (axum::http::StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    let mut races = Vec::with_capacity(rows.len());
+    for row in rows {
+        races.push(WinningRace {
+            team_id: row
+                .try_get("team_id")
+                .map_err(|e| (axum::http::StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?,
+            user_id: row
+                .try_get("user_id")
+                .map_err(|e| (axum::http::StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?,
+            guest_id: row
+                .try_get("guest_id")
+                .map_err(|e| (axum::http::StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?,
+            draft_id: row
+                .try_get("draft_id")
+                .map_err(|e| (axum::http::StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?,
+            draft_type: row
+                .try_get("draft_type")
+                .map_err(|e| (axum::http::StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?,
+            ranked: row
+                .try_get("ranked")
+                .map_err(|e| (axum::http::StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?,
+        });
+    }
+
+    Ok(races)
+}
+
 pub async fn get_stats_page_data(
     State(state): State<ServerState>,
 ) -> Result<Json<StatsPageResponse>, AppError> {
@@ -299,6 +368,7 @@ pub async fn get_stats_page_data(
     };
 
     let winning_run_kos = fetch_winning_run_kos(&state).await?;
+    let winning_races = fetch_winning_races(&state).await?;
 
     Ok(Json(StatsPageResponse {
         players,
@@ -306,6 +376,7 @@ pub async fn get_stats_page_data(
         auctions,
         legacy,
         winning_run_kos,
+        winning_races,
     }))
 }
 
