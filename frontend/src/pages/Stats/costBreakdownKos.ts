@@ -152,17 +152,20 @@ export function computeAverageKosByPokemonKey(
 }
 
 /**
- * Counts non-casual races in which the winning team had drafted/picked that
- * Pokémon and then beat Steven or Wally. This deliberately uses the draft rows
- * rather than the saved run, so a win still counts without KO data and
- * evolution/form changes (including an egg hatch) stay on the drafted row.
+ * Counts races in which the winning team had drafted/picked that Pokémon and
+ * then beat Steven or Wally. Auction eligibility comes from the same
+ * `validDraftIds` used by Cost Breakdown and player profiles, so unranked
+ * auctions count as long as they are not casual drafts. This deliberately uses
+ * the draft rows rather than the saved run, so a win still counts without KO
+ * data and evolution/form changes (including an egg hatch) stay on the drafted
+ * row.
  */
 export function computeWinningPicksByPokemonKey(
   races: WinningRace[],
   auctions: StatsAuction[],
   teams: StatsPageTeamRow[],
   players: StatsPagePlayer[],
-  eligibleAuctionDraftIds: Set<string>,
+  validAuctionDraftIds: Set<string>,
   casualOneVOneDraftIds: Set<string>,
 ): Map<string, number> {
   const wins = new Map<string, number>();
@@ -175,7 +178,7 @@ export function computeWinningPicksByPokemonKey(
   for (const race of races) {
     if (race.draft_type === '1v1') {
       if (casualOneVOneDraftIds.has(race.draft_id)) continue;
-    } else if (!race.ranked || !eligibleAuctionDraftIds.has(race.draft_id)) {
+    } else if (!validAuctionDraftIds.has(race.draft_id)) {
       continue;
     }
 

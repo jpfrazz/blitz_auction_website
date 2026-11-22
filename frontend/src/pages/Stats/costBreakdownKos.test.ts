@@ -66,7 +66,6 @@ const race = (overrides: Partial<WinningRace>): WinningRace => ({
   user_id: 'user-1',
   guest_id: null,
   draft_type: 'auction',
-  ranked: true,
   ...overrides,
 });
 
@@ -149,7 +148,7 @@ test('attributes an evolved egg hatch to the Egg row instead of the hatch specie
   expect(result.size).toBe(1);
 });
 
-test('counts one win per non-casual winning race where the Pokémon was drafted', () => {
+test('counts one win per valid auction or non-casual 1v1 race where the Pokémon was drafted', () => {
   const auctions = [
     auction({ auction_id: 1, draft_id: 'draft-1', winning_user_id: 'user-1' }),
     auction({ auction_id: 2, draft_id: 'draft-2', winning_user_id: 'user-1' }),
@@ -203,20 +202,18 @@ test('counts one win per non-casual winning race where the Pokémon was drafted'
   const races = [
     race({ team_id: 1, draft_id: 'draft-1', user_id: 'user-1' }),
     race({ team_id: 2, draft_id: 'draft-2', user_id: 'user-1' }),
-    race({ team_id: 3, draft_id: 'draft-casual', user_id: 'user-1', ranked: false }),
+    race({ team_id: 3, draft_id: 'draft-casual', user_id: 'user-1' }),
     race({
       team_id: 4,
       draft_id: 'draft-3',
       user_id: 'user-2',
       draft_type: '1v1',
-      ranked: false,
     }),
     race({
       team_id: 5,
       draft_id: 'draft-4',
       user_id: 'user-2',
       draft_type: '1v1',
-      ranked: false,
     }),
   ];
 
@@ -233,6 +230,19 @@ test('counts one win per non-casual winning race where the Pokémon was drafted'
   expect(result.get('Egg')).toBe(1);
   expect(result.has('Togepi')).toBe(false);
   expect(result.size).toBe(2);
+});
+
+test('counts a valid unranked auction using the existing validDraftIds determination', () => {
+  const result = computeWinningPicksByPokemonKey(
+    [race({ team_id: 2, draft_id: 'draft-unranked', user_id: 'user-1' })],
+    [auction({ auction_id: 1, draft_id: 'draft-unranked', winning_user_id: 'user-1' })],
+    [team({ team_id: 2, draft_id: 'draft-unranked', user_id: 'user-1', ranked: false })],
+    [] as StatsPagePlayer[],
+    new Set(['draft-unranked']),
+    new Set<string>(),
+  );
+
+  expect(result.get('Charmander')).toBe(1);
 });
 
 test('deduplicates one Pokémon per race and resolves linked guest owners', () => {

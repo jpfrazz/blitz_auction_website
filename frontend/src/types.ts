@@ -272,7 +272,6 @@ export interface WinningRace {
   user_id: string | null;
   guest_id: string | null;
   draft_type: string;
-  ranked: boolean;
 }
 
 export interface StatsPageResponse {

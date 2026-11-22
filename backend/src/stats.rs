@@ -91,7 +91,6 @@ pub struct WinningRace {
     pub user_id: Option<String>,
     pub guest_id: Option<String>,
     pub draft_type: String,
-    pub ranked: bool,
 }
 
 #[derive(Serialize)]
@@ -247,8 +246,7 @@ async fn fetch_winning_races(
                t.user_id,
                t.guest_id,
                t.draft_id,
-               d.draft_type,
-               d.ranked
+               d.draft_type
         FROM boss_battle_history bbh
         JOIN drafts d ON d.draft_id = bbh.draft_id
         JOIN teams t ON t.team_id = bbh.team_id
@@ -279,9 +277,6 @@ async fn fetch_winning_races(
                 .map_err(|e| (axum::http::StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?,
             draft_type: row
                 .try_get("draft_type")
-                .map_err(|e| (axum::http::StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?,
-            ranked: row
-                .try_get("ranked")
                 .map_err(|e| (axum::http::StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?,
         });
     }
