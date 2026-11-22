@@ -1,12 +1,12 @@
-// Downloads the generations 1-7 Shuffle icons from Bulbagarden into the local
-// (gitignored) "Pokemon Shuffle Icons" folder. Direct media/upload URLs are
-// blocked by Cloudflare, so the Special:Redirect endpoint is used instead.
-// Safe to re-run: existing files are skipped.
+// Downloads the generations 1-7 Shuffle icons from Bulbagarden into the tracked
+// "ShuffleIcons" folder so they are included in production builds. Direct
+// media/upload URLs are blocked by Cloudflare, so the Special:Redirect endpoint
+// is used instead. Safe to re-run: existing files are skipped.
 import { mkdir, stat, writeFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 
-const folder = fileURLToPath(new URL('../public/Pokemon Shuffle Icons', import.meta.url));
+const folder = fileURLToPath(new URL('../public/ShuffleIcons', import.meta.url));
 const userAgent = 'BlitzAuctionBot/1.0 (contact: admin@example.com)';
 const concurrency = 10;
 const pngSignature = '89504e470d0a1a0a';

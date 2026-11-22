@@ -18,6 +18,7 @@ import { getIconName } from '../../../utils/speciesUtils';
 import { SPECIES_BY_ID } from '../../../utils/speciesIdMap';
 import { getRunStatLineage, RunStatLineage } from '../../../utils/runStatLineage';
 import { getRunStatsByIcon, RunStatSummary } from '../../../utils/runStatSummary';
+import { findEggHatchStats, isEggAuction, EggHatchStats } from '../../../utils/eggHatchStats';
 import { EEVEELUTION_IDS } from '../../../utils/eevee';
 import { getAvatarUrl, onAvatarError } from '../../../shared/utils/user';
 import { fetchCurrentUser } from '../../../shared/api/draftData';
@@ -295,6 +296,8 @@ interface RunDisplayRow {
   /** Pick number in 1v1s, cost in auctions; null for the gifted Eevee. */
   slotValue: number | null;
   pickLabel: string;
+  /** Display-only override, e.g. "Egg (Venipede)" once the hatch is inferred. */
+  label?: string;
   monStats?: RunStatSummary;
   isEeveeGift: boolean;
 }
@@ -334,10 +337,12 @@ function sortRunRows(
   statsByIcon: Map<string, RunStatSummary>,
   sort: RunSort,
   is1v1: boolean,
-  eeveeGift: EeveeGiftStats | null
+  eeveeGift: EeveeGiftStats | null,
+  eggHatch: EggHatchStats | null
 ): RunDisplayRow[] {
   const rows: RunDisplayRow[] = auctions.map((auction, pickIdx) => {
     const fullName = auction.form ? `${auction.name}-${auction.form}` : auction.name;
+    const hatched = isEggAuction(auction) ? eggHatch : null;
     return {
       key: String(auction.auction_id),
       icon: formatPokemonName(fullName),
@@ -346,7 +351,8 @@ function sortRunRows(
       pickIdx,
       slotValue: is1v1 ? pickIdx : (auction.winning_bid ?? 0),
       pickLabel: is1v1 ? `#${pickIdx + 1}` : `$${(auction.winning_bid ?? 0).toLocaleString()}`,
-      monStats: statsByIcon.get(getIconName(fullName)),
+      label: hatched ? `Egg (${hatched.name})` : undefined,
+      monStats: hatched?.summary ?? statsByIcon.get(getIconName(fullName)),
       isEeveeGift: false,
     };
   });
@@ -1511,7 +1517,10 @@ const PlayerSearchStatsTab: React.FC<PlayerSearchStatsTabProps> = ({
                   const hallOfFameTeam = team.hall_of_fame_team;
                   const runStatsByIcon = getRunStatsByIcon(team.run_stats, runStatLineage);
                   const eeveeGift = getEeveeGiftStats(team.run_stats);
-                  const sortedRunRows = sortRunRows(listAuctions, runStatsByIcon, runSort, is1v1, eeveeGift);
+                  const eggHatch = listAuctions.some(isEggAuction)
+                    ? findEggHatchStats(team.run_stats, listAuctions, runStatLineage)
+                    : null;
+                  const sortedRunRows = sortRunRows(listAuctions, runStatsByIcon, runSort, is1v1, eeveeGift, eggHatch);
 
                   return (
                     <div className="match-timeline-entry" key={team.team_id} data-team-id={team.team_id}>
@@ -1609,7 +1618,7 @@ const PlayerSearchStatsTab: React.FC<PlayerSearchStatsTabProps> = ({
                               {sortedRunRows.length === 0 && (
                                 <div className="match-draft-details-empty">{is1v1 ? 'No Pokemon picked in this draft.' : 'No Pokemon won in this draft.'}</div>
                               )}
-                              {sortedRunRows.map(({ key, icon, name, form, pickLabel, monStats }) => (
+                              {sortedRunRows.map(({ key, icon, name, form, label, pickLabel, monStats }) => (
                                 <div className="match-draft-details-row" key={key}>
                                   <div className="match-draft-details-pokemon">
                                     <img
@@ -1619,7 +1628,7 @@ const PlayerSearchStatsTab: React.FC<PlayerSearchStatsTabProps> = ({
                                         (ev.currentTarget as HTMLImageElement).style.display = 'none';
                                       }}
                                     />
-                                    <span>{getPokemonLabel(name, form)}</span>
+                                    <span>{label ?? getPokemonLabel(name, form)}</span>
                                   </div>
                                   <span className="match-draft-details-cost">{pickLabel}</span>
                                   <span className="match-draft-details-stat">{monStats?.totalTurns ?? '—'}</span>

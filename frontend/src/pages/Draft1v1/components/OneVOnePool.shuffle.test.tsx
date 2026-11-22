@@ -29,16 +29,16 @@ test('renders Shuffle icons, form-specific art, and fallback art in Shuffle Icon
   );
 
   expect(screen.getByAltText('Pikachu').getAttribute('src')).toBe(
-    '/Pokemon%20Shuffle%20Icons/Shuffle025.png',
+    '/ShuffleIcons/Shuffle025.png',
   );
   expect(screen.getByAltText('Zigzagoon (Galar)').getAttribute('src')).toBe(
-    '/Pokemon%20Shuffle%20Icons/G%20-%20Zigzagoon.png',
+    '/ShuffleIcons/G%20-%20Zigzagoon.png',
   );
   expect(screen.getByAltText('Vulpix (Alola)').getAttribute('src')).toBe(
-    '/Pokemon%20Shuffle%20Icons/Shuffle037A.png',
+    '/ShuffleIcons/Shuffle037A.png',
   );
   expect(screen.getByAltText('Blipbug').getAttribute('src')).toBe(
-    '/Pokemon%20Shuffle%20Icons/Blipbug.png',
+    '/ShuffleIcons/Blipbug.png',
   );
   expect(screen.getByAltText('Egg').getAttribute('src')).toBe('/baseforms/Egg.png');
 

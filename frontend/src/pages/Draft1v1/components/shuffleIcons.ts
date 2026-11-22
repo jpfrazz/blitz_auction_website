@@ -2,7 +2,8 @@ import { Pokemon } from '../../../types';
 import index from './shuffleIconIndex.json';
 
 const iconByDex: Record<string, string> = index;
-const ROOT = '/Pokemon%20Shuffle%20Icons/';
+// Icons are committed under public/ShuffleIcons so they exist in production builds.
+const ROOT = '/ShuffleIcons/';
 
 /**
  * Resolves a pool entry to a Shuffle icon URL.

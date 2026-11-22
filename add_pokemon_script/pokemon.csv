@@ -264,7 +264,7 @@ dex_number,name,form,evolves_from_id,evolves_from_form,type1,type2,stage,ability
 607,Litwick,,,,Ghost,Fire,base,Flash Fire,Flame Body,Infiltrator,50,30,55,65,55,20,,"Stage 2",,
 608,Lampent,,607,,Ghost,Fire,evo,Flash Fire,Flame Body,Infiltrator,60,40,60,95,60,55,"Level 41 (Guru)","Stage 2",,
 609,Chandelure,,608,,Ghost,Fire,evo,Flash Fire,Flame Body,Infiltrator,60,55,90,145,90,80,"Dusk Stone","Stage 2",,
-609,Mega Chandelure,Mega,609,,Ghost,Fire,mega,Flash Fire,Flame Body,Infiltrator,60,75,110,175,110,90,Chandelurite,"Stage 2",,
+609,Mega Chandelure,Mega,609,,Ghost,Fire,mega,Infiltrator,,,60,75,110,175,110,90,Chandelurite,"Stage 2",,
 270,Lotad,,,,Water,Grass,base,Swift Swim,Rain Dish,Own Tempo,40,30,30,40,50,30,,,,"Tip: Delayed Evolution\nBy delaying Lotad's evolution until level 18, it can learn Mega Drain before gym 2. Otherwise, you'll be relying on the Bullet Seed TM for Grass STAB until you gain access to the Giga Drain TM."
 271,Lombre,,270,,Water,Grass,evo,Swift Swim,Rain Dish,Own Tempo,60,50,50,60,70,50,"Level 14",,,
 272,Ludicolo,,271,,Water,Grass,evo,Swift Swim,Rain Dish,Own Tempo,80,70,70,90,100,70,"Water Stone",,,
