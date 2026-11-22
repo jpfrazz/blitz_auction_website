@@ -1891,7 +1891,8 @@ pub async fn get_admin_hall_of_fame_teams(
 
 /// A user/race combination that qualifies for a Hall of Fame team because the
 /// player beat Steven (804) or Wally (656), i.e. their run ended with a win.
-/// `hours`/`minutes`/`seconds` are the in-game timestamp of the beat.
+/// `hours`/`minutes`/`seconds` are the in-game timestamp of the beat;
+/// `beat_date` is the race date from the draft, not when splits were submitted.
 #[derive(Clone, Debug, Serialize)]
 pub struct AdminHallOfFameEligibleEntry {
     pub team_id: i64,
@@ -1929,7 +1930,7 @@ async fn fetch_hall_of_fame_eligible(
              SELECT DISTINCT ON (bbh.team_id)
                     bbh.team_id, bbh.draft_id, bbh.trainer_id,
                     bbh.hours, bbh.minutes, bbh.seconds,
-                    bbh.created_at AS beat_date,
+                    d.created_at AS beat_date,
                     d.draft_name, d.draft_type, d.created_at,
                     COALESCE(u.user_id, g.user_id) AS user_id,
                     COALESCE(u.user_name, g.user_name) AS user_name,

@@ -559,10 +559,11 @@ const PlayerSearchStatsTab: React.FC<PlayerSearchStatsTabProps> = ({
     teamId: number,
     draftId: string,
     existing?: BossBattleSubmission,
-    additive?: boolean
+    additive?: boolean,
+    prefillHistory?: boolean
   ) => {
     const existingBattles = existing ? existing.battles.map((battle) => ({ ...battle })) : [];
-    const historyBattles: BossBattleSubmissionBattle[] = additive
+    const historyBattles: BossBattleSubmissionBattle[] = additive || prefillHistory
       ? (bossBattleHistory.get(teamId) ?? []).map((battle) => ({
           trainer_id: battle.trainer_id,
           version: battle.version ?? null,
@@ -1700,11 +1701,11 @@ const PlayerSearchStatsTab: React.FC<PlayerSearchStatsTabProps> = ({
                                    const finished = isRunFinished(battles);
                                    const pending = mySubmissions.get(team.team_id);
                                    const isOwnProfile = selectedPlayer?.user_id === currentUserId;
-                                   // The site admin can add splits to any player's unfinished run,
-                                   // the same way they can edit any profile's avatar.
+                                   const isSiteAdmin = currentUserId === SITE_ADMIN_USER_ID;
+                                   // The site admin can add or edit splits on any player's run,
+                                   // including finished runs, the same way they can edit any profile's avatar.
                                    const canSubmitBattles =
-                                     !mySubmissionsLoading &&
-                                     (isOwnProfile || currentUserId === SITE_ADMIN_USER_ID);
+                                     !mySubmissionsLoading && (isOwnProfile || isSiteAdmin);
                                    if (pending && canSubmitBattles) {
                                      return (
                                        <div className="boss-submission-status">
@@ -1732,7 +1733,23 @@ const PlayerSearchStatsTab: React.FC<PlayerSearchStatsTabProps> = ({
                                      }
                                      return null;
                                    }
-                                   // Owner (or site admin), no pending submission
+                                   if (isSiteAdmin) {
+                                     return (
+                                       <div className="boss-submission-empty">
+                                         <span>{hasBattles ? 'Edit boss battles' : 'No boss battles recorded'}</span>
+                                         <button
+                                           type="button"
+                                           className="boss-submission-add"
+                                           title="Edit boss battles"
+                                           aria-label="Edit boss battles"
+                                           onClick={() => openUploadModal(team.team_id, team.draft_id, undefined, false, true)}
+                                         >
+                                           +
+                                         </button>
+                                       </div>
+                                     );
+                                   }
+                                   // Owner (not site admin), no pending submission
                                    if (!hasBattles) {
                                      return (
                                        <div className="boss-submission-empty">
