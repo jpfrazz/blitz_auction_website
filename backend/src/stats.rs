@@ -44,6 +44,9 @@ pub struct StatsTeam {
     pub placement: Option<i32>,
     pub race_placement: Option<i32>,
     pub has_save: bool,
+    /// Whether this team/draft has any boss battle rows. Cost Breakdown uses
+    /// this to count only races where the Pokémon actually had a chance to win.
+    pub has_boss_battles: bool,
 }
 
 #[derive(Serialize, FromRow)]
@@ -301,6 +304,10 @@ pub async fn get_stats_page_data(
         sqlx::query_as::<_, StatsTeam>(
             "SELECT t.team_id, t.user_id, t.guest_id, t.draft_id, t.placement, t.race_placement,
                     (t.save_data IS NOT NULL) AS has_save,
+                    EXISTS (
+                        SELECT 1 FROM boss_battle_history bbh
+                        WHERE bbh.team_id = t.team_id AND bbh.draft_id = t.draft_id
+                    ) AS has_boss_battles,
                     d.draft_name, COALESCE(d.host_user_id, d.host_guest_id) AS host, d.ranked, d.draft_type, d.season
              FROM teams t
              JOIN drafts d ON t.draft_id = d.draft_id

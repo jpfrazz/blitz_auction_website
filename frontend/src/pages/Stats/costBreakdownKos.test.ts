@@ -8,6 +8,7 @@ import type {
 } from '../../types';
 import {
   computeAverageKosByPokemonKey,
+  computeWinOpportunitiesByPokemonKey,
   computeWinningPicksByPokemonKey,
 } from './costBreakdownKos';
 
@@ -46,6 +47,7 @@ const team = (overrides: Partial<StatsPageTeamRow>): StatsPageTeamRow => ({
   season: 1,
   ranked: true,
   has_save: true,
+  has_boss_battles: true,
   ...overrides,
 } as StatsPageTeamRow);
 
@@ -294,6 +296,122 @@ test('deduplicates one Pokémon per race and resolves linked guest owners', () =
     [race({ team_id: 1, user_id: 'user-1' })],
     auctions,
     [team({ team_id: 1, user_id: 'user-1' })],
+    players,
+    new Set(['draft-1']),
+    new Set<string>(),
+  );
+
+  expect(result.get('Wooper-Paldea')).toBe(1);
+  expect(result.size).toBe(1);
+});
+
+test('counts one win chance per valid race that has boss battle data', () => {
+  const auctions = [
+    auction({ auction_id: 1, draft_id: 'draft-1', winning_user_id: 'user-1' }),
+    auction({ auction_id: 2, draft_id: 'draft-2', winning_user_id: 'user-1' }),
+    auction({ auction_id: 3, draft_id: 'draft-casual', winning_user_id: 'user-1' }),
+    auction({ auction_id: 4, draft_id: 'draft-no-boss', winning_user_id: 'user-1' }),
+    auction({
+      auction_id: 5,
+      draft_id: 'draft-3',
+      draft_type: '1v1',
+      winning_bid: null,
+      action: 'PICK',
+      winning_user_id: 'user-2',
+    }),
+    auction({
+      auction_id: 6,
+      draft_id: 'draft-4',
+      draft_type: '1v1',
+      winning_bid: null,
+      action: 'PICK',
+      winning_user_id: 'user-2',
+    }),
+    auction({
+      auction_id: 7,
+      draft_id: 'draft-3',
+      draft_type: '1v1',
+      winning_bid: null,
+      action: 'BAN',
+      winning_user_id: 'user-2',
+    }),
+    auction({
+      auction_id: 8,
+      draft_id: 'draft-1',
+      name: 'Egg',
+      pokedex_id: 1573,
+      winning_user_id: 'user-1',
+    }),
+  ];
+
+  const teams = [
+    team({ team_id: 1, draft_id: 'draft-1', user_id: 'user-1' }),
+    team({ team_id: 2, draft_id: 'draft-2', user_id: 'user-1' }),
+    team({ team_id: 3, draft_id: 'draft-casual', user_id: 'user-1' }),
+    team({ team_id: 4, draft_id: 'draft-no-boss', user_id: 'user-1', has_boss_battles: false }),
+    team({ team_id: 5, draft_id: 'draft-3', user_id: 'user-2', draft_type: '1v1' }),
+    team({ team_id: 6, draft_id: 'draft-4', user_id: 'user-2', draft_type: '1v1' }),
+  ];
+
+  const result = computeWinOpportunitiesByPokemonKey(
+    teams,
+    auctions,
+    [] as StatsPagePlayer[],
+    new Set(['draft-1', 'draft-2', 'draft-no-boss']),
+    new Set(['draft-4']),
+  );
+
+  // draft-1 auction, draft-2 auction, and the non-casual 1v1 draft-3.
+  expect(result.get('Charmander')).toBe(3);
+  expect(result.get('Egg')).toBe(1);
+  expect(result.size).toBe(2);
+});
+
+test('dedupes linked guest picks and forms when counting win chances', () => {
+  const players: StatsPagePlayer[] = [
+    {
+      user_id: 'user-1',
+      user_name: 'Player',
+      global_name: null,
+      is_guest: false,
+      linked_user_id: null,
+    },
+    {
+      user_id: 'guest-a',
+      user_name: 'Guest',
+      global_name: null,
+      is_guest: true,
+      linked_user_id: 'user-1',
+    },
+  ];
+  const auctions = [
+    auction({
+      auction_id: 1,
+      draft_id: 'draft-1',
+      name: 'Wooper',
+      pokedex_id: 194,
+      winning_user_id: null,
+      winning_guest_id: 'guest-a',
+    }),
+    auction({
+      auction_id: 2,
+      draft_id: 'draft-1',
+      name: 'Wooper',
+      form: 'Paldea',
+      pokedex_id: 194,
+      winning_user_id: null,
+      winning_guest_id: 'guest-a',
+    }),
+    auction({
+      auction_id: 3,
+      draft_id: 'draft-1',
+      winning_user_id: 'user-2',
+    }),
+  ];
+
+  const result = computeWinOpportunitiesByPokemonKey(
+    [team({ team_id: 1, user_id: 'user-1' })],
+    auctions,
     players,
     new Set(['draft-1']),
     new Set<string>(),

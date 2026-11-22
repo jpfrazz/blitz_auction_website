@@ -200,3 +200,42 @@ export function computeWinningPicksByPokemonKey(
 
   return wins;
 }
+
+/**
+ * Counts one chance to win per non-casual race (auction or 1v1) where the team
+ * drafted/picked that Pokémon and the race has boss battle data. Races with no
+ * boss battle history are excluded because the Pokémon had no opportunity to
+ * win. Uses the same draft eligibility as `computeWinningPicksByPokemonKey`.
+ */
+export function computeWinOpportunitiesByPokemonKey(
+  teams: StatsPageTeamRow[],
+  auctions: StatsAuction[],
+  players: StatsPagePlayer[],
+  validAuctionDraftIds: Set<string>,
+  casualOneVOneDraftIds: Set<string>,
+): Map<string, number> {
+  const chances = new Map<string, number>();
+  const guestIdsByUserId = buildGuestIdsByUserId(players);
+  const auctionsByDraft = buildAuctionsByDraft(auctions);
+
+  for (const team of teams) {
+    if (!team.has_boss_battles) continue;
+    if (team.draft_type === '1v1') {
+      if (casualOneVOneDraftIds.has(team.draft_id)) continue;
+    } else if (!validAuctionDraftIds.has(team.draft_id)) {
+      continue;
+    }
+
+    const accountIds = buildAccountIds([team.user_id, team.guest_id], guestIdsByUserId);
+    const seenKeys = new Set<string>();
+    for (const auction of auctionsByDraft.get(team.draft_id) ?? []) {
+      if (!isDraftedPick(auction) || !ownerWonAuction(auction, accountIds)) continue;
+      const { key } = resolvePokemonIdentity(auction.name || '', auction.form || '');
+      if (seenKeys.has(key)) continue;
+      seenKeys.add(key);
+      chances.set(key, (chances.get(key) ?? 0) + 1);
+    }
+  }
+
+  return chances;
+}

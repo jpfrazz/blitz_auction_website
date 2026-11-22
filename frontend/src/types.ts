@@ -240,6 +240,7 @@ export interface StatsPageTeamRow {
   draft_type?: string;
   season?: number;
   has_save?: boolean;
+  has_boss_battles: boolean;
 }
 
 export interface StatsPagePlayer {

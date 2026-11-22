@@ -8,9 +8,9 @@ import './PokemonStatsTab.scss';
 import { casualOneVOneDraftIds, oneVOneLeftoverOrders, oneVOnePickSlot } from '../oneVOneHistory';
 import { resolvePokemonIdentity } from '../../../shared/utils/pokemonIdentity';
 import { buildRunStatLineage } from '../../../utils/runStatLineage';
-import { computeAverageKosByPokemonKey, computeWinningPicksByPokemonKey } from '../costBreakdownKos';
+import { computeAverageKosByPokemonKey, computeWinOpportunitiesByPokemonKey, computeWinningPicksByPokemonKey } from '../costBreakdownKos';
 
-type SortKey = 'rank' | 'name' | 'avgWinningBid' | 'minBid' | 'maxBid' | 'priceVariance' | 'bidsWon' | 'recentMovement' | 'priceMovement' | 'avgOneVOnePick' | 'total1v1Picks' | 'pickMovement' | 'avgKOs' | 'wins';
+type SortKey = 'rank' | 'name' | 'avgWinningBid' | 'minBid' | 'maxBid' | 'priceVariance' | 'bidsWon' | 'recentMovement' | 'priceMovement' | 'avgOneVOnePick' | 'total1v1Picks' | 'pickMovement' | 'avgKOs' | 'wins' | 'winPercentage';
 
 interface PokemonAggregate {
   key: string;
@@ -30,6 +30,7 @@ interface PokemonAggregate {
   pickMovement: number;
   avgKOs: number | null;
   wins: number;
+  winPercentage: number | null;
   types: string[];
 }
 
@@ -374,6 +375,16 @@ const PokemonStatsTab: React.FC<PokemonStatsTabProps> = ({
     );
   }, [stats?.winning_races, stats?.auctions, stats?.teams, stats?.players, validDraftIds, casual1v1DraftIds]);
 
+  const winOpportunitiesByKey = useMemo(() => {
+    return computeWinOpportunitiesByPokemonKey(
+      stats?.teams ?? [],
+      stats?.auctions ?? [],
+      stats?.players ?? [],
+      validDraftIds,
+      casual1v1DraftIds,
+    );
+  }, [stats?.teams, stats?.auctions, stats?.players, validDraftIds, casual1v1DraftIds]);
+
   const aggregatedPokemon = useMemo<PokemonAggregate[]>(() => {
     const sales: PokemonSaleRow[] = [];
 
@@ -524,6 +535,9 @@ const PokemonStatsTab: React.FC<PokemonStatsTabProps> = ({
         ? avgOneVOnePick - historicAvgPick
         : 0;
 
+      const wins = winsByKey.get(entry.key) ?? 0;
+      const winOpportunities = winOpportunitiesByKey.get(entry.key) ?? 0;
+
       return {
         key: entry.key,
         name: entry.name,
@@ -541,7 +555,8 @@ const PokemonStatsTab: React.FC<PokemonStatsTabProps> = ({
         total1v1Picks: picks.length,
         pickMovement,
         avgKOs: avgKOsByKey.get(entry.key) ?? null,
-        wins: winsByKey.get(entry.key) ?? 0,
+        wins,
+        winPercentage: winOpportunities > 0 ? wins / winOpportunities : null,
         types: entry.types,
       };
     });
@@ -565,7 +580,7 @@ const PokemonStatsTab: React.FC<PokemonStatsTabProps> = ({
       p.priceMovement = histData ? p.avgWinningBid - histData.avg : 0;
     });
     return results;
-  }, [sortedAuctions, stats?.legacy, recentDraftInfo, typeLookup, oneVOnePickMap, oneVOneHistoricPickMap, avgKOsByKey, winsByKey]);
+  }, [sortedAuctions, stats?.legacy, recentDraftInfo, typeLookup, oneVOnePickMap, oneVOneHistoricPickMap, avgKOsByKey, winsByKey, winOpportunitiesByKey]);
 
   const pokemonSummary = useMemo<PokemonAggregate[]>(() => {
     return [...aggregatedPokemon].sort((a, b) => {
@@ -801,6 +816,9 @@ const PokemonStatsTab: React.FC<PokemonStatsTabProps> = ({
                   <th className="sortable" onClick={() => handleSort('wins')} title="Non-casual races where this Pokemon was drafted or picked and the team beat Steven or Wally">
                     Wins {sortConfig.key === 'wins' ? (sortConfig.direction === 'asc' ? '↑' : '↓') : ''}
                   </th>
+                  <th className="sortable" onClick={() => handleSort('winPercentage')} title="Wins divided by non-casual races with boss battle data where this Pokemon was drafted or picked">
+                    Win % {sortConfig.key === 'winPercentage' ? (sortConfig.direction === 'asc' ? '↑' : '↓') : ''}
+                  </th>
                 </tr>
               </thead>
               <tbody
@@ -878,10 +896,11 @@ const PokemonStatsTab: React.FC<PokemonStatsTabProps> = ({
                     <td>{entry.total1v1Picks}</td>
                     <td>{entry.avgKOs !== null ? parseFloat(entry.avgKOs.toFixed(1)).toLocaleString() : '-'}</td>
                     <td>{entry.wins}</td>
+                    <td>{entry.winPercentage !== null ? `${(entry.winPercentage * 100).toFixed(1)}%` : '-'}</td>
                   </tr>
                     {expandedPokemon === entry.key && (
                       <tr className="price-history-dropdown-row">
-                        <td colSpan={11}>
+                        <td colSpan={12}>
                           <div className="price-history-container">
                             <PokemonHistoryChart 
                               pokemonKey={entry.key} 
