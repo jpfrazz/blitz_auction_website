@@ -2,6 +2,7 @@ import axios, {AxiosError} from 'axios';
 import {
   AdminHallOfFameEligibleEntry,
   DraftRaceResults,
+  HallOfFamePokemon,
   MatchHistoryTeam,
   RaceResultTeamUpdate,
   StatsPageResponse,
@@ -57,6 +58,7 @@ export interface BossBattleSubmission {
   draft_id: string;
   battles: BossBattleSubmissionBattle[];
   note?: string | null;
+  hall_of_fame_team?: HallOfFamePokemon[] | null;
   created_at: string;
 }
 
@@ -75,8 +77,14 @@ export async function submitBossBattleSubmission(
   teamId: number,
   battles: BossBattleSubmissionBattle[],
   note?: string | null,
+  hallOfFameTeam?: HallOfFamePokemon[] | null,
 ): Promise<BossBattleSubmission> {
-  const response = await axios.post('/api/boss-battle-submissions', { team_id: teamId, battles, note });
+  const response = await axios.post('/api/boss-battle-submissions', {
+    team_id: teamId,
+    battles,
+    note,
+    hall_of_fame_team: hallOfFameTeam ?? null,
+  });
   return response.data;
 }
 

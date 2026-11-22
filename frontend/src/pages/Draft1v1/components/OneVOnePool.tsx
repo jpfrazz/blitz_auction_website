@@ -19,9 +19,11 @@ interface OneVOnePoolProps {
   onHover?: (slot: OneVOnePoolSlot | null) => void;
   currentUserTeam?: Team | null;
   oneVOne?: OneVOneState | null;
+  markedSlots?: Set<string>;
+  onToggleMark?: (slot: OneVOnePoolSlot) => void;
 }
 
-function slotKey(slot: OneVOnePoolSlot): string {
+export function slotKey(slot: Pick<OneVOnePoolSlot, 'pokemon'>): string {
   return `${slot.pokemon.pokedex_id}-${slot.pokemon.form ?? ''}`;
 }
 
@@ -138,6 +140,8 @@ const OneVOnePool: React.FC<OneVOnePoolProps> = ({
   onHover,
   currentUserTeam,
   oneVOne,
+  markedSlots,
+  onToggleMark,
 }) => {
   const [artMode, setArtMode] = useState(() => localStorage.getItem('eb-1v1-pokemon-art') || 'standard');
   const [tcgArtSeed] = useState(() => Math.floor(Math.random() * 0x100000000));
@@ -201,17 +205,19 @@ const OneVOnePool: React.FC<OneVOnePoolProps> = ({
       <div ref={gridRef} className="one-v-one-pool-grid" style={{ '--pool-tile-size': `${Math.min(tileSize, gridSpace?.max ?? 160)}px`, ...(gridSpace ? { maxHeight: gridSpace.height, overflowY: 'auto' } : {}) } as React.CSSProperties}>
         {sortedPool.map((slot, idx) => {
           const status = statusClass(slot.status);
+          const key = slotKey(slot);
           const isSelected = selectedSlot && sameSlot(selectedSlot, slot);
-          const label = slotLabels?.get(slotKey(slot));
+          const label = slotLabels?.get(key);
           const isAvailable = slot.status === 'Available';
+          const isMarked = isAvailable && !!markedSlots?.has(key);
           const portrait = portraits[idx];
           const tcgArt = artMode === 'tcg' ? getTcgArt(slot.pokemon, tcgArtSeed) : undefined;
           const shuffleArt = shuffleMode ? getShuffleIcon(slot.pokemon) : undefined;
           const dizzyPortrait = dizzyPortraits[idx]?.url !== portrait?.url ? dizzyPortraits[idx] : null;
-          const baseClasses = `one-v-one-pool-square ${status.cls} ${portrait ? 'mystery-dungeon' : ''} ${portrait?.local ? 'local-art' : ''} ${tcgArt ? 'tcg-art' : ''} ${shuffleArt ? 'shuffle-art' : ''} ${dizzyPortrait && loadedDizzy.has(dizzyPortrait.url) ? 'has-dizzy' : ''} ${isActive && isAvailable ? 'clickable' : ''} ${isSelected ? 'selected' : ''} ${isAvailable && hoverClass ? hoverClass : ''} ${isSelected && isAvailable && hoverClass ? `${hoverClass}-persistent` : ''}`;
+          const baseClasses = `one-v-one-pool-square ${status.cls} ${portrait ? 'mystery-dungeon' : ''} ${portrait?.local ? 'local-art' : ''} ${tcgArt ? 'tcg-art' : ''} ${shuffleArt ? 'shuffle-art' : ''} ${dizzyPortrait && loadedDizzy.has(dizzyPortrait.url) ? 'has-dizzy' : ''} ${isActive && isAvailable ? 'clickable' : ''} ${isSelected ? 'selected' : ''} ${isAvailable && hoverClass ? hoverClass : ''} ${isSelected && isAvailable && hoverClass ? `${hoverClass}-persistent` : ''} ${isMarked ? 'marked' : ''}`;
           return (
             <div
-              key={slotKey(slot)}
+              key={key}
               className="one-v-one-pool-cell"
             >
               <div
@@ -219,9 +225,13 @@ const OneVOnePool: React.FC<OneVOnePoolProps> = ({
                 onClick={() => {
                   if (isActive && isAvailable) onSelect(slot);
                 }}
+                onContextMenu={(event) => {
+                  event.preventDefault();
+                  if (isAvailable) onToggleMark?.(slot);
+                }}
                 onMouseEnter={() => onHover?.(slot)}
                 onMouseLeave={() => onHover?.(null)}
-                title={displayName(slot)}
+                title={`${displayName(slot)}${isAvailable ? ` — right-click to ${isMarked ? 'unmark' : 'mark'}` : ''}`}
               >
                 <img
                   key={portrait?.url || tcgArt || shuffleArt || 'standard'}

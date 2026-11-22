@@ -322,6 +322,7 @@ export interface AdminBossBattleSubmission {
   user_name: string | null;
   battles: BossBattleSubmissionBattle[];
   note?: string | null;
+  hall_of_fame_team?: HallOfFamePokemon[] | null;
   created_at: string;
 }
 
@@ -338,8 +339,12 @@ export async function fetchPendingBossBattleSubmissionCount(): Promise<number> {
 export async function approveBossBattleSubmission(
   teamId: number,
   battles?: BossBattleSubmissionBattle[],
+  hallOfFameTeam?: HallOfFamePokemon[] | null,
 ): Promise<void> {
-  await axios.post(`/api/admin/boss-battle-submissions/${teamId}/approve`, { battles });
+  await axios.post(`/api/admin/boss-battle-submissions/${teamId}/approve`, {
+    battles,
+    hall_of_fame_team: hallOfFameTeam ?? null,
+  });
 }
 
 export async function rejectBossBattleSubmission(teamId: number): Promise<void> {

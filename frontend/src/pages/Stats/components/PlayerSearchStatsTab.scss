@@ -1165,6 +1165,21 @@
     font-size: 1.15rem;
 }
 
+.player-search-stats-tab .boss-battle-hof-section {
+    display: flex;
+    flex-direction: column;
+    gap: 0.55rem;
+    padding-top: 0.8rem;
+    border-top: 1px solid $eb-border;
+}
+
+.player-search-stats-tab .boss-battle-section-title {
+    margin: 0;
+    color: $eb-text;
+    font-size: 1.15rem;
+    font-weight: 700;
+}
+
 .player-search-stats-tab .boss-battle-note-input {
     width: 100%;
     box-sizing: border-box;

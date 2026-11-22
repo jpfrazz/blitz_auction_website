@@ -1275,6 +1275,7 @@ pub struct PendingBossBattleSubmission {
     pub draft_id: String,
     pub battles: Vec<BossBattleSubmissionBattle>,
     pub note: Option<String>,
+    pub hall_of_fame_team: Option<Vec<HallOfFamePokemon>>,
     pub owner_user_id: String,
     pub created_at: chrono::DateTime<chrono::Utc>,
 }
@@ -1286,6 +1287,8 @@ pub struct MyBossBattleSubmission {
     pub battles: Vec<BossBattleSubmissionBattle>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub note: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub hall_of_fame_team: Option<Vec<HallOfFamePokemon>>,
     pub created_at: String,
 }
 
@@ -1300,6 +1303,8 @@ pub struct AdminBossBattleSubmission {
     pub battles: Vec<BossBattleSubmissionBattle>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub note: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub hall_of_fame_team: Option<Vec<HallOfFamePokemon>>,
     pub created_at: String,
 }
 
@@ -1309,12 +1314,16 @@ pub struct CreateBossBattleSubmissionRequest {
     pub battles: Vec<BossBattleSubmissionBattle>,
     #[serde(default)]
     pub note: Option<String>,
+    #[serde(default)]
+    pub hall_of_fame_team: Option<Vec<HallOfFamePokemon>>,
 }
 
 #[derive(Debug, Deserialize)]
 pub struct UpdateBossBattleSubmissionRequest {
     #[serde(default)]
     pub battles: Option<Vec<BossBattleSubmissionBattle>>,
+    #[serde(default)]
+    pub hall_of_fame_team: Option<Vec<HallOfFamePokemon>>,
 }
 
 fn sanitize_submission_battles(battles: &mut Vec<BossBattleSubmissionBattle>) {
@@ -1333,6 +1342,36 @@ fn sanitize_submission_battles(battles: &mut Vec<BossBattleSubmissionBattle>) {
             battle.seconds = 59;
         }
     }
+}
+
+/// Validates an optional Hall of Fame team that rides along with a pending
+/// boss battle submission. Empty teams are treated as "nothing submitted" so
+/// players can submit splits without also changing their Hall of Fame.
+fn sanitize_submission_hall_of_fame_team(
+    team: Option<Vec<HallOfFamePokemon>>,
+) -> Result<Option<Vec<HallOfFamePokemon>>, (StatusCode, String)> {
+    let Some(mut team) = team else {
+        return Ok(None);
+    };
+    team.truncate(6);
+    if team.is_empty() {
+        return Ok(None);
+    }
+
+    for mon in &mut team {
+        mon.name = mon.name.trim().to_string();
+        if mon.name.is_empty() {
+            return Err((
+                StatusCode::BAD_REQUEST,
+                "Hall of Fame pokemon names cannot be empty".to_string(),
+            ));
+        }
+        mon.icon = mon.icon.trim().to_string();
+        if mon.icon.is_empty() {
+            mon.icon = mon.name.to_lowercase().replace('\'', "");
+        }
+    }
+    Ok(Some(team))
 }
 
 /// Prepares approved battles the same way emulator saves do so uploaded
@@ -1413,6 +1452,7 @@ pub async fn get_my_boss_battle_submissions(
             draft_id: entry.draft_id.clone(),
             battles: entry.battles.clone(),
             note: entry.note.clone(),
+            hall_of_fame_team: entry.hall_of_fame_team.clone(),
             created_at: entry.created_at.to_rfc3339(),
         })
         .collect();
@@ -1453,6 +1493,8 @@ pub async fn post_boss_battle_submission(
             "submission must contain at least one boss battle".to_string(),
         ));
     }
+    let hall_of_fame_team =
+        sanitize_submission_hall_of_fame_team(request.hall_of_fame_team)?;
 
     // The site admin can add splits to any team; everyone else can only
     // submit splits for their own (or linked guest) teams.
@@ -1490,6 +1532,7 @@ pub async fn post_boss_battle_submission(
             let submission = occupied.get_mut();
             submission.battles = request.battles.clone();
             submission.note = request.note.clone();
+            submission.hall_of_fame_team = hall_of_fame_team.clone();
             submission.owner_user_id = user_id.clone();
         }
         entry::Entry::Vacant(vacant) => {
@@ -1498,6 +1541,7 @@ pub async fn post_boss_battle_submission(
                 draft_id: draft_id.clone(),
                 battles: request.battles.clone(),
                 note: request.note.clone(),
+                hall_of_fame_team: hall_of_fame_team.clone(),
                 owner_user_id: user_id.clone(),
                 created_at: now,
             });
@@ -1509,6 +1553,7 @@ pub async fn post_boss_battle_submission(
         draft_id,
         battles: request.battles,
         note: request.note,
+        hall_of_fame_team,
         created_at: now.to_rfc3339(),
     }))
 }
@@ -1611,6 +1656,7 @@ pub async fn get_admin_boss_battle_submissions(
                 user_name,
                 battles: entry.battles,
                 note: entry.note,
+                hall_of_fame_team: entry.hall_of_fame_team,
                 created_at: entry.created_at.to_rfc3339(),
             }
         })
@@ -1650,6 +1696,31 @@ pub async fn approve_boss_battle_submission(
             "approved submission must contain at least one boss battle".to_string(),
         ));
     }
+
+    let submitted_hall_of_fame_team = match request.hall_of_fame_team {
+        Some(team) => Some(team),
+        None => entry.hall_of_fame_team.clone(),
+    };
+    let hall_of_fame_team =
+        match sanitize_submission_hall_of_fame_team(submitted_hall_of_fame_team) {
+            Ok(team) => team,
+            Err(error) => {
+                state.boss_battle_submissions.insert(entry.team_id, entry);
+                return Err(error);
+            }
+        };
+    if hall_of_fame_team.is_some()
+        && !battles.iter().any(|battle| {
+            !battle.is_loss && (battle.trainer_id == 804 || battle.trainer_id == 656)
+        })
+    {
+        state.boss_battle_submissions.insert(entry.team_id, entry);
+        return Err((
+            StatusCode::BAD_REQUEST,
+            "a submitted Hall of Fame team requires a win over Steven or Wally".to_string(),
+        ));
+    }
+    let hall_of_fame_team_recorded = hall_of_fame_team.is_some();
 
     // Verify the team still exists before writing anything.
     let row = sqlx::query("SELECT draft_id FROM teams WHERE team_id = $1")
@@ -1708,6 +1779,28 @@ pub async fn approve_boss_battle_submission(
         })?;
     }
 
+    if let Some(team) = hall_of_fame_team {
+        let hall_of_fame_value = match serde_json::to_value(&team) {
+            Ok(value) => value,
+            Err(e) => {
+                state.boss_battle_submissions.insert(team_id, entry);
+                return Err((
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    format!("failed to serialize hall of fame team: {}", e),
+                ));
+            }
+        };
+        if let Err(e) = sqlx::query("UPDATE teams SET hall_of_fame_team = $1 WHERE team_id = $2")
+            .bind(&hall_of_fame_value)
+            .bind(team_id)
+            .execute(&mut *tx)
+            .await
+        {
+            state.boss_battle_submissions.insert(team_id, entry);
+            return Err((StatusCode::INTERNAL_SERVER_ERROR, format!("db error: {}", e)));
+        }
+    }
+
     if let Err(e) = tx.commit().await {
         // Restore the pending submission so it is not silently lost.
         state.boss_battle_submissions.insert(team_id, entry);
@@ -1716,7 +1809,8 @@ pub async fn approve_boss_battle_submission(
 
     Ok(Json(serde_json::json!({
         "team_id": team_id,
-        "battles_recorded": battles.len()
+        "battles_recorded": battles.len(),
+        "hall_of_fame_team_recorded": hall_of_fame_team_recorded
     })))
 }
 

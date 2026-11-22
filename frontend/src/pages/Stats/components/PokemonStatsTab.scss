@@ -2,7 +2,16 @@
 
 .pokemon-stats-tab {
     table {
-        min-width: 960px;
+        min-width: 860px;
+    }
+
+    // "Sales" and "Picks" no longer need room for "Total", so keep these
+    // columns from taking back the reclaimed width when the table expands.
+    table th:nth-child(6),
+    table td:nth-child(6),
+    table th:nth-child(9),
+    table td:nth-child(9) {
+        width: 5rem;
     }
 
     .pokemon-stats-controls {

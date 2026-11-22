@@ -134,12 +134,16 @@ const Admin: React.FC = () => {
     setEditingSubmission(null);
   };
 
-  const handleApproveBossSubmission = async (teamId: number, battles?: BossBattleSubmissionBattle[]) => {
+  const handleApproveBossSubmission = async (
+    teamId: number,
+    battles?: BossBattleSubmissionBattle[],
+    hallOfFameTeam?: HallOfFamePokemon[] | null,
+  ) => {
     setActingOnTeamId(teamId);
     setBossSubmissionsError(null);
     setBossSubmissionsSuccess(null);
     try {
-      await approveBossBattleSubmission(teamId, battles);
+      await approveBossBattleSubmission(teamId, battles, hallOfFameTeam);
       setBossSubmissionsSuccess(`Approved boss battle submission for team ${teamId}.`);
       setEditingSubmission(null);
       loadBossBattleSubmissions();
@@ -1124,8 +1128,9 @@ const Admin: React.FC = () => {
                   {bossSubmissionsError && <div className="admin-message admin-error">{bossSubmissionsError}</div>}
                   {bossSubmissionsSuccess && <div className="admin-message admin-success">{bossSubmissionsSuccess}</div>}
                   <p className="admin-submissions-hint">
-                    Pending boss battle history uploaded by players. Approving writes the battles into the
-                    team&apos;s match history. Submissions are kept in memory and are lost if the server restarts.
+                    Pending boss battle history and optional Hall of Fame teams uploaded by players. Approving
+                    writes the battles into the team&apos;s match history and saves any submitted Hall of Fame team.
+                    Submissions are kept in memory and are lost if the server restarts.
                   </p>
                   {bossSubmissionsLoading ? (
                     <div className="admin-message">Loading boss battle submissions...</div>
@@ -1217,6 +1222,27 @@ const Admin: React.FC = () => {
                           <span>{editingSubmission.user_name ?? editingSubmission.user_id ?? editingSubmission.guest_id ?? '-'}</span>
                           {editingSubmission.note && <span>Note: {editingSubmission.note}</span>}
                         </div>
+                        <div className="admin-submission-hof">
+                          <h4>Hall of Fame Team</h4>
+                          {(editingSubmission.hall_of_fame_team?.length ?? 0) > 0 ? (
+                            <div className="admin-submission-hof-list">
+                              {editingSubmission.hall_of_fame_team?.map((mon, index) => (
+                                <span className="admin-submission-hof-mon" key={`${mon.name}-${index}`}>
+                                  <img
+                                    src={`/MiniIcons/${mon.icon || getIconName(mon.name)}.png`}
+                                    alt=""
+                                    onError={(event) => {
+                                      (event.currentTarget as HTMLImageElement).src = '/MiniIcons/question.png';
+                                    }}
+                                  />
+                                  {mon.name}
+                                </span>
+                              ))}
+                            </div>
+                          ) : (
+                            <p className="admin-submission-hof-empty">No Hall of Fame team submitted.</p>
+                          )}
+                        </div>
                         <BossBattleEditor
                           battles={editingBattles}
                           onChange={setEditingBattles}
@@ -1234,7 +1260,11 @@ const Admin: React.FC = () => {
                           <button
                             type="button"
                             className="button boss-battle-modal-submit"
-                            onClick={() => handleApproveBossSubmission(editingSubmission.team_id, editingBattles)}
+                            onClick={() => handleApproveBossSubmission(
+                              editingSubmission.team_id,
+                              editingBattles,
+                              editingSubmission.hall_of_fame_team,
+                            )}
                             disabled={actingOnTeamId !== null}
                           >
                             {actingOnTeamId === editingSubmission.team_id ? 'Approving...' : 'Approve'}

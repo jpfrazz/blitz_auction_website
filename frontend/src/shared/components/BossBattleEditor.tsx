@@ -27,11 +27,12 @@ export const BOSS_BASE_TRAINERS: { id: number; name: string }[] = [
   { id: 656, name: 'Wally' },
 ];
 
-const GYM_LEADER_IDS = new Set([265, 855, 266, 267, 268, 269, 270, 271, 272, 601, 34]);
+const NUMBERED_TRAINER_IDS = new Set([265, 855, 266, 267, 268, 269, 270, 271, 272, 601, 34]);
+const AUTO_NUMBERED_ROWS = 8;
 
 const EMPTY_BATTLE: BossBattleSubmissionBattle = {
   trainer_id: 265,
-  version: null,
+  version: 1,
   hours: 0,
   minutes: 0,
   seconds: 0,
@@ -41,6 +42,46 @@ const EMPTY_BATTLE: BossBattleSubmissionBattle = {
 function clamp(value: number, min: number, max: number): number {
   if (Number.isNaN(value)) return min;
   return Math.max(min, Math.min(max, value));
+}
+
+export function formatBattleTime(hours: number, minutes: number, seconds: number): string {
+  const pad = (value: number) => String(value).padStart(2, '0');
+  return `${pad(hours)}:${pad(minutes)}:${pad(seconds)}`;
+}
+
+export function parseBattleTime(value: string): Pick<BossBattleSubmissionBattle, 'hours' | 'minutes' | 'seconds'> | null {
+  const match = /^(\d{1,3}):([0-5]\d):([0-5]\d)$/.exec(value.trim());
+  if (!match) return null;
+  return {
+    hours: Number(match[1]),
+    minutes: Number(match[2]),
+    seconds: Number(match[3]),
+  };
+}
+
+/**
+ * The first eight rows are always battles 1-8 when their trainer has a number.
+ * Every other numbered trainer keeps its manually chosen version, and trainers
+ * without a number never carry one.
+ */
+export function normalizeSubmissionBattles(
+  battles: BossBattleSubmissionBattle[],
+  lockedCount = 0,
+): BossBattleSubmissionBattle[] {
+  return battles.map((battle, index) => {
+    if (index < lockedCount) return battle;
+    if (!NUMBERED_TRAINER_IDS.has(battle.trainer_id)) {
+      return { ...battle, version: null };
+    }
+    if (index < AUTO_NUMBERED_ROWS) {
+      return { ...battle, version: index + 1 };
+    }
+    return battle;
+  });
+}
+
+function hasTrainerNumber(trainerId: number): boolean {
+  return NUMBERED_TRAINER_IDS.has(trainerId);
 }
 
 interface BossBattleEditorProps {
@@ -53,22 +94,45 @@ interface BossBattleEditorProps {
 const BossBattleEditor: React.FC<BossBattleEditorProps> = ({ battles, onChange, disabled = false, lockedCount = 0 }) => {
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [importError, setImportError] = useState<string | null>(null);
+  const [timeDrafts, setTimeDrafts] = useState<Record<number, string>>({});
+
+  const clearTimeDrafts = () => setTimeDrafts({});
 
   const updateBattle = (index: number, patch: Partial<BossBattleSubmissionBattle>) => {
     if (index < lockedCount && Object.keys(patch).length > 0) {
       // Don't allow modifying locked entries
       return;
     }
-    onChange(battles.map((battle, i) => (i === index ? { ...battle, ...patch } : battle)));
+    onChange(normalizeSubmissionBattles(
+      battles.map((battle, i) => (i === index ? { ...battle, ...patch } : battle)),
+      lockedCount,
+    ));
+  };
+
+  const handleTimeChange = (index: number, value: string) => {
+    setTimeDrafts((prev) => ({ ...prev, [index]: value }));
+    const parsed = parseBattleTime(value);
+    if (parsed) updateBattle(index, parsed);
+  };
+
+  const handleTimeBlur = (index: number) => {
+    setTimeDrafts((prev) => {
+      const next = { ...prev };
+      delete next[index];
+      return next;
+    });
   };
 
   const addBattle = () => {
-    onChange([...battles, { ...EMPTY_BATTLE }]);
+    const next = [...battles, { ...EMPTY_BATTLE }];
+    onChange(normalizeSubmissionBattles(next, lockedCount));
+    clearTimeDrafts();
   };
 
   const removeBattle = (index: number) => {
     if (index < lockedCount) return;
-    onChange(battles.filter((_, i) => i !== index));
+    onChange(normalizeSubmissionBattles(battles.filter((_, i) => i !== index), lockedCount));
+    clearTimeDrafts();
   };
 
   const handleSaveFile = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -91,7 +155,8 @@ const BossBattleEditor: React.FC<BossBattleEditorProps> = ({ battles, onChange, 
           setImportError('No boss battles found on this trainer card.');
         } else {
           setImportError(null);
-          onChange(wins);
+          onChange(normalizeSubmissionBattles(wins, lockedCount));
+          clearTimeDrafts();
         }
       } catch (e) {
         console.error('[BossBattleEditor] Failed to parse save file:', e);
@@ -128,17 +193,16 @@ const BossBattleEditor: React.FC<BossBattleEditorProps> = ({ battles, onChange, 
       ) : (
         battles.map((battle, index) => {
           const known = BOSS_BASE_TRAINERS.find((trainer) => trainer.id === battle.trainer_id);
-          const isGymLeader = GYM_LEADER_IDS.has(battle.trainer_id);
+          const numbered = hasTrainerNumber(battle.trainer_id);
+          const autoNumbered = numbered && index < AUTO_NUMBERED_ROWS;
+          const timeValue = timeDrafts[index] ?? formatBattleTime(battle.hours, battle.minutes, battle.seconds);
           return (
             <div className="boss-battle-editor-row" key={index}>
-               <select
-                 value={known ? battle.trainer_id : ''}
-                 disabled={disabled || index < lockedCount}
-                 onChange={(e) => {
-                   const id = Number(e.target.value);
-                   updateBattle(index, { trainer_id: id, version: null });
-                 }}
-               >
+              <select
+                value={known ? battle.trainer_id : ''}
+                disabled={disabled || index < lockedCount}
+                onChange={(e) => updateBattle(index, { trainer_id: Number(e.target.value) })}
+              >
                 <option value="">Custom...</option>
                 {BOSS_BASE_TRAINERS.map((trainer) => (
                   <option key={trainer.id} value={trainer.id}>
@@ -146,80 +210,70 @@ const BossBattleEditor: React.FC<BossBattleEditorProps> = ({ battles, onChange, 
                   </option>
                 ))}
               </select>
-               <input
-                 type="number"
-                 className="boss-battle-trainer-id"
-                 value={battle.trainer_id}
-                 min={0}
-                 disabled={disabled || index < lockedCount}
-                 title="Trainer ID"
-                 onChange={(e) => updateBattle(index, { trainer_id: clamp(Number(e.target.value), 0, 9999) })}
-               />
-              {isGymLeader && (
+              <input
+                type="number"
+                className="boss-battle-trainer-id"
+                value={battle.trainer_id}
+                min={0}
+                disabled={disabled || index < lockedCount}
+                title="Trainer ID"
+                onChange={(e) => updateBattle(index, { trainer_id: clamp(Number(e.target.value), 0, 9999) })}
+              />
+              {numbered && autoNumbered && (
+                <span className="boss-battle-version boss-battle-version-auto" title={`Battle ${index + 1} (automatic)`}>
+                  {index + 1}
+                </span>
+              )}
+              {numbered && !autoNumbered && (
                 <input
                   type="number"
                   className="boss-battle-version"
                   value={battle.version ?? 1}
                   min={1}
                   max={8}
-                   disabled={disabled || index < lockedCount}
-                   title="Gym leader version (1-8)"
-                   onChange={(e) => updateBattle(index, { version: clamp(Number(e.target.value), 1, 8) })}
-                 />
+                  disabled={disabled || index < lockedCount}
+                  title="Gym leader version (1-8)"
+                  onChange={(e) => updateBattle(index, { version: clamp(Number(e.target.value), 1, 8) })}
+                />
               )}
               <div className="boss-battle-time">
                 <input
-                  type="number"
-                  value={battle.hours}
-                  min={0}
-                   disabled={disabled || index < lockedCount}
-                   onChange={(e) => updateBattle(index, { hours: clamp(Number(e.target.value), 0, 999) })}
-                 />
-                <span className="boss-battle-time-unit">h</span>
-                <input
-                  type="number"
-                  value={battle.minutes}
-                  min={0}
-                  max={59}
-                   disabled={disabled || index < lockedCount}
-                   onChange={(e) => updateBattle(index, { minutes: clamp(Number(e.target.value), 0, 59) })}
-                 />
-                <span className="boss-battle-time-unit">m</span>
-                <input
-                  type="number"
-                  value={battle.seconds}
-                  min={0}
-                  max={59}
-                   disabled={disabled || index < lockedCount}
-                   onChange={(e) => updateBattle(index, { seconds: clamp(Number(e.target.value), 0, 59) })}
-                 />
-                <span className="boss-battle-time-unit">s</span>
+                  type="text"
+                  className="boss-battle-time-input"
+                  value={timeValue}
+                  placeholder="00:00:00"
+                  title="Battle time"
+                  disabled={disabled || index < lockedCount}
+                  onChange={(e) => handleTimeChange(index, e.target.value)}
+                  onBlur={() => handleTimeBlur(index)}
+                />
+                <span className="boss-battle-time-format">(Split)</span>
               </div>
               <div className="boss-battle-result-toggle">
                 <button
                   type="button"
                   className={`boss-battle-result-btn win ${!battle.is_loss ? 'active' : ''}`}
-                   disabled={disabled || index < lockedCount}
-                   onClick={() => updateBattle(index, { is_loss: false })}
-                 >
+                  disabled={disabled || index < lockedCount}
+                  onClick={() => updateBattle(index, { is_loss: false })}
+                >
                   Win
                 </button>
                 <button
                   type="button"
                   className={`boss-battle-result-btn loss ${battle.is_loss ? 'active' : ''}`}
-                   disabled={disabled || index < lockedCount}
-                   onClick={() => updateBattle(index, { is_loss: true })}
-                 >
+                  disabled={disabled || index < lockedCount}
+                  onClick={() => updateBattle(index, { is_loss: true })}
+                >
                   Loss
                 </button>
               </div>
-               <button
-                 type="button"
-                 className="boss-battle-remove"
-                 onClick={() => removeBattle(index)}
-                 disabled={disabled || index < lockedCount}
-                 title={index < lockedCount ? 'Cannot remove existing recorded battles' : 'Remove battle'}
-               >
+              <button
+                type="button"
+                className="boss-battle-remove"
+                onClick={() => removeBattle(index)}
+                disabled={disabled || index < lockedCount}
+                title={index < lockedCount ? 'Cannot remove existing recorded battles' : 'Remove battle'}
+              >
                 &times;
               </button>
             </div>

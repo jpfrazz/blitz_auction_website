@@ -109,62 +109,6 @@
   margin: 0.5rem 0;
 }
 
-.hof-team-editor-grid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 0.7rem;
-  margin-bottom: 1.4rem;
-}
-
-.hof-team-editor-slot {
-  display: flex;
-  align-items: center;
-  gap: 0.6rem;
-  background: $eb-surface;
-  border: 1px solid $eb-border;
-  border-radius: 4px;
-  padding: 0.4rem 0.6rem;
-}
-
-.hof-team-editor-icon {
-  width: 40px;
-  height: 40px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-  background: $eb-bg;
-  border-radius: 4px;
-}
-
-.hof-team-editor-icon img {
-  width: 36px;
-  height: 36px;
-  object-fit: contain;
-  image-rendering: pixelated;
-}
-
-.hof-team-editor-slot-num {
-  color: $eb-text-muted;
-  font-size: 0.85rem;
-}
-
-.hof-team-editor-slot input {
-  flex: 1;
-  min-width: 0;
-  background: $eb-bg;
-  color: $eb-text;
-  border: 1px solid $eb-border;
-  border-radius: 4px;
-  padding: 0.35rem 0.5rem;
-}
-
-@media (max-width: 640px) {
-  .hof-team-editor-grid {
-    grid-template-columns: 1fr;
-  }
-}
-
 .admin-error {
   color: #ff8f8f;
 }
@@ -252,6 +196,44 @@
   gap: 0.2rem;
   color: #a9c3dc;
   font-size: 0.95rem;
+}
+
+.admin-submission-hof {
+  padding: 0.6rem 0;
+  border-top: 1px solid #243242;
+  border-bottom: 1px solid #243242;
+
+  h4 {
+    margin: 0 0 0.4rem;
+    font-size: 1rem;
+  }
+}
+
+.admin-submission-hof-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem 0.8rem;
+}
+
+.admin-submission-hof-mon {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  color: #eef4fb;
+  font-size: 0.95rem;
+
+  img {
+    width: 24px;
+    height: 24px;
+    object-fit: contain;
+    image-rendering: pixelated;
+  }
+}
+
+.admin-submission-hof-empty {
+  margin: 0;
+  color: #7d94ad;
+  font-size: 0.9rem;
 }
 
 .boss-battle-modal-backdrop {

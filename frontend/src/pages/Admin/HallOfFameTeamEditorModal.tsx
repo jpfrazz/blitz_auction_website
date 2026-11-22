@@ -1,7 +1,6 @@
-import React, { useEffect, useMemo, useState } from 'react';
-import { AdminHallOfFameEligibleEntry, HallOfFamePokemon, Pokemon } from '../../types';
-import { fetchPokemonList } from '../../shared/api/pokemon';
-import { getIconName } from '../../utils/speciesUtils';
+import React, { useState } from 'react';
+import { AdminHallOfFameEligibleEntry, HallOfFamePokemon } from '../../types';
+import HallOfFameTeamEditor from '../../shared/components/HallOfFameTeamEditor';
 
 interface HallOfFameTeamEditorModalProps {
   entry: AdminHallOfFameEligibleEntry;
@@ -9,8 +8,6 @@ interface HallOfFameTeamEditorModalProps {
   onSave: (team: HallOfFamePokemon[]) => Promise<void>;
   onClose: () => void;
 }
-
-const MAX_SLOTS = 6;
 
 function formatBeatTime(hours: number, minutes: number, seconds: number): string {
   return `${hours}h ${minutes}m ${seconds}s`;
@@ -22,61 +19,12 @@ const HallOfFameTeamEditorModal: React.FC<HallOfFameTeamEditorModalProps> = ({
   onSave,
   onClose,
 }) => {
-  const [pokemonList, setPokemonList] = useState<Pokemon[]>([]);
-  const [texts, setTexts] = useState<string[]>(() => {
-    const initial = new Array<string>(MAX_SLOTS).fill('');
-    entry.hall_of_fame_team.forEach((mon, i) => {
-      if (i < MAX_SLOTS) initial[i] = mon.name;
-    });
-    return initial;
-  });
+  const [team, setTeam] = useState<HallOfFamePokemon[]>(entry.hall_of_fame_team);
+  const [editorKey, setEditorKey] = useState(0);
   const [localError, setLocalError] = useState<string | null>(null);
-
-  useEffect(() => {
-    fetchPokemonList()
-      .then(setPokemonList)
-      .catch(() => setPokemonList([]));
-  }, []);
-
-  const pokemonByName = useMemo(() => {
-    const map = new Map<string, Pokemon>();
-    pokemonList.forEach((p) => {
-      const key = p.name.toLowerCase();
-      if (!map.has(key)) map.set(key, p);
-    });
-    return map;
-  }, [pokemonList]);
-
-  const handleTextChange = (idx: number, value: string) => {
-    setTexts((prev) => {
-      const next = [...prev];
-      next[idx] = value;
-      return next;
-    });
-  };
-
-  const iconFor = (idx: number): string | null => {
-    const text = texts[idx].trim().toLowerCase();
-    if (!text) return null;
-    const pokemon = pokemonByName.get(text);
-    return getIconName(pokemon?.name ?? text);
-  };
-
-  const buildTeam = (): HallOfFamePokemon[] => {
-    const team: HallOfFamePokemon[] = [];
-    for (let i = 0; i < MAX_SLOTS; i++) {
-      const text = texts[i].trim();
-      if (!text) continue;
-      const pokemon = pokemonByName.get(text.toLowerCase());
-      const name = pokemon?.name ?? text;
-      team.push({ name, icon: getIconName(name) });
-    }
-    return team;
-  };
 
   const handleSubmit = async () => {
     setLocalError(null);
-    const team = buildTeam();
     if (team.length === 0) {
       setLocalError('Enter at least one Pokemon.');
       return;
@@ -92,6 +40,8 @@ const HallOfFameTeamEditorModal: React.FC<HallOfFameTeamEditorModalProps> = ({
     setLocalError(null);
     try {
       await onSave([]);
+      setTeam([]);
+      setEditorKey((key) => key + 1);
     } catch (e: any) {
       setLocalError(e?.response?.data ?? e?.message ?? 'Failed to clear Hall of Fame team.');
     }
@@ -113,44 +63,15 @@ const HallOfFameTeamEditorModal: React.FC<HallOfFameTeamEditorModalProps> = ({
 
         {localError && <div className="race-results-message race-results-error">{localError}</div>}
 
-        <div className="hof-team-editor-grid">
-          {Array.from({ length: MAX_SLOTS }, (_, i) => {
-            const icon = iconFor(i);
-            return (
-              <div className="hof-team-editor-slot" key={i}>
-                <div className="hof-team-editor-icon">
-                  {icon ? (
-                    <img
-                      src={`/MiniIcons/${icon}.png`}
-                      alt=""
-                      onError={(e) => {
-                        (e.currentTarget as HTMLImageElement).src = '/MiniIcons/question.png';
-                      }}
-                    />
-                  ) : (
-                    <span className="hof-team-editor-slot-num">{i + 1}</span>
-                  )}
-                </div>
-                <input
-                  list={`hof-pokemon-list-${entry.team_id}`}
-                  type="text"
-                  placeholder={`Pokemon ${i + 1}`}
-                  value={texts[i]}
-                  onChange={(e) => handleTextChange(i, e.target.value)}
-                  disabled={saving}
-                />
-              </div>
-            );
-          })}
-        </div>
-        <datalist id={`hof-pokemon-list-${entry.team_id}`}>
-          {pokemonList.map((p) => (
-            <option key={`${p.id}-${p.name}`} value={p.name} />
-          ))}
-        </datalist>
+        <HallOfFameTeamEditor
+          key={editorKey}
+          initialTeam={entry.hall_of_fame_team}
+          onChange={setTeam}
+          disabled={saving}
+        />
 
         <div className="race-results-modal-footer">
-          {entry.hall_of_fame_team.length > 0 && (
+          {team.length > 0 && (
             <button type="button" className="button danger" onClick={handleClear} disabled={saving}>
               Clear Team
             </button>

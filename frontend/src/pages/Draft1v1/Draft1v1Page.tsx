@@ -28,7 +28,7 @@ import AllPokemonTab from '../Auction/components/PokemonTablePanel/AllPokemonTab
 import TeamPlannerTab from '../Auction/components/PokemonTablePanel/TeamPlannerTab';
 import TierListTab from '../Auction/components/PokemonTablePanel/TierListTab';
 import PlayerSearchTab from '../Auction/components/PokemonTablePanel/PlayerSearchTab';
-import OneVOnePool from './components/OneVOnePool';
+import OneVOnePool, { slotKey } from './components/OneVOnePool';
 import OneVOneInfoPanel from './components/OneVOneInfoPanel';
 import PickOrderTab from './components/PickOrderTab';
 import '../Auction/AuctionPage.scss';
@@ -88,6 +88,8 @@ const Draft1v1Page: React.FC = () => {
   const [hasRefereeRole, setHasRefereeRole] = useState(false);
   const [selectedSlot, setSelectedSlot] = useState<OneVOnePoolSlot | null>(null);
   const [hoveredSlot, setHoveredSlot] = useState<OneVOnePoolSlot | null>(null);
+  // Right-click marks are a local-only visual aid, never sent to the server or the opponent.
+  const [markedSlots, setMarkedSlots] = useState<Set<string>>(() => new Set());
   const [poolCollapsed, setPoolCollapsed] = useState(false);
   const [poolTileSize, setPoolTileSize] = useState(() => {
     const stored = Number(localStorage.getItem('eb-1v1-tile-size'));
@@ -176,6 +178,20 @@ const Draft1v1Page: React.FC = () => {
     setSelectedSlot(null);
   }, [oneVOne?.current_player, oneVOne?.current_action, oneVOne?.eeveelution_phase]);
 
+  // A mark only lasts until that pokemon is picked or banned by either player.
+  useEffect(() => {
+    if (!oneVOne || markedSlots.size === 0) return;
+    const resolved = new Set(
+      [...oneVOne.pool, ...oneVOne.eeveelutions]
+        .filter((slot) => slot.status !== 'Available')
+        .map(slotKey)
+    );
+    setMarkedSlots((previous) => {
+      const remaining = Array.from(previous).filter((key) => !resolved.has(key));
+      return remaining.length === previous.size ? previous : new Set(remaining);
+    });
+  }, [oneVOne, markedSlots.size]);
+
   const requiredTeams = 2;
   const joinedTeams = draft?.teams.length ?? 0;
   const readyTeams = draft?.teams.filter((t) => t.ready === true).length ?? 0;
@@ -245,7 +261,7 @@ const Draft1v1Page: React.FC = () => {
     let pick = 0;
     let ban = 0;
     for (const h of oneVOne.history) {
-      const key = `${h.pokemon.pokedex_id}-${h.pokemon.form ?? ''}`;
+      const key = slotKey(h);
       if (h.action === 'Leftover') {
         continue;
       }
@@ -261,7 +277,7 @@ const Draft1v1Page: React.FC = () => {
       for (const slot of oneVOne.eeveelutions) {
         if (typeof slot.status === 'object' && slot.status !== null && 'Banned' in slot.status) {
           ban += 1;
-          map.set(`${slot.pokemon.pokedex_id}-${slot.pokemon.form ?? ''}`, `B${ban}`);
+          map.set(slotKey(slot), `B${ban}`);
         }
       }
     }
@@ -435,6 +451,16 @@ const Draft1v1Page: React.FC = () => {
     });
   };
 
+  const handleToggleMark = useCallback((slot: OneVOnePoolSlot) => {
+    const key = slotKey(slot);
+    setMarkedSlots((previous) => {
+      const next = new Set(previous);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
+    });
+  }, []);
+
   if (loading) {
     return (
       <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
@@ -495,6 +521,8 @@ const Draft1v1Page: React.FC = () => {
               {oneVOne && (
                 <OneVOnePool
                   pool={oneVOne.pool}
+                  markedSlots={markedSlots}
+                  onToggleMark={handleToggleMark}
                   tileSize={poolTileSize}
                   onTileSizeChange={(size) => {
                     setPoolTileSize(size);
@@ -516,6 +544,8 @@ const Draft1v1Page: React.FC = () => {
                 <div className="one-v-one-pool-container-sub">
                   <OneVOnePool
                     pool={oneVOne.eeveelutions}
+                    markedSlots={markedSlots}
+                    onToggleMark={handleToggleMark}
                     tileSize={poolTileSize}
                     history={oneVOne.history}
                     slotLabels={slotLabels}

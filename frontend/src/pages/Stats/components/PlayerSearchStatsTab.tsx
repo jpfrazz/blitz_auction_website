@@ -10,8 +10,16 @@ import {
   BossBattleSubmission,
   BossBattleSubmissionBattle,
 } from '../../../shared/api/stats';
-import BossBattleEditor from '../../../shared/components/BossBattleEditor';
-import { MatchHistoryTeam, RunMonStat, StatsAuction, StatsPagePlayer, StatsPageResponse } from '../../../types';
+import BossBattleEditor, { normalizeSubmissionBattles } from '../../../shared/components/BossBattleEditor';
+import HallOfFameTeamEditor from '../../../shared/components/HallOfFameTeamEditor';
+import {
+  HallOfFamePokemon,
+  MatchHistoryTeam,
+  RunMonStat,
+  StatsAuction,
+  StatsPagePlayer,
+  StatsPageResponse,
+} from '../../../types';
 import type { PlayerStatPill } from './playerStatPills';
 import { getPlayerStatPills } from './playerStatPills';
 import { getIconName } from '../../../utils/speciesUtils';
@@ -473,6 +481,7 @@ const PlayerSearchStatsTab: React.FC<PlayerSearchStatsTabProps> = ({
     draftId: string;
     battles: BossBattleSubmissionBattle[];
     note: string;
+    hallOfFameTeam: HallOfFamePokemon[];
     lockedCount?: number;
   } | null>(null);
   const [uploadSaving, setUploadSaving] = useState(false);
@@ -553,7 +562,7 @@ const PlayerSearchStatsTab: React.FC<PlayerSearchStatsTabProps> = ({
     additive?: boolean
   ) => {
     const existingBattles = existing ? existing.battles.map((battle) => ({ ...battle })) : [];
-    const battlesFromExistingHistory = additive
+    const historyBattles: BossBattleSubmissionBattle[] = additive
       ? (bossBattleHistory.get(teamId) ?? []).map((battle) => ({
           trainer_id: battle.trainer_id,
           version: battle.version ?? null,
@@ -563,12 +572,19 @@ const PlayerSearchStatsTab: React.FC<PlayerSearchStatsTabProps> = ({
           is_loss: battle.is_loss,
         }))
       : existingBattles;
+    const lockedCount =
+      additive && historyBattles.length > 0 ? historyBattles.length : undefined;
+    const hallOfFameTeam =
+      existing?.hall_of_fame_team ??
+      playerMatchHistory?.find((team) => team.team_id === teamId)?.hall_of_fame_team ??
+      [];
     setUploadTeam({
       teamId,
       draftId,
-      battles: battlesFromExistingHistory,
+      battles: normalizeSubmissionBattles(historyBattles, lockedCount),
       note: existing?.note ?? '',
-      lockedCount: additive && battlesFromExistingHistory.length > 0 ? battlesFromExistingHistory.length : undefined,
+      hallOfFameTeam: hallOfFameTeam.map((mon) => ({ ...mon })),
+      lockedCount,
     });
     setUploadError(null);
   };
@@ -592,6 +608,7 @@ const PlayerSearchStatsTab: React.FC<PlayerSearchStatsTabProps> = ({
         uploadTeam.teamId,
         uploadTeam.battles,
         uploadTeam.note.trim() || null,
+        uploadTeam.hallOfFameTeam,
       );
       setMySubmissions((prev) => new Map(prev).set(submission.team_id, submission));
       setUploadTeam(null);
@@ -1813,6 +1830,20 @@ const PlayerSearchStatsTab: React.FC<PlayerSearchStatsTabProps> = ({
                 lockedCount={uploadTeam.lockedCount}
                 onChange={(battles) => setUploadTeam((prev) => (prev ? { ...prev, battles } : prev))}
               />
+              <div className="boss-battle-hof-section">
+                <h3 className="boss-battle-section-title">Hall of Fame Team (optional)</h3>
+                <p className="boss-battle-modal-hint">
+                  If this run champed, enter your Hall of Fame team here.
+                </p>
+                <HallOfFameTeamEditor
+                  key={uploadTeam.teamId}
+                  initialTeam={uploadTeam.hallOfFameTeam}
+                  disabled={uploadSaving}
+                  onChange={(hallOfFameTeam) =>
+                    setUploadTeam((prev) => (prev ? { ...prev, hallOfFameTeam } : prev))
+                  }
+                />
+              </div>
               <input
                 type="text"
                 className="boss-battle-note-input"

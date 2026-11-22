@@ -784,7 +784,7 @@ const PokemonStatsTab: React.FC<PokemonStatsTabProps> = ({
                     Price +/- {sortConfig.key === 'priceMovement' ? (sortConfig.direction === 'asc' ? '↑' : '↓') : ''}
                   </th>
                   <th className="sortable" onClick={() => handleSort('bidsWon')}>
-                    Total Sales {sortConfig.key === 'bidsWon' ? (sortConfig.direction === 'asc' ? '↑' : '↓') : ''}
+                    Sales {sortConfig.key === 'bidsWon' ? (sortConfig.direction === 'asc' ? '↑' : '↓') : ''}
                   </th>
                   <th className="sortable" onClick={() => handleSort('avgOneVOnePick')}>
                     AVG 1v1 PICK {sortConfig.key === 'avgOneVOnePick' ? (sortConfig.direction === 'asc' ? '↑' : '↓') : ''}
@@ -793,7 +793,7 @@ const PokemonStatsTab: React.FC<PokemonStatsTabProps> = ({
                     Pick +/- {sortConfig.key === 'pickMovement' ? (sortConfig.direction === 'asc' ? '↑' : '↓') : ''}
                   </th>
                   <th className="sortable" onClick={() => handleSort('total1v1Picks')}>
-                    Total Picks {sortConfig.key === 'total1v1Picks' ? (sortConfig.direction === 'asc' ? '↑' : '↓') : ''}
+                    Picks {sortConfig.key === 'total1v1Picks' ? (sortConfig.direction === 'asc' ? '↑' : '↓') : ''}
                   </th>
                   <th className="sortable" onClick={() => handleSort('avgKOs')} title="Average KOs from completed runs that beat Steven or Wally">
                     AVG KOS {sortConfig.key === 'avgKOs' ? (sortConfig.direction === 'asc' ? '↑' : '↓') : ''}
