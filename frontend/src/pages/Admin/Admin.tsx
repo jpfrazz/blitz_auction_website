@@ -16,8 +16,10 @@ import {
   updateAdminGuestLink,
   updateAdminHallOfFameTeam,
   approveBossBattleSubmission,
+  fetchAdminBossBattleHistory,
   fetchAdminBossBattleSubmissions,
   rejectBossBattleSubmission,
+  AdminBossBattleHistoryEntry,
   AdminBossBattleSubmission,
 } from '../../shared/api/users';
 import { BossBattleSubmissionBattle } from '../../shared/api/stats';
@@ -72,10 +74,13 @@ const Admin: React.FC = () => {
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [uploadSuccess, setUploadSuccess] = useState<string | null>(null);
 
-  const [bossBattleHistory, setBossBattleHistory] = useState<any[]>([]);
+  const [bossBattleHistory, setBossBattleHistory] = useState<AdminBossBattleHistoryEntry[]>([]);
   const [bossBattleHistoryLoading, setBossBattleHistoryLoading] = useState(false);
   const [bossBattleHistoryError, setBossBattleHistoryError] = useState<string | null>(null);
   const [bossBattleHistorySuccess, setBossBattleHistorySuccess] = useState<string | null>(null);
+  const [bossBattleHistoryPage, setBossBattleHistoryPage] = useState(1);
+  const [bossBattleHistoryTotalPages, setBossBattleHistoryTotalPages] = useState(1);
+  const [bossBattleHistoryTotal, setBossBattleHistoryTotal] = useState(0);
   const [bossBattleSavingId, setBossBattleSavingId] = useState<number | null>(null);
   const [bossSubmissions, setBossSubmissions] = useState<AdminBossBattleSubmission[]>([]);
   const [bossSubmissionsLoading, setBossSubmissionsLoading] = useState(false);
@@ -345,22 +350,32 @@ const Admin: React.FC = () => {
   useEffect(() => {
     if (!hasRefereeRole || tab !== 'boss-battle-history') return;
 
+    let cancelled = false;
     setBossBattleHistoryLoading(true);
     setBossBattleHistoryError(null);
-    fetch('/api/admin/boss-battle-history')
-      .then(async (res) => {
-        if (!res.ok) {
-          const text = await res.text();
-          throw new Error(text || res.statusText);
-        }
-        return res.json();
+    fetchAdminBossBattleHistory(bossBattleHistoryPage)
+      .then((data) => {
+        if (cancelled) return;
+        setBossBattleHistory(data.rows);
+        setBossBattleHistoryPage(data.page);
+        setBossBattleHistoryTotalPages(data.total_pages);
+        setBossBattleHistoryTotal(data.total);
       })
-      .then((rows) => setBossBattleHistory(rows))
-      .catch((err: any) =>
-        setBossBattleHistoryError(err?.message ?? 'Failed to load boss battle history.')
-      )
-      .finally(() => setBossBattleHistoryLoading(false));
-  }, [hasRefereeRole, tab]);
+      .catch((err: any) => {
+        if (!cancelled) {
+          setBossBattleHistoryError(
+            err?.response?.data ?? err?.message ?? 'Failed to load boss battle history.'
+          );
+        }
+      })
+      .finally(() => {
+        if (!cancelled) setBossBattleHistoryLoading(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [hasRefereeRole, tab, bossBattleHistoryPage]);
 
   useEffect(() => {
     if (!hasRefereeRole || tab !== 'hall-of-fame') return;
@@ -582,7 +597,7 @@ const Admin: React.FC = () => {
     );
   };
 
-  const handleSaveBossTrainer = async (battle: any) => {
+  const handleSaveBossTrainer = async (battle: AdminBossBattleHistoryEntry) => {
     setBossBattleHistoryError(null);
     setBossBattleHistorySuccess(null);
     setBossBattleSavingId(battle.id);
@@ -1055,6 +1070,33 @@ const Admin: React.FC = () => {
               {tab === 'boss-battle-history' && (
                 <div className="admin-tab-content">
                   <h2>Boss Battle History</h2>
+                  <div className="admin-pagination">
+                    <span>
+                      {bossBattleHistoryTotal} entries · Page {bossBattleHistoryPage} of {bossBattleHistoryTotalPages}
+                    </span>
+                    <button
+                      type="button"
+                      className="button"
+                      onClick={() => setBossBattleHistoryPage((page) => Math.max(1, page - 1))}
+                      disabled={bossBattleHistoryLoading || bossBattleHistoryPage <= 1}
+                    >
+                      Previous
+                    </button>
+                    <button
+                      type="button"
+                      className="button"
+                      onClick={() =>
+                        setBossBattleHistoryPage((page) =>
+                          Math.min(bossBattleHistoryTotalPages, page + 1)
+                        )
+                      }
+                      disabled={
+                        bossBattleHistoryLoading || bossBattleHistoryPage >= bossBattleHistoryTotalPages
+                      }
+                    >
+                      Next
+                    </button>
+                  </div>
                   {bossBattleHistoryError && <div className="admin-message admin-error">{bossBattleHistoryError}</div>}
                   {bossBattleHistorySuccess && <div className="admin-message admin-success">{bossBattleHistorySuccess}</div>}
                   {bossBattleHistoryLoading ? (

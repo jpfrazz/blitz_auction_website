@@ -313,6 +313,39 @@ export async function updateAdminGuestLink(
   await axios.post(`/api/admin/guests/${guest_id}/link`, { discord_user_id });
 }
 
+export interface AdminBossBattleHistoryEntry {
+  id: number;
+  team_id: number;
+  draft_id: string;
+  user_id: string | null;
+  guest_id: string | null;
+  user_name: string | null;
+  trainer_id: number;
+  version: number | null;
+  hours: number;
+  minutes: number;
+  seconds: number;
+  is_loss: boolean;
+  created_at: string;
+}
+
+export interface AdminBossBattleHistoryPage {
+  rows: AdminBossBattleHistoryEntry[];
+  page: number;
+  page_size: number;
+  total: number;
+  total_pages: number;
+}
+
+export async function fetchAdminBossBattleHistory(
+  page: number,
+): Promise<AdminBossBattleHistoryPage> {
+  const response = await axios.get('/api/admin/boss-battle-history', {
+    params: { page },
+  });
+  return response.data;
+}
+
 export interface AdminBossBattleSubmission {
   team_id: number;
   draft_id: string;

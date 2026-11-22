@@ -48,6 +48,8 @@ const FAQ = () => (
             <li><a href="#how-can-the-website-track-my-stats">How can the website track my stats?</a></li>
             <li><a href="#why-is-my-draft-not-green">What's the difference between a casual and a competitive draft?</a></li>
             <li><a href="#how-does-the-website-decide-on-outliers">How does the website calculate outliers?</a></li>
+            <li><a href="#what-counts-as-a-win">What counts as a win?</a></li>
+            <li><a href="#how-is-win-percent-calculated">How is Win % calculated?</a></li>
           </ul>
         </div>
         <div className="faq-toc-group">
@@ -298,7 +300,7 @@ participate!
             <li>Total Pokémon sold is not equal to 8 times the total number of players</li>
           </ol>
           <p className="faq-answer" style={{ marginTop: '1rem' }}>
-            That said, all drafts are still preserved in the draft tab for you and your friends to look at! They just don't contribute to the cost breakdown chart.
+            That said, all drafts are still preserved in the draft tab for you and your friends to look at! They just don't contribute to the cost breakdown chart for stats like Avg Price, Avg KOs, or Win %.
           </p>
           <p className="faq-answer" style={{ marginTop: '1rem' }}>
             Drafts that don't meet these four criteria are marked as "Casual Drafts" in the stats tab.
@@ -316,6 +318,28 @@ participate!
             <li>The data is then split into four quartiles. The difference between Q1 and Q3 is the IQR.</li>
             <li>Only sales within the "fences" are kept: Q1 - 1.5 × IQR (lower) up to Q3 + 2.0 × IQR (upper). Anything below the lower fence or above the upper fence is excluded.</li>
           </ol>
+        </section>
+
+        <section id="what-counts-as-a-win" className="faq-section" style={{ scrollMarginTop: '120px' }}>
+          <h2 className="faq-question">What counts as a win?</h2>
+          <hr />
+          <p className="faq-answer">
+            If a player makes it to the hall of fame, all Pokemon they drafted for that race earn a win (even Pokemon that fainted or weren't in the hall of fame team itself).
+          </p>
+          <p className="faq-answer" style={{ marginTop: '1rem' }}>
+            Both auction races and 1v1 races count so long as they meet the site's non-casual criteria.
+          </p>
+        </section>
+
+        <section id="how-is-win-percent-calculated" className="faq-section" style={{ scrollMarginTop: '120px' }}>
+          <h2 className="faq-question">How is Win % calculated?</h2>
+          <hr />
+          <p className="faq-answer">
+            Win % is the number of Wins divided by the number of chances that Pokémon had to win.
+          </p>
+          <p className="faq-answer" style={{ marginTop: '1rem' }}>
+            A chance is a non-casual race, auction or 1v1, where that Pokémon was drafted or picked. If a player's run doesn't have boss battle results (because it was either played on local emulator or wasn't played at all), that doesn't count as a chance.
+          </p>
         </section>
       </div>
 

@@ -105,6 +105,19 @@
   background: #162636;
 }
 
+.admin-pagination {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin: 0.5rem 0 0.75rem;
+  color: #c8d6e5;
+
+  button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+}
+
 .admin-message {
   margin: 0.5rem 0;
 }

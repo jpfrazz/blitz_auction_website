@@ -1257,6 +1257,27 @@ pub struct AdminBossBattleHistoryEntry {
     pub created_at: String,
 }
 
+const ADMIN_BOSS_BATTLE_HISTORY_PAGE_SIZE: i64 = 100;
+
+#[derive(Debug, Deserialize)]
+pub struct AdminBossBattleHistoryQuery {
+    #[serde(default = "default_admin_boss_battle_history_page")]
+    pub page: i64,
+}
+
+fn default_admin_boss_battle_history_page() -> i64 {
+    1
+}
+
+#[derive(serde::Serialize)]
+pub struct AdminBossBattleHistoryPage {
+    pub rows: Vec<AdminBossBattleHistoryEntry>,
+    pub page: i64,
+    pub page_size: i64,
+    pub total: i64,
+    pub total_pages: i64,
+}
+
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct BossBattleSubmissionBattle {
     pub trainer_id: i32,
@@ -1413,8 +1434,26 @@ fn finalize_submission_battles(battles: &mut Vec<BossBattleSubmissionBattle>) {
 #[debug_handler]
 pub async fn get_admin_boss_battle_history(
     State(state): State<ServerState>,
-) -> Result<Json<Vec<AdminBossBattleHistoryEntry>>, (StatusCode, String)> {
-    let history = sqlx::query_as::<_, AdminBossBattleHistoryEntry>(
+    Query(query): Query<AdminBossBattleHistoryQuery>,
+) -> Result<Json<AdminBossBattleHistoryPage>, (StatusCode, String)> {
+    let total: i64 = sqlx::query_scalar(
+        "SELECT COUNT(*)
+         FROM boss_battle_history bbh
+         JOIN teams t ON bbh.team_id = t.team_id",
+    )
+    .fetch_one(&state.db_pool)
+    .await
+    .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, format!("db error: {}", e)))?;
+
+    let total_pages = if total == 0 {
+        1
+    } else {
+        (total + ADMIN_BOSS_BATTLE_HISTORY_PAGE_SIZE - 1) / ADMIN_BOSS_BATTLE_HISTORY_PAGE_SIZE
+    };
+    let page = query.page.clamp(1, total_pages);
+    let offset = (page - 1) * ADMIN_BOSS_BATTLE_HISTORY_PAGE_SIZE;
+
+    let rows = sqlx::query_as::<_, AdminBossBattleHistoryEntry>(
         "SELECT bbh.id, bbh.team_id, bbh.draft_id::text, t.user_id, t.guest_id,
                 COALESCE(u.user_name, g.user_name) as user_name,
                 bbh.trainer_id, bbh.version, bbh.hours, bbh.minutes, bbh.seconds, bbh.is_loss,
@@ -1423,13 +1462,22 @@ pub async fn get_admin_boss_battle_history(
          JOIN teams t ON bbh.team_id = t.team_id
          LEFT JOIN users u ON t.user_id = u.user_id
          LEFT JOIN guests g ON t.guest_id = g.user_id
-         ORDER BY bbh.created_at DESC"
+         ORDER BY bbh.created_at DESC, bbh.id DESC
+         LIMIT $1 OFFSET $2",
     )
+    .bind(ADMIN_BOSS_BATTLE_HISTORY_PAGE_SIZE)
+    .bind(offset)
     .fetch_all(&state.db_pool)
     .await
     .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, format!("db error: {}", e)))?;
 
-    Ok(Json(history))
+    Ok(Json(AdminBossBattleHistoryPage {
+        rows,
+        page,
+        page_size: ADMIN_BOSS_BATTLE_HISTORY_PAGE_SIZE,
+        total,
+        total_pages,
+    }))
 }
 
 /// Returns the current user's pending boss battle submissions.
