@@ -110,16 +110,19 @@ export const getIconName = (name: string, speciesId?: number) => {
 };
 
 /**
- * Enemy trainer sprite overrides. A few evolution lines have a form that only
- * enemy trainers use (Kanto Vulpix/Ninetales, Unovan Zorua/Zoroark), while the
- * player-accessible form of the same line uses a different sprite. Those
- * enemy-only sprites ship in /MiniIcons/enemies so the two forms don't share
- * one image.
+ * Enemy trainer sprite overrides. A few enemy teams use forms of these lines
+ * whose sprites ship in /MiniIcons/enemies (Kanto Vulpix/Ninetales and Hisuian
+ * Zorua/Zoroark), so the regular icon is remapped to that folder.
  */
 const ENEMY_ICON_LINES = ['vulpix', 'ninetales', 'zorua', 'zoroark'] as const;
 
+// Forms that have their own sprite in /MiniIcons and must keep it even when an
+// enemy trainer uses them (e.g. Glacia's Ninetales-Alola).
+const ENEMY_ICON_EXCLUSIONS = new Set(['ninetales-alola']);
+
 export const getEnemyIconName = (name: string, speciesId?: number) => {
   const icon = getIconName(name, speciesId);
+  if (ENEMY_ICON_EXCLUSIONS.has(icon)) return icon;
   const line = ENEMY_ICON_LINES.find(
     (base) => icon === base || icon.startsWith(`${base}-`)
   );

@@ -1,11 +1,12 @@
-import type { RunStatLineage } from '../../utils/runStatLineage';
 import type {
+  Pokemon,
   StatsAuction,
   StatsPagePlayer,
   StatsPageTeamRow,
   WinningRace,
   WinningRunKoSample,
 } from '../../types';
+import { buildRunStatLineage, type RunStatLineage } from '../../utils/runStatLineage';
 import {
   computeAverageKosByPokemonKey,
   computeWinOpportunitiesByPokemonKey,
@@ -74,6 +75,8 @@ const race = (overrides: Partial<WinningRace>): WinningRace => ({
 const iconsBySpecies: Record<number, string[]> = {
   4: ['charmander'],
   98: ['wooper', 'wooper-paldea'],
+  311: ['plusle'],
+  312: ['minun'],
   468: ['togekiss', 'togetic', 'togepi'],
   1573: ['egg'],
 };
@@ -147,6 +150,58 @@ test('attributes an evolved egg hatch to the Egg row instead of the hatch specie
 
   expect(result.get('Egg')).toBe(31);
   expect(result.has('Togepi')).toBe(false);
+  expect(result.size).toBe(1);
+});
+
+test('averages Aegislash form KOs onto a drafted Honedge row', () => {
+  const aegislashCatalog: Pokemon[] = [
+    { id: 679, pokedex_id: 679, name: 'Honedge' },
+    { id: 680, pokedex_id: 680, name: 'Doublade', evolves_from_id: '679' },
+    {
+      id: 681,
+      pokedex_id: 681,
+      name: 'Aegislash-Shield',
+      form: 'Shield',
+      evolves_from_id: '680',
+    },
+    {
+      id: 681,
+      pokedex_id: 681,
+      name: 'Aegislash-Blade',
+      form: 'Blade',
+      evolves_from_id: '680',
+    },
+  ];
+  const aegislashLineage = buildRunStatLineage(aegislashCatalog);
+
+  const result = computeAverageKosByPokemonKey(
+    [
+      sample({ species_id: 681, ko_count: 12 }),
+      sample({ species_id: 1156, ko_count: 18 }),
+    ],
+    [auction({ auction_id: 1, name: 'Honedge', pokedex_id: 679, winning_user_id: 'user-1' })],
+    [team({ team_id: 1, user_id: 'user-1' })],
+    [] as StatsPagePlayer[],
+    aegislashLineage,
+  );
+
+  expect(result.get('Honedge')).toBe(30);
+  expect(result.size).toBe(1);
+});
+
+test('sums Plusle and Minun KOs for the combined draft pick', () => {
+  const result = computeAverageKosByPokemonKey(
+    [
+      sample({ species_id: 311, ko_count: 7 }),
+      sample({ species_id: 312, ko_count: 5 }),
+    ],
+    [auction({ auction_id: 1, name: 'Plusle and Minun', pokedex_id: 311, winning_user_id: 'user-1' })],
+    [team({ team_id: 1, user_id: 'user-1' })],
+    [] as StatsPagePlayer[],
+    lineage,
+  );
+
+  expect(result.get('Plusle and Minun')).toBe(12);
   expect(result.size).toBe(1);
 });
 

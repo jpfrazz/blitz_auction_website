@@ -10,6 +10,48 @@ export interface RunStatSummary {
   faintedLevel: number | null;
 }
 
+const COMBINED_PLUSLE_MINUN_ICONS = ['plusle', 'minun'] as const;
+
+/**
+ * The auction has one "Plusle and Minun" pick, but the save stores them as two
+ * separate species. Sum both halves so the combined row gets the pair's total.
+ */
+function isCombinedPlusleMinunPick(fullName: string): boolean {
+  const normalized = fullName.toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+  return normalized.includes('plusle') && normalized.includes('minun');
+}
+
+function mergeRunStats(summaries: RunStatSummary[]): RunStatSummary {
+  const hasKos = summaries.some((summary) => summary.koCount != null);
+  const hasTurns = summaries.some((summary) => summary.totalTurns != null);
+  return {
+    koCount: hasKos
+      ? summaries.reduce((total, summary) => total + (summary.koCount ?? 0), 0)
+      : null,
+    totalTurns: hasTurns
+      ? summaries.reduce((total, summary) => total + (summary.totalTurns ?? 0), 0)
+      : null,
+    fainted: summaries.some((summary) => summary.fainted),
+    faintedLevel: summaries.find((summary) => summary.faintedLevel != null)?.faintedLevel ?? null,
+  };
+}
+
+/** Resolve a drafted pick's run stats, including the two-for-one Plusle/Minun pick. */
+export function getRunStatsForPick(
+  statsByIcon: Map<string, RunStatSummary>,
+  fullName: string
+): RunStatSummary | undefined {
+  if (!isCombinedPlusleMinunPick(fullName)) {
+    return statsByIcon.get(getIconName(fullName));
+  }
+
+  const combined = COMBINED_PLUSLE_MINUN_ICONS
+    .map((icon) => statsByIcon.get(icon))
+    .filter((summary): summary is RunStatSummary => Boolean(summary));
+  if (combined.length === 0) return undefined;
+  return mergeRunStats(combined);
+}
+
 /**
  * Shared KO/turn attribution for the player profile run charts and the Cost
  * Breakdown Average KOs column.

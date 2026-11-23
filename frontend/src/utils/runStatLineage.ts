@@ -17,10 +17,11 @@ export interface RunStatLineage {
 
 const NINCADA_DEX_ID = 290;
 
-// These families can change form mid-run with an item (Burmy Binder / Rotom
-// Catalog). The save stores whichever form the mon currently has, so a saved
-// form has to map back to every drafted form of that species too.
-const FORM_CHANGING_BASE_IDS = new Set([412, 413, 414, 479]);
+// These families can change form mid-run with an item or ability (Burmy Binder,
+// Rotom Catalog, Aegislash Stance Change). The save stores whichever form the
+// mon currently has, so a saved form has to map back to every drafted form of
+// that species too.
+const FORM_CHANGING_BASE_IDS = new Set([412, 413, 414, 479, 681]);
 
 let lineagePromise: Promise<RunStatLineage> | null = null;
 
@@ -43,16 +44,7 @@ export function buildRunStatLineage(list: Pokemon[]): RunStatLineage {
     }
   }
 
-  // ROM form names are suffixed ("Wooper-Paldea") while the database keeps the
-  // form in its own column ("Wooper" + "Paldea").
-  const resolveDbEntry = (info: SpeciesInfo): Pokemon | undefined => {
-    let name = info.name;
-    const form = (info.form ?? '').trim().toLowerCase();
-    if (form && name.toLowerCase().endsWith(`-${form}`)) {
-      name = name.slice(0, -(form.length + 1));
-    }
-
-    const candidates = byName.get(name.trim().toLowerCase()) ?? [];
+  const pickDbEntry = (candidates: Pokemon[], form: string): Pokemon | undefined => {
     if (candidates.length === 0) return undefined;
     if (form) {
       const exact = candidates.find(
@@ -61,6 +53,26 @@ export function buildRunStatLineage(list: Pokemon[]): RunStatLineage {
       if (exact) return exact;
     }
     return candidates.find((candidate) => !(candidate.form ?? '').trim()) ?? candidates[0];
+  };
+
+  // ROM form names are usually suffixed ("Wooper-Paldea") while the database
+  // keeps the form in its own column ("Wooper" + "Paldea"). Some database rows
+  // include the suffix in the name too ("Aegislash-Shield" + "Shield"), so try
+  // the full ROM name before stripping it.
+  const resolveDbEntry = (info: SpeciesInfo): Pokemon | undefined => {
+    const form = (info.form ?? '').trim().toLowerCase();
+    const fullNameEntry = pickDbEntry(
+      byName.get(info.name.trim().toLowerCase()) ?? [],
+      form
+    );
+    if (fullNameEntry) return fullNameEntry;
+
+    let name = info.name;
+    if (form && name.toLowerCase().endsWith(`-${form}`)) {
+      name = name.slice(0, -(form.length + 1));
+    }
+
+    return pickDbEntry(byName.get(name.trim().toLowerCase()) ?? [], form);
   };
 
   const iconForDbEntry = (pokemon: Pokemon): string => {

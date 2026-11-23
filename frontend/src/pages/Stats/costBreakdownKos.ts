@@ -1,8 +1,7 @@
 import { resolvePokemonIdentity } from '../../shared/utils/pokemonIdentity';
 import { findEggHatchStats, isEggAuction } from '../../utils/eggHatchStats';
 import type { RunStatLineage } from '../../utils/runStatLineage';
-import { getRunStatsByIcon } from '../../utils/runStatSummary';
-import { getIconName } from '../../utils/speciesUtils';
+import { getRunStatsByIcon, getRunStatsForPick } from '../../utils/runStatSummary';
 import type {
   RunMonStat,
   StatsAuction,
@@ -134,7 +133,7 @@ export function computeAverageKosByPokemonKey(
       const fullName = auction.form ? `${auction.name}-${auction.form}` : auction.name;
       const koCount = isEggAuction(auction)
         ? eggHatch?.summary.koCount
-        : runStatsByIcon.get(getIconName(fullName))?.koCount;
+        : getRunStatsForPick(runStatsByIcon, fullName)?.koCount;
       if (koCount == null) continue;
 
       const total = totals.get(identity.key) ?? { sum: 0, count: 0 };

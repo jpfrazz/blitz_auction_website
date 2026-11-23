@@ -38,6 +38,10 @@ const catalog: Pokemon[] = [
   mon(689, 'Barbaracle', '', '688'),
   mon(742, 'Cutiefly'),
   mon(743, 'Ribombee', '', '742'),
+  mon(679, 'Honedge'),
+  mon(680, 'Doublade', '', '679'),
+  mon(681, 'Aegislash-Shield', 'Shield', '680'),
+  mon(681, 'Aegislash-Blade', 'Blade', '680'),
   mon(980, 'Clodsire', 'Paldea', '194', 'Paldea'),
 ];
 
@@ -107,6 +111,12 @@ describe('run stat evolution lineage', () => {
       'rotom-fan',
       'rotom-mow',
     ]));
+  });
+
+  it('maps both Aegislash forms back through Doublade to Honedge', () => {
+    const expected = ['aegislash', 'aegislash-blade', 'doublade', 'honedge'];
+    expect(lineage.getIcons(681)).toEqual(expect.arrayContaining(expected));
+    expect(lineage.getIcons(1156)).toEqual(expect.arrayContaining(expected));
   });
 
   it('returns no icons for an unknown species so the caller can fall back', () => {

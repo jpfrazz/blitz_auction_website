@@ -25,7 +25,7 @@ import { getPlayerStatPills } from './playerStatPills';
 import { getIconName } from '../../../utils/speciesUtils';
 import { SPECIES_BY_ID } from '../../../utils/speciesIdMap';
 import { getRunStatLineage, RunStatLineage } from '../../../utils/runStatLineage';
-import { getRunStatsByIcon, RunStatSummary } from '../../../utils/runStatSummary';
+import { getRunStatsByIcon, getRunStatsForPick, RunStatSummary } from '../../../utils/runStatSummary';
 import { findEggHatchStats, isEggAuction, EggHatchStats } from '../../../utils/eggHatchStats';
 import { EEVEELUTION_IDS } from '../../../utils/eevee';
 import { getAvatarUrl, onAvatarError } from '../../../shared/utils/user';
@@ -360,7 +360,7 @@ function sortRunRows(
       slotValue: is1v1 ? pickIdx : (auction.winning_bid ?? 0),
       pickLabel: is1v1 ? `#${pickIdx + 1}` : `$${(auction.winning_bid ?? 0).toLocaleString()}`,
       label: hatched ? `Egg (${hatched.name})` : undefined,
-      monStats: hatched?.summary ?? statsByIcon.get(getIconName(fullName)),
+      monStats: hatched?.summary ?? getRunStatsForPick(statsByIcon, fullName),
       isEeveeGift: false,
     };
   });
@@ -1603,7 +1603,7 @@ const PlayerSearchStatsTab: React.FC<PlayerSearchStatsTabProps> = ({
                       {isExpanded && (
                         <div className="match-draft-details" style={{ display: 'flex', gap: '1rem' }}>
                           {/* Pokemon Section + Hall of Fame Team */}
-                          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                          <div style={{ flex: 6, display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                             <div>
                               <div className="match-draft-details-header">
                                 <span>Pokemon</span>
@@ -1685,7 +1685,7 @@ const PlayerSearchStatsTab: React.FC<PlayerSearchStatsTabProps> = ({
                           </div>
 
                           {/* Boss Battle History Section */}
-                          <div style={{ flex: 1 }}>
+                          <div style={{ flex: 4 }}>
                             {bossBattleHistoryLoading && (
                               <div className="match-draft-details-empty">Loading boss battles...</div>
                             )}
