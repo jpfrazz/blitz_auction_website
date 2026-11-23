@@ -856,6 +856,7 @@ const AuctionPage: React.FC = () => {
                     current_auction={transformedCurrentAuction!}
                     all_pokemon={allPokemon.length > 0 ? allPokemon : pokemon}
                     onToggleEgg={handleToggleEggView}
+                    collapsible
                   />
                 )}
                 <PokemonTablePanel

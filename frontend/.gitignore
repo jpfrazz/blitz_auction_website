@@ -11,9 +11,6 @@
 # production
 /build
 
-# Legacy local Shuffle Icons cache (superseded by the tracked public/ShuffleIcons folder)
-/public/Pokemon Shuffle Icons/
-
 # misc
 .DS_Store
 .env.local

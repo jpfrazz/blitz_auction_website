@@ -1,6 +1,7 @@
 // Generates shuffleIconIndex.json. The Bulbagarden gen 1-7 files are named by
-// dex number, while the local gen 8-9 folder is named by Pokémon name, so this
-// index translates the website's pokedex_id (+ form) into a filename.
+// dex number, while the gen 8-9 files in public/ShuffleIcons are named by
+// Pokémon name, so this index translates the website's pokedex_id (+ form)
+// into a filename.
 // Only clearly identifiable forms are mapped; anything ambiguous is omitted so
 // the tile falls back to standard art rather than showing the wrong form.
 import { writeFile } from 'node:fs/promises';
@@ -22,7 +23,7 @@ for (const dex of [26, 27, 28, 37, 38, 103, 105]) {
 // Key format is "<pokedex_id>" for base forms and "<pokedex_id>|<form>" for
 // alternate forms. A Pokémon with a form never reuses its base icon.
 const curated = [
-  // Generations 1-7 alternate forms (from the local folder)
+  // Generations 1-7 alternate forms (in public/ShuffleIcons)
   ['52|Galar', 'G - Meowth.png'],
   ['79|Galar', 'G - Slowpoke.png'],
   ['83|Galar', 'G - Farfetchd.png'],
@@ -40,7 +41,7 @@ const curated = [
   ['706|Hisui', 'H- Goodra.png'],
   ['724|Hisui', 'H- Decidueye.png'],
 
-  // Generations 8-9 (name-based files in the local folder)
+  // Generations 8-9 (name-based files in public/ShuffleIcons)
   ['819', 'Skwovet.png'],
   ['821', 'Rookidee.png'],
   ['823', 'Corviknight.png'],

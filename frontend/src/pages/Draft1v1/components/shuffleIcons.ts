@@ -9,8 +9,9 @@ const EGG_ICON = 'Egg.png';
 /**
  * Resolves a pool entry to a Shuffle icon URL.
  *
- * The website identifies Pokémon by pokedex number, while the local gen 8-9
- * folder is named by Pokémon name; shuffleIconIndex.json bridges the two.
+ * The website identifies Pokémon by pokedex number, while the gen 8-9 files in
+ * public/ShuffleIcons are named by Pokémon name; shuffleIconIndex.json bridges
+ * the two.
  * A Pokémon with a form never reuses its base icon, so entries without a
  * matching form return undefined and fall back to standard art rather than
  * showing the wrong form.

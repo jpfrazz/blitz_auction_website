@@ -10,6 +10,7 @@ interface CurrentPokemonPanelProps {
   current_auction: Auction;
   all_pokemon: Pokemon[];
   onToggleEgg?: (id: number | null) => void;
+  collapsible?: boolean;
 }
 
 const EVOLUTION_METHOD_TOOLTIPS: Record<string, string> = {
@@ -178,7 +179,7 @@ function buildEvolutionTree(
 
 
 // Render the evolution tree recursively (horizontal)
-const EvolutionTree: React.FC<{ node: EvoNode }> = ({ node }) => {
+const EvolutionTree: React.FC<{ node: EvoNode; compact?: boolean }> = ({ node, compact = false }) => {
   // Use evolutions folder for all images
   const getImageSrc = (pokemon: Pokemon) => {
     const nameForImg = pokemon.name.includes('(') 
@@ -208,13 +209,17 @@ const EvolutionTree: React.FC<{ node: EvoNode }> = ({ node }) => {
   // Determine if this is a baseform or evolution
   const isBaseform = !node.pokemon.evolves_from_id;
   return (
-    <div className="evo-tree-node-horizontal">
+    <div className={`evo-tree-node-horizontal${compact ? ' compact' : ''}`}>
       <div className={`evo-pokemon-block-horizontal ${isBaseform ? 'baseform' : ''}`}>
         <img
           src={getImageSrc(node.pokemon)}
           alt={node.pokemon.name}
           title={node.pokemon.name}
-          className={isBaseform ? "evo-pokemon-img-baseform" : "evo-pokemon-img-evolution"}
+          className={compact
+            ? "evo-pokemon-img-compact"
+            : isBaseform
+              ? "evo-pokemon-img-baseform"
+              : "evo-pokemon-img-evolution"}
         />
         <div className="pokemon-type-ability">
           {node.pokemon.type1 && (
@@ -368,15 +373,15 @@ const EvolutionTree: React.FC<{ node: EvoNode }> = ({ node }) => {
                 <div className="evo-arrow-container-horizontal">
                   {/* Use react-icons for arrows */}
                   {node.children.length > 1 ? (
-                    <TbArrowsSplit size={32} color="#888" />
+                    <TbArrowsSplit size={compact ? 20 : 32} color="#888" />
                   ) : child.isMega ? (
-                    <VscArrowBoth size={32} color="#888" />
+                    <VscArrowBoth size={compact ? 20 : 32} color="#888" />
                   ) : (
-                    <TbArrowRight size={32} color="#888" />
+                    <TbArrowRight size={compact ? 20 : 32} color="#888" />
                   )}
-                  <EvolutionMethodLabel method={child.methodFromParent} />
+                  {!compact && <EvolutionMethodLabel method={child.methodFromParent} />}
                 </div>
-                <EvolutionTree node={child} />
+                <EvolutionTree node={child} compact={compact} />
               </div>
             </React.Fragment>
           ))}
@@ -386,10 +391,11 @@ const EvolutionTree: React.FC<{ node: EvoNode }> = ({ node }) => {
   );
 };
 
-const CurrentPokemonPanel: React.FC<CurrentPokemonPanelProps> = ({ current_auction, all_pokemon, onToggleEgg }) => {
+const CurrentPokemonPanel: React.FC<CurrentPokemonPanelProps> = ({ current_auction, all_pokemon, onToggleEgg, collapsible = false }) => {
   const pokemonData: Pokemon = current_auction.pokemon;
   const currentPokemonKey = getPokemonNodeKey(pokemonData);
   const [showTipModal, setShowTipModal] = React.useState(false);
+  const [collapsed, setCollapsed] = React.useState(false);
 
   const isEgg = pokemonData.name.trim().toLowerCase() === 'egg' || (pokemonData as any).isRevealedEgg;
   const isUnrevealedEgg = pokemonData.name.trim().toLowerCase() === 'egg';
@@ -416,6 +422,41 @@ const CurrentPokemonPanel: React.FC<CurrentPokemonPanelProps> = ({ current_aucti
       .map((m) => m.replace(/_/g, ' ').trim())
       .join('/');
   };
+
+  const collapseToggle = collapsible ? (
+    <button
+      className="pokemon-panel-collapse-toggle"
+      onClick={() => setCollapsed((c) => !c)}
+      title={collapsed ? 'Expand Pokémon Info' : 'Collapse Pokémon Info'}
+      aria-label={collapsed ? 'Expand Pokémon Info' : 'Collapse Pokémon Info'}
+    >
+      {collapsed ? (
+        <svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true">
+          <polyline points="6 9 12 15 18 9" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+      ) : (
+        <svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true">
+          <polyline points="6 15 12 9 18 15" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+      )}
+    </button>
+  ) : null;
+
+  if (collapsed) {
+    return (
+      <div className="auction-current-pokemon-box collapsed">
+        <div className="pokemon-header">
+          <div className="pokemon-left">
+            <h2 className="pokemon-name">{pokemonData.name}</h2>
+          </div>
+        </div>
+        <div className="pokemon-evolution-tree-section">
+          <EvolutionTree key={currentPokemonKey} node={evoTree} compact />
+        </div>
+        {collapseToggle}
+      </div>
+    );
+  }
 
   return (
     <div className="auction-current-pokemon-box" style={{ position: 'relative' }}>
@@ -678,6 +719,8 @@ const CurrentPokemonPanel: React.FC<CurrentPokemonPanelProps> = ({ current_aucti
           </div>
         </div>
       )}
+
+      {collapseToggle}
     </div>
   );
 };
