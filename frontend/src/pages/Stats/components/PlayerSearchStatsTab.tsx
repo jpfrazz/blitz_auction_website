@@ -35,6 +35,8 @@ import { FiCamera, FiChevronDown } from 'react-icons/fi';
 import '../Stats.scss';
 import './PlayerSearchStatsTab.scss';
 import { casualOneVOneDraftIds, oneVOneLeftoverOrders, oneVOnePickSlot } from '../oneVOneHistory';
+import { computeWinningPicksByPokemonKey } from '../costBreakdownKos';
+import { buildOpponentsByDraftId, getSelectedPlayerIdentityIds } from '../opponentLinks';
 
 const SITE_ADMIN_USER_ID = '270029441999175681';
 
@@ -701,6 +703,18 @@ const PlayerSearchStatsTab: React.FC<PlayerSearchStatsTabProps> = ({
     return map;
   }, [stats?.auctions]);
 
+  // A profile can include linked guest accounts, so exclude every identity
+  // tied to the selected player when finding the other teams in each race.
+  const selectedPlayerIdentityIds = useMemo(
+    () => getSelectedPlayerIdentityIds(selectedPlayer, stats?.players ?? []),
+    [selectedPlayer, stats?.players],
+  );
+
+  const opponentsByDraftId = useMemo(
+    () => buildOpponentsByDraftId(stats?.teams ?? [], stats?.players ?? [], selectedPlayerIdentityIds),
+    [stats?.teams, stats?.players, selectedPlayerIdentityIds],
+  );
+
   const topPlayers = useMemo(() => {
     if (!stats?.players) return [];
     return stats.players
@@ -932,6 +946,36 @@ const PlayerSearchStatsTab: React.FC<PlayerSearchStatsTabProps> = ({
     return rounds > 0 ? Math.round((wins / rounds) * 100) : null;
   }, [selectedPlayer]);
 
+  // Winning races are global, so narrow them to the teams on this player's
+  // profile (which already includes linked guest accounts and excludes junk
+  // drafts) before reusing the Cost Breakdown win rules.
+  const playerTeamIds = useMemo(
+    () => new Set((displayMatchHistory ?? []).map((team) => team.team_id)),
+    [displayMatchHistory],
+  );
+
+  const winsByKey = useMemo(() => {
+    const playerWinningRaces = (stats?.winning_races ?? []).filter((race) =>
+      playerTeamIds.has(race.team_id),
+    );
+    return computeWinningPicksByPokemonKey(
+      playerWinningRaces,
+      stats?.auctions ?? [],
+      stats?.teams ?? [],
+      stats?.players ?? [],
+      validDraftIds,
+      casual1v1DraftIds,
+    );
+  }, [
+    stats?.winning_races,
+    stats?.auctions,
+    stats?.teams,
+    stats?.players,
+    playerTeamIds,
+    validDraftIds,
+    casual1v1DraftIds,
+  ]);
+
   interface AllPokemonRow {
     key: string;
     name: string;
@@ -945,6 +989,7 @@ const PlayerSearchStatsTab: React.FC<PlayerSearchStatsTabProps> = ({
     timesPicked: number;
     oneVOneAppearances: number;
     pctPicked: number | null;
+    wins: number;
   }
 
   const allPokemonList = useMemo<AllPokemonRow[]>(() => {
@@ -1002,6 +1047,7 @@ const PlayerSearchStatsTab: React.FC<PlayerSearchStatsTabProps> = ({
         timesPicked,
         oneVOneAppearances,
         pctPicked,
+        wins: winsByKey.get(key) ?? 0,
       });
     });
 
@@ -1011,7 +1057,7 @@ const PlayerSearchStatsTab: React.FC<PlayerSearchStatsTabProps> = ({
     });
 
     return rows;
-  }, [pokemonDraftSummary, stats?.auctions, validDraftIds, globalPokemonPrices, auctionMatchHistory, playerOneVOnePickStats]);
+  }, [pokemonDraftSummary, stats?.auctions, validDraftIds, globalPokemonPrices, auctionMatchHistory, playerOneVOnePickStats, winsByKey]);
 
   const signaturePokemon = useMemo(() => {
     const candidates = allPokemonList.filter((p) => p.pctDrafted !== null && p.pctDrafted > 0 && p.playerGames >= 3);
@@ -1019,7 +1065,7 @@ const PlayerSearchStatsTab: React.FC<PlayerSearchStatsTabProps> = ({
     return candidates.reduce((best, p) => (p.pctDrafted! > best.pctDrafted! ? p : best), candidates[0]);
   }, [allPokemonList]);
 
-  type TableSortKey = 'name' | 'playerGames' | 'appearances' | 'pctDrafted' | 'avgPaid' | 'avgPrice' | 'diff' | 'timesPicked' | 'oneVOneAppearances' | 'pctPicked';
+  type TableSortKey = 'name' | 'playerGames' | 'appearances' | 'pctDrafted' | 'avgPaid' | 'avgPrice' | 'diff' | 'timesPicked' | 'oneVOneAppearances' | 'pctPicked' | 'wins';
   const [tableSortConfig, setTableSortConfig] = useState<{ key: TableSortKey; direction: 'asc' | 'desc' }>({ key: 'playerGames', direction: 'desc' });
 
   const handleTableSort = (key: TableSortKey) => {
@@ -1059,6 +1105,8 @@ const PlayerSearchStatsTab: React.FC<PlayerSearchStatsTabProps> = ({
           return mult * (a.oneVOneAppearances - b.oneVOneAppearances);
         case 'pctPicked':
           return mult * ((a.pctPicked ?? -Infinity) - (b.pctPicked ?? -Infinity));
+        case 'wins':
+          return mult * (a.wins - b.wins);
         default:
           return 0;
       }
@@ -1488,6 +1536,9 @@ const PlayerSearchStatsTab: React.FC<PlayerSearchStatsTabProps> = ({
                         <span className="sortable" onClick={() => handleTableSort('pctPicked')}>
                           % Picked{renderSortArrow('pctPicked')}
                         </span>
+                        <span className="sortable" onClick={() => handleTableSort('wins')}>
+                          Wins{renderSortArrow('wins')}
+                        </span>
                       </div>
 
                       {filteredPokemonList.map((pokemon) => (
@@ -1528,6 +1579,7 @@ const PlayerSearchStatsTab: React.FC<PlayerSearchStatsTabProps> = ({
                           <span>{pokemon.timesPicked}</span>
                           <span>{pokemon.oneVOneAppearances}</span>
                           <span>{pokemon.pctPicked !== null ? `${pokemon.pctPicked}%` : '---'}</span>
+                          <span>{pokemon.wins}</span>
                         </div>
                       ))}
                     </div>
@@ -1560,6 +1612,8 @@ const PlayerSearchStatsTab: React.FC<PlayerSearchStatsTabProps> = ({
                     ? findEggHatchStats(team.run_stats, listAuctions, runStatLineage)
                     : null;
                   const sortedRunRows = sortRunRows(listAuctions, runStatsByIcon, runSort, is1v1, eeveeGift, eggHatch);
+                  const opponents = (opponentsByDraftId.get(team.draft_id) ?? [])
+                    .filter((opponent) => opponent.teamId !== team.team_id);
 
                   return (
                     <div className="match-timeline-entry" key={team.team_id} data-team-id={team.team_id}>
@@ -1622,221 +1676,240 @@ const PlayerSearchStatsTab: React.FC<PlayerSearchStatsTabProps> = ({
                       </button>
 
                       {isExpanded && (
-                        <div className="match-draft-details" style={{ display: 'flex', gap: '1rem' }}>
-                          {/* Pokemon Section + Hall of Fame Team */}
-                          <div style={{ flex: 6, display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                            <div>
-                              <div className="match-draft-details-header">
-                                <span>Pokemon</span>
-                                <button
-                                  type="button"
-                                  className={`match-draft-details-sort ${runSort?.column === 'slot' ? 'sorted' : ''}`}
-                                  onClick={() => toggleRunSort('slot')}
-                                  title={is1v1 ? 'Sort by pick number' : 'Sort by cost'}
+                        <div className="match-draft-details">
+                          <div className="match-opponents">
+                            <span className="match-opponents-label">vs</span>
+                            {opponents.length === 0 ? (
+                              <span className="match-opponents-empty">Unknown</span>
+                            ) : opponents.map((opponent, index) => (
+                              <React.Fragment key={opponent.teamId}>
+                                {index > 0 && <span className="match-opponents-separator">,</span>}
+                                <a
+                                  className="match-opponents-link"
+                                  href={`/Stats/PlayerProfiles/${encodeURIComponent(opponent.name)}?userId=${encodeURIComponent(opponent.userId)}`}
+                                  title={`Open ${opponent.name}'s profile`}
                                 >
-                                  {is1v1 ? 'Pick' : 'Paid'}{runSort?.column === 'slot' ? (runSort.direction === 'desc' ? ' ▼' : ' ▲') : ''}
-                                </button>
-                                <button
-                                  type="button"
-                                  className={`match-draft-details-sort ${runSort?.column === 'turns' ? 'sorted' : ''}`}
-                                  onClick={() => toggleRunSort('turns')}
-                                  title="Sort by turn count"
-                                >
-                                  Turn Count{runSort?.column === 'turns' ? (runSort.direction === 'desc' ? ' ▼' : ' ▲') : ''}
-                                </button>
-                                <button
-                                  type="button"
-                                  className={`match-draft-details-sort ${runSort?.column === 'kos' ? 'sorted' : ''}`}
-                                  onClick={() => toggleRunSort('kos')}
-                                  title="Sort by KOs"
-                                >
-                                  KOs{runSort?.column === 'kos' ? (runSort.direction === 'desc' ? ' ▼' : ' ▲') : ''}
-                                </button>
-                                <span>Fainted</span>
-                              </div>
-                              {sortedRunRows.length === 0 && (
-                                <div className="match-draft-details-empty">{is1v1 ? 'No Pokemon picked in this draft.' : 'No Pokemon won in this draft.'}</div>
-                              )}
-                              {sortedRunRows.map(({ key, icon, name, form, label, pickLabel, monStats }) => (
-                                <div className="match-draft-details-row" key={key}>
-                                  <div className="match-draft-details-pokemon">
-                                    <img
-                                      src={`/MiniIcons/${icon}.png`}
-                                      alt={name}
-                                      onError={(ev) => {
-                                        (ev.currentTarget as HTMLImageElement).style.display = 'none';
-                                      }}
-                                    />
-                                    <span>{label ?? getPokemonLabel(name, form)}</span>
-                                  </div>
-                                  <span className="match-draft-details-cost">{pickLabel}</span>
-                                  <span className="match-draft-details-stat">{monStats?.totalTurns ?? '—'}</span>
-                                  <span className="match-draft-details-stat">{monStats?.koCount ?? '—'}</span>
-                                  <span className="match-draft-details-stat">
-                                    {!monStats
-                                      ? '—'
-                                      : monStats.fainted
-                                        ? monStats.faintedLevel != null
-                                          ? `lvl ${monStats.faintedLevel}`
-                                          : 'Fainted'
-                                        : '—'}
-                                  </span>
+                                  {opponent.name}
+                                </a>
+                              </React.Fragment>
+                            ))}
+                          </div>
+                          <div className="match-draft-details-columns" style={{ display: 'flex', gap: '1rem' }}>
+                            {/* Pokemon Section + Hall of Fame Team */}
+                            <div style={{ flex: 6, display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                              <div>
+                                <div className="match-draft-details-header">
+                                  <span>Pokemon</span>
+                                  <button
+                                    type="button"
+                                    className={`match-draft-details-sort ${runSort?.column === 'slot' ? 'sorted' : ''}`}
+                                    onClick={() => toggleRunSort('slot')}
+                                    title={is1v1 ? 'Sort by pick number' : 'Sort by cost'}
+                                  >
+                                    {is1v1 ? 'Pick' : 'Paid'}{runSort?.column === 'slot' ? (runSort.direction === 'desc' ? ' ▼' : ' ▲') : ''}
+                                  </button>
+                                  <button
+                                    type="button"
+                                    className={`match-draft-details-sort ${runSort?.column === 'turns' ? 'sorted' : ''}`}
+                                    onClick={() => toggleRunSort('turns')}
+                                    title="Sort by turn count"
+                                  >
+                                    Turn Count{runSort?.column === 'turns' ? (runSort.direction === 'desc' ? ' ▼' : ' ▲') : ''}
+                                  </button>
+                                  <button
+                                    type="button"
+                                    className={`match-draft-details-sort ${runSort?.column === 'kos' ? 'sorted' : ''}`}
+                                    onClick={() => toggleRunSort('kos')}
+                                    title="Sort by KOs"
+                                  >
+                                    KOs{runSort?.column === 'kos' ? (runSort.direction === 'desc' ? ' ▼' : ' ▲') : ''}
+                                  </button>
+                                  <span>Fainted</span>
                                 </div>
-                              ))}
-                            </div>
-
-                            {bossVictory && hallOfFameTeam && hallOfFameTeam.length > 0 && (
-                              <div className="match-hall-of-fame">
-                                <div className="match-hall-of-fame-header">Hall of Fame Team</div>
-                                <div className="match-hall-of-fame-icons">
-                                  {hallOfFameTeam.map((mon, idx) => (
-                                    <div className="match-hall-of-fame-icon" key={idx} title={mon.name}>
+                                {sortedRunRows.length === 0 && (
+                                  <div className="match-draft-details-empty">{is1v1 ? 'No Pokemon picked in this draft.' : 'No Pokemon won in this draft.'}</div>
+                                )}
+                                {sortedRunRows.map(({ key, icon, name, form, label, pickLabel, monStats }) => (
+                                  <div className="match-draft-details-row" key={key}>
+                                    <div className="match-draft-details-pokemon">
                                       <img
-                                        src={`/MiniIcons/${getIconName(mon.name)}.png`}
-                                        alt={mon.name}
+                                        src={`/MiniIcons/${icon}.png`}
+                                        alt={name}
                                         onError={(ev) => {
-                                          (ev.currentTarget as HTMLImageElement).src = '/MiniIcons/question.png';
+                                          (ev.currentTarget as HTMLImageElement).style.display = 'none';
                                         }}
                                       />
+                                      <span>{label ?? getPokemonLabel(name, form)}</span>
                                     </div>
-                                  ))}
-                                </div>
+                                    <span className="match-draft-details-cost">{pickLabel}</span>
+                                    <span className="match-draft-details-stat">{monStats?.totalTurns ?? '—'}</span>
+                                    <span className="match-draft-details-stat">{monStats?.koCount ?? '—'}</span>
+                                    <span className="match-draft-details-stat">
+                                      {!monStats
+                                        ? '—'
+                                        : monStats.fainted
+                                          ? monStats.faintedLevel != null
+                                            ? `lvl ${monStats.faintedLevel}`
+                                            : 'Fainted'
+                                          : '—'}
+                                    </span>
+                                  </div>
+                                ))}
                               </div>
-                            )}
-                          </div>
 
-                          {/* Boss Battle History Section */}
-                          <div style={{ flex: 4 }}>
-                            {bossBattleHistoryLoading && (
-                              <div className="match-draft-details-empty">Loading boss battles...</div>
-                            )}
-                            {!bossBattleHistoryLoading && bossBattleHistory.has(team.team_id) && (
-                              <>
-                                <div className="match-draft-details-header boss-battle-header">
-                                  <span>Boss Battles</span>
-                                  <span>Time</span>
+                              {bossVictory && hallOfFameTeam && hallOfFameTeam.length > 0 && (
+                                <div className="match-hall-of-fame">
+                                  <div className="match-hall-of-fame-header">Hall of Fame Team</div>
+                                  <div className="match-hall-of-fame-icons">
+                                    {hallOfFameTeam.map((mon, idx) => (
+                                      <div className="match-hall-of-fame-icon" key={idx} title={mon.name}>
+                                        <img
+                                          src={`/MiniIcons/${getIconName(mon.name)}.png`}
+                                          alt={mon.name}
+                                          onError={(ev) => {
+                                            (ev.currentTarget as HTMLImageElement).src = '/MiniIcons/question.png';
+                                          }}
+                                        />
+                                      </div>
+                                    ))}
+                                  </div>
                                 </div>
-                                 {(() => {
-                                   const battles = bossBattleHistory.get(team.team_id);
-                                   const hasBattles = battles && battles.length > 0;
-                                   const finished = isRunFinished(battles);
-                                   const pending = mySubmissions.get(team.team_id);
-                                   const isOwnProfile = selectedPlayer?.user_id === currentUserId;
-                                   const isSiteAdmin = currentUserId === SITE_ADMIN_USER_ID;
-                                   // The site admin can add or edit splits on any player's run,
-                                   // including finished runs, the same way they can edit any profile's avatar.
-                                   const canSubmitBattles =
-                                     !mySubmissionsLoading && (isOwnProfile || isSiteAdmin);
-                                   if (pending && canSubmitBattles) {
-                                     return (
-                                       <div className="boss-submission-status">
-                                         <span className="boss-submission-pending">Pending Confirmation</span>
-                                         <button
-                                           type="button"
-                                           className="boss-submission-action"
-                                           onClick={() => openUploadModal(team.team_id, team.draft_id, pending)}
-                                         >
-                                           Edit
-                                         </button>
-                                         <button
-                                           type="button"
-                                           className="boss-submission-action"
-                                           onClick={() => handleWithdraw(team.team_id)}
-                                         >
-                                           Withdraw
-                                         </button>
-                                       </div>
-                                     );
-                                   }
-                                   if (!canSubmitBattles) {
+                              )}
+                            </div>
+
+                            {/* Boss Battle History Section */}
+                            <div style={{ flex: 4 }}>
+                              {bossBattleHistoryLoading && (
+                                <div className="match-draft-details-empty">Loading boss battles...</div>
+                              )}
+                              {!bossBattleHistoryLoading && bossBattleHistory.has(team.team_id) && (
+                                <>
+                                  <div className="match-draft-details-header boss-battle-header">
+                                    <span>Boss Battles</span>
+                                    <span>Time</span>
+                                  </div>
+                                   {(() => {
+                                     const battles = bossBattleHistory.get(team.team_id);
+                                     const hasBattles = battles && battles.length > 0;
+                                     const finished = isRunFinished(battles);
+                                     const pending = mySubmissions.get(team.team_id);
+                                     const isOwnProfile = selectedPlayer?.user_id === currentUserId;
+                                     const isSiteAdmin = currentUserId === SITE_ADMIN_USER_ID;
+                                     // The site admin can add or edit splits on any player's run,
+                                     // including finished runs, the same way they can edit any profile's avatar.
+                                     const canSubmitBattles =
+                                       !mySubmissionsLoading && (isOwnProfile || isSiteAdmin);
+                                     if (pending && canSubmitBattles) {
+                                       return (
+                                         <div className="boss-submission-status">
+                                           <span className="boss-submission-pending">Pending Confirmation</span>
+                                           <button
+                                             type="button"
+                                             className="boss-submission-action"
+                                             onClick={() => openUploadModal(team.team_id, team.draft_id, pending)}
+                                           >
+                                             Edit
+                                           </button>
+                                           <button
+                                             type="button"
+                                             className="boss-submission-action"
+                                             onClick={() => handleWithdraw(team.team_id)}
+                                           >
+                                             Withdraw
+                                           </button>
+                                         </div>
+                                       );
+                                     }
+                                     if (!canSubmitBattles) {
+                                       if (!hasBattles) {
+                                         return <div className="match-draft-details-empty">No boss battles recorded</div>;
+                                       }
+                                       return null;
+                                     }
+                                     if (isSiteAdmin) {
+                                       return (
+                                         <div className="boss-submission-empty">
+                                           <span>{hasBattles ? 'Edit boss battles' : 'No boss battles recorded'}</span>
+                                           <button
+                                             type="button"
+                                             className="boss-submission-add"
+                                             title="Edit boss battles"
+                                             aria-label="Edit boss battles"
+                                             onClick={() => openUploadModal(team.team_id, team.draft_id, undefined, false, true)}
+                                           >
+                                             +
+                                           </button>
+                                         </div>
+                                       );
+                                     }
+                                     // Owner (not site admin), no pending submission
                                      if (!hasBattles) {
-                                       return <div className="match-draft-details-empty">No boss battles recorded</div>;
+                                       return (
+                                         <div className="boss-submission-empty">
+                                           <span>No boss battles recorded</span>
+                                           <button
+                                             type="button"
+                                             className="boss-submission-add"
+                                             title="Upload boss battle history"
+                                             aria-label="Upload boss battle history"
+                                             onClick={() => openUploadModal(team.team_id, team.draft_id)}
+                                           >
+                                             +
+                                           </button>
+                                         </div>
+                                       );
+                                     }
+                                     // Has battles; show + only if not finished (additive case)
+                                     if (!finished) {
+                                       return (
+                                         <div className="boss-submission-empty">
+                                           <span>Add boss battles played on local emulator</span>
+                                           <button
+                                             type="button"
+                                             className="boss-submission-add"
+                                             title="Upload boss battle history"
+                                             aria-label="Upload boss battle history"
+                                             onClick={() => openUploadModal(team.team_id, team.draft_id, undefined, true)}
+                                           >
+                                             +
+                                           </button>
+                                         </div>
+                                       );
                                      }
                                      return null;
-                                   }
-                                   if (isSiteAdmin) {
-                                     return (
-                                       <div className="boss-submission-empty">
-                                         <span>{hasBattles ? 'Edit boss battles' : 'No boss battles recorded'}</span>
-                                         <button
-                                           type="button"
-                                           className="boss-submission-add"
-                                           title="Edit boss battles"
-                                           aria-label="Edit boss battles"
-                                           onClick={() => openUploadModal(team.team_id, team.draft_id, undefined, false, true)}
-                                         >
-                                           +
-                                         </button>
-                                       </div>
-                                     );
-                                   }
-                                   // Owner (not site admin), no pending submission
-                                   if (!hasBattles) {
-                                     return (
-                                       <div className="boss-submission-empty">
-                                         <span>No boss battles recorded</span>
-                                         <button
-                                           type="button"
-                                           className="boss-submission-add"
-                                           title="Upload boss battle history"
-                                           aria-label="Upload boss battle history"
-                                           onClick={() => openUploadModal(team.team_id, team.draft_id)}
-                                         >
-                                           +
-                                         </button>
-                                       </div>
-                                     );
-                                   }
-                                   // Has battles; show + only if not finished (additive case)
-                                   if (!finished) {
-                                     return (
-                                       <div className="boss-submission-empty">
-                                         <span>Add boss battles played on local emulator</span>
-                                         <button
-                                           type="button"
-                                           className="boss-submission-add"
-                                           title="Upload boss battle history"
-                                           aria-label="Upload boss battle history"
-                                           onClick={() => openUploadModal(team.team_id, team.draft_id, undefined, true)}
-                                         >
-                                           +
-                                         </button>
-                                       </div>
-                                     );
-                                   }
-                                   return null;
-                                 })()}
-                                {bossBattleHistory.get(team.team_id)?.map((battle, idx) => {
-                                  const sprite = getTrainerSpriteName(battle.trainer_id, battle.version);
-                                  return (
-                                    <div className="match-draft-details-row boss-battle-row" key={idx}>
-                                      <div className="match-draft-details-pokemon trainer-name">
-                                        {sprite && (
-                                          <img
-                                            className="trainer-sprite"
-                                            src={`/TrainerSprites/${sprite}.png`}
-                                            alt=""
-                                            onError={(ev) => {
-                                              (ev.currentTarget as HTMLImageElement).style.display = 'none';
-                                            }}
-                                          />
-                                        )}
-                                        <span className={battle.is_loss ? 'loss' : 'win'}>
-                                          {getTrainerNameById(battle.trainer_id, battle.version)}
+                                   })()}
+                                  {bossBattleHistory.get(team.team_id)?.map((battle, idx) => {
+                                    const sprite = getTrainerSpriteName(battle.trainer_id, battle.version);
+                                    return (
+                                      <div className="match-draft-details-row boss-battle-row" key={idx}>
+                                        <div className="match-draft-details-pokemon trainer-name">
+                                          {sprite && (
+                                            <img
+                                              className="trainer-sprite"
+                                              src={`/TrainerSprites/${sprite}.png`}
+                                              alt=""
+                                              onError={(ev) => {
+                                                (ev.currentTarget as HTMLImageElement).style.display = 'none';
+                                              }}
+                                            />
+                                          )}
+                                          <span className={battle.is_loss ? 'loss' : 'win'}>
+                                            {getTrainerNameById(battle.trainer_id, battle.version)}
+                                          </span>
+                                        </div>
+                                        <span
+                                          className={`match-draft-details-cost ${battle.hours === 5 && battle.minutes === 0 && battle.seconds === 0 ? 'forfeit' : ''}`}
+                                        >
+                                          {battle.hours === 5 && battle.minutes === 0 && battle.seconds === 0
+                                            ? 'Forfeit'
+                                            : `${battle.hours > 0 ? `${battle.hours}h ` : ''}${battle.minutes}m ${battle.seconds}s`}
                                         </span>
                                       </div>
-                                      <span
-                                        className={`match-draft-details-cost ${battle.hours === 5 && battle.minutes === 0 && battle.seconds === 0 ? 'forfeit' : ''}`}
-                                      >
-                                        {battle.hours === 5 && battle.minutes === 0 && battle.seconds === 0
-                                          ? 'Forfeit'
-                                          : `${battle.hours > 0 ? `${battle.hours}h ` : ''}${battle.minutes}m ${battle.seconds}s`}
-                                      </span>
-                                    </div>
-                                  );
-                                })}
-                              </>
-                            )}
+                                    );
+                                  })}
+                                </>
+                              )}
+                            </div>
                           </div>
                         </div>
                       )}

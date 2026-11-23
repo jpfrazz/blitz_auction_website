@@ -10,8 +10,14 @@ import {
   ReferenceLine,
 } from 'recharts';
 import { StatsPageResponse } from '../../types';
-import { casualOneVOneDraftIds, oneVOneLeftoverOrders, oneVOnePickSlot } from './oneVOneHistory';
+import { casualOneVOneDraftIds, isOneVOneBan, oneVOneLeftoverOrders, oneVOnePickSlot } from './oneVOneHistory';
 import { resolvePokemonIdentity } from '../../shared/utils/pokemonIdentity';
+import {
+  BAN_COLOR,
+  OUTLIER_COLOR,
+  PICK_COLOR,
+  getPickHistoryDotColor,
+} from './pickHistoryColors';
 
 function calculateQuantile(sortedData: number[], q: number) {
   const pos = (sortedData.length - 1) * q;
@@ -43,6 +49,14 @@ const PickHistoryTooltip = ({ active, payload, label }: any) => {
           <p style={{ margin: 0, color: '#fff' }}>
             <span style={{ color: '#888' }}>Pick/Ban #:</span> {data.pickNumber}
           </p>
+          <p style={{ margin: 0, color: data.isBan ? BAN_COLOR : PICK_COLOR }}>
+            <span style={{ color: '#888' }}>Result:</span> {data.isBan ? 'Ban / Not picked' : 'Pick'}
+          </p>
+          {data.isOutlier && (
+            <p style={{ margin: 0, color: OUTLIER_COLOR }}>
+              <span style={{ color: '#888' }}>Outlier:</span> Yes
+            </p>
+          )}
           {data.player && (
             <p style={{ margin: 0, color: '#fff' }}>
               <span style={{ color: '#888' }}>Player:</span> {data.player}
@@ -103,6 +117,7 @@ const PokemonPickHistoryChartBody: React.FC<PokemonHistoryChartProps> = ({ pokem
 
         return {
           pickNumber,
+          isBan: isOneVOneBan(a, pickNumber),
           date: a.created_at ? new Date(a.created_at).getTime() : 0,
           formattedDate: a.created_at ? new Date(a.created_at).toLocaleDateString() : 'Unknown',
           draftId: a.draft_id,
@@ -115,9 +130,8 @@ const PokemonPickHistoryChartBody: React.FC<PokemonHistoryChartProps> = ({ pokem
 
     if (events.length === 0) return null;
 
-    // Statistical outlier detection using IQR "fences", mirroring the Sale
-    // History chart. Pick/ban numbers below Q1 - 1.5 x IQR (lower fence) or
-    // above Q3 + 2.0 x IQR (upper fence) are treated as outliers.
+    // Bans / 29s are real 1v1 outcomes, so they count toward the outlier
+    // fences and can be flagged as outliers themselves.
     const picksForBounds = events.map(e => e.pickNumber as number);
     let lowerBound: number | null = null;
     let upperBound: number | null = null;
@@ -137,7 +151,9 @@ const PokemonPickHistoryChartBody: React.FC<PokemonHistoryChartProps> = ({ pokem
       return {
         pointNumber: index + 1,
         pickNumber,
-        isOutlier: (lowerBound !== null && pickNumber < lowerBound) || (upperBound !== null && pickNumber > upperBound),
+        isBan: e.isBan,
+        isOutlier: (lowerBound !== null && pickNumber < lowerBound) ||
+          (upperBound !== null && pickNumber > upperBound),
         date: e.formattedDate,
         draftId: e.draftId,
         player: e.player,
@@ -182,22 +198,22 @@ const PokemonPickHistoryChartBody: React.FC<PokemonHistoryChartProps> = ({ pokem
         />
         <Tooltip content={<PickHistoryTooltip />} />
 
-        {(upperBound !== null && upperBound > 1 && upperBound < yMax) && <ReferenceLine y={upperBound} stroke="#8B0000" strokeDasharray="5 5" label={{ value: 'Outlier Bound', position: 'right', fill: '#8B0000', fontSize: 10 }} />}
-        {(lowerBound !== null && lowerBound > 1 && lowerBound < yMax) && <ReferenceLine y={lowerBound} stroke="#8B0000" strokeDasharray="5 5" />}
+        {(upperBound !== null && upperBound > 1 && upperBound < yMax) && <ReferenceLine y={upperBound} stroke={OUTLIER_COLOR} strokeDasharray="5 5" label={{ value: 'Outlier Bound', position: 'right', fill: OUTLIER_COLOR, fontSize: 10 }} />}
+        {(lowerBound !== null && lowerBound > 1 && lowerBound < yMax) && <ReferenceLine y={lowerBound} stroke={OUTLIER_COLOR} strokeDasharray="5 5" />}
 
         <Line
           type="monotone"
           dataKey="pickNumber"
-          stroke="#7CB946"
+          stroke={PICK_COLOR}
           strokeWidth={0}
           dot={(props: any) => {
             const { cx, cy, payload } = props;
-            const fill = payload.isOutlier ? '#8B0000' : '#7CB946';
+            const fill = getPickHistoryDotColor(Boolean(payload.isBan), Boolean(payload.isOutlier));
             return (
               <circle key={`dot-${payload.pointNumber}`} cx={cx} cy={cy} r={4} fill={fill} stroke="none" />
             );
           }}
-          activeDot={{ r: 6, fill: '#fff', stroke: '#7CB946' }}
+          activeDot={{ r: 6, fill: '#fff', stroke: PICK_COLOR }}
         />
       </LineChart>
     </ResponsiveContainer>

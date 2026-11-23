@@ -19,7 +19,7 @@ test('renders Shuffle icons, form-specific art, and fallback art in Shuffle Icon
         slot(263, 'Zigzagoon', 'Galar'),
         slot(37, 'Vulpix', 'Alola'),
         slot(824, 'Blipbug'),
-        slot(65536, 'Egg'),
+        slot(1573, 'Egg'),
       ]}
       history={[]}
       isActive={false}
@@ -40,7 +40,7 @@ test('renders Shuffle icons, form-specific art, and fallback art in Shuffle Icon
   expect(screen.getByAltText('Blipbug').getAttribute('src')).toBe(
     '/ShuffleIcons/Blipbug.png',
   );
-  expect(screen.getByAltText('Egg').getAttribute('src')).toBe('/baseforms/Egg.png');
+  expect(screen.getByAltText('Egg').getAttribute('src')).toBe('/ShuffleIcons/Egg.png');
 
   expect(screen.getByText('Shuffle icon credits')).toBeTruthy();
   expect(screen.getByText('Official Games').tagName).toBe('STRONG');

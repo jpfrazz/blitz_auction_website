@@ -9,6 +9,7 @@ import type {
 import { buildRunStatLineage, type RunStatLineage } from '../../utils/runStatLineage';
 import {
   computeAverageKosByPokemonKey,
+  computeWinHistoryByPokemonKey,
   computeWinOpportunitiesByPokemonKey,
   computeWinningPicksByPokemonKey,
 } from './costBreakdownKos';
@@ -522,4 +523,203 @@ test('dedupes linked guest picks and forms when counting win chances', () => {
 
   expect(result.get('Wooper-Paldea')).toBe(1);
   expect(result.size).toBe(1);
+});
+
+test('builds win history rows with draft dates, owners, types and missing KO stats', () => {
+  const players: StatsPagePlayer[] = [
+    {
+      user_id: 'user-1',
+      user_name: 'Alice',
+      global_name: null,
+      is_guest: false,
+      linked_user_id: null,
+      rps_wins: 0,
+      rps_losses: 0,
+    },
+    {
+      user_id: 'user-2',
+      user_name: 'Bob',
+      global_name: null,
+      is_guest: false,
+      linked_user_id: null,
+      rps_wins: 0,
+      rps_losses: 0,
+    },
+  ];
+  const auctions = [
+    auction({
+      auction_id: 1,
+      draft_id: 'draft-1',
+      winning_user_id: 'user-1',
+      created_at: '2026-01-02T12:00:00Z',
+    }),
+    auction({
+      auction_id: 2,
+      draft_id: 'draft-2',
+      winning_user_id: 'user-2',
+      created_at: '2026-02-03T12:00:00Z',
+    }),
+    auction({
+      auction_id: 3,
+      draft_id: 'draft-3',
+      draft_type: '1v1',
+      winning_bid: null,
+      action: 'PICK',
+      winning_user_id: 'user-1',
+      created_at: '2026-03-04T12:00:00Z',
+    }),
+    auction({ auction_id: 4, draft_id: 'draft-casual', winning_user_id: 'user-1' }),
+    auction({
+      auction_id: 5,
+      draft_id: 'draft-casual-1v1',
+      draft_type: '1v1',
+      winning_bid: null,
+      action: 'PICK',
+      winning_user_id: 'user-1',
+    }),
+  ];
+  const teams = [
+    team({
+      team_id: 1,
+      draft_id: 'draft-1',
+      user_id: 'user-1',
+      created_at: '2026-01-02T12:00:00Z',
+    }),
+    team({
+      team_id: 2,
+      draft_id: 'draft-2',
+      user_id: 'user-2',
+      created_at: '2026-02-03T12:00:00Z',
+    }),
+    team({
+      team_id: 3,
+      draft_id: 'draft-3',
+      user_id: 'user-1',
+      draft_type: '1v1',
+      created_at: '2026-03-04T12:00:00Z',
+    }),
+    team({ team_id: 4, draft_id: 'draft-casual', user_id: 'user-1' }),
+    team({ team_id: 5, draft_id: 'draft-casual-1v1', user_id: 'user-1', draft_type: '1v1' }),
+  ];
+  const races = [
+    race({ team_id: 1, draft_id: 'draft-1', user_id: 'user-1' }),
+    race({ team_id: 2, draft_id: 'draft-2', user_id: 'user-2' }),
+    race({
+      team_id: 3,
+      draft_id: 'draft-3',
+      user_id: 'user-1',
+      draft_type: '1v1',
+    }),
+    race({ team_id: 4, draft_id: 'draft-casual', user_id: 'user-1' }),
+    race({
+      team_id: 5,
+      draft_id: 'draft-casual-1v1',
+      user_id: 'user-1',
+      draft_type: '1v1',
+    }),
+  ];
+  const samples = [
+    sample({ team_id: 1, ko_count: 12 }),
+    sample({
+      team_id: 3,
+      draft_id: 'draft-3',
+      draft_type: '1v1',
+      user_id: 'user-1',
+      ko_count: 25,
+    }),
+  ];
+
+  const result = computeWinHistoryByPokemonKey(
+    races,
+    samples,
+    auctions,
+    teams,
+    players,
+    lineage,
+    new Set(['draft-1', 'draft-2']),
+    new Set(['draft-casual-1v1']),
+  );
+  const rows = result.get('Charmander') ?? [];
+
+  expect(rows).toHaveLength(3);
+  expect(rows.find((row) => row.team_id === 1)).toEqual({
+    team_id: 1,
+    draft_id: 'draft-1',
+    user_id: 'user-1',
+    guest_id: null,
+    draft_type: 'auction',
+    created_at: '2026-01-02T12:00:00Z',
+    ko_count: 12,
+  });
+  expect(rows.find((row) => row.team_id === 2)).toEqual({
+    team_id: 2,
+    draft_id: 'draft-2',
+    user_id: 'user-2',
+    guest_id: null,
+    draft_type: 'auction',
+    created_at: '2026-02-03T12:00:00Z',
+    ko_count: null,
+  });
+  expect(rows.find((row) => row.team_id === 3)).toEqual({
+    team_id: 3,
+    draft_id: 'draft-3',
+    user_id: 'user-1',
+    guest_id: null,
+    draft_type: '1v1',
+    created_at: '2026-03-04T12:00:00Z',
+    ko_count: 25,
+  });
+  expect(rows.some((row) => row.draft_id.startsWith('draft-casual'))).toBe(false);
+  expect(result.size).toBe(1);
+});
+
+test('keeps combined Plusle/Minun and evolved KOs on the drafted win rows', () => {
+  const combinedLineage = {
+    getIcons: (speciesId: number) => {
+      if (speciesId === 311) return ['plusle'];
+      if (speciesId === 312) return ['minun'];
+      if (speciesId === 5) return ['charmander'];
+      return [];
+    },
+  } as RunStatLineage;
+  const auctions = [
+    auction({
+      auction_id: 1,
+      draft_id: 'draft-1',
+      name: 'Plusle and Minun',
+      pokedex_id: 311,
+      winning_user_id: 'user-1',
+    }),
+    auction({ auction_id: 2, draft_id: 'draft-2', winning_user_id: 'user-1' }),
+  ];
+  const teams = [
+    team({ team_id: 1, draft_id: 'draft-1', user_id: 'user-1' }),
+    team({ team_id: 2, draft_id: 'draft-2', user_id: 'user-1' }),
+  ];
+  const races = [
+    race({ team_id: 1, draft_id: 'draft-1', user_id: 'user-1' }),
+    race({ team_id: 2, draft_id: 'draft-2', user_id: 'user-1' }),
+  ];
+  const samples = [
+    sample({ team_id: 1, draft_id: 'draft-1', species_id: 311, ko_count: 7 }),
+    sample({ team_id: 1, draft_id: 'draft-1', species_id: 312, ko_count: 5 }),
+    sample({ team_id: 2, draft_id: 'draft-2', species_id: 5, ko_count: 9 }),
+  ];
+
+  const result = computeWinHistoryByPokemonKey(
+    races,
+    samples,
+    auctions,
+    teams,
+    [] as StatsPagePlayer[],
+    combinedLineage,
+    new Set(['draft-1', 'draft-2']),
+    new Set<string>(),
+  );
+
+  expect(result.get('Plusle and Minun')?.[0].ko_count).toBe(12);
+  expect(result.get('Charmander')?.[0].ko_count).toBe(9);
+  expect(result.has('Plusle')).toBe(false);
+  expect(result.has('Minun')).toBe(false);
+  expect(result.size).toBe(2);
 });

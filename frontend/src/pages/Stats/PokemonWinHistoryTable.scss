@@ -1,0 +1,80 @@
+@import '../../shared/style/theme.scss';
+
+.win-history-table {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    font-size: 0.9rem;
+    color: $eb-text;
+}
+
+.win-history-head,
+.win-history-row {
+    display: grid;
+    grid-template-columns: 1.1fr 1.5fr 0.8fr 0.6fr;
+    gap: 0.75rem;
+    align-items: center;
+    padding: 0.35rem 0.5rem;
+}
+
+.win-history-head {
+    color: $eb-text-muted;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    border-bottom: 1px solid $eb-border;
+}
+
+.win-history-sort {
+    appearance: none;
+    border: 0;
+    background: none;
+    color: inherit;
+    font: inherit;
+    letter-spacing: inherit;
+    text-align: left;
+    text-transform: inherit;
+    cursor: pointer;
+    padding: 0;
+
+    &:hover {
+        color: $eb-text;
+    }
+
+    &:focus-visible {
+        outline: 1px solid $eb-primary;
+        outline-offset: 2px;
+    }
+}
+
+.win-history-body {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: $eb-border transparent;
+}
+
+.win-history-row {
+    border-bottom: 1px solid rgba($eb-border, 0.5);
+
+    &:nth-child(even) {
+        background: rgba(255, 255, 255, 0.03);
+    }
+
+    span:nth-child(n + 3) {
+        text-align: right;
+    }
+
+    span:last-child {
+        font-variant-numeric: tabular-nums;
+    }
+}
+
+.win-history-empty {
+    height: 100%;
+    display: grid;
+    place-items: center;
+    color: $eb-text-muted;
+    font-size: 0.95rem;
+}

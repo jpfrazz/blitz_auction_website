@@ -147,6 +147,16 @@
     scrollbar-width: thin;
 }
 
+.auction-player-name-link {
+    color: inherit;
+    text-decoration: none;
+
+    &:hover,
+    &:focus-visible {
+        text-decoration: underline;
+    }
+}
+
 .auction-player-icons {
     margin-top: 6px;
     display: flex;

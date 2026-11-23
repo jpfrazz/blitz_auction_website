@@ -4,6 +4,7 @@ import index from './shuffleIconIndex.json';
 const iconByDex: Record<string, string> = index;
 // Icons are committed under public/ShuffleIcons so they exist in production builds.
 const ROOT = '/ShuffleIcons/';
+const EGG_ICON = 'Egg.png';
 
 /**
  * Resolves a pool entry to a Shuffle icon URL.
@@ -15,6 +16,11 @@ const ROOT = '/ShuffleIcons/';
  * showing the wrong form.
  */
 export function getShuffleIcon(pokemon: Pokemon): string | undefined {
+  // The egg has no national dex entry, so it can't be keyed in the index. Match
+  // by name instead, including locally revealed "Egg (Species)" labels.
+  const name = pokemon.name.replace(/\s*\(.*\)\s*/, '').trim().toLowerCase();
+  if (name === 'egg' || name === '???') return `${ROOT}${EGG_ICON}`;
+
   const dex = pokemon.pokedex_id ?? pokemon.id;
   if (!dex) return undefined;
 

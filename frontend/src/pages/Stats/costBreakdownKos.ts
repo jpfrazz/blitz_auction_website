@@ -62,6 +62,159 @@ function ownerWonAuction(auction: StatsAuction, accountIds: Set<string>): boolea
     || (auction.winning_guest_id != null && accountIds.has(auction.winning_guest_id));
 }
 
+interface PickContext {
+  teamById: Map<number, StatsPageTeamRow>;
+  guestIdsByUserId: Map<string, Set<string>>;
+  auctionsByDraft: Map<string, StatsAuction[]>;
+}
+
+function buildPickContext(
+  teams: StatsPageTeamRow[],
+  players: StatsPagePlayer[],
+  auctions: StatsAuction[],
+): PickContext {
+  return {
+    teamById: new Map(teams.map((team) => [team.team_id, team])),
+    guestIdsByUserId: buildGuestIdsByUserId(players),
+    auctionsByDraft: buildAuctionsByDraft(auctions),
+  };
+}
+
+type WinningRaceRef = { draft_type?: string | null; draft_id: string };
+
+function isEligibleWinningRace(
+  race: WinningRaceRef,
+  validAuctionDraftIds: Set<string>,
+  casualOneVOneDraftIds: Set<string>,
+): boolean {
+  if (race.draft_type === '1v1') return !casualOneVOneDraftIds.has(race.draft_id);
+  return validAuctionDraftIds.has(race.draft_id);
+}
+
+type OwnedRaceRef = Pick<WinningRace, 'team_id' | 'draft_id' | 'user_id' | 'guest_id'>;
+
+function getOwnedPicksForRace(race: OwnedRaceRef, context: PickContext): StatsAuction[] {
+  const team = context.teamById.get(race.team_id);
+  const accountIds = buildAccountIds(
+    [team?.user_id, team?.guest_id, race.user_id, race.guest_id],
+    context.guestIdsByUserId,
+  );
+  return (context.auctionsByDraft.get(race.draft_id) ?? []).filter(
+    (auction) => isDraftedPick(auction) && ownerWonAuction(auction, accountIds),
+  );
+}
+
+/** KO count per drafted key for one winning team, using the profile-chart rules. */
+function getKosByKeyForOwnedPicks(
+  ownedPicks: StatsAuction[],
+  samplesForTeam: WinningRunKoSample[],
+  lineage: RunStatLineage,
+): Map<string, number | null> {
+  const runStats: RunMonStat[] = samplesForTeam
+    .filter((sample) => sample.ko_count != null)
+    .map((sample) => ({
+      species_id: sample.species_id,
+      personality: 0,
+      ko_count: sample.ko_count,
+      total_turns: null,
+      level: null,
+      fainted: false,
+    }));
+  const runStatsByIcon = getRunStatsByIcon(runStats, lineage);
+  const eggHatch = ownedPicks.some(isEggAuction)
+    ? findEggHatchStats(runStats, ownedPicks, lineage)
+    : null;
+
+  const kos = new Map<string, number | null>();
+  for (const auction of ownedPicks) {
+    const identity = resolvePokemonIdentity(auction.name || '', auction.form || '');
+    if (kos.has(identity.key)) continue;
+    const fullName = auction.form ? `${auction.name}-${auction.form}` : auction.name;
+    kos.set(
+      identity.key,
+      isEggAuction(auction)
+        ? eggHatch?.summary.koCount ?? null
+        : getRunStatsForPick(runStatsByIcon, fullName)?.koCount ?? null,
+    );
+  }
+  return kos;
+}
+
+function getDraftCreatedAt(team: StatsPageTeamRow | undefined, draftAuctions: StatsAuction[]): string | null {
+  if (team?.created_at) return team.created_at;
+  const dates = draftAuctions.map((auction) => auction.created_at).filter(Boolean).sort();
+  return dates[0] ?? null;
+}
+
+/** One win row for the Cost Breakdown "Win History" panel. */
+export interface WinHistoryEntry {
+  team_id: number;
+  draft_id: string;
+  user_id: string | null;
+  guest_id: string | null;
+  draft_type: string;
+  created_at: string | null;
+  ko_count: number | null;
+}
+
+/**
+ * Builds per-Pokémon win rows using the same ownership, eligibility and KO
+ * attribution rules as the Wins / Avg KOs columns. A missing save produces a
+ * row with `ko_count: null` so the UI can show a dash instead of hiding the win.
+ */
+export function computeWinHistoryByPokemonKey(
+  races: WinningRace[],
+  samples: WinningRunKoSample[],
+  auctions: StatsAuction[],
+  teams: StatsPageTeamRow[],
+  players: StatsPagePlayer[],
+  lineage: RunStatLineage,
+  validAuctionDraftIds: Set<string>,
+  casualOneVOneDraftIds: Set<string>,
+): Map<string, WinHistoryEntry[]> {
+  const history = new Map<string, WinHistoryEntry[]>();
+  if (races.length === 0) return history;
+
+  const context = buildPickContext(teams, players, auctions);
+  const samplesByTeam = new Map<number, WinningRunKoSample[]>();
+  for (const sample of samples) {
+    if (sample.ko_count == null) continue;
+    const bucket = samplesByTeam.get(sample.team_id) ?? [];
+    bucket.push(sample);
+    samplesByTeam.set(sample.team_id, bucket);
+  }
+
+  for (const race of races) {
+    if (!isEligibleWinningRace(race, validAuctionDraftIds, casualOneVOneDraftIds)) continue;
+
+    const ownedPicks = getOwnedPicksForRace(race, context);
+    if (ownedPicks.length === 0) continue;
+
+    const team = context.teamById.get(race.team_id);
+    const koByKey = getKosByKeyForOwnedPicks(
+      ownedPicks,
+      samplesByTeam.get(race.team_id) ?? [],
+      lineage,
+    );
+    const base: Omit<WinHistoryEntry, 'ko_count'> = {
+      team_id: race.team_id,
+      draft_id: race.draft_id,
+      user_id: race.user_id ?? team?.user_id ?? null,
+      guest_id: race.guest_id ?? team?.guest_id ?? null,
+      draft_type: race.draft_type,
+      created_at: getDraftCreatedAt(team, ownedPicks),
+    };
+
+    koByKey.forEach((koCount, key) => {
+      const rows = history.get(key) ?? [];
+      rows.push({ ...base, ko_count: koCount });
+      history.set(key, rows);
+    });
+  }
+
+  return history;
+}
+
 /**
  * Averages the KO counts shown on the player profile run charts across winning
  * runs only. Backend samples are limited to runs that beat Steven/Wally; each
@@ -90,57 +243,29 @@ export function computeAverageKosByPokemonKey(
   const averages = new Map<string, number>();
   if (samplesByTeam.size === 0) return averages;
 
-  const teamById = new Map(teams.map((team) => [team.team_id, team]));
-  const guestIdsByUserId = buildGuestIdsByUserId(players);
-  const auctionsByDraft = buildAuctionsByDraft(auctions);
+  const context = buildPickContext(teams, players, auctions);
   const totals = new Map<string, KoTotal>();
 
   samplesByTeam.forEach((samplesForTeam, teamId) => {
-    const team = teamById.get(teamId);
+    const team = context.teamById.get(teamId);
     const first = samplesForTeam[0];
     const draftId = team?.draft_id ?? first.draft_id;
 
     const accountIds = buildAccountIds(
       [team?.user_id, team?.guest_id, first.user_id, first.guest_id],
-      guestIdsByUserId,
+      context.guestIdsByUserId,
     );
-
-    // Same shape the profile run charts receive from /api/match-history. Only
-    // KO counts are needed here, so the other fields use neutral defaults.
-    const runStats: RunMonStat[] = samplesForTeam.map((sample) => ({
-      species_id: sample.species_id,
-      personality: 0,
-      ko_count: sample.ko_count,
-      total_turns: null,
-      level: null,
-      fainted: false,
-    }));
-    const runStatsByIcon = getRunStatsByIcon(runStats, lineage);
-
-    const ownedPicks = (auctionsByDraft.get(draftId) ?? []).filter(
+    const ownedPicks = (context.auctionsByDraft.get(draftId) ?? []).filter(
       (auction) => isDraftedPick(auction) && ownerWonAuction(auction, accountIds),
     );
-    const eggHatch = ownedPicks.some(isEggAuction)
-      ? findEggHatchStats(runStats, ownedPicks, lineage)
-      : null;
 
-    const seenKeys = new Set<string>();
-    for (const auction of ownedPicks) {
-      const identity = resolvePokemonIdentity(auction.name || '', auction.form || '');
-      if (seenKeys.has(identity.key)) continue;
-      seenKeys.add(identity.key);
-
-      const fullName = auction.form ? `${auction.name}-${auction.form}` : auction.name;
-      const koCount = isEggAuction(auction)
-        ? eggHatch?.summary.koCount
-        : getRunStatsForPick(runStatsByIcon, fullName)?.koCount;
-      if (koCount == null) continue;
-
-      const total = totals.get(identity.key) ?? { sum: 0, count: 0 };
+    getKosByKeyForOwnedPicks(ownedPicks, samplesForTeam, lineage).forEach((koCount, key) => {
+      if (koCount == null) return;
+      const total = totals.get(key) ?? { sum: 0, count: 0 };
       total.sum += koCount;
       total.count += 1;
-      totals.set(identity.key, total);
-    }
+      totals.set(key, total);
+    });
   });
 
   totals.forEach((total, key) => {
@@ -170,26 +295,13 @@ export function computeWinningPicksByPokemonKey(
   const wins = new Map<string, number>();
   if (races.length === 0) return wins;
 
-  const teamById = new Map(teams.map((team) => [team.team_id, team]));
-  const guestIdsByUserId = buildGuestIdsByUserId(players);
-  const auctionsByDraft = buildAuctionsByDraft(auctions);
+  const context = buildPickContext(teams, players, auctions);
 
   for (const race of races) {
-    if (race.draft_type === '1v1') {
-      if (casualOneVOneDraftIds.has(race.draft_id)) continue;
-    } else if (!validAuctionDraftIds.has(race.draft_id)) {
-      continue;
-    }
-
-    const team = teamById.get(race.team_id);
-    const accountIds = buildAccountIds(
-      [team?.user_id, team?.guest_id, race.user_id, race.guest_id],
-      guestIdsByUserId,
-    );
+    if (!isEligibleWinningRace(race, validAuctionDraftIds, casualOneVOneDraftIds)) continue;
 
     const seenKeys = new Set<string>();
-    for (const auction of auctionsByDraft.get(race.draft_id) ?? []) {
-      if (!isDraftedPick(auction) || !ownerWonAuction(auction, accountIds)) continue;
+    for (const auction of getOwnedPicksForRace(race, context)) {
       const { key } = resolvePokemonIdentity(auction.name || '', auction.form || '');
       if (seenKeys.has(key)) continue;
       seenKeys.add(key);
@@ -219,11 +331,7 @@ export function computeWinOpportunitiesByPokemonKey(
 
   for (const team of teams) {
     if (!team.has_boss_battles) continue;
-    if (team.draft_type === '1v1') {
-      if (casualOneVOneDraftIds.has(team.draft_id)) continue;
-    } else if (!validAuctionDraftIds.has(team.draft_id)) {
-      continue;
-    }
+    if (!isEligibleWinningRace(team, validAuctionDraftIds, casualOneVOneDraftIds)) continue;
 
     const accountIds = buildAccountIds([team.user_id, team.guest_id], guestIdsByUserId);
     const seenKeys = new Set<string>();

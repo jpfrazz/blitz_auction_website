@@ -180,8 +180,8 @@
         position: absolute;
         inset: 0;
         background-repeat: no-repeat;
-        background-position: right -1.5rem center;
-        background-size: 220px;
+        background-position: right 1.5rem top 0.75rem;
+        background-size: 200px;
         opacity: 0.5;
         filter: saturate(1.15);
         pointer-events: none;
@@ -372,7 +372,7 @@
 
     .player-draft-overview-table-wrapper {
         max-height: 480px;
-        max-width: 920px;
+        max-width: 1020px;
         overflow: auto;
         scrollbar-gutter: stable;
         scrollbar-width: thin;
@@ -417,7 +417,7 @@
     .player-draft-overview-table {
         display: grid;
         gap: 0.4rem;
-        min-width: 920px;
+        min-width: 1020px;
     }
 
     .player-draft-overview-row:nth-child(even) {
@@ -427,7 +427,7 @@
     .player-draft-overview-table-header,
     .player-draft-overview-row {
         display: grid;
-        grid-template-columns: 160px 64px 86px 70px 78px 78px 68px 74px 78px 68px;
+        grid-template-columns: 160px 64px 86px 70px 78px 78px 68px 74px 78px 68px 64px;
         gap: 0.75rem;
         align-items: center;
 
@@ -629,6 +629,39 @@
         padding: 0.7rem 0.85rem 0.8rem;
     }
 
+    .match-opponents {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: baseline;
+        column-gap: 0.35rem;
+        row-gap: 0.2rem;
+        margin-bottom: 0.7rem;
+        padding-bottom: 0.55rem;
+        border-bottom: 1px solid $eb-border;
+        color: $eb-text-muted;
+        font-size: 1.05rem;
+    }
+
+    .match-opponents-label {
+        color: $eb-text;
+        font-weight: 700;
+    }
+
+    .match-opponents-link {
+        color: #fff;
+        text-decoration: none;
+
+        &:hover,
+        &:focus-visible {
+            text-decoration: underline;
+        }
+    }
+
+    .match-opponents-separator,
+    .match-opponents-empty {
+        color: $eb-text-muted;
+    }
+
     .match-draft-details-header,
     .match-draft-details-row {
         display: grid;
@@ -767,7 +800,6 @@
         height: 42px;
         border-radius: 4px;
         overflow: hidden;
-        border: 1px solid $eb-border;
         background: $eb-bg;
         display: flex;
         align-items: center;
@@ -777,7 +809,6 @@
 
         &:hover {
             transform: scale(1.08);
-            border-color: $eb-primary;
         }
 
         img {
@@ -940,7 +971,6 @@
         height: 40px;
         border-radius: 4px;
         overflow: hidden;
-        border: 1px solid $eb-border;
         background: $eb-bg;
         display: flex;
         align-items: center;
@@ -950,7 +980,6 @@
 
         &:hover {
             transform: scale(1.08);
-            border-color: $eb-primary;
         }
 
         img {
@@ -963,8 +992,8 @@
 
     @media (max-width: 950px) {
         .player-draft-overview-background {
-            background-position: right -2rem top 0.5rem;
-            background-size: 180px;
+            background-position: right 1rem top 0.5rem;
+            background-size: 170px;
         }
 
         .match-timeline-row {
@@ -983,8 +1012,8 @@
         }
 
         .player-draft-overview-background {
-            background-position: center top;
-            background-size: 140px;
+            background-position: right 0 top 0.5rem;
+            background-size: 130px;
         }
 
         .player-draft-overview-content,
@@ -998,7 +1027,7 @@
 
         .player-draft-overview-table-header,
         .player-draft-overview-row {
-            grid-template-columns: minmax(140px, 1fr) 54px 76px 64px 68px 68px 60px 64px 70px 60px;
+            grid-template-columns: minmax(140px, 1fr) 54px 76px 64px 68px 68px 60px 64px 70px 60px 54px;
             gap: 0.5rem;
             font-size: 1.0rem;
         }

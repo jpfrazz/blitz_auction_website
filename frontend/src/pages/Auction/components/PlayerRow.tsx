@@ -88,7 +88,11 @@ const SortableItem: React.FC<SortableItemProps> = ({ team, highestBidderId, wsCo
   const isMyCard = !positionColors && !team.isPlaceholder && playerCardColor && team.user_id === currentUserId;
   const colorVarStyle = isMyCard ? { ['--player-card-color' as any]: playerCardColor } : {};
 
-  const playerName = team.isPlaceholder ? null : (team.global_name || team.username || team.user_id);
+  const playerName = team.isPlaceholder ? null : (team.global_name || team.username || team.user_id || team.guest_id || null);
+  const profileUserId = team.isPlaceholder ? null : (team.user_id || team.guest_id || null);
+  const profileHref = playerName && profileUserId
+    ? `/Stats/PlayerProfiles/${encodeURIComponent(playerName)}?userId=${encodeURIComponent(profileUserId)}`
+    : null;
   const isFilled = !team.isPlaceholder;
   const readinessClass = isFilled && team.ready ? 'player-ready' : 'player-not-ready';
   const teamMoney = team.budget_remaining ?? 0;
@@ -102,7 +106,21 @@ const SortableItem: React.FC<SortableItemProps> = ({ team, highestBidderId, wsCo
   const cardContent = (
     <>
       <div className="auction-player-name">
-        {playerName || 'Open Slot'}
+        {profileHref ? (
+          <a
+            className="auction-player-name-link"
+            href={profileHref}
+            title={`Open ${playerName}'s profile`}
+            draggable={false}
+            onPointerDown={(event) => event.stopPropagation()}
+            onKeyDown={(event) => event.stopPropagation()}
+            onClick={(event) => event.stopPropagation()}
+          >
+            {playerName}
+          </a>
+        ) : (
+          playerName || 'Open Slot'
+        )}
       </div>
       {!hideMoney && (
         <div className="auction-player-money">${teamMoney.toLocaleString()}</div>

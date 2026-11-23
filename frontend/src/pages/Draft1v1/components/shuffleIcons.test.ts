@@ -44,7 +44,14 @@ test('uses form-specific art without falling back to the base form', () => {
   expect(getShuffleIcon(pokemon(6, 'Charizard', 'Mega X'))).toBeUndefined();
 });
 
+test('uses the local Shuffle egg icon for the egg regardless of its id', () => {
+  expect(getShuffleIcon(pokemon(1573, 'Egg'))).toBe('/ShuffleIcons/Egg.png');
+  expect(getShuffleIcon(pokemon(65536, 'Egg'))).toBe('/ShuffleIcons/Egg.png');
+  expect(getShuffleIcon(pokemon(0, 'Egg (Togepi)'))).toBe('/ShuffleIcons/Egg.png');
+  expect(getShuffleIcon({ id: 0, name: '???' } as Pokemon)).toBe('/ShuffleIcons/Egg.png');
+});
+
 test('has no icon for entries outside the index', () => {
-  expect(getShuffleIcon(pokemon(65536, 'Egg'))).toBeUndefined();
+  expect(getShuffleIcon(pokemon(65536, 'Unknown'))).toBeUndefined();
   expect(getShuffleIcon({ id: 0, name: 'Unknown' } as Pokemon)).toBeUndefined();
 });

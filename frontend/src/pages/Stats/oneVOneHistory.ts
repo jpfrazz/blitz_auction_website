@@ -26,3 +26,15 @@ export function oneVOnePickSlot(auction: StatsAuction, leftoverOrders: Map<strin
   }
   return null;
 }
+
+/**
+ * Whether a 1v1 slot was a ban (or an unclaimed leftover, shown as 29).
+ * `action` is authoritative; the fixed slot order is the fallback for older
+ * rows that predate it: 1-4 are picks, then bans are the odd slots from 5 on.
+ */
+export function isOneVOneBan(auction: StatsAuction, pickNumber: number | null): boolean {
+  if (auction.action === 'BAN') return true;
+  if (auction.action === 'PICK') return false;
+  if (auction.action === 'LEFTOVER' || pickNumber === 29) return true;
+  return pickNumber !== null && pickNumber >= 5 && pickNumber % 2 === 1;
+}

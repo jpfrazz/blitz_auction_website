@@ -907,6 +907,9 @@ const PokemonStatsTab: React.FC<PokemonStatsTabProps> = ({
                               pokemonName={`${entry.name}${entry.form && entry.form !== 'base' ? ` (${toLabel(entry.form)})` : ''}`}
                               stats={stats!} 
                               cutoffDate={cutoffDate}
+                              validDraftIds={validDraftIds}
+                              casualOneVOneDraftIds={casual1v1DraftIds}
+                              runStatLineage={runStatLineage}
                             />
                           </div>
                         </td>
