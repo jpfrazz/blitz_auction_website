@@ -22,7 +22,7 @@ type Phase = 'choosing' | 'reveal' | 'swap' | 'clash' | 'result' | 'decided';
 
 const REVEAL_MS = 520;
 // Give players a beat to recognize the revealed moves before tiles rearrange.
-const SWAP_DELAY_MS = 1000;
+const SWAP_DELAY_MS = 750;
 const SWAP_MS = 260;
 const CLASH_MS = 320;
 const SHATTER_MS = 700;

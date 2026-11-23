@@ -662,18 +662,18 @@ const Stats: React.FC = () => {
             Pokemon
           </button>
           <button
-            className={`tab-chip ${activeTab === 'drafts' ? 'active' : ''}`}
-            type="button"
-            onClick={() => navigate('/Stats/Drafts')}
-          >
-            Drafts
-          </button>
-          <button
             className={`tab-chip ${activeTab === 'player-search' ? 'active' : ''}`}
             type="button"
             onClick={() => navigate('/Stats/PlayerProfiles')}
           >
             Player Profiles
+          </button>
+          <button
+            className={`tab-chip ${activeTab === 'drafts' ? 'active' : ''}`}
+            type="button"
+            onClick={() => navigate('/Stats/Drafts')}
+          >
+            Drafts
           </button>
           <button
             className={`tab-chip ${activeTab === 'hall-of-fame' ? 'active' : ''}`}

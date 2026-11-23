@@ -4,45 +4,55 @@
     height: 100%;
     display: flex;
     flex-direction: column;
-    font-size: 0.9rem;
+    font-size: 1.25rem;
     color: $eb-text;
 }
 
 .win-history-head,
 .win-history-row {
     display: grid;
-    grid-template-columns: 1.1fr 1.5fr 0.8fr 0.6fr;
+    grid-template-columns: 1.1fr 1.4fr 0.8fr 0.6fr;
     gap: 0.75rem;
     align-items: center;
-    padding: 0.35rem 0.5rem;
+    padding: 0.58rem 0.62rem;
+    text-align: left;
 }
 
 .win-history-head {
     color: $eb-text-muted;
     font-weight: 700;
-    letter-spacing: 0.04em;
+    letter-spacing: 0.05em;
     text-transform: uppercase;
+    background: $eb-bg;
     border-bottom: 1px solid $eb-border;
+    padding: 0;
 }
 
 .win-history-sort {
     appearance: none;
     border: 0;
+    border-radius: 0;
     background: none;
+    box-shadow: none;
+    box-sizing: border-box;
     color: inherit;
     font: inherit;
     letter-spacing: inherit;
     text-align: left;
     text-transform: inherit;
     cursor: pointer;
-    padding: 0;
+    width: 100%;
+    align-self: stretch;
+    padding: 0.58rem 0.62rem;
+    transition: background-color 0.1s ease;
 
     &:hover {
-        color: $eb-text;
+        background-color: $eb-surface;
+        color: inherit;
     }
 
     &:focus-visible {
-        outline: 1px solid $eb-primary;
+        outline: 1px solid $eb-text-muted;
         outline-offset: 2px;
     }
 }
@@ -57,13 +67,18 @@
 
 .win-history-row {
     border-bottom: 1px solid rgba($eb-border, 0.5);
+    transition: background-color 0.1s ease;
 
     &:nth-child(even) {
         background: rgba(255, 255, 255, 0.03);
     }
 
-    span:nth-child(n + 3) {
-        text-align: right;
+    &:hover {
+        background-color: rgba(255, 255, 255, 0.05);
+    }
+
+    span {
+        text-align: left;
     }
 
     span:last-child {
@@ -76,5 +91,5 @@
     display: grid;
     place-items: center;
     color: $eb-text-muted;
-    font-size: 0.95rem;
+    font-size: 1.1rem;
 }

@@ -712,7 +712,9 @@ const Draft1v1Page: React.FC = () => {
                 <div className="draft-completed-buttons">
                   {currentUserTeam ? (
                     <>
+                      {/* Claim Eeveelution is currently only available from the emulator page.
                       <button className="button" onClick={() => setShowEeveelutionModal(true)}>Claim Eeveelution</button>
+                      */}
                       <button className="button" onClick={() => window.open(`/Emulator/${draft.draft_id}`, '_blank')}>Play Emulator</button>
                     </>
                   ) : (

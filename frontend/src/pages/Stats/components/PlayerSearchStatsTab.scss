@@ -176,17 +176,6 @@
         min-height: 220px;
     }
 
-    .player-draft-overview-background {
-        position: absolute;
-        inset: 0;
-        background-repeat: no-repeat;
-        background-position: right 1.5rem top 0.75rem;
-        background-size: 200px;
-        opacity: 0.5;
-        filter: saturate(1.15);
-        pointer-events: none;
-    }
-
     .player-draft-overview-content {
         position: relative;
         z-index: 1;
@@ -194,7 +183,7 @@
         flex-direction: column;
         gap: 1rem;
         padding: 1rem;
-        background: linear-gradient(90deg, rgba($eb-surface, 0.95) 0%, rgba($eb-surface, 0.85) 55%, rgba($eb-surface, 0.4) 100%);
+        background: $eb-surface;
     }
 
     .player-draft-overview-header {
@@ -991,11 +980,6 @@
     }
 
     @media (max-width: 950px) {
-        .player-draft-overview-background {
-            background-position: right 1rem top 0.5rem;
-            background-size: 170px;
-        }
-
         .match-timeline-row {
             grid-template-columns: 65px 1fr;
 
@@ -1009,11 +993,6 @@
     @media (max-width: 640px) {
         .player-draft-overview {
             min-height: 0;
-        }
-
-        .player-draft-overview-background {
-            background-position: right 0 top 0.5rem;
-            background-size: 130px;
         }
 
         .player-draft-overview-content,

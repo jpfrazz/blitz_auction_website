@@ -1350,16 +1350,6 @@ const PlayerSearchStatsTab: React.FC<PlayerSearchStatsTabProps> = ({
             <>
               {(
                 <div className="player-draft-overview">
-                 {featuredPokemon && (
-                    <div
-                      className="player-draft-overview-background"
-                      style={{
-                        backgroundImage: `url(/baseforms/${featuredPokemon.name}.png)`,
-                      }}
-                      aria-hidden="true"
-                    />
-                  )}
-
                   <div className="player-draft-overview-content">
                     <div className="player-draft-overview-header">
                       <div>

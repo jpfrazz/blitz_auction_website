@@ -876,12 +876,14 @@ const AuctionPage: React.FC = () => {
                     <div className="draft-completed-buttons">
                       {currentUserTeam ? (
                         <>
+                          {/* Claim Eeveelution is only available from the emulator page for now.
                           <button
                             className="button"
                             onClick={() => setShowEeveelutionModal(true)}
                           >
                             Claim Eeveelution
                           </button>
+                          */}
                           <button
                             className="button"
                             onClick={() => window.open(`/Emulator/${draft.draft_id}`, '_blank')}
