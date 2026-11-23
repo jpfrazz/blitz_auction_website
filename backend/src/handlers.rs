@@ -2,7 +2,7 @@ use crate::{
     AppError, CSRF_STATE_KEY,
     contains_profanity,
     auction::AuctionResponse,
-    draft::{Draft, DraftLobbyResponse, DraftResponse, DraftSettings, DraftState, AutoBidResponse},
+    draft::{Draft, DraftLobbyResponse, DraftResponse, DraftSettings, DraftState, AutoBidResponse, RpsChoice},
     messages::{
         ChatMessage, ClientBidRequest, ClientBidResponse, ClientJoinResponse, ForfeitRequest,
         HallOfFamePokemon, PostLocationRequest, PostSaveRequest, RunMonStat, SaveData, ServerMessage,
@@ -90,6 +90,18 @@ pub struct SetAutoBidRequest {
 pub struct OneVOnePickBanRequest {
     pub pokedex_id: u32,
     pub form: Option<String>,
+}
+
+#[derive(Clone, Debug, Deserialize)]
+pub struct RpsPickRequest {
+    /// `null` clears the player's pending move so they can change their mind.
+    pub choice: Option<RpsChoice>,
+}
+
+#[derive(Clone, Debug, Deserialize)]
+pub struct RpsChooseFirstPickRequest {
+    /// `true` if the RPS winner wants the 1st pick, `false` for 2nd+3rd.
+    pub first_pick: bool,
 }
 
 fn default_ready_true() -> bool {
@@ -438,6 +450,7 @@ pub async fn create_draft(
             continue;
         };
         if lobby.draft_state == DraftState::PENDING
+            || lobby.draft_state == DraftState::RPS
             || lobby.draft_state == DraftState::BIDDING
         {
             open_lobbies += 1;
@@ -3136,6 +3149,54 @@ pub async fn one_v_one_toggle_timer(
         ));
     };
     draft.one_v_one_toggle_timer(user.get_user_id_string()).await
+}
+
+#[debug_handler]
+pub async fn rps_pick(
+    State(state): State<ServerState>,
+    Path(draft_id): Path<String>,
+    auth_session: AuthSession<AuthBackend>,
+    Json(request): Json<RpsPickRequest>,
+) -> Result<(), AppError> {
+    let user = auth_session.user.expect("user should exist");
+    let draft_uuid = Uuid::from_str(&draft_id).map_err(|_| {
+        (
+            StatusCode::BAD_REQUEST,
+            format!("requested draft does not exist"),
+        )
+    })?;
+    let Some(draft) = state.drafts.get(&draft_uuid) else {
+        return Err((
+            StatusCode::BAD_REQUEST,
+            format!("requested draft does not exist"),
+        ));
+    };
+    draft.rps_pick(user.get_user_id_string(), request.choice).await
+}
+
+#[debug_handler]
+pub async fn rps_choose_first_pick(
+    State(state): State<ServerState>,
+    Path(draft_id): Path<String>,
+    auth_session: AuthSession<AuthBackend>,
+    Json(request): Json<RpsChooseFirstPickRequest>,
+) -> Result<(), AppError> {
+    let user = auth_session.user.expect("user should exist");
+    let draft_uuid = Uuid::from_str(&draft_id).map_err(|_| {
+        (
+            StatusCode::BAD_REQUEST,
+            format!("requested draft does not exist"),
+        )
+    })?;
+    let Some(draft) = state.drafts.get(&draft_uuid) else {
+        return Err((
+            StatusCode::BAD_REQUEST,
+            format!("requested draft does not exist"),
+        ));
+    };
+    draft
+        .rps_choose_first_pick(user.get_user_id_string(), request.first_pick)
+        .await
 }
 
 #[debug_handler]

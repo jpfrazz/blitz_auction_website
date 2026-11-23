@@ -189,6 +189,46 @@ test('averages Aegislash form KOs onto a drafted Honedge row', () => {
   expect(result.size).toBe(1);
 });
 
+test('attributes Cursola KOs to a drafted Corsola-Galar', () => {
+  const corsolaCatalog: Pokemon[] = [
+    { id: 222, pokedex_id: 222, name: 'Corsola' },
+    {
+      id: 222,
+      pokedex_id: 222,
+      name: 'Corsola',
+      form: 'Galar',
+      evolves_from_id: '222',
+    },
+    {
+      id: 864,
+      pokedex_id: 864,
+      name: 'Cursola',
+      evolves_from_id: '222',
+      evolves_from_form: 'Galar',
+    },
+  ];
+  const corsolaLineage = buildRunStatLineage(corsolaCatalog);
+
+  const result = computeAverageKosByPokemonKey(
+    [sample({ species_id: 864, ko_count: 23 })],
+    [
+      auction({
+        auction_id: 1,
+        name: 'Corsola',
+        form: 'Galar',
+        pokedex_id: 222,
+        winning_user_id: 'user-1',
+      }),
+    ],
+    [team({ team_id: 1, user_id: 'user-1' })],
+    [] as StatsPagePlayer[],
+    corsolaLineage,
+  );
+
+  expect(result.get('Corsola-Galar')).toBe(23);
+  expect(result.size).toBe(1);
+});
+
 test('sums Plusle and Minun KOs for the combined draft pick', () => {
   const result = computeAverageKosByPokemonKey(
     [
@@ -310,6 +350,8 @@ test('deduplicates one Pokémon per race and resolves linked guest owners', () =
       global_name: null,
       is_guest: false,
       linked_user_id: null,
+      rps_wins: 0,
+      rps_losses: 0,
     },
     {
       user_id: 'guest-a',
@@ -317,6 +359,8 @@ test('deduplicates one Pokémon per race and resolves linked guest owners', () =
       global_name: null,
       is_guest: true,
       linked_user_id: 'user-1',
+      rps_wins: 0,
+      rps_losses: 0,
     },
   ];
   const auctions = [
@@ -430,6 +474,8 @@ test('dedupes linked guest picks and forms when counting win chances', () => {
       global_name: null,
       is_guest: false,
       linked_user_id: null,
+      rps_wins: 0,
+      rps_losses: 0,
     },
     {
       user_id: 'guest-a',
@@ -437,6 +483,8 @@ test('dedupes linked guest picks and forms when counting win chances', () => {
       global_name: null,
       is_guest: true,
       linked_user_id: 'user-1',
+      rps_wins: 0,
+      rps_losses: 0,
     },
   ];
   const auctions = [

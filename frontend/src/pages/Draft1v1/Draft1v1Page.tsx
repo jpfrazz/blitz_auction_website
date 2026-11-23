@@ -17,8 +17,10 @@ import {
   unclaimEeveelution,
   updatePendingDraftSettings,
   oneVOneToggleTimer,
+  rpsPick,
+  rpsChooseFirstPick,
 } from '../../shared/api/draftData';
-import { Draft, Pokemon, Team, OneVOnePoolSlot, OneVOneState, ChatMessage } from '../../types';
+import { Draft, Pokemon, Team, OneVOnePoolSlot, OneVOneState, ChatMessage, RpsChoice } from '../../types';
 import { fetchPokemonList } from '../../shared/api/pokemon';
 import PlayerRow from '../Auction/components/PlayerRow';
 import AuctionChatBox from '../Auction/components/AuctionChatBox';
@@ -31,6 +33,7 @@ import PlayerSearchTab from '../Auction/components/PokemonTablePanel/PlayerSearc
 import OneVOnePool, { slotKey } from './components/OneVOnePool';
 import OneVOneInfoPanel from './components/OneVOneInfoPanel';
 import PickOrderTab from './components/PickOrderTab';
+import RockPaperScissorsPanel from './components/RockPaperScissorsPanel';
 import '../Auction/AuctionPage.scss';
 import './Draft1v1Page.scss';
 
@@ -72,6 +75,7 @@ const Draft1v1Page: React.FC = () => {
   const [joinError, setJoinError] = useState<string | null>(null);
   const [joiningDraft, setJoiningDraft] = useState(false);
   const [startingDraft, setStartingDraft] = useState(false);
+  const [rpsBusy, setRpsBusy] = useState(false);
   const [readyingUp, setReadyingUp] = useState(false);
   const [becomingSpectator, setBecomingSpectator] = useState(false);
   const [pausingDraft, setPausingDraft] = useState(false);
@@ -323,6 +327,32 @@ const Draft1v1Page: React.FC = () => {
     }
   };
 
+  const handleRpsPick = async (choice: RpsChoice | null) => {
+    setRpsBusy(true);
+    try {
+      const updated = await rpsPick(draftId, choice);
+      setDraft(updated);
+    } catch (e: any) {
+      setError(e.response?.data || e.message);
+      throw e;
+    } finally {
+      setRpsBusy(false);
+    }
+  };
+
+  const handleRpsChooseFirstPick = async (firstPick: boolean) => {
+    setRpsBusy(true);
+    try {
+      const updated = await rpsChooseFirstPick(draftId, firstPick);
+      setDraft(updated);
+    } catch (e: any) {
+      setError(e.response?.data || e.message);
+      throw e;
+    } finally {
+      setRpsBusy(false);
+    }
+  };
+
   const handleTogglePause = async () => {
     if (!draft) return;
     setPausingDraft(true);
@@ -515,150 +545,163 @@ const Draft1v1Page: React.FC = () => {
 
         {/* Main content grid */}
         <div className="auction-content-grid">
-          {/* Left: 1v1 Pool Container + tabs */}
+          {/* Left: RPS pick-order showdown first, then the 1v1 pool + tabs */}
           <div className="auction-left-panel">
-            <div className={`one-v-one-pool-container ${poolCollapsed ? 'collapsed' : ''}`}>
-              {oneVOne && (
-                <OneVOnePool
-                  pool={oneVOne.pool}
-                  markedSlots={markedSlots}
-                  onToggleMark={handleToggleMark}
-                  tileSize={poolTileSize}
-                  onTileSizeChange={(size) => {
-                    setPoolTileSize(size);
-                    localStorage.setItem('eb-1v1-tile-size', String(size));
-                  }}
-                  history={oneVOne.history}
-                  slotLabels={slotLabels}
-                  currentPlayer={oneVOne.current_player}
-                  currentAction={oneVOne.current_action}
-                  isActive={draft.draft_state === 'BIDDING' && currentPlayerIsMe && !isPaused && !oneVOne.eeveelution_phase}
-                  selectedSlot={selectedSlot}
-                  onSelect={setSelectedSlot}
-                  onHover={setHoveredSlot}
-                  currentUserTeam={currentUserTeam}
-                  oneVOne={oneVOne}
-                />
-              )}
-              {!poolCollapsed && oneVOne?.eeveelution_phase && oneVOne.eeveelutions.length > 0 && (
-                <div className="one-v-one-pool-container-sub">
+            {draft.draft_state === 'RPS' && draft.rps ? (
+              <RockPaperScissorsPanel
+                rps={draft.rps}
+                teams={draft.teams}
+                currentUserId={currentUserId}
+                isBusy={rpsBusy}
+                onPick={handleRpsPick}
+                onChooseFirstPick={handleRpsChooseFirstPick}
+              />
+            ) : (
+              <>
+              <div className={`one-v-one-pool-container ${poolCollapsed ? 'collapsed' : ''}`}>
+                {oneVOne && (
                   <OneVOnePool
-                    pool={oneVOne.eeveelutions}
+                    pool={oneVOne.pool}
                     markedSlots={markedSlots}
                     onToggleMark={handleToggleMark}
                     tileSize={poolTileSize}
+                    onTileSizeChange={(size) => {
+                      setPoolTileSize(size);
+                      localStorage.setItem('eb-1v1-tile-size', String(size));
+                    }}
                     history={oneVOne.history}
                     slotLabels={slotLabels}
                     currentPlayer={oneVOne.current_player}
                     currentAction={oneVOne.current_action}
-                    isActive={draft.draft_state === 'BIDDING' && currentPlayerIsMe && !isPaused}
+                    isActive={draft.draft_state === 'BIDDING' && currentPlayerIsMe && !isPaused && !oneVOne.eeveelution_phase}
                     selectedSlot={selectedSlot}
                     onSelect={setSelectedSlot}
                     onHover={setHoveredSlot}
                     currentUserTeam={currentUserTeam}
                     oneVOne={oneVOne}
                   />
-                </div>
-              )}
-              {draft.draft_state === 'COMPLETED' && (
-                <button
-                  className="one-v-one-pool-collapse-toggle"
-                  onClick={() => setPoolCollapsed((c) => !c)}
-                  title={poolCollapsed ? 'Expand pool' : 'Collapse pool'}
-                >
-                  {poolCollapsed ? (
-                    <svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true">
-                      <polyline points="6 9 12 15 18 9" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
-                    </svg>
-                  ) : (
-                    <svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true">
-                      <polyline points="6 15 12 9 18 15" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
-                    </svg>
-                  )}
-                </button>
-              )}
-            </div>
-
-            <div className="pokemon-table-panel-outer">
-              <div className="pokemon-table-tabs">
-                <button className={tab === TAB_HOVER ? 'active' : ''} onClick={() => setTab(TAB_HOVER)}>Current Hover</button>
-                <button className={tab === TAB_ALL ? 'active' : ''} onClick={() => setTab(TAB_ALL)}>All Pokémon</button>
-                <button className={tab === TAB_TEAM ? 'active' : ''} onClick={() => setTab(TAB_TEAM)}>Team Planner</button>
-                <button className={tab === TAB_HISTORY ? 'active' : ''} onClick={() => setTab(TAB_HISTORY)}>Draft History</button>
-                <button className={tab === TAB_STATS ? 'active' : ''} onClick={() => setTab(TAB_STATS)}>Stats</button>
-                <button className={tab === TAB_PLAYER ? 'active' : ''} onClick={() => setTab(TAB_PLAYER)}>Player Search</button>
-                <button className={tab === TAB_PICK_ORDER ? 'active' : ''} onClick={() => setTab(TAB_PICK_ORDER)}>Pick Order</button>
-              </div>
-              <div className="auction-pokemon-table-box">
-                <div className="pokemon-table-tab-content">
-                  {tab === TAB_HOVER && (
-                    <div className="one-v-one-hover-panel">
-                      {(() => {
-                        const p = hoveredSlot?.pokemon ?? selectedSlot?.pokemon;
-                        if (!p) return <div className="one-v-one-info-prompt">Hover over a Pokémon to learn about it.</div>;
-                        const fakeAuction = {
-                          auction_id: 'preview',
-                          auction_state: 'PENDING',
-                          pokemon: p,
-                          highest_bid: 0,
-                          highest_bidder: null,
-                        } as any;
-                        return <CurrentPokemonPanel current_auction={fakeAuction} all_pokemon={allPokemon.length > 0 ? allPokemon : poolPokemon} />;
-                      })()}
-                    </div>
-                  )}
-                  {tab === TAB_ALL && <AllPokemonTab pokemon={poolPokemon} auctions={[]} allPokemon={allPokemon.length > 0 ? allPokemon : poolPokemon} />}
-                  {tab === TAB_TEAM && (
-                    <TeamPlannerTab
-                      teams={displayDraft?.teams ?? draft.teams}
-                      currentUserId={currentUserId}
-                      allPokemon={allPokemon.length > 0 ? allPokemon : poolPokemon}
-                      minimizedPokemon={minimizedPokemon}
-                      onToggleMinimize={handleToggleMinimize}
-                      onToggleEgg={handleToggleEggView}
+                )}
+                {!poolCollapsed && oneVOne?.eeveelution_phase && oneVOne.eeveelutions.length > 0 && (
+                  <div className="one-v-one-pool-container-sub">
+                    <OneVOnePool
+                      pool={oneVOne.eeveelutions}
+                      markedSlots={markedSlots}
+                      onToggleMark={handleToggleMark}
+                      tileSize={poolTileSize}
+                      history={oneVOne.history}
+                      slotLabels={slotLabels}
+                      currentPlayer={oneVOne.current_player}
+                      currentAction={oneVOne.current_action}
+                      isActive={draft.draft_state === 'BIDDING' && currentPlayerIsMe && !isPaused}
+                      selectedSlot={selectedSlot}
+                      onSelect={setSelectedSlot}
+                      onHover={setHoveredSlot}
+                      currentUserTeam={currentUserTeam}
+                      oneVOne={oneVOne}
                     />
-                  )}
-                  {tab === TAB_HISTORY && (
-                    <div className="one-v-one-draft-history" style={{ paddingTop: '1rem' }}>
-                      <ul>
-                        {(oneVOne?.history ?? []).slice().reverse().map((entry, idx) => (
-                          <li key={idx} className={`one-v-one-history-row ${entry.player === 'P1' ? 'row-p1' : 'row-p2'}`}>
-                            <div style={{ display: 'flex', alignItems: 'center' }}>
-                              <div style={{ width: '24px', display: 'flex', justifyContent: 'center', marginRight: '8px', flexShrink: 0 }}>
-                                <img
-                                  src={`/MiniIcons/${entry.pokemon.name.toLowerCase()}.png`}
-                                  alt={entry.pokemon.name}
-                                  className="draft-history-pokemon-icon"
-                                />
+                  </div>
+                )}
+                {draft.draft_state === 'COMPLETED' && (
+                  <button
+                    className="one-v-one-pool-collapse-toggle"
+                    onClick={() => setPoolCollapsed((c) => !c)}
+                    title={poolCollapsed ? 'Expand pool' : 'Collapse pool'}
+                  >
+                    {poolCollapsed ? (
+                      <svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true">
+                        <polyline points="6 9 12 15 18 9" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+                      </svg>
+                    ) : (
+                      <svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true">
+                        <polyline points="6 15 12 9 18 15" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+                      </svg>
+                    )}
+                  </button>
+                )}
+              </div>
+  
+              <div className="pokemon-table-panel-outer">
+                <div className="pokemon-table-tabs">
+                  <button className={tab === TAB_HOVER ? 'active' : ''} onClick={() => setTab(TAB_HOVER)}>Current Hover</button>
+                  <button className={tab === TAB_ALL ? 'active' : ''} onClick={() => setTab(TAB_ALL)}>All Pokémon</button>
+                  <button className={tab === TAB_TEAM ? 'active' : ''} onClick={() => setTab(TAB_TEAM)}>Team Planner</button>
+                  <button className={tab === TAB_HISTORY ? 'active' : ''} onClick={() => setTab(TAB_HISTORY)}>Draft History</button>
+                  <button className={tab === TAB_STATS ? 'active' : ''} onClick={() => setTab(TAB_STATS)}>Stats</button>
+                  <button className={tab === TAB_PLAYER ? 'active' : ''} onClick={() => setTab(TAB_PLAYER)}>Player Search</button>
+                  <button className={tab === TAB_PICK_ORDER ? 'active' : ''} onClick={() => setTab(TAB_PICK_ORDER)}>Pick Order</button>
+                </div>
+                <div className="auction-pokemon-table-box">
+                  <div className="pokemon-table-tab-content">
+                    {tab === TAB_HOVER && (
+                      <div className="one-v-one-hover-panel">
+                        {(() => {
+                          const p = hoveredSlot?.pokemon ?? selectedSlot?.pokemon;
+                          if (!p) return <div className="one-v-one-info-prompt">Hover over a Pokémon to learn about it.</div>;
+                          const fakeAuction = {
+                            auction_id: 'preview',
+                            auction_state: 'PENDING',
+                            pokemon: p,
+                            highest_bid: 0,
+                            highest_bidder: null,
+                          } as any;
+                          return <CurrentPokemonPanel current_auction={fakeAuction} all_pokemon={allPokemon.length > 0 ? allPokemon : poolPokemon} />;
+                        })()}
+                      </div>
+                    )}
+                    {tab === TAB_ALL && <AllPokemonTab pokemon={poolPokemon} auctions={[]} allPokemon={allPokemon.length > 0 ? allPokemon : poolPokemon} />}
+                    {tab === TAB_TEAM && (
+                      <TeamPlannerTab
+                        teams={displayDraft?.teams ?? draft.teams}
+                        currentUserId={currentUserId}
+                        allPokemon={allPokemon.length > 0 ? allPokemon : poolPokemon}
+                        minimizedPokemon={minimizedPokemon}
+                        onToggleMinimize={handleToggleMinimize}
+                        onToggleEgg={handleToggleEggView}
+                      />
+                    )}
+                    {tab === TAB_HISTORY && (
+                      <div className="one-v-one-draft-history" style={{ paddingTop: '1rem' }}>
+                        <ul>
+                          {(oneVOne?.history ?? []).slice().reverse().map((entry, idx) => (
+                            <li key={idx} className={`one-v-one-history-row ${entry.player === 'P1' ? 'row-p1' : 'row-p2'}`}>
+                              <div style={{ display: 'flex', alignItems: 'center' }}>
+                                <div style={{ width: '24px', display: 'flex', justifyContent: 'center', marginRight: '8px', flexShrink: 0 }}>
+                                  <img
+                                    src={`/MiniIcons/${entry.pokemon.name.toLowerCase()}.png`}
+                                    alt={entry.pokemon.name}
+                                    className="draft-history-pokemon-icon"
+                                  />
+                                </div>
+                                <div>
+                                  <strong>{entry.pokemon.name}</strong>
+                                  {entry.action === 'Leftover' ? ': Leftover' : `: ${entry.player} ${entry.action}`}
+                                </div>
                               </div>
-                              <div>
-                                <strong>{entry.pokemon.name}</strong>
-                                {entry.action === 'Leftover' ? ': Leftover' : `: ${entry.player} ${entry.action}`}
-                              </div>
-                            </div>
-                          </li>
-                        ))}
-                        {(!oneVOne || oneVOne.history.length === 0) && <li>No picks or bans yet.</li>}
-                      </ul>
-                    </div>
-                  )}
-                  {tab === TAB_STATS && <TierListTab />}
-                  {tab === TAB_PLAYER && <PlayerSearchTab />}
-                  {tab === TAB_PICK_ORDER && (
-                    <PickOrderTab
-                      poolSize={oneVOne?.pool.length || draft.one_v_one_pool_size || 32}
-                      player1Name={oneVOne ? orderedTeams[0]?.global_name || orderedTeams[0]?.username || null : null}
-                      player2Name={oneVOne ? orderedTeams[1]?.global_name || orderedTeams[1]?.username || null : null}
-                      currentPickNumber={
-                        oneVOne && draft.draft_state === 'BIDDING' && !oneVOne.eeveelution_phase
-                          ? oneVOne.history.length + 1
-                          : null
-                      }
-                    />
-                  )}
+                            </li>
+                          ))}
+                          {(!oneVOne || oneVOne.history.length === 0) && <li>No picks or bans yet.</li>}
+                        </ul>
+                      </div>
+                    )}
+                    {tab === TAB_STATS && <TierListTab />}
+                    {tab === TAB_PLAYER && <PlayerSearchTab />}
+                    {tab === TAB_PICK_ORDER && (
+                      <PickOrderTab
+                        poolSize={oneVOne?.pool.length || draft.one_v_one_pool_size || 32}
+                        player1Name={oneVOne ? orderedTeams[0]?.global_name || orderedTeams[0]?.username || null : null}
+                        player2Name={oneVOne ? orderedTeams[1]?.global_name || orderedTeams[1]?.username || null : null}
+                        currentPickNumber={
+                          oneVOne && draft.draft_state === 'BIDDING' && !oneVOne.eeveelution_phase
+                            ? oneVOne.history.length + 1
+                            : null
+                        }
+                      />
+                    )}
+                  </div>
                 </div>
               </div>
-            </div>
+              </>
+            )}
           </div>
 
           {/* Right: info panel / completed UI */}
@@ -692,10 +735,10 @@ const Draft1v1Page: React.FC = () => {
                     <div className="draft-completed-buttons">
                       {isHost && (
                         <>
-                          <button className="button" onClick={() => setShowKickPlayerModal(true)}>Kick Player</button>
                           <button className="button" onClick={handleStartDraft} disabled={startingDraft || !allTeamsReady}>
                             {startingDraft ? 'Starting Draft...' : 'Start 1v1 Draft'}
                           </button>
+                          <button className="button" onClick={() => setShowKickPlayerModal(true)}>Kick Player</button>
                         </>
                       )}
                       {currentUserTeam && !currentUserTeam.ready && (
@@ -711,6 +754,8 @@ const Draft1v1Page: React.FC = () => {
                     </div>
                   </div>
                 )}
+
+                {draft.draft_state === 'RPS' && <div className="draft-completed-panel" />}
 
                 {draft.draft_state !== 'PENDING' && oneVOne && (
                   <OneVOneInfoPanel

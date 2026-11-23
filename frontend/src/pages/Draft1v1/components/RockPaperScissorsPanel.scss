@@ -1,0 +1,377 @@
+.rps-panel {
+  padding: 0;
+  margin-bottom: 16px;
+}
+
+.rps-panel-inner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 24px;
+  padding: 28px 16px 32px;
+}
+
+// Card backs for the opponent's three possible picks.
+.rps-face-down-row {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+  width: 100%;
+  max-width: 440px;
+  transition: max-width 0.5s ease, transform 0.5s ease;
+}
+
+.rps-face-motion {
+  position: relative;
+  translate: 0 0;
+  transition: translate 0.26s ease-in-out;
+
+  &.rps-shatter { z-index: 2; }
+}
+
+.rps-card-back {
+  background:
+    repeating-linear-gradient(45deg, rgba(255, 255, 255, 0.06) 0 6px, transparent 6px 12px),
+    linear-gradient(135deg, #33465b, #1d2a38);
+  border: 3px solid #8fa6bd;
+  box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.12), 0 3px 10px rgba(0, 0, 0, 0.45);
+}
+
+.rps-face-down-tile {
+  position: relative;
+  aspect-ratio: 1 / 1;
+  transform-style: preserve-3d;
+
+  &.is-flipped {
+    animation: rps-flip 0.5s ease-in-out forwards;
+  }
+}
+
+.rps-card-face {
+  position: absolute;
+  inset: 0;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  overflow: hidden;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+}
+
+.rps-card-front {
+  transform: rotateY(180deg);
+
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    box-sizing: border-box;
+  }
+}
+
+.rps-tile-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 18px;
+  width: 100%;
+  max-width: 660px;
+  transition: transform 0.5s ease;
+}
+
+// The opponent row grows to match the player's tile size while the player's
+// row pulls back, opening a real gap in the middle for the clash.
+.rps-panel-inner.rps-revealing {
+  .rps-face-down-row {
+    max-width: 660px;
+    transform: translateY(-10px);
+  }
+
+  .rps-tile-grid {
+    transform: translateY(40px);
+  }
+}
+
+.rps-tile-cell {
+  position: relative;
+  translate: 0 0;
+  transition: translate 0.26s ease-in-out;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  color: inherit;
+  font: inherit;
+
+  // theme.scss styles every button (and its hover/disabled states) with a
+  // green background; the RPS tiles must keep their own move color.
+  &:hover,
+  &:focus {
+    background: transparent;
+  }
+
+  &:disabled,
+  &:disabled:hover {
+    background: transparent !important;
+    border-radius: 0 !important;
+    border: none !important;
+    box-shadow: none !important;
+    cursor: default !important;
+  }
+
+  &.rps-shatter { z-index: 2; }
+}
+
+.rps-tile {
+  width: 100%;
+  // The PNGs already carry their own transparent padding, so fill the tile.
+  padding: 0;
+
+  img {
+    padding: 0;
+  }
+}
+
+.rps-clickable {
+  cursor: pointer;
+}
+
+.rps-tile-cell:hover .rps-clickable,
+.rps-clickable:hover {
+  transform: scale(1.06);
+}
+
+// Rock red, paper blue, scissors green.
+.rps-tile.rps-rock {
+  background: #e0a8a8;
+  border-color: #8f2f2f;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.5), 0 1px 2px rgba(0, 0, 0, 0.28);
+}
+
+.rps-tile.rps-paper {
+  background: #a8c8e0;
+  border-color: #2f5f8f;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.5), 0 1px 2px rgba(0, 0, 0, 0.28);
+}
+
+.rps-tile.rps-scissors {
+  background: #93c47c;
+  border-color: #3f6f2f;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.4), 0 1px 2px rgba(0, 0, 0, 0.28);
+}
+
+// Unpicked tiles look like banned pool tiles once one move is selected.
+.rps-tile.rps-muted {
+  background: #6e6e6e;
+  border-color: #4d4d4d;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.25), 0 1px 2px rgba(0, 0, 0, 0.3);
+
+  img {
+    filter: grayscale(100%);
+    opacity: 0.55;
+  }
+}
+
+.rps-tile-label {
+  color: #fff;
+  font-size: 2.4rem;
+  font-weight: 700;
+  line-height: 1.1;
+}
+
+// Seamless reveal / clash animations on the tiles already on screen.
+// --rps-approach is -1 for the player's row and +1 for the opponent's row;
+// --rps-attack is the winning direction (-1 up, +1 down).
+// 16% is the contact point: 16% of the enemy wrapper (~209px) plus 16% of the
+// player cell (~248px) closes the 74px gap so the edges meet without overlap.
+@keyframes rps-flip {
+  from { transform: rotateY(0deg); }
+  to { transform: rotateY(180deg); }
+}
+
+@keyframes rps-approach-move {
+  from { transform: translateY(0); }
+  to { transform: translateY(calc(var(--rps-approach) * 16%)); }
+}
+
+@keyframes rps-bonk-move {
+  0% { transform: translateY(calc(var(--rps-approach) * 16%)); }
+  30% { transform: translateY(calc(var(--rps-approach) * -10%)) scale(0.97); }
+  55% { transform: translateY(calc(var(--rps-approach) * 4%)); }
+  78% { transform: translateY(calc(var(--rps-approach) * -2%)); }
+  100% { transform: translateY(0); }
+}
+
+// Decisive rounds: the winner holds at the contact point while the loser
+// flashes and breaks into two flying shards instead of bouncing back.
+@keyframes rps-shatter-impact {
+  0% {
+    transform: translateY(calc(var(--rps-approach) * 16%)) scale(1);
+    filter: brightness(1);
+  }
+  15% {
+    transform: translateY(calc(var(--rps-approach) * 16%)) scale(1.06);
+    filter: brightness(2.1);
+  }
+  100% {
+    transform: translateY(calc(var(--rps-approach) * 16%)) scale(1.06);
+    filter: brightness(1);
+  }
+}
+
+@keyframes rps-shatter-shard-left {
+  from { opacity: 1; transform: translate(0, 0) rotate(0deg); }
+  to {
+    opacity: 0;
+    transform: translate(-48%, calc(var(--rps-attack) * 42%)) rotate(-26deg) scale(0.88);
+  }
+}
+
+@keyframes rps-shatter-shard-right {
+  from { opacity: 1; transform: translate(0, 0) rotate(0deg); }
+  to {
+    opacity: 0;
+    transform: translate(52%, calc(var(--rps-attack) * 48%)) rotate(30deg) scale(0.88);
+  }
+}
+
+@keyframes rps-shatter-hide-flipped {
+  from { opacity: 1; transform: rotateY(180deg); }
+  to { opacity: 0; transform: rotateY(180deg); }
+}
+
+@keyframes rps-shatter-hide {
+  from { opacity: 1; }
+  to { opacity: 0; }
+}
+
+.rps-approach {
+  animation: rps-approach-move 0.32s ease-in forwards;
+}
+
+.rps-bonk {
+  animation: rps-bonk-move 0.7s ease-in-out;
+}
+
+.rps-shatter {
+  animation: rps-shatter-impact 0.22s ease-out forwards;
+
+  &::before,
+  &::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    aspect-ratio: 1 / 1;
+    z-index: 2;
+    background-image: var(--rps-shard-image);
+    background-position: center;
+    background-repeat: no-repeat;
+    background-size: contain;
+    pointer-events: none;
+  }
+
+  &::before {
+    clip-path: polygon(0 0, 58% 0, 44% 42%, 18% 68%, 0 55%);
+    animation: rps-shatter-shard-left 0.5s cubic-bezier(0.25, 0.6, 0.35, 1) forwards;
+  }
+
+  &::after {
+    clip-path: polygon(58% 0, 100% 0, 100% 62%, 72% 100%, 44% 42%);
+    animation: rps-shatter-shard-right 0.5s cubic-bezier(0.25, 0.6, 0.35, 1) forwards;
+  }
+}
+
+.rps-face-motion.rps-shatter .rps-face-down-tile {
+  animation: rps-shatter-hide-flipped 0.12s ease-out forwards;
+}
+
+.rps-tile-cell.rps-shatter .rps-tile {
+  animation: rps-shatter-hide 0.12s ease-out forwards;
+}
+
+// Winning tile slides into the column opposite the loser's pick. `translate`
+// is used instead of `left` so percentages stay relative to the tile itself
+// and the swap composes cleanly with the transform-based clash animations.
+.rps-swap {
+  translate: calc(var(--rps-column-shift) * 108.7%) 0;
+}
+
+.rps-outcome {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 32px;
+  min-height: 420px;
+  padding: 32px 16px 40px;
+  animation: rps-fade-in 0.3s ease-out;
+}
+
+.rps-outcome-title {
+  color: #fff;
+  font-weight: 800;
+  line-height: 1;
+  text-align: center;
+}
+
+.rps-outcome--win .rps-outcome-title {
+  font-size: 6.5rem;
+  text-shadow: 0 4px 18px rgba(0, 0, 0, 0.55);
+}
+
+.rps-outcome--wait .rps-outcome-title {
+  color: #d8dde3;
+  font-size: 3.6rem;
+}
+
+.rps-pick-order {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 24px;
+}
+
+.rps-choice-button {
+  min-width: 280px;
+  padding: 18px 30px;
+  font-size: 2.2rem;
+}
+
+// The loser can see the choices but cannot make them.
+.rps-pick-order--disabled .rps-choice-button,
+.rps-pick-order--disabled .rps-choice-button:disabled {
+  background: #6e6e6e !important;
+  color: #111 !important;
+  border: none !important;
+  box-shadow: none !important;
+  opacity: 1 !important;
+  cursor: not-allowed !important;
+  pointer-events: none !important;
+}
+
+@keyframes rps-fade-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@media (max-width: 600px) {
+  .rps-tile-grid {
+    gap: 10px;
+  }
+
+  .rps-face-down-row {
+    gap: 8px;
+  }
+
+  .rps-tile-label {
+    font-size: 1.8rem;
+  }
+}

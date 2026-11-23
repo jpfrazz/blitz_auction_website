@@ -74,6 +74,9 @@ pub struct DraftResponse {
     /// 1v1 drafts only: the shared pick/ban pool and current turn state.
     #[serde(skip_serializing_if = "Option::is_none")]
     one_v_one: Option<OneVOneState>,
+    /// 1v1 drafts only: the rock-paper-scissors pick-order showdown.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    rps: Option<RockPaperScissorsState>,
 }
 
 #[derive(Clone, Debug, Serialize)]
@@ -97,6 +100,8 @@ pub struct DraftLobbyResponse {
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq, Display)]
 pub enum DraftState {
     PENDING,
+    /// 1v1 drafts only: players are settling the pick order with RPS.
+    RPS,
     BIDDING,
     COMPLETED,
 }
@@ -191,6 +196,137 @@ pub struct OneVOneState {
     pub eeveelutions: Vec<OneVOnePoolSlot>,
     /// pokedex_ids of eeveelutions that were banned (greyed out in the emulator).
     pub banned_eeveelutions: Vec<u32>,
+}
+
+/// A move in the 1v1 pick-order rock-paper-scissors showdown.
+#[derive(Clone, Copy, Debug, Serialize, Deserialize, PartialEq, Eq)]
+pub enum RpsChoice {
+    Rock,
+    Paper,
+    Scissors,
+}
+
+impl RpsChoice {
+    fn beats(self, other: Self) -> bool {
+        matches!(
+            (self, other),
+            (Self::Rock, Self::Scissors)
+                | (Self::Paper, Self::Rock)
+                | (Self::Scissors, Self::Paper)
+        )
+    }
+}
+
+#[cfg(test)]
+mod rps_choice_tests {
+    use super::RpsChoice;
+
+    #[test]
+    fn each_move_beats_exactly_one_other_move() {
+        use RpsChoice::*;
+        assert!(Rock.beats(Scissors));
+        assert!(Paper.beats(Rock));
+        assert!(Scissors.beats(Paper));
+        assert!(!Scissors.beats(Rock));
+        assert!(!Rock.beats(Paper));
+        assert!(!Paper.beats(Scissors));
+        assert!(!Rock.beats(Rock));
+    }
+}
+
+/// Resolve a completed RPS round into a publicly revealable result.
+fn resolve_rps_round(
+    round: u32,
+    host: &str,
+    opponent: &str,
+    host_choice: RpsChoice,
+    opponent_choice: RpsChoice,
+) -> RpsRoundResult {
+    let winner = if host_choice == opponent_choice {
+        None
+    } else if host_choice.beats(opponent_choice) {
+        Some(host.to_string())
+    } else {
+        Some(opponent.to_string())
+    };
+    RpsRoundResult {
+        round,
+        host: host_choice,
+        opponent: opponent_choice,
+        winner,
+    }
+}
+
+#[cfg(test)]
+mod resolve_rps_round_tests {
+    use super::{resolve_rps_round, RpsChoice};
+
+    #[test]
+    fn ties_have_no_winner_and_wins_go_to_the_matching_player() {
+        use RpsChoice::*;
+        let tie = resolve_rps_round(1, "host", "guest", Rock, Rock);
+        assert_eq!(tie.winner, None);
+
+        let host_win = resolve_rps_round(2, "host", "guest", Scissors, Paper);
+        assert_eq!(host_win.winner.as_deref(), Some("host"));
+
+        let guest_win = resolve_rps_round(3, "host", "guest", Rock, Paper);
+        assert_eq!(guest_win.winner.as_deref(), Some("guest"));
+    }
+}
+
+/// One resolved RPS round. Choices are only revealed once both players lock in.
+#[derive(Clone, Debug, Serialize)]
+pub struct RpsRoundResult {
+    pub round: u32,
+    pub host: RpsChoice,
+    pub opponent: RpsChoice,
+    /// user id of the round winner; `None` means the round was a tie.
+    pub winner: Option<String>,
+}
+
+/// Public RPS state included in `DraftResponse` while the showdown is running.
+/// Current-round choices are deliberately omitted so players can't see the
+/// opponent's move before they both lock in.
+#[derive(Clone, Debug, Serialize)]
+pub struct RockPaperScissorsState {
+    pub host: String,
+    pub opponent: String,
+    pub round: u32,
+    pub host_ready: bool,
+    pub opponent_ready: bool,
+    pub last_round: Option<RpsRoundResult>,
+    /// user id of the player who won a round and gets to choose pick order.
+    pub winner: Option<String>,
+    /// user id of the player who will receive the first pick.
+    pub first_pick: Option<String>,
+}
+
+/// Internal RPS state. Holds the hidden picks until both players have chosen.
+struct RpsEngine {
+    host: String,
+    opponent: String,
+    round: u32,
+    host_choice: Option<RpsChoice>,
+    opponent_choice: Option<RpsChoice>,
+    last_round: Option<RpsRoundResult>,
+    winner: Option<String>,
+    first_pick: Option<String>,
+}
+
+impl RpsEngine {
+    fn to_state(&self) -> RockPaperScissorsState {
+        RockPaperScissorsState {
+            host: self.host.clone(),
+            opponent: self.opponent.clone(),
+            round: self.round,
+            host_ready: self.host_choice.is_some(),
+            opponent_ready: self.opponent_choice.is_some(),
+            last_round: self.last_round.clone(),
+            winner: self.winner.clone(),
+            first_pick: self.first_pick.clone(),
+        }
+    }
 }
 
 /// The full 1v1 pick/ban order. Each tuple is (player, action).
@@ -979,6 +1115,54 @@ impl Draft {
         })?
     }
 
+    /// 1v1 drafts: set or clear a pending rock-paper-scissors move.
+    pub async fn rps_pick(&self, user_id: String, choice: Option<RpsChoice>) -> Result<(), AppError> {
+        let (response_sender, response_receiver) = oneshot::channel();
+        let cmd = DraftCommand::RpsPick {
+            response_sender,
+            user_id,
+            choice,
+        };
+        self.actor_sender.send(cmd).await.map_err(|e| {
+            (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                format!("failed to send rps pick cmd to actor, {}", e),
+            )
+        })?;
+        response_receiver.await.map_err(|e| {
+            (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                format!("failed to wait for actor response, {}", e),
+            )
+        })?
+    }
+
+    /// 1v1 drafts: the RPS winner decides who receives the first pick.
+    pub async fn rps_choose_first_pick(
+        &self,
+        user_id: String,
+        first_pick: bool,
+    ) -> Result<(), AppError> {
+        let (response_sender, response_receiver) = oneshot::channel();
+        let cmd = DraftCommand::RpsChooseFirstPick {
+            response_sender,
+            user_id,
+            first_pick,
+        };
+        self.actor_sender.send(cmd).await.map_err(|e| {
+            (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                format!("failed to send rps choose cmd to actor, {}", e),
+            )
+        })?;
+        response_receiver.await.map_err(|e| {
+            (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                format!("failed to wait for actor response, {}", e),
+            )
+        })?
+    }
+
     pub async fn shutdown(&self) {
         let _ = self.actor_sender.send(DraftCommand::Shutdown).await;
     }
@@ -1000,6 +1184,8 @@ struct DraftActor {
     broadcast_tx: broadcast::Sender<ServerMessage>,
     /// 1v1 drafts only: the pick/ban engine state.
     one_v_one: Option<OneVOneEngine>,
+    /// 1v1 drafts only: the pick-order RPS showdown state.
+    rps: Option<RpsEngine>,
 }
 
 /// Internal (non-serialized) 1v1 engine state for the actor.
@@ -1131,6 +1317,18 @@ enum DraftCommand {
         response_sender: oneshot::Sender<Result<(), AppError>>,
         user_id: String,
     },
+    /// 1v1 drafts: a player sets or clears their pending RPS move.
+    RpsPick {
+        response_sender: oneshot::Sender<Result<(), AppError>>,
+        user_id: String,
+        choice: Option<RpsChoice>,
+    },
+    /// 1v1 drafts: the RPS winner picks who gets the 1st / 2nd+3rd picks.
+    RpsChooseFirstPick {
+        response_sender: oneshot::Sender<Result<(), AppError>>,
+        user_id: String,
+        first_pick: bool,
+    },
     Shutdown,
 }
 
@@ -1179,6 +1377,7 @@ impl DraftActor {
             broadcast_tx,
             spectators: vec![],
             one_v_one: None,
+            rps: None,
         }
     }
 
@@ -1407,6 +1606,30 @@ impl DraftActor {
                             self.broadcast();
                         };
                     }
+                    DraftCommand::RpsPick {
+                        response_sender,
+                        user_id,
+                        choice,
+                    } => {
+                        let res = self.rps_pick(user_id, choice).await;
+                        let ok = res.is_ok();
+                        let _ = response_sender.send(res);
+                        if ok {
+                            self.broadcast();
+                        };
+                    }
+                    DraftCommand::RpsChooseFirstPick {
+                        response_sender,
+                        user_id,
+                        first_pick,
+                    } => {
+                        let res = self.rps_choose_first_pick(user_id, first_pick).await;
+                        let ok = res.is_ok();
+                        let _ = response_sender.send(res);
+                        if ok {
+                            self.broadcast();
+                        };
+                    }
                     DraftCommand::Shutdown => break,
                 }
             }
@@ -1501,7 +1724,9 @@ impl DraftActor {
         }
 
         if self.settings.draft_type == DRAFT_TYPE_1V1 {
-            return self.start_one_v_one().await;
+            // 1v1 drafts settle the pick order with rock-paper-scissors before
+            // the pick/ban pool is generated.
+            return self.start_rps();
         }
 
         self.db_writer.start_draft().await?;
@@ -1518,8 +1743,174 @@ impl DraftActor {
         Ok(())
     }
 
+    /// Begin the 1v1 pick-order showdown instead of generating the pool.
+    fn start_rps(&mut self) -> Result<(), AppError> {
+        if self.teams.len() != 2 {
+            return Err((
+                StatusCode::PRECONDITION_FAILED,
+                format!("1v1 drafts require exactly 2 players"),
+            ));
+        }
+
+        let mut player_ids: Vec<String> = self.teams.keys().cloned().collect();
+        player_ids.sort();
+        let host = if player_ids.contains(&self.host) {
+            self.host.clone()
+        } else {
+            player_ids[0].clone()
+        };
+        let opponent = player_ids
+            .into_iter()
+            .find(|id| *id != host)
+            .ok_or_else(|| {
+                (
+                    StatusCode::PRECONDITION_FAILED,
+                    "1v1 drafts require exactly 2 players".to_string(),
+                )
+            })?;
+
+        self.rps = Some(RpsEngine {
+            host,
+            opponent,
+            round: 1,
+            host_choice: None,
+            opponent_choice: None,
+            last_round: None,
+            winner: None,
+            first_pick: None,
+        });
+        self.draft_state = DraftState::RPS;
+        Ok(())
+    }
+
+    /// Set or clear one player's provisional RPS move. When both moves are in,
+    /// the round is revealed: a tie advances to a new round, otherwise the
+    /// winner decides pick order and the round is persisted for stats.
+    async fn rps_pick(&mut self, user_id: String, choice: Option<RpsChoice>) -> Result<(), AppError> {
+        if self.draft_state != DraftState::RPS {
+            return Err((
+                StatusCode::PRECONDITION_FAILED,
+                format!("rock paper scissors is not in progress"),
+            ));
+        }
+        let Some(rps) = self.rps.as_mut() else {
+            return Err((
+                StatusCode::PRECONDITION_FAILED,
+                format!("rock paper scissors is not in progress"),
+            ));
+        };
+        if rps.winner.is_some() {
+            return Err((
+                StatusCode::PRECONDITION_FAILED,
+                format!("rock paper scissors is already decided"),
+            ));
+        }
+
+        let is_host = user_id == rps.host;
+        let is_opponent = user_id == rps.opponent;
+        if !is_host && !is_opponent {
+            return Err((
+                StatusCode::PRECONDITION_FAILED,
+                format!("user is not part of the rock paper scissors match"),
+            ));
+        }
+        // The move stays provisional until both players have one in, so a
+        // player may replace it or clear it (`None`) before then.
+        if is_host {
+            rps.host_choice = choice;
+        } else {
+            rps.opponent_choice = choice;
+        }
+
+        // Collect the decisive result while the RPS state is borrowed, then
+        // hand it to the DB writer once the borrow ends.
+        let mut decisive = None;
+        if let (Some(host_choice), Some(opponent_choice)) = (rps.host_choice, rps.opponent_choice) {
+            let round = rps.round;
+            let result = resolve_rps_round(
+                round,
+                &rps.host,
+                &rps.opponent,
+                host_choice,
+                opponent_choice,
+            );
+            let winner = result.winner.clone();
+            rps.last_round = Some(result);
+            rps.host_choice = None;
+            rps.opponent_choice = None;
+            match winner {
+                Some(winner_id) => {
+                    let loser_id = if winner_id == rps.host {
+                        rps.opponent.clone()
+                    } else {
+                        rps.host.clone()
+                    };
+                    decisive = Some((round, winner_id.clone(), loser_id));
+                    rps.winner = Some(winner_id);
+                }
+                None => rps.round += 1,
+            }
+        }
+
+        if let Some((round, winner_id, loser_id)) = decisive {
+            self.db_writer
+                .record_rps_result(round, winner_id, loser_id)
+                .await;
+        }
+
+        Ok(())
+    }
+
+    /// The RPS winner chooses who gets the first pick (and therefore who gets
+    /// the 2nd+3rd picks). This transitions straight into the 1v1 draft.
+    async fn rps_choose_first_pick(
+        &mut self,
+        user_id: String,
+        first_pick: bool,
+    ) -> Result<(), AppError> {
+        if self.draft_state != DraftState::RPS {
+            return Err((
+                StatusCode::PRECONDITION_FAILED,
+                format!("rock paper scissors is not in progress"),
+            ));
+        }
+        let Some(rps) = self.rps.as_ref() else {
+            return Err((
+                StatusCode::PRECONDITION_FAILED,
+                format!("rock paper scissors is not in progress"),
+            ));
+        };
+        if rps.winner.as_deref() != Some(user_id.as_str()) {
+            return Err((
+                StatusCode::PRECONDITION_FAILED,
+                format!("only the rock paper scissors winner can choose pick order"),
+            ));
+        }
+        if rps.first_pick.is_some() {
+            return Err((
+                StatusCode::PRECONDITION_FAILED,
+                format!("pick order has already been chosen"),
+            ));
+        }
+
+        let winner = rps.winner.clone().unwrap();
+        let loser = if winner == rps.host {
+            rps.opponent.clone()
+        } else {
+            rps.host.clone()
+        };
+        let first_pick_user = if first_pick { winner } else { loser };
+        self.start_one_v_one(Some(first_pick_user.clone())).await?;
+        if let Some(rps) = self.rps.as_mut() {
+            rps.first_pick = Some(first_pick_user);
+        }
+        Ok(())
+    }
+
     /// Initializes the 1v1 pick/ban engine and starts the first turn.
-    async fn start_one_v_one(&mut self) -> Result<(), AppError> {
+    /// `first_pick` comes from the RPS showdown; if absent (legacy/internal
+    /// callers) the first player is chosen randomly.
+    async fn start_one_v_one(&mut self, first_pick: Option<String>) -> Result<(), AppError> {
         // Exactly two teams required.
         if self.teams.len() != 2 {
             return Err((
@@ -1528,11 +1919,31 @@ impl DraftActor {
             ));
         }
 
-        // Randomly assign first pick (P1 / blue) and second pick (P2 / red).
-        let mut player_ids: Vec<String> = self.teams.keys().cloned().collect();
-        player_ids.shuffle(&mut rand::rng());
-        let player1 = player_ids[0].clone();
-        let player2 = player_ids[1].clone();
+        // P1 is the first pick (blue), P2 gets the 2nd and 3rd picks (red).
+        let player1 = if let Some(first_pick) = first_pick {
+            if !self.teams.contains_key(&first_pick) {
+                return Err((
+                    StatusCode::PRECONDITION_FAILED,
+                    format!("first pick player is not in the draft"),
+                ));
+            }
+            first_pick
+        } else {
+            let mut player_ids: Vec<String> = self.teams.keys().cloned().collect();
+            player_ids.shuffle(&mut rand::rng());
+            player_ids[0].clone()
+        };
+        let player2 = self
+            .teams
+            .keys()
+            .find(|id| **id != player1)
+            .cloned()
+            .ok_or_else(|| {
+                (
+                    StatusCode::PRECONDITION_FAILED,
+                    "1v1 drafts require exactly 2 players".to_string(),
+                )
+            })?;
 
         // Choose base, non-rental pokemon at random from the draft pool.
         let pool_size = self.settings.one_v_one_pool_size as usize;
@@ -3011,6 +3422,7 @@ impl From<&DraftActor> for DraftResponse {
             auction_length: value.settings.auction_length,
             one_v_one_pool_size: (value.settings.draft_type == DRAFT_TYPE_1V1).then_some(value.settings.one_v_one_pool_size),
             one_v_one: value.one_v_one.as_ref().map(|e| e.to_state(value)),
+            rps: value.rps.as_ref().map(|e| e.to_state()),
         }
     }
 }

@@ -6,6 +6,7 @@ import {
   DraftLobby,
   MatchHistoryTeam,
   Pokemon,
+  RpsChoice,
   StatsPageResponse,
   UserRole,
 } from "../../types";
@@ -169,6 +170,20 @@ export async function oneVOneBan(draft_id: string, pokedex_id: number, form: str
 
 export async function oneVOneToggleTimer(draft_id: string): Promise<void> {
   await axios.post(`/api/drafts/${draft_id}/one-v-one/toggle-timer`);
+}
+
+// 1v1 pick-order showdown: set a provisional move, or pass null to clear it
+export async function rpsPick(draft_id: string, choice: RpsChoice | null): Promise<Draft> {
+  await axios.post(`/api/drafts/${draft_id}/one-v-one/rps/pick`, { choice });
+  const response = await axios.get(`/api/drafts/${draft_id}`);
+  return response.data;
+}
+
+// 1v1 pick-order showdown: the winner chooses 1st pick or 2nd+3rd pick
+export async function rpsChooseFirstPick(draft_id: string, first_pick: boolean): Promise<Draft> {
+  await axios.post(`/api/drafts/${draft_id}/one-v-one/rps/choose`, { first_pick });
+  const response = await axios.get(`/api/drafts/${draft_id}`);
+  return response.data;
 }
 
 export interface AutoBidState {

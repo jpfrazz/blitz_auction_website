@@ -82,6 +82,12 @@ enum DbCommand {
     IncrementOneVOnePick {
         user: User,
     },
+    /// 1v1 drafts: record one decisive rock-paper-scissors round.
+    RecordRpsResult {
+        round: u32,
+        winner_id: String,
+        loser_id: String,
+    },
 }
 
 impl DbWriter {
@@ -333,6 +339,17 @@ impl DbWriter {
         let cmd = DbCommand::IncrementOneVOnePick { user };
         let _ = self.actor_sender.send(cmd).await;
     }
+
+    /// 1v1 drafts: persist a decisive RPS round for per-account win rates.
+    /// Matches involving a guest are skipped, so IDs here are raw Discord IDs.
+    pub async fn record_rps_result(&self, round: u32, winner_id: String, loser_id: String) {
+        let cmd = DbCommand::RecordRpsResult {
+            round,
+            winner_id,
+            loser_id,
+        };
+        let _ = self.actor_sender.send(cmd).await;
+    }
 }
 
 impl Actor {
@@ -445,6 +462,13 @@ impl Actor {
                     }
                     DbCommand::IncrementOneVOnePick { user } => {
                         self.increment_one_v_one_pick(user).await;
+                    }
+                    DbCommand::RecordRpsResult {
+                        round,
+                        winner_id,
+                        loser_id,
+                    } => {
+                        self.record_rps_result(round, &winner_id, &loser_id).await;
                     }
                 }
             } else {
@@ -961,5 +985,95 @@ impl Actor {
         .bind(self.draft_id)
         .execute(&self.pool)
         .await;
+    }
+
+    /// Insert the result row first; only a fresh insert bumps the counters, so
+    /// replaying a round can never double count. Both writes share a transaction.
+    /// Guest-vs-anyone matches are ignored entirely so guest play never affects
+    /// a Discord player's RPS win rate.
+    async fn record_rps_result(&self, round: u32, winner_id: &str, loser_id: &str) {
+        let has_guest: bool = match sqlx::query_scalar(
+            "SELECT EXISTS (SELECT 1 FROM guests WHERE user_id = ANY($1))",
+        )
+        .bind(vec![winner_id.to_string(), loser_id.to_string()])
+        .fetch_one(&self.pool)
+        .await
+        {
+            Ok(value) => value,
+            Err(e) => {
+                eprintln!("[db_writer] failed to check RPS players for guests: {}", e);
+                return;
+            }
+        };
+        if has_guest {
+            return;
+        }
+
+        let mut tx = match self.pool.begin().await {
+            Ok(tx) => tx,
+            Err(e) => {
+                eprintln!("[db_writer] failed to start RPS stats transaction: {}", e);
+                return;
+            }
+        };
+
+        let inserted = sqlx::query(
+            "INSERT INTO rps_results (draft_id, round, winner_account_id, loser_account_id)
+             VALUES ($1, $2, $3, $4)
+             ON CONFLICT (draft_id, round) DO NOTHING",
+        )
+        .bind(self.draft_id)
+        .bind(round as i32)
+        .bind(winner_id)
+        .bind(loser_id)
+        .execute(&mut *tx)
+        .await;
+
+        let inserted = match inserted {
+            Ok(result) => result.rows_affected() > 0,
+            Err(e) => {
+                eprintln!("[db_writer] failed to record RPS result: {}", e);
+                let _ = tx.rollback().await;
+                return;
+            }
+        };
+
+        if !inserted {
+            let _ = tx.rollback().await;
+            return;
+        }
+
+        let winner_update = sqlx::query(
+            "INSERT INTO rps_stats (account_id, wins, losses) VALUES ($1, 1, 0)
+             ON CONFLICT (account_id) DO UPDATE SET wins = rps_stats.wins + 1",
+        )
+        .bind(winner_id)
+        .execute(&mut *tx)
+        .await;
+
+        let loser_update = sqlx::query(
+            "INSERT INTO rps_stats (account_id, wins, losses) VALUES ($1, 0, 1)
+             ON CONFLICT (account_id) DO UPDATE SET losses = rps_stats.losses + 1",
+        )
+        .bind(loser_id)
+        .execute(&mut *tx)
+        .await;
+
+        match (winner_update, loser_update) {
+            (Ok(_), Ok(_)) => {
+                if let Err(e) = tx.commit().await {
+                    eprintln!("[db_writer] failed to commit RPS stats: {}", e);
+                }
+            }
+            (winner_err, loser_err) => {
+                if let Err(e) = winner_err {
+                    eprintln!("[db_writer] failed to update RPS wins: {}", e);
+                }
+                if let Err(e) = loser_err {
+                    eprintln!("[db_writer] failed to update RPS losses: {}", e);
+                }
+                let _ = tx.rollback().await;
+            }
+        }
     }
 }

@@ -1,7 +1,7 @@
 use axum::{Json, extract::State};
 use serde::Serialize;
 use sqlx::{FromRow, Row};
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 
 use crate::{AppError, handlers::build_run_stats, server::ServerState};
 
@@ -28,6 +28,94 @@ pub struct StatsPlayer {
     pub avatar: Option<String>,
     pub is_guest: bool,
     pub linked_user_id: Option<String>,
+    /// Decisive rock-paper-scissors rounds won (including linked guest ids for
+    /// registered users).
+    pub rps_wins: i32,
+    /// Decisive rock-paper-scissors rounds lost (including linked guest ids).
+    pub rps_losses: i32,
+}
+
+#[derive(FromRow)]
+struct RpsStatRow {
+    account_id: String,
+    wins: i32,
+    losses: i32,
+}
+
+/// Apply raw per-account RPS totals to the profile list. Guest accounts never
+/// contribute to RPS win rates, so rows keyed by a guest id are ignored even
+/// if they were written before the write-side guest filter existed.
+fn apply_rps_stats(players: &mut [StatsPlayer], rows: Vec<RpsStatRow>) {
+    let guest_ids: HashSet<String> = players
+        .iter()
+        .filter(|player| player.is_guest)
+        .map(|player| player.user_id.clone())
+        .collect();
+
+    let totals: HashMap<String, (i32, i32)> = rows
+        .into_iter()
+        .filter(|row| !guest_ids.contains(&row.account_id))
+        .map(|row| (row.account_id, (row.wins, row.losses)))
+        .collect();
+
+    for player in players.iter_mut() {
+        let (wins, losses) = totals.get(&player.user_id).copied().unwrap_or((0, 0));
+        player.rps_wins = wins;
+        player.rps_losses = losses;
+    }
+}
+
+#[cfg(test)]
+mod rps_stats_tests {
+    use super::{apply_rps_stats, RpsStatRow, StatsPlayer};
+
+    fn player(user_id: &str, is_guest: bool, linked_user_id: Option<&str>) -> StatsPlayer {
+        StatsPlayer {
+            user_id: user_id.to_string(),
+            user_name: user_id.to_string(),
+            global_name: None,
+            avatar: None,
+            is_guest,
+            linked_user_id: linked_user_id.map(str::to_string),
+            rps_wins: 0,
+            rps_losses: 0,
+        }
+    }
+
+    fn row(account_id: &str, wins: i32, losses: i32) -> RpsStatRow {
+        RpsStatRow {
+            account_id: account_id.to_string(),
+            wins,
+            losses,
+        }
+    }
+
+    #[test]
+    fn guest_rows_are_excluded_from_every_players_rate() {
+        let mut players = vec![
+            player("discord-1", false, None),
+            player("guest-1", true, Some("discord-1")),
+            player("discord-2", false, None),
+        ];
+        apply_rps_stats(
+            &mut players,
+            vec![
+                row("discord-1", 2, 1),
+                row("guest-1", 3, 4),
+                row("discord-2", 1, 0),
+            ],
+        );
+        assert_eq!((players[0].rps_wins, players[0].rps_losses), (2, 1));
+        assert_eq!((players[1].rps_wins, players[1].rps_losses), (0, 0));
+        assert_eq!((players[2].rps_wins, players[2].rps_losses), (1, 0));
+    }
+
+    #[test]
+    fn players_without_results_have_zero_counts() {
+        let mut players = vec![player("discord-1", false, None)];
+        apply_rps_stats(&mut players, vec![row("someone-else", 1, 0)]);
+        assert_eq!((players[0].rps_wins, players[0].rps_losses), (0, 0));
+    }
 }
 
 #[derive(Serialize, FromRow)]
@@ -291,14 +379,28 @@ pub async fn get_stats_page_data(
     State(state): State<ServerState>,
 ) -> Result<Json<StatsPageResponse>, AppError> {
     // Combine registered users and guests into a single player list
-    let players = sqlx::query_as::<_, StatsPlayer>(
-        "SELECT user_id, user_name, global_name, avatar, false AS is_guest, NULL::TEXT AS linked_user_id FROM users
+    let mut players = sqlx::query_as::<_, StatsPlayer>(
+        "SELECT user_id, user_name, global_name, avatar, false AS is_guest, NULL::TEXT AS linked_user_id, 0::INT AS rps_wins, 0::INT AS rps_losses FROM users
          UNION ALL
-         SELECT user_id, user_name, NULL AS global_name, NULL AS avatar, true AS is_guest, discord_user_id AS linked_user_id FROM guests",
+         SELECT user_id, user_name, NULL AS global_name, NULL AS avatar, true AS is_guest, discord_user_id AS linked_user_id, 0::INT AS rps_wins, 0::INT AS rps_losses FROM guests",
     )
     .fetch_all(&state.db_pool)
     .await
     .map_err(|e| (axum::http::StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    // RPS stats live in their own tables; tolerate an environment where the
+    // migration has not run yet instead of failing the whole stats page.
+    let rps_rows = match sqlx::query_as::<_, RpsStatRow>(
+        "SELECT account_id, wins, losses FROM rps_stats",
+    )
+    .fetch_all(&state.db_pool)
+    .await
+    {
+        Ok(rows) => rows,
+        Err(sqlx::Error::Database(db_err)) if db_err.code().as_deref() == Some("42P01") => Vec::new(),
+        Err(e) => return Err((axum::http::StatusCode::INTERNAL_SERVER_ERROR, e.to_string())),
+    };
+    apply_rps_stats(&mut players, rps_rows);
 
     let teams =
         sqlx::query_as::<_, StatsTeam>(

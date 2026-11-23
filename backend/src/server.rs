@@ -209,6 +209,14 @@ impl Server {
                 post(handlers::one_v_one_toggle_timer),
             )
             .route(
+                "/drafts/{draft_id}/one-v-one/rps/pick",
+                post(handlers::rps_pick),
+            )
+            .route(
+                "/drafts/{draft_id}/one-v-one/rps/choose",
+                post(handlers::rps_choose_first_pick),
+            )
+            .route(
                 "/drafts/{draft_id}/submit-results",
                 post(handlers::submit_race_results),
             )

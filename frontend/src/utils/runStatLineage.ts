@@ -23,6 +23,21 @@ const NINCADA_DEX_ID = 290;
 // that species too.
 const FORM_CHANGING_BASE_IDS = new Set([412, 413, 414, 479, 681]);
 
+// Corsola's Galarian form and Cursola aren't a normal forward chain in the
+// database rows, but the game treats them as one line. Share all three icons so
+// a save in any stage credits the pick that started the line.
+const LINKED_EVOLUTION_LINES = [
+  [222, 986, 864], // Corsola -> Corsola-Galar -> Cursola
+];
+
+const LINKED_EVOLUTION_ICONS = new Map<number, string[]>();
+for (const ids of LINKED_EVOLUTION_LINES) {
+  const icons = ids
+    .map((id) => SPECIES_BY_ID[id]?.icon)
+    .filter((icon): icon is string => Boolean(icon));
+  for (const id of ids) LINKED_EVOLUTION_ICONS.set(id, icons);
+}
+
 let lineagePromise: Promise<RunStatLineage> | null = null;
 
 export function buildRunStatLineage(list: Pokemon[]): RunStatLineage {
@@ -145,6 +160,9 @@ export function buildRunStatLineage(list: Pokemon[]): RunStatLineage {
     }
 
     for (const icon of formFamilyIconsByBaseId.get(info.baseId) ?? []) {
+      push(icon);
+    }
+    for (const icon of LINKED_EVOLUTION_ICONS.get(romSpeciesId) ?? []) {
       push(icon);
     }
 

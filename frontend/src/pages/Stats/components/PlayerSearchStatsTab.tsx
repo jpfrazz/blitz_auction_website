@@ -679,7 +679,7 @@ const PlayerSearchStatsTab: React.FC<PlayerSearchStatsTabProps> = ({
   const playerGamesMap = useMemo(() => {
     const map = new Map<string, number>();
     if (!stats) return map;
-    // Match "Total Races Played": count every race (competitive, casual, and
+    // Match "Races Played": count every race (competitive, casual, and
     // 1v1) a player took part in, excluding junk drafts.
     stats.teams.forEach((team) => {
       const id = team.user_id || team.guest_id;
@@ -923,6 +923,14 @@ const PlayerSearchStatsTab: React.FC<PlayerSearchStatsTabProps> = ({
     });
     return Math.round(total / auctionMatchHistory.length);
   }, [draftRmvMap, auctionMatchHistory]);
+
+  const rpsWinRate = useMemo(() => {
+    if (!selectedPlayer) return null;
+    const wins = selectedPlayer.rps_wins ?? 0;
+    const losses = selectedPlayer.rps_losses ?? 0;
+    const rounds = wins + losses;
+    return rounds > 0 ? Math.round((wins / rounds) * 100) : null;
+  }, [selectedPlayer]);
 
   interface AllPokemonRow {
     key: string;
@@ -1353,7 +1361,7 @@ const PlayerSearchStatsTab: React.FC<PlayerSearchStatsTabProps> = ({
                             </div>
                           )}
                           <div className="player-draft-overview-kicker-group stat-with-breakdown">
-                            <span className="player-draft-overview-kicker">Total Races Played</span>
+                            <span className="player-draft-overview-kicker">Races Played</span>
                             <h3>{totalGames}</h3>
                             <button
                               type="button"
@@ -1393,6 +1401,19 @@ const PlayerSearchStatsTab: React.FC<PlayerSearchStatsTabProps> = ({
                               </span>
                             </span>
                             <h3>{averageRmv !== null ? `$${averageRmv.toLocaleString()}` : '---'}</h3>
+                          </div>
+                          <div className="player-draft-overview-kicker-group">
+                            <span
+                              className="player-draft-overview-kicker"
+                              title={
+                                selectedPlayer
+                                  ? `${selectedPlayer.rps_wins ?? 0} wins / ${(selectedPlayer.rps_wins ?? 0) + (selectedPlayer.rps_losses ?? 0)} decisive rounds`
+                                  : undefined
+                              }
+                            >
+                              RPS Win Rate
+                            </span>
+                            <h3>{rpsWinRate !== null ? `${rpsWinRate}%` : '---'}</h3>
                           </div>
                         </div>
 

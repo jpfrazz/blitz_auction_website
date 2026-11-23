@@ -30,6 +30,9 @@ const catalog: Pokemon[] = [
   mon(290, 'Nincada'),
   mon(291, 'Ninjask', '', '290'),
   mon(292, 'Shedinja', '', '290'),
+  mon(222, 'Corsola'),
+  mon(222, 'Corsola', 'Galar', '222'),
+  mon(864, 'Cursola', '', '222', 'Galar'),
   mon(331, 'Cacnea'),
   mon(332, 'Cacturne', '', '331'),
   mon(458, 'Mantyke'),
@@ -117,6 +120,13 @@ describe('run stat evolution lineage', () => {
     const expected = ['aegislash', 'aegislash-blade', 'doublade', 'honedge'];
     expect(lineage.getIcons(681)).toEqual(expect.arrayContaining(expected));
     expect(lineage.getIcons(1156)).toEqual(expect.arrayContaining(expected));
+  });
+
+  it('shares stats across the Corsola -> Corsola-Galar -> Cursola line', () => {
+    const expected = ['corsola', 'corsola-galar', 'cursola'];
+    expect(lineage.getIcons(222)).toEqual(expect.arrayContaining(expected));
+    expect(lineage.getIcons(986)).toEqual(expect.arrayContaining(expected));
+    expect(lineage.getIcons(864)).toEqual(expect.arrayContaining(expected));
   });
 
   it('returns no icons for an unknown species so the caller can fall back', () => {

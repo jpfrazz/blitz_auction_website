@@ -56,7 +56,7 @@ export type SerializedUser =
     } };
 
 // Types for draft data
-export type DraftState = 'PENDING' | 'BIDDING' | 'COMPLETED' | 'Pending' | 'Active' | 'Paused' | 'Completed';
+export type DraftState = 'PENDING' | 'RPS' | 'BIDDING' | 'COMPLETED' | 'Pending' | 'Active' | 'Paused' | 'Completed';
 
 export interface Auction {
   auction_id: string;
@@ -116,6 +116,28 @@ export interface OneVOneState {
   banned_eeveelutions: number[];
 }
 
+export type RpsChoice = 'Rock' | 'Paper' | 'Scissors';
+
+export interface RpsRoundResult {
+  round: number;
+  host: RpsChoice;
+  opponent: RpsChoice;
+  /** user id of the round winner, or null when the round was a tie. */
+  winner: string | null;
+}
+
+/** Public state for the 1v1 pick-order rock-paper-scissors showdown. */
+export interface RockPaperScissorsState {
+  host: string;
+  opponent: string;
+  round: number;
+  host_ready: boolean;
+  opponent_ready: boolean;
+  last_round: RpsRoundResult | null;
+  winner: string | null;
+  first_pick: string | null;
+}
+
 export interface SpectatorInfo {
   user_id: string;
   user_name: string;
@@ -141,6 +163,7 @@ export interface Draft {
   auction_length: number;
   one_v_one_pool_size?: number;
   one_v_one?: OneVOneState | null;
+  rps?: RockPaperScissorsState | null;
 }
 
 export interface ChatMessage {
@@ -249,6 +272,10 @@ export interface StatsPagePlayer {
   global_name?: string | null;
   is_guest: boolean;
   linked_user_id?: string | null;
+  /** Decisive RPS rounds won, including results from linked guest ids. */
+  rps_wins: number;
+  /** Decisive RPS rounds lost, including results from linked guest ids. */
+  rps_losses: number;
 }
 
 export interface StatsLegacyPick {
