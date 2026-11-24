@@ -72,19 +72,21 @@ const BATTLE_FRONTIER_BRAIN_IDS = new Set([806, 807, 810, 811]);
 export interface BossTrainerGroup {
   label: string;
   ids: number[];
+  /** Present when the group holds one gym leader's eight ordered splits. */
+  baseTrainerId?: number;
 }
 
 /** All boss trainer splits tracked in gyms.txt. */
 export const BOSS_TRAINER_GROUPS: BossTrainerGroup[] = [
-  { label: 'Roxanne 1-8', ids: [265, 770, 771, 772, 773, 812, 813, 814] },
-  { label: 'Viola 1-8', ids: [855, 856, 857, 858, 859, 860, 861, 862] },
-  { label: 'Brawly 1-8', ids: [266, 774, 775, 776, 777, 815, 816, 817] },
-  { label: 'Wattson 1-8', ids: [267, 778, 779, 780, 781, 818, 819, 820] },
-  { label: 'Flannery 1-8', ids: [268, 782, 783, 784, 785, 821, 822, 823] },
-  { label: 'Norman 1-8', ids: [269, 786, 787, 788, 789, 824, 825, 826] },
-  { label: 'Winona 1-8', ids: [270, 790, 791, 792, 793, 827, 828, 829] },
-  { label: 'Tate & Liza 1-8', ids: [271, 794, 795, 796, 797, 830, 831, 832] },
-  { label: 'Juan & Wallace 1-8', ids: [272, 798, 799, 800, 801, 833, 834, 835] },
+  { label: 'Roxanne 1-8', ids: [265, 770, 771, 772, 773, 812, 813, 814], baseTrainerId: 265 },
+  { label: 'Viola 1-8', ids: [855, 856, 857, 858, 859, 860, 861, 862], baseTrainerId: 855 },
+  { label: 'Brawly 1-8', ids: [266, 774, 775, 776, 777, 815, 816, 817], baseTrainerId: 266 },
+  { label: 'Wattson 1-8', ids: [267, 778, 779, 780, 781, 818, 819, 820], baseTrainerId: 267 },
+  { label: 'Flannery 1-8', ids: [268, 782, 783, 784, 785, 821, 822, 823], baseTrainerId: 268 },
+  { label: 'Norman 1-8', ids: [269, 786, 787, 788, 789, 824, 825, 826], baseTrainerId: 269 },
+  { label: 'Winona 1-8', ids: [270, 790, 791, 792, 793, 827, 828, 829], baseTrainerId: 270 },
+  { label: 'Tate & Liza 1-8', ids: [271, 794, 795, 796, 797, 830, 831, 832], baseTrainerId: 271 },
+  { label: 'Juan & Wallace 1-8', ids: [272, 798, 799, 800, 801, 833, 834, 835], baseTrainerId: 272 },
   { label: 'Story bosses / rivals', ids: [34, 601] },
   { label: 'Elite Four / Frontier Brains', ids: [261, 807, 262, 810, 263, 806, 264, 811] },
   { label: 'Champions', ids: [804, 656] },
@@ -93,11 +95,30 @@ export const BOSS_TRAINER_GROUPS: BossTrainerGroup[] = [
 const ALL_BOSS_TRAINER_IDS = new Set<number>();
 BOSS_TRAINER_GROUPS.forEach((group) => group.ids.forEach((id) => ALL_BOSS_TRAINER_IDS.add(id)));
 
+const GYM_LEADER_GROUPS = BOSS_TRAINER_GROUPS.filter(
+  (group): group is BossTrainerGroup & { baseTrainerId: number } => group.baseTrainerId !== undefined,
+);
+
+/**
+ * Boss battle rows store the base gym-leader id plus the fight's index within
+ * the run (the number the profile appends, e.g. Norman + 7 => "Norman 7").
+ * Translate that to the split id used by the achievement. Split ids and
+ * non-gym trainers are already unambiguous and pass through unchanged.
+ */
+function resolveBossTrainerId(trainerId: number, version: number | null): number | null {
+  const group = GYM_LEADER_GROUPS.find((candidate) => candidate.baseTrainerId === trainerId);
+  if (!group) return ALL_BOSS_TRAINER_IDS.has(trainerId) ? trainerId : null;
+  if (version === null || version <= 0) return group.ids[0];
+  return version <= group.ids.length ? group.ids[version - 1] : null;
+}
+
 export interface SeenBossTrainerDetail {
   teamId: number;
   draftId: string;
   version: number | null;
   isLoss: boolean;
+  /** Trainer id as stored in boss battle history, before split mapping. */
+  storedTrainerId: number;
 }
 
 export interface SeenItAllProgress {
@@ -118,13 +139,15 @@ export function getSeenItAllProgress(
 
   matchHistory.forEach((team) => {
     (bossBattleHistory.get(team.team_id) ?? []).forEach((battle) => {
-      if (!ALL_BOSS_TRAINER_IDS.has(battle.trainer_id) || seenIds.has(battle.trainer_id)) return;
-      seenIds.add(battle.trainer_id);
-      seenDetails.set(battle.trainer_id, {
+      const trainerId = resolveBossTrainerId(battle.trainer_id, battle.version);
+      if (trainerId === null || seenIds.has(trainerId)) return;
+      seenIds.add(trainerId);
+      seenDetails.set(trainerId, {
         teamId: team.team_id,
         draftId: team.draft_id,
         version: battle.version,
         isLoss: battle.is_loss,
+        storedTrainerId: battle.trainer_id,
       });
     });
   });

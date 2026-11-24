@@ -447,6 +447,78 @@ describe('computePlayerAchievements', () => {
     expect(earnedIds(contextWith([...bossTrainerIds.slice(0, -1), 9999])).has('seen-it-all')).toBe(false);
   });
 
+  it('credits versioned gym leader battles as the matching split trainer', () => {
+    const battle = (trainer_id: number, version: number | null): BossBattleHistoryEntry => ({
+      trainer_id,
+      version,
+      hours: 0,
+      minutes: 1,
+      seconds: 0,
+      is_loss: false,
+    });
+
+    // Boss battle rows store the base gym leader id plus the fight's run-wide
+    // version index, which the profile displays as e.g. "Norman 7".
+    const runs = [
+      [
+        battle(266, 1), battle(855, 2), battle(272, 3), battle(267, 4),
+        battle(268, 5), battle(270, 6), battle(269, 7), battle(271, 8),
+      ],
+      [battle(269, 1), battle(270, 3)],
+    ];
+    const matchHistory = runs.map((_, index) =>
+      team({ team_id: index + 1, draft_id: `versioned-${index + 1}` }),
+    );
+    const bossBattleHistory = new Map<number, BossBattleHistoryEntry[]>(
+      runs.map((battles, index) => [index + 1, battles]),
+    );
+    const progress = getSeenItAllProgress(matchHistory, bossBattleHistory);
+
+    expect(progress.seenIds).toEqual(new Set([
+      266, 856, 799, 780, 785, 827, 825, 832,
+      269, 791,
+    ]));
+    expect(progress.seenDetails.get(825)).toMatchObject({
+      teamId: 1,
+      draftId: 'versioned-1',
+      version: 7,
+      storedTrainerId: 269,
+    });
+    expect(progress.seenDetails.get(827)).toMatchObject({ version: 6, storedTrainerId: 270 });
+  });
+
+  it('awards Seen It All when versioned gym fights cover every split', () => {
+    const battles: BossBattleHistoryEntry[] = [];
+    BOSS_TRAINER_GROUPS.forEach((group) => {
+      if (group.baseTrainerId === undefined) {
+        group.ids.forEach((id) => battles.push({
+          trainer_id: id,
+          version: null,
+          hours: 0,
+          minutes: 1,
+          seconds: 0,
+          is_loss: false,
+        }));
+        return;
+      }
+      for (let version = 1; version <= group.ids.length; version += 1) {
+        battles.push({
+          trainer_id: group.baseTrainerId,
+          version,
+          hours: 0,
+          minutes: 1,
+          seconds: 0,
+          is_loss: false,
+        });
+      }
+    });
+
+    expect(earnedIds(baseContext({
+      matchHistory: [team({ team_id: 1, draft_id: 'all-splits' })],
+      bossBattleHistory: new Map([[1, battles]]),
+    })).has('seen-it-all')).toBe(true);
+  });
+
   it('reports Seen It All progress from the same grouped trainer ids', () => {
     const allIds = BOSS_TRAINER_GROUPS.reduce<number[]>((ids, group) => ids.concat(group.ids), []);
     expect(allIds).toHaveLength(84);
