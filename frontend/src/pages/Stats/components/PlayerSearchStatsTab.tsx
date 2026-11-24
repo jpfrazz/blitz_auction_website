@@ -1794,7 +1794,7 @@ const PlayerSearchStatsTab: React.FC<PlayerSearchStatsTabProps> = ({
                       {isExpanded && (
                         <div className="match-draft-details">
                           <div className="match-opponents">
-                            <span className="match-opponents-label">vs</span>
+                            <span className="match-opponents-label"> vs </span>
                             {opponents.length === 0 ? (
                               <span className="match-opponents-empty">Unknown</span>
                             ) : opponents.map((opponent, index) => (
