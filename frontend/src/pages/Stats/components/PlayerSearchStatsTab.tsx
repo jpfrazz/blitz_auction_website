@@ -990,12 +990,26 @@ const PlayerSearchStatsTab: React.FC<PlayerSearchStatsTabProps> = ({
     return map;
   }, [displayMatchHistory, globalPokemonPrices]);
 
+  // Winning races are global, so narrow them to the teams on this player's
+  // profile (which already includes linked guest accounts and excludes junk
+  // drafts) before reusing the Cost Breakdown win rules.
+  const playerTeamIds = useMemo(
+    () => new Set((displayMatchHistory ?? []).map((team) => team.team_id)),
+    [displayMatchHistory],
+  );
+
+  const playerWinningRaces = useMemo(
+    () => (stats?.winning_races ?? []).filter((race) => playerTeamIds.has(race.team_id)),
+    [stats?.winning_races, playerTeamIds],
+  );
+
   const playerAchievements = useMemo(() => {
     if (!selectedPlayer || !achievementSources || !displayMatchHistory) return [];
     return computePlayerAchievements({
       player: selectedPlayer,
       identityIds: selectedPlayerIdentityIds,
       matchHistory: displayMatchHistory,
+      winningRaces: playerWinningRaces,
       bossBattleHistory,
       hallOfFame: achievementSources.hallOfFame,
       leaderboardIds: achievementSources.leaderboardIds,
@@ -1016,6 +1030,7 @@ const PlayerSearchStatsTab: React.FC<PlayerSearchStatsTabProps> = ({
     stats?.teams,
     stats?.auctions,
     stats?.players,
+    playerWinningRaces,
     bossBattleHistory,
     validDraftIds,
     casual1v1DraftIds,
@@ -1060,35 +1075,25 @@ const PlayerSearchStatsTab: React.FC<PlayerSearchStatsTabProps> = ({
     return rounds > 0 ? Math.round((wins / rounds) * 100) : null;
   }, [selectedPlayer]);
 
-  // Winning races are global, so narrow them to the teams on this player's
-  // profile (which already includes linked guest accounts and excludes junk
-  // drafts) before reusing the Cost Breakdown win rules.
-  const playerTeamIds = useMemo(
-    () => new Set((displayMatchHistory ?? []).map((team) => team.team_id)),
-    [displayMatchHistory],
-  );
-
-  const winsByKey = useMemo(() => {
-    const playerWinningRaces = (stats?.winning_races ?? []).filter((race) =>
-      playerTeamIds.has(race.team_id),
-    );
-    return computeWinningPicksByPokemonKey(
+  const winsByKey = useMemo(
+    () =>
+      computeWinningPicksByPokemonKey(
+        playerWinningRaces,
+        stats?.auctions ?? [],
+        stats?.teams ?? [],
+        stats?.players ?? [],
+        validDraftIds,
+        casual1v1DraftIds,
+      ),
+    [
       playerWinningRaces,
-      stats?.auctions ?? [],
-      stats?.teams ?? [],
-      stats?.players ?? [],
+      stats?.auctions,
+      stats?.teams,
+      stats?.players,
       validDraftIds,
       casual1v1DraftIds,
-    );
-  }, [
-    stats?.winning_races,
-    stats?.auctions,
-    stats?.teams,
-    stats?.players,
-    playerTeamIds,
-    validDraftIds,
-    casual1v1DraftIds,
-  ]);
+    ],
+  );
 
   interface AllPokemonRow {
     key: string;

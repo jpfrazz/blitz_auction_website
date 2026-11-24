@@ -165,6 +165,8 @@ pub struct MatchHistoryTeam {
     pub money_remaining: i32,
     pub pokemon_drafted: Vec<MatchHistoryAuction>,
     pub placement: Option<i32>,
+    /// Placement from the Race Results tab; preferred over `placement` by the UI.
+    pub race_placement: Option<i32>,
     pub pre_match_mmr: Option<i32>,
     pub hall_of_fame_team: Option<Vec<HallOfFamePokemon>>,
     pub run_stats: Vec<RunMonStat>,
@@ -967,6 +969,7 @@ pub(crate) fn build_run_stats(save_value: Option<serde_json::Value>) -> Vec<RunM
             RunMonStat {
                 species_id: mon.species_id,
                 personality: mon.personality,
+                nickname: Some(mon.nickname.clone()),
                 ko_count: mon.ko_count,
                 total_turns: mon.total_turns,
                 level: faint_level.or(Some(mon.level)),
@@ -980,6 +983,7 @@ pub(crate) fn build_run_stats(save_value: Option<serde_json::Value>) -> Vec<RunM
         RunMonStat {
             species_id: mon.species_id,
             personality: mon.personality,
+            nickname: Some(mon.nickname.clone()),
             ko_count: mon.ko_count,
             total_turns: mon.total_turns,
             level: faint_level,
@@ -1059,7 +1063,7 @@ pub async fn get_match_history_by_user_id(
     let team_rows = sqlx::query(
         "SELECT t.team_id, t.user_id, t.guest_id, t.draft_id,
                 d.ranked, d.draft_type, (SELECT COUNT(*)::INT FROM teams team_counts WHERE team_counts.draft_id = t.draft_id) AS team_count,
-                t.money_remaining, t.placement,
+                t.money_remaining, t.placement, t.race_placement,
                 t.pre_match_mmr, t.hall_of_fame_team, t.save_data, t.updated_at, d.created_at
          FROM teams t
           JOIN drafts d ON d.draft_id = t.draft_id
@@ -1114,6 +1118,9 @@ pub async fn get_match_history_by_user_id(
             pokemon_drafted: auctions_won,
             placement: row
                 .try_get("placement")
+                .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?,
+            race_placement: row
+                .try_get("race_placement")
                 .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?,
             pre_match_mmr: row
                 .try_get("pre_match_mmr")
@@ -2284,8 +2291,8 @@ pub async fn update_admin_hall_of_fame_team(
         .take(6)
         .collect();
 
-    // The admin editor only sends names and icons. Keep the KO counts that
-    // were captured with the original team so that data survives an edit.
+    // The admin editor only sends names and icons. Keep the KO counts and IVs
+    // that were captured with the original team so that data survives an edit.
     if let Some(existing_row) = sqlx::query("SELECT hall_of_fame_team FROM teams WHERE team_id = $1")
         .bind(team_id)
         .fetch_optional(&state.db_pool)
@@ -2299,13 +2306,15 @@ pub async fn update_admin_hall_of_fame_team(
             .and_then(|v| serde_json::from_value::<Vec<HallOfFamePokemon>>(v).ok())
         {
             for (idx, mon) in hall_of_fame_team.iter_mut().enumerate() {
-                if mon.ko_count.is_some() {
-                    continue;
-                }
-                mon.ko_count = existing
+                let old = existing
                     .get(idx)
-                    .filter(|old| old.name.eq_ignore_ascii_case(&mon.name))
-                    .and_then(|old| old.ko_count);
+                    .filter(|old| old.name.eq_ignore_ascii_case(&mon.name));
+                if mon.ko_count.is_none() {
+                    mon.ko_count = old.and_then(|old| old.ko_count);
+                }
+                if mon.ivs.is_none() {
+                    mon.ivs = old.and_then(|old| old.ivs.clone());
+                }
             }
         }
     }

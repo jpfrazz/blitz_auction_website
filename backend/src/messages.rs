@@ -103,6 +103,10 @@ pub struct HallOfFamePokemon {
     /// Older stored teams (and admin-entered ones) won't have it.
     #[serde(default)]
     pub ko_count: Option<u16>,
+    /// IVs from the save at the time of the Hall of Fame. Older stored teams
+    /// (and admin-entered ones) won't have them.
+    #[serde(default)]
+    pub ivs: Option<SaveIvs>,
 }
 
 /// Compact lifetime run stats for one Pokémon, derived from a team's stored
@@ -111,6 +115,9 @@ pub struct HallOfFamePokemon {
 pub struct RunMonStat {
     pub species_id: u16,
     pub personality: u32,
+    /// Save-file nickname, so the profile can tell a real nickname from the
+    /// un-nicknamed species name.
+    pub nickname: Option<String>,
     pub ko_count: Option<u16>,
     pub total_turns: Option<u16>,
     /// Box Pokémon don't carry a level in the save layout.

@@ -7,13 +7,17 @@ import type {
   StatsAuction,
   StatsPagePlayer,
   StatsPageTeamRow,
+  WinningRace,
 } from '../../types';
 import type { BossBattleHistoryEntry } from '../../shared/api/stats';
 import { SPECIES_BY_ID } from '../../utils/speciesIdMap';
 import { buildOpponentsByDraftId, getSelectedPlayerIdentityIds } from './opponentLinks';
 import { resolvePokemonIdentity } from '../../shared/utils/pokemonIdentity';
+import { computeWinningPicksByPokemonKey } from './costBreakdownKos';
 import { computePersonalBestSeconds, isChampionWin, isNonCasualRace } from './raceEligibility';
+import { isOneVOneBan, oneVOneLeftoverOrders, oneVOnePickSlot } from './oneVOneHistory';
 import { isRentalPokemonName } from './rentalPool';
+import { isActuallyNicknamed } from '../../utils/speciesUtils';
 
 export interface AchievementDefinition {
   id: string;
@@ -35,6 +39,8 @@ export interface AchievementContext {
   identityIds: Set<string>;
   /** Junk drafts already removed, matching the profile's match history. */
   matchHistory: MatchHistoryTeam[];
+  /** Winning races from the stats chart, narrowed to this player's teams. */
+  winningRaces: WinningRace[];
   bossBattleHistory: Map<number, BossBattleHistoryEntry[]>;
   hallOfFame: AdminHallOfFameEligibleEntry[];
   /** Ids appearing on either the season 1 or season 2 leaderboard. */
@@ -395,7 +401,7 @@ export const ACHIEVEMENT_DEFINITIONS: AchievementDefinition[] = [
   {
     id: 'schoolin-on-em',
     name: "Schoolin' On Em",
-    description: 'Win a race in which Wishiwashi earns at least 11 KOs',
+    description: 'Win a race in which Wishiwashi earns over 10 KOs',
     icon: 'SchoolinOnEm.png',
   },
   {
@@ -489,10 +495,34 @@ export const ACHIEVEMENT_DEFINITIONS: AchievementDefinition[] = [
     icon: 'InfiniteWisdom.png',
   },
   {
+    id: 'around-the-world',
+    name: 'Around the World',
+    description: 'Win with every Pokémon in the pool',
+    icon: 'AroundTheWorld.png',
+  },
+  {
+    id: 'traitor',
+    name: 'Traitor',
+    description: 'Ban your most drafted Pokémon in a 1v1, then beat the game',
+    icon: 'Traitor.png',
+  },
+  {
     id: 'early-bird',
     name: 'Early Bird',
     description: 'Play a race in March or April 2026',
     icon: 'EarlyBird.png',
+  },
+  {
+    id: 'true-nuzlocker',
+    name: 'True Nuzlocker',
+    description: 'Play a race in which all of your Pokémon are nicknamed',
+    icon: 'TrueNuzlocker.png',
+  },
+  {
+    id: 'against-all-odds',
+    name: 'Against All Odds',
+    description: 'Enter the Hall of Fame with a Pokémon whose IVs are all single digit',
+    icon: 'AgainstAllOdds.png',
   },
 ];
 
@@ -735,6 +765,33 @@ function hadNoFaints(team: MatchHistoryTeam): boolean {
   return runStats.length > 0 && runStats.every((mon) => !mon.fainted);
 }
 
+/**
+ * A run counts when every Pokemon saved during it has a real, player-given
+ * nickname. The un-nicknamed species name (including truncated forms) is not
+ * enough. Older saves without nickname data can't qualify.
+ */
+function allRunMonsNicknamed(team: MatchHistoryTeam): boolean {
+  const runStats = team.run_stats ?? [];
+  return (
+    runStats.length > 0 &&
+    runStats.every((mon) => {
+      const speciesName = SPECIES_BY_ID[mon.species_id]?.name;
+      if (!speciesName) return false;
+      return isActuallyNicknamed(mon.nickname ?? undefined, mon.species_id, speciesName);
+    })
+  );
+}
+
+const IV_KEYS = ['hp', 'atk', 'def', 'spa', 'spd', 'spe'] as const;
+
+function hasSingleDigitIvHallOfFameMon(team: MatchHistoryTeam): boolean {
+  return (team.hall_of_fame_team ?? []).some((mon) => {
+    const ivs = mon.ivs;
+    if (!ivs) return false;
+    return IV_KEYS.every((key) => ivs[key] >= 0 && ivs[key] <= 9);
+  });
+}
+
 function firstPickIsMudkip(team: MatchHistoryTeam): boolean {
   const picks = (team.pokemon_drafted ?? []).filter((auction) => {
     if (team.draft_type !== '1v1') return true;
@@ -746,6 +803,126 @@ function firstPickIsMudkip(team: MatchHistoryTeam): boolean {
   return picks.some(
     (auction) => auction.draft_order === firstOrder && auction.pokedex_id === MUDKIP_POKEDEX_ID,
   );
+}
+
+/**
+ * Mirrors the profile's visible "Most Drafted" stat: the most frequently
+ * drafted Pokemon in competitive auction drafts, ties broken alphabetically.
+ */
+function mostDraftedPokemonKey(ctx: AchievementContext, asOfDate?: string): string | null {
+  const counts = new Map<string, number>();
+  ctx.matchHistory.forEach((team) => {
+    if (team.draft_type === '1v1' || !ctx.validDraftIds.has(team.draft_id)) return;
+    // Judge the ban against the player's most drafted Pokemon at the time of
+    // that 1v1, so later drafts can't revoke an achievement already earned.
+    if (asOfDate && team.created_at.slice(0, 10) > asOfDate) return;
+    (team.pokemon_drafted ?? []).forEach((pick) => {
+      const key = `${pick.name}::${pick.form}`;
+      counts.set(key, (counts.get(key) ?? 0) + 1);
+    });
+  });
+
+  return Array.from(counts.entries()).reduce<{ key: string; count: number; label: string } | null>(
+    (best, [key, count]) => {
+      const separator = key.indexOf('::');
+      const name = key.slice(0, separator);
+      const form = key.slice(separator + 2);
+      const label = form ? `${name} (${form})` : name;
+      if (
+        best === null ||
+        count > best.count ||
+        (count === best.count && label.localeCompare(best.label) < 0)
+      ) {
+        return { key, count, label };
+      }
+      return best;
+    },
+    null,
+  )?.key ?? null;
+}
+
+/**
+ * 1v1 bans are auction rows whose winner is the banning player, so a player's
+ * own bans are in their match history. Casual and regular 1v1s both count, and
+ * the win has to be in the same draft where the ban happened.
+ */
+function bannedMostDraftedAndBeatGame(ctx: AchievementContext): boolean {
+  const leftoverOrders = oneVOneLeftoverOrders(ctx.auctions);
+  return ctx.matchHistory.some((team) => {
+    if (team.draft_type !== '1v1' || !didBeatGame(team, ctx.bossBattleHistory)) return false;
+    const mostDraftedKey = mostDraftedPokemonKey(ctx, team.created_at.slice(0, 10));
+    if (mostDraftedKey === null) return false;
+    return (team.pokemon_drafted ?? []).some((auction) => {
+      const bannedByPlayer =
+        (auction.winning_user_id !== null && ctx.identityIds.has(auction.winning_user_id)) ||
+        (auction.winning_guest_id !== null && ctx.identityIds.has(auction.winning_guest_id));
+      return (
+        bannedByPlayer &&
+        isOneVOneBan(auction, oneVOnePickSlot(auction, leftoverOrders)) &&
+        `${auction.name}::${auction.form}` === mostDraftedKey
+      );
+    });
+  });
+}
+
+/**
+ * Mirrors the profile stats chart: the pool is every resolved Pokemon identity
+ * in a valid draft, and a win is a non-casual race where the player drafted that
+ * identity. The pool is frozen as of each winning race's date so adding a new
+ * Pokemon to the site later can't revoke an achievement already earned.
+ */
+function wonWithEveryPoolPokemon(ctx: AchievementContext): boolean {
+  const winDatesByTeamId = new Map<number, string>();
+  ctx.matchHistory.forEach((team) => {
+    winDatesByTeamId.set(team.team_id, team.created_at.slice(0, 10));
+  });
+
+  const datedWins = ctx.winningRaces
+    .map((race) => ({ race, date: winDatesByTeamId.get(race.team_id) }))
+    .filter((entry): entry is { race: WinningRace; date: string } => Boolean(entry.date))
+    .sort((a, b) => a.date.localeCompare(b.date));
+  if (datedWins.length === 0) return false;
+
+  const poolEntries = ctx.auctions
+    .filter((auction) => ctx.validDraftIds.has(auction.draft_id))
+    .map((auction) => ({
+      date: auction.created_at.slice(0, 10),
+      key: resolvePokemonIdentity(auction.name, auction.form || '').key,
+    }))
+    .filter((entry) => entry.date.length > 0)
+    .sort((a, b) => a.date.localeCompare(b.date));
+  if (poolEntries.length === 0) return false;
+
+  const availablePool = new Set<string>();
+  let poolIndex = 0;
+  let lastCheckedDate = '';
+
+  for (const { date } of datedWins) {
+    if (date === lastCheckedDate) continue;
+    lastCheckedDate = date;
+
+    while (poolIndex < poolEntries.length) {
+      const entry = poolEntries[poolIndex];
+      if (!entry || entry.date > date) break;
+      availablePool.add(entry.key);
+      poolIndex += 1;
+    }
+    if (availablePool.size === 0) continue;
+
+    const wins = computeWinningPicksByPokemonKey(
+      datedWins.filter((win) => win.date <= date).map((win) => win.race),
+      ctx.auctions,
+      ctx.allTeams,
+      ctx.allPlayers,
+      ctx.validDraftIds,
+      ctx.casual1v1DraftIds,
+    );
+
+    const complete = Array.from(availablePool).every((key) => (wins.get(key) ?? 0) >= 1);
+    if (complete) return true;
+  }
+
+  return false;
 }
 
 function neverSpentOverTwoThousandOnOnePokemon(team: MatchHistoryTeam): boolean {
@@ -818,35 +995,61 @@ function hasHostedAndWonOwnAuction(
 }
 
 function wonPokemonForAtLeastTwoThousandOverAverage(ctx: AchievementContext): boolean {
-  const competitiveSalesByKey = new Map<string, { total: number; count: number }>();
-
-  ctx.auctions.forEach((auction) => {
-    if (typeof auction.winning_bid !== 'number') return;
-    if (auction.draft_type === '1v1') return;
-    if (auction.action === 'BAN' || auction.action === 'LEFTOVER') return;
-    if (!isNonCasualRace(auction, ctx.validDraftIds, ctx.casual1v1DraftIds)) return;
-
-    const { key } = resolvePokemonIdentity(auction.name, auction.form || '');
-    const sales = competitiveSalesByKey.get(key) ?? { total: 0, count: 0 };
-    sales.total += auction.winning_bid;
-    sales.count += 1;
-    competitiveSalesByKey.set(key, sales);
-  });
-
-  return ctx.auctions.some((auction) => {
+  const qualifyingSales = ctx.auctions.filter((auction) => {
     if (typeof auction.winning_bid !== 'number') return false;
     if (auction.draft_type === '1v1') return false;
     if (auction.action === 'BAN' || auction.action === 'LEFTOVER') return false;
-    if (!isNonCasualRace(auction, ctx.validDraftIds, ctx.casual1v1DraftIds)) return false;
+    return isNonCasualRace(auction, ctx.validDraftIds, ctx.casual1v1DraftIds);
+  });
 
+  const salesByKey = new Map<string, StatsAuction[]>();
+  qualifyingSales.forEach((auction) => {
+    const { key } = resolvePokemonIdentity(auction.name, auction.form || '');
+    const sales = salesByKey.get(key) ?? [];
+    sales.push(auction);
+    salesByKey.set(key, sales);
+  });
+
+  // Freeze the average at each winning auction's date so later sales can't
+  // revoke the achievement or retroactively award it.
+  const cumulativePricesByKey = new Map<string, Array<{ date: string; total: number; count: number }>>();
+  salesByKey.forEach((sales, key) => {
+    const byDate = new Map<string, { total: number; count: number }>();
+    sales.forEach((sale) => {
+      const date = sale.created_at.slice(0, 10);
+      const point = byDate.get(date) ?? { total: 0, count: 0 };
+      point.total += sale.winning_bid ?? 0;
+      point.count += 1;
+      byDate.set(date, point);
+    });
+
+    let total = 0;
+    let count = 0;
+    cumulativePricesByKey.set(
+      key,
+      Array.from(byDate.entries())
+        .sort(([a], [b]) => a.localeCompare(b))
+        .map(([date, point]) => {
+          total += point.total;
+          count += point.count;
+          return { date, total, count };
+        }),
+    );
+  });
+
+  return qualifyingSales.some((auction) => {
     const winnerId = auction.winning_user_id ?? auction.winning_guest_id;
     if (!winnerId || !ctx.identityIds.has(winnerId)) return false;
 
     const { key } = resolvePokemonIdentity(auction.name, auction.form || '');
-    const sales = competitiveSalesByKey.get(key);
-    if (!sales || sales.count === 0) return false;
-    const avgPrice = sales.total / sales.count;
-    return auction.winning_bid >= avgPrice + WORTH_EVERY_PENNY_MIN_PREMIUM;
+    const prices = cumulativePricesByKey.get(key);
+    if (!prices) return false;
+
+    const date = auction.created_at.slice(0, 10);
+    const asOf = [...prices].reverse().find((point) => point.date <= date);
+    if (!asOf || asOf.count === 0) return false;
+
+    return (auction.winning_bid ?? 0) >= asOf.total / asOf.count + WORTH_EVERY_PENNY_MIN_PREMIUM;
   });
 }
 
@@ -954,6 +1157,17 @@ function hasTenRacesWithSamePlayer(ctx: AchievementContext): boolean {
   );
 }
 
+/**
+ * The Race Results tab reads and writes `race_placement`; `placement` is the
+ * older results-submission column and may be null or stale. Prefer the value
+ * the race results screen shows, falling back to `placement` for older data.
+ */
+function effectivePlacement(
+  team: Pick<MatchHistoryTeam, 'placement'> & { race_placement?: number | null },
+): number | null {
+  return team.race_placement ?? team.placement;
+}
+
 function outplacedShartwagonInRace(
   ctx: AchievementContext,
   matchHistory: MatchHistoryTeam[],
@@ -978,14 +1192,15 @@ function outplacedShartwagonInRace(
   });
 
   return matchHistory.some((team) => {
-    const placement = team.placement;
+    const placement = effectivePlacement(team);
     if (placement === null) return false;
 
     return (teamsByDraftId.get(team.draft_id) ?? []).some((opponent) => {
       const opponentId = opponent.user_id ?? opponent.guest_id;
+      const opponentPlacement = effectivePlacement(opponent);
       return (
-        opponent.placement !== null &&
-        placement < opponent.placement &&
+        opponentPlacement !== null &&
+        placement < opponentPlacement &&
         Boolean(opponentId) &&
         targetIdentityIds.has(opponentId!) &&
         !ctx.identityIds.has(opponentId!)
@@ -1042,6 +1257,8 @@ export function computePlayerAchievements(ctx: AchievementContext): PlayerAchiev
       const date = draftYearMonth(team.created_at);
       return date?.year === 2026 && (date.month === 3 || date.month === 4);
     }),
+    // Every recorded race counts, including casual drafts and casual 1v1s.
+    'true-nuzlocker': ctx.matchHistory.some(allRunMonsNicknamed),
     // Unlike the Blitz X achievements, this counts any completed run.
     winner: ctx.matchHistory.some((team) => didBeatGame(team, ctx.bossBattleHistory)),
     'grand-prix-racer': Array.from(ctx.identityIds).some((id) => ctx.leaderboardIds.has(id)),
@@ -1112,6 +1329,8 @@ export function computePlayerAchievements(ctx: AchievementContext): PlayerAchiev
         (mon) => isRentalPokemonName(mon.name) || isRentalPokemonName(mon.icon),
       ),
     ),
+    // Casual runs count here too.
+    'against-all-odds': allWinningTeams.some(hasSingleDigitIvHallOfFameMon),
     'good-as-new': hasAllHallOfFameKeys(allWinningTeams, GOOD_AS_NEW_KEYS),
     'rainbow-warrior': hasAllHallOfFameKeys(allWinningTeams, EEVEELUTION_ICONS),
     'appliance-master': hasAllHallOfFameKeys(allWinningTeams, ROTOM_APPLIANCE_FORM_KEYS),
@@ -1132,6 +1351,8 @@ export function computePlayerAchievements(ctx: AchievementContext): PlayerAchiev
     'stream-legend': ctx.identityIds.has(STREAM_LEGEND_USER_ID),
     'close-combatant': winningTeams.some(hasMultipleCloseCombatMons),
     'rps-champion': (ctx.player.rps_wins ?? 0) >= RPS_CHAMPION_REQUIRED_WINS,
+    'around-the-world': wonWithEveryPoolPokemon(ctx),
+    traitor: bannedMostDraftedAndBeatGame(ctx),
     // This achievement can only be granted manually.
     'infinite-wisdom': false,
   };

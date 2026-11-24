@@ -7,6 +7,7 @@ import type {
   StatsAuction,
   StatsPagePlayer,
   StatsPageTeamRow,
+  WinningRace,
 } from '../../types';
 import type { BossBattleHistoryEntry } from '../../shared/api/stats';
 import {
@@ -141,6 +142,7 @@ function baseContext(overrides: Partial<AchievementContext> = {}): AchievementCo
     player,
     identityIds: new Set(['player-1']),
     matchHistory: [],
+    winningRaces: [],
     bossBattleHistory: new Map(),
     hallOfFame: [],
     leaderboardIds: new Set(),
@@ -166,9 +168,37 @@ function earnedIds(context: AchievementContext): Set<string> {
 
 describe('achievement definitions', () => {
   it('has one definition per achievement with a unique id and icon', () => {
-    expect(ACHIEVEMENT_DEFINITIONS).toHaveLength(50);
-    expect(new Set(ACHIEVEMENT_DEFINITIONS.map((achievement) => achievement.id)).size).toBe(50);
-    expect(new Set(ACHIEVEMENT_DEFINITIONS.map((achievement) => achievement.icon)).size).toBe(50);
+    expect(ACHIEVEMENT_DEFINITIONS).toHaveLength(54);
+    expect(new Set(ACHIEVEMENT_DEFINITIONS.map((achievement) => achievement.id)).size).toBe(54);
+    expect(new Set(ACHIEVEMENT_DEFINITIONS.map((achievement) => achievement.icon)).size).toBe(54);
+    expect(ACHIEVEMENT_DEFINITIONS.find((achievement) => achievement.id === 'around-the-world')).toEqual({
+      id: 'around-the-world',
+      name: 'Around the World',
+      description: 'Win with every Pokémon in the pool',
+      icon: 'AroundTheWorld.png',
+    });
+    expect(ACHIEVEMENT_DEFINITIONS.find((achievement) => achievement.id === 'traitor')).toEqual({
+      id: 'traitor',
+      name: 'Traitor',
+      description: 'Ban your most drafted Pokémon in a 1v1, then beat the game',
+      icon: 'Traitor.png',
+    });
+    expect(ACHIEVEMENT_DEFINITIONS.find((achievement) => achievement.id === 'true-nuzlocker')).toEqual({
+      id: 'true-nuzlocker',
+      name: 'True Nuzlocker',
+      description: 'Play a race in which all of your Pokémon are nicknamed',
+      icon: 'TrueNuzlocker.png',
+    });
+    expect(ACHIEVEMENT_DEFINITIONS.find((achievement) => achievement.id === 'against-all-odds')).toEqual({
+      id: 'against-all-odds',
+      name: 'Against All Odds',
+      description: 'Enter the Hall of Fame with a Pokémon whose IVs are all single digit',
+      icon: 'AgainstAllOdds.png',
+    });
+    expect(ACHIEVEMENT_DEFINITIONS.map((achievement) => achievement.id).slice(-2)).toEqual([
+      'true-nuzlocker',
+      'against-all-odds',
+    ]);
   });
 
 });
@@ -189,6 +219,66 @@ describe('computePlayerAchievements', () => {
       matchHistory: [race('2026-04-15T12:00:00Z', { draft_id: 'casual-1v1', draft_type: '1v1' })],
       casual1v1DraftIds: new Set(['casual-1v1']),
     }))).toContain('early-bird');
+  });
+
+  it('awards True Nuzlocker when every saved Pokemon is nicknamed, including casual races', () => {
+    const mon = (species_id: number, nickname: string | null): RunMonStat => ({
+      species_id,
+      personality: species_id,
+      nickname,
+      ko_count: null,
+      total_turns: null,
+      level: 50,
+      fainted: false,
+    });
+    const race = (run_stats: RunMonStat[], overrides: Partial<MatchHistoryTeam> = {}) =>
+      team({ team_id: 1, draft_id: 'nuzlocker-race', run_stats, ...overrides });
+    const earnedFor = (races: MatchHistoryTeam[], casual1v1 = false) => earnedIds(baseContext({
+      matchHistory: races,
+      casual1v1DraftIds: casual1v1 ? new Set(races.map((entry) => entry.draft_id)) : new Set(),
+    }));
+
+    expect(earnedFor([race([mon(25, 'Sparky'), mon(133, 'Vee')])]).has('true-nuzlocker')).toBe(true);
+    // The species name and a truncated form name are not real nicknames.
+    expect(earnedFor([race([mon(25, 'Pikachu')])]).has('true-nuzlocker')).toBe(false);
+    expect(earnedFor([race([mon(83, 'Farfetch')])]).has('true-nuzlocker')).toBe(false);
+    expect(earnedFor([race([mon(25, 'Sparky'), mon(133, null)])]).has('true-nuzlocker')).toBe(false);
+    expect(earnedFor([race([mon(99999, 'Sparky')])]).has('true-nuzlocker')).toBe(false);
+    expect(earnedFor([race([])]).has('true-nuzlocker')).toBe(false);
+    // Casual auctions and casual 1v1s both count.
+    expect(earnedFor([race([mon(25, 'Sparky')], { draft_id: 'casual-auction' })])
+      .has('true-nuzlocker')).toBe(true);
+    expect(earnedFor([race([mon(25, 'Sparky')], { draft_id: 'casual-1v1', draft_type: '1v1' })], true)
+      .has('true-nuzlocker')).toBe(true);
+  });
+
+  it('awards Against All Odds for a single-digit-IV Hall of Fame mon, including casual races', () => {
+    const ivs = (hp: number, atk = 9, def = 9, spa = 9, spd = 9, spe = 9) =>
+      ({ hp, atk, def, spa, spd, spe });
+    const hofMonWithIvs = (values: ReturnType<typeof ivs> | null): HallOfFamePokemon => ({
+      ...hofMon('Pikachu'),
+      ivs: values,
+    });
+    const race = (hall_of_fame_team: HallOfFamePokemon[], overrides: Partial<MatchHistoryTeam> = {}) =>
+      team({ team_id: 1, draft_id: 'odds-race', hall_of_fame_team, ...overrides });
+    const earnedFor = (races: MatchHistoryTeam[], casual1v1 = false) => earnedIds(baseContext({
+      matchHistory: races,
+      casual1v1DraftIds: casual1v1 ? new Set(races.map((entry) => entry.draft_id)) : new Set(),
+    }));
+
+    expect(earnedFor([race([hofMonWithIvs(ivs(0))])]).has('against-all-odds')).toBe(true);
+    // Any IV of 10 or higher disqualifies the mon.
+    expect(earnedFor([race([hofMonWithIvs(ivs(9, 10))])]).has('against-all-odds')).toBe(false);
+    expect(earnedFor([race([hofMonWithIvs(ivs(31))])]).has('against-all-odds')).toBe(false);
+    expect(earnedFor([race([hofMonWithIvs(null)])]).has('against-all-odds')).toBe(false);
+    // Only one Hall of Fame mon needs the all-single-digit spread.
+    expect(earnedFor([race([hofMonWithIvs(null), hofMonWithIvs(ivs(7))])])
+      .has('against-all-odds')).toBe(true);
+    // Casual auctions and casual 1v1s both count.
+    expect(earnedFor([race([hofMonWithIvs(ivs(5))], { draft_id: 'casual-auction' })])
+      .has('against-all-odds')).toBe(true);
+    expect(earnedFor([race([hofMonWithIvs(ivs(5))], { draft_id: 'casual-1v1', draft_type: '1v1' })], true)
+      .has('against-all-odds')).toBe(true);
   });
 
   it('awards Blitz Winner for beating the game in a competitive or casual run', () => {
@@ -607,6 +697,22 @@ describe('computePlayerAchievements', () => {
     expect(earnedFor(race(2), [opponent('shared-race', null)]).has('easy-as-pie')).toBe(false);
     expect(earnedFor(race(2), [opponent('other-race', 5)]).has('easy-as-pie')).toBe(false);
     expect(earnedFor(race(null), [opponent('shared-race', 5)]).has('easy-as-pie')).toBe(false);
+
+    // The Race Results tab writes race_placement and leaves placement null.
+    expect(earnedFor(
+      { ...race(null), race_placement: 2 },
+      [{ ...opponent('shared-race', null), race_placement: 9 }],
+    ).has('easy-as-pie')).toBe(true);
+    // Stale placement values must not override the edited race placements.
+    expect(earnedFor(
+      { ...race(9), race_placement: 2 },
+      [{ ...opponent('shared-race', 2), race_placement: 9 }],
+    ).has('easy-as-pie')).toBe(true);
+    expect(earnedFor(
+      { ...race(2), race_placement: 9 },
+      [{ ...opponent('shared-race', 9), race_placement: 2 }],
+    ).has('easy-as-pie')).toBe(false);
+
     expect(earnedFor(
       race(2),
       [opponent('shared-race', 5)],
@@ -807,6 +913,80 @@ describe('computePlayerAchievements', () => {
       ...qualifying.slice(0, 4),
       { ...qualifying[4], action: 'BAN' as const },
     ]).has('worth-every-penny')).toBe(false);
+  });
+
+  it('keeps Worth Every Penny when later sales raise the average price', () => {
+    const draftId = 'worth-early';
+    const laterDraftId = 'worth-later';
+    const sale = (overrides: Partial<StatsAuction> = {}) =>
+      pick(500, {
+        draft_id: draftId,
+        auction_id: 1,
+        name: 'Pikachu',
+        form: '',
+        pokedex_id: 25,
+        ...overrides,
+      });
+    const earlySales: StatsAuction[] = [
+      sale({ auction_id: 1, created_at: '2026-01-01T00:00:00Z', winning_bid: 500, winning_user_id: 'other' }),
+      sale({ auction_id: 2, created_at: '2026-01-01T00:00:00Z', winning_bid: 500, winning_user_id: 'other' }),
+      sale({ auction_id: 3, created_at: '2026-01-01T00:00:00Z', winning_bid: 500, winning_user_id: 'other' }),
+      sale({ auction_id: 4, created_at: '2026-01-01T00:00:00Z', winning_bid: 500, winning_user_id: 'other' }),
+      sale({ auction_id: 5, created_at: '2026-01-15T00:00:00Z', winning_bid: 3000, winning_user_id: 'player-1' }),
+    ];
+    const laterSales = Array.from({ length: 10 }, (_, index) =>
+      sale({
+        auction_id: 10 + index,
+        draft_id: laterDraftId,
+        created_at: '2026-03-01T00:00:00Z',
+        winning_bid: 10_000,
+        winning_user_id: 'other',
+      }),
+    );
+    const earnedFor = (auctions: StatsAuction[]) => earnedIds(baseContext({
+      auctions,
+      validDraftIds: new Set([draftId, laterDraftId]),
+    }));
+
+    expect(earnedFor(earlySales).has('worth-every-penny')).toBe(true);
+    expect(earnedFor([...earlySales, ...laterSales]).has('worth-every-penny')).toBe(true);
+  });
+
+  it('does not retroactively award Worth Every Penny when later sales lower the average price', () => {
+    const draftId = 'worth-early';
+    const laterDraftId = 'worth-later';
+    const sale = (overrides: Partial<StatsAuction> = {}) =>
+      pick(500, {
+        draft_id: draftId,
+        auction_id: 1,
+        name: 'Pikachu',
+        form: '',
+        pokedex_id: 25,
+        ...overrides,
+      });
+    const earlySales: StatsAuction[] = [
+      sale({ auction_id: 1, created_at: '2026-01-01T00:00:00Z', winning_bid: 5000, winning_user_id: 'other' }),
+      sale({ auction_id: 2, created_at: '2026-01-01T00:00:00Z', winning_bid: 5000, winning_user_id: 'other' }),
+      sale({ auction_id: 3, created_at: '2026-01-01T00:00:00Z', winning_bid: 5000, winning_user_id: 'other' }),
+      sale({ auction_id: 4, created_at: '2026-01-01T00:00:00Z', winning_bid: 5000, winning_user_id: 'other' }),
+      sale({ auction_id: 5, created_at: '2026-01-15T00:00:00Z', winning_bid: 6000, winning_user_id: 'player-1' }),
+    ];
+    const laterSales = Array.from({ length: 20 }, (_, index) =>
+      sale({
+        auction_id: 10 + index,
+        draft_id: laterDraftId,
+        created_at: '2026-03-01T00:00:00Z',
+        winning_bid: 100,
+        winning_user_id: 'other',
+      }),
+    );
+    const earnedFor = (auctions: StatsAuction[]) => earnedIds(baseContext({
+      auctions,
+      validDraftIds: new Set([draftId, laterDraftId]),
+    }));
+
+    expect(earnedFor(earlySales).has('worth-every-penny')).toBe(false);
+    expect(earnedFor([...earlySales, ...laterSales]).has('worth-every-penny')).toBe(false);
   });
 
   it('awards Stingy for a win with no single Pokemon costing over $2000', () => {
@@ -1425,6 +1605,302 @@ describe('computePlayerAchievements', () => {
     expect(earned.has('artisan')).toBe(true);
     expect(earned.has('rainbow-warrior')).toBe(true);
     expect(earned.has('big-year')).toBe(true);
+  });
+
+  describe('Around the World', () => {
+    const entry = (options: {
+      teamId: number;
+      draftId: string;
+      name: string;
+      date?: string;
+      draftType?: string;
+    }) => {
+      const {
+        teamId,
+        draftId,
+        name,
+        date = '2026-01-01T00:00:00Z',
+        draftType = 'auction',
+      } = options;
+      const auction = pick(1000, {
+        auction_id: teamId,
+        draft_id: draftId,
+        draft_type: draftType,
+        name,
+        form: '',
+        pokedex_id: 25,
+        action: draftType === '1v1' ? 'PICK' : null,
+        winning_user_id: 'player-1',
+        created_at: date,
+      });
+      return {
+        teamId,
+        draftId,
+        matchTeam: team({
+          team_id: teamId,
+          draft_id: draftId,
+          draft_type: draftType,
+          created_at: date,
+          hall_of_fame_team: [hofMon(name)],
+          pokemon_drafted: [auction],
+        }),
+        statsTeam: {
+          ...statsTeam(teamId, draftId, null, 'player-1'),
+          draft_type: draftType,
+          created_at: date,
+        },
+        race: {
+          team_id: teamId,
+          draft_id: draftId,
+          user_id: 'player-1',
+          guest_id: null,
+          draft_type: draftType,
+        } as WinningRace,
+        auction,
+      };
+    };
+
+    const contextFor = (
+      entries: ReturnType<typeof entry>[],
+      options: { winningTeamIds?: number[]; casual1v1DraftIds?: Set<string> } = {},
+    ) => {
+      const winningTeamIds = options.winningTeamIds ?? entries.map((item) => item.teamId);
+      return baseContext({
+        matchHistory: entries.map((item) => item.matchTeam),
+        winningRaces: entries
+          .filter((item) => winningTeamIds.includes(item.teamId))
+          .map((item) => item.race),
+        allTeams: entries.map((item) => item.statsTeam),
+        auctions: entries.map((item) => item.auction),
+        validDraftIds: new Set(entries.map((item) => item.draftId)),
+        casual1v1DraftIds: options.casual1v1DraftIds ?? new Set(),
+      });
+    };
+
+    it('does not award without a pool or winning races', () => {
+      expect(earnedIds(baseContext()).has('around-the-world')).toBe(false);
+    });
+
+    it('awards when every stats-chart pool Pokemon has at least one non-casual win', () => {
+      const entries = [
+        entry({ teamId: 1, draftId: 'draft-1', name: 'Pikachu' }),
+        entry({ teamId: 2, draftId: 'draft-2', name: 'Charmander' }),
+        entry({ teamId: 3, draftId: 'draft-3', name: 'Squirtle', draftType: '1v1' }),
+      ];
+
+      expect(earnedIds(contextFor(entries)).has('around-the-world')).toBe(true);
+    });
+
+    it('does not award when one pool Pokemon has no win', () => {
+      const entries = [
+        entry({ teamId: 1, draftId: 'draft-1', name: 'Pikachu' }),
+        entry({ teamId: 2, draftId: 'draft-2', name: 'Charmander' }),
+        entry({ teamId: 3, draftId: 'draft-3', name: 'Squirtle' }),
+      ];
+
+      expect(earnedIds(contextFor(entries, { winningTeamIds: [1, 2] }))
+        .has('around-the-world')).toBe(false);
+    });
+
+    it('does not count casual 1v1 races toward the win requirement', () => {
+      const entries = [
+        entry({ teamId: 1, draftId: 'draft-1', name: 'Pikachu' }),
+        entry({ teamId: 2, draftId: 'draft-2', name: 'Charmander' }),
+        entry({ teamId: 3, draftId: 'casual-1v1', name: 'Squirtle', draftType: '1v1' }),
+      ];
+
+      expect(earnedIds(contextFor(entries, { casual1v1DraftIds: new Set(['casual-1v1']) }))
+        .has('around-the-world')).toBe(false);
+    });
+
+    it('stays earned when a later draft adds another Pokemon to the pool', () => {
+      const entries = [
+        entry({ teamId: 1, draftId: 'draft-1', name: 'Pikachu', date: '2026-01-01T00:00:00Z' }),
+        entry({ teamId: 2, draftId: 'draft-2', name: 'Charmander', date: '2026-01-01T00:00:00Z' }),
+        entry({ teamId: 3, draftId: 'draft-3', name: 'Squirtle', date: '2026-03-01T00:00:00Z' }),
+      ];
+
+      expect(earnedIds(contextFor(entries, { winningTeamIds: [1, 2] }))
+        .has('around-the-world')).toBe(true);
+    });
+  });
+
+  describe('Traitor', () => {
+    const context = (options: {
+      banName?: string;
+      banForm?: string;
+      banUser?: string;
+      win1v1?: boolean;
+      casual?: boolean;
+      includeAuctionPicks?: boolean;
+    } = {}): AchievementContext => {
+      const {
+        banName = 'Pikachu',
+        banForm = '',
+        banUser = 'player-1',
+        win1v1 = true,
+        casual = false,
+        includeAuctionPicks = true,
+      } = options;
+      const oneVOneDraftId = casual ? 'casual-1v1' : 'regular-1v1';
+      const auctionTeams = includeAuctionPicks
+        ? [
+            team({
+              team_id: 1,
+              draft_id: 'auction-1',
+              pokemon_drafted: [
+                pick(null, { draft_id: 'auction-1', name: 'Pikachu', action: 'PICK' }),
+                pick(null, { draft_id: 'auction-1', name: 'Charizard', action: 'PICK' }),
+              ],
+            }),
+            team({
+              team_id: 2,
+              draft_id: 'auction-2',
+              pokemon_drafted: [
+                pick(null, { draft_id: 'auction-2', name: 'Pikachu', action: 'PICK' }),
+              ],
+            }),
+          ]
+        : [];
+      const oneVOneTeam = team({
+        team_id: 3,
+        draft_id: oneVOneDraftId,
+        draft_type: '1v1',
+        pokemon_drafted: [
+          pick(null, {
+            draft_id: oneVOneDraftId,
+            draft_type: '1v1',
+            draft_order: 5,
+            action: 'BAN',
+            name: banName,
+            form: banForm,
+            winning_user_id: banUser,
+          }),
+        ],
+      });
+
+      return baseContext({
+        matchHistory: [...auctionTeams, oneVOneTeam],
+        validDraftIds: new Set(['auction-1', 'auction-2']),
+        casual1v1DraftIds: casual ? new Set([oneVOneDraftId]) : new Set(),
+        bossBattleHistory: win1v1 ? new Map([[3, [championWin(90 * 60)]]]) : new Map(),
+        auctions: [
+          pick(null, {
+            draft_id: oneVOneDraftId,
+            draft_type: '1v1',
+            draft_order: casual ? 37 : 29,
+            action: 'LEFTOVER',
+          }),
+        ],
+      });
+    };
+
+    it('awards for banning your most drafted Pokemon in a winning 1v1', () => {
+      expect(earnedIds(context()).has('traitor')).toBe(true);
+    });
+
+    it('counts casual 1v1s as well as regular 1v1s', () => {
+      expect(earnedIds(context({ casual: true })).has('traitor')).toBe(true);
+    });
+
+    it('does not award for banning a different Pokemon', () => {
+      expect(earnedIds(context({ banName: 'Charizard' })).has('traitor')).toBe(false);
+    });
+
+    it('does not award unless the same 1v1 was won', () => {
+      expect(earnedIds(context({ win1v1: false })).has('traitor')).toBe(false);
+    });
+
+    it('does not award when someone else made the ban', () => {
+      expect(earnedIds(context({ banUser: 'opponent' })).has('traitor')).toBe(false);
+    });
+
+    it('does not award without a most drafted Pokemon to betray', () => {
+      expect(earnedIds(context({ includeAuctionPicks: false })).has('traitor')).toBe(false);
+    });
+
+    it('stays earned when a later draft changes the most drafted Pokemon', () => {
+      const earlyAuction = team({
+        team_id: 1,
+        draft_id: 'early-auction',
+        created_at: '2026-01-01T00:00:00Z',
+        pokemon_drafted: [
+          pick(null, { draft_id: 'early-auction', name: 'Pikachu', action: 'PICK' }),
+          pick(null, { draft_id: 'early-auction', name: 'Pikachu', action: 'PICK' }),
+          pick(null, { draft_id: 'early-auction', name: 'Charizard', action: 'PICK' }),
+        ],
+      });
+      const winningOneVOne = team({
+        team_id: 2,
+        draft_id: 'traitor-1v1',
+        draft_type: '1v1',
+        created_at: '2026-02-01T00:00:00Z',
+        pokemon_drafted: [
+          pick(null, {
+            draft_id: 'traitor-1v1',
+            draft_type: '1v1',
+            draft_order: 5,
+            action: 'BAN',
+            name: 'Pikachu',
+          }),
+        ],
+      });
+      const laterAuction = team({
+        team_id: 3,
+        draft_id: 'later-auction',
+        created_at: '2026-03-01T00:00:00Z',
+        pokemon_drafted: Array.from({ length: 5 }, () =>
+          pick(null, { draft_id: 'later-auction', name: 'Charizard', action: 'PICK' }),
+        ),
+      });
+
+      expect(earnedIds(baseContext({
+        matchHistory: [earlyAuction, winningOneVOne, laterAuction],
+        validDraftIds: new Set(['early-auction', 'later-auction']),
+        bossBattleHistory: new Map([[2, [championWin(90 * 60)]]]),
+      })).has('traitor')).toBe(true);
+    });
+
+    it('does not retroactively award when the banned Pokemon only becomes most drafted later', () => {
+      const earlyAuction = team({
+        team_id: 1,
+        draft_id: 'early-auction',
+        created_at: '2026-01-01T00:00:00Z',
+        pokemon_drafted: [
+          pick(null, { draft_id: 'early-auction', name: 'Charizard', action: 'PICK' }),
+          pick(null, { draft_id: 'early-auction', name: 'Pikachu', action: 'PICK' }),
+        ],
+      });
+      const winningOneVOne = team({
+        team_id: 2,
+        draft_id: 'traitor-1v1',
+        draft_type: '1v1',
+        created_at: '2026-02-01T00:00:00Z',
+        pokemon_drafted: [
+          pick(null, {
+            draft_id: 'traitor-1v1',
+            draft_type: '1v1',
+            draft_order: 5,
+            action: 'BAN',
+            name: 'Pikachu',
+          }),
+        ],
+      });
+      const laterAuction = team({
+        team_id: 3,
+        draft_id: 'later-auction',
+        created_at: '2026-03-01T00:00:00Z',
+        pokemon_drafted: Array.from({ length: 5 }, () =>
+          pick(null, { draft_id: 'later-auction', name: 'Pikachu', action: 'PICK' }),
+        ),
+      });
+
+      expect(earnedIds(baseContext({
+        matchHistory: [earlyAuction, winningOneVOne, laterAuction],
+        validDraftIds: new Set(['early-auction', 'later-auction']),
+        bossBattleHistory: new Map([[2, [championWin(90 * 60)]]]),
+      })).has('traitor')).toBe(false);
+    });
   });
 
   it('accumulates Rainbow Warrior eeveelutions across winning races, including casual races', () => {

@@ -2314,6 +2314,7 @@ const EmulatorPage: React.FC = () => {
           name: realName,
           icon: getIconName(realName, speciesId),
           ko_count: mon.ko_count ?? null,
+          ivs: mon.ivs ?? null,
         };
       })
       : undefined;

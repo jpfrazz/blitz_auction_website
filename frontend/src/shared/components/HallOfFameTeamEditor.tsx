@@ -25,7 +25,7 @@ function pokemonByName(pokemonList: Pokemon[]): Map<string, Pokemon> {
 
 /**
  * Builds the API payload from the six text slots. Matching the original team
- * by slot/name keeps any KO counts that were captured from a real save.
+ * by slot/name keeps any KO counts and IVs that were captured from a real save.
  */
 export function buildHallOfFameTeam(
   texts: string[],
@@ -45,6 +45,9 @@ export function buildHallOfFameTeam(
     const mon: HallOfFamePokemon = { name, icon: getIconName(name) };
     if (previous?.ko_count !== undefined && previous.ko_count !== null) {
       mon.ko_count = previous.ko_count;
+    }
+    if (previous?.ivs) {
+      mon.ivs = previous.ivs;
     }
     team.push(mon);
   }

@@ -210,16 +210,29 @@ export interface StatsAuction {
   action: 'PICK' | 'BAN' | 'LEFTOVER' | null;
 }
 
+export interface PokemonIvs {
+  hp: number;
+  atk: number;
+  def: number;
+  spa: number;
+  spd: number;
+  spe: number;
+}
+
 export interface HallOfFamePokemon {
   name: string;
   icon: string;
   /** Lifetime KO count captured from the save at the time of the Hall of Fame. */
   ko_count?: number | null;
+  /** IVs captured from the save at the time of the Hall of Fame. */
+  ivs?: PokemonIvs | null;
 }
 
 export interface RunMonStat {
   species_id: number;
   personality: number;
+  /** Save-file nickname, so a real nickname can be told from the species name. */
+  nickname?: string | null;
   ko_count: number | null;
   total_turns: number | null;
   /** Box Pokémon don't carry a level in the save layout. */
@@ -238,6 +251,8 @@ export interface MatchHistoryTeam {
   money_remaining: number;
   pokemon_drafted: StatsAuction[];
   placement: number | null;
+  /** Placement entered in the Race Results tab; takes precedence over placement. */
+  race_placement?: number | null;
   pre_match_mmr: number | null;
   hall_of_fame_team?: HallOfFamePokemon[] | null;
   run_stats?: RunMonStat[] | null;
