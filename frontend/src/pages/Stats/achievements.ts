@@ -391,7 +391,7 @@ export const ACHIEVEMENT_DEFINITIONS: AchievementDefinition[] = [
   {
     id: 'night-owl',
     name: 'Night Owl',
-    description: 'Enter the Hall of Fame with at least 2 Pokémon who evolve only at night',
+    description: 'Enter the Hall of Fame with at least 2 Pokémon who evolve only at night on your team',
     icon: 'NightOwl.png',
   },
   {
