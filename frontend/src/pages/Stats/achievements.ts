@@ -173,12 +173,6 @@ export const ACHIEVEMENT_DEFINITIONS: AchievementDefinition[] = [
     icon: 'TrueLove.png',
   },
   {
-    id: 'winner',
-    name: 'Blitz Winner',
-    description: 'Beat the game',
-    icon: 'Winner.png',
-  },
-  {
     id: 'blitz-legend',
     name: 'Blitz Legend',
     description: 'Beat the game 100 times',
@@ -195,6 +189,12 @@ export const ACHIEVEMENT_DEFINITIONS: AchievementDefinition[] = [
     name: 'Blitz Hero',
     description: 'Beat the game 10 times',
     icon: 'BlitzHero.png',
+  },
+  {
+    id: 'winner',
+    name: 'Blitz Winner',
+    description: 'Beat the game',
+    icon: 'Winner.png',
   },
   {
     id: 'sub-100-club',
