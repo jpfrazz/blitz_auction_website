@@ -68,33 +68,74 @@ const SCHOOLIN_ON_EM_MIN_KOS = 11;
 const TRUE_LOVE_SHARED_RACES = 10;
 const DEATHLESS_START_DATE = '2026-08-10';
 const BATTLE_FRONTIER_BRAIN_IDS = new Set([806, 807, 810, 811]);
+/** Boss trainer splits grouped for display, in achievement order. */
+export interface BossTrainerGroup {
+  label: string;
+  ids: number[];
+}
+
 /** All boss trainer splits tracked in gyms.txt. */
-const ALL_BOSS_TRAINER_IDS = new Set([
-  // Roxanne 1-8
-  265, 770, 771, 772, 773, 812, 813, 814,
-  // Viola 1-8
-  855, 856, 857, 858, 859, 860, 861, 862,
-  // Brawly 1-8
-  266, 774, 775, 776, 777, 815, 816, 817,
-  // Wattson 1-8
-  267, 778, 779, 780, 781, 818, 819, 820,
-  // Flannery 1-8
-  268, 782, 783, 784, 785, 821, 822, 823,
-  // Norman 1-8
-  269, 786, 787, 788, 789, 824, 825, 826,
-  // Winona 1-8
-  270, 790, 791, 792, 793, 827, 828, 829,
-  // Tate & Liza 1-8
-  271, 794, 795, 796, 797, 830, 831, 832,
-  // Juan & Wallace 1-8
-  272, 798, 799, 800, 801, 833, 834, 835,
-  // Story bosses / rivals
-  34, 601,
-  // Elite Four / Frontier Brains
-  261, 807, 262, 810, 263, 806, 264, 811,
-  // Champions
-  804, 656,
-]);
+export const BOSS_TRAINER_GROUPS: BossTrainerGroup[] = [
+  { label: 'Roxanne 1-8', ids: [265, 770, 771, 772, 773, 812, 813, 814] },
+  { label: 'Viola 1-8', ids: [855, 856, 857, 858, 859, 860, 861, 862] },
+  { label: 'Brawly 1-8', ids: [266, 774, 775, 776, 777, 815, 816, 817] },
+  { label: 'Wattson 1-8', ids: [267, 778, 779, 780, 781, 818, 819, 820] },
+  { label: 'Flannery 1-8', ids: [268, 782, 783, 784, 785, 821, 822, 823] },
+  { label: 'Norman 1-8', ids: [269, 786, 787, 788, 789, 824, 825, 826] },
+  { label: 'Winona 1-8', ids: [270, 790, 791, 792, 793, 827, 828, 829] },
+  { label: 'Tate & Liza 1-8', ids: [271, 794, 795, 796, 797, 830, 831, 832] },
+  { label: 'Juan & Wallace 1-8', ids: [272, 798, 799, 800, 801, 833, 834, 835] },
+  { label: 'Story bosses / rivals', ids: [34, 601] },
+  { label: 'Elite Four / Frontier Brains', ids: [261, 807, 262, 810, 263, 806, 264, 811] },
+  { label: 'Champions', ids: [804, 656] },
+];
+
+const ALL_BOSS_TRAINER_IDS = new Set<number>();
+BOSS_TRAINER_GROUPS.forEach((group) => group.ids.forEach((id) => ALL_BOSS_TRAINER_IDS.add(id)));
+
+export interface SeenBossTrainerDetail {
+  teamId: number;
+  draftId: string;
+  version: number | null;
+  isLoss: boolean;
+}
+
+export interface SeenItAllProgress {
+  seenIds: Set<number>;
+  missingIds: number[];
+  total: number;
+  /** First recorded encounter for each faced trainer, for admin troubleshooting. */
+  seenDetails: Map<number, SeenBossTrainerDetail>;
+}
+
+/** Derive Seen It All progress from the same data the player profile uses. */
+export function getSeenItAllProgress(
+  matchHistory: MatchHistoryTeam[],
+  bossBattleHistory: Map<number, BossBattleHistoryEntry[]>,
+): SeenItAllProgress {
+  const seenIds = new Set<number>();
+  const seenDetails = new Map<number, SeenBossTrainerDetail>();
+
+  matchHistory.forEach((team) => {
+    (bossBattleHistory.get(team.team_id) ?? []).forEach((battle) => {
+      if (!ALL_BOSS_TRAINER_IDS.has(battle.trainer_id) || seenIds.has(battle.trainer_id)) return;
+      seenIds.add(battle.trainer_id);
+      seenDetails.set(battle.trainer_id, {
+        teamId: team.team_id,
+        draftId: team.draft_id,
+        version: battle.version,
+        isLoss: battle.is_loss,
+      });
+    });
+  });
+
+  return {
+    seenIds,
+    missingIds: Array.from(ALL_BOSS_TRAINER_IDS).filter((id) => !seenIds.has(id)),
+    total: ALL_BOSS_TRAINER_IDS.size,
+    seenDetails,
+  };
+}
 const ORIGINAL_151_MAX_DEX_ID = 151;
 const REGIONAL_FORMS = new Set(['alola', 'galar', 'hisui', 'paldea']);
 
@@ -1064,15 +1105,8 @@ export function computePlayerAchievements(ctx: AchievementContext): PlayerAchiev
       defeatedAllFrontierBrainsConsecutively(ctx.bossBattleHistory.get(team.team_id) ?? []),
     ),
     'seen-it-all': (() => {
-      const facedBossTrainers = new Set<number>();
-      ctx.matchHistory.forEach((team) => {
-        (ctx.bossBattleHistory.get(team.team_id) ?? []).forEach((battle) => {
-          if (ALL_BOSS_TRAINER_IDS.has(battle.trainer_id)) {
-            facedBossTrainers.add(battle.trainer_id);
-          }
-        });
-      });
-      return ALL_BOSS_TRAINER_IDS.size > 0 && facedBossTrainers.size >= ALL_BOSS_TRAINER_IDS.size;
+      const progress = getSeenItAllProgress(ctx.matchHistory, ctx.bossBattleHistory);
+      return progress.total > 0 && progress.seenIds.size >= progress.total;
     })(),
     'stream-legend': ctx.identityIds.has(STREAM_LEGEND_USER_ID),
     'close-combatant': winningTeams.some(hasMultipleCloseCombatMons),

@@ -41,9 +41,10 @@ import { fetchCurrentUser } from '../../shared/api/draftData';
 import { getIconName } from '../../utils/speciesUtils';
 import HallOfFameTeamEditorModal from './HallOfFameTeamEditorModal';
 import CostBreakdownExportPanel from './CostBreakdownExportPanel';
+import SeenItAllProgressPanel from './SeenItAllProgressPanel';
 
 
-type AdminTab = 'draft-results' | 'discord-users' | 'guest-linking' | 'upload-pokemon-data' | 'boss-battle-history' | 'boss-battle-submissions' | 'hall-of-fame' | 'race-results' | 'season-2-races' | 'metrics' | 'cost-breakdown-export';
+type AdminTab = 'draft-results' | 'discord-users' | 'guest-linking' | 'upload-pokemon-data' | 'boss-battle-history' | 'boss-battle-submissions' | 'hall-of-fame' | 'race-results' | 'season-2-races' | 'metrics' | 'cost-breakdown-export' | 'seen-it-all';
 
 const Admin: React.FC = () => {
   const [hasRefereeRole, setHasRefereeRole] = useState<boolean | null>(null);
@@ -768,6 +769,13 @@ const Admin: React.FC = () => {
                   type="button"
                 >
                   Cost Breakdown Export
+                </button>
+                <button
+                  className={`admin-tab ${tab === 'seen-it-all' ? 'active' : ''}`}
+                  onClick={() => setTab('seen-it-all')}
+                  type="button"
+                >
+                  Seen It All
                 </button>
               </div>
 
@@ -1669,6 +1677,13 @@ const Admin: React.FC = () => {
                     Download the current Cost Breakdown data as CSV.
                   </p>
                   <CostBreakdownExportPanel />
+                </div>
+              )}
+
+              {tab === 'seen-it-all' && (
+                <div className="admin-tab-content">
+                  <h2>Seen It All Progress</h2>
+                  <SeenItAllProgressPanel />
                 </div>
               )}
             </>

@@ -9,7 +9,13 @@ import type {
   StatsPageTeamRow,
 } from '../../types';
 import type { BossBattleHistoryEntry } from '../../shared/api/stats';
-import { ACHIEVEMENT_DEFINITIONS, AchievementContext, computePlayerAchievements } from './achievements';
+import {
+  ACHIEVEMENT_DEFINITIONS,
+  AchievementContext,
+  BOSS_TRAINER_GROUPS,
+  computePlayerAchievements,
+  getSeenItAllProgress,
+} from './achievements';
 
 const player: StatsPagePlayer = {
   user_id: 'player-1',
@@ -640,6 +646,36 @@ describe('computePlayerAchievements', () => {
     expect(earnedIds(contextWith(bossTrainerIds, { losses: true })).has('seen-it-all')).toBe(true);
     expect(earnedIds(contextWith(bossTrainerIds.slice(0, -1))).has('seen-it-all')).toBe(false);
     expect(earnedIds(contextWith([...bossTrainerIds.slice(0, -1), 9999])).has('seen-it-all')).toBe(false);
+  });
+
+  it('reports Seen It All progress from the same grouped trainer ids', () => {
+    const allIds = BOSS_TRAINER_GROUPS.reduce<number[]>((ids, group) => ids.concat(group.ids), []);
+    expect(allIds).toHaveLength(84);
+    expect(new Set(allIds).size).toBe(84);
+
+    const battle = (trainerId: number, isLoss: boolean): BossBattleHistoryEntry => ({
+      trainer_id: trainerId,
+      version: null,
+      hours: 0,
+      minutes: 1,
+      seconds: 0,
+      is_loss: isLoss,
+    });
+    const progress = getSeenItAllProgress(
+      [team({ team_id: 1, draft_id: 'draft-1' }), team({ team_id: 2, draft_id: 'draft-2' })],
+      new Map([
+        [1, [battle(265, false), battle(9999, false)]],
+        [2, [battle(804, true)]],
+      ]),
+    );
+
+    expect(progress.total).toBe(84);
+    expect(progress.seenIds).toEqual(new Set([265, 804]));
+    expect(progress.missingIds).toHaveLength(82);
+    expect(progress.missingIds).not.toContain(265);
+    expect(progress.seenDetails.get(265)).toMatchObject({ teamId: 1, draftId: 'draft-1', isLoss: false });
+    expect(progress.seenDetails.get(804)).toMatchObject({ teamId: 2, draftId: 'draft-2', isLoss: true });
+    expect(progress.seenDetails.has(9999)).toBe(false);
   });
 
   it('awards Speed Freak for a sub-2:30 first split in a valid draft without requiring a win', () => {
