@@ -111,6 +111,8 @@ const SortableItem: React.FC<SortableItemProps> = ({ team, highestBidderId, wsCo
             className="auction-player-name-link"
             href={profileHref}
             title={`Open ${playerName}'s profile`}
+            target="_blank"
+            rel="noopener noreferrer"
             draggable={false}
             onPointerDown={(event) => event.stopPropagation()}
             onKeyDown={(event) => event.stopPropagation()}

@@ -98,7 +98,12 @@ const AchievementsPanel: React.FC<AchievementsPanelProps> = ({
                   >
                     <img src={`/Achievements/${achievement.icon}`} alt="" />
                     <span className="player-achievement-copy">
-                      <span className="player-achievement-name">{achievement.name}</span>
+                      <span
+                        className={`player-achievement-name${expanded ? ' is-visible' : ''}`}
+                        aria-hidden={!expanded}
+                      >
+                        {achievement.name}
+                      </span>
                       <span
                         className={`player-achievement-description${expanded ? ' is-visible' : ''}`}
                         aria-hidden={!expanded}

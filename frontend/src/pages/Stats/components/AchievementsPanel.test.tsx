@@ -114,6 +114,7 @@ describe('AchievementsPanel', () => {
     );
 
     fireEvent.click(screen.getByRole('button', { name: 'Edit player achievements' }));
+    expect(screen.getByRole('button', { name: 'Add 10+ Club' })).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Add True Love' })).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Add Impatient' })).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Add Who Are You?' })).toBeTruthy();
@@ -121,6 +122,7 @@ describe('AchievementsPanel', () => {
     expect(screen.getByRole('button', { name: 'Add Pokémon Professor' })).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Add Old Head' })).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Add Deathless' })).toBeTruthy();
+    expect(document.querySelector('img[src="/Achievements/10+.png"]')).toBeTruthy();
     expect(document.querySelector('img[src="/Achievements/TrueLove.png"]')).toBeTruthy();
     expect(document.querySelector('img[src="/Achievements/Impatient.png"]')).toBeTruthy();
     expect(document.querySelector('img[src="/Achievements/WhoAreYou.png"]')).toBeTruthy();

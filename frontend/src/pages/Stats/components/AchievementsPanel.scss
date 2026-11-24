@@ -84,19 +84,24 @@
 }
 
 .player-achievement-name {
+    width: 0;
+    min-width: 0;
+    max-height: 0;
+    opacity: 0;
+    overflow: hidden;
     color: #fff;
     justify-self: start;
     white-space: nowrap;
-    transform: translateY(14px);
-    transition: transform 0.18s ease;
+
+    &.is-visible {
+        width: auto;
+        max-height: 2rem;
+        opacity: 1;
+    }
 }
 
 .player-achievement-badge.is-expanded .player-achievement-copy {
     align-self: center;
-}
-
-.player-achievement-badge.is-expanded .player-achievement-name {
-    transform: translateY(0);
 }
 
 .player-achievement-description {

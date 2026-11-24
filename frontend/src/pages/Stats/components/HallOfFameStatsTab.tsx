@@ -39,15 +39,27 @@ const HallOfFameStatsTab: React.FC<HallOfFameStatsTabProps> = ({ validDraftIds, 
   const [selectedChampion, setSelectedChampion] = useState('');
   const [fasterThan, setFasterThan] = useState('');
   const [pokemonFilter, setPokemonFilter] = useState('');
+  const [mostRecent, setMostRecent] = useState(200);
+  const [mostRecentInput, setMostRecentInput] = useState('200');
 
   useEffect(() => {
+    let active = true;
     setLoading(true);
     setError(null);
-    fetchHallOfFameEligible()
-      .then((data) => setEntries(data.filter((entry) => entry.hall_of_fame_team.length > 0)))
-      .catch((err: any) => setError(err?.message ?? 'Failed to load hall of fame teams.'))
-      .finally(() => setLoading(false));
-  }, []);
+    fetchHallOfFameEligible(mostRecent)
+      .then((data) => {
+        if (!active) return;
+        setEntries(data.filter((entry) => entry.hall_of_fame_team.length > 0));
+      })
+      .catch((err: any) => {
+        if (!active) return;
+        setError(err?.message ?? 'Failed to load hall of fame teams.');
+      })
+      .finally(() => {
+        if (active) setLoading(false);
+      });
+    return () => { active = false; };
+  }, [mostRecent]);
 
   const filteredEntries = useMemo(() => {
     const fasterThanSeconds = parseTimeToSeconds(fasterThan);
@@ -78,11 +90,24 @@ const HallOfFameStatsTab: React.FC<HallOfFameStatsTabProps> = ({ validDraftIds, 
     });
   }, [entries, cutoffDate, selectedChampion, fasterThan, pokemonFilter]);
 
+  const commitMostRecent = () => {
+    const parsed = parseInt(mostRecentInput, 10);
+    if (!Number.isNaN(parsed) && parsed > 0) {
+      const clamped = Math.floor(parsed);
+      setMostRecent(clamped);
+      setMostRecentInput(String(clamped));
+    } else {
+      setMostRecentInput(String(mostRecent));
+    }
+  };
+
   const resetFilters = () => {
     setCutoffDate('');
     setSelectedChampion('');
     setFasterThan('');
     setPokemonFilter('');
+    setMostRecent(200);
+    setMostRecentInput('200');
   };
 
   return (
@@ -120,6 +145,28 @@ const HallOfFameStatsTab: React.FC<HallOfFameStatsTabProps> = ({ validDraftIds, 
               >
                 <TbRefresh />
               </button>
+              <div
+                className="stats-setting-item most-recent-label"
+                style={{ display: 'flex', alignItems: 'center', gap: '8px' }}
+              >
+                <span>Show Most Recent</span>
+                <input
+                  className="stats-filter-input"
+                  type="number"
+                  min={1}
+                  step={1}
+                  style={{ width: '72px', textAlign: 'left' }}
+                  value={mostRecentInput}
+                  onChange={(e) => setMostRecentInput(e.target.value)}
+                  onBlur={commitMostRecent}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      commitMostRecent();
+                      (e.currentTarget as HTMLInputElement).blur();
+                    }
+                  }}
+                />
+              </div>
               <div
                 className="stats-setting-item cutoff-date-label"
                 style={{ display: 'flex', alignItems: 'center', gap: '8px' }}

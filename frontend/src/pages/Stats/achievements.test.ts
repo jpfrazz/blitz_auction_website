@@ -160,14 +160,77 @@ function earnedIds(context: AchievementContext): Set<string> {
 
 describe('achievement definitions', () => {
   it('has one definition per achievement with a unique id and icon', () => {
-    expect(ACHIEVEMENT_DEFINITIONS).toHaveLength(37);
-    expect(new Set(ACHIEVEMENT_DEFINITIONS.map((achievement) => achievement.id)).size).toBe(37);
-    expect(new Set(ACHIEVEMENT_DEFINITIONS.map((achievement) => achievement.icon)).size).toBe(37);
+    expect(ACHIEVEMENT_DEFINITIONS).toHaveLength(50);
+    expect(new Set(ACHIEVEMENT_DEFINITIONS.map((achievement) => achievement.id)).size).toBe(50);
+    expect(new Set(ACHIEVEMENT_DEFINITIONS.map((achievement) => achievement.icon)).size).toBe(50);
   });
 
-  it('puts Stream Legend first, Early Bird last, and Sub-90 with the personal-best clubs', () => {
+  it('puts Stream Legend first, Early Bird last, and personal-best clubs in order', () => {
     expect(ACHIEVEMENT_DEFINITIONS[0].id).toBe('stream-legend');
     expect(ACHIEVEMENT_DEFINITIONS[ACHIEVEMENT_DEFINITIONS.length - 1].id).toBe('early-bird');
+
+    expect(ACHIEVEMENT_DEFINITIONS.find((achievement) => achievement.id === 'sub-100-club')).toEqual({
+      id: 'sub-100-club',
+      name: 'Sub-100 Club',
+      description: 'Get a personal best time under 100 minutes',
+      icon: 'Sub100.png',
+    });
+
+    expect(ACHIEVEMENT_DEFINITIONS.find((achievement) => achievement.id === 'seen-it-all')).toEqual({
+      id: 'seen-it-all',
+      name: 'Seen It All',
+      description: 'Face every boss trainer',
+      icon: 'SeenItAll.png',
+    });
+
+    expect(ACHIEVEMENT_DEFINITIONS.find((achievement) => achievement.id === 'winner')).toEqual({
+      id: 'winner',
+      name: 'Blitz Winner',
+      description: 'Beat the game',
+      icon: 'Winner.png',
+    });
+
+    expect(ACHIEVEMENT_DEFINITIONS.find((achievement) => achievement.id === 'appliance-master')).toEqual({
+      id: 'appliance-master',
+      name: 'Appliance Master',
+      description: "Enter the Hall of Fame with all 5 of Rotom's appliance forms across your races",
+      icon: 'ApplianceMaster.png',
+    });
+
+    expect(ACHIEVEMENT_DEFINITIONS.find((achievement) => achievement.id === 'doctors-worst-nightmare')).toEqual({
+      id: 'doctors-worst-nightmare',
+      name: "Doctor's Worst Nightmare",
+      description: "Enter the Hall of Fame with all 3 of Applin's evolutions across your races",
+      icon: 'DoctorsWorstNightmare.png',
+    });
+
+    expect(ACHIEVEMENT_DEFINITIONS.find((achievement) => achievement.id === 'natural-born-gambler')).toEqual({
+      id: 'natural-born-gambler',
+      name: 'Natural Born Gambler',
+      description: 'Enter the Hall of Fame with Azumarill, Clefable, Togekiss, and Wigglytuff across your races',
+      icon: 'NaturalBornGambler.png',
+    });
+
+    expect(ACHIEVEMENT_DEFINITIONS.find((achievement) => achievement.id === 'night-owl')).toEqual({
+      id: 'night-owl',
+      name: 'Night Owl',
+      description: 'Enter the Hall of Fame with at least 2 Pokémon who evolve only at night',
+      icon: 'NightOwl.png',
+    });
+
+    expect(ACHIEVEMENT_DEFINITIONS.find((achievement) => achievement.id === 'good-as-new')).toEqual({
+      id: 'good-as-new',
+      name: 'Good as New',
+      description: 'Enter the Hall of Fame with Corsola',
+      icon: 'GoodAsNew.png',
+    });
+
+    expect(ACHIEVEMENT_DEFINITIONS.find((achievement) => achievement.id === 'impressive-host')).toEqual({
+      id: 'impressive-host',
+      name: 'Impressive Host',
+      description: 'Host and win your own auction draft race',
+      icon: 'ImpressiveHost.png',
+    });
 
     const sub90 = ACHIEVEMENT_DEFINITIONS.find((achievement) => achievement.id === 'sub-90-club');
     expect(sub90).toEqual({
@@ -178,6 +241,7 @@ describe('achievement definitions', () => {
     });
     expect(ACHIEVEMENT_DEFINITIONS.map((achievement) => achievement.id)).toEqual(
       expect.arrayContaining([
+        'sub-100-club',
         'sub-90-club',
         'sub-80-club',
         'sub-70-club',
@@ -190,6 +254,27 @@ describe('achievement definitions', () => {
       name: 'True Love',
       description: 'Play 10 races with another specific player',
       icon: 'TrueLove.png',
+    });
+
+    expect(ACHIEVEMENT_DEFINITIONS.find((achievement) => achievement.id === '250-club')).toEqual({
+      id: '250-club',
+      name: '250+ Club',
+      description: 'Play 250 races',
+      icon: '250+.png',
+    });
+
+    expect(ACHIEVEMENT_DEFINITIONS.find((achievement) => achievement.id === '10-club')).toEqual({
+      id: '10-club',
+      name: '10+ Club',
+      description: 'Play 10 races',
+      icon: '10+.png',
+    });
+
+    expect(ACHIEVEMENT_DEFINITIONS.find((achievement) => achievement.id === 'worth-every-penny')).toEqual({
+      id: 'worth-every-penny',
+      name: 'Worth Every Penny',
+      description: 'Win a Pokemon in auction for at least $2000 more than its average price',
+      icon: 'WorthEveryPenny.png',
     });
 
     expect(ACHIEVEMENT_DEFINITIONS.find((achievement) => achievement.id === 'who-are-you')).toEqual({
@@ -213,11 +298,25 @@ describe('achievement definitions', () => {
       icon: 'OldHead.png',
     });
 
+    expect(ACHIEVEMENT_DEFINITIONS.find((achievement) => achievement.id === 'untiltable')).toEqual({
+      id: 'untiltable',
+      name: 'Untiltable',
+      description: 'Beat the game after losing three Pokémon to the first gym leader',
+      icon: 'Untiltable.png',
+    });
+
     expect(ACHIEVEMENT_DEFINITIONS.find((achievement) => achievement.id === 'deathless')).toEqual({
       id: 'deathless',
       name: 'Deathless',
       description: 'Beat the game without any Pokémon fainting',
       icon: 'Deathless.png',
+    });
+
+    expect(ACHIEVEMENT_DEFINITIONS.find((achievement) => achievement.id === 'schoolin-on-em')).toEqual({
+      id: 'schoolin-on-em',
+      name: "Schoolin' On Em",
+      description: 'Win a race in which Wishiwashi earns at least 11 KOs',
+      icon: 'SchoolinOnEm.png',
     });
 
     expect(ACHIEVEMENT_DEFINITIONS.find((achievement) => achievement.id === 'old-faithful')).toEqual({
@@ -242,19 +341,36 @@ describe('achievement definitions', () => {
     });
 
     const ids = ACHIEVEMENT_DEFINITIONS.map((achievement) => achievement.id);
+    expect(ids.indexOf('impressive-host')).toBe(ids.indexOf('back-to-back') + 1);
+    expect(ids.indexOf('moneyballer')).toBe(ids.indexOf('impressive-host') + 1);
+    expect(ids.indexOf('worth-every-penny')).toBe(ids.indexOf('moneyballer') + 1);
+    expect(ids.indexOf('stingy')).toBe(ids.indexOf('worth-every-penny') + 1);
     expect(ids.indexOf('impatient')).toBe(ids.indexOf('stingy') + 1);
-    expect(ids.indexOf('sub-90-club')).toBe(ids.indexOf('impatient') + 1);
-    expect(ids.indexOf('true-love')).toBe(ids.indexOf('25-club') + 1);
-    expect(ids.indexOf('blitz-legend')).toBe(ids.indexOf('true-love') + 1);
+    expect(ids.indexOf('sub-100-club')).toBe(ids.indexOf('impatient') + 1);
+    expect(ids.indexOf('sub-90-club')).toBe(ids.indexOf('sub-100-club') + 1);
+    expect(ids.indexOf('10-club')).toBe(ids.indexOf('25-club') + 1);
+    expect(ids.indexOf('true-love')).toBe(ids.indexOf('10-club') + 1);
+    expect(ids.indexOf('winner')).toBe(ids.indexOf('true-love') + 1);
+    expect(ids.indexOf('blitz-legend')).toBe(ids.indexOf('winner') + 1);
     expect(ids.indexOf('who-are-you')).toBe(ids.indexOf('easy-as-pie') + 1);
     expect(ids.indexOf('the-chosen-one')).toBe(ids.indexOf('who-are-you') + 1);
     expect(ids.indexOf('pokemon-professor')).toBe(ids.indexOf('type-loyalist') + 1);
     expect(ids.indexOf('old-head')).toBe(ids.indexOf('pokemon-professor') + 1);
     expect(ids.indexOf('clutch-master')).toBe(ids.indexOf('old-head') + 1);
-    expect(ids.indexOf('deathless')).toBe(ids.indexOf('clutch-master') + 1);
+    expect(ids.indexOf('untiltable')).toBe(ids.indexOf('clutch-master') + 1);
+    expect(ids.indexOf('deathless')).toBe(ids.indexOf('untiltable') + 1);
     expect(ids.indexOf('hard-carried')).toBe(ids.indexOf('deathless') + 1);
-    expect(ids.indexOf('old-faithful')).toBe(ids.indexOf('hard-carried') + 1);
+    expect(ids.indexOf('schoolin-on-em')).toBe(ids.indexOf('hard-carried') + 1);
+    expect(ids.indexOf('old-faithful')).toBe(ids.indexOf('schoolin-on-em') + 1);
     expect(ids.indexOf('artisan')).toBe(ids.indexOf('old-faithful') + 1);
+    expect(ids.indexOf('criminal')).toBe(ids.indexOf('artisan') + 1);
+    expect(ids.indexOf('good-as-new')).toBe(ids.indexOf('criminal') + 1);
+    expect(ids.indexOf('rainbow-warrior')).toBe(ids.indexOf('good-as-new') + 1);
+    expect(ids.indexOf('appliance-master')).toBe(ids.indexOf('rainbow-warrior') + 1);
+    expect(ids.indexOf('doctors-worst-nightmare')).toBe(ids.indexOf('appliance-master') + 1);
+    expect(ids.indexOf('natural-born-gambler')).toBe(ids.indexOf('doctors-worst-nightmare') + 1);
+    expect(ids.indexOf('big-year')).toBe(ids.indexOf('natural-born-gambler') + 1);
+    expect(ids.indexOf('night-owl')).toBe(ids.indexOf('big-year') + 1);
   });
 });
 
@@ -270,14 +386,106 @@ describe('computePlayerAchievements', () => {
     expect(earnedIds(baseContext({ matchHistory: [race('2026-03-02T12:00:00Z')] }))).not.toContain('early-bird');
   });
 
-  it('awards the race-count clubs at their thresholds', () => {
-    const races = (count: number) =>
-      Array.from({ length: count }, (_, index) => team({ team_id: index, draft_id: `d${index}` }));
-    const earnedFor = (count: number, valid = true) =>
-      earnedIds(baseContext({
-        matchHistory: races(count),
-        validDraftIds: valid ? new Set(races(count).map((race) => race.draft_id)) : new Set(),
+  it('awards Blitz Winner for beating the game in a competitive or casual run', () => {
+    const won = (draftId: string) => team({
+      team_id: 1,
+      draft_id: draftId,
+      hall_of_fame_team: [hofMon('Pikachu')],
+    });
+
+    expect(earnedIds(baseContext({
+      matchHistory: [won('competitive')],
+      validDraftIds: new Set(['competitive']),
+    })).has('winner')).toBe(true);
+
+    expect(earnedIds(baseContext({
+      matchHistory: [won('casual')],
+      validDraftIds: new Set(),
+    })).has('winner')).toBe(true);
+
+    expect(earnedIds(baseContext({
+      matchHistory: [
+        team({
+          team_id: 1,
+          draft_id: 'casual-1v1',
+          draft_type: '1v1',
+        }),
+      ],
+      bossBattleHistory: new Map([[1, [championWin(90 * 60)]]]),
+    })).has('winner')).toBe(true);
+
+    expect(earnedIds(baseContext({
+      matchHistory: [team({ team_id: 1, draft_id: 'unfinished' })],
+      bossBattleHistory: new Map([[1, [{ ...championWin(90 * 60), is_loss: true }]]]),
+    })).has('winner')).toBe(false);
+  });
+
+  it('awards Impressive Host only for winning a hosted competitive auction draft', () => {
+    const hostedRace = (
+      draftId: string,
+      options: { draftType?: string; host?: string | null; won?: boolean } = {},
+    ) => {
+      const draftType = options.draftType ?? 'auction';
+      const won = options.won ?? true;
+      const host = options.host === undefined ? 'player-1' : options.host;
+      return {
+        matchHistory: [team({
+          team_id: 1,
+          draft_id: draftId,
+          draft_type: draftType,
+          hall_of_fame_team: won ? [hofMon('Pikachu')] : null,
+        })],
+        allTeams: [{
+          ...statsTeam(1, draftId, null, 'player-1'),
+          draft_type: draftType,
+          host,
+        }],
+      };
+    };
+    const earnedFor = (
+      race: ReturnType<typeof hostedRace>,
+      options: { identityIds?: Set<string>; validDraftIds?: Set<string> } = {},
+    ) => earnedIds(baseContext({
+      matchHistory: race.matchHistory,
+      allTeams: race.allTeams,
+      identityIds: options.identityIds ?? new Set(['player-1']),
+      validDraftIds: options.validDraftIds ?? new Set(['competitive']),
+    }));
+
+    expect(earnedFor(hostedRace('competitive')).has('impressive-host')).toBe(true);
+    expect(earnedFor(hostedRace('competitive', { host: 'guest-1' }), {
+      identityIds: new Set(['player-1', 'guest-1']),
+    }).has('impressive-host')).toBe(true);
+
+    expect(earnedFor(hostedRace('competitive', { host: 'someone-else' })).has('impressive-host')).toBe(false);
+    expect(earnedFor(hostedRace('competitive', { won: false })).has('impressive-host')).toBe(false);
+    expect(earnedFor(hostedRace('casual'), { validDraftIds: new Set() }).has('impressive-host')).toBe(false);
+    expect(earnedFor(hostedRace('one-v-one', { draftType: '1v1' })).has('impressive-host')).toBe(false);
+  });
+
+  it('awards the race-count clubs at their thresholds and counts casual races', () => {
+    const races = (count: number, draftType: 'auction' | '1v1' = 'auction') =>
+      Array.from({ length: count }, (_, index) => team({
+        team_id: index,
+        draft_id: `d${index}`,
+        draft_type: draftType,
       }));
+    const earnedFor = (
+      count: number,
+      options: { valid?: boolean; casual1v1?: boolean } = {},
+    ) => {
+      const matchHistory = races(count, options.casual1v1 ? '1v1' : 'auction');
+      const draftIds = matchHistory.map((race) => race.draft_id);
+      return earnedIds(baseContext({
+        matchHistory,
+        validDraftIds: options.valid === false ? new Set() : new Set(draftIds),
+        casual1v1DraftIds: options.casual1v1 ? new Set(draftIds) : new Set(),
+      }));
+    };
+
+    expect(earnedFor(9).has('10-club')).toBe(false);
+    expect(earnedFor(10).has('10-club')).toBe(true);
+    expect(earnedFor(10).has('25-club')).toBe(false);
 
     expect(earnedFor(24).has('25-club')).toBe(false);
     expect(earnedFor(25).has('25-club')).toBe(true);
@@ -285,13 +493,22 @@ describe('computePlayerAchievements', () => {
 
     expect(earnedFor(99).has('100-club')).toBe(false);
     expect(earnedFor(100).has('100-club')).toBe(true);
-    expect(earnedFor(100).has('200-club')).toBe(false);
+    expect(earnedFor(100).has('250-club')).toBe(false);
 
-    expect(earnedFor(199).has('200-club')).toBe(false);
-    expect(earnedFor(200).has('200-club')).toBe(true);
+    expect(earnedFor(249).has('250-club')).toBe(false);
+    expect(earnedFor(250).has('250-club')).toBe(true);
 
-    // Casual drafts do not count, no matter how many were played.
-    expect(earnedFor(200, false).has('25-club')).toBe(false);
+    // All four clubs count casual auction drafts.
+    expect(earnedFor(10, { valid: false }).has('10-club')).toBe(true);
+    expect(earnedFor(25, { valid: false }).has('25-club')).toBe(true);
+    expect(earnedFor(100, { valid: false }).has('100-club')).toBe(true);
+    expect(earnedFor(250, { valid: false }).has('250-club')).toBe(true);
+
+    // All four clubs count casual 1v1 drafts.
+    expect(earnedFor(10, { casual1v1: true }).has('10-club')).toBe(true);
+    expect(earnedFor(25, { casual1v1: true }).has('25-club')).toBe(true);
+    expect(earnedFor(100, { casual1v1: true }).has('100-club')).toBe(true);
+    expect(earnedFor(250, { casual1v1: true }).has('250-club')).toBe(true);
   });
 
   it('uses Hall of Fame wins from non-casual races for the beat-the-game achievements', () => {
@@ -379,6 +596,50 @@ describe('computePlayerAchievements', () => {
       champion,
     ]).has('elite-mind')).toBe(false);
     expect(earnedFor([...brains, champion], false).has('elite-mind')).toBe(false);
+  });
+
+  it('awards Seen It All for facing every boss trainer across any runs', () => {
+    const bossTrainerIds = [
+      // Gym leaders 1-8
+      265, 770, 771, 772, 773, 812, 813, 814,
+      855, 856, 857, 858, 859, 860, 861, 862,
+      266, 774, 775, 776, 777, 815, 816, 817,
+      267, 778, 779, 780, 781, 818, 819, 820,
+      268, 782, 783, 784, 785, 821, 822, 823,
+      269, 786, 787, 788, 789, 824, 825, 826,
+      270, 790, 791, 792, 793, 827, 828, 829,
+      271, 794, 795, 796, 797, 830, 831, 832,
+      272, 798, 799, 800, 801, 833, 834, 835,
+      // Maxie / Archie, Elite Four, Frontier Brains, champions
+      34, 601, 261, 807, 262, 810, 263, 806, 264, 811, 804, 656,
+    ];
+    const battle = (trainer_id: number): BossBattleHistoryEntry => ({
+      trainer_id,
+      version: null,
+      hours: 1,
+      minutes: 0,
+      seconds: 0,
+      is_loss: false,
+    });
+
+    // Split across competitive and casual runs, with losses counting as faced.
+    const contextWith = (trainerIds: number[], options: { losses?: boolean } = {}) => {
+      const matchHistory = trainerIds.map((_, index) =>
+        team({ team_id: index + 1, draft_id: `draft-${index + 1}` }),
+      );
+      const bossBattleHistory = new Map<number, BossBattleHistoryEntry[]>(
+        trainerIds.map((trainerId, index) => [
+          index + 1,
+          [{ ...battle(trainerId), is_loss: Boolean(options.losses) }],
+        ]),
+      );
+      return baseContext({ matchHistory, bossBattleHistory });
+    };
+
+    expect(earnedIds(contextWith(bossTrainerIds)).has('seen-it-all')).toBe(true);
+    expect(earnedIds(contextWith(bossTrainerIds, { losses: true })).has('seen-it-all')).toBe(true);
+    expect(earnedIds(contextWith(bossTrainerIds.slice(0, -1))).has('seen-it-all')).toBe(false);
+    expect(earnedIds(contextWith([...bossTrainerIds.slice(0, -1), 9999])).has('seen-it-all')).toBe(false);
   });
 
   it('awards Speed Freak for a sub-2:30 first split in a valid draft without requiring a win', () => {
@@ -584,6 +845,53 @@ describe('computePlayerAchievements', () => {
       validDraftIds: new Set(['competitive']),
       rmvByTeamId: new Map([[2, 30_000]]),
     })).has('moneyballer')).toBe(false);
+  });
+
+  it('awards Worth Every Penny for competitive auction wins at least $2000 over average', () => {
+    const draftId = 'competitive-auction';
+    const sale = (overrides: Partial<StatsAuction> = {}) =>
+      pick(3000, { draft_id: draftId, auction_id: 1, name: 'Pikachu', form: '', pokedex_id: 25, ...overrides });
+    const earnedFor = (auctions: StatsAuction[], options: { valid?: boolean } = {}) =>
+      earnedIds(baseContext({
+        auctions,
+        validDraftIds: options.valid === false ? new Set() : new Set([draftId]),
+      }));
+
+    // Avg 1000 across competitive sales, win 3000 => +2000.
+    expect(earnedFor([
+      sale({ auction_id: 1, winning_bid: 500, winning_user_id: 'other' }),
+      sale({ auction_id: 2, winning_bid: 500, winning_user_id: 'other' }),
+      sale({ auction_id: 3, winning_bid: 500, winning_user_id: 'other' }),
+      sale({ auction_id: 4, winning_bid: 500, winning_user_id: 'other' }),
+      sale({ auction_id: 5, winning_bid: 3000, winning_user_id: 'player-1' }),
+    ]).has('worth-every-penny')).toBe(true);
+
+    expect(earnedFor([
+      sale({ auction_id: 1, winning_bid: 500, winning_user_id: 'other' }),
+      sale({ auction_id: 2, winning_bid: 500, winning_user_id: 'other' }),
+      sale({ auction_id: 3, winning_bid: 500, winning_user_id: 'other' }),
+      sale({ auction_id: 4, winning_bid: 500, winning_user_id: 'other' }),
+      sale({ auction_id: 5, winning_bid: 2999, winning_user_id: 'player-1' }),
+    ]).has('worth-every-penny')).toBe(false);
+
+    const qualifying = [
+      sale({ auction_id: 1, winning_bid: 500, winning_user_id: 'other' }),
+      sale({ auction_id: 2, winning_bid: 500, winning_user_id: 'other' }),
+      sale({ auction_id: 3, winning_bid: 500, winning_user_id: 'other' }),
+      sale({ auction_id: 4, winning_bid: 500, winning_user_id: 'other' }),
+      sale({ auction_id: 5, winning_bid: 3000, winning_user_id: 'player-1' }),
+    ];
+
+    // Only count competitive drafts.
+    expect(earnedFor(qualifying, { valid: false }).has('worth-every-penny')).toBe(false);
+
+    expect(earnedFor(qualifying.map((auction) => ({ ...auction, draft_type: '1v1' as const })))
+      .has('worth-every-penny')).toBe(false);
+
+    expect(earnedFor([
+      ...qualifying.slice(0, 4),
+      { ...qualifying[4], action: 'BAN' as const },
+    ]).has('worth-every-penny')).toBe(false);
   });
 
   it('awards Stingy for a win with no single Pokemon costing over $2000', () => {
@@ -893,6 +1201,117 @@ describe('computePlayerAchievements', () => {
     expect(earnedFor(win({ draft_type: '1v1' }), { casual: true }).has('deathless')).toBe(false);
   });
 
+  it('awards Untiltable for beating the game with three level 15 faints', () => {
+    const draftId = 'untiltable-race';
+    const run = (faints: Array<{ level: number | null; fainted: boolean }>) =>
+      team({
+        team_id: 1,
+        draft_id: draftId,
+        run_stats: faints.map((mon, index) => ({
+          species_id: index + 1,
+          personality: index,
+          ko_count: 0,
+          total_turns: 0,
+          level: mon.level,
+          fainted: mon.fainted,
+        })),
+      });
+    const earnedFor = (runStats: Array<{ level: number | null; fainted: boolean }>, win = true) =>
+      earnedIds(baseContext({
+        matchHistory: [run(runStats)],
+        bossBattleHistory: new Map([[1, win ? [championWin(3600)] : []]]),
+        validDraftIds: new Set([draftId]),
+      }));
+
+    expect(earnedFor([
+      { level: 15, fainted: true },
+      { level: 15, fainted: true },
+      { level: 15, fainted: true },
+    ]).has('untiltable')).toBe(true);
+
+    expect(earnedFor([
+      { level: 15, fainted: true },
+      { level: 15, fainted: true },
+    ]).has('untiltable')).toBe(false);
+
+    expect(earnedFor([
+      { level: 15, fainted: true },
+      { level: 15, fainted: true },
+      { level: 16, fainted: true },
+    ]).has('untiltable')).toBe(false);
+
+    expect(earnedFor([
+      { level: 15, fainted: true },
+      { level: 15, fainted: true },
+      { level: 15, fainted: false },
+    ]).has('untiltable')).toBe(false);
+
+    expect(earnedFor([
+      { level: 15, fainted: true },
+      { level: 15, fainted: true },
+      { level: 15, fainted: true },
+    ], false).has('untiltable')).toBe(false);
+  });
+
+  it("awards Schoolin' On Em for a win with at least 11 Wishiwashi KOs", () => {
+    const race = (
+      options: {
+        speciesId?: number;
+        runKos?: number;
+        hofKos?: number;
+        hofName?: string;
+        hofIcon?: string;
+        won?: boolean;
+      } = {},
+    ) => team({
+      team_id: 1,
+      draft_id: `schoolin-${options.speciesId ?? 746}-${options.runKos ?? 0}-${options.hofKos ?? 0}`,
+      run_stats: [{
+        species_id: options.speciesId ?? 746,
+        personality: 1,
+        ko_count: options.runKos ?? 0,
+        total_turns: null,
+        level: 50,
+        fainted: false,
+      }],
+      hall_of_fame_team: options.won === false ? null : [{
+        name: options.hofName ?? 'Wishiwashi-School',
+        icon: options.hofIcon ?? 'wishiwashi',
+        ko_count: options.hofKos ?? 0,
+      }],
+    });
+    const earnedFor = (
+      races: MatchHistoryTeam[],
+      options: { valid?: boolean } = {},
+    ) => earnedIds(baseContext({
+      matchHistory: races,
+      validDraftIds: options.valid === false
+        ? new Set()
+        : new Set(races.map((entry) => entry.draft_id)),
+    }));
+
+    // Both Solo (746) and School (1175) ROM species ids count.
+    expect(earnedFor([race({ runKos: 11 })]).has('schoolin-on-em')).toBe(true);
+    expect(earnedFor([race({ speciesId: 1175, runKos: 11 })]).has('schoolin-on-em')).toBe(true);
+
+    // Hall of Fame KO counts also qualify.
+    expect(earnedFor([race({ hofKos: 11 })]).has('schoolin-on-em')).toBe(true);
+
+    // 10 is not enough, and other Pokémon do not count.
+    expect(earnedFor([race({ runKos: 10, hofKos: 10 })]).has('schoolin-on-em')).toBe(false);
+    expect(earnedFor([race({
+      speciesId: 25,
+      runKos: 11,
+      hofName: 'Pikachu',
+      hofIcon: 'pikachu',
+      hofKos: 11,
+    })]).has('schoolin-on-em')).toBe(false);
+
+    // Only competitive wins count.
+    expect(earnedFor([race({ runKos: 11 })], { valid: false }).has('schoolin-on-em')).toBe(false);
+    expect(earnedFor([race({ runKos: 11, won: false })]).has('schoolin-on-em')).toBe(false);
+  });
+
   it('awards Old Faithful for 10 non-casual wins with the same draft pick', () => {
     const race = (index: number, pokedex_id: number, overrides: Partial<MatchHistoryTeam> = {}) => {
       const draft_id = `faithful-${index}`;
@@ -966,6 +1385,8 @@ describe('computePlayerAchievements', () => {
       bossBattleHistory: new Map([[1, [championWin(seconds)]]]),
     });
 
+    expect(earnedIds(personalBestContext(99 * 60 + 59)).has('sub-100-club')).toBe(true);
+    expect(earnedIds(personalBestContext(100 * 60)).has('sub-100-club')).toBe(false);
     expect(earnedIds(personalBestContext(89 * 60 + 59)).has('sub-90-club')).toBe(true);
     expect(earnedIds(personalBestContext(90 * 60)).has('sub-90-club')).toBe(false);
     expect(earnedIds(personalBestContext(79 * 60 + 59)).has('sub-80-club')).toBe(true);
@@ -1089,6 +1510,318 @@ describe('computePlayerAchievements', () => {
     expect(earned.has('artisan')).toBe(true);
     expect(earned.has('rainbow-warrior')).toBe(true);
     expect(earned.has('big-year')).toBe(true);
+  });
+
+  it('accumulates Rainbow Warrior eeveelutions across winning races, including casual races', () => {
+    const battles: BossBattleHistoryEntry[] = [
+      { trainer_id: 804, version: null, hours: 1, minutes: 0, seconds: 0, is_loss: false },
+    ];
+    const firstWin = team({
+      team_id: 1,
+      draft_id: 'd1',
+      hall_of_fame_team: [
+        { name: 'Vaporeon', icon: 'vaporeon', ko_count: null },
+        { name: 'Jolteon', icon: 'jolteon', ko_count: null },
+        { name: 'Flareon', icon: 'flareon', ko_count: null },
+        { name: 'Espeon', icon: 'espeon', ko_count: null },
+      ],
+    });
+    const secondWin = team({
+      team_id: 2,
+      draft_id: 'd2',
+      hall_of_fame_team: [
+        { name: 'Umbreon', icon: 'umbreon', ko_count: null },
+        { name: 'Leafeon', icon: 'leafeon', ko_count: null },
+        { name: 'Glaceon', icon: 'glaceon', ko_count: null },
+        { name: 'Sylveon', icon: 'sylveon', ko_count: null },
+      ],
+    });
+
+    expect(earnedIds(baseContext({
+      matchHistory: [firstWin, secondWin],
+      validDraftIds: new Set(['d1', 'd2']),
+      bossBattleHistory: new Map([[1, battles], [2, battles]]),
+    })).has('rainbow-warrior')).toBe(true);
+
+    // Casual races count too.
+    expect(earnedIds(baseContext({
+      matchHistory: [firstWin, secondWin],
+      validDraftIds: new Set(),
+      bossBattleHistory: new Map([[1, battles], [2, battles]]),
+    })).has('rainbow-warrior')).toBe(true);
+
+    // Not all 8 seen yet.
+    expect(earnedIds(baseContext({
+      matchHistory: [firstWin],
+      validDraftIds: new Set(['d1']),
+      bossBattleHistory: new Map([[1, battles]]),
+    })).has('rainbow-warrior')).toBe(false);
+
+    // Losing/non-winning runs do not contribute.
+    expect(earnedIds(baseContext({
+      matchHistory: [
+        firstWin,
+        { ...secondWin, draft_id: 'd2-loss', hall_of_fame_team: [] },
+      ],
+      validDraftIds: new Set(['d1', 'd2-loss']),
+      bossBattleHistory: new Map([
+        [1, battles],
+        [2, [{ trainer_id: 804, version: null, hours: 1, minutes: 0, seconds: 0, is_loss: true }]],
+      ]),
+    })).has('rainbow-warrior')).toBe(false);
+  });
+
+  it('accumulates Appliance Master forms across winning races, including casual races', () => {
+    const forms: HallOfFamePokemon[] = [
+      { name: 'Rotom-Heat', icon: 'rotom-heat', ko_count: null },
+      { name: 'Rotom-Wash', icon: 'rotom-wash', ko_count: null },
+      { name: 'Rotom-Mow', icon: 'rotom-mow', ko_count: null },
+      { name: 'Rotom-Frost', icon: 'rotom-frost', ko_count: null },
+      { name: 'Rotom-Fan', icon: 'rotom-fan', ko_count: null },
+    ];
+    const winningTeam = (teamId: number, hallOfFameTeam: HallOfFamePokemon[]) =>
+      team({
+        team_id: teamId,
+        draft_id: `d${teamId}`,
+        hall_of_fame_team: hallOfFameTeam,
+      });
+    const earnedFor = (
+      teams: MatchHistoryTeam[],
+      options: { validDraftIds?: Set<string> } = {},
+    ) =>
+      earnedIds(baseContext({
+        matchHistory: teams,
+        validDraftIds: options.validDraftIds ?? new Set(teams.map((entry) => entry.draft_id)),
+      }));
+
+    expect(earnedFor([winningTeam(1, forms)]).has('appliance-master')).toBe(true);
+
+    // Form can be recognized from the icon alone.
+    expect(earnedFor([winningTeam(1, forms.map((mon) => ({ ...mon, name: 'Rotom' })))]).has('appliance-master')).toBe(true);
+
+    // Forms accumulate across winning runs, and casual races count.
+    expect(earnedFor([
+      winningTeam(1, forms.slice(0, 3)),
+      winningTeam(2, forms.slice(3)),
+    ]).has('appliance-master')).toBe(true);
+    expect(earnedFor([winningTeam(1, forms)], { validDraftIds: new Set() }).has('appliance-master')).toBe(true);
+
+    // Missing a form does not count, even when spread across runs.
+    expect(earnedFor([winningTeam(1, forms.slice(0, 4))]).has('appliance-master')).toBe(false);
+    expect(earnedFor([
+      winningTeam(1, forms.slice(0, 3)),
+      winningTeam(2, forms.slice(3, 4)),
+    ]).has('appliance-master')).toBe(false);
+
+    // Non-winning runs do not contribute.
+    expect(earnedFor([
+      winningTeam(1, forms.slice(0, 4)),
+      { ...winningTeam(2, forms.slice(4)), hall_of_fame_team: [] },
+    ]).has('appliance-master')).toBe(false);
+  });
+
+  it("accumulates Doctor's Worst Nightmare evolutions across winning races, including casual races", () => {
+    const evolutions: HallOfFamePokemon[] = [
+      { name: 'Hydrapple', icon: 'hydrapple', ko_count: null },
+      { name: 'Appletun', icon: 'appletun', ko_count: null },
+      { name: 'Flapple', icon: 'flapple', ko_count: null },
+    ];
+    const winningTeam = (teamId: number, hallOfFameTeam: HallOfFamePokemon[]) =>
+      team({
+        team_id: teamId,
+        draft_id: `d${teamId}`,
+        hall_of_fame_team: hallOfFameTeam,
+      });
+    const earnedFor = (
+      teams: MatchHistoryTeam[],
+      options: { validDraftIds?: Set<string> } = {},
+    ) =>
+      earnedIds(baseContext({
+        matchHistory: teams,
+        validDraftIds: options.validDraftIds ?? new Set(teams.map((entry) => entry.draft_id)),
+      }));
+
+    expect(earnedFor([winningTeam(1, evolutions)]).has('doctors-worst-nightmare')).toBe(true);
+
+    // Evolution can be recognized from the icon alone.
+    expect(earnedFor([winningTeam(1, evolutions.map((mon) => ({ ...mon, name: 'Applin' })))]).has('doctors-worst-nightmare')).toBe(true);
+
+    // Evolutions accumulate across winning runs, and casual races count.
+    expect(earnedFor([
+      winningTeam(1, evolutions.slice(0, 2)),
+      winningTeam(2, evolutions.slice(2)),
+    ]).has('doctors-worst-nightmare')).toBe(true);
+    expect(earnedFor([winningTeam(1, evolutions)], { validDraftIds: new Set() }).has('doctors-worst-nightmare')).toBe(true);
+
+    // Missing an evolution or using Applin itself does not count.
+    expect(earnedFor([winningTeam(1, evolutions.slice(0, 2))]).has('doctors-worst-nightmare')).toBe(false);
+    expect(earnedFor([winningTeam(1, [
+      evolutions[0],
+      evolutions[1],
+      { name: 'Applin', icon: 'applin', ko_count: null },
+    ])]).has('doctors-worst-nightmare')).toBe(false);
+
+    // Non-winning runs do not contribute.
+    expect(earnedFor([
+      winningTeam(1, evolutions.slice(0, 2)),
+      { ...winningTeam(2, evolutions.slice(2)), hall_of_fame_team: [] },
+    ]).has('doctors-worst-nightmare')).toBe(false);
+  });
+
+  it('accumulates Natural Born Gambler across winning races, including casual races', () => {
+    const mons: HallOfFamePokemon[] = [
+      { name: 'Azumarill', icon: 'azumarill', ko_count: null },
+      { name: 'Clefable', icon: 'clefable', ko_count: null },
+      { name: 'Togekiss', icon: 'togekiss', ko_count: null },
+      { name: 'Wigglytuff', icon: 'wigglytuff', ko_count: null },
+    ];
+    const winningTeam = (teamId: number, hallOfFameTeam: HallOfFamePokemon[]) =>
+      team({
+        team_id: teamId,
+        draft_id: `d${teamId}`,
+        hall_of_fame_team: hallOfFameTeam,
+      });
+    const earnedFor = (
+      teams: MatchHistoryTeam[],
+      options: { validDraftIds?: Set<string> } = {},
+    ) =>
+      earnedIds(baseContext({
+        matchHistory: teams,
+        validDraftIds: options.validDraftIds ?? new Set(teams.map((entry) => entry.draft_id)),
+      }));
+
+    expect(earnedFor([winningTeam(1, mons)]).has('natural-born-gambler')).toBe(true);
+
+    // Pokémon can be recognized from their icons alone.
+    expect(earnedFor([winningTeam(1, mons.map((mon) => ({ ...mon, name: 'Unknown' })))]).has('natural-born-gambler')).toBe(true);
+
+    // Collected Pokémon accumulate across winning runs, and casual races count.
+    expect(earnedFor([
+      winningTeam(1, mons.slice(0, 2)),
+      winningTeam(2, mons.slice(2)),
+    ]).has('natural-born-gambler')).toBe(true);
+    expect(earnedFor([winningTeam(1, mons)], { validDraftIds: new Set() }).has('natural-born-gambler')).toBe(true);
+
+    // Missing one, or using pre-evolutions instead, does not count.
+    expect(earnedFor([winningTeam(1, mons.slice(0, 3))]).has('natural-born-gambler')).toBe(false);
+    expect(earnedFor([winningTeam(1, [
+      { name: 'Marill', icon: 'marill', ko_count: null },
+      { name: 'Clefairy', icon: 'clefairy', ko_count: null },
+      { name: 'Togetic', icon: 'togetic', ko_count: null },
+      { name: 'Jigglypuff', icon: 'jigglypuff', ko_count: null },
+    ])]).has('natural-born-gambler')).toBe(false);
+
+    // Non-winning runs do not contribute.
+    expect(earnedFor([
+      winningTeam(1, mons.slice(0, 3)),
+      { ...winningTeam(2, mons.slice(3)), hall_of_fame_team: [] },
+    ]).has('natural-born-gambler')).toBe(false);
+  });
+
+  it('awards Good as New for Corsola in any Hall of Fame team, including casual races', () => {
+    const corsola: HallOfFamePokemon = { name: 'Corsola', icon: 'corsola', ko_count: null };
+    const winningTeam = (
+      teamId: number,
+      hallOfFameTeam: HallOfFamePokemon[],
+      draftType = 'auction',
+    ) => team({
+      team_id: teamId,
+      draft_id: `d${teamId}`,
+      draft_type: draftType,
+      hall_of_fame_team: hallOfFameTeam,
+    });
+    const earnedFor = (
+      teams: MatchHistoryTeam[],
+      options: { validDraftIds?: Set<string>; casual1v1DraftIds?: Set<string> } = {},
+    ) => earnedIds(baseContext({
+      matchHistory: teams,
+      validDraftIds: options.validDraftIds ?? new Set(teams.map((entry) => entry.draft_id)),
+      casual1v1DraftIds: options.casual1v1DraftIds ?? new Set(),
+    }));
+
+    expect(earnedFor([winningTeam(1, [corsola])]).has('good-as-new')).toBe(true);
+    expect(earnedFor([winningTeam(1, [corsola])], { validDraftIds: new Set() }).has('good-as-new')).toBe(true);
+    expect(earnedFor([winningTeam(1, [corsola], '1v1')], {
+      validDraftIds: new Set(),
+      casual1v1DraftIds: new Set(['d1']),
+    }).has('good-as-new')).toBe(true);
+
+    // Name or icon alone is enough.
+    expect(earnedFor([winningTeam(1, [{ name: 'Unknown', icon: 'corsola', ko_count: null }])])
+      .has('good-as-new')).toBe(true);
+    expect(earnedFor([winningTeam(1, [{ name: 'Corsola', icon: 'unknown', ko_count: null }])])
+      .has('good-as-new')).toBe(true);
+
+    // Galar form and other Pokémon do not count.
+    const galarCorsola: HallOfFamePokemon = {
+      name: 'Corsola-Galar',
+      icon: 'corsola-galar',
+      ko_count: null,
+    };
+    expect(earnedFor([winningTeam(1, [galarCorsola])]).has('good-as-new')).toBe(false);
+    expect(earnedFor([winningTeam(1, [{ name: 'Pikachu', icon: 'pikachu', ko_count: null }])])
+      .has('good-as-new')).toBe(false);
+
+    // Non-winning runs do not contribute.
+    expect(earnedFor([{ ...winningTeam(1, [corsola]), hall_of_fame_team: [] }])
+      .has('good-as-new')).toBe(false);
+  });
+
+  it('awards Night Owl for two night-evolving Pokémon on one Hall of Fame team', () => {
+    const nightMons: HallOfFamePokemon[] = [
+      { name: 'Decidueye', icon: 'decidueye', ko_count: null },
+      { name: 'Typhlosion-Hisui', icon: 'typhlosion-hisui', ko_count: null },
+      { name: 'Braviary-Hisui', icon: 'braviary-hisui', ko_count: null },
+      { name: 'Samurott-Hisui', icon: 'samurott-hisui', ko_count: null },
+      { name: 'Mr. Rime', icon: 'mr-rime', ko_count: null },
+      { name: 'Marowak-Alola', icon: 'marowak-alola', ko_count: null },
+      { name: 'Lycanroc-Midnight', icon: 'lycanroc-midnight', ko_count: null },
+    ];
+    const winningTeam = (teamId: number, hallOfFameTeam: HallOfFamePokemon[]) =>
+      team({
+        team_id: teamId,
+        draft_id: `d${teamId}`,
+        hall_of_fame_team: hallOfFameTeam,
+      });
+    const earnedFor = (
+      teams: MatchHistoryTeam[],
+      options: { validDraftIds?: Set<string> } = {},
+    ) =>
+      earnedIds(baseContext({
+        matchHistory: teams,
+        validDraftIds: options.validDraftIds ?? new Set(teams.map((entry) => entry.draft_id)),
+      }));
+
+    expect(earnedFor([winningTeam(1, nightMons.slice(0, 2))]).has('night-owl')).toBe(true);
+    expect(earnedFor([winningTeam(1, [nightMons[5], nightMons[6]])]).has('night-owl')).toBe(true);
+
+    // Pokémon can be recognized from their icons alone.
+    expect(earnedFor([winningTeam(1, nightMons.slice(0, 2).map((mon) => ({
+      ...mon,
+      name: 'Unknown',
+    })))]).has('night-owl')).toBe(true);
+
+    // One qualifying Pokémon or a duplicate does not count.
+    expect(earnedFor([winningTeam(1, nightMons.slice(0, 1))]).has('night-owl')).toBe(false);
+    expect(earnedFor([winningTeam(1, [nightMons[0], nightMons[0]])]).has('night-owl')).toBe(false);
+
+    // Not cumulative: the pair must be on the same Hall of Fame team.
+    expect(earnedFor([
+      winningTeam(1, nightMons.slice(0, 1)),
+      winningTeam(2, nightMons.slice(1, 2)),
+    ]).has('night-owl')).toBe(false);
+
+    // Similar but non-qualifying forms do not count.
+    expect(earnedFor([winningTeam(1, [
+      { name: 'Decidueye-Hisui', icon: 'decidueye-hisui', ko_count: null },
+      { name: 'Lycanroc-Midday', icon: 'lycanroc-midday', ko_count: null },
+    ])]).has('night-owl')).toBe(false);
+
+    // Casual wins do not count.
+    expect(earnedFor(
+      [winningTeam(1, nightMons.slice(0, 2))],
+      { validDraftIds: new Set() },
+    ).has('night-owl')).toBe(false);
   });
 
   it('does not award win-based achievements for unfinished races', () => {

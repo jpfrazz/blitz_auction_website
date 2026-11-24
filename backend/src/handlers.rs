@@ -1971,6 +1971,12 @@ pub struct AdminHallOfFameEligibleEntry {
     pub hall_of_fame_team: Vec<HallOfFamePokemon>,
 }
 
+#[derive(Clone, Debug, Deserialize)]
+pub struct HallOfFameQuery {
+    /// Maximum number of teams to return. Omit to return all.
+    pub limit: Option<i64>,
+}
+
 fn hall_of_fame_beat_name(trainer_id: i32) -> String {
     match trainer_id {
         804 => "Steven".to_string(),
@@ -1984,8 +1990,13 @@ fn hall_of_fame_beat_name(trainer_id: i32) -> String {
 /// the latest one (the run it actually ended with) is kept.
 async fn fetch_hall_of_fame_eligible(
     state: &ServerState,
+    limit: Option<i64>,
 ) -> Result<Vec<AdminHallOfFameEligibleEntry>, (StatusCode, String)> {
-    let rows = sqlx::query(
+    let limit_sql = limit
+        .filter(|l| *l > 0)
+        .map(|l| format!(" LIMIT {}", l))
+        .unwrap_or_default();
+    let sql = format!(
         "SELECT team_id, draft_id, draft_name, draft_type, user_id, user_name, trainer_id, hours, minutes, seconds, beat_date, hall_of_fame_team
          FROM (
              SELECT DISTINCT ON (bbh.team_id)
@@ -2005,8 +2016,10 @@ async fn fetch_hall_of_fame_eligible(
                AND NOT bbh.is_loss
              ORDER BY bbh.team_id, bbh.hours DESC, bbh.minutes DESC, bbh.seconds DESC
          ) wins
-         ORDER BY created_at DESC, user_name ASC, team_id ASC",
-    )
+         ORDER BY created_at DESC, user_name ASC, team_id ASC{}",
+        limit_sql
+    );
+    let rows = sqlx::query(&sql)
     .fetch_all(&state.db_pool)
     .await
     .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
@@ -2068,18 +2081,20 @@ async fn fetch_hall_of_fame_eligible(
 pub async fn get_admin_hall_of_fame_eligible(
     State(state): State<ServerState>,
     auth_session: AuthSession<AuthBackend>,
+    Query(query): Query<HallOfFameQuery>,
 ) -> Result<Json<Vec<AdminHallOfFameEligibleEntry>>, AppError> {
     let _ = require_referee_user(auth_session.user)?;
 
-    let entries = fetch_hall_of_fame_eligible(&state).await?;
+    let entries = fetch_hall_of_fame_eligible(&state, query.limit).await?;
     Ok(Json(entries))
 }
 
 #[debug_handler]
 pub async fn get_hall_of_fame(
     State(state): State<ServerState>,
+    Query(query): Query<HallOfFameQuery>,
 ) -> Result<Json<Vec<AdminHallOfFameEligibleEntry>>, AppError> {
-    let entries = fetch_hall_of_fame_eligible(&state).await?;
+    let entries = fetch_hall_of_fame_eligible(&state, query.limit).await?;
     Ok(Json(entries))
 }
 

@@ -203,12 +203,18 @@
   to { transform: translateY(calc(var(--rps-approach) * 16%)); }
 }
 
+// A tie is a hard tile-on-tile collision, not a rubber bounce: one small
+// recoil, then a clean stop. No scaling, so the tiles keep their rigid shape.
 @keyframes rps-bonk-move {
-  0% { transform: translateY(calc(var(--rps-approach) * 16%)); }
-  30% { transform: translateY(calc(var(--rps-approach) * -10%)) scale(0.97); }
-  55% { transform: translateY(calc(var(--rps-approach) * 4%)); }
-  78% { transform: translateY(calc(var(--rps-approach) * -2%)); }
-  100% { transform: translateY(0); }
+  0% {
+    transform: translateY(calc(var(--rps-approach) * 16%));
+    animation-timing-function: cubic-bezier(0.15, 0.85, 0.35, 1);
+  }
+  22% {
+    transform: translateY(calc(var(--rps-approach) * -5%));
+    animation-timing-function: ease-out;
+  }
+  55%, 100% { transform: translateY(0); }
 }
 
 // Decisive rounds: the winner holds at the contact point while the loser
@@ -326,8 +332,9 @@
 }
 
 .rps-outcome--win .rps-outcome-title {
-  font-size: 6.5rem;
+  font-size: 6rem;
   text-shadow: 0 4px 18px rgba(0, 0, 0, 0.55);
+  transform: translateY(-10px);
 }
 
 .rps-outcome--wait .rps-outcome-title {

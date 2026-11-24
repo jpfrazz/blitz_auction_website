@@ -11,6 +11,7 @@ import type {
 import type { BossBattleHistoryEntry } from '../../shared/api/stats';
 import { SPECIES_BY_ID } from '../../utils/speciesIdMap';
 import { buildOpponentsByDraftId, getSelectedPlayerIdentityIds } from './opponentLinks';
+import { resolvePokemonIdentity } from '../../shared/utils/pokemonIdentity';
 import { computePersonalBestSeconds, isChampionWin, isNonCasualRace } from './raceEligibility';
 import { isRentalPokemonName } from './rentalPool';
 
@@ -57,13 +58,43 @@ const EASY_AS_PIE_USER_ID = '306547404595920896';
 const WALLY_TRAINER_ID = 656;
 const MUDKIP_POKEDEX_ID = 258;
 const STINGY_MAX_SINGLE_PURCHASE = 2000;
+const WORTH_EVERY_PENNY_MIN_PREMIUM = 2000;
 const RPS_CHAMPION_REQUIRED_WINS = 10;
 const IMPATIENT_SPEND_TARGET = 20000;
 const OLD_FAITHFUL_REQUIRED_WINS = 10;
 const EEVEE_POKEDEX_ID = 133;
+const WISHIWASHI_POKEDEX_ID = 746;
+const SCHOOLIN_ON_EM_MIN_KOS = 11;
 const TRUE_LOVE_SHARED_RACES = 10;
 const DEATHLESS_START_DATE = '2026-08-10';
 const BATTLE_FRONTIER_BRAIN_IDS = new Set([806, 807, 810, 811]);
+/** All boss trainer splits tracked in gyms.txt. */
+const ALL_BOSS_TRAINER_IDS = new Set([
+  // Roxanne 1-8
+  265, 770, 771, 772, 773, 812, 813, 814,
+  // Viola 1-8
+  855, 856, 857, 858, 859, 860, 861, 862,
+  // Brawly 1-8
+  266, 774, 775, 776, 777, 815, 816, 817,
+  // Wattson 1-8
+  267, 778, 779, 780, 781, 818, 819, 820,
+  // Flannery 1-8
+  268, 782, 783, 784, 785, 821, 822, 823,
+  // Norman 1-8
+  269, 786, 787, 788, 789, 824, 825, 826,
+  // Winona 1-8
+  270, 790, 791, 792, 793, 827, 828, 829,
+  // Tate & Liza 1-8
+  271, 794, 795, 796, 797, 830, 831, 832,
+  // Juan & Wallace 1-8
+  272, 798, 799, 800, 801, 833, 834, 835,
+  // Story bosses / rivals
+  34, 601,
+  // Elite Four / Frontier Brains
+  261, 807, 262, 810, 263, 806, 264, 811,
+  // Champions
+  804, 656,
+]);
 const ORIGINAL_151_MAX_DEX_ID = 151;
 const REGIONAL_FORMS = new Set(['alola', 'galar', 'hisui', 'paldea']);
 
@@ -127,18 +158,25 @@ export const ACHIEVEMENT_DEFINITIONS: AchievementDefinition[] = [
   },
   {
     id: 'grand-prix-racer',
-    name: 'Grand Prix Racer',
-    description: 'Play an Ever Grand Prix race',
+    name: 'Grande Prix Racer',
+    description: 'Play in an Ever Grande Prix race',
     icon: 'GrandPrixRacer.png',
   },
-  { id: '200-club', name: '200+ Club', description: 'Play 200 races', icon: '200+.png' },
+  { id: '250-club', name: '250+ Club', description: 'Play 250 races', icon: '250+.png' },
   { id: '100-club', name: '100+ Club', description: 'Play 100 races', icon: '100+.png' },
-  { id: '25-club', name: '25+ Club', description: 'Play 25 races', icon: '25+.png.png' },
+  { id: '25-club', name: '25+ Club', description: 'Play 25 races', icon: '25+.png' },
+  { id: '10-club', name: '10+ Club', description: 'Play 10 races', icon: '10+.png' },
   {
     id: 'true-love',
     name: 'True Love',
     description: 'Play 10 races with another specific player',
     icon: 'TrueLove.png',
+  },
+  {
+    id: 'winner',
+    name: 'Blitz Winner',
+    description: 'Beat the game',
+    icon: 'Winner.png',
   },
   {
     id: 'blitz-legend',
@@ -159,28 +197,10 @@ export const ACHIEVEMENT_DEFINITIONS: AchievementDefinition[] = [
     icon: 'BlitzHero.png',
   },
   {
-    id: 'back-to-back',
-    name: 'Back to Back',
-    description: 'Beat the game twice in one day',
-    icon: 'BacktoBack.png',
-  },
-  {
-    id: 'moneyballer',
-    name: 'Moneyballer',
-    description: 'Get an RMV of over $25,000 in a competitive draft',
-    icon: 'Moneyballer.png',
-  },
-  {
-    id: 'stingy',
-    name: 'Stingy',
-    description: "Win a race in which you don't spend more than $2000 on a single Pokémon",
-    icon: 'Stingy.png',
-  },
-  {
-    id: 'impatient',
-    name: 'Impatient',
-    description: 'Spend $20,000 before an auction is halfway over',
-    icon: 'Impatient.png',
+    id: 'sub-100-club',
+    name: 'Sub-100 Club',
+    description: 'Get a personal best time under 100 minutes',
+    icon: 'Sub100.png',
   },
   {
     id: 'sub-90-club',
@@ -211,6 +231,42 @@ export const ACHIEVEMENT_DEFINITIONS: AchievementDefinition[] = [
     name: 'Speed Freak',
     description: 'Beat the first gym in under 2 minutes and 30 seconds',
     icon: 'SpeedFreak.png',
+  },
+  {
+    id: 'back-to-back',
+    name: 'Back to Back',
+    description: 'Beat the game twice in one day',
+    icon: 'BacktoBack.png',
+  },
+  {
+    id: 'impressive-host',
+    name: 'Impressive Host',
+    description: 'Host and win your own auction draft race',
+    icon: 'ImpressiveHost.png',
+  },
+  {
+    id: 'moneyballer',
+    name: 'Moneyballer',
+    description: 'Get an RMV of over $25,000 in a competitive draft',
+    icon: 'Moneyballer.png',
+  },
+  {
+    id: 'worth-every-penny',
+    name: 'Worth Every Penny',
+    description: 'Win a Pokemon in auction for at least $2000 more than its average price',
+    icon: 'WorthEveryPenny.png',
+  },
+  {
+    id: 'stingy',
+    name: 'Stingy',
+    description: "Win a race in which you don't spend more than $2000 on a single Pokémon",
+    icon: 'Stingy.png',
+  },
+  {
+    id: 'impatient',
+    name: 'Impatient',
+    description: 'Spend $20,000 before an auction is halfway over',
+    icon: 'Impatient.png',
   },
   {
     id: 'easy-as-pie',
@@ -255,6 +311,12 @@ export const ACHIEVEMENT_DEFINITIONS: AchievementDefinition[] = [
     icon: 'ClutchMaster.png',
   },
   {
+    id: 'untiltable',
+    name: 'Untiltable',
+    description: 'Beat the game after losing three Pokémon to the first gym leader',
+    icon: 'Untiltable.png',
+  },
+  {
     id: 'deathless',
     name: 'Deathless',
     description: 'Beat the game without any Pokémon fainting',
@@ -265,6 +327,12 @@ export const ACHIEVEMENT_DEFINITIONS: AchievementDefinition[] = [
     name: 'Hard Carried',
     description: 'Win a race in which one Pokemon earns at least 20 KOs',
     icon: 'HardCarried.png',
+  },
+  {
+    id: 'schoolin-on-em',
+    name: "Schoolin' On Em",
+    description: 'Win a race in which Wishiwashi earns at least 11 KOs',
+    icon: 'SchoolinOnEm.png',
   },
   {
     id: 'old-faithful',
@@ -285,10 +353,34 @@ export const ACHIEVEMENT_DEFINITIONS: AchievementDefinition[] = [
     icon: 'Criminal.png',
   },
   {
+    id: 'good-as-new',
+    name: 'Good as New',
+    description: 'Enter the Hall of Fame with Corsola',
+    icon: 'GoodAsNew.png',
+  },
+  {
     id: 'rainbow-warrior',
     name: 'Rainbow Warrior',
-    description: 'Enter the Hall of Fame with all 8 Eeveelutions',
+    description: 'Enter the Hall of Fame with all 8 Eeveelutions across your races',
     icon: 'RainbowWarrior.png',
+  },
+  {
+    id: 'appliance-master',
+    name: 'Appliance Master',
+    description: "Enter the Hall of Fame with all 5 of Rotom's appliance forms across your races",
+    icon: 'ApplianceMaster.png',
+  },
+  {
+    id: 'doctors-worst-nightmare',
+    name: "Doctor's Worst Nightmare",
+    description: "Enter the Hall of Fame with all 3 of Applin's evolutions across your races",
+    icon: 'DoctorsWorstNightmare.png',
+  },
+  {
+    id: 'natural-born-gambler',
+    name: 'Natural Born Gambler',
+    description: 'Enter the Hall of Fame with Azumarill, Clefable, Togekiss, and Wigglytuff across your races',
+    icon: 'NaturalBornGambler.png',
   },
   {
     id: 'big-year',
@@ -297,10 +389,22 @@ export const ACHIEVEMENT_DEFINITIONS: AchievementDefinition[] = [
     icon: 'BigYear.png',
   },
   {
+    id: 'night-owl',
+    name: 'Night Owl',
+    description: 'Enter the Hall of Fame with at least 2 Pokémon who evolve only at night',
+    icon: 'NightOwl.png',
+  },
+  {
     id: 'elite-mind',
     name: 'Elite Mind',
     description: 'Win a run in which you defeat all four Battle Frontier Brains consecutively',
     icon: 'EliteMind.png',
+  },
+  {
+    id: 'seen-it-all',
+    name: 'Seen It All',
+    description: 'Face every boss trainer',
+    icon: 'SeenItAll.png',
   },
   {
     id: 'close-combatant',
@@ -317,7 +421,7 @@ export const ACHIEVEMENT_DEFINITIONS: AchievementDefinition[] = [
   {
     id: 'infinite-wisdom',
     name: 'Infinite Wisdom',
-    description: 'Participate as a Coach in a Little Cup Race',
+    description: 'Coach in a Little Cup Race',
     icon: 'InfiniteWisdom.png',
   },
   {
@@ -337,6 +441,39 @@ const WALLY_MON_POOL = new Set([
 ].map(normalizeName));
 const WALLY_REQUIRED_MONS = 3;
 
+const ROTOM_APPLIANCE_FORM_KEYS = ['Heat', 'Wash', 'Mow', 'Frost', 'Fan']
+  .map((form) => normalizeName(`Rotom-${form}`));
+
+const APPLIN_EVOLUTION_KEYS = ['Hydrapple', 'Appletun', 'Flapple'].map(normalizeName);
+
+const NATURAL_BORN_GAMBLER_KEYS = ['Azumarill', 'Clefable', 'Togekiss', 'Wigglytuff']
+  .map(normalizeName);
+
+const GOOD_AS_NEW_KEYS = ['Corsola'].map(normalizeName);
+
+const NIGHT_OWL_KEYS = new Set([
+  'Decidueye',
+  'Typhlosion-Hisui',
+  'Braviary-Hisui',
+  'Samurott-Hisui',
+  'Mr. Rime',
+  'Marowak-Alola',
+  'Lycanroc-Midnight',
+].map(normalizeName));
+
+const WISHIWASHI_ROM_IDS = new Set<number>([
+  WISHIWASHI_POKEDEX_ID,
+  ...Object.entries(SPECIES_BY_ID)
+    .filter(([, info]) => info.baseId === WISHIWASHI_POKEDEX_ID)
+    .map(([id]) => Number(id)),
+]);
+const WISHIWASHI_NAME_KEYS = new Set<string>(['wishiwashi']);
+Object.values(SPECIES_BY_ID).forEach((info) => {
+  if (info.baseId !== WISHIWASHI_POKEDEX_ID) return;
+  WISHIWASHI_NAME_KEYS.add(normalizeName(info.name));
+  WISHIWASHI_NAME_KEYS.add(normalizeName(info.icon));
+});
+
 function didBeatWally(
   team: MatchHistoryTeam,
   bossBattleHistory: Map<number, BossBattleHistoryEntry[]>,
@@ -355,6 +492,35 @@ function hasThreeOfWallysMons(team: MatchHistoryTeam): boolean {
     else if (WALLY_MON_POOL.has(iconKey)) matched.add(iconKey);
   });
   return matched.size >= WALLY_REQUIRED_MONS;
+}
+
+/** Collects Hall of Fame Pokémon from every provided run, including casual runs. */
+function hasAllHallOfFameKeys(teams: MatchHistoryTeam[], keys: string[]): boolean {
+  const seen = new Set<string>();
+  teams.forEach((team) => {
+    (team.hall_of_fame_team ?? []).forEach((mon) => {
+      seen.add(normalizeName(mon.icon));
+      seen.add(normalizeName(mon.name));
+    });
+  });
+  return keys.every((key) => seen.has(key));
+}
+
+function didWishiwashiEarnOverTenKos(team: MatchHistoryTeam): boolean {
+  const hasEnoughKos = (kos: number | null | undefined) =>
+    (kos ?? 0) >= SCHOOLIN_ON_EM_MIN_KOS;
+
+  return (
+    (team.run_stats ?? []).some(
+      (mon) => WISHIWASHI_ROM_IDS.has(mon.species_id) && hasEnoughKos(mon.ko_count),
+    ) ||
+    (team.hall_of_fame_team ?? []).some(
+      (mon) =>
+        (WISHIWASHI_NAME_KEYS.has(normalizeName(mon.name)) ||
+          WISHIWASHI_NAME_KEYS.has(normalizeName(mon.icon))) &&
+        hasEnoughKos(mon.ko_count),
+    )
+  );
 }
 
 function isRegionalForm(form: string | null | undefined): boolean {
@@ -434,6 +600,17 @@ function hasMultipleCloseCombatMons(team: MatchHistoryTeam): boolean {
   (team.hall_of_fame_team ?? []).forEach((mon) => {
     const key = normalizeName(mon.name) || normalizeName(mon.icon);
     if (CLOSE_COMBAT_POOL.has(key)) matching.add(key);
+  });
+  return matching.size >= 2;
+}
+
+function hasTwoNightEvolutionMons(team: MatchHistoryTeam): boolean {
+  const matching = new Set<string>();
+  (team.hall_of_fame_team ?? []).forEach((mon) => {
+    const nameKey = normalizeName(mon.name);
+    const iconKey = normalizeName(mon.icon);
+    if (NIGHT_OWL_KEYS.has(nameKey)) matching.add(nameKey);
+    else if (NIGHT_OWL_KEYS.has(iconKey)) matching.add(iconKey);
   });
   return matching.size >= 2;
 }
@@ -556,6 +733,57 @@ function spentTwentyThousandBeforeHalfway(ctx: AchievementContext): boolean {
   }
 
   return false;
+}
+
+function hostedDraftIds(ctx: AchievementContext): Set<string> {
+  const hosted = new Set<string>();
+  ctx.allTeams.forEach((team) => {
+    if (team.host && ctx.identityIds.has(team.host)) {
+      hosted.add(team.draft_id);
+    }
+  });
+  return hosted;
+}
+
+function hasHostedAndWonOwnAuction(
+  ctx: AchievementContext,
+  winningTeams: MatchHistoryTeam[],
+): boolean {
+  const hosted = hostedDraftIds(ctx);
+  return winningTeams.some((team) => team.draft_type !== '1v1' && hosted.has(team.draft_id));
+}
+
+function wonPokemonForAtLeastTwoThousandOverAverage(ctx: AchievementContext): boolean {
+  const competitiveSalesByKey = new Map<string, { total: number; count: number }>();
+
+  ctx.auctions.forEach((auction) => {
+    if (typeof auction.winning_bid !== 'number') return;
+    if (auction.draft_type === '1v1') return;
+    if (auction.action === 'BAN' || auction.action === 'LEFTOVER') return;
+    if (!isNonCasualRace(auction, ctx.validDraftIds, ctx.casual1v1DraftIds)) return;
+
+    const { key } = resolvePokemonIdentity(auction.name, auction.form || '');
+    const sales = competitiveSalesByKey.get(key) ?? { total: 0, count: 0 };
+    sales.total += auction.winning_bid;
+    sales.count += 1;
+    competitiveSalesByKey.set(key, sales);
+  });
+
+  return ctx.auctions.some((auction) => {
+    if (typeof auction.winning_bid !== 'number') return false;
+    if (auction.draft_type === '1v1') return false;
+    if (auction.action === 'BAN' || auction.action === 'LEFTOVER') return false;
+    if (!isNonCasualRace(auction, ctx.validDraftIds, ctx.casual1v1DraftIds)) return false;
+
+    const winnerId = auction.winning_user_id ?? auction.winning_guest_id;
+    if (!winnerId || !ctx.identityIds.has(winnerId)) return false;
+
+    const { key } = resolvePokemonIdentity(auction.name, auction.form || '');
+    const sales = competitiveSalesByKey.get(key);
+    if (!sales || sales.count === 0) return false;
+    const avgPrice = sales.total / sales.count;
+    return auction.winning_bid >= avgPrice + WORTH_EVERY_PENNY_MIN_PREMIUM;
+  });
 }
 
 function hasFourSameTypePicks(team: MatchHistoryTeam, pokemonById: Map<number, Pokemon>): boolean {
@@ -713,7 +941,8 @@ export function computePlayerAchievements(ctx: AchievementContext): PlayerAchiev
     ctx.validDraftIds,
     ctx.casual1v1DraftIds,
   );
-  const racesPlayed = nonCasualMatchHistory.length;
+  // The X+ clubs count every recorded race, including casual drafts and casual 1v1s.
+  const clubRacesPlayed = ctx.matchHistory.length;
   const hallOfFameCount = nonCasualMatchHistory.filter((team) =>
     didBeatGame(team, ctx.bossBattleHistory),
   ).length;
@@ -736,6 +965,10 @@ export function computePlayerAchievements(ctx: AchievementContext): PlayerAchiev
   const winningTeams = nonCasualMatchHistory.filter((team) =>
     didBeatGame(team, ctx.bossBattleHistory),
   );
+  // Collection achievements count every completed run, including casual drafts and 1v1s.
+  const allWinningTeams = ctx.matchHistory.filter((team) =>
+    didBeatGame(team, ctx.bossBattleHistory),
+  );
   const pokemonById = new Map(ctx.pokemon.map((mon) => [mon.id, mon]));
   const pokemonLookup = pokemonByName(ctx.pokemon);
 
@@ -744,23 +977,29 @@ export function computePlayerAchievements(ctx: AchievementContext): PlayerAchiev
       const date = draftYearMonth(team.created_at);
       return date?.year === 2026 && (date.month === 3 || date.month === 4);
     }),
+    // Unlike the Blitz X achievements, this counts any completed run.
+    winner: ctx.matchHistory.some((team) => didBeatGame(team, ctx.bossBattleHistory)),
     'grand-prix-racer': Array.from(ctx.identityIds).some((id) => ctx.leaderboardIds.has(id)),
-    '200-club': racesPlayed >= 200,
-    '100-club': racesPlayed >= 100,
-    '25-club': racesPlayed >= 25,
+    '250-club': clubRacesPlayed >= 250,
+    '100-club': clubRacesPlayed >= 100,
+    '25-club': clubRacesPlayed >= 25,
+    '10-club': clubRacesPlayed >= 10,
     'true-love': hasTenRacesWithSamePlayer(ctx),
     'blitz-legend': hallOfFameCount >= 100,
     'blitz-champion': hallOfFameCount >= 50,
     'blitz-hero': hallOfFameCount >= 10,
     'back-to-back': beatGameTwiceInOneDay,
+    'impressive-host': hasHostedAndWonOwnAuction(ctx, winningTeams),
     moneyballer: nonCasualMatchHistory.some(
       (team) =>
         team.draft_type !== '1v1' && (ctx.rmvByTeamId.get(team.team_id) ?? 0) > 25_000,
     ),
+    'worth-every-penny': wonPokemonForAtLeastTwoThousandOverAverage(ctx),
     'stingy': winningTeams.some(
       (team) => team.draft_type !== '1v1' && neverSpentOverTwoThousandOnOnePokemon(team),
     ),
     impatient: spentTwentyThousandBeforeHalfway(ctx),
+    'sub-100-club': personalBestSeconds !== null && personalBestSeconds < 100 * 60,
     'sub-90-club': personalBestSeconds !== null && personalBestSeconds < 90 * 60,
     'sub-80-club': personalBestSeconds !== null && personalBestSeconds < 80 * 60,
     'sub-70-club': personalBestSeconds !== null && personalBestSeconds < 70 * 60,
@@ -785,6 +1024,9 @@ export function computePlayerAchievements(ctx: AchievementContext): PlayerAchiev
     'clutch-master': winningTeams.some(
       (team) => (team.run_stats ?? []).filter((mon) => mon.fainted).length >= 10,
     ),
+    'untiltable': winningTeams.some(
+      (team) => (team.run_stats ?? []).filter((mon) => mon.fainted && mon.level === 15).length >= 3,
+    ),
     'deathless': winningTeams.some(
       (team) =>
         isDraftOnOrAfter(team.created_at, DEATHLESS_START_DATE) && hadNoFaints(team),
@@ -796,6 +1038,7 @@ export function computePlayerAchievements(ctx: AchievementContext): PlayerAchiev
       ];
       return koCounts.some((kos) => kos >= 20);
     }),
+    'schoolin-on-em': winningTeams.some(didWishiwashiEarnOverTenKos),
     'old-faithful': wonTenRacesWithSameDraftPick(winningTeams),
     artisan: winningTeams.some((team) =>
       (team.hall_of_fame_team ?? []).some(
@@ -807,19 +1050,30 @@ export function computePlayerAchievements(ctx: AchievementContext): PlayerAchiev
         (mon) => isRentalPokemonName(mon.name) || isRentalPokemonName(mon.icon),
       ),
     ),
-    'rainbow-warrior': winningTeams.some((team) => {
-      const hof = team.hall_of_fame_team ?? [];
-      const icons = new Set(hof.map((mon) => normalizeName(mon.icon)));
-      const names = new Set(hof.map((mon) => normalizeName(mon.name)));
-      return EEVEELUTION_ICONS.every((icon) => icons.has(icon) || names.has(icon));
-    }),
+    'good-as-new': hasAllHallOfFameKeys(allWinningTeams, GOOD_AS_NEW_KEYS),
+    'rainbow-warrior': hasAllHallOfFameKeys(allWinningTeams, EEVEELUTION_ICONS),
+    'appliance-master': hasAllHallOfFameKeys(allWinningTeams, ROTOM_APPLIANCE_FORM_KEYS),
+    'doctors-worst-nightmare': hasAllHallOfFameKeys(allWinningTeams, APPLIN_EVOLUTION_KEYS),
+    'natural-born-gambler': hasAllHallOfFameKeys(allWinningTeams, NATURAL_BORN_GAMBLER_KEYS),
     'big-year': winningTeams.some(
       (team) =>
         (team.hall_of_fame_team ?? []).filter((mon) => isFlyingType(mon, pokemonLookup)).length >= 3,
     ),
+    'night-owl': winningTeams.some(hasTwoNightEvolutionMons),
     'elite-mind': winningTeams.some((team) =>
       defeatedAllFrontierBrainsConsecutively(ctx.bossBattleHistory.get(team.team_id) ?? []),
     ),
+    'seen-it-all': (() => {
+      const facedBossTrainers = new Set<number>();
+      ctx.matchHistory.forEach((team) => {
+        (ctx.bossBattleHistory.get(team.team_id) ?? []).forEach((battle) => {
+          if (ALL_BOSS_TRAINER_IDS.has(battle.trainer_id)) {
+            facedBossTrainers.add(battle.trainer_id);
+          }
+        });
+      });
+      return ALL_BOSS_TRAINER_IDS.size > 0 && facedBossTrainers.size >= ALL_BOSS_TRAINER_IDS.size;
+    })(),
     'stream-legend': ctx.identityIds.has(STREAM_LEGEND_USER_ID),
     'close-combatant': winningTeams.some(hasMultipleCloseCombatMons),
     'rps-champion': (ctx.player.rps_wins ?? 0) >= RPS_CHAMPION_REQUIRED_WINS,
