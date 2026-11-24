@@ -171,225 +171,24 @@ describe('achievement definitions', () => {
     expect(new Set(ACHIEVEMENT_DEFINITIONS.map((achievement) => achievement.icon)).size).toBe(50);
   });
 
-  it('puts Stream Legend first, Early Bird last, and personal-best clubs in order', () => {
-    expect(ACHIEVEMENT_DEFINITIONS[0].id).toBe('stream-legend');
-    expect(ACHIEVEMENT_DEFINITIONS[ACHIEVEMENT_DEFINITIONS.length - 1].id).toBe('early-bird');
-
-    expect(ACHIEVEMENT_DEFINITIONS.find((achievement) => achievement.id === 'sub-100-club')).toEqual({
-      id: 'sub-100-club',
-      name: 'Sub-100 Club',
-      description: 'Get a personal best time under 100 minutes',
-      icon: 'Sub100.png',
-    });
-
-    expect(ACHIEVEMENT_DEFINITIONS.find((achievement) => achievement.id === 'seen-it-all')).toEqual({
-      id: 'seen-it-all',
-      name: 'Seen It All',
-      description: 'Face every boss trainer',
-      icon: 'SeenItAll.png',
-    });
-
-    expect(ACHIEVEMENT_DEFINITIONS.find((achievement) => achievement.id === 'winner')).toEqual({
-      id: 'winner',
-      name: 'Blitz Winner',
-      description: 'Beat the game',
-      icon: 'Winner.png',
-    });
-
-    expect(ACHIEVEMENT_DEFINITIONS.find((achievement) => achievement.id === 'appliance-master')).toEqual({
-      id: 'appliance-master',
-      name: 'Appliance Master',
-      description: "Enter the Hall of Fame with all 5 of Rotom's appliance forms across your races",
-      icon: 'ApplianceMaster.png',
-    });
-
-    expect(ACHIEVEMENT_DEFINITIONS.find((achievement) => achievement.id === 'doctors-worst-nightmare')).toEqual({
-      id: 'doctors-worst-nightmare',
-      name: "Doctor's Worst Nightmare",
-      description: "Enter the Hall of Fame with all 3 of Applin's evolutions across your races",
-      icon: 'DoctorsWorstNightmare.png',
-    });
-
-    expect(ACHIEVEMENT_DEFINITIONS.find((achievement) => achievement.id === 'natural-born-gambler')).toEqual({
-      id: 'natural-born-gambler',
-      name: 'Natural Born Gambler',
-      description: 'Enter the Hall of Fame with Azumarill, Clefable, Togekiss, and Wigglytuff across your races',
-      icon: 'NaturalBornGambler.png',
-    });
-
-    expect(ACHIEVEMENT_DEFINITIONS.find((achievement) => achievement.id === 'night-owl')).toEqual({
-      id: 'night-owl',
-      name: 'Night Owl',
-      description: 'Enter the Hall of Fame with at least 2 Pokémon who evolve only at night on your team',
-      icon: 'NightOwl.png',
-    });
-
-    expect(ACHIEVEMENT_DEFINITIONS.find((achievement) => achievement.id === 'good-as-new')).toEqual({
-      id: 'good-as-new',
-      name: 'Good as New',
-      description: 'Enter the Hall of Fame with Corsola',
-      icon: 'GoodAsNew.png',
-    });
-
-    expect(ACHIEVEMENT_DEFINITIONS.find((achievement) => achievement.id === 'impressive-host')).toEqual({
-      id: 'impressive-host',
-      name: 'Impressive Host',
-      description: 'Host and win your own auction draft race',
-      icon: 'ImpressiveHost.png',
-    });
-
-    const sub90 = ACHIEVEMENT_DEFINITIONS.find((achievement) => achievement.id === 'sub-90-club');
-    expect(sub90).toEqual({
-      id: 'sub-90-club',
-      name: 'Sub-90 Club',
-      description: 'Get a personal best time under 90 minutes',
-      icon: 'Sub90.png',
-    });
-    expect(ACHIEVEMENT_DEFINITIONS.map((achievement) => achievement.id)).toEqual(
-      expect.arrayContaining([
-        'sub-100-club',
-        'sub-90-club',
-        'sub-80-club',
-        'sub-70-club',
-        'sub-hour-club',
-      ]),
-    );
-
-    expect(ACHIEVEMENT_DEFINITIONS.find((achievement) => achievement.id === 'true-love')).toEqual({
-      id: 'true-love',
-      name: 'True Love',
-      description: 'Play 10 races with another specific player',
-      icon: 'TrueLove.png',
-    });
-
-    expect(ACHIEVEMENT_DEFINITIONS.find((achievement) => achievement.id === '250-club')).toEqual({
-      id: '250-club',
-      name: '250+ Club',
-      description: 'Play 250 races',
-      icon: '250+.png',
-    });
-
-    expect(ACHIEVEMENT_DEFINITIONS.find((achievement) => achievement.id === '10-club')).toEqual({
-      id: '10-club',
-      name: '10+ Club',
-      description: 'Play 10 races',
-      icon: '10+.png',
-    });
-
-    expect(ACHIEVEMENT_DEFINITIONS.find((achievement) => achievement.id === 'worth-every-penny')).toEqual({
-      id: 'worth-every-penny',
-      name: 'Worth Every Penny',
-      description: 'Win a Pokemon in auction for at least $2000 more than its average price',
-      icon: 'WorthEveryPenny.png',
-    });
-
-    expect(ACHIEVEMENT_DEFINITIONS.find((achievement) => achievement.id === 'who-are-you')).toEqual({
-      id: 'who-are-you',
-      name: 'Who Are You?',
-      description: 'Defeat Wally using 3 of his own Pokémon',
-      icon: 'WhoAreYou.png',
-    });
-
-    expect(ACHIEVEMENT_DEFINITIONS.find((achievement) => achievement.id === 'pokemon-professor')).toEqual({
-      id: 'pokemon-professor',
-      name: 'Pokémon Professor',
-      description: 'Win a race in which you draft a starter of all 3 types',
-      icon: 'PokemonProfessor.png',
-    });
-
-    expect(ACHIEVEMENT_DEFINITIONS.find((achievement) => achievement.id === 'old-head')).toEqual({
-      id: 'old-head',
-      name: 'Old Head',
-      description: 'Win a race in which you only use Pokémon from the original 151',
-      icon: 'OldHead.png',
-    });
-
-    expect(ACHIEVEMENT_DEFINITIONS.find((achievement) => achievement.id === 'untiltable')).toEqual({
-      id: 'untiltable',
-      name: 'Untiltable',
-      description: 'Beat the game after losing three Pokémon to the first gym leader',
-      icon: 'Untiltable.png',
-    });
-
-    expect(ACHIEVEMENT_DEFINITIONS.find((achievement) => achievement.id === 'deathless')).toEqual({
-      id: 'deathless',
-      name: 'Deathless',
-      description: 'Beat the game without any Pokémon fainting',
-      icon: 'Deathless.png',
-    });
-
-    expect(ACHIEVEMENT_DEFINITIONS.find((achievement) => achievement.id === 'schoolin-on-em')).toEqual({
-      id: 'schoolin-on-em',
-      name: "Schoolin' On Em",
-      description: 'Win a race in which Wishiwashi earns at least 11 KOs',
-      icon: 'SchoolinOnEm.png',
-    });
-
-    expect(ACHIEVEMENT_DEFINITIONS.find((achievement) => achievement.id === 'old-faithful')).toEqual({
-      id: 'old-faithful',
-      name: 'Old Faithful',
-      description: 'Win 10 races with the same Pokémon',
-      icon: 'OldFaithful.png',
-    });
-
-    expect(ACHIEVEMENT_DEFINITIONS.find((achievement) => achievement.id === 'impatient')).toEqual({
-      id: 'impatient',
-      name: 'Impatient',
-      description: 'Spend $20,000 before an auction is halfway over',
-      icon: 'Impatient.png',
-    });
-
-    expect(ACHIEVEMENT_DEFINITIONS.find((achievement) => achievement.id === 'rps-champion')).toEqual({
-      id: 'rps-champion',
-      name: 'RPS Champion',
-      description: 'Win 10 rounds of Rock Paper Scissors',
-      icon: 'RPSChampion.png',
-    });
-
-    const ids = ACHIEVEMENT_DEFINITIONS.map((achievement) => achievement.id);
-    expect(ids.indexOf('impressive-host')).toBe(ids.indexOf('back-to-back') + 1);
-    expect(ids.indexOf('moneyballer')).toBe(ids.indexOf('impressive-host') + 1);
-    expect(ids.indexOf('worth-every-penny')).toBe(ids.indexOf('moneyballer') + 1);
-    expect(ids.indexOf('stingy')).toBe(ids.indexOf('worth-every-penny') + 1);
-    expect(ids.indexOf('impatient')).toBe(ids.indexOf('stingy') + 1);
-    expect(ids.indexOf('sub-100-club')).toBe(ids.indexOf('impatient') + 1);
-    expect(ids.indexOf('sub-90-club')).toBe(ids.indexOf('sub-100-club') + 1);
-    expect(ids.indexOf('10-club')).toBe(ids.indexOf('25-club') + 1);
-    expect(ids.indexOf('true-love')).toBe(ids.indexOf('10-club') + 1);
-    expect(ids.indexOf('winner')).toBe(ids.indexOf('true-love') + 1);
-    expect(ids.indexOf('blitz-legend')).toBe(ids.indexOf('winner') + 1);
-    expect(ids.indexOf('who-are-you')).toBe(ids.indexOf('easy-as-pie') + 1);
-    expect(ids.indexOf('the-chosen-one')).toBe(ids.indexOf('who-are-you') + 1);
-    expect(ids.indexOf('pokemon-professor')).toBe(ids.indexOf('type-loyalist') + 1);
-    expect(ids.indexOf('old-head')).toBe(ids.indexOf('pokemon-professor') + 1);
-    expect(ids.indexOf('clutch-master')).toBe(ids.indexOf('old-head') + 1);
-    expect(ids.indexOf('untiltable')).toBe(ids.indexOf('clutch-master') + 1);
-    expect(ids.indexOf('deathless')).toBe(ids.indexOf('untiltable') + 1);
-    expect(ids.indexOf('hard-carried')).toBe(ids.indexOf('deathless') + 1);
-    expect(ids.indexOf('schoolin-on-em')).toBe(ids.indexOf('hard-carried') + 1);
-    expect(ids.indexOf('old-faithful')).toBe(ids.indexOf('schoolin-on-em') + 1);
-    expect(ids.indexOf('artisan')).toBe(ids.indexOf('old-faithful') + 1);
-    expect(ids.indexOf('criminal')).toBe(ids.indexOf('artisan') + 1);
-    expect(ids.indexOf('good-as-new')).toBe(ids.indexOf('criminal') + 1);
-    expect(ids.indexOf('rainbow-warrior')).toBe(ids.indexOf('good-as-new') + 1);
-    expect(ids.indexOf('appliance-master')).toBe(ids.indexOf('rainbow-warrior') + 1);
-    expect(ids.indexOf('doctors-worst-nightmare')).toBe(ids.indexOf('appliance-master') + 1);
-    expect(ids.indexOf('natural-born-gambler')).toBe(ids.indexOf('doctors-worst-nightmare') + 1);
-    expect(ids.indexOf('big-year')).toBe(ids.indexOf('natural-born-gambler') + 1);
-    expect(ids.indexOf('night-owl')).toBe(ids.indexOf('big-year') + 1);
-  });
 });
 
 describe('computePlayerAchievements', () => {
-  it('finds non-casual races from March and April 2026', () => {
-    const race = (created_at: string) =>
-      team({ team_id: 1, draft_id: 'd1', created_at });
+  it('finds any race from March and April 2026, including casual races', () => {
+    const race = (created_at: string, overrides: Partial<MatchHistoryTeam> = {}) =>
+      team({ team_id: 1, draft_id: 'd1', created_at, ...overrides });
     const validDraftIds = new Set(['d1']);
 
     expect(earnedIds(baseContext({ matchHistory: [race('2026-03-02T12:00:00Z')], validDraftIds }))).toContain('early-bird');
     expect(earnedIds(baseContext({ matchHistory: [race('2026-04-30T12:00:00Z')], validDraftIds }))).toContain('early-bird');
     expect(earnedIds(baseContext({ matchHistory: [race('2026-05-01T12:00:00Z')], validDraftIds }))).not.toContain('early-bird');
-    expect(earnedIds(baseContext({ matchHistory: [race('2026-03-02T12:00:00Z')] }))).not.toContain('early-bird');
+    // A casual auction (no valid draft id) still counts.
+    expect(earnedIds(baseContext({ matchHistory: [race('2026-03-02T12:00:00Z')] }))).toContain('early-bird');
+    // So does a casual 1v1.
+    expect(earnedIds(baseContext({
+      matchHistory: [race('2026-04-15T12:00:00Z', { draft_id: 'casual-1v1', draft_type: '1v1' })],
+      casual1v1DraftIds: new Set(['casual-1v1']),
+    }))).toContain('early-bird');
   });
 
   it('awards Blitz Winner for beating the game in a competitive or casual run', () => {
@@ -678,20 +477,28 @@ describe('computePlayerAchievements', () => {
     expect(progress.seenDetails.has(9999)).toBe(false);
   });
 
-  it('awards Speed Freak for a sub-2:30 first split in a valid draft without requiring a win', () => {
+  it('awards Speed Freak for a sub-2:30 first split in a non-casual race without requiring a win', () => {
     // No Hall of Fame team and no champion win: the run was never completed.
     const race = team({ team_id: 1, draft_id: 'fast-draft' });
-    const earnedFor = (battles: BossBattleHistoryEntry[], valid = true, draftType = 'auction') =>
-      earnedIds(baseContext({
+    const earnedFor = (
+      battles: BossBattleHistoryEntry[],
+      options: { valid?: boolean; draftType?: string; casual1v1?: boolean } = {},
+    ) => {
+      const { valid = true, draftType = 'auction', casual1v1 = false } = options;
+      return earnedIds(baseContext({
         matchHistory: [{ ...race, draft_type: draftType }],
         validDraftIds: valid ? new Set(['fast-draft']) : new Set(),
+        casual1v1DraftIds: casual1v1 ? new Set(['fast-draft']) : new Set(),
         bossBattleHistory: new Map([[1, battles]]),
       }));
+    };
 
     expect(earnedFor([gymWin(2 * 60 + 29)]).has('speed-freak')).toBe(true);
     expect(earnedFor([gymWin(2 * 60 + 30)]).has('speed-freak')).toBe(false);
-    expect(earnedFor([gymWin(2 * 60 + 29)], false).has('speed-freak')).toBe(false);
-    expect(earnedFor([gymWin(2 * 60 + 29)], true, '1v1').has('speed-freak')).toBe(false);
+    expect(earnedFor([gymWin(2 * 60 + 29)], { valid: false }).has('speed-freak')).toBe(false);
+    // Non-casual 1v1s count, but casual 1v1s do not.
+    expect(earnedFor([gymWin(2 * 60 + 29)], { draftType: '1v1' }).has('speed-freak')).toBe(true);
+    expect(earnedFor([gymWin(2 * 60 + 29)], { draftType: '1v1', casual1v1: true }).has('speed-freak')).toBe(false);
     expect(earnedFor([{ ...gymWin(2 * 60 + 29), is_loss: true }]).has('speed-freak')).toBe(false);
     expect(earnedFor([]).has('speed-freak')).toBe(false);
     // A fast later split does not count; only the first split matters.

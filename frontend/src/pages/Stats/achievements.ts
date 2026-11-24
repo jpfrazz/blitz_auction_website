@@ -384,7 +384,7 @@ export const ACHIEVEMENT_DEFINITIONS: AchievementDefinition[] = [
   {
     id: 'artisan',
     name: 'Artisan',
-    description: 'Win a race with Smeargle on your Hall of Fame team',
+    description: 'Enter the Hall of Fame with Smeargle',
     icon: 'Artisan.png',
   },
   {
@@ -1014,7 +1014,8 @@ export function computePlayerAchievements(ctx: AchievementContext): PlayerAchiev
   const pokemonLookup = pokemonByName(ctx.pokemon);
 
   const earned: Record<string, boolean> = {
-    'early-bird': nonCasualMatchHistory.some((team) => {
+    // Any race in the window counts, including casual drafts and casual 1v1s.
+    'early-bird': ctx.matchHistory.some((team) => {
       const date = draftYearMonth(team.created_at);
       return date?.year === 2026 && (date.month === 3 || date.month === 4);
     }),
@@ -1045,12 +1046,9 @@ export function computePlayerAchievements(ctx: AchievementContext): PlayerAchiev
     'sub-80-club': personalBestSeconds !== null && personalBestSeconds < 80 * 60,
     'sub-70-club': personalBestSeconds !== null && personalBestSeconds < 70 * 60,
     'sub-hour-club': personalBestSeconds !== null && personalBestSeconds < 60 * 60,
-    // Only a valid auction draft is required; the run does not need to be completed.
-    'speed-freak': ctx.matchHistory.some(
-      (team) =>
-        team.draft_type !== '1v1' &&
-        ctx.validDraftIds.has(team.draft_id) &&
-        beatFirstGymUnderTwoThirty(ctx.bossBattleHistory.get(team.team_id) ?? []),
+    // Any non-casual race counts (including 1v1s); the run does not need to be completed.
+    'speed-freak': nonCasualMatchHistory.some((team) =>
+      beatFirstGymUnderTwoThirty(ctx.bossBattleHistory.get(team.team_id) ?? []),
     ),
     'easy-as-pie': outplacedShartwagonInRace(ctx, nonCasualMatchHistory),
     'who-are-you': winningTeams.some(
