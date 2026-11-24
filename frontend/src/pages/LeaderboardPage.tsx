@@ -195,8 +195,9 @@ const LeaderboardPage = () => {
         });
 
         activeStats.teams.forEach(t => {
-            // Season 2 standings are driven by race placements, not ELO placements.
-            const position = activeTab === 'season2' ? t.race_placement : t.placement;
+            // placement is canonical for both season tabs; race_placement is
+            // only a transition fallback for rows written before the backfill.
+            const position = t.placement ?? t.race_placement;
             if (position === null || position === undefined) return;
             if (!map.has(t.draft_id)) {
                 map.set(t.draft_id, { date: '', participants: [] });

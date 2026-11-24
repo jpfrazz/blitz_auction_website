@@ -575,13 +575,13 @@ pub async fn get_season2_leaderboard(
                 COALESCE(t.user_id, g.discord_user_id) AS user_id,
                 t.draft_id,
                 (CASE
-                    WHEN t.race_placement = 1 THEN 5
-                    WHEN t.race_placement = 2 THEN 4
-                    WHEN t.race_placement = 3 THEN 3
+                    WHEN COALESCE(t.placement, t.race_placement) = 1 THEN 5
+                    WHEN COALESCE(t.placement, t.race_placement) = 2 THEN 4
+                    WHEN COALESCE(t.placement, t.race_placement) = 3 THEN 3
                     ELSE 0
-                 END + (rs.n - t.race_placement))::INT AS points,
-                (rs.n - t.race_placement)::INT AS wins,
-                (t.race_placement - 1)::INT AS losses
+                 END + (rs.n - COALESCE(t.placement, t.race_placement)))::INT AS points,
+                (rs.n - COALESCE(t.placement, t.race_placement))::INT AS wins,
+                (COALESCE(t.placement, t.race_placement) - 1)::INT AS losses
             FROM teams t
             JOIN drafts d ON d.draft_id = t.draft_id
             JOIN race_sizes rs ON rs.draft_id = t.draft_id
@@ -589,7 +589,7 @@ pub async fn get_season2_leaderboard(
             WHERE d.season = 2
               AND d.state = 'COMPLETED'
                             AND COALESCE(t.user_id, g.discord_user_id) IS NOT NULL
-              AND t.race_placement IS NOT NULL
+              AND COALESCE(t.placement, t.race_placement) IS NOT NULL
                         ORDER BY COALESCE(t.user_id, g.discord_user_id), t.draft_id,
                                          (t.user_id IS NULL), t.team_id
         ),

@@ -2566,14 +2566,16 @@ pub async fn admin_auto_fill_race_placements(
         ),
         no_manual AS (
             SELECT draft_id FROM teams GROUP BY draft_id
-            HAVING bool_and(race_placement IS NULL AND race_wipe_trainer IS NULL)
+            HAVING bool_and(placement IS NULL AND race_wipe_trainer IS NULL)
         ),
         ranked AS (
             SELECT e.team_id, e.draft_id,
                    row_number() OVER (PARTITION BY e.draft_id ORDER BY e.finish_seconds) AS rn
             FROM earliest e JOIN no_manual nm ON nm.draft_id = e.draft_id
         )
-        UPDATE teams t SET race_placement = ranked.rn
+        -- placement is canonical; the temporary DB trigger mirrors this into
+        -- race_placement until that column is dropped.
+        UPDATE teams t SET placement = ranked.rn
         FROM ranked WHERE t.team_id = ranked.team_id
         RETURNING t.draft_id
         "#,
@@ -2629,7 +2631,7 @@ struct RaceResultTeamRow {
     user_id: Option<String>,
     guest_id: Option<String>,
     user_name: Option<String>,
-    race_placement: Option<i32>,
+    placement: Option<i32>,
     race_wipe_trainer: Option<String>,
 }
 
@@ -2732,13 +2734,16 @@ pub async fn get_draft_race_results(
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
 
     let teams = sqlx::query_as::<_, RaceResultTeamRow>(
-        "SELECT t.team_id, t.user_id, t.guest_id, t.race_placement, t.race_wipe_trainer,
+        "SELECT t.team_id, t.user_id, t.guest_id,
+                COALESCE(t.placement, t.race_placement) AS placement,
+                t.race_wipe_trainer,
                 COALESCE(u.user_name, g.user_name) AS user_name
          FROM teams t
          LEFT JOIN users u ON u.user_id = t.user_id
          LEFT JOIN guests g ON g.user_id = t.guest_id
          WHERE t.draft_id = $1
-         ORDER BY t.race_placement ASC NULLS LAST, COALESCE(u.user_name, g.user_name) ASC",
+         ORDER BY COALESCE(t.placement, t.race_placement) ASC NULLS LAST,
+                  COALESCE(u.user_name, g.user_name) ASC",
     )
     .bind(draft_uuid)
     .fetch_all(&state.db_pool)
@@ -2778,7 +2783,7 @@ pub async fn get_draft_race_results(
                 user_id: team.user_id,
                 guest_id: team.guest_id,
                 user_name: team.user_name,
-                placement: team.race_placement,
+                placement: team.placement,
                 wipe_trainer: team.race_wipe_trainer,
                 result,
                 detail,
@@ -2928,7 +2933,7 @@ pub async fn update_draft_race_results(
 
         sqlx::query(
             "UPDATE teams
-             SET race_placement = $1,
+             SET placement = $1,
                  race_wipe_trainer = $2
              WHERE team_id = $3
                AND draft_id = $4",
