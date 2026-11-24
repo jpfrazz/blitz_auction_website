@@ -1,5 +1,5 @@
 use crate::{
-    Draft, PgPool, handlers, metrics::{self, MetricsCollector}, pokemon, stats,
+    Draft, PgPool, achievements, handlers, metrics::{self, MetricsCollector}, pokemon, stats,
     users::{AuthBackend, Credentials},
 };
 use axum::{
@@ -171,6 +171,10 @@ impl Server {
             .route(
                 "/match-history/{user_id}",
                 get(handlers::get_match_history_by_user_id),
+            )
+            .route(
+                "/achievements/manual/{user_id}",
+                get(achievements::get_manual_achievements),
             );
 
         let private_routes = Router::new()
@@ -252,6 +256,10 @@ impl Server {
             .route(
                 "/admin/recalculate-stats",
                 post(handlers::admin_recalculate_all_stats),
+            )
+            .route(
+                "/admin/achievements/{user_id}",
+                post(achievements::set_manual_achievement),
             )
             .route("/admin/users", get(handlers::get_admin_discord_users))
             .route(

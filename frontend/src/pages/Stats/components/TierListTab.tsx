@@ -3,6 +3,7 @@ import * as htmlToImage from 'html-to-image';
 import { FaCog, FaArrowUp, FaArrowDown, FaCopy, FaTrash } from 'react-icons/fa';
 import { StatsPageResponse, StatsPagePlayer } from '../../../types';
 import { resolvePokemonIdentity } from '../../../shared/utils/pokemonIdentity';
+import { RENTAL_POOL } from '../rentalPool';
 import './TierListTab.scss';
 
 interface TierRow {
@@ -72,13 +73,6 @@ const DEFAULT_TIERS_CONFIG = [
 
 const EEVEE_POOL = [
     'Vaporeon', 'Jolteon', 'Flareon', 'Espeon', 'Umbreon', 'Leafeon', 'Glaceon', 'Sylveon'
-];
-
-const RENTAL_POOL = [
-    'Absol', 'Drampa', 'Falinks', 'Hawlucha', 'Heracross', 'Kangaskhan', 'Pinsir', 'Skarmory',
-    'Alomomola', 'Bombirdier', 'Bouffalant', 'Carnivine', 'Comfey', 'Cryogonal', 'Dhelmise',
-    'Durant', 'Heatmor', 'Lapras', 'Miltank', 'Mimikyu', 'Relicanth', 'Seviper',
-    'Stonjourner', 'Stunfisk', 'Togedemaru', 'Torkoal', 'Tropius', 'Turtonator', 'Zangoose'
 ];
 
 function formatPokemonName(name: string): string {

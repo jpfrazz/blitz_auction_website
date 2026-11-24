@@ -19,6 +19,13 @@
         width: 5rem;
     }
 
+    // The long "AVG 1v1 PICK" header leaves the short numeric cells looking
+    // roomy, so tighten only this column's right padding.
+    table th:nth-child(7),
+    table td:nth-child(7) {
+        padding-right: 0.2rem;
+    }
+
     .pokemon-stats-controls {
         display: flex;
         justify-content: space-between;

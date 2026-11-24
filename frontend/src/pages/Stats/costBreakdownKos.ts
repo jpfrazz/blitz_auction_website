@@ -1,4 +1,5 @@
 import { resolvePokemonIdentity } from '../../shared/utils/pokemonIdentity';
+import { isNonCasualRace } from './raceEligibility';
 import { findEggHatchStats, isEggAuction } from '../../utils/eggHatchStats';
 import type { RunStatLineage } from '../../utils/runStatLineage';
 import { getRunStatsByIcon, getRunStatsForPick } from '../../utils/runStatSummary';
@@ -78,17 +79,6 @@ function buildPickContext(
     guestIdsByUserId: buildGuestIdsByUserId(players),
     auctionsByDraft: buildAuctionsByDraft(auctions),
   };
-}
-
-type WinningRaceRef = { draft_type?: string | null; draft_id: string };
-
-function isEligibleWinningRace(
-  race: WinningRaceRef,
-  validAuctionDraftIds: Set<string>,
-  casualOneVOneDraftIds: Set<string>,
-): boolean {
-  if (race.draft_type === '1v1') return !casualOneVOneDraftIds.has(race.draft_id);
-  return validAuctionDraftIds.has(race.draft_id);
 }
 
 type OwnedRaceRef = Pick<WinningRace, 'team_id' | 'draft_id' | 'user_id' | 'guest_id'>;
@@ -185,7 +175,7 @@ export function computeWinHistoryByPokemonKey(
   }
 
   for (const race of races) {
-    if (!isEligibleWinningRace(race, validAuctionDraftIds, casualOneVOneDraftIds)) continue;
+    if (!isNonCasualRace(race, validAuctionDraftIds, casualOneVOneDraftIds)) continue;
 
     const ownedPicks = getOwnedPicksForRace(race, context);
     if (ownedPicks.length === 0) continue;
@@ -298,7 +288,7 @@ export function computeWinningPicksByPokemonKey(
   const context = buildPickContext(teams, players, auctions);
 
   for (const race of races) {
-    if (!isEligibleWinningRace(race, validAuctionDraftIds, casualOneVOneDraftIds)) continue;
+    if (!isNonCasualRace(race, validAuctionDraftIds, casualOneVOneDraftIds)) continue;
 
     const seenKeys = new Set<string>();
     for (const auction of getOwnedPicksForRace(race, context)) {
@@ -331,7 +321,7 @@ export function computeWinOpportunitiesByPokemonKey(
 
   for (const team of teams) {
     if (!team.has_boss_battles) continue;
-    if (!isEligibleWinningRace(team, validAuctionDraftIds, casualOneVOneDraftIds)) continue;
+    if (!isNonCasualRace(team, validAuctionDraftIds, casualOneVOneDraftIds)) continue;
 
     const accountIds = buildAccountIds([team.user_id, team.guest_id], guestIdsByUserId);
     const seenKeys = new Set<string>();

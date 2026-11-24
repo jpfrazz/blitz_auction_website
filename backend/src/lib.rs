@@ -8,6 +8,7 @@ use tower_sessions::{Expiry, cookie::time::Duration};
 
 use crate::draft::Draft;
 
+pub mod achievements;
 pub mod auction;
 pub mod db_writer;
 pub mod draft;

@@ -1,0 +1,224 @@
+@import '../../../shared/style/theme.scss';
+
+.player-achievements {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    box-sizing: border-box;
+    width: 100%;
+    min-width: 0;
+}
+
+.player-achievement-row {
+    display: flex;
+    flex-wrap: nowrap;
+    align-items: center;
+    gap: 0.5rem;
+    width: 100%;
+    min-width: 0;
+    overflow: visible;
+}
+
+.player-achievement {
+    display: flex;
+    flex: 0 0 auto;
+    align-items: center;
+    min-width: 0;
+}
+
+.player-achievement-badge {
+    display: inline-grid;
+    grid-template-columns: 44px auto;
+    align-items: start;
+    column-gap: 0.5rem;
+    box-sizing: border-box;
+    width: fit-content;
+    max-width: min(26rem, 100%);
+    height: 52px;
+    padding: 0.3rem 0.6rem;
+    border: 1px solid $eb-border;
+    border-radius: 4px;
+    background: rgba(0, 0, 0, 0.28);
+    color: #fff;
+    font-size: 1.25rem;
+    font-weight: 600;
+    line-height: 1.2;
+    text-align: left;
+    cursor: pointer;
+    overflow: hidden;
+    transition: background-color 0.15s ease, border-color 0.15s ease;
+
+    img {
+        width: 44px;
+        height: 44px;
+        object-fit: contain;
+    }
+
+    &.is-expanded {
+        width: max-content;
+        height: auto;
+        min-height: 52px;
+        align-items: center;
+    }
+
+    &:hover,
+    &:focus-visible {
+        background: rgba(255, 255, 255, 0.1);
+        border-color: $eb-primary;
+        color: #fff;
+    }
+
+    &:focus-visible {
+        outline: 2px solid $eb-primary;
+        outline-offset: 2px;
+    }
+}
+
+.player-achievement-copy {
+    display: grid;
+    grid-template-rows: auto auto;
+    justify-items: start;
+    align-self: start;
+    min-width: 0;
+    color: #fff;
+}
+
+.player-achievement-name {
+    color: #fff;
+    justify-self: start;
+    white-space: nowrap;
+    transform: translateY(14px);
+    transition: transform 0.18s ease;
+}
+
+.player-achievement-badge.is-expanded .player-achievement-copy {
+    align-self: center;
+}
+
+.player-achievement-badge.is-expanded .player-achievement-name {
+    transform: translateY(0);
+}
+
+.player-achievement-description {
+    width: 0;
+    min-width: 0;
+    max-width: 15rem;
+    max-height: 0;
+    opacity: 0;
+    overflow: hidden;
+    color: rgba(255, 255, 255, 0.72);
+    font-size: 1.08rem;
+    font-weight: 400;
+    line-height: 1.35;
+    white-space: normal;
+    overflow-wrap: anywhere;
+
+    &.is-visible {
+        width: auto;
+        max-height: 8rem;
+        opacity: 1;
+    }
+}
+
+.player-achievement-admin {
+    position: relative;
+    display: inline-flex;
+}
+
+.player-achievement-admin-toggle {
+    display: inline-grid;
+    place-items: center;
+    width: 28px;
+    height: 28px;
+    padding: 0;
+    border: 1px dashed $eb-primary;
+    border-radius: 999px;
+    background: rgba(0, 0, 0, 0.28);
+    color: $eb-primary;
+    font-size: 1.4rem;
+    line-height: 1;
+    cursor: pointer;
+
+    &:hover,
+    &:focus-visible {
+        background: rgba(124, 185, 70, 0.15);
+        outline: none;
+    }
+}
+
+.player-achievement-admin-menu {
+    position: absolute;
+    z-index: 10;
+    top: calc(100% + 6px);
+    left: 0;
+    width: 260px;
+    max-height: 320px;
+    overflow-y: auto;
+    padding: 0.4rem;
+    border: 1px solid $eb-border;
+    border-radius: 6px;
+    background: #1d1f21;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
+}
+
+.player-achievement-admin-heading {
+    padding: 0.2rem 0.4rem 0.45rem;
+    color: $eb-text-muted;
+    font-size: 0.9rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+}
+
+.player-achievement-admin-option {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    width: 100%;
+    padding: 0.3rem 0.4rem;
+    border: 0;
+    border-radius: 4px;
+    background: transparent;
+    color: #fff;
+    font-size: 1rem;
+    text-align: left;
+    cursor: pointer;
+
+    img {
+        width: 18px;
+        height: 18px;
+        flex: 0 0 18px;
+        object-fit: contain;
+        opacity: 0.45;
+    }
+
+    span:nth-child(2) {
+        flex: 1 1 auto;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    &.is-earned img { opacity: 1; }
+
+    &:hover,
+    &:focus-visible {
+        background: rgba(255, 255, 255, 0.08);
+        color: #fff;
+        outline: none;
+    }
+
+    &:disabled { cursor: wait; opacity: 0.6; }
+}
+
+.player-achievement-admin-action {
+    flex: 0 0 auto;
+    color: $eb-primary;
+    font-size: 1.15rem;
+    font-weight: 700;
+}
+
+.player-achievement-admin-error {
+    padding: 0.4rem;
+    color: #ff8585;
+    font-size: 0.9rem;
+}

@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import {
   fetchMatchHistoryByUserId,
   fetchBossBattleHistory,
+  fetchHallOfFameEligible,
   fetchMyBossBattleSubmissions,
   submitBossBattleSubmission,
   withdrawBossBattleSubmission,
@@ -13,13 +14,25 @@ import {
 import BossBattleEditor, { normalizeSubmissionBattles } from '../../../shared/components/BossBattleEditor';
 import HallOfFameTeamEditor from '../../../shared/components/HallOfFameTeamEditor';
 import {
+  AdminHallOfFameEligibleEntry,
   HallOfFamePokemon,
   MatchHistoryTeam,
+  Pokemon,
   RunMonStat,
   StatsAuction,
   StatsPagePlayer,
   StatsPageResponse,
 } from '../../../types';
+import { fetchLeaderboard, fetchSeason2Leaderboard } from '../../../shared/api/users';
+import { fetchPokemonList } from '../../../shared/api/pokemon';
+import {
+  fetchManualAchievements,
+  ManualAchievementOverride,
+  setManualAchievement,
+} from '../../../shared/api/achievements';
+import { computePlayerAchievements, PlayerAchievement } from '../achievements';
+import { computePersonalBestSeconds, isNonCasualRace } from '../raceEligibility';
+import AchievementsPanel from './AchievementsPanel';
 import type { PlayerStatPill } from './playerStatPills';
 import { getPlayerStatPills } from './playerStatPills';
 import { getIconName } from '../../../utils/speciesUtils';
@@ -475,6 +488,16 @@ const PlayerSearchStatsTab: React.FC<PlayerSearchStatsTabProps> = ({
   const [playerMatchHistoryError, setPlayerMatchHistoryError] = useState<string | null>(null);
   const [bossBattleHistory, setBossBattleHistory] = useState<Map<number, BossBattleHistoryEntry[]>>(new Map());
   const [bossBattleHistoryLoading, setBossBattleHistoryLoading] = useState(false);
+  const [achievementSources, setAchievementSources] = useState<{
+    hallOfFame: AdminHallOfFameEligibleEntry[];
+    leaderboardIds: Set<string>;
+    pokemon: Pokemon[];
+  } | null>(null);
+  const [manualAchievements, setManualAchievements] = useState<Map<string, boolean>>(new Map());
+  const [achievementSavingIds, setAchievementSavingIds] = useState<Set<string>>(new Set());
+  const [achievementEditError, setAchievementEditError] = useState<string | null>(null);
+  const isAchievementAdmin = currentUserId === SITE_ADMIN_USER_ID;
+  const selectedUserId = selectedPlayer?.user_id;
   const [pokemonFilterQuery, setPokemonFilterQuery] = useState('');
   const [mySubmissions, setMySubmissions] = useState<Map<number, BossBattleSubmission>>(new Map());
   const [mySubmissionsLoading, setMySubmissionsLoading] = useState(false);
@@ -506,6 +529,44 @@ const PlayerSearchStatsTab: React.FC<PlayerSearchStatsTabProps> = ({
     }).catch(() => {});
     return () => { active = false; };
   }, []);
+
+  useEffect(() => {
+    let active = true;
+    Promise.all([
+      fetchHallOfFameEligible().catch(() => [] as AdminHallOfFameEligibleEntry[]),
+      fetchLeaderboard().catch(() => []),
+      fetchSeason2Leaderboard().catch(() => []),
+      fetchPokemonList().catch(() => [] as Pokemon[]),
+    ]).then(([hallOfFame, season1, season2, pokemon]) => {
+      if (!active) return;
+      setAchievementSources({
+        hallOfFame,
+        leaderboardIds: new Set([...season1, ...season2].map((entry) => entry.user_id)),
+        pokemon,
+      });
+    });
+    return () => { active = false; };
+  }, []);
+
+  useEffect(() => {
+    let active = true;
+    setAchievementEditError(null);
+    if (!selectedUserId) {
+      setManualAchievements(new Map());
+      return () => { active = false; };
+    }
+
+    setManualAchievements(new Map());
+    fetchManualAchievements(selectedUserId)
+      .then((overrides: ManualAchievementOverride[]) => {
+        if (!active) return;
+        setManualAchievements(new Map(overrides.map((override) => [override.achievement_id, override.earned])));
+      })
+      .catch(() => {
+        if (active) setManualAchievements(new Map());
+      });
+    return () => { active = false; };
+  }, [selectedUserId]);
 
   const uploadAvatar = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -670,7 +731,7 @@ const PlayerSearchStatsTab: React.FC<PlayerSearchStatsTabProps> = ({
   }, [playerMatchHistory, junkDraftIds]);
 
   const isCasualTeam = (team: MatchHistoryTeam) =>
-    team.draft_type !== '1v1' && !validDraftIds.has(team.draft_id);
+    !isNonCasualRace(team, validDraftIds, casual1v1DraftIds);
 
   const auctionMatchHistory = useMemo(() => {
     if (!displayMatchHistory) return null;
@@ -768,24 +829,24 @@ const PlayerSearchStatsTab: React.FC<PlayerSearchStatsTabProps> = ({
 
   const featuredPokemon = pokemonDraftSummary[0] ?? null;
 
+  const personalBestSeconds = useMemo(
+    () =>
+      computePersonalBestSeconds(
+        displayMatchHistory ?? [],
+        bossBattleHistory,
+        validDraftIds,
+        casual1v1DraftIds,
+      ),
+    [displayMatchHistory, bossBattleHistory, validDraftIds, casual1v1DraftIds],
+  );
+
   const personalBestTime = useMemo(() => {
-    let bestSeconds = Infinity;
-    (displayMatchHistory ?? []).forEach((team) => {
-      if (isCasualTeam(team)) return;
-      const battles = bossBattleHistory.get(team.team_id) ?? [];
-      battles.forEach((b) => {
-        if (b.is_loss) return;
-        if (b.trainer_id !== 804 && b.trainer_id !== 656) return;
-        const total = b.hours * 3600 + b.minutes * 60 + b.seconds;
-        if (total < bestSeconds) bestSeconds = total;
-      });
-    });
-    if (bestSeconds === Infinity) return null;
-    const h = Math.floor(bestSeconds / 3600);
-    const m = Math.floor((bestSeconds % 3600) / 60);
-    const s = bestSeconds % 60;
+    if (personalBestSeconds === null) return null;
+    const h = Math.floor(personalBestSeconds / 3600);
+    const m = Math.floor((personalBestSeconds % 3600) / 60);
+    const s = personalBestSeconds % 60;
     return `${h > 0 ? `${h}h ` : ''}${m}m ${s}s`;
-  }, [displayMatchHistory, bossBattleHistory]);
+  }, [personalBestSeconds]);
 
   const totalGames = displayMatchHistory?.length ?? 0;
 
@@ -928,6 +989,59 @@ const PlayerSearchStatsTab: React.FC<PlayerSearchStatsTabProps> = ({
     });
     return map;
   }, [displayMatchHistory, globalPokemonPrices]);
+
+  const playerAchievements = useMemo(() => {
+    if (!selectedPlayer || !achievementSources || !displayMatchHistory) return [];
+    return computePlayerAchievements({
+      player: selectedPlayer,
+      identityIds: selectedPlayerIdentityIds,
+      matchHistory: displayMatchHistory,
+      bossBattleHistory,
+      hallOfFame: achievementSources.hallOfFame,
+      leaderboardIds: achievementSources.leaderboardIds,
+      allTeams: stats?.teams ?? [],
+      auctions: stats?.auctions ?? [],
+      allPlayers: stats?.players ?? [],
+      pokemon: achievementSources.pokemon,
+      validDraftIds,
+      casual1v1DraftIds,
+      rmvByTeamId: draftRmvMap,
+      manualOverrides: manualAchievements,
+    });
+  }, [
+    selectedPlayer,
+    achievementSources,
+    displayMatchHistory,
+    selectedPlayerIdentityIds,
+    stats?.teams,
+    stats?.auctions,
+    stats?.players,
+    bossBattleHistory,
+    validDraftIds,
+    casual1v1DraftIds,
+    draftRmvMap,
+    manualAchievements,
+  ]);
+
+  const handleToggleAchievement = async (achievement: PlayerAchievement) => {
+    if (!selectedUserId || achievementSavingIds.has(achievement.id)) return;
+    const nextEarned = !achievement.earned;
+    setAchievementSavingIds((current) => new Set(current).add(achievement.id));
+    setAchievementEditError(null);
+    try {
+      await setManualAchievement(selectedUserId, achievement.id, nextEarned);
+      setManualAchievements((current) => new Map(current).set(achievement.id, nextEarned));
+    } catch (error) {
+      console.error('[PlayerSearchStatsTab] Error updating achievement:', error);
+      setAchievementEditError('Could not update achievements. Please try again.');
+    } finally {
+      setAchievementSavingIds((current) => {
+        const next = new Set(current);
+        next.delete(achievement.id);
+        return next;
+      });
+    }
+  };
 
   const averageRmv = useMemo(() => {
     if (!auctionMatchHistory || auctionMatchHistory.length === 0) return null;
@@ -1354,7 +1468,8 @@ const PlayerSearchStatsTab: React.FC<PlayerSearchStatsTabProps> = ({
                     <div className="player-draft-overview-header">
                       <div>
                         {selectedPlayer && (
-                          <div className="player-draft-overview-profile-name" style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '8px' }}>
+                          <>
+                          <div className="player-draft-overview-profile-name" style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: '8px 12px', marginBottom: '8px' }}>
                             <div className="profile-avatar-wrapper">
                               <img
                                 key={`${selectedPlayer.user_id}-${avatarVersion}`}
@@ -1377,6 +1492,17 @@ const PlayerSearchStatsTab: React.FC<PlayerSearchStatsTabProps> = ({
                               {selectedPlayer.global_name && <div style={{ fontSize: '1rem', opacity: 0.8 }}>({selectedPlayer.global_name})</div>}
                             </div>
                           </div>
+                          <div className="player-achievements-section">
+                            <AchievementsPanel
+                              key={selectedPlayer.user_id}
+                              achievements={playerAchievements}
+                              canEdit={isAchievementAdmin}
+                              savingIds={achievementSavingIds}
+                              editError={achievementEditError}
+                              onToggleAchievement={handleToggleAchievement}
+                            />
+                          </div>
+                          </>
                         )}
                         {avatarError && <div className="profile-avatar-error" role="alert">{avatarError}</div>}
                         <div className="player-draft-overview-kickers">
@@ -1673,13 +1799,19 @@ const PlayerSearchStatsTab: React.FC<PlayerSearchStatsTabProps> = ({
                               <span className="match-opponents-empty">Unknown</span>
                             ) : opponents.map((opponent, index) => (
                               <React.Fragment key={opponent.teamId}>
-                                {index > 0 && <span className="match-opponents-separator">,</span>}
+                                {index > 0 && <span className="match-opponents-separator">•</span>}
                                 <a
                                   className="match-opponents-link"
                                   href={`/Stats/PlayerProfiles/${encodeURIComponent(opponent.name)}?userId=${encodeURIComponent(opponent.userId)}`}
                                   title={`Open ${opponent.name}'s profile`}
                                 >
-                                  {opponent.name}
+                                  <img
+                                    className="match-opponents-avatar"
+                                    src={getAvatarUrl(opponent.userId)}
+                                    alt=""
+                                    onError={onAvatarError}
+                                  />
+                                  <span>{opponent.name}</span>
                                 </a>
                               </React.Fragment>
                             ))}

@@ -199,6 +199,11 @@
         }
     }
 
+    .player-achievements-section {
+        margin: 0.25rem 0 0.6rem;
+        min-width: 0;
+    }
+
     .player-draft-overview-kicker {
         display: inline-block;
         font-size: 0.9rem;
@@ -621,7 +626,7 @@
     .match-opponents {
         display: flex;
         flex-wrap: wrap;
-        align-items: baseline;
+        align-items: center;
         column-gap: 0.35rem;
         row-gap: 0.2rem;
         margin-bottom: 0.7rem;
@@ -637,6 +642,9 @@
     }
 
     .match-opponents-link {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.3rem;
         color: #fff;
         text-decoration: none;
 
@@ -646,7 +654,20 @@
         }
     }
 
-    .match-opponents-separator,
+    .match-opponents-avatar {
+        width: 1.5rem;
+        height: 1.5rem;
+        flex: 0 0 auto;
+        border-radius: 50%;
+        object-fit: cover;
+        background: $eb-surface;
+    }
+
+    .match-opponents-separator {
+        color: $eb-border;
+        line-height: 1;
+    }
+
     .match-opponents-empty {
         color: $eb-text-muted;
     }
