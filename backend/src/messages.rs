@@ -79,6 +79,27 @@ pub struct SaveData {
     /// each save so same-PID split evolutions (Ninjask/Shedinja) stay distinct.
     #[serde(default)]
     pub fainted_keys: Vec<String>,
+    /// Snapshots of rental Pokemon that have been returned to the NPC. Their
+    /// KO/turn counters lived only on the Pokemon, so without a snapshot the
+    /// numbers disappear from the run along with the rentals.
+    #[serde(default)]
+    pub rental_history: Vec<RentalStat>,
+}
+
+/// A rental Pokemon that is no longer in the party/PC. Kept in the save JSON
+/// (not a separate table) so old teams deserialize with an empty history.
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct RentalStat {
+    pub species_id: u16,
+    pub personality: u32,
+    pub nickname: String,
+    pub ko_count: Option<u16>,
+    pub total_turns: Option<u16>,
+    /// Box Pokemon don't carry a level in the save layout.
+    pub level: Option<u8>,
+    pub fainted: bool,
+    /// Badge count when the snapshot was taken; rentals happen in badge order.
+    pub badge_count: u16,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]

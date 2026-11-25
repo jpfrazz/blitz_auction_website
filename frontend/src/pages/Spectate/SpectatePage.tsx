@@ -7,6 +7,7 @@ import { MOVES } from '../../utils/movesData';
 import { SaveData, formatMapName } from '../../utils/parseSaveFile';
 import { cloneFaintedMap, hasFaintedKey, recordFaintedFromSave, type FaintedMap } from '../../utils/faintedTracking';
 import { formatMonTotalsLine } from '../../utils/monTooltip';
+import { getChampionName } from '../../utils/runCompletion';
 import { fetchDraftById } from '../../shared/api/draftData';
 import { fetchPokemonList, fetchRentalPokemonList } from '../../shared/api/pokemon';
 import './SpectatePage.scss';
@@ -41,17 +42,6 @@ const NATURE_EFFECTS: Record<string, string> = {
 };
 
 type PlayerSave = { displayName: string; save: SaveData | null };
-
-// Returns "Wally" or "Steven" when the player has a champion win on their
-// trainer card (Wally = 656, Steven = 804), otherwise null. Used to display
-// "(Beat Wally!)" / "(Beat Steven!)" once the save reaches the museum.
-function getChampionName(saveData: SaveData | null | undefined): string | null {
-  const wins = saveData?.trainer_card_wins;
-  if (!wins || wins.length === 0) return null;
-  const championWins = wins.filter(w => !w.is_loss && (w.trainer_id === 656 || w.trainer_id === 804));
-  if (championWins.length === 0) return null;
-  return championWins[championWins.length - 1].trainer_id === 804 ? 'Steven' : 'Wally';
-}
 
 // In-game seconds elapsed when a player obtained their Nth badge, derived from
 // the gym leader win on their trainer card with version === N. Used to break

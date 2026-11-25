@@ -1,6 +1,7 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import Home from './pages/Home/Home';
 import AuctionSetup from './pages/AuctionSetup/AuctionSetup';
 import TeamPlanner from './pages/TeamPlanner/TeamPlanner';
@@ -33,14 +34,23 @@ if ('scrollRestoration' in window.history) {
 // Restore the header +/- page zoom before the first paint.
 applyPageZoom(getStoredPageZoom() ?? DEFAULT_PAGE_ZOOM);
 
+// Profile data is cached here so revisiting a player is instant. Keep retries
+// conservative: a missing profile is usually a bad URL, not a flaky request.
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: { staleTime: 60_000, retry: 1, refetchOnWindowFocus: false },
+  },
+});
+
 const container = document.getElementById('root');
 if (container) {
   const root = ReactDOM.createRoot(container);
   root.render(
     <React.StrictMode>
-      <Router>
-        <ScrollToTop />
-        <Routes>
+      <QueryClientProvider client={queryClient}>
+        <Router>
+          <ScrollToTop />
+          <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/AuctionSetup" element={<AuctionSetup />} />
           <Route path="/Draft1v1Setup" element={<Draft1v1Setup />} />
@@ -67,8 +77,9 @@ if (container) {
           <Route path="/Spectate" element={<SpectatePage />} />
           <Route path="/Spectate/:draftId" element={<SpectatePage />} />
           <Route path="/SaveReader" element={<SaveUploaderPage />} />
-        </Routes>
-      </Router>
+          </Routes>
+        </Router>
+      </QueryClientProvider>
     </React.StrictMode>
   );
 } else {

@@ -240,6 +240,20 @@ export interface RunMonStat {
   fainted: boolean;
 }
 
+/** A rental Pokémon that was returned to the NPC, with its final run stats. */
+export interface RentalStat {
+  species_id: number;
+  personality: number;
+  nickname?: string | null;
+  ko_count: number | null;
+  total_turns: number | null;
+  /** Box Pokémon don't carry a level in the save layout. */
+  level: number | null;
+  fainted: boolean;
+  /** Badge count when the snapshot was taken; rentals happen in badge order. */
+  badge_count: number;
+}
+
 export interface MatchHistoryTeam {
   team_id: number;
   user_id: string | null;
@@ -256,6 +270,8 @@ export interface MatchHistoryTeam {
   pre_match_mmr: number | null;
   hall_of_fame_team?: HallOfFamePokemon[] | null;
   run_stats?: RunMonStat[] | null;
+  /** Returned rentals plus any still held at the final save. */
+  rental_stats?: RentalStat[] | null;
   updated_at: string;
   created_at: string;
 }
@@ -324,6 +340,41 @@ export interface StatsPageResponse {
   legacy: StatsLegacyPick[];
   winning_run_kos: WinningRunKoSample[];
   winning_races: WinningRace[];
+}
+
+/** One sale in a valid draft, used to reconstruct the pool as of a date. */
+export interface PoolEntry {
+  date: string;
+  key: string;
+}
+
+/** Cumulative price total/count up to and including `date`. */
+export interface PricePoint {
+  date: string;
+  total: number;
+  count: number;
+}
+
+export interface PlayerIdLookup {
+  user_id: string;
+}
+
+export interface PokemonKeyRow {
+  key: string;
+  name: string;
+  form: string;
+}
+
+/** Scoped payload for a single player profile (GET /api/stats/player/:id). */
+export interface PlayerProfileResponse {
+  /** Stats narrowed to drafts this player joined. */
+  stats: StatsPageResponse;
+  /** Average sale price per identity key across all valid drafts + legacy. */
+  global_prices: Record<string, number>;
+  pool_entries: PoolEntry[];
+  price_history: Record<string, PricePoint[]>;
+  valid_draft_ids: string[];
+  global_pokemon_keys: PokemonKeyRow[];
 }
 
 export interface AdminHallOfFameTeamEntry {

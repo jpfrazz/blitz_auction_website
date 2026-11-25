@@ -166,6 +166,14 @@ impl Server {
             .route("/leaderboard", get(stats::get_leaderboard))
             .route("/leaderboard/season2", get(stats::get_season2_leaderboard))
             .route("/stats", get(stats::get_stats_page_data))
+            .route(
+                "/stats/player/{user_id}",
+                get(stats::get_player_profile_stats),
+            )
+            .route(
+                "/stats/player-id/{username}",
+                get(stats::get_player_id_by_name),
+            )
             .route("/hall-of-fame-teams", get(handlers::get_hall_of_fame))
             .route("/avatar/{user_id}", get(handlers::get_user_avatar))
             .route(

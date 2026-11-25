@@ -4,6 +4,8 @@ import {
   DraftRaceResults,
   HallOfFamePokemon,
   MatchHistoryTeam,
+  PlayerIdLookup,
+  PlayerProfileResponse,
   RaceResultTeamUpdate,
   StatsPageResponse,
 } from "../../types";
@@ -15,6 +17,18 @@ export async function fetchMatchHistoryByUserId(userId: string): Promise<MatchHi
 
 export async function fetchStatsPageData(): Promise<StatsPageResponse> {
   const response = await axios.get('/api/stats');
+  return response.data;
+}
+
+/** Player-scoped stats plus the compact global aggregates the profile needs. */
+export async function fetchPlayerProfileStats(userId: string): Promise<PlayerProfileResponse> {
+  const response = await axios.get(`/api/stats/player/${encodeURIComponent(userId)}`);
+  return response.data;
+}
+
+/** Resolve a legacy name-only profile URL to a stable user id. */
+export async function fetchPlayerIdByName(username: string): Promise<PlayerIdLookup> {
+  const response = await axios.get(`/api/stats/player-id/${encodeURIComponent(username)}`);
   return response.data;
 }
 

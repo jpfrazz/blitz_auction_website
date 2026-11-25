@@ -1,5 +1,6 @@
 import type { SaveBoxPokemon, SavePokemon } from './parseSaveFile';
 import { getMonIdentity } from './pokemonIdentity';
+import { isRentalSpeciesId } from './rentalPokemon';
 
 type EvolutionMetadataEntry = {
   evolves_from_id?: string | number | null;
@@ -24,6 +25,12 @@ export interface PartyInferenceState {
   departedSinceSave: Map<string, SavePokemon>;
   lastSeenParty: Map<string, SavePokemon>;
   lastPartyKeys: Set<string>;
+  /**
+   * Rental identities observed leaving the live party. A returned rental is
+   * truly gone from the player's roster — it is not a box move — so these keys
+   * must never be preserved in the inferred box, even by a stale `.sav`.
+   */
+  returnedRentals: Set<string>;
   evolution: EvolutionMaps;
 }
 
@@ -85,6 +92,7 @@ export const createPartyInferenceState = (pokemonById?: PokemonByIdLike): PartyI
   departedSinceSave: new Map(),
   lastSeenParty: new Map(),
   lastPartyKeys: new Set(),
+  returnedRentals: new Set(),
   evolution: buildEvolutionMaps(pokemonById),
 });
 
@@ -101,6 +109,7 @@ export const resetPartyInferenceState = (state: PartyInferenceState): void => {
   state.departedSinceSave.clear();
   state.lastSeenParty.clear();
   state.lastPartyKeys.clear();
+  state.returnedRentals.clear();
   // `evolution` is catalog metadata, not game state, so it survives a reset.
 };
 
@@ -157,12 +166,25 @@ export const applyPartyInference = (state: PartyInferenceState, party: SavePokem
     state.lastSeenParty.set(key, mon);
     state.inferredBox.delete(key);
     state.departedSinceSave.delete(key);
+    // A rental seen in the live party is still owned — clear any stale
+    // "returned" marker (e.g. the same identity was rented again).
+    state.returnedRentals.delete(key);
   }
 
   for (const key of Array.from(state.lastPartyKeys)) {
     if (newKeys.has(key) || state.inferredBox.has(key)) continue;
     const data = state.lastSeenParty.get(key);
     if (!data) continue;
+
+    if (isRentalSpeciesId(data.species_id)) {
+      // Returned rentals leave the roster entirely. Never preserve them as a
+      // ghost box entry the way we do for ordinary missing Pokémon.
+      state.inferredBox.delete(key);
+      state.departedSinceSave.delete(key);
+      state.lastSeenParty.delete(key);
+      state.returnedRentals.add(key);
+      continue;
+    }
 
     if (evolvedInto(data, party, state)) {
       // The pre-evolution ceased to exist; it did not move to the box.
@@ -184,6 +206,10 @@ export const applyPartyInference = (state: PartyInferenceState, party: SavePokem
  * against the most recent live party read. Identity is composite so a live
  * Ninjask can never mask a Shedinja (or vice versa) that shares its PID, and
  * lineage data keeps a stale save's pre-evolution out of the box after evolution.
+ *
+ * Rentals are exempt from the "missing mon" preservation: once a rental has
+ * been seen leaving the live party it is treated as returned, so a stale save
+ * cannot put it back in the box.
  */
 export const reconcileBoxFromSave = (
   state: PartyInferenceState,
@@ -195,9 +221,23 @@ export const reconcileBoxFromSave = (
   const savePartyKeys = new Set(saveParty.map(getMonIdentity));
   const liveKeys = liveParty ? new Set(liveParty.map(getMonIdentity)) : savePartyKeys;
 
+  // A live read is authoritative: a rental present there is still owned.
+  if (liveParty) {
+    for (const key of Array.from(liveKeys)) state.returnedRentals.delete(key);
+  }
+
   // Anything the snapshot accounts for — or that has since evolved — is no
-  // longer an unconfirmed departure.
+  // longer an unconfirmed departure. Returned rentals are never unconfirmed
+  // departures: they left the roster for good.
   for (const [key, data] of Array.from(state.departedSinceSave)) {
+    if (isRentalSpeciesId(data.species_id)) {
+      state.departedSinceSave.delete(key);
+      if (!liveKeys.has(key)) {
+        state.lastSeenParty.delete(key);
+        state.returnedRentals.add(key);
+      }
+      continue;
+    }
     if (
       saveBoxKeys.has(key) ||
       savePartyKeys.has(key) ||
@@ -208,7 +248,11 @@ export const reconcileBoxFromSave = (
   }
 
   const rebuilt = new Map<string, SavePokemon>();
-  for (const mon of saveBox) rebuilt.set(getMonIdentity(mon), mon as unknown as SavePokemon);
+  for (const mon of saveBox) {
+    const key = getMonIdentity(mon);
+    if (state.returnedRentals.has(key)) continue;
+    rebuilt.set(key, mon as unknown as SavePokemon);
+  }
   for (const [key, data] of Array.from(state.departedSinceSave)) rebuilt.set(key, data);
 
   // Mons the snapshot still listed in the party that have since left it.
@@ -218,6 +262,12 @@ export const reconcileBoxFromSave = (
     const key = getMonIdentity(mon);
     if (liveKeys.has(key)) continue;
     if (liveParty && evolvedInto(mon, liveParty, state)) continue;
+    if (isRentalSpeciesId(mon.species_id)) {
+      // The save predates a rental return — do not resurrect it as a box mon.
+      state.returnedRentals.add(key);
+      state.lastSeenParty.delete(key);
+      continue;
+    }
     rebuilt.set(key, mon);
   }
 

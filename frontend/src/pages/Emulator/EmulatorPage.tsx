@@ -7,6 +7,7 @@ import { getIconName, createResolveMetadata, isActuallyNicknamed } from '../../u
 import { SPECIES_BY_ID } from '../../utils/speciesIdMap';
 import { getMonIdentity } from '../../utils/pokemonIdentity';
 import { cloneFaintedMap, hasFaintedKey, recordFaintedFromSave, type FaintedMap } from '../../utils/faintedTracking';
+import { hasChampionWin, getChampionName, isRunFinishedFor } from '../../utils/runCompletion';
 import { formatMonTotalsLine } from '../../utils/monTooltip';
 import {
   createPartyInferenceState,
@@ -555,17 +556,6 @@ async function deleteStoredSave(key: string): Promise<void> {
 
 // Map of user_id → latest parsed save for other draft players
 type OtherPlayerSaves = Record<string, { displayName: string; save: SaveData | null; mapName?: string; inBattle?: boolean; enemyParty?: EnemyMon[] }>;
-
-// Returns "Wally" or "Steven" when the player has a champion win on their
-// trainer card (Wally = 656, Steven = 804), otherwise null. Used to display
-// "(Beat Wally!)" / "(Beat Steven!)" once the save reaches the museum.
-function getChampionName(saveData: SaveData | null | undefined): string | null {
-  const wins = saveData?.trainer_card_wins;
-  if (!wins || wins.length === 0) return null;
-  const championWins = wins.filter(w => !w.is_loss && (w.trainer_id === 656 || w.trainer_id === 804));
-  if (championWins.length === 0) return null;
-  return championWins[championWins.length - 1].trainer_id === 804 ? 'Steven' : 'Wally';
-}
 
 // In-game seconds elapsed when a player obtained their Nth badge, derived from
 // the gym leader win on their trainer card with version === N. Used to break
@@ -1129,6 +1119,17 @@ const EmulatorPage: React.FC = () => {
   // that was just recorded on the backend.
   const forfeitedRef = useRef(false);
 
+  // A .sav that carries a win over Wally/Steven is the run's final save. From
+  // then on the site must ignore everything the emulator reports — players
+  // often remain in the Lilycove Museum fighting trainers for extra KOs, and
+  // those post-game gains must never reach the recorded run stats. The flag is
+  // tied to the draft id because the router reuses this component for a
+  // different draft; a state/ROM reload keeps the id, so it cannot unfreeze a
+  // finished run.
+  const finishedDraftIdRef = useRef<string | null>(null);
+  const runKey = draftId ?? 'standalone';
+  const isRunFinished = () => isRunFinishedFor(finishedDraftIdRef.current, runKey);
+
   // ── Live party reads from the WASM heap ──────────────────────────────────
   // The libretro mGBA core keeps the GBA's EWRAM (and with it the live party)
   // in the WASM heap, reachable via gameManager.Module.HEAPU8. We scan once to
@@ -1264,7 +1265,9 @@ const EmulatorPage: React.FC = () => {
         credentials: 'include',
       }).catch(() => { });
     }
-    // Reset inference state when a state is loaded - the game state has gone back in time
+    // Reset inference state when a state is loaded - the game state has gone back in time.
+    // The run-finished flag deliberately survives: a champion win is permanent,
+    // so reloading a state in the museum cannot restart stat tracking.
     resetPartyInferenceState(inferenceRef.current);
     // Also reset live party state to force re-detection of current party
     livePartyHashRef.current = '';
@@ -1650,7 +1653,7 @@ const EmulatorPage: React.FC = () => {
 
   // Shared POST helper used by both the .sav flush path and the live heap path.
   const postSaveToBackend = (parsed: SaveData, extra?: Record<string, unknown>) => {
-    if (!draftId) return;
+    if (!draftId || isRunFinished()) return;
     // Faint bookkeeping is display-only. It must never be able to throw before
     // the fetch below, or a save would silently never reach the other players.
     let storedKeys: string[] = [];
@@ -1771,7 +1774,7 @@ const EmulatorPage: React.FC = () => {
   // across poll ticks) until a valid party is located, e.g. right after the
   // game boots or after a hard reset.
   livePollRef.current = () => {
-    if (forfeitedRef.current) return;
+    if (forfeitedRef.current || isRunFinished()) return;
     // No .sav parsed yet → there is nothing to merge into, so skip the heap
     // scan entirely. Before the player makes the initial in-game save there is
     // also no party in RAM, so scanning would burn main-thread time and starve
@@ -2203,8 +2206,9 @@ const EmulatorPage: React.FC = () => {
   };
   onRawSaveBytesRef.current = (bytes: Uint8Array) => {
     // Ignore saves that arrive after a forfeit (e.g. the one the emulator
-    // writes while exiting) so they can't overwrite the recorded loss.
-    if (forfeitedRef.current) return;
+    // writes while exiting) so they can't overwrite the recorded loss, and
+    // everything after the champion win is post-game — the run is frozen.
+    if (forfeitedRef.current || isRunFinished()) return;
     latestSaveBytesRef.current = bytes;
     setHasSaveBytes(true);
     let parsed: SaveData;
@@ -2302,9 +2306,7 @@ const EmulatorPage: React.FC = () => {
     // left it, and the Lilycove Museum is reachable before beating the game,
     // so the map is not a reliable signal. A party is at most 6 Pokemon, so
     // cap it defensively. The backend only keeps the first one.
-    const beatChampion = (parsed.trainer_card_wins ?? []).some(w =>
-      !w.is_loss && (w.trainer_id === 656 || w.trainer_id === 804)
-    );
+    const beatChampion = hasChampionWin(parsed);
     const hallOfFameTeam = beatChampion
       ? (syncedSave.party ?? []).slice(0, 6).map((mon: any) => {
         const speciesId = mon.species_id ?? mon.speciesId;
@@ -2319,8 +2321,13 @@ const EmulatorPage: React.FC = () => {
       })
       : undefined;
 
+    // This is the final save of the run — post it (with the Hall of Fame team)
+    // and then freeze. Any later .sav flush or live heap read is post-game.
     if (draftId) {
       postSaveToBackend(syncedSave, hallOfFameTeam ? { hall_of_fame_team: hallOfFameTeam } : undefined);
+    }
+    if (beatChampion) {
+      finishedDraftIdRef.current = runKey;
     }
   };
 
@@ -2345,6 +2352,8 @@ const EmulatorPage: React.FC = () => {
       faintedHydratedRef.current.clear();
       setMarkedPids(new Set());
       resetPartyInferenceState(inferenceRef.current);
+      // Keep the finished-draft marker: once a champion win was recorded for
+      // this team, replacing the emulator state cannot restart stat tracking.
       livePartyOffsetRef.current = null;
       livePartyHashRef.current = '';
       livePartyProvenLiveRef.current = false;
@@ -3438,9 +3447,9 @@ const EmulatorPage: React.FC = () => {
     };
   }, [isResizing, onResizeMove, onResizeEnd]);
 
-  // Once the player beats the champion (Steven/Wally) and warps into the
-  // Lilycove Museum the run is over, so there's nothing left to forfeit to.
-  const runIsOver = !!getChampionName(mySaveData) && mySaveData?.map_name === 'LilycoveCity_LilycoveMuseum_1F';
+  // A champion win is the finish line (the museum alone is reachable earlier),
+  // so there is nothing left to forfeit once one is recorded.
+  const runIsOver = hasChampionWin(mySaveData);
 
   return (
     <div className="emulator-page">

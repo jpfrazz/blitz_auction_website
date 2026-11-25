@@ -1,11 +1,13 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Navigate, useNavigate, useParams, useSearchParams } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
 import Header from '../../shared/components/Header';
 import { fetchStatsPageData } from '../../shared/api/stats';
-import { StatsPagePlayer, StatsPageResponse, StatsPageTeamRow } from '../../types';
+import { StatsPagePlayer, StatsPageTeamRow } from '../../types';
 import PokemonStatsTab from './components/PokemonStatsTab';
 import PokemonPriceHistoryChart from './PokemonPriceHistoryChart';
 import PlayerSearchStatsTab from './components/PlayerSearchStatsTab';
+import PlayerProfileStatsTab from './components/PlayerProfileStatsTab';
 import TierListTab from './components/TierListTab';
 import RaceResultsTab from './components/RaceResultsTab';
 import HallOfFameStatsTab from './components/HallOfFameStatsTab';
@@ -120,10 +122,11 @@ const Stats: React.FC = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const { tab: tabSegment, username } = useParams<{ tab?: string; username?: string }>();
-  const [stats, setStats] = useState<StatsPageResponse | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const initialUserId = searchParams.get('userId') ?? undefined;
+  // A URL that already names a player goes straight to that profile. The icon
+  // prewarm below exists only to keep the top-150 racer grid from popping in
+  // empty, so profile requests must not pay for it.
+  const isProfileRoute = Boolean(username || initialUserId);
   const teamIdParam = searchParams.get('teamId');
   const parsedTeamId = teamIdParam ? Number(teamIdParam) : NaN;
   const initialTeamId = Number.isFinite(parsedTeamId) ? parsedTeamId : undefined;
@@ -134,21 +137,12 @@ const Stats: React.FC = () => {
   const [showCasual, setShowCasual] = useState(false);
   const [show1v1s, setShow1v1s] = useState(false);
   const [gridColumns, setGridColumns] = useState<number>(0);
-  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
-
-  useEffect(() => {
-    let cancelled = false;
-    fetchCurrentUser()
-      .then((user) => {
-        if (!cancelled) {
-          setCurrentUserId(user.user_id);
-        }
-      })
-      .catch((e) => console.error('[Stats] Error fetching current user:', e));
-    return () => {
-      cancelled = true;
-    };
-  }, []);
+  const { data: currentUser } = useQuery({
+    queryKey: ['current-user'],
+    queryFn: fetchCurrentUser,
+    staleTime: 5 * 60_000,
+  });
+  const currentUserId = currentUser?.user_id ?? null;
 
   useEffect(() => {
     if (!expandedDraftId) {
@@ -176,51 +170,34 @@ const Stats: React.FC = () => {
     };
   }, [expandedDraftId, draftSortMode]);
 
-  useEffect(() => {
-    const load = async () => {
-      try {
-        console.log('[Stats] Starting stats data fetch...');
-        setLoading(true);
-        const data = await fetchStatsPageData();
-        console.log('[Stats] Fetched stats data successfully:', {
-          playerCount: data.players.length,
-          teamCount: data.teams.length,
-          auctionCount: data.auctions.length,
-          legacyCount: data.legacy?.length ?? 0,
-        });
-
-        // Warm the icons for the rows that are actually on screen so the entrance
-        // animation never plays over an empty image slot. This used to await
-        // *every* mini icon in the dataset (~1.1k of them) in one Promise.all,
-        // which held the page on "Loading stats..." for the slowest request and
-        // then dumped ~1.1k PNG decodes onto the main thread at the exact moment
-        // the stagger began. The cap keeps the reveal snappy, the budget stops a
-        // single slow icon from stalling it, and the remaining rows now load
-        // lazily (see loading="lazy" on the row icons) as they are scrolled to.
-        const iconNames: string[] = [];
-        const seenIconNames = new Set<string>();
-        const collectIconName = (name: string) => {
-          if (name && !seenIconNames.has(name)) {
-            seenIconNames.add(name);
-            iconNames.push(name);
-          }
-        };
-        data.auctions.forEach((a) => collectIconName(a.name));
-        data.legacy?.forEach((l: any) => collectIconName(l.pokemon));
-
-        await preloadIcons(iconNames.slice(0, PRELOAD_ICON_COUNT), PRELOAD_ICON_BUDGET_MS);
-
-        setStats(data);
-      } catch (e: any) {
-        console.error('[Stats] Error fetching stats data:', e);
-        setError('Failed to load stats data.');
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    load();
-  }, []);
+  // Profile routes fetch a scoped payload inside PlayerProfileStatsTab; the
+  // global grid is only needed for the list/other tabs. React Query keeps it
+  // cached so navigating back from a profile is instant.
+  const statsQuery = useQuery({
+    queryKey: ['global-stats'],
+    queryFn: async () => {
+      const data = await fetchStatsPageData();
+      // Warm the icons for the rows actually on screen before exposing the
+      // data, so the entrance animation never plays over an empty slot. The
+      // cap and budget stop one slow icon from stalling the reveal.
+      const iconNames: string[] = [];
+      const seenIconNames = new Set<string>();
+      const collectIconName = (name: string) => {
+        if (name && !seenIconNames.has(name)) {
+          seenIconNames.add(name);
+          iconNames.push(name);
+        }
+      };
+      data.auctions.forEach((a) => collectIconName(a.name));
+      data.legacy?.forEach((l) => collectIconName(l.pokemon));
+      await preloadIcons(iconNames.slice(0, PRELOAD_ICON_COUNT), PRELOAD_ICON_BUDGET_MS);
+      return data;
+    },
+    enabled: !isProfileRoute,
+  });
+  const stats = statsQuery.data ?? null;
+  const loading = statsQuery.isLoading;
+  const error = statsQuery.isError ? 'Failed to load stats data.' : null;
 
   const playersById = useMemo(() => {
     console.log('[Stats] Building playersById map from', stats?.players?.length ?? 0, 'players');
@@ -622,26 +599,6 @@ const Stats: React.FC = () => {
     return <Navigate to={`/Stats/PlayerProfiles/${encodeURIComponent(tabSegment)}`} replace />;
   }
 
-  if (loading) {
-    return (
-      <div className="match-history-page">
-        <Header />
-        <main className="match-history-main">Loading stats...</main>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="match-history-page">
-        <Header />
-        <main className="match-history-main">
-          <div className="match-history-error">{error}</div>
-        </main>
-      </div>
-    );
-  }
-
   return (
     <div className="match-history-page">
       <Header />
@@ -691,6 +648,14 @@ const Stats: React.FC = () => {
           </button>
         </section>
 
+        {loading ? (
+          <section className="stats-panel">
+            {isProfileRoute ? 'Loading player profile...' : 'Loading stats...'}
+          </section>
+        ) : error ? (
+          <div className="match-history-error">{error}</div>
+        ) : (
+          <>
         {activeTab === 'pokemon' && (
           <PokemonStatsTab
             stats={stats}
@@ -1124,12 +1089,12 @@ const Stats: React.FC = () => {
           </section>
         )}
 
-        {activeTab === 'player-search' && (
-          <PlayerSearchStatsTab
-            stats={stats}
-            loading={loading}
-            error={error}
-            validDraftIds={validDraftIds}
+        {activeTab === 'player-search' && !isProfileRoute && (
+          <PlayerSearchStatsTab stats={stats} loading={loading} error={error} />
+        )}
+
+        {activeTab === 'player-search' && isProfileRoute && (
+          <PlayerProfileStatsTab
             initialUserId={initialUserId}
             initialUserName={username}
             initialTeamId={initialTeamId}
@@ -1146,6 +1111,8 @@ const Stats: React.FC = () => {
             stats={stats} 
             playersById={playersById}
           />
+        )}
+          </>
         )}
       </main>
     </div>

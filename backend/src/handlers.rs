@@ -5,8 +5,8 @@ use crate::{
     draft::{Draft, DraftLobbyResponse, DraftResponse, DraftSettings, DraftState, AutoBidResponse, RpsChoice},
     messages::{
         ChatMessage, ClientBidRequest, ClientBidResponse, ClientJoinResponse, ForfeitRequest,
-        HallOfFamePokemon, PostLocationRequest, PostSaveRequest, RunMonStat, SaveData, ServerMessage,
-        TrainerCardWin, get_trainer_name_by_id,
+        HallOfFamePokemon, PostLocationRequest, PostSaveRequest, RentalStat, RunMonStat, SaveData,
+        ServerMessage, TrainerCardWin, get_trainer_name_by_id,
     },
     pokemon::{self, Pokemon},
     pokemon_data_updater::{self, KeyMoveCsvRecord, PokemonCsvRecord},
@@ -170,6 +170,8 @@ pub struct MatchHistoryTeam {
     pub pre_match_mmr: Option<i32>,
     pub hall_of_fame_team: Option<Vec<HallOfFamePokemon>>,
     pub run_stats: Vec<RunMonStat>,
+    /// Returned rentals, plus any still in the party/PC at the last save.
+    pub rental_stats: Vec<RentalStat>,
     pub updated_at: chrono::DateTime<chrono::Utc>,
     pub created_at: chrono::DateTime<chrono::Utc>,
 }
@@ -994,6 +996,148 @@ pub(crate) fn build_run_stats(save_value: Option<serde_json::Value>) -> Vec<RunM
     stats
 }
 
+/// Species marked `Rental` in the catalog. The draft pool already excludes
+/// these, so seeing one in a save means it came from the Slateport rental NPC.
+fn rental_species_ids() -> HashSet<u16> {
+    pokemon::get_pokemon_data(&Vec::new())
+        .map(|pokemon| {
+            pokemon
+                .iter()
+                .filter(|p| p.obtain_method.as_deref() == Some("Rental"))
+                .map(|p| p.pokedex_id as u16)
+                .collect()
+        })
+        .unwrap_or_default()
+}
+
+fn rental_fainted(save: &SaveData, personality: u32, species_id: u16) -> bool {
+    let key = format!("{}-{}", personality, species_id);
+    save.fainted_keys
+        .iter()
+        .any(|entry| entry == &key || entry.starts_with(&format!("{}-", key)))
+        || save.fainted_pids.contains(&personality)
+}
+
+/// Rentals currently present in a save, keyed by identity. PID keeps two
+/// rentals of the same species (different badges) from collapsing together.
+fn active_rentals(save: &SaveData, rental_species: &HashSet<u16>) -> HashMap<(u32, u16), RentalStat> {
+    let mut rentals = HashMap::new();
+    for mon in &save.party {
+        if rental_species.contains(&mon.species_id) {
+            rentals.insert(
+                (mon.personality, mon.species_id),
+                RentalStat {
+                    species_id: mon.species_id,
+                    personality: mon.personality,
+                    nickname: mon.nickname.clone(),
+                    ko_count: mon.ko_count,
+                    total_turns: mon.total_turns,
+                    level: Some(mon.level),
+                    fainted: rental_fainted(save, mon.personality, mon.species_id),
+                    badge_count: save.badge_count,
+                },
+            );
+        }
+    }
+    for mon in &save.r#box {
+        if rental_species.contains(&mon.species_id) {
+            rentals.insert(
+                (mon.personality, mon.species_id),
+                RentalStat {
+                    species_id: mon.species_id,
+                    personality: mon.personality,
+                    nickname: mon.nickname.clone(),
+                    ko_count: mon.ko_count,
+                    total_turns: mon.total_turns,
+                    level: None,
+                    fainted: rental_fainted(save, mon.personality, mon.species_id),
+                    badge_count: save.badge_count,
+                },
+            );
+        }
+    }
+    rentals
+}
+
+fn push_rental_stat(history: &mut Vec<RentalStat>, stat: RentalStat) {
+    if history
+        .iter()
+        .any(|existing| existing.personality == stat.personality && existing.species_id == stat.species_id)
+    {
+        return;
+    }
+    history.push(stat);
+}
+
+/// Compact rental stats for the match-history response: archived returns plus
+/// rentals still in the party/PC at the final save.
+pub(crate) fn build_rental_stats(save_value: Option<serde_json::Value>) -> Vec<RentalStat> {
+    let Some(value) = save_value else {
+        return Vec::new();
+    };
+    let Ok(save) = serde_json::from_value::<SaveData>(value) else {
+        return Vec::new();
+    };
+    let rental_species = rental_species_ids();
+    let active = active_rentals(&save, &rental_species);
+    let mut stats = save.rental_history;
+    for stat in active.into_values() {
+        push_rental_stat(&mut stats, stat);
+    }
+    stats.sort_by_key(|stat| (stat.badge_count, stat.personality));
+    stats
+}
+
+/// Rental Pokémon are removed from the party/PC when returned, taking their
+/// KO/turn counters with them. The emulator posts the whole save on every
+/// party change, so the previous save still has the last snapshot: archive it
+/// as soon as the rental disappears from the incoming save.
+fn merge_rental_history(new_save: &mut serde_json::Value, old_save: Option<&serde_json::Value>) {
+    let rental_species = rental_species_ids();
+    if rental_species.is_empty() {
+        return;
+    }
+    merge_rental_history_for_species(new_save, old_save, &rental_species);
+}
+
+fn merge_rental_history_for_species(
+    new_save: &mut serde_json::Value,
+    old_save: Option<&serde_json::Value>,
+    rental_species: &HashSet<u16>,
+) {
+    let Some(old) = old_save else {
+        return;
+    };
+    let Ok(old_data) = serde_json::from_value::<SaveData>(old.clone()) else {
+        return;
+    };
+    let Ok(new_data) = serde_json::from_value::<SaveData>(new_save.clone()) else {
+        return;
+    };
+
+    let old_rentals = active_rentals(&old_data, rental_species);
+    let new_keys: HashSet<(u32, u16)> = active_rentals(&new_data, rental_species)
+        .into_keys()
+        .collect();
+
+    let mut history: Vec<RentalStat> = serde_json::from_value(
+        old.get("rental_history")
+            .cloned()
+            .unwrap_or_else(|| serde_json::json!([])),
+    )
+    .unwrap_or_default();
+
+    for (key, stat) in old_rentals {
+        if !new_keys.contains(&key) {
+            push_rental_stat(&mut history, stat);
+        }
+    }
+
+    if let Some(obj) = new_save.as_object_mut() {
+        obj.insert("rental_history".to_string(), serde_json::json!(history));
+    }
+}
+
 /// Faint records are cumulative: once a Pokémon has fainted it stays fainted
 /// even after being healed or moved to the PC. A client that reloaded mid-race
 /// posts an empty `fainted_keys` array, so replacing the stored save outright
@@ -1034,6 +1178,23 @@ fn merge_fainted_state(new_save: &mut serde_json::Value, old_save: Option<&serde
         }
     }
     obj.insert("fainted_pids".to_string(), serde_json::json!(pids));
+}
+
+/// True once a save records a non-loss win over Wally (656) or Steven (804).
+/// That trainer-card win is the run's finish line: players commonly stay in
+/// the Lilycove Museum afterwards to fight more trainers, so every save after
+/// this one is post-game and must not change the recorded run stats.
+fn save_has_champion_win(save: &serde_json::Value) -> bool {
+    save.get("trainer_card_wins")
+        .and_then(|wins| wins.as_array())
+        .map(|wins| {
+            wins.iter().any(|win| {
+                let is_loss = win.get("is_loss").and_then(|v| v.as_bool()).unwrap_or(false);
+                let trainer_id = win.get("trainer_id").and_then(|v| v.as_u64()).unwrap_or(0);
+                !is_loss && (trainer_id == 656 || trainer_id == 804)
+            })
+        })
+        .unwrap_or(false)
 }
 
 #[debug_handler]
@@ -1091,7 +1252,8 @@ pub async fn get_match_history_by_user_id(
         let save_value: Option<serde_json::Value> = row
             .try_get("save_data")
             .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-        let run_stats = build_run_stats(save_value);
+        let run_stats = build_run_stats(save_value.clone());
+        let rental_stats = build_rental_stats(save_value);
         history.push(MatchHistoryTeam {
             team_id: row
                 .try_get("team_id")
@@ -1127,6 +1289,7 @@ pub async fn get_match_history_by_user_id(
                 .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?,
             hall_of_fame_team,
             run_stats,
+            rental_stats,
             updated_at: row
                 .try_get("updated_at")
                 .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?,
@@ -3278,7 +3441,16 @@ pub async fn post_player_save(
             None
         }
     };
+    // The first save carrying a Wally/Steven win is the run's final save.
+    // Later posts are post-game (e.g. extra trainer fights in the Lilycove
+    // Museum) or stale clients reloading the finished .sav — neither may
+    // overwrite the frozen stats, boss history, or spectator state.
+    if old_save.as_ref().map_or(false, save_has_champion_win) {
+        return Ok(());
+    }
+
     merge_fainted_state(&mut json_value, old_save.as_ref());
+    merge_rental_history(&mut json_value, old_save.as_ref());
     sqlx::query(
         "UPDATE teams SET save_data = $1, updated_at = now()
          WHERE draft_id = $2
@@ -3532,6 +3704,12 @@ pub async fn post_player_forfeit(
     let team_id: i64 = row.get("team_id");
     let save_json: Option<serde_json::Value> = row.get("save_data");
 
+    // A finished run cannot be forfeited afterwards: the champion win already
+    // locked in the result, so a late loss must not overwrite its stats.
+    if save_json.as_ref().map_or(false, save_has_champion_win) {
+        return Ok(());
+    }
+
     let mut save_data: SaveData = match save_json {
         Some(value) => serde_json::from_value(value).map_err(|e| {
             (
@@ -3551,6 +3729,7 @@ pub async fn post_player_forfeit(
             most_recent_loss_name: None,
             fainted_pids: Vec::new(),
             fainted_keys: Vec::new(),
+            rental_history: Vec::new(),
         },
     };
 
@@ -6013,6 +6192,175 @@ mod fainted_state_tests {
 
         assert_eq!(new["fainted_keys"], json!(["9-197-40"]));
         assert_eq!(new["fainted_pids"], json!([9]));
+    }
+}
+
+#[cfg(test)]
+mod rental_history_tests {
+    use super::merge_rental_history_for_species;
+    use serde_json::{Value, json};
+    use std::collections::HashSet;
+
+    fn save_json(rentals: &[(u32, u16, Option<u16>, Option<u16>)], badges: u16) -> Value {
+        let party: Vec<Value> = rentals
+            .iter()
+            .map(|(pid, species, kos, turns)| {
+                json!({
+                    "personality": pid,
+                    "nickname": "Rental",
+                    "level": 29,
+                    "hp": 50,
+                    "max_hp": 50,
+                    "species_id": species,
+                    "nature": "Hardy",
+                    "ability_num": 0,
+                    "ivs": { "hp": 0, "atk": 0, "def": 0, "spa": 0, "spd": 0, "spe": 0 },
+                    "moves": [0, 0, 0, 0],
+                    "ko_count": kos,
+                    "total_turns": turns,
+                })
+            })
+            .collect();
+        json!({
+            "trainer_name": "T",
+            "money": 0,
+            "badge_count": badges,
+            "party": party,
+            "box": [],
+            "map_name": "",
+            "trainer_card_wins": [],
+            "most_recent_loss": null,
+            "most_recent_loss_name": null,
+            "fainted_pids": [],
+            "fainted_keys": [],
+        })
+    }
+
+    #[test]
+    fn a_returned_rental_is_archived_with_its_final_counts() {
+        let old = save_json(&[(123, 227, Some(4), Some(30))], 3);
+        let mut new = save_json(&[], 4);
+        let species = HashSet::from([227]);
+
+        merge_rental_history_for_species(&mut new, Some(&old), &species);
+
+        let history = new["rental_history"].as_array().unwrap();
+        assert_eq!(history.len(), 1);
+        assert_eq!(history[0]["species_id"], json!(227));
+        assert_eq!(history[0]["personality"], json!(123));
+        assert_eq!(history[0]["ko_count"], json!(4));
+        assert_eq!(history[0]["total_turns"], json!(30));
+        assert_eq!(history[0]["badge_count"], json!(3));
+        assert_eq!(history[0]["fainted"], json!(false));
+    }
+
+    #[test]
+    fn a_rental_still_in_the_party_is_not_archived() {
+        let old = save_json(&[(123, 227, Some(4), Some(30))], 3);
+        let mut new = save_json(&[(123, 227, Some(5), Some(32))], 3);
+        let species = HashSet::from([227]);
+
+        merge_rental_history_for_species(&mut new, Some(&old), &species);
+
+        assert_eq!(new["rental_history"], json!([]));
+    }
+
+    #[test]
+    fn earlier_archives_survive_later_posts() {
+        let mut old = save_json(&[], 4);
+        old["rental_history"] = json!([{
+            "species_id": 227,
+            "personality": 999,
+            "nickname": "Rental",
+            "ko_count": 2,
+            "total_turns": 18,
+            "level": 19,
+            "fainted": true,
+            "badge_count": 1,
+        }]);
+        let mut new = save_json(&[], 5);
+        let species = HashSet::from([227]);
+
+        merge_rental_history_for_species(&mut new, Some(&old), &species);
+
+        let history = new["rental_history"].as_array().unwrap();
+        assert_eq!(history.len(), 1);
+        assert_eq!(history[0]["personality"], json!(999));
+    }
+
+    #[test]
+    fn two_rentals_of_the_same_species_stay_distinct() {
+        let old = save_json(
+            &[(123, 227, Some(4), Some(30)), (456, 227, Some(2), Some(12))],
+            4,
+        );
+        let mut new = save_json(&[], 5);
+        let species = HashSet::from([227]);
+
+        merge_rental_history_for_species(&mut new, Some(&old), &species);
+
+        let history = new["rental_history"].as_array().unwrap();
+        assert_eq!(history.len(), 2);
+        assert!(history.iter().any(|entry| entry["personality"] == json!(123)));
+        assert!(history.iter().any(|entry| entry["personality"] == json!(456)));
+    }
+
+    #[test]
+    fn depositing_and_withdrawing_the_same_rental_keeps_one_entry() {
+        // Seviper (336) with PID 123 is deposited into the PC, withdrawn, then
+        // deposited again. The site drops rentals from its inferred box when
+        // they leave the live party, so each deposit looks like a "return".
+        let species = HashSet::from([336]);
+        let in_party = save_json(&[(123, 336, Some(4), Some(30))], 3);
+
+        let mut after_deposit = save_json(&[], 3);
+        merge_rental_history_for_species(&mut after_deposit, Some(&in_party), &species);
+
+        let withdrawn = save_json(&[(123, 336, Some(9), Some(50))], 3);
+        let mut after_withdraw = withdrawn.clone();
+        after_withdraw["rental_history"] = after_deposit["rental_history"].clone();
+        merge_rental_history_for_species(&mut after_withdraw, Some(&after_deposit), &species);
+
+        let mut after_second_deposit = save_json(&[], 3);
+        merge_rental_history_for_species(&mut after_second_deposit, Some(&after_withdraw), &species);
+
+        let history = after_second_deposit["rental_history"].as_array().unwrap();
+        assert_eq!(history.len(), 1);
+        assert_eq!(history[0]["personality"], json!(123));
+        assert_eq!(history[0]["species_id"], json!(336));
+    }
+}
+
+#[cfg(test)]
+mod run_completion_tests {
+    use super::save_has_champion_win;
+    use serde_json::{Value, json};
+
+    fn saves(wins: Value) -> Value {
+        json!({ "trainer_card_wins": wins })
+    }
+
+    #[test]
+    fn a_wally_or_steven_win_finishes_the_run() {
+        assert!(save_has_champion_win(&saves(json!([
+            { "trainer_id": 265, "is_loss": false },
+            { "trainer_id": 804, "is_loss": false }
+        ]))));
+        assert!(save_has_champion_win(&saves(json!([
+            { "trainer_id": 656, "is_loss": false }
+        ]))));
+    }
+
+    #[test]
+    fn gym_wins_champion_losses_and_missing_wins_do_not_finish_the_run() {
+        assert!(!save_has_champion_win(&saves(json!([
+            { "trainer_id": 265, "is_loss": false }
+        ]))));
+        assert!(!save_has_champion_win(&saves(json!([
+            { "trainer_id": 804, "is_loss": true }
+        ]))));
+        assert!(!save_has_champion_win(&saves(json!([]))));
+        assert!(!save_has_champion_win(&json!({})));
     }
 }
 

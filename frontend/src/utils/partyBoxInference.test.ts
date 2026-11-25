@@ -4,6 +4,7 @@ import {
   applyPartyInference,
   createPartyInferenceState,
   reconcileBoxFromSave,
+  resetPartyInferenceState,
   setPartyInferenceEvolutionMetadata,
 } from './partyBoxInference';
 
@@ -158,5 +159,83 @@ describe('evolution-aware inference', () => {
     applyPartyInference(state, [unrelatedMetapod, corsola]);
 
     expect(Array.from(state.inferredBox.values()).map(m => m.species_id)).toEqual([10]);
+  });
+});
+
+describe('returned rentals', () => {
+  const ABSOL_PID = 555111222;
+  const absol = mon(359, 60, ABSOL_PID); // rental-pool species
+
+  test('a rental leaving the live party is not preserved in the inferred box', () => {
+    const state = createPartyInferenceState();
+
+    applyPartyInference(state, [absol, corsola]);
+    applyPartyInference(state, []); // both leave the live party
+
+    // The ordinary mon is preserved as a box departure; the returned rental is not.
+    expect(state.inferredBox.has(getMonIdentity(corsola))).toBe(true);
+    expect(state.inferredBox.has(getMonIdentity(absol))).toBe(false);
+    expect(state.departedSinceSave.has(getMonIdentity(absol))).toBe(false);
+    expect(state.lastSeenParty.has(getMonIdentity(absol))).toBe(false);
+    expect(state.returnedRentals.has(getMonIdentity(absol))).toBe(true);
+  });
+
+  test('a stale .sav party cannot resurrect a returned rental', () => {
+    const state = createPartyInferenceState();
+
+    applyPartyInference(state, [absol, corsola]);
+    applyPartyInference(state, [corsola]); // rental returned
+
+    // The save still lists the rental in the party because Blitz only writes
+    // the flash on a manual save.
+    reconcileBoxFromSave(state, [], [absol, corsola], [corsola]);
+
+    expect(state.inferredBox.has(getMonIdentity(absol))).toBe(false);
+    expect(Array.from(state.inferredBox.values()).map(m => m.species_id)).toEqual([]);
+  });
+
+  test('a stale .sav box cannot resurrect a returned rental', () => {
+    const state = createPartyInferenceState();
+
+    applyPartyInference(state, [absol, corsola]);
+    applyPartyInference(state, [corsola]); // rental returned
+
+    reconcileBoxFromSave(state, [absol as unknown as SaveBoxPokemon], [corsola], [corsola]);
+
+    expect(state.inferredBox.has(getMonIdentity(absol))).toBe(false);
+  });
+
+  test('a rental still in the live party is not marked as returned', () => {
+    const state = createPartyInferenceState();
+
+    applyPartyInference(state, [absol, corsola]);
+    reconcileBoxFromSave(state, [], [absol, corsola], [absol, corsola]);
+
+    expect(state.returnedRentals.has(getMonIdentity(absol))).toBe(false);
+    expect(state.inferredBox.has(getMonIdentity(absol))).toBe(false);
+    expect(Array.from(state.lastPartyKeys)).toContain(getMonIdentity(absol));
+  });
+
+  test('a rental reappearing in the live party is no longer treated as returned', () => {
+    const state = createPartyInferenceState();
+
+    applyPartyInference(state, [absol]);
+    applyPartyInference(state, []);
+    expect(state.returnedRentals.has(getMonIdentity(absol))).toBe(true);
+
+    applyPartyInference(state, [absol]);
+    expect(state.returnedRentals.has(getMonIdentity(absol))).toBe(false);
+    expect(state.inferredBox.has(getMonIdentity(absol))).toBe(false);
+  });
+
+  test('resetting inference state clears returned rental markers', () => {
+    const state = createPartyInferenceState();
+
+    applyPartyInference(state, [absol]);
+    applyPartyInference(state, []);
+    expect(state.returnedRentals.size).toBe(1);
+
+    resetPartyInferenceState(state);
+    expect(state.returnedRentals.size).toBe(0);
   });
 });

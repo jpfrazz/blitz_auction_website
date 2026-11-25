@@ -3,6 +3,8 @@ import type {
   HallOfFamePokemon,
   MatchHistoryTeam,
   Pokemon,
+  PricePoint,
+  PoolEntry,
   RunMonStat,
   StatsAuction,
   StatsPagePlayer,
@@ -57,6 +59,11 @@ export interface AchievementContext {
   rmvByTeamId: Map<number, number>;
   /** Manual grants/revokes keyed by achievement id. */
   manualOverrides: Map<string, boolean>;
+  /** Precomputed global aggregates from the scoped profile endpoint. When
+   * absent (e.g. in unit tests) the two global achievements derive them from
+   * `auctions` instead. */
+  poolEntries?: PoolEntry[];
+  priceHistory?: Record<string, PricePoint[]>;
 }
 
 const STREAM_LEGEND_USER_ID = '310960489628696576';
@@ -883,14 +890,16 @@ function wonWithEveryPoolPokemon(ctx: AchievementContext): boolean {
     .sort((a, b) => a.date.localeCompare(b.date));
   if (datedWins.length === 0) return false;
 
-  const poolEntries = ctx.auctions
-    .filter((auction) => ctx.validDraftIds.has(auction.draft_id))
-    .map((auction) => ({
-      date: auction.created_at.slice(0, 10),
-      key: resolvePokemonIdentity(auction.name, auction.form || '').key,
-    }))
-    .filter((entry) => entry.date.length > 0)
-    .sort((a, b) => a.date.localeCompare(b.date));
+  const poolEntries = ctx.poolEntries
+    ? ctx.poolEntries.map((entry) => ({ date: entry.date, key: entry.key }))
+    : ctx.auctions
+        .filter((auction) => ctx.validDraftIds.has(auction.draft_id))
+        .map((auction) => ({
+          date: auction.created_at?.slice(0, 10) ?? '',
+          key: resolvePokemonIdentity(auction.name, auction.form || '').key,
+        }))
+        .filter((entry) => entry.date.length > 0)
+        .sort((a, b) => a.date.localeCompare(b.date));
   if (poolEntries.length === 0) return false;
 
   const availablePool = new Set<string>();
@@ -1001,6 +1010,22 @@ function wonPokemonForAtLeastTwoThousandOverAverage(ctx: AchievementContext): bo
     if (auction.action === 'BAN' || auction.action === 'LEFTOVER') return false;
     return isNonCasualRace(auction, ctx.validDraftIds, ctx.casual1v1DraftIds);
   });
+
+  // The scoped profile endpoint ships this aggregate so the browser doesn't
+  // need the global auction table just to answer one achievement.
+  if (ctx.priceHistory) {
+    return qualifyingSales.some((auction) => {
+      const winnerId = auction.winning_user_id ?? auction.winning_guest_id;
+      if (!winnerId || !ctx.identityIds.has(winnerId)) return false;
+      const { key } = resolvePokemonIdentity(auction.name, auction.form || '');
+      const prices = ctx.priceHistory![key];
+      if (!prices) return false;
+      const date = auction.created_at?.slice(0, 10) ?? '';
+      const asOf = [...prices].reverse().find((point) => point.date <= date);
+      if (!asOf || asOf.count === 0) return false;
+      return (auction.winning_bid ?? 0) >= asOf.total / asOf.count + WORTH_EVERY_PENNY_MIN_PREMIUM;
+    });
+  }
 
   const salesByKey = new Map<string, StatsAuction[]>();
   qualifyingSales.forEach((auction) => {

@@ -1,9 +1,9 @@
 import React, { useEffect, useLayoutEffect, useState, useRef } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import './Header.scss';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { fetchCurrentUser, changeGuestName } from '../api/draftData';
 import { fetchPendingBossBattleSubmissionCount } from '../api/users';
-import { UserRole } from '../../types';
 import SettingsModal from './SettingsModal';
 import NotesEditor from './NotesEditor';
 import NotesToolbar from './NotesToolbar';
@@ -20,6 +20,7 @@ const navButtons = [
 
 function Header() {
   const location = useLocation();
+  const navigate = useNavigate();
   const isAuctionPage = location.pathname === '/Auction' || location.pathname === '/Draft1v1';
   const isEmulatorPage = location.pathname.startsWith('/Emulator');
   const linkTarget = (isAuctionPage || isEmulatorPage) ? '_blank' : undefined;
@@ -37,15 +38,18 @@ function Header() {
     document.documentElement.style.setProperty('--eb-primary', savedColor);
   }, []);
 
-  type UserState =
-    | {
-      is_guest: boolean;
-      user_id: string | null;
-      username: string | null;
-      avatar?: string;
-      roles?: UserRole[];
-    };
-  const [user, setUser] = useState<UserState | null>(null);
+  type UserState = Awaited<ReturnType<typeof fetchCurrentUser>>;
+  const queryClient = useQueryClient();
+  // Keep the current user in the shared query cache. The cache survives route
+  // changes, so a freshly mounted Header sees the logged-in user on its very
+  // first render instead of briefly rendering as logged out and recalculating
+  // the automatic page zoom (which visibly rescaled the stats tab row).
+  const { data: currentUser } = useQuery<UserState>({
+    queryKey: ['current-user'],
+    queryFn: fetchCurrentUser,
+    staleTime: 5 * 60_000,
+  });
+  const user: UserState | null = currentUser?.user_id && currentUser.username ? currentUser : null;
   const [avatarVersion, setAvatarVersion] = useState(0);
   useEffect(() => {
     const refreshAvatar = (event: Event) => {
@@ -56,16 +60,6 @@ function Header() {
     window.addEventListener('avatar-updated', refreshAvatar);
     return () => window.removeEventListener('avatar-updated', refreshAvatar);
   }, [user?.user_id]);
-  useEffect(() => {
-    fetchCurrentUser().then(user => {
-      if(user.user_id && user.username) {
-        setUser(user);
-      } else {
-        setUser(null);
-      }
-    }).catch(() => setUser(null));
-  }, []);
-
   const [showNameModal, setShowNameModal] = useState(false);
   const [newGuestName, setNewGuestName] = useState('');
   const [nameError, setNameError] = useState<string | null>(null);
@@ -330,7 +324,9 @@ function Header() {
       const namePart = newGuestName.replace(/^guest:/, '').trim();
       if (!namePart) throw new Error('Name cannot be empty');
       const updated = await changeGuestName(namePart);
-      setUser(prev => prev ? { ...prev, username: updated } : prev);
+      queryClient.setQueryData<UserState>(['current-user'], (prev) =>
+        prev ? { ...prev, username: updated } : prev,
+      );
       setShowNameModal(false);
       setNewGuestName('');
     } catch (e: any) {
@@ -476,7 +472,7 @@ function Header() {
                 <h1>{user.username}</h1>
               </button>
               <div className="userDropdownMenu navDropdownMenu">
-                <button className="navButton userDropdownItem" onClick={() => { window.location.href = `/Stats/PlayerProfiles/${encodeURIComponent(user.username ?? '')}?userId=${encodeURIComponent(user.user_id ?? '')}`; handleNavLinkClick(); }}>
+                <button className="navButton userDropdownItem" onClick={() => { navigate(`/Stats/PlayerProfiles/${encodeURIComponent(user.username ?? '')}?userId=${encodeURIComponent(user.user_id ?? '')}`); handleNavLinkClick(); }}>
                   Profile
                 </button>
                 <button className="navButton userDropdownItem hide-on-mobile" onClick={() => { setShowNotes(true); handleNavLinkClick(); }}>
