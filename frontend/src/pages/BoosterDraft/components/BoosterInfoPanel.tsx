@@ -40,8 +40,17 @@ const BoosterInfoPanel: React.FC<BoosterInfoPanelProps> = ({
           : null;
   const pickedCount = booster.submissions.filter((s) => s.has_picked).length;
   const bannedCount = booster.submissions.filter((s) => s.has_banned).length;
+  const wardedCount = booster.submissions.filter((s) => s.has_warded).length;
   const total = booster.player_ids.length;
-  const progress = Math.round((pickedCount / Math.max(1, total)) * 100);
+  const readyCount = pickedCount +
+    (booster.bans_enabled ? bannedCount : 0) +
+    (booster.wards_enabled ? wardedCount : 0);
+  const requiredCount = total * (
+    1 +
+    (booster.bans_enabled ? 1 : 0) +
+    (booster.wards_enabled ? 1 : 0)
+  );
+  const progress = Math.round((readyCount / Math.max(1, requiredCount)) * 100);
 
   return (
     <div className="auction-info-box one-v-one-info-box booster-info-box" style={{ flexShrink: 0 }}>
@@ -62,6 +71,7 @@ const BoosterInfoPanel: React.FC<BoosterInfoPanelProps> = ({
       <div className="booster-submission-counts">
         <span>Picks ready: {pickedCount}/{total}</span>
         {booster.bans_enabled && <span>Bans ready: {bannedCount}/{total}</span>}
+        {booster.wards_enabled && <span>Wards ready: {wardedCount}/{total}</span>}
       </div>
 
       <div
