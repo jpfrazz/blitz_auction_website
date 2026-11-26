@@ -667,13 +667,6 @@ const Stats: React.FC = () => {
     <div className="match-history-page">
       <Header />
       <main className="match-history-main">
-        <section className="stats-hero-card">
-          <div>
-            <h1>Blitz Stats</h1>
-            <p>So much data! Booyah!</p>
-          </div>
-        </section>
-
         <section className="stats-tab-bar" aria-label="Stats tabs">
           <button
             className={`tab-chip ${activeTab === 'pokemon' ? 'active' : ''}`}
@@ -745,14 +738,14 @@ const Stats: React.FC = () => {
                     onChange={() => setShowAuctions((prev) => !prev)}
                   />
                   <DraftFilterToggle
-                    label="1v1s"
-                    checked={show1v1s}
-                    onChange={() => setShow1v1s((prev) => !prev)}
-                  />
-                  <DraftFilterToggle
                     label="Boosters"
                     checked={showBoosters}
                     onChange={() => setShowBoosters((prev) => !prev)}
+                  />
+                  <DraftFilterToggle
+                    label="1v1s"
+                    checked={show1v1s}
+                    onChange={() => setShow1v1s((prev) => !prev)}
                   />
                 </div>
               </div>
@@ -1103,6 +1096,8 @@ const Stats: React.FC = () => {
             validDraftIds={validDraftIds}
             casual1v1DraftIds={casual1v1DraftIds}
             casualBoosterDraftIds={casualBoosterIds}
+            currentUserId={currentUserId}
+            currentUsername={currentUser?.username ?? null}
           />
         )}
 

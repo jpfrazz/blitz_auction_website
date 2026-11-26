@@ -1,0 +1,31 @@
+12/X/2026
+
+
+New form! Decorator Smeargle
+
+Many users are contacting me to explain that I cannot just add Smeargle's Decorator form from Pokémon Pokopia to Emerald Blitz. They're saying that it isn't proper for Smeargle to transform into this adorable Pokémon after learning the move "Decorate" at level 41. And they're claiming that it's entirely ridiculous for this new Smeargle form to gain +20 in every base stat. 
+
+
+
+Rock Throw
+
+Tinkatink: 10
+Mudkip: 11
+Binacle: 12
+
+Smeargle Sketch Pool
+-Rapid Spin
++Mortal Spin
++Teleport
+
+
+Wattson 5 Electrode Stun Spore > Magical Leaf
+
+TL5-6 Lunatone Confusion/Psychic > Psyshock
+TL6 Oranguru Stored Power > Psychic
+TL7-8 Oranguru Calm Mind > Energy Ball
+
+
+When speaking to Mr. Briney at Dewford (DewfordTown_Text_WhereAreWeBound), the top option is Slateport and the 2nd option is Petalburg
+
+Move Relearner Text Shortened (Badge 0!)

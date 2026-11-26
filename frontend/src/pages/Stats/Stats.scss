@@ -15,37 +15,6 @@
   color: $eb-text;
 }
 
-.stats-hero-card {
-  background: $eb-surface;
-  border: 1px solid $eb-border;
-  border-radius: 4px;
-  padding: 1rem 1.2rem 1.1rem;
-  margin-bottom: 1rem;
-  display: flex;
-  justify-content: space-between;
-  gap: 1rem;
-  align-items: flex-end;
-}
-
-.stats-hero-card h1 {
-  margin: 0;
-  font-size: 2.5rem;
-  color: $eb-text;
-}
-
-.stats-hero-card p {
-  margin: 0.35rem 0 0;
-  color: $eb-text-muted;
-  font-size: 1.2rem;
-}
-
-.stats-hero-meta {
-  font-size: 1.15rem;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  color: $eb-text-muted;
-}
-
 .stats-kpi-grid {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -245,26 +214,11 @@
   .stats-kpi-grid {
     grid-template-columns: 1fr 1fr;
   }
-
-  .stats-hero-card {
-    flex-direction: column;
-    align-items: flex-start;
-  }
 }
 
 @media (max-width: 640px) {
   .match-history-main {
     padding: 4.8rem 0.7rem 1.6rem;
-  }
-
-  .stats-hero-card {
-    padding: 0.8rem 1rem;
-    h1 {
-      font-size: 1.65rem;
-    }
-    p {
-      font-size: 1rem;
-    }
   }
 
   .stats-kpi-grid {
@@ -281,10 +235,6 @@
     align-items: center !important;
     gap: 0.5rem;
     flex-wrap: nowrap !important;
-  }
-
-  .stats-hero-meta {
-    display: none;
   }
 
   .stats-panel h2 {
@@ -833,6 +783,63 @@
   }
 }
 
+.hof-heading-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  flex-shrink: 0;
+}
+
+.hof-page-size-label {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: $eb-text-muted;
+  font-size: 1rem;
+  white-space: nowrap;
+
+  input {
+    width: 56px;
+    text-align: left;
+  }
+
+  .hof-filter-bar & input {
+    font-size: 1rem;
+  }
+}
+
+.hof-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.9rem;
+  margin-top: 1rem;
+  color: $eb-text-muted;
+  font-size: 0.95rem;
+}
+
+.hof-page-button {
+  background: $eb-bg;
+  border: 1px solid $eb-border;
+  border-radius: 4px;
+  color: #fff;
+  cursor: pointer;
+  padding: 0.35rem 0.75rem;
+
+  &:hover:not(:disabled) {
+    border-color: $eb-primary;
+  }
+
+  &:disabled {
+    cursor: not-allowed;
+    opacity: 0.45;
+  }
+}
+
+.hof-page-status {
+  white-space: nowrap;
+}
+
 .admin-hof-entries {
   display: flex;
   flex-direction: column;
@@ -840,6 +847,9 @@
 }
 
 .admin-hof-entry {
+  --hof-text-size: 1.2rem;
+  --hof-text-color: #fff;
+
   position: relative;
   display: flex;
   flex-direction: column;
@@ -847,135 +857,291 @@
   background: #202224;
   border: 1px solid $eb-border;
   border-radius: 4px;
-  padding: 0.8rem 1rem;
+  padding: 0 1rem 0.8rem;
   box-shadow: $eb-shadow;
 }
 
-.admin-hof-draft-type {
+// Static spotlight beams: one from each bottom corner, reaching roughly
+// two-thirds across the card. Angles and start points are seeded per entry so
+// they vary down the list, but they never animate. They sit behind the solid
+// black text banner, so the text is never covered by a beam.
+.hof-spotlights {
   position: absolute;
-  top: 0.8rem;
-  right: 1rem;
-  padding: 0.1rem 0.55rem;
-  border-radius: 4px;
-  font-size: 0.9rem;
+  inset: 0;
+  overflow: hidden;
+  border-radius: inherit;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.hof-spotlight {
+  position: absolute;
+  inset: 0;
+
+  &.left {
+    background: linear-gradient(
+      to top right,
+      rgba(var(--hof-glow-rgb), 0.34) 0%,
+      rgba(var(--hof-glow-rgb), 0.1) 55%,
+      transparent 100%
+    );
+    clip-path: polygon(
+      var(--beam-origin-x) 100%,
+      calc(var(--beam-origin-x) + var(--beam-source-w)) 100%,
+      var(--beam-b) 0,
+      var(--beam-a) 0
+    );
+  }
+
+  &.right {
+    background: linear-gradient(
+      to top left,
+      rgba(var(--hof-glow-rgb), 0.34) 0%,
+      rgba(var(--hof-glow-rgb), 0.1) 55%,
+      transparent 100%
+    );
+    clip-path: polygon(
+      var(--beam-origin-x) 100%,
+      calc(var(--beam-origin-x) - var(--beam-source-w)) 100%,
+      calc(100% - var(--beam-b)) 0,
+      calc(100% - var(--beam-a)) 0
+    );
+  }
+}
+
+// Black banner holding all three text rows. Its top edge reaches the card
+// corners; the bottom tapers in much further to form an upside-down trapezoid.
+// position/z-index keep the spotlight beams behind this solid black area.
+.admin-hof-entry-info {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  margin: 0 -1rem;
+  padding: 0.55rem 3.75rem 0.75rem;
+  background: #000;
+  clip-path: polygon(0 0, 100% 0, calc(100% - 3.25rem) 100%, 3.25rem 100%);
+  color: var(--hof-text-color);
+  font-size: var(--hof-text-size);
   font-weight: 700;
-  letter-spacing: 0.02em;
-  white-space: nowrap;
-}
-
-.admin-hof-draft-type.competitive {
-  color: #4caf50;
-  background: rgba(76, 175, 80, 0.15);
-  border: 1px solid rgba(76, 175, 80, 0.45);
-}
-
-.admin-hof-draft-type.casual {
-  color: #e6c07a;
-  background: rgba(230, 192, 122, 0.12);
-  border: 1px solid rgba(230, 192, 122, 0.45);
-}
-
-.admin-hof-draft-type.one-v-one {
-  color: $eb-accent;
-  background: rgba(79, 195, 247, 0.12);
-  border: 1px solid rgba(79, 195, 247, 0.45);
-}
-
-.admin-hof-draft-type.booster {
-  color: #c79bf5;
-  background: rgba(142, 95, 216, 0.15);
-  border: 1px solid rgba(142, 95, 216, 0.45);
-}
-
-.admin-hof-draft-type.booster.casual-booster {
-  color: #e0b4ff;
-  background: rgba(230, 192, 122, 0.12);
-  border: 1px solid rgba(199, 155, 245, 0.55);
+  line-height: 1.35;
 }
 
 .admin-hof-entry-head {
   display: flex;
-  align-items: baseline;
+  justify-content: center;
+  align-items: center;
+}
+
+// Flex alignment keeps the username and the "beat ..." text on the same
+// vertical center line as the avatar instead of relying on text baselines.
+.admin-hof-entry-summary {
+  display: flex;
+  align-items: center;
+  justify-content: center;
   flex-wrap: wrap;
-  gap: 0.5rem;
-  padding-right: 8.5rem;
+  gap: 0.4rem;
 }
 
 .admin-hof-entry-player {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: inherit;
   font-weight: 700;
-  font-size: 1.3rem;
+  font-style: normal;
+  line-height: 1;
 }
 
-.admin-hof-entry-player.admin-hof-entry-player {
-  color: $eb-accent;
+.admin-hof-entry-player.admin-hof-entry-player,
+.admin-hof-entry-player.admin-hof-entry-player:visited {
+  color: var(--hof-text-color);
+  text-decoration: none;
+}
+
+a.admin-hof-entry-player.admin-hof-entry-player:hover span {
+  color: var(--hof-text-color);
   text-decoration: underline;
-  text-decoration-color: rgba(79, 195, 247, 0.5);
-  text-underline-offset: 3px;
-  transition: color 0.15s ease, text-decoration-color 0.15s ease;
+  text-underline-offset: 2px;
 }
 
-.admin-hof-entry-player.admin-hof-entry-player:hover {
-  color: lighten($eb-accent, 12%);
-  text-decoration-color: lighten($eb-accent, 12%);
-}
-
-.admin-hof-entry-race {
-  color: $eb-text-muted;
-  font-size: 1.3rem;
+.admin-hof-entry-avatar {
+  flex: 0 0 auto;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  object-fit: cover;
 }
 
 .admin-hof-entry-beat {
-  font-weight: 600;
-  color: $eb-primary;
-  font-size: 1.3rem;
-}
-
-.admin-hof-entry-beat .admin-hof-entry-time {
-  color: $eb-text;
-  font-weight: 400;
-  font-size: 1.3rem;
-}
-
-.admin-hof-entry-body {
-  display: flex;
+  display: inline-flex;
   align-items: center;
-  gap: 1rem;
-  flex-wrap: wrap;
+  color: var(--hof-text-color);
+  font-size: inherit;
+  font-weight: 700;
+  line-height: 1;
 }
 
-.admin-hof-team-icons {
+.admin-hof-team-names {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.6rem;
-}
-
-.admin-hof-team-icon {
-  display: flex;
-  flex-direction: column;
   align-items: center;
-  gap: 0.15rem;
-  background: $eb-surface;
-  border: 1px solid $eb-border;
-  border-radius: 4px;
-  padding: 0.3rem 0.5rem;
+  justify-content: center;
+  gap: 0.2rem 0.45rem;
 }
 
-.admin-hof-team-icon img {
-  width: 40px;
-  height: 40px;
-  object-fit: contain;
-  image-rendering: pixelated;
+.admin-hof-team-separator {
+  color: var(--hof-text-color);
+  font-size: inherit;
+  font-weight: 700;
+  line-height: 1;
 }
 
-.admin-hof-team-icon span {
-  font-size: 0.8rem;
-  max-width: 90px;
-  overflow: hidden;
-  text-overflow: ellipsis;
+.admin-hof-team-name {
+  font-size: var(--hof-text-size);
+  font-weight: 700;
+  font-style: normal;
+  color: var(--hof-text-color);
+  text-align: center;
   white-space: nowrap;
 }
 
+.admin-hof-classification {
+  font-size: var(--hof-text-size);
+  font-weight: 700;
+  font-style: normal;
+  color: var(--hof-text-color);
+  text-align: center;
+}
+
+.admin-hof-entry-body {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  justify-content: center;
+  width: 100%;
+}
+
+.hof-diorama {
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  width: 100%;
+  padding: 1.5rem 0 0.5rem;
+  border-radius: 4px;
+  background: radial-gradient(
+    ellipse at center bottom,
+    rgba(var(--hof-glow-rgb), 0.12),
+    transparent 70%
+  );
+}
+
+.hof-diorama-side {
+  display: flex;
+  align-items: flex-end;
+
+  &.left {
+    justify-content: flex-end;
+    margin-right: -24px;
+  }
+
+  &.right {
+    justify-content: flex-start;
+    margin-left: -24px;
+  }
+}
+
+.hof-diorama-mon {
+  position: relative;
+  flex: 0 0 auto;
+  width: clamp(69px, 10.5vw, 108px);
+
+  // Each pokemon tucks slightly behind its neighbor toward the center of the
+  // line; z-index from the layout helper decides who is actually in front.
+  & + & {
+    margin-left: -18px;
+  }
+
+  &.left {
+    transform-origin: bottom right;
+  }
+
+  &.right {
+    transform-origin: bottom left;
+  }
+
+  img {
+    display: block;
+    width: 100%;
+    height: auto;
+    filter: drop-shadow(0 3px 3px rgba(0, 0, 0, 0.45));
+  }
+
+  &.hof-diorama-mon-flippable {
+    cursor: pointer;
+  }
+}
+
+button.hof-diorama-mon {
+  display: block;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+
+  img {
+    transition: transform 0.15s ease;
+  }
+}
+
+.hof-diorama-trophy {
+  flex: 0 0 auto;
+  align-self: flex-end;
+  width: clamp(44px, 6.5vw, 68px);
+  height: auto;
+  // In front of every pokemon so the innermost sprites tuck behind it.
+  z-index: 40;
+  filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.55));
+}
+
+@media (max-width: 640px) {
+  .admin-hof-entry-info {
+    padding: 0.5rem 2.25rem 0.65rem;
+    clip-path: polygon(0 0, 100% 0, calc(100% - 2rem) 100%, 2rem 100%);
+  }
+
+  .hof-diorama {
+    padding-top: 1.1rem;
+  }
+
+  .hof-diorama-side {
+    &.left {
+      margin-right: -16px;
+    }
+
+    &.right {
+      margin-left: -16px;
+    }
+  }
+
+  .hof-diorama-mon {
+    width: clamp(46px, 14vw, 87px);
+
+    & + & {
+      margin-left: -16px;
+    }
+  }
+
+  .hof-diorama-trophy {
+    width: clamp(38px, 10vw, 52px);
+  }
+}
+
 .admin-hof-empty {
-  color: $eb-text-muted;
-  font-style: italic;
+  color: var(--hof-text-color);
+  font-size: var(--hof-text-size);
+  font-weight: 700;
+  font-style: normal;
 }
