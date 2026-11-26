@@ -366,8 +366,9 @@ const PokemonStatsTab: React.FC<PokemonStatsTabProps> = ({
       stats?.teams ?? [],
       stats?.players ?? [],
       runStatLineage,
+      casualBoosterIds,
     );
-  }, [stats?.winning_run_kos, stats?.auctions, stats?.teams, stats?.players, runStatLineage]);
+  }, [stats?.winning_run_kos, stats?.auctions, stats?.teams, stats?.players, runStatLineage, casualBoosterIds]);
 
   const winsByKey = useMemo(() => {
     return computeWinningPicksByPokemonKey(

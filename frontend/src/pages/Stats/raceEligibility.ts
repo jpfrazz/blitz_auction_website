@@ -11,6 +11,7 @@ export interface RaceEligibilityRef {
  * Shared definition of a non-casual race:
  * - auctions must pass the site's competitive-draft validation (`validDraftIds`)
  * - 1v1s must not be one of the large-pool casual 1v1 drafts
+ * - boosters must not be one of the 9/10-card casual booster drafts
  */
 export function isNonCasualRace(
   race: RaceEligibilityRef,

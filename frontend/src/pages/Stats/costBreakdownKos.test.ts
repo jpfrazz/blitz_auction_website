@@ -723,3 +723,95 @@ test('keeps combined Plusle/Minun and evolved KOs on the drafted win rows', () =
   expect(result.has('Minun')).toBe(false);
   expect(result.size).toBe(2);
 });
+
+test('counts non-casual booster picks in wins, chances and KOs but skips casual boosters', () => {
+  const auctions = [
+    auction({
+      auction_id: 1,
+      draft_id: 'booster-competitive',
+      draft_type: 'booster',
+      winning_bid: null,
+      action: 'PICK',
+      winning_user_id: 'user-1',
+    }),
+    auction({
+      auction_id: 2,
+      draft_id: 'booster-competitive',
+      draft_type: 'booster',
+      winning_bid: null,
+      action: 'BAN',
+      name: 'Plusle',
+      pokedex_id: 311,
+      winning_user_id: 'user-1',
+    }),
+    auction({
+      auction_id: 3,
+      draft_id: 'booster-casual',
+      draft_type: 'booster',
+      winning_bid: null,
+      action: 'PICK',
+      name: 'Minun',
+      pokedex_id: 312,
+      winning_user_id: 'user-1',
+    }),
+  ];
+  const teams = [
+    team({
+      team_id: 1,
+      draft_id: 'booster-competitive',
+      user_id: 'user-1',
+      draft_type: 'booster',
+    }),
+    team({
+      team_id: 2,
+      draft_id: 'booster-casual',
+      user_id: 'user-1',
+      draft_type: 'booster',
+    }),
+  ];
+  const races = [
+    race({ team_id: 1, draft_id: 'booster-competitive', user_id: 'user-1', draft_type: 'booster' }),
+    race({ team_id: 2, draft_id: 'booster-casual', user_id: 'user-1', draft_type: 'booster' }),
+  ];
+  const samples = [
+    sample({ team_id: 1, draft_id: 'booster-competitive', draft_type: 'booster', user_id: 'user-1', ko_count: 10 }),
+    sample({ team_id: 2, draft_id: 'booster-casual', draft_type: 'booster', user_id: 'user-1', species_id: 312, ko_count: 20 }),
+  ];
+  const casualBoosterIds = new Set(['booster-casual']);
+
+  const wins = computeWinningPicksByPokemonKey(
+    races,
+    auctions,
+    teams,
+    [] as StatsPagePlayer[],
+    new Set<string>(),
+    new Set<string>(),
+    casualBoosterIds,
+  );
+  const chances = computeWinOpportunitiesByPokemonKey(
+    teams,
+    auctions,
+    [] as StatsPagePlayer[],
+    new Set<string>(),
+    new Set<string>(),
+    casualBoosterIds,
+  );
+  const kos = computeAverageKosByPokemonKey(
+    samples,
+    auctions,
+    teams,
+    [] as StatsPagePlayer[],
+    lineage,
+    casualBoosterIds,
+  );
+
+  expect(wins.get('Charmander')).toBe(1);
+  expect(wins.has('Plusle')).toBe(false);
+  expect(wins.has('Minun')).toBe(false);
+
+  expect(chances.get('Charmander')).toBe(1);
+  expect(chances.has('Minun')).toBe(false);
+
+  expect(kos.get('Charmander')).toBe(10);
+  expect(kos.has('Minun')).toBe(false);
+});

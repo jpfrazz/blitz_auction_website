@@ -18,7 +18,9 @@ interface KoTotal {
 }
 
 function isDraftedPick(auction: StatsAuction): boolean {
-  if (auction.draft_type === '1v1') {
+  // 1v1 and booster picks are persisted as no-bid PICK rows, while auction
+  // picks carry a winning bid. Booster bans/leftovers must not count as picks.
+  if (auction.draft_type === '1v1' || auction.draft_type === 'booster') {
     return auction.action === 'PICK';
   }
   return auction.winning_bid !== null && auction.winning_bid !== undefined;
@@ -222,6 +224,7 @@ export function computeAverageKosByPokemonKey(
   teams: StatsPageTeamRow[],
   players: StatsPagePlayer[],
   lineage: RunStatLineage,
+  casualBoosterDraftIds: Set<string> = new Set(),
 ): Map<string, number> {
   const samplesByTeam = new Map<number, WinningRunKoSample[]>();
   for (const sample of samples) {
@@ -241,6 +244,7 @@ export function computeAverageKosByPokemonKey(
     const team = context.teamById.get(teamId);
     const first = samplesForTeam[0];
     const draftId = team?.draft_id ?? first.draft_id;
+    if (casualBoosterDraftIds.has(draftId)) return;
 
     const accountIds = buildAccountIds(
       [team?.user_id, team?.guest_id, first.user_id, first.guest_id],
@@ -268,12 +272,11 @@ export function computeAverageKosByPokemonKey(
 
 /**
  * Counts races in which the winning team had drafted/picked that Pokémon and
- * then beat Steven or Wally. Auction eligibility comes from the same
- * `validDraftIds` used by Cost Breakdown and player profiles, so unranked
- * auctions count as long as they are not casual drafts. This deliberately uses
- * the draft rows rather than the saved run, so a win still counts without KO
- * data and evolution/form changes (including an egg hatch) stay on the drafted
- * row.
+ * then beat Steven or Wally. Auction drafts use the same `validDraftIds` as
+ * Cost Breakdown and player profiles, while 1v1 and booster drafts use their
+ * own casual ID sets. This deliberately uses the draft rows rather than the
+ * saved run, so a win still counts without KO data and evolution/form changes
+ * (including an egg hatch) stay on the drafted row.
  */
 export function computeWinningPicksByPokemonKey(
   races: WinningRace[],
@@ -305,7 +308,7 @@ export function computeWinningPicksByPokemonKey(
 }
 
 /**
- * Counts one chance to win per non-casual race (auction or 1v1) where the team
+ * Counts one chance to win per non-casual race (auction, 1v1 or booster) where the team
  * drafted/picked that Pokémon and the race has boss battle data. Races with no
  * boss battle history are excluded because the Pokémon had no opportunity to
  * win. Uses the same draft eligibility as `computeWinningPicksByPokemonKey`.
