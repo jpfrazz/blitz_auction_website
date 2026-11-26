@@ -118,14 +118,36 @@ describe('getDioramaImageSources', () => {
   it('uses the baseform folder for pokemon that do not evolve', () => {
     const sources = getDioramaImageSources('Vulpix-Alola');
 
-    expect(sources[0]).toBe('/evolutions/Vulpix-Alola.png');
-    expect(sources).toContain('/baseforms/Vulpix.png');
+    expect(sources[0]).toBe('/baseforms/Vulpix.png');
+    expect(sources).toContain('/evolutions/Vulpix-Alola.png');
   });
 
   it('encodes spaces in sprite URLs such as mega forms', () => {
     expect(getDioramaImageSources('Mega Charizard X')[0]).toBe(
       '/evolutions/Charizard%20X-Mega.png',
     );
+  });
+
+  it('resolves irregular species names and forms to their exact full sprite', () => {
+    expect(getDioramaImageSources('Basculegion-M')[0]).toBe(
+      '/evolutions/Basculegion-Male.png',
+    );
+    expect(getDioramaImageSources('Flabébé-Red')[0]).toBe(
+      '/baseforms/Flabebe.png',
+    );
+    expect(getDioramaImageSources('Kommo-o')[0]).toBe(
+      '/evolutions/Kommo-o.png',
+    );
+    expect(getDioramaImageSources('Plusle and Minun')[0]).toBe(
+      '/baseforms/Plusle%20and%20Minun.png',
+    );
+  });
+
+  it('uses the stored icon for the mini-sprite fallback when the name is unknown', () => {
+    const sources = getDioramaImageSources('Nickname', 'nidorina');
+
+    expect(sources).toContain('/MiniIcons/nidorina.png');
+    expect(sources[sources.length - 1]).toBe('/MiniIcons/question.png');
   });
 
   it('falls back to the question icon for empty names', () => {

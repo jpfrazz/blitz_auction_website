@@ -598,6 +598,8 @@
 
 
 .hof-filter-bar {
+  position: relative;
+
   .stats-filter-input {
     background: $eb-bg;
     border: 1px solid $eb-border;
@@ -647,33 +649,52 @@
   }
 
   .pokemon-search-bar {
+    position: relative;
     flex: 1 1 auto;
     min-width: 0;
     justify-content: flex-end;
   }
 
+  // The filter rows spill out beneath the header instead of growing it.
   .stats-analysis-settings {
+    position: absolute;
+    top: calc(100% + 6px);
+    right: 0;
+    z-index: 20;
     display: flex;
-    align-items: center;
-    gap: 12px;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 6px;
     overflow: hidden;
-    max-width: 0;
+    max-height: 0;
+    padding: 0 0.75rem;
+    border: 1px solid transparent;
+    border-radius: 6px;
+    background: $eb-bg;
     opacity: 0;
     transition:
-      max-width 0.4s cubic-bezier(0.4, 0, 0.2, 1),
+      max-height 0.4s cubic-bezier(0.4, 0, 0.2, 1),
       opacity 0.3s ease-in-out,
-      margin-right 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+      padding 0.4s cubic-bezier(0.4, 0, 0.2, 1);
     pointer-events: none;
     white-space: nowrap;
 
     &.visible {
-      max-width: 1200px;
+      max-height: 220px;
+      padding: 0.5rem 0.75rem;
+      border-color: $eb-border;
+      box-shadow: $eb-shadow;
       opacity: 1;
-      margin-right: 12px;
       pointer-events: auto;
     }
+  }
 
-    & > div {
+  .hof-settings-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+
+    & > * {
       flex-shrink: 0;
     }
   }
@@ -711,7 +732,8 @@
       font-size: 1rem;
     }
 
-    &.includes-label .stats-filter-input {
+    &.includes-label .stats-filter-input,
+    &.player-label .stats-filter-input {
       width: 120px;
     }
   }
@@ -745,26 +767,26 @@
     }
 
     .stats-analysis-settings {
-      order: 3;
-      width: 100%;
-      max-width: none !important;
+      top: 100%;
+      left: 0;
+      right: 0;
+      width: auto;
       max-height: 0;
       white-space: normal;
       gap: 0.5rem !important;
-      flex-direction: row !important;
-      flex-wrap: wrap;
-      align-items: center !important;
-      transition:
-        max-height 0.4s cubic-bezier(0.4, 0, 0.2, 1),
-        opacity 0.3s ease-in-out,
-        margin-top 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+      align-items: stretch !important;
       margin-right: 0 !important;
 
       &.visible {
-        max-height: 500px;
+        max-height: 420px;
         opacity: 1;
-        margin-top: 0.25rem;
         pointer-events: auto;
+      }
+
+      .hof-settings-row {
+        flex-wrap: wrap;
+        justify-content: flex-end;
+        gap: 0.5rem;
       }
 
       .stats-setting-item {
@@ -774,10 +796,6 @@
         span:first-of-type {
           font-size: 0.85rem !important;
         }
-      }
-
-      .settings-divider {
-        display: none;
       }
     }
   }
@@ -1043,12 +1061,12 @@ a.admin-hof-entry-player.admin-hof-entry-player:hover span {
 
   &.left {
     justify-content: flex-end;
-    margin-right: -24px;
+    margin-right: -12px;
   }
 
   &.right {
     justify-content: flex-start;
-    margin-left: -24px;
+    margin-left: -12px;
   }
 }
 
@@ -1118,11 +1136,11 @@ button.hof-diorama-mon {
 
   .hof-diorama-side {
     &.left {
-      margin-right: -16px;
+      margin-right: -8px;
     }
 
     &.right {
-      margin-left: -16px;
+      margin-left: -8px;
     }
   }
 

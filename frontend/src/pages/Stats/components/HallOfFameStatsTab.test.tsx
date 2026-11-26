@@ -65,14 +65,14 @@ describe('Hall of Fame diorama', () => {
     mockFetch.mockResolvedValue([entry]);
   });
 
-  it('loads the full eligible list and defaults to 200 entries per page', async () => {
+  it('loads the full eligible list and defaults to 20 entries per page', async () => {
     const { container } = renderTab();
     await screen.findByAltText('Hall of Fame trophy');
 
     expect(mockFetch).toHaveBeenCalledWith(undefined, undefined);
     const input = screen.getByLabelText('Entries per page') as HTMLInputElement;
     expect(input.type).toBe('number');
-    expect(input.value).toBe('200');
+    expect(input.value).toBe('20');
     expect(screen.queryByText('Show Most Recent')).toBeNull();
     expect(container.querySelector('.admin-hof-entry')).toBeTruthy();
   });
@@ -90,7 +90,6 @@ describe('Hall of Fame diorama', () => {
 
     const input = screen.getByLabelText('Entries per page') as HTMLInputElement;
     fireEvent.change(input, { target: { value: '2' } });
-    fireEvent.blur(input);
 
     expect(await screen.findByText(/Page 1 of 3/)).toBeTruthy();
     expect(container.querySelectorAll('.admin-hof-entry')).toHaveLength(2);
@@ -99,6 +98,28 @@ describe('Hall of Fame diorama', () => {
     expect(screen.getByText(/Page 2 of 3/)).toBeTruthy();
     expect(container.querySelectorAll('.admin-hof-entry')).toHaveLength(2);
     expect(container.textContent).toContain('player-2');
+  });
+
+  it('puts Includes and Player on a second settings row and filters by player', async () => {
+    mockFetch.mockResolvedValue([
+      entry,
+      { ...entry, team_id: 3865, user_id: 'user-2', user_name: 'someone-else' },
+    ]);
+    const { container } = renderTab();
+    await screen.findAllByAltText('Hall of Fame trophy');
+
+    const rows = container.querySelectorAll('.stats-analysis-settings .hof-settings-row');
+    expect(rows).toHaveLength(2);
+    expect(rows[0].textContent).toContain('Faster Than');
+    expect(rows[0].textContent).not.toContain('Includes');
+    expect(rows[1].textContent).toContain('Includes');
+    expect(rows[1].textContent).toContain('Player');
+
+    const playerInput = screen.getByLabelText('Filter by player') as HTMLInputElement;
+    fireEvent.change(playerInput, { target: { value: 'jeans' } });
+
+    expect(container.textContent).toContain('jeansmm');
+    expect(container.textContent).not.toContain('someone-else');
   });
 
   it('keeps the draft type filter at three quarters of its old width', async () => {
@@ -379,24 +400,18 @@ describe('Hall of Fame diorama', () => {
     );
   });
 
-  it('lets the owner flip each pokemon in their own entry', async () => {
+  it('does not render the owner pokemon as flip buttons while flip is disabled', async () => {
     const { container } = renderTab({
       currentUserId: 'user-1',
       currentUsername: 'jeansmm',
     });
     await screen.findByAltText('Hall of Fame trophy');
 
-    const buttons = container.querySelectorAll<HTMLButtonElement>(
-      '.admin-hof-entry button.hof-diorama-mon',
-    );
-    expect(buttons).toHaveLength(6);
-    expect(buttons[0].getAttribute('aria-label')).toBe('Flip Ribombee');
-
-    const image = buttons[0].querySelector('img')!;
-    fireEvent.click(buttons[0]);
-    expect(image.style.transform).toBe('scaleX(-1)');
-    fireEvent.click(buttons[0]);
-    expect(image.style.transform).toBe('');
+    expect(container.querySelector('button.hof-diorama-mon')).toBeNull();
+    expect(container.querySelector('.hof-diorama-mon-flippable')).toBeNull();
+    expect(
+      container.querySelectorAll('.admin-hof-entry .hof-diorama-mon img'),
+    ).toHaveLength(6);
   });
 
   it('does not offer flip controls on someone else\'s entry', async () => {
@@ -409,7 +424,7 @@ describe('Hall of Fame diorama', () => {
     expect(container.querySelector('button.hof-diorama-mon')).toBeNull();
   });
 
-  it('lets franklynathan flip pokemon in any entry', async () => {
+  it('does not render flip buttons for franklynathan while flip is disabled', async () => {
     mockFetch.mockResolvedValue([
       entry,
       { ...entry, team_id: 3865, user_id: 'user-2', user_name: 'other-player' },
@@ -421,14 +436,9 @@ describe('Hall of Fame diorama', () => {
     await screen.findAllByAltText('Hall of Fame trophy');
 
     const cards = container.querySelectorAll('.admin-hof-entry');
-    expect(cards[0].querySelectorAll('button.hof-diorama-mon')).toHaveLength(6);
-    expect(cards[1].querySelectorAll('button.hof-diorama-mon')).toHaveLength(6);
-
-    const secondEntryButton = cards[1].querySelector<HTMLButtonElement>(
-      'button.hof-diorama-mon',
-    )!;
-    const image = secondEntryButton.querySelector('img')!;
-    fireEvent.click(secondEntryButton);
-    expect(image.style.transform).toBe('scaleX(-1)');
+    expect(cards[0].querySelector('button.hof-diorama-mon')).toBeNull();
+    expect(cards[1].querySelector('button.hof-diorama-mon')).toBeNull();
+    expect(cards[0].querySelector('.hof-diorama-mon-flippable')).toBeNull();
+    expect(cards[1].querySelector('.hof-diorama-mon-flippable')).toBeNull();
   });
 });

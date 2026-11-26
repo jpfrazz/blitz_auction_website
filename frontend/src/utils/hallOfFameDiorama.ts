@@ -1,5 +1,6 @@
 import type { CSSProperties } from 'react';
 import type { HallOfFamePokemon } from '../types';
+import { HOF_SPRITE_BY_ICON, HOF_SPRITE_BY_NAME } from './hofSpriteMap';
 import { getIconName } from './speciesUtils';
 
 // Layout of the Hall of Fame diorama. The trophy sits at the point of a V and
@@ -141,23 +142,45 @@ export const getDioramaImageNames = (name: string): string[] => {
   return unique([...primary, ...secondary]);
 };
 
+/** Match the normalized keys used by the generated species->sprite map. */
+const mapKey = (value: string): string =>
+  value
+    .trim()
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9]/g, '');
+
 /**
  * Ordered image URLs to try, from the preferred full sprite to the fallback.
- * Exact names are checked in /evolutions and /baseforms before guessing forms,
- * so common teams only need one or two requests to find their sprite.
+ * Known species resolve directly through the generated map, which covers form
+ * names the sprite folders spell differently (Flabébé-Red, Basculegion-M,
+ * Kommo-o, etc.). Unrecognized/admin-entered names still use name guesses.
  */
-export const getDioramaImageSources = (name: string): string[] => {
+export const getDioramaImageSources = (name: string, icon?: string): string[] => {
   const { primary, secondary } = getNameCandidates(name);
-  const sources = [
+  const trimmed = name?.trim();
+  const nameKey = trimmed && trimmed !== '???' ? mapKey(trimmed) : '';
+  const iconKey = icon?.trim() ? mapKey(icon) : '';
+  const mapped =
+    (nameKey && HOF_SPRITE_BY_NAME[nameKey]) ||
+    (iconKey && HOF_SPRITE_BY_ICON[iconKey]);
+
+  const sources: string[] = [];
+  if (mapped) sources.push(mapped);
+  sources.push(
     ...primary.map((spriteName) => `/evolutions/${encodeURI(spriteName)}.png`),
     ...primary.map((spriteName) => `/baseforms/${encodeURI(spriteName)}.png`),
     ...secondary.map((spriteName) => `/evolutions/${encodeURI(spriteName)}.png`),
     ...secondary.map((spriteName) => `/baseforms/${encodeURI(spriteName)}.png`),
-  ];
+  );
 
-  const trimmed = name?.trim();
-  if (trimmed && trimmed !== '???') {
-    sources.push(`/MiniIcons/${getIconName(name)}.png`);
+  if (nameKey) {
+    const iconName = getIconName(name);
+    sources.push(`/MiniIcons/${iconName}.png`);
+    if (icon && icon !== iconName) {
+      sources.push(`/MiniIcons/${icon}.png`);
+    }
   }
   sources.push('/MiniIcons/question.png');
 

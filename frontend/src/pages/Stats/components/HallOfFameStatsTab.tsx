@@ -24,7 +24,11 @@ interface HallOfFameStatsTabProps {
   currentUsername?: string | null;
 }
 
-const DEFAULT_ENTRIES_PER_PAGE = 200;
+const DEFAULT_ENTRIES_PER_PAGE = 20;
+
+// Flip interactions are temporarily hidden. Leave the flip state, permission
+// check, and button markup intact so this can be turned back on later.
+const ENABLE_HOF_SPRITE_FLIP = false;
 
 function parseTimeToSeconds(input: string): number | null {
   const trimmed = input.trim();
@@ -98,8 +102,8 @@ const DioramaPokemon: React.FC<{ slot: DioramaSlot; flippable: boolean }> = ({
   flippable,
 }) => {
   const sources = useMemo(
-    () => getDioramaImageSources(slot.pokemon.name),
-    [slot.pokemon.name],
+    () => getDioramaImageSources(slot.pokemon.name, slot.pokemon.icon),
+    [slot.pokemon.name, slot.pokemon.icon],
   );
   const [sourceIndex, setSourceIndex] = useState(0);
   const [flipped, setFlipped] = useState(false);
@@ -122,11 +126,11 @@ const DioramaPokemon: React.FC<{ slot: DioramaSlot; flippable: boolean }> = ({
   );
 
   const className = `hof-diorama-mon ${slot.side}${
-    flippable ? ' hof-diorama-mon-flippable' : ''
+    ENABLE_HOF_SPRITE_FLIP && flippable ? ' hof-diorama-mon-flippable' : ''
   }`;
   const style = getDioramaSlotStyle(slot);
 
-  return flippable ? (
+  return ENABLE_HOF_SPRITE_FLIP && flippable ? (
     <button
       type="button"
       className={className}
@@ -162,6 +166,7 @@ const HallOfFameStatsTab: React.FC<HallOfFameStatsTabProps> = ({
   const [selectedDraftType, setSelectedDraftType] = useState('');
   const [fasterThan, setFasterThan] = useState('');
   const [pokemonFilter, setPokemonFilter] = useState('');
+  const [playerFilter, setPlayerFilter] = useState('');
   const [entriesPerPage, setEntriesPerPage] = useState(DEFAULT_ENTRIES_PER_PAGE);
   const [entriesPerPageInput, setEntriesPerPageInput] = useState(
     String(DEFAULT_ENTRIES_PER_PAGE),
@@ -192,6 +197,7 @@ const HallOfFameStatsTab: React.FC<HallOfFameStatsTabProps> = ({
   const filteredEntries = useMemo(() => {
     const fasterThanSeconds = parseTimeToSeconds(fasterThan);
     const query = pokemonFilter.trim().toLowerCase();
+    const playerQuery = playerFilter.trim().toLowerCase();
 
     return entries.filter((entry) => {
       if (cutoffDate && entry.beat_date && entry.beat_date < cutoffDate) {
@@ -209,6 +215,12 @@ const HallOfFameStatsTab: React.FC<HallOfFameStatsTabProps> = ({
           return false;
         }
       }
+      if (playerQuery) {
+        const playerName = (entry.user_name ?? entry.user_id ?? '').toLowerCase();
+        if (!playerName.includes(playerQuery)) {
+          return false;
+        }
+      }
       if (query) {
         const match = entry.hall_of_fame_team.some((mon) =>
           mon.name.toLowerCase().includes(query)
@@ -219,7 +231,7 @@ const HallOfFameStatsTab: React.FC<HallOfFameStatsTabProps> = ({
       }
       return true;
     });
-  }, [entries, cutoffDate, selectedChampion, selectedDraftType, fasterThan, pokemonFilter]);
+  }, [entries, cutoffDate, selectedChampion, selectedDraftType, fasterThan, playerFilter, pokemonFilter]);
 
   const pageCount = Math.max(1, Math.ceil(filteredEntries.length / entriesPerPage));
   const currentPage = Math.min(page, pageCount - 1);
@@ -232,15 +244,13 @@ const HallOfFameStatsTab: React.FC<HallOfFameStatsTabProps> = ({
     if (page !== currentPage) setPage(currentPage);
   }, [page, currentPage]);
 
-  const commitEntriesPerPage = () => {
-    const parsed = parseInt(entriesPerPageInput, 10);
+  // Apply a valid page size immediately as the user types; no Enter/blur needed.
+  const handleEntriesPerPageChange = (value: string) => {
+    setEntriesPerPageInput(value);
+    const parsed = Number.parseInt(value, 10);
     if (!Number.isNaN(parsed) && parsed > 0) {
-      const clamped = Math.floor(parsed);
-      setEntriesPerPage(clamped);
-      setEntriesPerPageInput(String(clamped));
+      setEntriesPerPage(parsed);
       setPage(0);
-    } else {
-      setEntriesPerPageInput(String(entriesPerPage));
     }
   };
 
@@ -250,6 +260,7 @@ const HallOfFameStatsTab: React.FC<HallOfFameStatsTabProps> = ({
     setSelectedDraftType('');
     setFasterThan('');
     setPokemonFilter('');
+    setPlayerFilter('');
     setEntriesPerPage(DEFAULT_ENTRIES_PER_PAGE);
     setEntriesPerPageInput(String(DEFAULT_ENTRIES_PER_PAGE));
     setPage(0);
@@ -278,172 +289,177 @@ const HallOfFameStatsTab: React.FC<HallOfFameStatsTabProps> = ({
                 step={1}
                 aria-label="Entries per page"
                 value={entriesPerPageInput}
-                onChange={(e) => setEntriesPerPageInput(e.target.value)}
-                onBlur={commitEntriesPerPage}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') {
-                    commitEntriesPerPage();
-                    (e.currentTarget as HTMLInputElement).blur();
-                  }
-                }}
+                onChange={(e) => handleEntriesPerPageChange(e.target.value)}
               />
             </label>
           </div>
           <div className="pokemon-search-bar" style={{ display: 'flex', alignItems: 'center' }}>
             <div className={`stats-analysis-settings ${showFilters ? 'visible' : ''}`}>
-              <button
-                type="button"
-                className="stats-reset-button"
-                onClick={resetFilters}
-                title="Reset filters to default"
-                style={{
-                  background: 'none',
-                  border: 'none',
-                  color: '#888',
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  fontSize: '1.1rem',
-                  padding: '4px',
-                  flexShrink: 0,
-                  transition: 'color 0.2s ease',
-                }}
-              >
-                <TbRefresh />
-              </button>
-              <div
-                className="stats-setting-item cutoff-date-label"
-                style={{ display: 'flex', alignItems: 'center', gap: '8px' }}
-              >
-                <span>Cutoff Date</span>
-                <span
-                  title="Exclude hall of fame runs that occurred before this date"
+              <div className="hof-settings-row">
+                <button
+                  type="button"
+                  className="stats-reset-button"
+                  onClick={resetFilters}
+                  title="Reset filters to default"
                   style={{
-                    cursor: 'help',
-                    color: 'var(--eb-primary)',
-                    fontSize: '0.7rem',
-                    border: '1px solid var(--eb-primary)',
-                    borderRadius: '50%',
-                    width: '14px',
-                    height: '14px',
-                    display: 'inline-flex',
+                    background: 'none',
+                    border: 'none',
+                    color: '#888',
+                    cursor: 'pointer',
+                    display: 'flex',
                     alignItems: 'center',
-                    justifyContent: 'center',
+                    fontSize: '1.1rem',
+                    padding: '4px',
+                    flexShrink: 0,
+                    transition: 'color 0.2s ease',
                   }}
                 >
-                  i
-                </span>
-                <input
-                  className="stats-filter-input"
-                  type="date"
-                  style={{ width: '104px' }}
-                  value={cutoffDate}
-                  onChange={(e) => {
-                    setCutoffDate(e.target.value);
-                    setPage(0);
-                  }}
-                />
-              </div>
-              <div
-                className="stats-setting-item champion-label"
-                style={{ display: 'flex', alignItems: 'center', gap: '8px' }}
-              >
-                <span>Champion</span>
-                <select
-                  className="stats-filter-input"
-                  style={{ width: '96px' }}
-                  value={selectedChampion}
-                  onChange={(e) => {
-                    setSelectedChampion(e.target.value);
-                    setPage(0);
-                  }}
+                  <TbRefresh />
+                </button>
+                <div
+                  className="stats-setting-item cutoff-date-label"
+                  style={{ display: 'flex', alignItems: 'center', gap: '8px' }}
                 >
-                  <option value="">Both</option>
-                  <option value="Wally">Wally</option>
-                  <option value="Steven">Steven</option>
-                </select>
-              </div>
-              <div
-                className="stats-setting-item"
-                style={{ display: 'flex', alignItems: 'center', gap: '8px' }}
-              >
-                <span>Draft Type</span>
-                <select
-                  className="stats-filter-input"
-                  style={{ width: '99px' }}
-                  value={selectedDraftType}
-                  onChange={(e) => {
-                    setSelectedDraftType(e.target.value);
-                    setPage(0);
-                  }}
+                  <span>Cutoff Date</span>
+                  <span
+                    title="Exclude hall of fame runs that occurred before this date"
+                    style={{
+                      cursor: 'help',
+                      color: 'var(--eb-primary)',
+                      fontSize: '0.7rem',
+                      border: '1px solid var(--eb-primary)',
+                      borderRadius: '50%',
+                      width: '14px',
+                      height: '14px',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                    }}
+                  >
+                    i
+                  </span>
+                  <input
+                    className="stats-filter-input"
+                    type="date"
+                    style={{ width: '104px' }}
+                    value={cutoffDate}
+                    onChange={(e) => {
+                      setCutoffDate(e.target.value);
+                      setPage(0);
+                    }}
+                  />
+                </div>
+                <div
+                  className="stats-setting-item champion-label"
+                  style={{ display: 'flex', alignItems: 'center', gap: '8px' }}
                 >
-                  <option value="">All</option>
-                  <option value="auction">Auction Draft</option>
-                  <option value="1v1">1v1 Draft</option>
-                  <option value="booster">Booster Draft</option>
-                </select>
-              </div>
-              <div
-                className="stats-setting-item faster-than-label"
-                style={{ display: 'flex', alignItems: 'center', gap: '8px' }}
-              >
-                <span>Faster Than</span>
-                <span
-                  title="Show only runs completed faster than this time (e.g. 1:30:00)"
-                  style={{
-                    cursor: 'help',
-                    color: 'var(--eb-primary)',
-                    fontSize: '0.7rem',
-                    border: '1px solid var(--eb-primary)',
-                    borderRadius: '50%',
-                    width: '14px',
-                    height: '14px',
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                  }}
+                  <span>Champion</span>
+                  <select
+                    className="stats-filter-input"
+                    style={{ width: '96px' }}
+                    value={selectedChampion}
+                    onChange={(e) => {
+                      setSelectedChampion(e.target.value);
+                      setPage(0);
+                    }}
+                  >
+                    <option value="">Both</option>
+                    <option value="Wally">Wally</option>
+                    <option value="Steven">Steven</option>
+                  </select>
+                </div>
+                <div
+                  className="stats-setting-item"
+                  style={{ display: 'flex', alignItems: 'center', gap: '8px' }}
                 >
-                  i
-                </span>
-                <input
-                  className="stats-filter-input"
-                  type="text"
-                  placeholder="H:MM:SS"
-                  style={{ width: '78px', textAlign: 'left' }}
-                  value={fasterThan}
-                  onChange={(e) => {
-                    setFasterThan(e.target.value);
-                    setPage(0);
-                  }}
-                />
+                  <span>Draft Type</span>
+                  <select
+                    className="stats-filter-input"
+                    style={{ width: '99px' }}
+                    value={selectedDraftType}
+                    onChange={(e) => {
+                      setSelectedDraftType(e.target.value);
+                      setPage(0);
+                    }}
+                  >
+                    <option value="">All</option>
+                    <option value="auction">Auction Draft</option>
+                    <option value="1v1">1v1 Draft</option>
+                    <option value="booster">Booster Draft</option>
+                  </select>
+                </div>
+                <div
+                  className="stats-setting-item faster-than-label"
+                  style={{ display: 'flex', alignItems: 'center', gap: '8px' }}
+                >
+                  <span>Faster Than</span>
+                  <span
+                    title="Show only runs completed faster than this time (e.g. 1:30:00)"
+                    style={{
+                      cursor: 'help',
+                      color: 'var(--eb-primary)',
+                      fontSize: '0.7rem',
+                      border: '1px solid var(--eb-primary)',
+                      borderRadius: '50%',
+                      width: '14px',
+                      height: '14px',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                    }}
+                  >
+                    i
+                  </span>
+                  <input
+                    className="stats-filter-input"
+                    type="text"
+                    placeholder="H:MM:SS"
+                    style={{ width: '78px', textAlign: 'left' }}
+                    value={fasterThan}
+                    onChange={(e) => {
+                      setFasterThan(e.target.value);
+                      setPage(0);
+                    }}
+                  />
+                </div>
               </div>
-              <div
-                className="stats-setting-item includes-label"
-                style={{ display: 'flex', alignItems: 'center', gap: '8px' }}
-              >
-                <span>Includes</span>
-                <input
-                  className="stats-filter-input"
-                  type="text"
-                  placeholder="e.g. Swampert"
-                  style={{ textAlign: 'left' }}
-                  value={pokemonFilter}
-                  onChange={(e) => {
-                    setPokemonFilter(e.target.value);
-                    setPage(0);
-                  }}
-                />
+              <div className="hof-settings-row">
+                <div
+                  className="stats-setting-item includes-label"
+                  style={{ display: 'flex', alignItems: 'center', gap: '8px' }}
+                >
+                  <span>Includes</span>
+                  <input
+                    className="stats-filter-input"
+                    type="text"
+                    placeholder="e.g. Swampert"
+                    style={{ textAlign: 'left' }}
+                    value={pokemonFilter}
+                    onChange={(e) => {
+                      setPokemonFilter(e.target.value);
+                      setPage(0);
+                    }}
+                  />
+                </div>
+                <div
+                  className="stats-setting-item player-label"
+                  style={{ display: 'flex', alignItems: 'center', gap: '8px' }}
+                >
+                  <span>Player</span>
+                  <input
+                    className="stats-filter-input"
+                    type="text"
+                    aria-label="Filter by player"
+                    placeholder="e.g. jeansmm"
+                    style={{ textAlign: 'left' }}
+                    value={playerFilter}
+                    onChange={(e) => {
+                      setPlayerFilter(e.target.value);
+                      setPage(0);
+                    }}
+                  />
+                </div>
               </div>
-              <div
-                className="settings-divider"
-                style={{
-                  width: '1px',
-                  height: '24px',
-                  backgroundColor: 'var(--eb-border, #2a2d31)',
-                  margin: '0 4px',
-                  flexShrink: 0,
-                }}
-              />
             </div>
             <button
               type="button"
