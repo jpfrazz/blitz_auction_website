@@ -13,6 +13,7 @@ import RaceResultsTab from './components/RaceResultsTab';
 import HallOfFameStatsTab from './components/HallOfFameStatsTab';
 import { casualOneVOneDraftIds } from './oneVOneHistory';
 import { casualBoosterDraftIds } from './boosterHistory';
+import { isDraftBreakdownDraftVisible } from './draftBreakdownFilters';
 import { EEVEELUTION_IDS } from '../../utils/eevee';
 import { fetchCurrentUser } from '../../shared/api/draftData';
 import { resolvePokemonIdentity } from '../../shared/utils/pokemonIdentity';
@@ -125,6 +126,43 @@ function preloadIcons(names: string[], budgetMs: number): Promise<void> {
   });
 }
 
+const DraftFilterToggle: React.FC<{
+  label: string;
+  checked: boolean;
+  onChange: () => void;
+}> = ({ label, checked, onChange }) => (
+  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+    <span style={{ cursor: 'pointer', fontWeight: 500 }} onClick={onChange}>
+      {label}
+    </span>
+    <div
+      onClick={onChange}
+      style={{
+        position: 'relative',
+        width: '40px',
+        height: '20px',
+        backgroundColor: checked ? 'var(--eb-primary, #7CB946)' : '#333',
+        borderRadius: '20px',
+        cursor: 'pointer',
+        transition: 'background-color 0.3s ease',
+      }}
+    >
+      <div
+        style={{
+          position: 'absolute',
+          top: '2px',
+          left: checked ? '22px' : '2px',
+          width: '16px',
+          height: '16px',
+          backgroundColor: 'white',
+          borderRadius: '50%',
+          transition: 'left 0.3s ease',
+        }}
+      />
+    </div>
+  </div>
+);
+
 const Stats: React.FC = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
@@ -140,10 +178,10 @@ const Stats: React.FC = () => {
   const [expandedDraftId, setExpandedDraftId] = useState<string | null>(null);
   const [draftSortMode, setDraftSortMode] = useState<'order' | 'price' | 'user' | 'race'>('order');
   const [selectedPokemonForChart, setSelectedPokemonForChart] = useState<{ key: string; name: string } | null>(null);
-  const [showCompetitive, setShowCompetitive] = useState(true);
-  const [showCasual, setShowCasual] = useState(false);
-  const [show1v1s, setShow1v1s] = useState(false);
-  const [showBoosters, setShowBoosters] = useState(false);
+  const [competitiveOnly, setCompetitiveOnly] = useState(false);
+  const [showAuctions, setShowAuctions] = useState(true);
+  const [show1v1s, setShow1v1s] = useState(true);
+  const [showBoosters, setShowBoosters] = useState(true);
   const [gridColumns, setGridColumns] = useState<number>(0);
   const { data: currentUser } = useQuery({
     queryKey: ['current-user'],
@@ -523,19 +561,27 @@ const Stats: React.FC = () => {
   }, [stats?.auctions]);
 
   const visibleDrafts = useMemo(() => {
-    return draftSummary.filter((draft) => {
-      if (draft.draftType === '1v1') {
-        return show1v1s && finished1v1DraftIds.has(draft.draftId);
-      }
-      if (draft.draftType === 'booster') {
-        return showBoosters;
-      }
-      if (validDraftIds.has(draft.draftId)) {
-        return showCompetitive;
-      }
-      return showCasual;
-    });
-  }, [draftSummary, show1v1s, showBoosters, finished1v1DraftIds, showCompetitive, showCasual, validDraftIds]);
+    return draftSummary.filter((draft) => isDraftBreakdownDraftVisible(draft, {
+      competitiveOnly,
+      showAuctions,
+      show1v1s,
+      showBoosters,
+      validDraftIds,
+      casual1v1DraftIds,
+      casualBoosterIds,
+      finished1v1DraftIds,
+    }));
+  }, [
+    draftSummary,
+    competitiveOnly,
+    showAuctions,
+    show1v1s,
+    showBoosters,
+    validDraftIds,
+    casual1v1DraftIds,
+    casualBoosterIds,
+    finished1v1DraftIds,
+  ]);
 
   const kpis = useMemo(() => {
     // Adding 152 to account for legacy drafts
@@ -688,130 +734,26 @@ const Stats: React.FC = () => {
               <div className="stats-panel-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
                 <h2 style={{ margin: 0 }}>Draft Breakdown</h2>
                 <div className="competitive-toggle-wrapper" style={{ display: 'flex', alignItems: 'center', gap: '12px', fontSize: '1.1rem' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <span 
-                      style={{ cursor: 'pointer', fontWeight: 500 }} 
-                      onClick={() => setShowCompetitive(!showCompetitive)}
-                    >
-                      Competitive Drafts
-                    </span>
-                    <div
-                      onClick={() => setShowCompetitive(!showCompetitive)}
-                      style={{ 
-                        position: 'relative', 
-                        width: '40px', 
-                        height: '20px', 
-                        backgroundColor: showCompetitive ? 'var(--eb-primary, #7CB946)' : '#333', 
-                        borderRadius: '20px', 
-                        cursor: 'pointer', 
-                        transition: 'background-color 0.3s ease' 
-                      }}
-                    >
-                      <div style={{ 
-                        position: 'absolute', 
-                        top: '2px', 
-                        left: showCompetitive ? '22px' : '2px', 
-                        width: '16px', 
-                        height: '16px', 
-                        backgroundColor: 'white', 
-                        borderRadius: '50%', 
-                        transition: 'left 0.3s ease' 
-                      }} />
-                    </div>
-                  </div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <span 
-                      style={{ cursor: 'pointer', fontWeight: 500 }} 
-                      onClick={() => setShowCasual(!showCasual)}
-                    >
-                      Casual Drafts
-                    </span>
-                    <div
-                      onClick={() => setShowCasual(!showCasual)}
-                      style={{ 
-                        position: 'relative', 
-                        width: '40px', 
-                        height: '20px', 
-                        backgroundColor: showCasual ? 'var(--eb-primary, #7CB946)' : '#333', 
-                        borderRadius: '20px', 
-                        cursor: 'pointer', 
-                        transition: 'background-color 0.3s ease' 
-                      }}
-                    >
-                      <div style={{ 
-                        position: 'absolute', 
-                        top: '2px', 
-                        left: showCasual ? '22px' : '2px', 
-                        width: '16px', 
-                        height: '16px', 
-                        backgroundColor: 'white', 
-                        borderRadius: '50%', 
-                        transition: 'left 0.3s ease' 
-                      }} />
-                    </div>
-                  </div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <span 
-                      style={{ cursor: 'pointer', fontWeight: 500 }} 
-                      onClick={() => setShow1v1s(!show1v1s)}
-                    >
-                      1v1s
-                    </span>
-                    <div
-                      onClick={() => setShow1v1s(!show1v1s)}
-                      style={{ 
-                        position: 'relative', 
-                        width: '40px', 
-                        height: '20px', 
-                        backgroundColor: show1v1s ? 'var(--eb-primary, #7CB946)' : '#333', 
-                        borderRadius: '20px', 
-                        cursor: 'pointer', 
-                        transition: 'background-color 0.3s ease' 
-                      }}
-                    >
-                      <div style={{ 
-                        position: 'absolute', 
-                        top: '2px', 
-                        left: show1v1s ? '22px' : '2px', 
-                        width: '16px', 
-                        height: '16px', 
-                        backgroundColor: 'white', 
-                        borderRadius: '50%', 
-                        transition: 'left 0.3s ease' 
-                      }} />
-                    </div>
-                  </div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <span 
-                      style={{ cursor: 'pointer', fontWeight: 500 }} 
-                      onClick={() => setShowBoosters(!showBoosters)}
-                    >
-                      Booster
-                    </span>
-                    <div
-                      onClick={() => setShowBoosters(!showBoosters)}
-                      style={{ 
-                        position: 'relative', 
-                        width: '40px', 
-                        height: '20px', 
-                        backgroundColor: showBoosters ? 'var(--eb-primary, #7CB946)' : '#333', 
-                        borderRadius: '20px', 
-                        cursor: 'pointer', 
-                        transition: 'background-color 0.3s ease' 
-                      }}
-                    >
-                      <div style={{ 
-                        position: 'absolute', 
-                        top: '2px', 
-                        left: showBoosters ? '22px' : '2px', 
-                        width: '16px', 
-                        height: '16px', 
-                        backgroundColor: 'white', 
-                        borderRadius: '50%', 
-                        transition: 'left 0.3s ease' 
-                      }} />
-                    </div>
-                  </div>
+                  <DraftFilterToggle
+                    label="Competitive Drafts Only"
+                    checked={competitiveOnly}
+                    onChange={() => setCompetitiveOnly((prev) => !prev)}
+                  />
+                  <DraftFilterToggle
+                    label="Auctions"
+                    checked={showAuctions}
+                    onChange={() => setShowAuctions((prev) => !prev)}
+                  />
+                  <DraftFilterToggle
+                    label="1v1s"
+                    checked={show1v1s}
+                    onChange={() => setShow1v1s((prev) => !prev)}
+                  />
+                  <DraftFilterToggle
+                    label="Boosters"
+                    checked={showBoosters}
+                    onChange={() => setShowBoosters((prev) => !prev)}
+                  />
                 </div>
               </div>
               <div className="table-wrap">

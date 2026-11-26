@@ -60,6 +60,17 @@ describe('orderSlotsForHolder', () => {
       .toEqual([3, 4, 1, 2, 5, 6, 7]);
   });
 
+  test('keeps available cards in the engine average-price order', () => {
+    const slots = [
+      slot(9, 'Available'),
+      slot(2, 'Available'),
+      slot(5, 'Available'),
+    ];
+
+    expect(orderSlotsForHolder(slots, [], players, 'p1', 0).map((s) => s.pokemon.pokedex_id))
+      .toEqual([9, 2, 5]);
+  });
+
   test('uses history order as the tie-break inside a section', () => {
     const first = slot(20, { Picked: 'p2' });
     const second = slot(10, { Picked: 'p2' });

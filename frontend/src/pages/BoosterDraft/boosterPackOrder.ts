@@ -112,8 +112,9 @@ function historyOrder(
 
 /**
  * Slots are grouped so the pack always reads from useful to spent: available
- * cards first, then picks, then bans, and finally leftovers. Within a group,
- * picks and bans keep the order they were taken in.
+ * cards first, then picks, then bans, and finally leftovers. Available cards
+ * keep the engine's average-price-descending order (the same order 1v1 uses),
+ * while picks and bans keep the order they were taken in.
  */
 export function orderSlotsForHolder(
   slots: BoosterPoolSlot[],
@@ -136,9 +137,10 @@ export function orderSlotsForHolder(
     if (sectionA !== sectionB) return sectionA - sectionB;
 
     if (sectionA === 0) {
-      const dexA = a.pokemon.pokedex_id ?? Number.MAX_SAFE_INTEGER;
-      const dexB = b.pokemon.pokedex_id ?? Number.MAX_SAFE_INTEGER;
-      return dexA - dexB || a.pokemon.name.localeCompare(b.pokemon.name);
+      // The backend seeds each pack in average-price-descending order with a
+      // Pokédex tie-break. Sorting by dex here would undo that, so leave the
+      // available group in the exact order the engine provided.
+      return 0;
     }
 
     const { actor, kind } = statusActor(a.status);
