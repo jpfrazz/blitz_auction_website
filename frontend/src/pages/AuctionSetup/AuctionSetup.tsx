@@ -4,8 +4,6 @@ import { fetchPokemonList } from '../../shared/api/pokemon';
 import { Pokemon } from '../../types';
 import { useNavigate } from 'react-router-dom';
 import { fetchCurrentUser } from '../../shared/api/draftData';
-import Header from '../../shared/components/Header';
-import Footer from '../../shared/components/Footer';
 import './AuctionSetup.scss';
 import '../../shared/style/theme.scss';
 import { createDraft, CreateDraftRequest, isLobbyLimitError } from '../../shared/api/draft';
@@ -18,20 +16,8 @@ const MAX_TEAM_SIZE = 10;
 const DEFAULT_STARTING_MONEY = 20000;
 const DEFAULT_AUCTION_SECONDS = 10;
 
-const AuctionSetup = () => (
-  <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
-    <Header />
-    <main className="auction-setup-main">
-      <AuctionSetupForm />
-    </main>
-    <Footer />
-  </div>
-);
-
-const AuctionSetupForm: React.FC = () => {
+export const AuctionSetupTip: React.FC = () => {
   const [tipsEnabled, setTipsEnabled] = useState(getTipMessagesEnabled);
-  const [hasRefereeRole, setHasRefereeRole] = useState(false);
-  const navigate = useNavigate();
 
   useEffect(() => {
     const handleSettingsChanged = () => setTipsEnabled(getTipMessagesEnabled());
@@ -42,6 +28,19 @@ const AuctionSetupForm: React.FC = () => {
       window.removeEventListener('storage', handleSettingsChanged);
     };
   }, []);
+
+  if (!tipsEnabled) return null;
+
+  return (
+    <div className="auction-setup-tip">
+      <strong>TIP:</strong> Don't cap how many Pokemon a player can win in the auction! Some players will finish the auction with more Pokémon than others, and that's essential to the strategy. If one player drafts lots of weak, cheap Pokémon, they're able to play with more than a player who drafts powerful, expensive ones!
+    </div>
+  );
+};
+
+export const AuctionSetupForm: React.FC = () => {
+  const [hasRefereeRole, setHasRefereeRole] = useState(false);
+  const navigate = useNavigate();
 
   useEffect(() => {
     fetchCurrentUser()
@@ -131,11 +130,8 @@ const AuctionSetupForm: React.FC = () => {
     }
   };
 
-  return (
-    <>
-    <div className="auction-setup-card">
-      <h2 className="auction-setup-title">Auction Setup</h2>
-      <form className="auction-setup-form" onSubmit={handleSubmit} autoComplete="off">
+  const form = (
+    <form className="auction-setup-form" onSubmit={handleSubmit} autoComplete="off">
         {submitError && <div style={{ color: 'red', marginBottom: 8 }}>{submitError}</div>}
         {createdAuctionId && <div style={{ color: 'lime', marginBottom: 8 }}>Auction Created! ID: {createdAuctionId}</div>}
         <div style={{ display: 'flex', gap: '10px', width: '100%' }}>
@@ -311,25 +307,14 @@ const AuctionSetupForm: React.FC = () => {
           </div>
         )}
       </form>
-    </div>
-    {tipsEnabled && (
-      <div className="auction-setup-tip" style={{
-        marginTop: '20px',
-        padding: '16px 20px',
-        borderRadius: '8px',
-        background: 'rgba(255, 255, 255, 0.05)',
-        border: '1px solid rgba(255, 255, 255, 0.1)',
-        fontSize: '1.25rem',
-        lineHeight: '1.5',
-        color: 'var(--sl-color-neutral-300)',
-        maxWidth: '70%',
-      }}>
-        <strong>TIP:</strong> Don't cap how many Pokemon a player can win in the auction! Some players will finish the auction with more Pokémon than others, and that's essential to the strategy. If one player drafts lots of weak, cheap Pokémon, they're able to play with more than a player who drafts powerful, expensive ones!
-      </div>
-    )}
-    {showLobbyLimit && <LobbyLimitModal onClose={() => setShowLobbyLimit(false)} />}
+  );
+
+  const lobbyLimitModal = showLobbyLimit && <LobbyLimitModal onClose={() => setShowLobbyLimit(false)} />;
+
+  return (
+    <>
+      {form}
+      {lobbyLimitModal}
     </>
   );
 };
-
-export default AuctionSetup;

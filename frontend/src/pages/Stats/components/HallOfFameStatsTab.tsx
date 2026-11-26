@@ -7,6 +7,7 @@ import { getIconName } from '../../../utils/speciesUtils';
 interface HallOfFameStatsTabProps {
   validDraftIds: Set<string>;
   casual1v1DraftIds: Set<string>;
+  casualBoosterDraftIds?: Set<string>;
 }
 
 function parseTimeToSeconds(input: string): number | null {
@@ -29,7 +30,11 @@ function parseTimeToSeconds(input: string): number | null {
   return seconds;
 }
 
-const HallOfFameStatsTab: React.FC<HallOfFameStatsTabProps> = ({ validDraftIds, casual1v1DraftIds }) => {
+const HallOfFameStatsTab: React.FC<HallOfFameStatsTabProps> = ({
+  validDraftIds,
+  casual1v1DraftIds,
+  casualBoosterDraftIds = new Set(),
+}) => {
   const [entries, setEntries] = useState<AdminHallOfFameEligibleEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -37,6 +42,7 @@ const HallOfFameStatsTab: React.FC<HallOfFameStatsTabProps> = ({ validDraftIds, 
   const [showFilters, setShowFilters] = useState(false);
   const [cutoffDate, setCutoffDate] = useState('');
   const [selectedChampion, setSelectedChampion] = useState('');
+  const [selectedDraftType, setSelectedDraftType] = useState('');
   const [fasterThan, setFasterThan] = useState('');
   const [pokemonFilter, setPokemonFilter] = useState('');
   const [mostRecent, setMostRecent] = useState(200);
@@ -46,7 +52,7 @@ const HallOfFameStatsTab: React.FC<HallOfFameStatsTabProps> = ({ validDraftIds, 
     let active = true;
     setLoading(true);
     setError(null);
-    fetchHallOfFameEligible(mostRecent)
+    fetchHallOfFameEligible(mostRecent, selectedDraftType || undefined)
       .then((data) => {
         if (!active) return;
         setEntries(data.filter((entry) => entry.hall_of_fame_team.length > 0));
@@ -59,7 +65,7 @@ const HallOfFameStatsTab: React.FC<HallOfFameStatsTabProps> = ({ validDraftIds, 
         if (active) setLoading(false);
       });
     return () => { active = false; };
-  }, [mostRecent]);
+  }, [mostRecent, selectedDraftType]);
 
   const filteredEntries = useMemo(() => {
     const fasterThanSeconds = parseTimeToSeconds(fasterThan);
@@ -70,6 +76,9 @@ const HallOfFameStatsTab: React.FC<HallOfFameStatsTabProps> = ({ validDraftIds, 
         return false;
       }
       if (selectedChampion && entry.beat_name !== selectedChampion) {
+        return false;
+      }
+      if (selectedDraftType && entry.draft_type !== selectedDraftType) {
         return false;
       }
       if (fasterThanSeconds !== null) {
@@ -88,7 +97,7 @@ const HallOfFameStatsTab: React.FC<HallOfFameStatsTabProps> = ({ validDraftIds, 
       }
       return true;
     });
-  }, [entries, cutoffDate, selectedChampion, fasterThan, pokemonFilter]);
+  }, [entries, cutoffDate, selectedChampion, selectedDraftType, fasterThan, pokemonFilter]);
 
   const commitMostRecent = () => {
     const parsed = parseInt(mostRecentInput, 10);
@@ -104,6 +113,7 @@ const HallOfFameStatsTab: React.FC<HallOfFameStatsTabProps> = ({ validDraftIds, 
   const resetFilters = () => {
     setCutoffDate('');
     setSelectedChampion('');
+    setSelectedDraftType('');
     setFasterThan('');
     setPokemonFilter('');
     setMostRecent(200);
@@ -214,6 +224,23 @@ const HallOfFameStatsTab: React.FC<HallOfFameStatsTabProps> = ({ validDraftIds, 
                 </select>
               </div>
               <div
+                className="stats-setting-item"
+                style={{ display: 'flex', alignItems: 'center', gap: '8px' }}
+              >
+                <span>Draft Type</span>
+                <select
+                  className="stats-filter-input"
+                  style={{ width: '132px' }}
+                  value={selectedDraftType}
+                  onChange={(e) => setSelectedDraftType(e.target.value)}
+                >
+                  <option value="">All</option>
+                  <option value="auction">Auction Draft</option>
+                  <option value="1v1">1v1 Draft</option>
+                  <option value="booster">Booster Draft</option>
+                </select>
+              </div>
+              <div
                 className="stats-setting-item faster-than-label"
                 style={{ display: 'flex', alignItems: 'center', gap: '8px' }}
               >
@@ -304,7 +331,17 @@ const HallOfFameStatsTab: React.FC<HallOfFameStatsTabProps> = ({ validDraftIds, 
           <div className="admin-hof-entries">
             {filteredEntries.map((entry) => (
               <div className="admin-hof-entry" key={entry.team_id}>
-                {entry.draft_type === '1v1' ? (
+                {entry.draft_type === 'booster' ? (
+                  casualBoosterDraftIds.has(entry.draft_id) ? (
+                    <div className="admin-hof-draft-type booster casual-booster">
+                      Casual Booster
+                    </div>
+                  ) : (
+                    <div className="admin-hof-draft-type booster">
+                      Booster Draft
+                    </div>
+                  )
+                ) : entry.draft_type === '1v1' ? (
                   <div className={`admin-hof-draft-type ${casual1v1DraftIds.has(entry.draft_id) ? 'casual' : 'one-v-one'}`}>
                     {casual1v1DraftIds.has(entry.draft_id) ? 'Casual 1v1' : '1v1 Draft'}
                   </div>

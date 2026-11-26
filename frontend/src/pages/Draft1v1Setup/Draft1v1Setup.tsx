@@ -1,7 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import Header from '../../shared/components/Header';
-import Footer from '../../shared/components/Footer';
 import { createDraft, CreateDraftRequest, isLobbyLimitError } from '../../shared/api/draft';
 import { fetchPokemonList } from '../../shared/api/pokemon';
 import { Pokemon } from '../../types';
@@ -10,17 +8,7 @@ import { generateRandomDraftName } from '../../shared/utils/draftNameGenerator';
 import LobbyLimitModal from '../../shared/components/LobbyLimitModal';
 import './Draft1v1Setup.scss';
 
-const Draft1v1Setup = () => (
-  <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
-    <Header />
-    <main className="auction-setup-main">
-      <Draft1v1SetupForm />
-    </main>
-    <Footer />
-  </div>
-);
-
-const Draft1v1SetupForm: React.FC = () => {
+export const Draft1v1SetupForm: React.FC = () => {
   const navigate = useNavigate();
   const [draftName, setDraftName] = useState('');
   const [password, setPassword] = useState('');
@@ -70,10 +58,8 @@ const Draft1v1SetupForm: React.FC = () => {
     }
   };
 
-  return (
-    <div className="auction-setup-card">
-      <h2 className="auction-setup-title">1v1 Draft Setup</h2>
-      <form className="auction-setup-form" onSubmit={handleSubmit} autoComplete="off">
+  const form = (
+    <form className="auction-setup-form" onSubmit={handleSubmit} autoComplete="off">
         {submitError && <div style={{ color: 'red', marginBottom: 8 }}>{submitError}</div>}
         <div style={{ display: 'flex', gap: '10px', width: '100%' }}>
           <div className="auction-setup-field" style={{ flex: 1 }}>
@@ -128,7 +114,7 @@ const Draft1v1SetupForm: React.FC = () => {
               </button>
             ))}
           </div>
-          <span className="pool-size-description">{poolSize / 4} Pokemon per player</span>
+          <span className="pool-size-description">{poolSize / 4} Pokemon per player{poolSize >= 36 ? ' (Casual)' : ''}</span>
         </div>
         <div className="auction-setup-field auction-setup-btn-row">
           <button type="submit" className="auction-setup-btn navButton">
@@ -136,9 +122,14 @@ const Draft1v1SetupForm: React.FC = () => {
           </button>
         </div>
       </form>
-      {showLobbyLimit && <LobbyLimitModal onClose={() => setShowLobbyLimit(false)} />}
-    </div>
+  );
+
+  const lobbyLimitModal = showLobbyLimit && <LobbyLimitModal onClose={() => setShowLobbyLimit(false)} />;
+
+  return (
+    <>
+      {form}
+      {lobbyLimitModal}
+    </>
   );
 };
-
-export default Draft1v1Setup;

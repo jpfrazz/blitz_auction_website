@@ -133,6 +133,8 @@ const LobbyViewer: React.FC = () => {
       id: 'format',
       cell: info => {
         const row = info.row.original;
+        if (row.format) return row.format;
+        if (row.draft_type === 'booster') return 'Booster';
         if (row.draft_type === '1v1') return '1v1';
         if (row.ranked) return 'Ranked';
         return 'Auction';
@@ -155,8 +157,12 @@ const LobbyViewer: React.FC = () => {
         const ranked = info.row.original.ranked;
         const isCreator = info.row.original.host === currentUserId;
 
-        const is1v1 = info.row.original.draft_type === '1v1';
-        const joinTarget = is1v1 ? `/Draft1v1?${info.row.original.draft_id}` : `/Auction?${info.row.original.draft_id}`;
+        const draftType = info.row.original.draft_type;
+        const joinTarget = draftType === 'booster'
+          ? `/BoosterDraft?${info.row.original.draft_id}`
+          : draftType === '1v1'
+            ? `/Draft1v1?${info.row.original.draft_id}`
+            : `/Auction?${info.row.original.draft_id}`;
 
         // Once a lobby leaves the pending phase it enters the drafting phase and
         // beyond, so watchers get a "Spectate" link instead of a "Join" button.

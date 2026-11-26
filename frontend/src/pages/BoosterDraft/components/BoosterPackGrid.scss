@@ -1,0 +1,121 @@
+.booster-pack-panel {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  flex: 0 0 auto;
+  box-sizing: border-box;
+  width: calc(100% - 12px);
+  min-width: 0;
+  padding: 4px;
+  background: rgba(0, 0, 0, 0.3);
+  border: 2px solid var(--booster-holder-color, #9e9e9e);
+  border-radius: 8px;
+  box-shadow: 0 0 0 1px var(--booster-holder-glow, transparent),
+    inset 0 0 14px var(--booster-holder-glow, transparent);
+}
+
+.booster-pack-panel.my-pack {
+  box-shadow: 0 0 0 2px var(--booster-holder-glow, transparent),
+    0 0 16px var(--booster-holder-glow, transparent),
+    inset 0 0 14px var(--booster-holder-glow, transparent);
+}
+
+.booster-pack-grid {
+  box-sizing: border-box;
+  grid-template-columns: repeat(var(--booster-columns, 14), var(--pool-tile-size, 80px));
+  justify-content: start;
+  align-content: start;
+  gap: 4px;
+  // Leave room for the 1v1 hover scale so hovering never adds a scroll bar.
+  padding: 4px 4px 6px;
+  flex: 0 0 auto;
+  min-width: 0;
+  overflow-x: auto;
+  overflow-y: hidden;
+}
+
+.booster-tile.booster-picked {
+  background: var(--booster-picked-bg, #a8c8e0);
+  border-color: var(--booster-picked-border, #2f5f8f);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.28);
+  animation: pool-pop 0.35s ease;
+}
+
+.booster-tile.booster-banned {
+  background: #6e6e6e;
+  border-color: var(--booster-player-color, #4d4d4d);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+  animation: pool-pop 0.35s ease;
+
+  img {
+    filter: grayscale(100%);
+    opacity: 0.55;
+  }
+}
+
+.booster-tile.booster-leftover {
+  background: #444;
+  border-color: #666;
+  opacity: 0.65;
+}
+
+// Same hover treatment as 1v1: a small scale and the player's pick colours.
+// No extra shake/glow animation is introduced here.
+.booster-tile.booster-hover-pick:hover,
+.booster-tile.booster-hover-pick-persistent {
+  cursor: pointer;
+  background: var(--booster-hover-bg, #a8c8e0) !important;
+  border-color: var(--booster-hover-border, #2f5f8f) !important;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.28);
+  transform: scale(1.04);
+}
+
+.booster-tile.booster-hover-ban:hover,
+.booster-tile.booster-hover-ban-persistent {
+  cursor: pointer;
+  background: #6e6e6e !important;
+  border-color: var(--booster-hover-border, #2f5f8f) !important;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+  transform: scale(1.04);
+
+  img {
+    filter: grayscale(100%);
+    opacity: 0.55;
+  }
+}
+
+.booster-tile.marked.available.booster-hover-ban:hover,
+.booster-tile.marked.available.booster-hover-ban-persistent {
+  background: #6e6e6e !important;
+  border-color: #b8860b !important;
+}
+
+.booster-tile.mystery-dungeon.has-dizzy.booster-hover-ban:hover,
+.booster-tile.mystery-dungeon.has-dizzy.booster-hover-ban-persistent {
+  .portrait-normal { opacity: 0; }
+  .portrait-dizzy { opacity: 1; }
+}
+
+.booster-tile.mystery-dungeon::after,
+.booster-tile.tcg-art::after,
+.booster-tile.shuffle-art::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.booster-tile.mystery-dungeon.booster-picked::after,
+.booster-tile.tcg-art.booster-picked::after,
+.booster-tile.shuffle-art.booster-picked::after {
+  background: var(--booster-picked-overlay, rgba(74, 134, 216, 0.18));
+}
+
+.booster-tile.mystery-dungeon.booster-hover-pick:hover::after,
+.booster-tile.mystery-dungeon.booster-hover-pick-persistent::after,
+.booster-tile.tcg-art.booster-hover-pick:hover::after,
+.booster-tile.tcg-art.booster-hover-pick-persistent::after,
+.booster-tile.shuffle-art.booster-hover-pick:hover::after,
+.booster-tile.shuffle-art.booster-hover-pick-persistent::after {
+  background: var(--booster-hover-overlay, rgba(74, 134, 216, 0.18));
+}

@@ -12,6 +12,7 @@ interface PokemonHistoryChartProps {
   cutoffDate?: string;
   validDraftIds: Set<string>;
   casualOneVOneDraftIds: Set<string>;
+  casualBoosterDraftIds?: Set<string>;
   runStatLineage: RunStatLineage;
 }
 
@@ -24,6 +25,7 @@ const PokemonHistoryChart: React.FC<PokemonHistoryChartProps> = ({
   cutoffDate,
   validDraftIds,
   casualOneVOneDraftIds,
+  casualBoosterDraftIds = new Set(),
   runStatLineage,
 }) => {
   const [activeTab, setActiveTab] = useState<HistoryTab>('sales');
@@ -91,6 +93,7 @@ const PokemonHistoryChart: React.FC<PokemonHistoryChartProps> = ({
             cutoffDate={cutoffDate}
             validDraftIds={validDraftIds}
             casualOneVOneDraftIds={casualOneVOneDraftIds}
+            casualBoosterDraftIds={casualBoosterDraftIds}
             runStatLineage={runStatLineage}
           />
         )}

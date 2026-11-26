@@ -121,6 +121,10 @@ const Draft1v1Page: React.FC = () => {
         return Promise.all([fetchDraftById(draftId), fetchPokemonList()] as [Promise<Draft>, Promise<Pokemon[]>]).then(([draftData, allPkmn]) => ({ user, draftData, allPkmn }));
       })
       .then(({ user, draftData, allPkmn }) => {
+        if (draftData.draft_type === 'booster') {
+          navigate(`/BoosterDraft?${draftId}`, { replace: true });
+          return;
+        }
         if (draftData.draft_type !== '1v1') {
           navigate(`/Auction?${draftId}`, { replace: true });
           return;
@@ -827,7 +831,7 @@ const Draft1v1Page: React.FC = () => {
         {/* Guest confirm modal */}
         {showGuestConfirmModal && (
           <div className="auction-password-modal-overlay">
-            <div className="auction-password-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="auction-password-modal guest-confirm-modal" onClick={(e) => e.stopPropagation()}>
               <h3 className="auction-password-modal-title">Wait!</h3>
               <p className="auction-password-modal-text">
                 It looks like you aren't logged in! Are you sure you want to draft as a guest? If you log in with Discord, this website will track your favorite picks and other stats!

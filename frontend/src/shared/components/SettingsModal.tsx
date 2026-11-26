@@ -63,7 +63,9 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ onClose }) => {
   });
 
   const [oneVOneArt, setOneVOneArt] = useState(() =>
-    localStorage.getItem('eb-1v1-pokemon-art') || 'standard'
+    localStorage.getItem('eb-pokemon-tile-art') ||
+    localStorage.getItem('eb-1v1-pokemon-art') ||
+    'standard'
   );
 
   const [playerCardColor, setPlayerCardColor] = useState(() => {
@@ -120,6 +122,8 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ onClose }) => {
   }, [tipMessages]);
 
   useEffect(() => {
+    localStorage.setItem('eb-pokemon-tile-art', oneVOneArt);
+    // Keep the old key in sync for any other page still reading it.
     localStorage.setItem('eb-1v1-pokemon-art', oneVOneArt);
     window.dispatchEvent(new CustomEvent('eb-settings-changed'));
   }, [oneVOneArt]);
@@ -359,8 +363,8 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ onClose }) => {
           {activeTab === 'accessibility' && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', background: 'rgba(255,255,255,0.05)', padding: '1rem', borderRadius: '8px' }}>
-                <label className="settings-label" htmlFor="one-v-one-art">1v1 Pokémon Images</label>
-                <select id="one-v-one-art" value={oneVOneArt} onChange={(event) => setOneVOneArt(event.target.value)} style={{ padding: '8px', background: '#333', color: '#f1f1f1', border: '1px solid #666', borderRadius: '4px' }}>
+                <label className="settings-label" htmlFor="pokemon-tile-art">Pokémon Tile Images</label>
+                <select id="pokemon-tile-art" value={oneVOneArt} onChange={(event) => setOneVOneArt(event.target.value)} style={{ padding: '8px', background: '#333', color: '#f1f1f1', border: '1px solid #666', borderRadius: '4px' }}>
                   <option value="standard">Standard</option>
                   <option value="mystery-dungeon">Mystery Dungeon</option>
                   <option value="shuffle">Shuffle Icons</option>

@@ -126,6 +126,51 @@ export interface RpsRoundResult {
   winner: string | null;
 }
 
+export type BoosterAction = 'Pick' | 'Ban';
+export type BoosterSlotStatus =
+  | 'Available'
+  | { Picked: string }
+  | { Banned: string }
+  | 'Leftover';
+
+export interface BoosterPoolSlot {
+  pokemon: Pokemon;
+  status: BoosterSlotStatus;
+}
+
+export interface BoosterPackState {
+  pack_index: number;
+  owner_id: string;
+  holder_id: string;
+  slots: BoosterPoolSlot[];
+}
+
+export interface BoosterSubmissionState {
+  user_id: string;
+  has_picked: boolean;
+  has_banned: boolean;
+}
+
+export interface BoosterHistoryEntry {
+  round: number;
+  pack_index: number;
+  action: 'Pick' | 'Ban' | 'Leftover';
+  player_id: string | null;
+  pokemon: Pokemon;
+}
+
+export interface BoosterState {
+  player_ids: string[];
+  packs: BoosterPackState[];
+  submissions: BoosterSubmissionState[];
+  round: number;
+  total_rounds: number;
+  bans_enabled: boolean;
+  team_size: number;
+  casual: boolean;
+  history: BoosterHistoryEntry[];
+}
+
 /** Public state for the 1v1 pick-order rock-paper-scissors showdown. */
 export interface RockPaperScissorsState {
   host: string;
@@ -162,8 +207,10 @@ export interface Draft {
   current_server_time?: string;
   auction_length: number;
   one_v_one_pool_size?: number;
+  booster_team_size?: number;
   one_v_one?: OneVOneState | null;
   rps?: RockPaperScissorsState | null;
+  booster?: BoosterState | null;
 }
 
 export interface ChatMessage {
@@ -375,6 +422,8 @@ export interface PlayerProfileResponse {
   price_history: Record<string, PricePoint[]>;
   valid_draft_ids: string[];
   global_pokemon_keys: PokemonKeyRow[];
+  /** Opponent signature Pokémon identity key for each 1v1 draft, by draft id. */
+  one_v_one_opponent_signatures: Record<string, string>;
 }
 
 export interface AdminHallOfFameTeamEntry {

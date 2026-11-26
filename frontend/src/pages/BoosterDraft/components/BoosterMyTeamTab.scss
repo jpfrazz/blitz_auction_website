@@ -1,0 +1,41 @@
+.booster-my-team-tab {
+  position: relative;
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 100%;
+  padding: 16px 68px 16px 16px;
+  overflow-y: auto;
+}
+
+.booster-my-team-count {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  z-index: 1;
+  padding: 2px 8px;
+  background: var(--booster-my-team-overlay, rgba(158, 158, 158, 0.18));
+  border: 1px solid var(--booster-my-team-color, #9e9e9e);
+  border-radius: 4px;
+  color: #fff;
+  font-size: 0.8rem;
+  white-space: nowrap;
+}
+
+.booster-my-team-empty {
+  padding: 32px 16px;
+  color: #bbb;
+  text-align: center;
+}
+
+.booster-my-team-grid {
+  --pool-tile-size: 72px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 4px;
+}
+
+.booster-my-team-cell {
+  flex: 0 0 var(--pool-tile-size);
+  width: var(--pool-tile-size);
+}

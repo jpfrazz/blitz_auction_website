@@ -21,7 +21,10 @@ const navButtons = [
 function Header() {
   const location = useLocation();
   const navigate = useNavigate();
-  const isAuctionPage = location.pathname === '/Auction' || location.pathname === '/Draft1v1';
+  const isAuctionPage =
+    location.pathname === '/Auction' ||
+    location.pathname === '/Draft1v1' ||
+    location.pathname === '/BoosterDraft';
   const isEmulatorPage = location.pathname.startsWith('/Emulator');
   const linkTarget = (isAuctionPage || isEmulatorPage) ? '_blank' : undefined;
   const linkRel = (isAuctionPage || isEmulatorPage) ? 'noopener noreferrer' : undefined;
@@ -267,23 +270,28 @@ function Header() {
     const header = headerRef.current;
     if (!header) return false;
 
-    const rootStyle = document.documentElement.style;
-    const previousZoom = rootStyle.getPropertyValue('--eb-page-zoom');
-    const previousPriority = rootStyle.getPropertyPriority('--eb-page-zoom');
-    rootStyle.setProperty('--eb-page-zoom', String(zoom));
+    // Don't write candidate zoom levels to the live document to measure them.
+    // Changing --eb-page-zoom changes rem-based font sizes across the page, so
+    // elements with broad CSS transitions animated through every candidate
+    // (most visibly the stats tab chips, which ballooned and shrank on route
+    // changes). The site is rem-based and the header is centered, so scaling
+    // the already-measured rects by zoom / currentZoom gives the same answer
+    // without ever changing what is rendered.
+    const currentZoom = Number.parseFloat(document.documentElement.style.getPropertyValue('--eb-page-zoom')) || DEFAULT_PAGE_ZOOM;
+    const scale = zoom / currentZoom;
     const viewportWidth = document.documentElement.clientWidth;
-    const fits = Array.from(header.querySelectorAll('.logoLink, .logoImg, .nav > *, .userDropdownTrigger'))
+    // The header is `width: 100vw`, so its content is centered on innerWidth
+    // (which includes a scrollbar) while the usable right edge is clientWidth.
+    const centerX = window.innerWidth / 2;
+
+    return Array.from(header.querySelectorAll('.logoLink, .logoImg, .nav > *, .userDropdownTrigger'))
       .filter((element) => element.getClientRects().length > 0)
       .every((element) => {
         const bounds = element.getBoundingClientRect();
-        return bounds.left >= 0 && bounds.right <= viewportWidth;
+        const left = centerX + (bounds.left - centerX) * scale;
+        const right = centerX + (bounds.right - centerX) * scale;
+        return left >= 0 && right <= viewportWidth;
       });
-    if (previousZoom) {
-      rootStyle.setProperty('--eb-page-zoom', previousZoom, previousPriority);
-    } else {
-      rootStyle.removeProperty('--eb-page-zoom');
-    }
-    return fits;
   };
 
   const getDefaultPageZoom = () => {
@@ -373,15 +381,12 @@ function Header() {
           </Link>
           <div className="navDropdown">
             <button className="navButton navDropdownTrigger" type="button">
-              Auctions
+              Drafts
             </button>
             <div className="navDropdownMenu">
-              <Link to="/AuctionSetup" className="navButton navDropdownItem" onClick={handleNavLinkClick} target={linkTarget} rel={linkRel}>
-                Auction Setup
+              <Link to="/DraftSetup" className="navButton navDropdownItem" onClick={handleNavLinkClick} target={linkTarget} rel={linkRel}>
+                Draft Setup
               </Link>
-                <Link to="/Draft1v1Setup" className="navButton navDropdownItem" onClick={handleNavLinkClick} target={linkTarget} rel={linkRel}>
-                  1v1 Setup
-                </Link>
               <Link to="/LobbyViewer" className="navButton navDropdownItem" onClick={handleNavLinkClick} target={linkTarget} rel={linkRel}>
                 Lobby Viewer
               </Link>

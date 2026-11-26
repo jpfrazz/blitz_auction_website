@@ -133,6 +133,22 @@ function gymWin(totalSeconds: number): BossBattleHistoryEntry {
   };
 }
 
+function gymSplitWin(
+  baseTrainerId: number,
+  version: number,
+  seconds: number,
+  isLoss = false,
+): BossBattleHistoryEntry {
+  return {
+    trainer_id: baseTrainerId,
+    version,
+    hours: 0,
+    minutes: Math.floor(seconds / 60),
+    seconds: seconds % 60,
+    is_loss: isLoss,
+  };
+}
+
 function wallyWin(): BossBattleHistoryEntry {
   return brainWin(656, 0);
 }
@@ -168,9 +184,9 @@ function earnedIds(context: AchievementContext): Set<string> {
 
 describe('achievement definitions', () => {
   it('has one definition per achievement with a unique id and icon', () => {
-    expect(ACHIEVEMENT_DEFINITIONS).toHaveLength(54);
-    expect(new Set(ACHIEVEMENT_DEFINITIONS.map((achievement) => achievement.id)).size).toBe(54);
-    expect(new Set(ACHIEVEMENT_DEFINITIONS.map((achievement) => achievement.icon)).size).toBe(54);
+    expect(ACHIEVEMENT_DEFINITIONS).toHaveLength(56);
+    expect(new Set(ACHIEVEMENT_DEFINITIONS.map((achievement) => achievement.id)).size).toBe(56);
+    expect(new Set(ACHIEVEMENT_DEFINITIONS.map((achievement) => achievement.icon)).size).toBe(56);
     expect(ACHIEVEMENT_DEFINITIONS.find((achievement) => achievement.id === 'around-the-world')).toEqual({
       id: 'around-the-world',
       name: 'Around the World',
@@ -195,9 +211,21 @@ describe('achievement definitions', () => {
       description: 'Enter the Hall of Fame with a Pokémon whose IVs are all single digit',
       icon: 'AgainstAllOdds.png',
     });
+    expect(ACHIEVEMENT_DEFINITIONS.find((achievement) => achievement.id === 'topsy-turvy')).toEqual({
+      id: 'topsy-turvy',
+      name: 'Topsy Turvy',
+      description: "In a 1v1, enter the Hall of Fame with your opponent's signature Pokémon",
+      icon: 'TopsyTurvy.png',
+    });
+    expect(ACHIEVEMENT_DEFINITIONS.find((achievement) => achievement.id === 'vanilla-gamer')).toEqual({
+      id: 'vanilla-gamer',
+      name: 'Vanilla Gamer',
+      description: "Defeat Hoenn's 8 leaders in their original order",
+      icon: 'VanillaGamer.png',
+    });
     expect(ACHIEVEMENT_DEFINITIONS.map((achievement) => achievement.id).slice(-2)).toEqual([
-      'true-nuzlocker',
-      'against-all-odds',
+      'topsy-turvy',
+      'vanilla-gamer',
     ]);
   });
 
@@ -1900,6 +1928,151 @@ describe('computePlayerAchievements', () => {
         validDraftIds: new Set(['early-auction', 'later-auction']),
         bossBattleHistory: new Map([[2, [championWin(90 * 60)]]]),
       })).has('traitor')).toBe(false);
+    });
+  });
+
+  describe('Topsy Turvy', () => {
+    const context = (options: {
+      casual?: boolean;
+      hofMons?: HallOfFamePokemon[];
+      signatureKey?: string | null;
+      draftType?: string;
+    } = {}): AchievementContext => {
+      const {
+        casual = false,
+        hofMons = [hofMon('Pikachu')],
+        signatureKey = 'Pikachu',
+        draftType = '1v1',
+      } = options;
+      const draftId = casual ? 'casual-1v1' : 'competitive-1v1';
+      return baseContext({
+        matchHistory: [team({
+          team_id: 1,
+          draft_id: draftId,
+          draft_type: draftType,
+          created_at: '2026-04-15T00:00:00Z',
+          hall_of_fame_team: hofMons,
+        })],
+        casual1v1DraftIds: casual ? new Set([draftId]) : new Set(),
+        bossBattleHistory: new Map([[1, [championWin(90 * 60)]]]),
+        oneVOneOpponentSignatures:
+          signatureKey === null ? new Map() : new Map([[draftId, signatureKey]]),
+      });
+    };
+
+    it('awards for beating the game with the opponent signature in a 1v1', () => {
+      expect(earnedIds(context()).has('topsy-turvy')).toBe(true);
+    });
+
+    it('counts casual 1v1s as well as competitive 1v1s', () => {
+      expect(earnedIds(context({ casual: true })).has('topsy-turvy')).toBe(true);
+    });
+
+    it('matches regional form signatures', () => {
+      expect(earnedIds(context({
+        signatureKey: 'Meowth-Galar',
+        hofMons: [hofMon('Meowth-Galar')],
+      })).has('topsy-turvy')).toBe(true);
+    });
+
+    it('does not award for a different Hall of Fame Pokemon', () => {
+      expect(earnedIds(context({ hofMons: [hofMon('Charizard')] })).has('topsy-turvy')).toBe(false);
+    });
+
+    it('does not award without a signature for that draft', () => {
+      expect(earnedIds(context({ signatureKey: null })).has('topsy-turvy')).toBe(false);
+    });
+
+    it('does not award outside 1v1 drafts', () => {
+      expect(earnedIds(context({ draftType: 'auction' })).has('topsy-turvy')).toBe(false);
+    });
+
+    it('does not award without a Hall of Fame team', () => {
+      expect(earnedIds(context({ hofMons: [] })).has('topsy-turvy')).toBe(false);
+    });
+  });
+
+  describe('Vanilla Gamer', () => {
+    // Roxanne 1, Brawly 2, Wattson 3, Flannery 4, Norman 5, Winona 6,
+    // Tate & Liza 7, Juan & Wallace 8.
+    const vanillaSplits = [265, 774, 779, 784, 789, 827, 831, 835];
+    const wins = (ids: number[]): BossBattleHistoryEntry[] =>
+      ids.map((trainer_id, index) => ({
+        trainer_id,
+        version: null,
+        hours: 0,
+        minutes: index,
+        seconds: 0,
+        is_loss: false,
+      }));
+    const context = (options: {
+      ids?: number[];
+      draftType?: string;
+      validDraftId?: boolean;
+      casual1v1?: boolean;
+      extraBattles?: BossBattleHistoryEntry[];
+    } = {}): AchievementContext => {
+      const {
+        ids = vanillaSplits,
+        draftType = 'auction',
+        validDraftId = true,
+        casual1v1 = false,
+        extraBattles = [],
+      } = options;
+      return baseContext({
+        matchHistory: [team({ team_id: 1, draft_id: 'd1', draft_type: draftType })],
+        validDraftIds: validDraftId ? new Set(['d1']) : new Set(),
+        casual1v1DraftIds: casual1v1 ? new Set(['d1']) : new Set(),
+        bossBattleHistory: new Map([[1, [...extraBattles, ...wins(ids)]]]),
+      });
+    };
+
+    it('awards for the eight vanilla gym wins in order without beating the game', () => {
+      expect(earnedIds(context()).has('vanilla-gamer')).toBe(true);
+    });
+
+    it('accepts versioned base gym leader ids', () => {
+      const versioned = [
+        gymSplitWin(265, 1, 10),
+        gymSplitWin(266, 2, 20),
+        gymSplitWin(267, 3, 30),
+        gymSplitWin(268, 4, 40),
+        gymSplitWin(269, 5, 50),
+        gymSplitWin(270, 6, 60),
+        gymSplitWin(271, 7, 70),
+        gymSplitWin(272, 8, 80),
+      ];
+      expect(earnedIds(baseContext({
+        matchHistory: [team({ team_id: 1, draft_id: 'd1' })],
+        validDraftIds: new Set(['d1']),
+        bossBattleHistory: new Map([[1, versioned]]),
+      })).has('vanilla-gamer')).toBe(true);
+    });
+
+    it('does not award when the gym wins happen out of order', () => {
+      const reordered = [vanillaSplits[1], vanillaSplits[0], ...vanillaSplits.slice(2)];
+      expect(earnedIds(context({ ids: reordered })).has('vanilla-gamer')).toBe(false);
+    });
+
+    it('does not award when one of the eight gym wins is missing', () => {
+      expect(earnedIds(context({ ids: vanillaSplits.slice(0, 7) })).has('vanilla-gamer')).toBe(false);
+    });
+
+    it('does not count casual 1v1s', () => {
+      expect(earnedIds(context({
+        draftType: '1v1',
+        casual1v1: true,
+      })).has('vanilla-gamer')).toBe(false);
+    });
+
+    it('does not count casual auctions', () => {
+      expect(earnedIds(context({ validDraftId: false })).has('vanilla-gamer')).toBe(false);
+    });
+
+    it('ignores unrelated losses between the ordered gym wins', () => {
+      expect(earnedIds(context({
+        extraBattles: [gymSplitWin(265, 1, 5, true)],
+      })).has('vanilla-gamer')).toBe(true);
     });
   });
 

@@ -229,6 +229,10 @@ impl Server {
                 post(handlers::rps_choose_first_pick),
             )
             .route(
+                "/drafts/{draft_id}/booster/submit",
+                post(handlers::booster_submit),
+            )
+            .route(
                 "/drafts/{draft_id}/submit-results",
                 post(handlers::submit_race_results),
             )

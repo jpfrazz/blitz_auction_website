@@ -1,0 +1,74 @@
+@import '../../shared/style/theme.scss';
+
+.booster-page {
+  gap: 0.75rem;
+}
+
+.booster-left-panel {
+  gap: 0.5rem;
+}
+
+.booster-packs-grid {
+  display: flex;
+  flex-direction: column;
+  align-content: stretch;
+  gap: 0.5rem;
+  flex: 0 1 auto;
+  max-height: 58%;
+  min-height: 0;
+  padding: 2px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.booster-empty-state {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 1;
+  min-height: 0;
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
+  color: $eb-text-muted;
+  font-size: 1.1rem;
+  text-align: center;
+}
+
+.booster-tile-size-control {
+  display: flex;
+  align-items: center;
+  align-self: center;
+  justify-content: flex-end;
+  gap: 8px;
+  flex-shrink: 0;
+  color: $eb-text-muted;
+  font-size: 0.85rem;
+}
+
+.booster-draft-history li {
+  color: $eb-text;
+}
+
+.booster-draft-history .one-v-one-history-row {
+  border-radius: 4px;
+  margin-bottom: 2px;
+}
+
+.booster-draft-history .row-player-1 { background: rgba(74, 134, 216, 0.28); }
+.booster-draft-history .row-player-2 { background: rgba(208, 85, 85, 0.28); }
+.booster-draft-history .row-player-3 { background: rgba(224, 138, 44, 0.28); }
+.booster-draft-history .row-player-4 { background: rgba(142, 95, 216, 0.28); }
+.booster-draft-history .row-player-5 { background: rgba(47, 168, 155, 0.28); }
+.booster-draft-history .row-player-6 { background: rgba(217, 95, 168, 0.28); }
+.booster-draft-history .row-player-7 { background: rgba(109, 139, 216, 0.28); }
+.booster-draft-history .row-player-8 { background: rgba(184, 138, 69, 0.28); }
+.booster-draft-history .row-player-9 { background: rgba(74, 163, 208, 0.28); }
+.booster-draft-history .row-player-10 { background: rgba(139, 189, 63, 0.28); }
+
+@media (max-width: 1024px) {
+  .booster-packs-grid {
+    max-height: 420px;
+    overflow: visible;
+  }
+}

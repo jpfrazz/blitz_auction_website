@@ -2,7 +2,7 @@ use crate::{
     AppError, CSRF_STATE_KEY,
     contains_profanity,
     auction::AuctionResponse,
-    draft::{Draft, DraftLobbyResponse, DraftResponse, DraftSettings, DraftState, AutoBidResponse, RpsChoice},
+    draft::{AutoBidResponse, BoosterAction, Draft, DraftLobbyResponse, DraftResponse, DraftSettings, DraftState, RpsChoice},
     messages::{
         ChatMessage, ClientBidRequest, ClientBidResponse, ClientJoinResponse, ForfeitRequest,
         HallOfFamePokemon, PostLocationRequest, PostSaveRequest, RentalStat, RunMonStat, SaveData,
@@ -88,6 +88,13 @@ pub struct SetAutoBidRequest {
 
 #[derive(Clone, Debug, Deserialize)]
 pub struct OneVOnePickBanRequest {
+    pub pokedex_id: u32,
+    pub form: Option<String>,
+}
+
+#[derive(Clone, Debug, Deserialize)]
+pub struct BoosterSubmitRequest {
+    pub action: BoosterAction,
     pub pokedex_id: u32,
     pub form: Option<String>,
 }
@@ -525,6 +532,7 @@ pub async fn delete_draft(
 pub async fn get_draft(
     State(state): State<ServerState>,
     Path(draft_id): Path<String>,
+    auth_session: AuthSession<AuthBackend>,
 ) -> Result<Json<DraftResponse>, AppError> {
     let draft_uuid = Uuid::from_str(&draft_id).map_err(|e| {
         (
@@ -539,7 +547,11 @@ pub async fn get_draft(
         ));
     };
 
-    let mut res = draft.get().await?;
+    let viewer_id = auth_session
+        .user
+        .as_ref()
+        .map(|user| user.get_user_id_string());
+    let mut res = draft.get(viewer_id).await?;
 
     // Attach the last persisted save for every team so a freshly loaded page
     // (spectator or emulator after refresh) sees each player's latest save even
@@ -2145,6 +2157,7 @@ pub struct AdminHallOfFameEligibleEntry {
 pub struct HallOfFameQuery {
     /// Maximum number of teams to return. Omit to return all.
     pub limit: Option<i64>,
+    pub draft_type: Option<String>,
 }
 
 fn hall_of_fame_beat_name(trainer_id: i32) -> String {
@@ -2161,6 +2174,7 @@ fn hall_of_fame_beat_name(trainer_id: i32) -> String {
 async fn fetch_hall_of_fame_eligible(
     state: &ServerState,
     limit: Option<i64>,
+    draft_type: Option<String>,
 ) -> Result<Vec<AdminHallOfFameEligibleEntry>, (StatusCode, String)> {
     let limit_sql = limit
         .filter(|l| *l > 0)
@@ -2184,12 +2198,14 @@ async fn fetch_hall_of_fame_eligible(
              LEFT JOIN guests g ON g.user_id = t.guest_id
              WHERE bbh.trainer_id IN (804, 656)
                AND NOT bbh.is_loss
+               AND ($1::text IS NULL OR d.draft_type = $1)
              ORDER BY bbh.team_id, bbh.hours DESC, bbh.minutes DESC, bbh.seconds DESC
          ) wins
          ORDER BY created_at DESC, user_name ASC, team_id ASC{}",
         limit_sql
     );
     let rows = sqlx::query(&sql)
+    .bind(draft_type)
     .fetch_all(&state.db_pool)
     .await
     .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
@@ -2255,7 +2271,7 @@ pub async fn get_admin_hall_of_fame_eligible(
 ) -> Result<Json<Vec<AdminHallOfFameEligibleEntry>>, AppError> {
     let _ = require_referee_user(auth_session.user)?;
 
-    let entries = fetch_hall_of_fame_eligible(&state, query.limit).await?;
+    let entries = fetch_hall_of_fame_eligible(&state, query.limit, query.draft_type).await?;
     Ok(Json(entries))
 }
 
@@ -2264,7 +2280,7 @@ pub async fn get_hall_of_fame(
     State(state): State<ServerState>,
     Query(query): Query<HallOfFameQuery>,
 ) -> Result<Json<Vec<AdminHallOfFameEligibleEntry>>, AppError> {
-    let entries = fetch_hall_of_fame_eligible(&state, query.limit).await?;
+    let entries = fetch_hall_of_fame_eligible(&state, query.limit, query.draft_type).await?;
     Ok(Json(entries))
 }
 
@@ -3388,6 +3404,34 @@ pub async fn rps_choose_first_pick(
     };
     draft
         .rps_choose_first_pick(user.get_user_id_string(), request.first_pick)
+        .await
+}
+
+#[debug_handler]
+pub async fn booster_submit(
+    State(state): State<ServerState>,
+    Path(draft_id): Path<String>,
+    auth_session: AuthSession<AuthBackend>,
+    Json(request): Json<BoosterSubmitRequest>,
+) -> Result<(), AppError> {
+    let user = auth_session.user.ok_or((
+        StatusCode::UNAUTHORIZED,
+        "you must be signed in to submit a booster action".to_string(),
+    ))?;
+    let draft_uuid = Uuid::from_str(&draft_id).map_err(|_| {
+        (
+            StatusCode::BAD_REQUEST,
+            format!("requested draft does not exist"),
+        )
+    })?;
+    let Some(draft) = state.drafts.get(&draft_uuid) else {
+        return Err((
+            StatusCode::BAD_REQUEST,
+            format!("requested draft does not exist"),
+        ));
+    };
+    draft
+        .booster_submit(user, request.action, request.pokedex_id, request.form)
         .await
 }
 
@@ -5678,16 +5722,22 @@ pub async fn websocket_handler(
     let presence = draft.presence.clone();
     let spectator_count = draft.spectator_count.clone();
     let spectator_presence = draft.spectator_presence.clone();
+    let viewer_id = auth_session
+        .user
+        .as_ref()
+        .map(|user| user.get_user_id_string());
     // Every tab sharing this session gets the same id, so it contributes to
     // the spectator count only once. Fall back to a per-socket id when there is
     // no session user so unauthenticated sockets still count individually.
-    let spectator_identity = auth_session
-        .user
-        .map(|user| user.get_user_id_string())
+    let spectator_identity = viewer_id
+        .clone()
         .unwrap_or_else(|| Uuid::new_v4().to_string());
+    let draft = draft.clone();
     Ok(ws.on_upgrade(move |socket| {
         handle_websocket(
             socket,
+            draft,
+            viewer_id,
             tx,
             presence,
             spectator_count,
@@ -5740,6 +5790,8 @@ fn remove_spectator_connection(
 
 async fn handle_websocket(
     mut socket: WebSocket,
+    draft: Arc<Draft>,
+    viewer_id: Option<String>,
     tx: broadcast::Sender<ServerMessage>,
     presence: Arc<dashmap::DashMap<String, usize>>,
     spectator_count: Arc<AtomicUsize>,
@@ -5795,7 +5847,17 @@ async fn handle_websocket(
     loop {
         tokio::select! {
             Ok(msg) = rx.recv() => {
-                match serde_json::to_string(&msg) {
+                // DraftUpdate snapshots are scoped per viewer so a player's own
+                // hidden booster pick/ban can be shown immediately without
+                // leaking it to other sockets.
+                let outgoing = match msg {
+                    ServerMessage::DraftUpdate(original) => match draft.get(viewer_id.clone()).await {
+                        Ok(scoped) => ServerMessage::DraftUpdate(scoped),
+                        Err(_) => ServerMessage::DraftUpdate(original),
+                    },
+                    other => other,
+                };
+                match serde_json::to_string(&outgoing) {
                     Ok(json_text) => {
                         if socket.send(Message::Text(json_text.into())).await.is_err() {
                             break;

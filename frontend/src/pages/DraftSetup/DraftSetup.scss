@@ -1,0 +1,41 @@
+.draft-type-options {
+  width: 100%;
+
+  button {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    gap: 4px;
+    min-width: 0;
+    padding: 10px 12px;
+    font-size: 1.1rem;
+    line-height: 1.2;
+  }
+}
+
+.draft-type-recommendation {
+  color: #b0b0b0;
+  font-size: 0.85rem;
+  font-weight: normal;
+  white-space: nowrap;
+}
+
+.draft-setup-form-slot {
+  display: flex;
+  flex-direction: column;
+}
+
+.auction-setup-tip {
+  box-sizing: border-box;
+  width: 100%;
+  max-width: 70%;
+  margin: 36px auto 0;
+  padding: 16px 20px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--sl-color-neutral-300);
+  font-size: 1.25rem;
+  line-height: 1.5;
+  text-align: center;
+}

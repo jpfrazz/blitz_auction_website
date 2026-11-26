@@ -71,12 +71,18 @@ pub struct DraftResponse {
     auction_length: u32,
     #[serde(skip_serializing_if = "Option::is_none")]
     one_v_one_pool_size: Option<u32>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    booster_team_size: Option<u32>,
     /// 1v1 drafts only: the shared pick/ban pool and current turn state.
     #[serde(skip_serializing_if = "Option::is_none")]
     one_v_one: Option<OneVOneState>,
     /// 1v1 drafts only: the rock-paper-scissors pick-order showdown.
     #[serde(skip_serializing_if = "Option::is_none")]
     rps: Option<RockPaperScissorsState>,
+    /// Booster drafts only: every pack, the current secret-submission round,
+    /// and the revealed pick/ban history.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    booster: Option<BoosterState>,
 }
 
 #[derive(Clone, Debug, Serialize)]
@@ -329,6 +335,78 @@ impl RpsEngine {
     }
 }
 
+/// The action a booster player is submitting for the current pass.
+#[derive(Clone, Copy, Debug, Serialize, Deserialize, PartialEq, Eq)]
+pub enum BoosterAction {
+    Pick,
+    Ban,
+}
+
+/// A single pokemon in one booster pack. Until the whole table has submitted,
+/// even picked/banned statuses from previous passes stay visible while the
+/// current pass's choices are hidden in `BoosterEngine`'s pending maps.
+#[derive(Clone, Debug, Serialize)]
+pub struct BoosterPoolSlot {
+    pub pokemon: Pokemon,
+    pub status: BoosterSlotStatus,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
+pub enum BoosterSlotStatus {
+    Available,
+    Picked(String),
+    Banned(String),
+    Leftover,
+}
+
+#[derive(Clone, Debug, Serialize)]
+pub struct BoosterPackState {
+    /// Original seat that opened this pack.
+    pub pack_index: u32,
+    pub owner_id: String,
+    /// Seat currently holding this pack after the latest pass.
+    pub holder_id: String,
+    pub slots: Vec<BoosterPoolSlot>,
+}
+
+#[derive(Clone, Debug, Serialize)]
+pub struct BoosterSubmissionState {
+    pub user_id: String,
+    pub has_picked: bool,
+    pub has_banned: bool,
+}
+
+#[derive(Clone, Copy, Debug, Serialize, Deserialize, PartialEq, Eq)]
+pub enum BoosterHistoryAction {
+    Pick,
+    Ban,
+    Leftover,
+}
+
+#[derive(Clone, Debug, Serialize)]
+pub struct BoosterHistoryEntry {
+    pub round: u32,
+    pub pack_index: u32,
+    pub action: BoosterHistoryAction,
+    pub player_id: Option<String>,
+    pub pokemon: Pokemon,
+}
+
+/// Public booster state. Current-pass choices are deliberately represented
+/// only by ready flags so no player can see another player's hidden pick/ban.
+#[derive(Clone, Debug, Serialize)]
+pub struct BoosterState {
+    pub player_ids: Vec<String>,
+    pub packs: Vec<BoosterPackState>,
+    pub submissions: Vec<BoosterSubmissionState>,
+    pub round: u32,
+    pub total_rounds: u32,
+    pub bans_enabled: bool,
+    pub team_size: u32,
+    pub casual: bool,
+    pub history: Vec<BoosterHistoryEntry>,
+}
+
 /// The full 1v1 pick/ban order. Each tuple is (player, action).
 /// P1 opens with a lone pick, P2 takes a double pick with no ban, then P1
 /// picks and bans once. After that the players alternate Pick+Ban turns
@@ -471,9 +549,12 @@ pub struct DraftSettings {
     pub auction_length: u32,
     #[serde(default = "default_one_v_one_pool_size")]
     pub one_v_one_pool_size: u32,
-    /// 'auction' (default) or '1v1'. Determines the lobby format.
+    /// 'auction' (default), '1v1', or 'booster'. Determines the lobby format.
     #[serde(default = "default_draft_type")]
     pub draft_type: String,
+    /// Booster drafts only: 8, 9, or 10. Sizes 9 and 10 are casual.
+    #[serde(default = "default_booster_team_size")]
+    pub booster_team_size: u32,
 }
 
 fn default_draft_type() -> String {
@@ -484,7 +565,115 @@ fn default_one_v_one_pool_size() -> u32 {
     32
 }
 
+fn default_booster_team_size() -> u32 {
+    8
+}
+
+fn booster_pack_size(player_count: usize) -> usize {
+    match player_count {
+        // Eight picks, three bans, then three leftovers. A ten-Pokemon team
+        // adds two more passes per pack and leaves one leftover.
+        3 => 14,
+        // Eight picks, four bans, then three leftovers. A ten-Pokemon team
+        // adds two more passes per pack and leaves one leftover.
+        4 => 15,
+        _ => 3 * player_count + 3,
+    }
+}
+
+/// Booster packs only draw base, non-rental Pokemon, so "top 30 by average
+/// price" is ranked within that eligible pool. Pokemon without auction data
+/// have no price and are not featured.
+const BOOSTER_FEATURED_LIMIT: usize = 30;
+
+fn booster_featured_keys(
+    candidates: &[Arc<Pokemon>],
+    avg_prices: &HashMap<(u32, Option<String>), u32>,
+) -> Vec<(u32, Option<String>)> {
+    let mut priced: Vec<((u32, Option<String>), u32)> = candidates
+        .iter()
+        .filter_map(|pokemon| {
+            avg_prices
+                .get(&(pokemon.pokedex_id, pokemon.form.clone()))
+                .copied()
+                .map(|price| ((pokemon.pokedex_id, pokemon.form.clone()), price))
+        })
+        .collect();
+    priced.sort_by(|(key_a, price_a), (key_b, price_b)| {
+        price_b
+            .cmp(price_a)
+            .then_with(|| key_a.0.cmp(&key_b.0))
+            .then_with(|| key_a.1.cmp(&key_b.1))
+    });
+    priced
+        .into_iter()
+        .take(BOOSTER_FEATURED_LIMIT)
+        .map(|(key, _)| key)
+        .collect()
+}
+
+/// Seed one randomly chosen top-priced Pokemon into every pack, then fill the
+/// remaining slots from the rest of the eligible pool without duplicates.
+fn booster_pack_groups(
+    player_count: usize,
+    pack_size: usize,
+    candidates: Vec<Arc<Pokemon>>,
+    featured_keys: Vec<(u32, Option<String>)>,
+) -> Result<Vec<Vec<Arc<Pokemon>>>, AppError> {
+    let needed = pack_size * player_count;
+    if candidates.len() < needed {
+        return Err((
+            StatusCode::INTERNAL_SERVER_ERROR,
+            "not enough pokemon to build booster packs".to_string(),
+        ));
+    }
+
+    let featured_key_set: HashSet<(u32, Option<String>)> =
+        featured_keys.into_iter().collect();
+    let mut featured: Vec<Arc<Pokemon>> = candidates
+        .iter()
+        .filter(|pokemon| {
+            featured_key_set.contains(&(pokemon.pokedex_id, pokemon.form.clone()))
+        })
+        .cloned()
+        .collect();
+    if featured.len() < player_count {
+        return Err((
+            StatusCode::INTERNAL_SERVER_ERROR,
+            "not enough top-priced pokemon to seed booster packs".to_string(),
+        ));
+    }
+    featured.shuffle(&mut rand::rng());
+    featured.truncate(player_count);
+
+    let chosen_keys: HashSet<(u32, Option<String>)> = featured
+        .iter()
+        .map(|pokemon| (pokemon.pokedex_id, pokemon.form.clone()))
+        .collect();
+    let mut rest: Vec<Arc<Pokemon>> = candidates
+        .into_iter()
+        .filter(|pokemon| !chosen_keys.contains(&(pokemon.pokedex_id, pokemon.form.clone())))
+        .collect();
+    rest.shuffle(&mut rand::rng());
+    rest.truncate((pack_size - 1) * player_count);
+
+    let mut packs: Vec<Vec<Arc<Pokemon>>> =
+        featured.into_iter().map(|pokemon| vec![pokemon]).collect();
+    for (index, pokemon) in rest.into_iter().enumerate() {
+        packs[index / (pack_size - 1)].push(pokemon);
+    }
+    Ok(packs)
+}
+
+/// One round gives every player one pick, so the draft ends once everyone has
+/// reached the configured team size. A three-player 8-Pokémon draft therefore
+/// stops partway through the third circuit instead of forcing a full lap.
+fn booster_total_rounds(_player_count: usize, team_size: u32) -> u32 {
+    team_size
+}
+
 pub const DRAFT_TYPE_1V1: &str = "1v1";
+pub const DRAFT_TYPE_BOOSTER: &str = "booster";
 
 fn clone_arc_pokemon(p: &Arc<Pokemon>) -> Pokemon {
     (**p).clone()
@@ -568,6 +757,27 @@ impl Draft {
                 return Err((StatusCode::BAD_REQUEST, "1v1 pool size must be 32, 36, or 40".to_string()));
             }
             settings.num_teams = 2;
+            settings.num_auctions = 0;
+            settings.starting_money = 0;
+            settings.ranked = false;
+            settings.excluded_pokemon.clear();
+        }
+
+        // Booster drafts are simultaneous pick/ban rounds; they have no
+        // auctions, money, ranked MMR, or pokemon exclusions.
+        if settings.draft_type == DRAFT_TYPE_BOOSTER {
+            if !(3..=4).contains(&settings.num_teams) {
+                return Err((
+                    StatusCode::BAD_REQUEST,
+                    "booster drafts require between 3 and 4 players".to_string(),
+                ));
+            }
+            if ![8, 9, 10].contains(&settings.booster_team_size) {
+                return Err((
+                    StatusCode::BAD_REQUEST,
+                    "booster team size must be 8, 9, or 10".to_string(),
+                ));
+            }
             settings.num_auctions = 0;
             settings.starting_money = 0;
             settings.ranked = false;
@@ -815,9 +1025,12 @@ impl Draft {
         })?
     }
 
-    pub async fn get(&self) -> Result<DraftResponse, AppError> {
+    pub async fn get(&self, viewer_id: Option<String>) -> Result<DraftResponse, AppError> {
         let (response_sender, response_receiver) = oneshot::channel();
-        let cmd = DraftCommand::Get(response_sender);
+        let cmd = DraftCommand::Get {
+            response_sender,
+            viewer_id,
+        };
         self.actor_sender.send(cmd).await.map_err(|e| {
             (
                 StatusCode::INTERNAL_SERVER_ERROR,
@@ -1163,6 +1376,37 @@ impl Draft {
         })?
     }
 
+    /// Booster drafts: submit this pass's pick or ban. The choice is hidden
+    /// from every other participant until the whole table has submitted.
+    pub async fn booster_submit(
+        &self,
+        user: User,
+        action: BoosterAction,
+        pokedex_id: u32,
+        form: Option<String>,
+    ) -> Result<(), AppError> {
+        let (response_sender, response_receiver) = oneshot::channel();
+        let cmd = DraftCommand::BoosterSubmit {
+            response_sender,
+            user,
+            action,
+            pokedex_id,
+            form,
+        };
+        self.actor_sender.send(cmd).await.map_err(|e| {
+            (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                format!("failed to send booster submission to actor, {}", e),
+            )
+        })?;
+        response_receiver.await.map_err(|e| {
+            (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                format!("failed to wait for actor response, {}", e),
+            )
+        })?
+    }
+
     pub async fn shutdown(&self) {
         let _ = self.actor_sender.send(DraftCommand::Shutdown).await;
     }
@@ -1186,6 +1430,8 @@ struct DraftActor {
     one_v_one: Option<OneVOneEngine>,
     /// 1v1 drafts only: the pick-order RPS showdown state.
     rps: Option<RpsEngine>,
+    /// Booster drafts only: simultaneous pack pick/ban engine.
+    booster: Option<BoosterEngine>,
 }
 
 /// Internal (non-serialized) 1v1 engine state for the actor.
@@ -1216,6 +1462,160 @@ struct OneVOneEngine {
     turn_generation: u64,
 }
 
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+struct BoosterChoice {
+    pack_index: usize,
+    slot_index: usize,
+}
+
+struct BoosterPack {
+    owner_id: String,
+    holder_seat: usize,
+    slots: Vec<BoosterPoolSlot>,
+}
+
+struct BoosterEngine {
+    player_ids: Vec<String>,
+    packs: Vec<BoosterPack>,
+    round: u32,
+    total_rounds: u32,
+    team_size: u32,
+    /// A pass belongs to the first circuit, so players pick and ban.
+    bans_enabled: bool,
+    /// Hidden until every player has submitted both actions for this pass.
+    pending_picks: HashMap<String, BoosterChoice>,
+    pending_bans: HashMap<String, BoosterChoice>,
+    history: Vec<BoosterHistoryEntry>,
+    next_order: u32,
+    /// Bans are bookkeeping for the first circuit only. They are stored with
+    /// negative orders so the first LEFTOVER row stays at the circuit baseline
+    /// plus one and casual boosters can be classified from leftover order.
+    next_ban_order: i32,
+}
+
+impl BoosterEngine {
+    fn to_state(&self) -> BoosterState {
+        self.to_state_for(None)
+    }
+
+    /// Public snapshot. `viewer_id` is used only to reveal that viewer's own
+    /// hidden submissions; every other player's current-pass choices stay
+    /// invisible until the whole table has submitted.
+    fn to_state_for(&self, viewer_id: Option<&str>) -> BoosterState {
+        let mut packs: Vec<BoosterPackState> = self
+            .packs
+            .iter()
+            .enumerate()
+            .map(|(pack_index, pack)| BoosterPackState {
+                pack_index: pack_index as u32,
+                owner_id: pack.owner_id.clone(),
+                holder_id: self.player_ids[pack.holder_seat].clone(),
+                slots: pack.slots.clone(),
+            })
+            .collect();
+        let submissions = self
+            .player_ids
+            .iter()
+            .map(|user_id| BoosterSubmissionState {
+                user_id: user_id.clone(),
+                has_picked: self.pending_picks.contains_key(user_id),
+                has_banned: self.pending_bans.contains_key(user_id),
+            })
+            .collect();
+
+        if let Some(viewer) = viewer_id.filter(|id| self.is_participant(id)) {
+            for (pending, status) in [
+                (&self.pending_picks, BoosterSlotStatus::Picked(viewer.to_string())),
+                (&self.pending_bans, BoosterSlotStatus::Banned(viewer.to_string())),
+            ] {
+                if let Some(choice) = pending.get(viewer) {
+                    if let Some(slot) = packs
+                        .get_mut(choice.pack_index)
+                        .and_then(|pack| pack.slots.get_mut(choice.slot_index))
+                    {
+                        if slot.status == BoosterSlotStatus::Available {
+                            slot.status = status;
+                        }
+                    }
+                }
+            }
+        }
+
+        BoosterState {
+            player_ids: self.player_ids.clone(),
+            packs,
+            submissions,
+            round: self.round,
+            total_rounds: self.total_rounds,
+            bans_enabled: self.bans_enabled,
+            team_size: self.team_size,
+            casual: self.team_size >= 9,
+            history: self.history.clone(),
+        }
+    }
+
+    fn held_pack_index(&self, user_id: &str) -> Option<usize> {
+        self.packs
+            .iter()
+            .position(|pack| self.player_ids[pack.holder_seat] == user_id)
+    }
+
+    fn is_participant(&self, user_id: &str) -> bool {
+        self.player_ids.iter().any(|id| id == user_id)
+    }
+
+    fn all_submitted(&self) -> bool {
+        self.player_ids.iter().all(|user_id| {
+            self.pending_picks.contains_key(user_id)
+                && (!self.bans_enabled || self.pending_bans.contains_key(user_id))
+        })
+    }
+
+    fn take_next_order(&mut self) -> u32 {
+        let order = self.next_order;
+        self.next_order += 1;
+        order
+    }
+
+    fn take_ban_order(&mut self) -> i32 {
+        let order = self.next_ban_order;
+        self.next_ban_order -= 1;
+        order
+    }
+
+    /// Claim an available slot and return its pokemon for persistence.
+    fn claim_slot(&mut self, choice: BoosterChoice, status: BoosterSlotStatus) -> Option<Pokemon> {
+        let slot = self.packs.get_mut(choice.pack_index)?.slots.get_mut(choice.slot_index)?;
+        if slot.status != BoosterSlotStatus::Available {
+            return None;
+        }
+        slot.status = status;
+        Some(slot.pokemon.clone())
+    }
+
+    fn available_slots(&self) -> Vec<BoosterChoice> {
+        let mut choices = Vec::new();
+        for (pack_index, pack) in self.packs.iter().enumerate() {
+            for (slot_index, slot) in pack.slots.iter().enumerate() {
+                if slot.status == BoosterSlotStatus::Available {
+                    choices.push(BoosterChoice { pack_index, slot_index });
+                }
+            }
+        }
+        choices
+    }
+
+    fn pass_packs(&mut self) {
+        for pack in &mut self.packs {
+            pack.holder_seat = (pack.holder_seat + 1) % self.player_ids.len();
+        }
+        self.pending_picks.clear();
+        self.pending_bans.clear();
+        self.round += 1;
+        self.bans_enabled = self.round <= self.player_ids.len() as u32;
+    }
+}
+
 enum DraftCommand {
     Start {
         response_sender: oneshot::Sender<Result<(), AppError>>,
@@ -1229,7 +1629,10 @@ enum DraftCommand {
         response_sender: oneshot::Sender<Result<(), AppError>>,
         user_id: String,
     },
-    Get(oneshot::Sender<Result<DraftResponse, AppError>>),
+    Get {
+        response_sender: oneshot::Sender<Result<DraftResponse, AppError>>,
+        viewer_id: Option<String>,
+    },
     Join {
         response_sender: oneshot::Sender<Result<(), AppError>>,
         user: User,
@@ -1329,6 +1732,15 @@ enum DraftCommand {
         user_id: String,
         first_pick: bool,
     },
+    /// Booster drafts: a player secretly submits their pick or ban for the
+    /// current pass. The round reveals and passes once everyone has submitted.
+    BoosterSubmit {
+        response_sender: oneshot::Sender<Result<(), AppError>>,
+        user: User,
+        action: BoosterAction,
+        pokedex_id: u32,
+        form: Option<String>,
+    },
     Shutdown,
 }
 
@@ -1378,6 +1790,7 @@ impl DraftActor {
             spectators: vec![],
             one_v_one: None,
             rps: None,
+            booster: None,
         }
     }
 
@@ -1455,8 +1868,8 @@ impl DraftActor {
                             self.broadcast();
                         };
                     }
-                    DraftCommand::Get(response_sender) => {
-                        let _ = response_sender.send(Ok(DraftResponse::from(&self)));
+                    DraftCommand::Get { response_sender, viewer_id } => {
+                        let _ = response_sender.send(Ok(self.response_for(viewer_id.as_deref())));
                     }
                     DraftCommand::GetLobby(response_sender) => {
                         let _ = response_sender.send(Ok(DraftLobbyResponse::from(&self)));
@@ -1630,6 +2043,20 @@ impl DraftActor {
                             self.broadcast();
                         };
                     }
+                    DraftCommand::BoosterSubmit {
+                        response_sender,
+                        user,
+                        action,
+                        pokedex_id,
+                        form,
+                    } => {
+                        let res = self.booster_submit(user, action, pokedex_id, form).await;
+                        let ok = res.is_ok();
+                        let _ = response_sender.send(res);
+                        if ok {
+                            self.broadcast();
+                        };
+                    }
                     DraftCommand::Shutdown => break,
                 }
             }
@@ -1640,6 +2067,7 @@ impl DraftActor {
         if self.draft_state == DraftState::PENDING
             || self.draft_state == DraftState::COMPLETED
             || self.settings.draft_type == DRAFT_TYPE_1V1
+            || self.settings.draft_type == DRAFT_TYPE_BOOSTER
         {
             return Ok(None);
         }
@@ -1648,10 +2076,12 @@ impl DraftActor {
     }
 
     async fn bid(&self, auction_id: i64, bid_value: u32, user: User) -> Result<(), AppError> {
-        if self.settings.draft_type == DRAFT_TYPE_1V1 {
+        if self.settings.draft_type == DRAFT_TYPE_1V1
+            || self.settings.draft_type == DRAFT_TYPE_BOOSTER
+        {
             return Err((
                 StatusCode::PRECONDITION_FAILED,
-                format!("1v1 drafts do not use bidding"),
+                format!("this draft type does not use bidding"),
             ));
         }
         if self.draft_state != DraftState::BIDDING {
@@ -1728,6 +2158,9 @@ impl DraftActor {
             // the pick/ban pool is generated.
             return self.start_rps();
         }
+        if self.settings.draft_type == DRAFT_TYPE_BOOSTER {
+            return self.start_booster().await;
+        }
 
         self.db_writer.start_draft().await?;
 
@@ -1780,6 +2213,92 @@ impl DraftActor {
             first_pick: None,
         });
         self.draft_state = DraftState::RPS;
+        Ok(())
+    }
+
+    /// Generate one pack per player and open the first simultaneous pick/ban
+    /// pass. Three-player packs have 14 pokemon and four-player packs have 15,
+    /// and each pack is seeded with one of the 30 highest average-price Pokemon
+    /// eligible for booster packs. A full circuit is one pass per player, and
+    /// the first circuit also bans one pokemon per pass. The draft runs one
+    /// pass per drafted pokemon, so 8-Pokemon teams stop after 8 passes even if
+    /// that cuts a circuit short.
+    async fn start_booster(&mut self) -> Result<(), AppError> {
+        let player_count = self.teams.len();
+        if player_count != self.settings.num_teams as usize {
+            return Err((
+                StatusCode::PRECONDITION_FAILED,
+                "not all players have joined the booster draft".to_string(),
+            ));
+        }
+
+        let mut player_ids: Vec<String> = self.teams.keys().cloned().collect();
+        player_ids.sort();
+        if let Some(host_pos) = player_ids.iter().position(|id| *id == self.host) {
+            let host = player_ids.remove(host_pos);
+            player_ids.insert(0, host);
+        }
+
+        let pack_size = booster_pack_size(player_count);
+        let candidates: Vec<Arc<Pokemon>> = self
+            .draft
+            .pokemon
+            .iter()
+            .filter(|p| p.stage == PokemonStage::base && p.obtain_method.is_none())
+            .cloned()
+            .collect();
+        let avg_prices = self.load_avg_prices().await;
+        let featured_keys = booster_featured_keys(&candidates, &avg_prices);
+        let pack_groups =
+            booster_pack_groups(player_count, pack_size, candidates, featured_keys)?;
+        let packs = pack_groups
+            .into_iter()
+            .enumerate()
+            .map(|(pack_index, pack)| {
+                let mut slots: Vec<BoosterPoolSlot> = pack
+                    .iter()
+                    .map(|p| BoosterPoolSlot {
+                        pokemon: clone_arc_pokemon(p),
+                        status: BoosterSlotStatus::Available,
+                    })
+                    .collect();
+                slots.sort_by(|a, b| {
+                    let price_a = avg_prices
+                        .get(&(a.pokemon.pokedex_id, a.pokemon.form.clone()))
+                        .copied()
+                        .unwrap_or(0);
+                    let price_b = avg_prices
+                        .get(&(b.pokemon.pokedex_id, b.pokemon.form.clone()))
+                        .copied()
+                        .unwrap_or(0);
+                    price_b
+                        .cmp(&price_a)
+                        .then_with(|| a.pokemon.pokedex_id.cmp(&b.pokemon.pokedex_id))
+                });
+                BoosterPack {
+                    owner_id: player_ids[pack_index].clone(),
+                    holder_seat: pack_index,
+                    slots,
+                }
+            })
+            .collect();
+
+        self.booster = Some(BoosterEngine {
+            player_ids,
+            packs,
+            round: 1,
+            total_rounds: booster_total_rounds(player_count, self.settings.booster_team_size),
+            team_size: self.settings.booster_team_size,
+            bans_enabled: true,
+            pending_picks: HashMap::new(),
+            pending_bans: HashMap::new(),
+            history: vec![],
+            next_order: 1,
+            next_ban_order: -1,
+        });
+
+        self.db_writer.start_draft().await?;
+        self.draft_state = DraftState::BIDDING;
         Ok(())
     }
 
@@ -2061,7 +2580,7 @@ impl DraftActor {
             "SELECT d.draft_id, COUNT(*)::INT AS team_count
              FROM teams t
              JOIN drafts d ON d.draft_id = t.draft_id
-             WHERE d.draft_type != '1v1'
+             WHERE d.draft_type NOT IN ('1v1', 'booster')
              GROUP BY d.draft_id",
         )
         .fetch_all(self.db_writer.pool())
@@ -2086,7 +2605,7 @@ impl DraftActor {
              FROM auctions a
              JOIN drafts d ON d.draft_id = a.draft_id
              WHERE a.winning_bid IS NOT NULL
-               AND d.draft_type != '1v1'
+               AND d.draft_type NOT IN ('1v1', 'booster')
              GROUP BY a.draft_id",
         )
         .fetch_all(self.db_writer.pool())
@@ -2139,7 +2658,7 @@ impl DraftActor {
              FROM auctions a
              JOIN drafts d ON d.draft_id = a.draft_id
              JOIN pokemon p ON p.pokedex_id = a.pokedex_id AND p.form = a.form
-             WHERE d.draft_type != '1v1'
+             WHERE d.draft_type NOT IN ('1v1', 'booster')
                AND a.winning_bid IS NOT NULL",
         )
         .fetch_all(self.db_writer.pool())
@@ -2602,6 +3121,224 @@ impl DraftActor {
         Ok(())
     }
 
+    // ------------------------------------------------------------------
+    // Booster Draft Engine
+    // ------------------------------------------------------------------
+
+    async fn booster_submit(
+        &mut self,
+        user: User,
+        action: BoosterAction,
+        pokedex_id: u32,
+        form: Option<String>,
+    ) -> Result<(), AppError> {
+        if self.draft_state != DraftState::BIDDING {
+            return Err((StatusCode::PRECONDITION_FAILED, "draft is not running".to_string()));
+        }
+        let user_id = user.get_user_id_string();
+        let (choice, bans_enabled, existing_pick, existing_ban) = {
+            let engine = self.booster.as_ref().ok_or((
+                StatusCode::PRECONDITION_FAILED,
+                "not a booster draft".to_string(),
+            ))?;
+            if !engine.is_participant(&user_id) {
+                return Err((StatusCode::UNAUTHORIZED, "not a participant".to_string()));
+            }
+            let pack_index = engine.held_pack_index(&user_id).ok_or((
+                StatusCode::INTERNAL_SERVER_ERROR,
+                "no pack assigned to player".to_string(),
+            ))?;
+            let slot_index = engine.packs[pack_index]
+                .slots
+                .iter()
+                .position(|slot| {
+                    slot.pokemon.pokedex_id == pokedex_id
+                        && slot.pokemon.form.as_deref() == form.as_deref()
+                })
+                .ok_or((
+                    StatusCode::BAD_REQUEST,
+                    "pokemon is not in your current pack".to_string(),
+                ))?;
+            if engine.packs[pack_index].slots[slot_index].status != BoosterSlotStatus::Available {
+                return Err((
+                    StatusCode::BAD_REQUEST,
+                    "pokemon is no longer available".to_string(),
+                ));
+            }
+            (
+                BoosterChoice { pack_index, slot_index },
+                engine.bans_enabled,
+                engine.pending_picks.get(&user_id).copied(),
+                engine.pending_bans.get(&user_id).copied(),
+            )
+        };
+
+        match action {
+            BoosterAction::Pick => {
+                if existing_ban == Some(choice) {
+                    return Err((
+                        StatusCode::BAD_REQUEST,
+                        "cannot pick the pokemon you banned".to_string(),
+                    ));
+                }
+                self.booster
+                    .as_mut()
+                    .expect("booster engine")
+                    .pending_picks
+                    .insert(user_id, choice);
+            }
+            BoosterAction::Ban => {
+                if !bans_enabled {
+                    return Err((
+                        StatusCode::PRECONDITION_FAILED,
+                        "bans are only allowed during the first cycle".to_string(),
+                    ));
+                }
+                if existing_pick == Some(choice) {
+                    return Err((
+                        StatusCode::BAD_REQUEST,
+                        "cannot ban the pokemon you picked".to_string(),
+                    ));
+                }
+                self.booster
+                    .as_mut()
+                    .expect("booster engine")
+                    .pending_bans
+                    .insert(user_id, choice);
+            }
+        }
+
+        let all_submitted = self
+            .booster
+            .as_ref()
+            .expect("booster engine")
+            .all_submitted();
+        if all_submitted {
+            self.booster_reveal_and_pass().await;
+        }
+        Ok(())
+    }
+
+    /// Reveal and persist the whole table's submissions, then pass every pack
+    /// to the right. Nothing here is applied until all players are ready, so
+    /// no player can react to another player's hidden choice.
+    async fn booster_reveal_and_pass(&mut self) {
+        let (round, bans_enabled, picks, bans) = {
+            let engine = self.booster.as_ref().expect("booster engine");
+            let picks = engine
+                .player_ids
+                .iter()
+                .filter_map(|id| engine.pending_picks.get(id).map(|choice| (id.clone(), *choice)))
+                .collect::<Vec<_>>();
+            let bans = engine
+                .player_ids
+                .iter()
+                .filter_map(|id| engine.pending_bans.get(id).map(|choice| (id.clone(), *choice)))
+                .collect::<Vec<_>>();
+            (engine.round, engine.bans_enabled, picks, bans)
+        };
+
+        for (user_id, choice) in picks {
+            let Some(pokemon) = self.booster.as_mut().expect("booster engine").claim_slot(
+                choice,
+                BoosterSlotStatus::Picked(user_id.clone()),
+            ) else {
+                continue;
+            };
+            let order = self.booster.as_mut().expect("booster engine").take_next_order();
+            let user = self.team_users.get(&user_id).cloned();
+            self.db_writer
+                .write_one_v_one_action(pokemon.pokedex_id, pokemon.form.clone(), order as i32, "PICK", user.clone())
+                .await;
+            if let Some(user) = user {
+                self.db_writer.increment_one_v_one_pick(user.clone()).await;
+                if let Some(team) = self.teams.get_mut(&user_id) {
+                    team.auctions_won.push(Arc::new(pokemon.clone()));
+                    team.pokemon_drafted += 1;
+                }
+            }
+            self.booster.as_mut().expect("booster engine").history.push(BoosterHistoryEntry {
+                round,
+                pack_index: choice.pack_index as u32,
+                action: BoosterHistoryAction::Pick,
+                player_id: Some(user_id),
+                pokemon,
+            });
+        }
+
+        if bans_enabled {
+            for (user_id, choice) in bans {
+                let Some(pokemon) = self.booster.as_mut().expect("booster engine").claim_slot(
+                    choice,
+                    BoosterSlotStatus::Banned(user_id.clone()),
+                ) else {
+                    continue;
+                };
+                let order = self.booster.as_mut().expect("booster engine").take_ban_order();
+                let user = self.team_users.get(&user_id).cloned();
+                self.db_writer
+                    .write_one_v_one_action(pokemon.pokedex_id, pokemon.form.clone(), order, "BAN", user)
+                    .await;
+                self.booster.as_mut().expect("booster engine").history.push(BoosterHistoryEntry {
+                    round,
+                    pack_index: choice.pack_index as u32,
+                    action: BoosterHistoryAction::Ban,
+                    player_id: Some(user_id),
+                    pokemon,
+                });
+            }
+        }
+
+        let (round, total_rounds, has_cards) = {
+            let engine = self.booster.as_ref().expect("booster engine");
+            (
+                engine.round,
+                engine.total_rounds,
+                !engine.available_slots().is_empty(),
+            )
+        };
+        if !has_cards || round >= total_rounds {
+            self.booster_finish().await;
+            return;
+        }
+        self.booster.as_mut().expect("booster engine").pass_packs();
+    }
+
+    /// Mark every unclaimed pokemon as leftover and persist it, matching the
+    /// 1v1 draft's stats/leftover convention.
+    async fn booster_finish(&mut self) {
+        let leftovers = self
+            .booster
+            .as_ref()
+            .expect("booster engine")
+            .available_slots();
+        for choice in leftovers {
+            let Some(pokemon) = self
+                .booster
+                .as_mut()
+                .expect("booster engine")
+                .claim_slot(choice, BoosterSlotStatus::Leftover)
+            else {
+                continue;
+            };
+            let round = self.booster.as_ref().expect("booster engine").round;
+            let order = self.booster.as_mut().expect("booster engine").take_next_order();
+            self.db_writer
+                .write_one_v_one_action(pokemon.pokedex_id, pokemon.form.clone(), order as i32, "LEFTOVER", None)
+                .await;
+            self.booster.as_mut().expect("booster engine").history.push(BoosterHistoryEntry {
+                round,
+                pack_index: choice.pack_index as u32,
+                action: BoosterHistoryAction::Leftover,
+                player_id: None,
+                pokemon,
+            });
+        }
+        if self.db_writer.finish_draft().await.is_ok() {
+            self.draft_state = DraftState::COMPLETED;
+        }
+    }
+
     async fn place_auto_bids(&self) {
         let auction = &self.auctions[self.current_auction];
 
@@ -2641,6 +3378,12 @@ impl DraftActor {
     }
 
     async fn resume(&mut self, user_id: String) -> Result<(), AppError> {
+        if self.settings.draft_type == DRAFT_TYPE_BOOSTER {
+            return Err((
+                StatusCode::PRECONDITION_FAILED,
+                "booster drafts do not use a countdown timer".to_string(),
+            ));
+        }
         if self.settings.draft_type == DRAFT_TYPE_1V1 {
             if !self.is_one_v_one_player(&user_id) {
                 return Err((StatusCode::UNAUTHORIZED, "not a participant".to_string()));
@@ -2663,6 +3406,12 @@ impl DraftActor {
     }
 
     async fn pause(&mut self, user_id: String) -> Result<(), AppError> {
+        if self.settings.draft_type == DRAFT_TYPE_BOOSTER {
+            return Err((
+                StatusCode::PRECONDITION_FAILED,
+                "booster drafts do not use a countdown timer".to_string(),
+            ));
+        }
         if self.settings.draft_type == DRAFT_TYPE_1V1 {
             if !self.is_one_v_one_player(&user_id) {
                 return Err((StatusCode::UNAUTHORIZED, "not a participant".to_string()));
@@ -2769,6 +3518,14 @@ impl DraftActor {
         &mut self,
         completed_auction: AuctionResponse,
     ) -> Result<(), AppError> {
+        if self.settings.draft_type == DRAFT_TYPE_1V1
+            || self.settings.draft_type == DRAFT_TYPE_BOOSTER
+        {
+            return Err((
+                StatusCode::PRECONDITION_FAILED,
+                format!("this draft type does not use bidding"),
+            ));
+        }
         if self.draft_state != DraftState::BIDDING {
             return Err((
                 StatusCode::PRECONDITION_FAILED,
@@ -3165,8 +3922,12 @@ impl DraftActor {
             return Err((StatusCode::FORBIDDEN, "user is not host".to_string()));
         }
 
-        // 1v1 drafts only support kicking joined players; ignore num_teams/num_auctions.
-        if self.settings.draft_type == DRAFT_TYPE_1V1 {
+        // Settings can only be changed while PENDING; the check above keeps a
+        // started draft's size locked. Pick/ban-only drafts only support
+        // kicking joined players, so ignore num_teams/num_auctions here.
+        if self.settings.draft_type == DRAFT_TYPE_1V1
+            || self.settings.draft_type == DRAFT_TYPE_BOOSTER
+        {
             return self.update_one_v_one_pending_settings(remove_team_ids).await;
         }
 
@@ -3389,12 +4150,24 @@ impl DraftActor {
         self.broadcast();
         Ok(DraftResponse::from(&*self))
     }
+
+    fn response_for(&self, viewer_id: Option<&str>) -> DraftResponse {
+        let mut response = DraftResponse::from(self);
+        if let (Some(engine), Some(viewer)) = (self.booster.as_ref(), viewer_id) {
+            response.booster = Some(engine.to_state_for(Some(viewer)));
+        }
+        response
+    }
 }
 
 impl From<&DraftActor> for DraftResponse {
     fn from(value: &DraftActor) -> Self {
         let draft_type = value.settings.draft_type.clone();
-        let format = format_label(&draft_type, value.settings.ranked);
+        let format = format_label(
+            &draft_type,
+            value.settings.ranked,
+            value.settings.booster_team_size,
+        );
         DraftResponse {
             draft_id: value.draft.draft_id.to_string(),
             draft_name: value.draft.draft_name.clone(),
@@ -3421,8 +4194,11 @@ impl From<&DraftActor> for DraftResponse {
             current_server_time: Utc::now(),
             auction_length: value.settings.auction_length,
             one_v_one_pool_size: (value.settings.draft_type == DRAFT_TYPE_1V1).then_some(value.settings.one_v_one_pool_size),
+            booster_team_size: (value.settings.draft_type == DRAFT_TYPE_BOOSTER)
+                .then_some(value.settings.booster_team_size),
             one_v_one: value.one_v_one.as_ref().map(|e| e.to_state(value)),
             rps: value.rps.as_ref().map(|e| e.to_state()),
+            booster: value.booster.as_ref().map(|e| e.to_state()),
         }
     }
 }
@@ -3430,7 +4206,11 @@ impl From<&DraftActor> for DraftResponse {
 impl From<&DraftActor> for DraftLobbyResponse {
     fn from(value: &DraftActor) -> Self {
         let draft_type = value.settings.draft_type.clone();
-        let format = format_label(&draft_type, value.settings.ranked);
+        let format = format_label(
+            &draft_type,
+            value.settings.ranked,
+            value.settings.booster_team_size,
+        );
         let mut players: Vec<String> = value
             .team_users
             .values()
@@ -3467,12 +4247,224 @@ impl From<&DraftActor> for DraftLobbyResponse {
     }
 }
 
-fn format_label(draft_type: &str, ranked: bool) -> String {
-    if draft_type == DRAFT_TYPE_1V1 {
+fn format_label(draft_type: &str, ranked: bool, booster_team_size: u32) -> String {
+    if draft_type == DRAFT_TYPE_BOOSTER {
+        if booster_team_size >= 9 {
+            "Booster (Casual)".to_string()
+        } else {
+            "Booster".to_string()
+        }
+    } else if draft_type == DRAFT_TYPE_1V1 {
         "1v1".to_string()
     } else if ranked {
         "Ranked".to_string()
     } else {
         "Auction".to_string()
+    }
+}
+
+#[cfg(test)]
+mod booster_tests {
+    use super::*;
+
+    fn test_pokemon(pokedex_id: u32) -> Arc<Pokemon> {
+        Arc::new(Pokemon {
+            pokedex_id,
+            name: format!("Pokemon {}", pokedex_id),
+            form: None,
+            stage: PokemonStage::base,
+            type1: pokemon::PokemonType::Normal,
+            type2: None,
+            ability1: String::new(),
+            ability2: None,
+            hidden_ability: None,
+            stats: pokemon::PokemonStats {
+                hp: 1,
+                attack: 1,
+                defense: 1,
+                sp_attack: 1,
+                sp_defense: 1,
+                speed: 1,
+            },
+            key_moves: sqlx::types::Json(vec![]),
+            description: None,
+            evolves_from_id: None,
+            evolves_from_form: None,
+            evolution_method: None,
+            obtain_method: None,
+        })
+    }
+
+    fn test_engine(player_count: usize, team_size: u32) -> BoosterEngine {
+        let player_ids: Vec<String> = (0..player_count).map(|i| format!("p{}", i + 1)).collect();
+        let packs = (0..player_count)
+            .map(|i| BoosterPack {
+                owner_id: player_ids[i].clone(),
+                holder_seat: i,
+                slots: Vec::new(),
+            })
+            .collect();
+        BoosterEngine {
+            player_ids,
+            packs,
+            round: 1,
+            total_rounds: booster_total_rounds(player_count, team_size),
+            team_size,
+            bans_enabled: true,
+            pending_picks: HashMap::new(),
+            pending_bans: HashMap::new(),
+            history: Vec::new(),
+            next_order: 1,
+            next_ban_order: -1,
+        }
+    }
+
+    #[test]
+    fn pack_sizes_leave_three_leftovers_for_eight_pokemon_teams() {
+        assert_eq!(booster_pack_size(3), 14);
+        assert_eq!(booster_pack_size(4), 15);
+
+        for player_count in [3, 4] {
+            let pack_size = booster_pack_size(player_count);
+            assert_eq!(pack_size - 8 - player_count, 3);
+            assert_eq!(pack_size - 9 - player_count, 2);
+            assert_eq!(pack_size - 10 - player_count, 1);
+        }
+    }
+
+    #[test]
+    fn booster_featured_keys_only_include_the_top_thirty_priced_pokemon() {
+        let candidates: Vec<Arc<Pokemon>> = (1..=40u32).map(test_pokemon).collect();
+        let avg_prices: HashMap<(u32, Option<String>), u32> = (1..=40u32)
+            .map(|id| ((id, None), 1000 - id))
+            .collect();
+
+        let featured = booster_featured_keys(&candidates, &avg_prices);
+        assert_eq!(featured.len(), 30);
+        assert!(featured.contains(&(1, None)));
+        assert!(featured.contains(&(30, None)));
+        assert!(!featured.contains(&(31, None)));
+    }
+
+    #[test]
+    fn every_booster_pack_gets_a_top_priced_pokemon_without_duplicates() {
+        let player_count = 3;
+        let pack_size = booster_pack_size(player_count);
+        let needed = pack_size * player_count;
+        let candidates: Vec<Arc<Pokemon>> = (1..=(needed as u32)).map(test_pokemon).collect();
+        let avg_prices: HashMap<(u32, Option<String>), u32> = (1..=40u32)
+            .map(|id| ((id, None), 1000 - id))
+            .collect();
+        let featured_keys = booster_featured_keys(&candidates, &avg_prices);
+
+        let packs = booster_pack_groups(player_count, pack_size, candidates, featured_keys.clone())
+            .expect("packs should build");
+        assert_eq!(packs.len(), player_count);
+
+        let mut seen = HashSet::new();
+        for pack in &packs {
+            assert_eq!(pack.len(), pack_size);
+            assert!(
+                pack.iter().any(|pokemon| {
+                    featured_keys.contains(&(pokemon.pokedex_id, pokemon.form.clone()))
+                }),
+                "pack is missing a top-priced pokemon"
+            );
+            for pokemon in pack {
+                assert!(seen.insert((pokemon.pokedex_id, pokemon.form.clone())));
+            }
+        }
+        assert_eq!(seen.len(), needed);
+    }
+
+    #[test]
+    fn rounds_match_the_configured_team_size() {
+        assert_eq!(booster_total_rounds(3, 8), 8);
+        assert_eq!(booster_total_rounds(3, 9), 9);
+        assert_eq!(booster_total_rounds(3, 10), 10);
+        assert_eq!(booster_total_rounds(4, 8), 8);
+        assert_eq!(booster_total_rounds(4, 9), 9);
+        assert_eq!(booster_total_rounds(4, 10), 10);
+    }
+
+    #[test]
+    fn reveal_waits_for_every_pick_and_ban() {
+        let mut engine = test_engine(3, 8);
+        assert!(!engine.all_submitted());
+
+        for player in 0..3 {
+            engine.pending_picks.insert(
+                format!("p{}", player + 1),
+                BoosterChoice {
+                    pack_index: player,
+                    slot_index: 0,
+                },
+            );
+        }
+        assert!(!engine.all_submitted(), "bans are still missing");
+
+        for player in 0..3 {
+            engine.pending_bans.insert(
+                format!("p{}", player + 1),
+                BoosterChoice {
+                    pack_index: player,
+                    slot_index: 1,
+                },
+            );
+        }
+        assert!(engine.all_submitted());
+
+        engine.bans_enabled = false;
+        engine.pending_bans.clear();
+        assert!(engine.all_submitted(), "pick-only passes need no bans");
+    }
+
+    #[test]
+    fn passes_rotate_right_and_disable_bans_after_first_circuit() {
+        let mut engine = test_engine(3, 8);
+        assert_eq!(engine.held_pack_index("p1"), Some(0));
+        assert_eq!(engine.held_pack_index("p3"), Some(2));
+
+        for _ in 0..3 {
+            engine.pass_packs();
+        }
+
+        assert_eq!(engine.round, 4);
+        assert!(!engine.bans_enabled);
+        assert_eq!(engine.held_pack_index("p1"), Some(0));
+        assert_eq!(engine.held_pack_index("p2"), Some(1));
+        assert_eq!(engine.held_pack_index("p3"), Some(2));
+    }
+
+    #[test]
+    fn bans_use_negative_orders_so_leftover_baseline_is_team_size_times_players() {
+        let mut engine = test_engine(3, 8);
+        assert_eq!(engine.take_next_order(), 1);
+        assert_eq!(engine.take_next_order(), 2);
+        assert_eq!(engine.take_ban_order(), -1);
+        assert_eq!(engine.take_ban_order(), -2);
+
+        // 3 players x 8 picks = 24 numbered picks, so the first leftover row
+        // is 25. Team sizes 9/10 add N/2N picks before the leftovers.
+        let baseline = 8 * 3 + 1;
+        assert_eq!(baseline, 25);
+        assert_eq!(baseline + 3, 28);
+        assert_eq!(baseline + 6, 31);
+
+        // Four players also make 8 picks each, so their first leftover is 33.
+        assert_eq!(8 * 4 + 1, 33);
+    }
+
+    #[test]
+    fn casual_label_covers_team_sizes_nine_and_ten() {
+        assert_eq!(format_label(DRAFT_TYPE_BOOSTER, false, 8), "Booster");
+        assert_eq!(
+            format_label(DRAFT_TYPE_BOOSTER, false, 9),
+            "Booster (Casual)"
+        );
+        assert_eq!(
+            format_label(DRAFT_TYPE_BOOSTER, false, 10),
+            "Booster (Casual)"
+        );
     }
 }

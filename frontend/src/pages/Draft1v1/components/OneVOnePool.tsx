@@ -143,7 +143,11 @@ const OneVOnePool: React.FC<OneVOnePoolProps> = ({
   markedSlots,
   onToggleMark,
 }) => {
-  const [artMode, setArtMode] = useState(() => localStorage.getItem('eb-1v1-pokemon-art') || 'standard');
+  const [artMode, setArtMode] = useState(() =>
+    localStorage.getItem('eb-pokemon-tile-art') ||
+    localStorage.getItem('eb-1v1-pokemon-art') ||
+    'standard'
+  );
   const [tcgArtSeed] = useState(() => Math.floor(Math.random() * 0x100000000));
   const mysteryDungeon = artMode === 'mystery-dungeon';
   const shuffleMode = artMode === 'shuffle';
@@ -182,7 +186,11 @@ const OneVOnePool: React.FC<OneVOnePoolProps> = ({
     };
   }, [pool.length, !!onTileSizeChange]);
   useEffect(() => {
-    const refresh = () => setArtMode(localStorage.getItem('eb-1v1-pokemon-art') || 'standard');
+    const refresh = () => setArtMode(
+      localStorage.getItem('eb-pokemon-tile-art') ||
+      localStorage.getItem('eb-1v1-pokemon-art') ||
+      'standard'
+    );
     window.addEventListener('eb-settings-changed', refresh);
     window.addEventListener('storage', refresh);
     return () => {

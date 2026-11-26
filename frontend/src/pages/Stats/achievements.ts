@@ -56,6 +56,8 @@ export interface AchievementContext {
   pokemon: Pokemon[];
   validDraftIds: Set<string>;
   casual1v1DraftIds: Set<string>;
+  /** Booster drafts whose leftover order shows a 9/10-card casual team size. */
+  casualBoosterDraftIds?: Set<string>;
   rmvByTeamId: Map<number, number>;
   /** Manual grants/revokes keyed by achievement id. */
   manualOverrides: Map<string, boolean>;
@@ -64,6 +66,9 @@ export interface AchievementContext {
    * `auctions` instead. */
   poolEntries?: PoolEntry[];
   priceHistory?: Record<string, PricePoint[]>;
+  /** Opponent signature Pokémon identity key for each 1v1 draft, by draft id.
+   * Calculated server-side as of that 1v1's date. */
+  oneVOneOpponentSignatures?: Map<string, string>;
 }
 
 const STREAM_LEGEND_USER_ID = '310960489628696576';
@@ -531,6 +536,18 @@ export const ACHIEVEMENT_DEFINITIONS: AchievementDefinition[] = [
     description: 'Enter the Hall of Fame with a Pokémon whose IVs are all single digit',
     icon: 'AgainstAllOdds.png',
   },
+  {
+    id: 'topsy-turvy',
+    name: 'Topsy Turvy',
+    description: "In a 1v1, enter the Hall of Fame with your opponent's signature Pokémon",
+    icon: 'TopsyTurvy.png',
+  },
+  {
+    id: 'vanilla-gamer',
+    name: 'Vanilla Gamer',
+    description: "Defeat Hoenn's 8 leaders in their original order",
+    icon: 'VanillaGamer.png',
+  },
 ];
 
 function normalizeName(value: string): string {
@@ -754,6 +771,33 @@ function defeatedAllFrontierBrainsConsecutively(
   return false;
 }
 
+/**
+ * The "vanilla" Hoenn gym order skips Viola and uses each gym's matching
+ * split: Roxanne 1, Brawly 2, Wattson 3, Flannery 4, Norman 5, Winona 6,
+ * Tate & Liza 7, Juan & Wallace 8.
+ */
+const VANILLA_GYM_SPLIT_IDS: number[] = [
+  [265, 1],  // Roxanne 1
+  [266, 2],  // Brawly 2
+  [267, 3],  // Wattson 3
+  [268, 4],  // Flannery 4
+  [269, 5],  // Norman 5
+  [270, 6],  // Winona 6
+  [271, 7],  // Tate & Liza 7
+  [272, 8],  // Juan & Wallace 8
+].map(([baseTrainerId, version]) => resolveBossTrainerId(baseTrainerId, version)!);
+
+/** Boss history is chronological, so look for the eight wins as an ordered subsequence. */
+function defeatedVanillaGymsInOrder(battles: BossBattleHistoryEntry[]): boolean {
+  let nextSplit = 0;
+  battles.forEach((battle) => {
+    if (nextSplit >= VANILLA_GYM_SPLIT_IDS.length || battle.is_loss) return;
+    const trainerId = resolveBossTrainerId(battle.trainer_id, battle.version);
+    if (trainerId === VANILLA_GYM_SPLIT_IDS[nextSplit]) nextSplit += 1;
+  });
+  return nextSplit === VANILLA_GYM_SPLIT_IDS.length;
+}
+
 function draftYearMonth(value: string): { year: number; month: number } | null {
   // Both ISO ("2026-03-14T...") and SQL ("2026-03-14 12:00:00") timestamps
   // start with the calendar date, so avoid timezone shifting the month.
@@ -873,6 +917,33 @@ function bannedMostDraftedAndBeatGame(ctx: AchievementContext): boolean {
 }
 
 /**
+ * The profile endpoint supplies the other player's Signature Pokémon for each
+ * 1v1 draft, frozen at that draft's date. Casual and competitive 1v1s both
+ * count; the run only has to end in a Hall of Fame win.
+ */
+function beatGameWithOpponentSignature(ctx: AchievementContext): boolean {
+  const signatures = ctx.oneVOneOpponentSignatures;
+  if (!signatures || signatures.size === 0) return false;
+
+  return ctx.matchHistory.some((team) => {
+    if (team.draft_type !== '1v1' || !didBeatGame(team, ctx.bossBattleHistory)) return false;
+    const signatureKey = signatures.get(team.draft_id);
+    if (!signatureKey) return false;
+
+    const signature = resolvePokemonIdentity(signatureKey, '');
+    const acceptedKeys = new Set([normalizeName(signature.key)]);
+    if (!signature.form) acceptedKeys.add(normalizeName(signature.name));
+
+    return (team.hall_of_fame_team ?? []).some((mon) =>
+      [mon.name, mon.icon].some(
+        (value) =>
+          Boolean(value) && acceptedKeys.has(normalizeName(resolvePokemonIdentity(value, '').key)),
+      ),
+    );
+  });
+}
+
+/**
  * Mirrors the profile stats chart: the pool is every resolved Pokemon identity
  * in a valid draft, and a win is a non-casual race where the player drafted that
  * identity. The pool is frozen as of each winning race's date so adding a new
@@ -890,6 +961,7 @@ function wonWithEveryPoolPokemon(ctx: AchievementContext): boolean {
     .sort((a, b) => a.date.localeCompare(b.date));
   if (datedWins.length === 0) return false;
 
+  const casualBoosterIds = ctx.casualBoosterDraftIds ?? new Set<string>();
   const poolEntries = ctx.poolEntries
     ? ctx.poolEntries.map((entry) => ({ date: entry.date, key: entry.key }))
     : ctx.auctions
@@ -925,6 +997,7 @@ function wonWithEveryPoolPokemon(ctx: AchievementContext): boolean {
       ctx.allPlayers,
       ctx.validDraftIds,
       ctx.casual1v1DraftIds,
+      casualBoosterIds,
     );
 
     const complete = Array.from(availablePool).every((key) => (wins.get(key) ?? 0) >= 1);
@@ -951,12 +1024,13 @@ function neverSpentOverTwoThousandOnOnePokemon(team: MatchHistoryTeam): boolean 
  * fewer than half of that draft's Pokemon have sold.
  */
 function spentTwentyThousandBeforeHalfway(ctx: AchievementContext): boolean {
+  const casualBoosterIds = ctx.casualBoosterDraftIds ?? new Set<string>();
   const salesByDraftId = new Map<string, StatsAuction[]>();
 
   ctx.auctions.forEach((auction) => {
     if (typeof auction.winning_bid !== 'number') return;
-    if (auction.draft_type === '1v1') return;
-    if (!isNonCasualRace(auction, ctx.validDraftIds, ctx.casual1v1DraftIds)) return;
+    if (auction.draft_type === '1v1' || auction.draft_type === 'booster') return;
+    if (!isNonCasualRace(auction, ctx.validDraftIds, ctx.casual1v1DraftIds, casualBoosterIds)) return;
 
     const sales = salesByDraftId.get(auction.draft_id) ?? [];
     sales.push(auction);
@@ -1000,15 +1074,18 @@ function hasHostedAndWonOwnAuction(
   winningTeams: MatchHistoryTeam[],
 ): boolean {
   const hosted = hostedDraftIds(ctx);
-  return winningTeams.some((team) => team.draft_type !== '1v1' && hosted.has(team.draft_id));
+  return winningTeams.some(
+    (team) => team.draft_type !== '1v1' && team.draft_type !== 'booster' && hosted.has(team.draft_id),
+  );
 }
 
 function wonPokemonForAtLeastTwoThousandOverAverage(ctx: AchievementContext): boolean {
+  const casualBoosterIds = ctx.casualBoosterDraftIds ?? new Set<string>();
   const qualifyingSales = ctx.auctions.filter((auction) => {
     if (typeof auction.winning_bid !== 'number') return false;
-    if (auction.draft_type === '1v1') return false;
+    if (auction.draft_type === '1v1' || auction.draft_type === 'booster') return false;
     if (auction.action === 'BAN' || auction.action === 'LEFTOVER') return false;
-    return isNonCasualRace(auction, ctx.validDraftIds, ctx.casual1v1DraftIds);
+    return isNonCasualRace(auction, ctx.validDraftIds, ctx.casual1v1DraftIds, casualBoosterIds);
   });
 
   // The scoped profile endpoint ships this aggregate so the browser doesn't
@@ -1236,14 +1313,16 @@ function outplacedShartwagonInRace(
 
 /** Derive every earned achievement for a player from data already on the stats page. */
 export function computePlayerAchievements(ctx: AchievementContext): PlayerAchievement[] {
+  const casualBoosterIds = ctx.casualBoosterDraftIds ?? new Set<string>();
   const nonCasualMatchHistory = ctx.matchHistory.filter((team) =>
-    isNonCasualRace(team, ctx.validDraftIds, ctx.casual1v1DraftIds),
+    isNonCasualRace(team, ctx.validDraftIds, ctx.casual1v1DraftIds, casualBoosterIds),
   );
   const personalBestSeconds = computePersonalBestSeconds(
     ctx.matchHistory,
     ctx.bossBattleHistory,
     ctx.validDraftIds,
     ctx.casual1v1DraftIds,
+    casualBoosterIds,
   );
   // The X+ clubs count every recorded race, including casual drafts and casual 1v1s.
   const clubRacesPlayed = ctx.matchHistory.length;
@@ -1255,7 +1334,7 @@ export function computePlayerAchievements(ctx: AchievementContext): PlayerAchiev
     (entry) =>
       entry.user_id &&
       ctx.identityIds.has(entry.user_id) &&
-      isNonCasualRace(entry, ctx.validDraftIds, ctx.casual1v1DraftIds),
+      isNonCasualRace(entry, ctx.validDraftIds, ctx.casual1v1DraftIds, casualBoosterIds),
   );
 
   const hallOfFameDays = new Map<string, number>();
@@ -1378,6 +1457,11 @@ export function computePlayerAchievements(ctx: AchievementContext): PlayerAchiev
     'rps-champion': (ctx.player.rps_wins ?? 0) >= RPS_CHAMPION_REQUIRED_WINS,
     'around-the-world': wonWithEveryPoolPokemon(ctx),
     traitor: bannedMostDraftedAndBeatGame(ctx),
+    'topsy-turvy': beatGameWithOpponentSignature(ctx),
+    // Only the eighth gym win is needed; casual runs do not count.
+    'vanilla-gamer': nonCasualMatchHistory.some((team) =>
+      defeatedVanillaGymsInOrder(ctx.bossBattleHistory.get(team.team_id) ?? []),
+    ),
     // This achievement can only be granted manually.
     'infinite-wisdom': false,
   };

@@ -404,6 +404,10 @@ const AuctionPage: React.FC = () => {
         ]).then(([draftData, pokemonData, current_auction, allPkmn]) => ({ user, draftData, pokemonData, current_auction, allPkmn }));
       })
       .then(({ user, draftData, pokemonData, current_auction, allPkmn }) => {
+        if (draftData.draft_type === 'booster') {
+          navigate(`/BoosterDraft?${auctionId}`, { replace: true });
+          return;
+        }
         if (draftData.draft_type === '1v1') {
           navigate(`/Draft1v1?${auctionId}`, { replace: true });
           return;
@@ -420,7 +424,7 @@ const AuctionPage: React.FC = () => {
       })
       .catch(error => console.error('Error fetching draft on initial load:', error))
       .finally(() => setLoading(false));
-  }, [auctionId]);
+  }, [auctionId, navigate]);
 
   const handleReadyUp = async () => {
     if (!draft) return;

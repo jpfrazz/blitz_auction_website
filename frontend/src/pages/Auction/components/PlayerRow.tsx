@@ -38,6 +38,8 @@ interface PlayerRowProps {
    * can never paint a player with the other player's colour.
    */
   positionOneId?: string | null;
+  /** Ordered player ids for modes with more than two fixed seat colors. */
+  positionIds?: string[];
   highlightId?: string | null;
   equalWidth?: boolean;
 }
@@ -173,7 +175,7 @@ const SortableItem: React.FC<SortableItemProps> = ({ team, highestBidderId, wsCo
   );
 };
 
-const PlayerRow: React.FC<PlayerRowProps> = ({ teams, numPlayers, highestBidderId, wsConnected = true, currentUserId, highestBid, auctionCompleted, hideMoney, positionColors, positionOneId, highlightId, equalWidth }) => {
+const PlayerRow: React.FC<PlayerRowProps> = ({ teams, numPlayers, highestBidderId, wsConnected = true, currentUserId, highestBid, auctionCompleted, hideMoney, positionColors, positionOneId, positionIds, highlightId, equalWidth }) => {
   const [animatingId, setAnimatingId] = React.useState<string | null>(null);
   const isInitial = React.useRef(true);
 
@@ -346,6 +348,12 @@ const PlayerRow: React.FC<PlayerRowProps> = ({ teams, numPlayers, highestBidderI
   // the row reorders itself (sort by funds, "me first", dragging).
   const getPositionColorClass = (team: any, idx: number): string => {
     if (!positionColors || team.isPlaceholder) return '';
+    if (positionIds && positionIds.length > 0) {
+      const seat = positionIds.findIndex(
+        (id) => id === team.user_id || id === team.guest_id,
+      );
+      if (seat >= 0) return `player-slot-p${seat + 1}`;
+    }
     if (positionOneId) {
       const isP1 = team.user_id === positionOneId || team.guest_id === positionOneId;
       return isP1 ? 'player-slot-p1' : 'player-slot-p2';

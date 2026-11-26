@@ -6,6 +6,7 @@ import { TbSettings, TbRefresh } from 'react-icons/tb';
 import '../Stats.scss';
 import './PokemonStatsTab.scss';
 import { casualOneVOneDraftIds, oneVOneLeftoverOrders, oneVOnePickSlot } from '../oneVOneHistory';
+import { casualBoosterDraftIds } from '../boosterHistory';
 import { resolvePokemonIdentity } from '../../../shared/utils/pokemonIdentity';
 import { buildRunStatLineage } from '../../../utils/runStatLineage';
 import { computeAverageKosByPokemonKey, computeWinOpportunitiesByPokemonKey, computeWinningPicksByPokemonKey } from '../costBreakdownKos';
@@ -258,6 +259,10 @@ const PokemonStatsTab: React.FC<PokemonStatsTabProps> = ({
     () => casualOneVOneDraftIds(stats?.auctions ?? []),
     [stats?.auctions],
   );
+  const casualBoosterIds = useMemo(
+    () => casualBoosterDraftIds(stats?.auctions ?? [], stats?.teams ?? []),
+    [stats?.auctions, stats?.teams],
+  );
 
   const played1v1DraftIds = useMemo(() => {
     const played = new Set<string>();
@@ -372,8 +377,9 @@ const PokemonStatsTab: React.FC<PokemonStatsTabProps> = ({
       stats?.players ?? [],
       validDraftIds,
       casual1v1DraftIds,
+      casualBoosterIds,
     );
-  }, [stats?.winning_races, stats?.auctions, stats?.teams, stats?.players, validDraftIds, casual1v1DraftIds]);
+  }, [stats?.winning_races, stats?.auctions, stats?.teams, stats?.players, validDraftIds, casual1v1DraftIds, casualBoosterIds]);
 
   const winOpportunitiesByKey = useMemo(() => {
     return computeWinOpportunitiesByPokemonKey(
@@ -382,8 +388,9 @@ const PokemonStatsTab: React.FC<PokemonStatsTabProps> = ({
       stats?.players ?? [],
       validDraftIds,
       casual1v1DraftIds,
+      casualBoosterIds,
     );
-  }, [stats?.teams, stats?.auctions, stats?.players, validDraftIds, casual1v1DraftIds]);
+  }, [stats?.teams, stats?.auctions, stats?.players, validDraftIds, casual1v1DraftIds, casualBoosterIds]);
 
   const aggregatedPokemon = useMemo<PokemonAggregate[]>(() => {
     const sales: PokemonSaleRow[] = [];
@@ -909,6 +916,7 @@ const PokemonStatsTab: React.FC<PokemonStatsTabProps> = ({
                               cutoffDate={cutoffDate}
                               validDraftIds={validDraftIds}
                               casualOneVOneDraftIds={casual1v1DraftIds}
+                              casualBoosterDraftIds={casualBoosterIds}
                               runStatLineage={runStatLineage}
                             />
                           </div>

@@ -88,7 +88,10 @@
   padding: 0.45rem 0.8rem;
   font-weight: 600;
   cursor: pointer;
-  transition: 120ms ease;
+  // Only animate the hover/active colors. Transitioning `all` also animated
+  // font-size and padding whenever the header's page-zoom changed, which made
+  // this tab row balloon and shrink on navigation.
+  transition: background-color 120ms ease, border-color 120ms ease, color 120ms ease;
 }
 
 .tab-chip:hover {
@@ -876,6 +879,18 @@
   color: $eb-accent;
   background: rgba(79, 195, 247, 0.12);
   border: 1px solid rgba(79, 195, 247, 0.45);
+}
+
+.admin-hof-draft-type.booster {
+  color: #c79bf5;
+  background: rgba(142, 95, 216, 0.15);
+  border: 1px solid rgba(142, 95, 216, 0.45);
+}
+
+.admin-hof-draft-type.booster.casual-booster {
+  color: #e0b4ff;
+  background: rgba(230, 192, 122, 0.12);
+  border: 1px solid rgba(199, 155, 245, 0.55);
 }
 
 .admin-hof-entry-head {

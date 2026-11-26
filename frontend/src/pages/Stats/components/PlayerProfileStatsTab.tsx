@@ -48,6 +48,7 @@ import { FiCamera, FiChevronDown } from 'react-icons/fi';
 import '../Stats.scss';
 import './PlayerSearchStatsTab.scss';
 import { casualOneVOneDraftIds, oneVOneLeftoverOrders, oneVOnePickSlot } from '../oneVOneHistory';
+import { casualBoosterDraftIds } from '../boosterHistory';
 import { computeWinningPicksByPokemonKey } from '../costBreakdownKos';
 import { buildOpponentsByDraftId, getSelectedPlayerIdentityIds } from '../opponentLinks';
 
@@ -77,7 +78,7 @@ interface PlayerOneVOnePickStats {
   appearedDraftIds: Set<string>;
 }
 
-type RaceCategory = 'auction' | 'casualAuction' | 'oneVOne' | 'casualOneVOne';
+type RaceCategory = 'auction' | 'casualAuction' | 'oneVOne' | 'casualOneVOne' | 'booster' | 'casualBooster';
 
 function formatPokemonName(name: string | undefined): string {
   if (!name) return '';
@@ -124,8 +125,12 @@ function getPokemonLabel(name: string, form: string): string {
 function getRaceCategory(
   team: MatchHistoryTeam,
   validDraftIds: Set<string>,
-  casual1v1DraftIds: Set<string>
+  casual1v1DraftIds: Set<string>,
+  casualBoosterIds: Set<string>
 ): RaceCategory {
+  if (team.draft_type === 'booster') {
+    return casualBoosterIds.has(team.draft_id) ? 'casualBooster' : 'booster';
+  }
   if (team.draft_type === '1v1') {
     return casual1v1DraftIds.has(team.draft_id) ? 'casualOneVOne' : 'oneVOne';
   }
@@ -510,6 +515,10 @@ const PlayerProfileStatsTab: React.FC<PlayerProfileStatsTabProps> = ({
   const casual1v1DraftIds = useMemo(() => {
     return casualOneVOneDraftIds(stats?.auctions ?? []);
   }, [stats?.auctions]);
+  const casualBoosterIds = useMemo(
+    () => casualBoosterDraftIds(stats?.auctions ?? [], stats?.teams ?? []),
+    [stats?.auctions, stats?.teams],
+  );
   const [expandedTeamId, setExpandedTeamId] = useState<number | null>(null);
   const [showGamesBreakdown, setShowGamesBreakdown] = useState(false);
   const [showHofBreakdown, setShowHofBreakdown] = useState(false);
@@ -785,7 +794,7 @@ const PlayerProfileStatsTab: React.FC<PlayerProfileStatsTabProps> = ({
   }, [playerMatchHistory, junkDraftIds]);
 
   const isCasualTeam = (team: MatchHistoryTeam) =>
-    !isNonCasualRace(team, validDraftIds, casual1v1DraftIds);
+    !isNonCasualRace(team, validDraftIds, casual1v1DraftIds, casualBoosterIds);
 
   const auctionMatchHistory = useMemo(() => {
     if (!displayMatchHistory) return null;
@@ -866,8 +875,9 @@ const PlayerProfileStatsTab: React.FC<PlayerProfileStatsTabProps> = ({
         bossBattleHistory,
         validDraftIds,
         casual1v1DraftIds,
+        casualBoosterIds,
       ),
-    [displayMatchHistory, bossBattleHistory, validDraftIds, casual1v1DraftIds],
+    [displayMatchHistory, bossBattleHistory, validDraftIds, casual1v1DraftIds, casualBoosterIds],
   );
 
   const personalBestTime = useMemo(() => {
@@ -886,12 +896,14 @@ const PlayerProfileStatsTab: React.FC<PlayerProfileStatsTabProps> = ({
       casualAuction: 0,
       oneVOne: 0,
       casualOneVOne: 0,
+      booster: 0,
+      casualBooster: 0,
     };
     (displayMatchHistory ?? []).forEach((team) => {
-      counts[getRaceCategory(team, validDraftIds, casual1v1DraftIds)]++;
+      counts[getRaceCategory(team, validDraftIds, casual1v1DraftIds, casualBoosterIds)]++;
     });
     return counts;
-  }, [displayMatchHistory, validDraftIds, casual1v1DraftIds]);
+  }, [displayMatchHistory, validDraftIds, casual1v1DraftIds, casualBoosterIds]);
 
   const hofBreakdown = useMemo(() => {
     const counts: Record<RaceCategory, number> = {
@@ -899,28 +911,33 @@ const PlayerProfileStatsTab: React.FC<PlayerProfileStatsTabProps> = ({
       casualAuction: 0,
       oneVOne: 0,
       casualOneVOne: 0,
+      booster: 0,
+      casualBooster: 0,
     };
     (displayMatchHistory ?? []).forEach((team) => {
       const battles = bossBattleHistory.get(team.team_id);
       if (!battles || !getRunResult(battles)?.isWin) return;
-      counts[getRaceCategory(team, validDraftIds, casual1v1DraftIds)]++;
+      counts[getRaceCategory(team, validDraftIds, casual1v1DraftIds, casualBoosterIds)]++;
     });
     return counts;
-  }, [displayMatchHistory, bossBattleHistory, validDraftIds, casual1v1DraftIds]);
+  }, [displayMatchHistory, bossBattleHistory, validDraftIds, casual1v1DraftIds, casualBoosterIds]);
 
-  // Include casual auctions and casual 1v1s so the headline number matches the
-  // four tiles in the breakdown row.
+  // Include casual variants so the headline number matches the breakdown tiles.
   const hallOfFameCount =
     hofBreakdown.auction +
     hofBreakdown.casualAuction +
     hofBreakdown.oneVOne +
-    hofBreakdown.casualOneVOne;
+    hofBreakdown.casualOneVOne +
+    hofBreakdown.booster +
+    hofBreakdown.casualBooster;
 
   const gamesBreakdownItems = [
     { label: 'Auctions Played', value: gamesBreakdown.auction },
     { label: 'Casual Auctions Played', value: gamesBreakdown.casualAuction },
     { label: '1v1s Played', value: gamesBreakdown.oneVOne },
     { label: 'Casual 1v1s Played', value: gamesBreakdown.casualOneVOne },
+    { label: 'Boosters Played', value: gamesBreakdown.booster },
+    { label: 'Casual Boosters Played', value: gamesBreakdown.casualBooster },
   ];
 
   const hofBreakdownItems = [
@@ -928,6 +945,8 @@ const PlayerProfileStatsTab: React.FC<PlayerProfileStatsTabProps> = ({
     { label: 'Casual Auction HoFs', value: hofBreakdown.casualAuction },
     { label: '1v1 HoFs', value: hofBreakdown.oneVOne },
     { label: 'Casual 1v1 HoFs', value: hofBreakdown.casualOneVOne },
+    { label: 'Booster HoFs', value: hofBreakdown.booster },
+    { label: 'Casual Booster HoFs', value: hofBreakdown.casualBooster },
   ];
 
   const playerOneVOnePickStats = useMemo(() => {
@@ -991,6 +1010,11 @@ const PlayerProfileStatsTab: React.FC<PlayerProfileStatsTabProps> = ({
     [stats?.winning_races, playerTeamIds],
   );
 
+  const opponentSignatureKeys = useMemo(
+    () => new Map(Object.entries(profile?.one_v_one_opponent_signatures ?? {})),
+    [profile?.one_v_one_opponent_signatures],
+  );
+
   const playerAchievements = useMemo(() => {
     if (!selectedPlayer || !achievementSources || !displayMatchHistory) return [];
     return computePlayerAchievements({
@@ -1007,10 +1031,12 @@ const PlayerProfileStatsTab: React.FC<PlayerProfileStatsTabProps> = ({
       pokemon: achievementSources.pokemon,
       validDraftIds,
       casual1v1DraftIds,
+      casualBoosterDraftIds: casualBoosterIds,
       rmvByTeamId: draftRmvMap,
       manualOverrides: manualAchievements,
       poolEntries: profile?.pool_entries,
       priceHistory: profile?.price_history,
+      oneVOneOpponentSignatures: opponentSignatureKeys,
     });
   }, [
     selectedPlayer,
@@ -1024,10 +1050,12 @@ const PlayerProfileStatsTab: React.FC<PlayerProfileStatsTabProps> = ({
     bossBattleHistory,
     validDraftIds,
     casual1v1DraftIds,
+    casualBoosterIds,
     draftRmvMap,
     manualAchievements,
     profile?.pool_entries,
     profile?.price_history,
+    opponentSignatureKeys,
   ]);
 
   const handleToggleAchievement = async (achievement: PlayerAchievement) => {
@@ -1079,6 +1107,7 @@ const PlayerProfileStatsTab: React.FC<PlayerProfileStatsTabProps> = ({
         stats?.players ?? [],
         validDraftIds,
         casual1v1DraftIds,
+        casualBoosterIds,
       ),
     [
       playerWinningRaces,
@@ -1087,6 +1116,7 @@ const PlayerProfileStatsTab: React.FC<PlayerProfileStatsTabProps> = ({
       stats?.players,
       validDraftIds,
       casual1v1DraftIds,
+      casualBoosterIds,
     ],
   );
 
@@ -1568,10 +1598,17 @@ const PlayerProfileStatsTab: React.FC<PlayerProfileStatsTabProps> = ({
                 {displayMatchHistory.map((team) => {
                   const auctions = team.pokemon_drafted || [];
                   const is1v1 = team.draft_type === '1v1';
+                  const isBooster = team.draft_type === 'booster';
                   const isCasual = isCasualTeam(team);
-                  const listAuctions = is1v1 ? auctions.filter(a => a.action === 'PICK') : auctions;
+                  const listAuctions = is1v1 || isBooster ? auctions.filter(a => a.action === 'PICK') : auctions;
                   const isRanked = team.pre_match_mmr !== null || team.placement !== null;
-                  const result = is1v1 ? (casual1v1DraftIds.has(team.draft_id) ? 'Casual 1v1' : '1v1') : isCasual ? 'Casual' : getPlacementLabel(team.placement, isRanked);
+                  const result = is1v1
+                    ? (casual1v1DraftIds.has(team.draft_id) ? 'Casual 1v1' : '1v1')
+                    : isBooster
+                      ? (casualBoosterIds.has(team.draft_id) ? 'Casual Booster' : 'Booster')
+                      : isCasual
+                        ? 'Casual'
+                        : getPlacementLabel(team.placement, isRanked);
                   const resultClass = getPlacementClass(team.placement, isRanked);
                   const isExpanded = expandedTeamId === team.team_id;
                   const battles = bossBattleHistory.get(team.team_id);
@@ -1582,7 +1619,7 @@ const PlayerProfileStatsTab: React.FC<PlayerProfileStatsTabProps> = ({
                   const eggHatch = listAuctions.some(isEggAuction)
                     ? findEggHatchStats(team.run_stats, listAuctions, runStatLineage)
                     : null;
-                  const sortedRunRows = sortRunRows(listAuctions, runStatsByIcon, runSort, is1v1, eeveeGift, eggHatch, team.rental_stats ?? []);
+                  const sortedRunRows = sortRunRows(listAuctions, runStatsByIcon, runSort, is1v1 || isBooster, eeveeGift, eggHatch, team.rental_stats ?? []);
                   const opponents = (opponentsByDraftId.get(team.draft_id) ?? [])
                     .filter((opponent) => opponent.teamId !== team.team_id);
 
@@ -1626,13 +1663,13 @@ const PlayerProfileStatsTab: React.FC<PlayerProfileStatsTabProps> = ({
 
                         <div className="match-pokemon-picks">
                           {listAuctions.length === 0 && (
-                            <span className="no-picks-label">{is1v1 ? 'No picks' : 'No wins'}</span>
+                            <span className="no-picks-label">{is1v1 || isBooster ? 'No picks' : 'No wins'}</span>
                           )}
                           {listAuctions.map((auction: StatsAuction, pickIdx) => (
                             <div
                               className="match-pick"
                               key={auction.auction_id}
-                              title={is1v1 ? `#${auction.pokedex_id} - Pick ${pickIdx + 1}` : `#${auction.pokedex_id} - $${auction.winning_bid ?? 0}`}
+                              title={is1v1 || isBooster ? `#${auction.pokedex_id} - Pick ${pickIdx + 1}` : `#${auction.pokedex_id} - $${auction.winning_bid ?? 0}`}
                             >
                               <img
                                 src={`/MiniIcons/${formatPokemonName(auction.name)}.png`}
@@ -1681,9 +1718,9 @@ const PlayerProfileStatsTab: React.FC<PlayerProfileStatsTabProps> = ({
                                     type="button"
                                     className={`match-draft-details-sort ${runSort?.column === 'slot' ? 'sorted' : ''}`}
                                     onClick={() => toggleRunSort('slot')}
-                                    title={is1v1 ? 'Sort by pick number' : 'Sort by cost'}
+                                    title={is1v1 || isBooster ? 'Sort by pick number' : 'Sort by cost'}
                                   >
-                                    {is1v1 ? 'Pick' : 'Paid'}{runSort?.column === 'slot' ? (runSort.direction === 'desc' ? ' â–¼' : ' â–²') : ''}
+                                    {is1v1 || isBooster ? 'Pick' : 'Paid'}{runSort?.column === 'slot' ? (runSort.direction === 'desc' ? ' â–¼' : ' â–²') : ''}
                                   </button>
                                   <button
                                     type="button"
@@ -1704,7 +1741,7 @@ const PlayerProfileStatsTab: React.FC<PlayerProfileStatsTabProps> = ({
                                   <span>Fainted</span>
                                 </div>
                                 {sortedRunRows.length === 0 && (
-                                  <div className="match-draft-details-empty">{is1v1 ? 'No Pokemon picked in this draft.' : 'No Pokemon won in this draft.'}</div>
+                                  <div className="match-draft-details-empty">{is1v1 || isBooster ? 'No Pokemon picked in this draft.' : 'No Pokemon won in this draft.'}</div>
                                 )}
                                 {sortedRunRows.map(({ key, icon, name, form, label, pickLabel, monStats }) => (
                                   <div className="match-draft-details-row" key={key}>

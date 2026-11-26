@@ -35,12 +35,31 @@ pub fn get_expiry_time_from_instant(instant: Instant) -> chrono::DateTime<chrono
     chrono::Utc::now() + time_remaining
 }
 
-/// Returns true if the text contains profanity.
+/// Returns true if any whitespace-delimited word in the text is a banned word.
+///
+/// Matching is whole-word: fragments of a longer word (for example the "s" in
+/// "Flareon's" followed by "ex" in "Exclusive") are not treated as profanity.
+/// Punctuation inside a word is ignored (`f!u!c!k`), repeated letters are
+/// collapsed (`fuuuuck`), and censor's character aliases are applied (`s3x`).
 pub fn contains_profanity(text: &str) -> bool {
     // Combine Standard and Sex sets, add specific slurs, and remove "ass" and "shit".
-    // Removing "ass" automatically prevents "grass" from being flagged.
+    // Removing "ass" prevents "grass" from being flagged even with whole-word matching.
     let filter = Standard + Sex + "nigga" - "ass" - "shit" - "twat";
-    filter.check(text)
+
+    text.to_lowercase().split_whitespace().any(|word| {
+        let mut normalized = String::with_capacity(word.len());
+        let mut previous: Option<char> = None;
+        for c in word.chars() {
+            if !c.is_alphanumeric() {
+                continue;
+            }
+            if previous != Some(c) {
+                normalized.push(c);
+            }
+            previous = Some(c);
+        }
+        filter.contains(&normalized)
+    })
 }
 
 pub const DISCORD_GUILD_ID: u64 = 1436799517121843272;

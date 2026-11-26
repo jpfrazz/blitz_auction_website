@@ -60,6 +60,8 @@ const VALID_ACHIEVEMENT_IDS: &[&str] = &[
     "around-the-world",
     "true-nuzlocker",
     "against-all-odds",
+    "topsy-turvy",
+    "vanilla-gamer",
 ];
 
 #[derive(Clone, Debug, Serialize, sqlx::FromRow)]

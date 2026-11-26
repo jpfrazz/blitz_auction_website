@@ -32,9 +32,15 @@ export async function fetchPlayerIdByName(username: string): Promise<PlayerIdLoo
   return response.data;
 }
 
-export async function fetchHallOfFameEligible(limit?: number): Promise<AdminHallOfFameEligibleEntry[]> {
+export async function fetchHallOfFameEligible(
+  limit?: number,
+  draftType?: string,
+): Promise<AdminHallOfFameEligibleEntry[]> {
   const response = await axios.get('/api/hall-of-fame-teams', {
-    params: limit !== undefined ? { limit } : undefined,
+    params: {
+      ...(limit !== undefined ? { limit } : {}),
+      ...(draftType ? { draft_type: draftType } : {}),
+    },
   });
   return response.data;
 }

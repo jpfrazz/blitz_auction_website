@@ -154,26 +154,26 @@
 .rps-tile.rps-rock {
   background: #e0a8a8;
   border-color: #8f2f2f;
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.5), 0 1px 2px rgba(0, 0, 0, 0.28);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.28);
 }
 
 .rps-tile.rps-paper {
   background: #a8c8e0;
   border-color: #2f5f8f;
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.5), 0 1px 2px rgba(0, 0, 0, 0.28);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.28);
 }
 
 .rps-tile.rps-scissors {
   background: #93c47c;
   border-color: #3f6f2f;
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.4), 0 1px 2px rgba(0, 0, 0, 0.28);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.28);
 }
 
 // Unpicked tiles look like banned pool tiles once one move is selected.
 .rps-tile.rps-muted {
   background: #6e6e6e;
   border-color: #4d4d4d;
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.25), 0 1px 2px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
 
   img {
     filter: grayscale(100%);

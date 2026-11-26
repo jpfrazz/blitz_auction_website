@@ -12,6 +12,7 @@ import TierListTab from './components/TierListTab';
 import RaceResultsTab from './components/RaceResultsTab';
 import HallOfFameStatsTab from './components/HallOfFameStatsTab';
 import { casualOneVOneDraftIds } from './oneVOneHistory';
+import { casualBoosterDraftIds } from './boosterHistory';
 import { EEVEELUTION_IDS } from '../../utils/eevee';
 import { fetchCurrentUser } from '../../shared/api/draftData';
 import { resolvePokemonIdentity } from '../../shared/utils/pokemonIdentity';
@@ -81,6 +82,12 @@ function parseLegacyCost(cost: string): number | null {
   return /^\d+$/.test(normalized) ? Number(normalized) : null;
 }
 
+function getDraftTypeLabel(draftType: string | undefined): string {
+  if (draftType === '1v1') return '1v1';
+  if (draftType === 'booster') return 'Booster';
+  return 'Auction';
+}
+
 // How many mini icons to eagerly warm before revealing the table, and the longest
 // we will wait for them. Roughly covers the rows visible in the 750px scroller
 // with headroom; everything past that loads lazily on scroll.
@@ -136,6 +143,7 @@ const Stats: React.FC = () => {
   const [showCompetitive, setShowCompetitive] = useState(true);
   const [showCasual, setShowCasual] = useState(false);
   const [show1v1s, setShow1v1s] = useState(false);
+  const [showBoosters, setShowBoosters] = useState(false);
   const [gridColumns, setGridColumns] = useState<number>(0);
   const { data: currentUser } = useQuery({
     queryKey: ['current-user'],
@@ -254,6 +262,10 @@ const Stats: React.FC = () => {
   const casual1v1DraftIds = useMemo(() => {
     return casualOneVOneDraftIds(stats?.auctions ?? []);
   }, [stats?.auctions]);
+
+  const casualBoosterIds = useMemo(() => {
+    return casualBoosterDraftIds(stats?.auctions ?? [], stats?.teams ?? []);
+  }, [stats?.auctions, stats?.teams]);
 
   const sortedAuctions = useMemo(() => {
     const sorted = [...(stats?.auctions ?? [])]
@@ -378,7 +390,8 @@ const Stats: React.FC = () => {
     (stats?.teams ?? []).forEach((team) => {
       const dStat = draftStats.get(team.draft_id);
       const is1v1 = team.draft_type === '1v1';
-      if (!is1v1) {
+      const isBooster = team.draft_type === 'booster';
+      if (!is1v1 && !isBooster) {
         if (!dStat) return;
         if (dStat.total < 1) return;
         if (dStat.total < 16) return;
@@ -421,9 +434,10 @@ const Stats: React.FC = () => {
 
     (stats?.auctions ?? []).forEach((auction: any) => {
       const is1v1 = auction.draft_type === '1v1';
-      if (!is1v1 && auction.winning_bid === null) return;
+      const isBooster = auction.draft_type === 'booster';
+      if (!is1v1 && !isBooster && auction.winning_bid === null) return;
       const dStat = draftStats.get(auction.draft_id);
-      if (!is1v1) {
+      if (!is1v1 && !isBooster) {
         if (!dStat || dStat.total < 1) return;
         if (dStat.total < 16) return;
       }
@@ -471,7 +485,7 @@ const Stats: React.FC = () => {
         const errors = [];
         if (draft.draftType === '1v1') {
           if (draft.auctionCount < 30) errors.push("Incomplete 1v1 draft");
-        } else if (dStat) {
+        } else if (draft.draftType !== 'booster' && dStat) {
           if (dStat.total < 40) errors.push("Fewer than 40 Pokemon sold");
           if (dStat.minBidCount > 3) errors.push("More than 3 Pokemon sold for $100");
           if (dStat.total !== 8 * dStat.teamCount) errors.push(`Total Pokemon sold (${dStat.total}) is not 8 * players (${dStat.teamCount})`);
@@ -514,12 +528,15 @@ const Stats: React.FC = () => {
       if (draft.draftType === '1v1') {
         return show1v1s && finished1v1DraftIds.has(draft.draftId);
       }
+      if (draft.draftType === 'booster') {
+        return showBoosters;
+      }
       if (validDraftIds.has(draft.draftId)) {
         return showCompetitive;
       }
       return showCasual;
     });
-  }, [draftSummary, show1v1s, finished1v1DraftIds, showCompetitive, showCasual, validDraftIds]);
+  }, [draftSummary, show1v1s, showBoosters, finished1v1DraftIds, showCompetitive, showCasual, validDraftIds]);
 
   const kpis = useMemo(() => {
     // Adding 152 to account for legacy drafts
@@ -558,21 +575,23 @@ const Stats: React.FC = () => {
 
   const handleDownloadCSV = (draft: any) => {
     const is1v1 = draft.draftType === '1v1';
+    const isBooster = draft.draftType === 'booster';
+    const isPickOnly = is1v1 || isBooster;
     const auctions = (stats?.auctions ?? [])
-      .filter((a) => a.draft_id === draft.draftId && (is1v1 || a.winning_bid !== null))
+      .filter((a) => a.draft_id === draft.draftId && (isPickOnly || a.winning_bid !== null))
       .sort((a, b) => a.draft_order - b.draft_order);
 
     let csvContent = `Draft ID: ${draft.draftId}\n`;
     csvContent += `Date: ${draft.formattedDate}\n`;
-    csvContent += `Draft Type: ${is1v1 ? '1v1' : 'Auction'}\n`;
-    csvContent += `${is1v1 ? 'Total Actions' : 'Total Pokemon Sold'}: ${draft.auctionCount}\n\n`;
-    csvContent += is1v1 ? `Order,Pokemon,Drafted By,Action\n` : `Order,Pokemon,Drafted By,Cost\n`;
+    csvContent += `Draft Type: ${getDraftTypeLabel(draft.draftType)}\n`;
+    csvContent += `${isPickOnly ? 'Total Actions' : 'Total Pokemon Sold'}: ${draft.auctionCount}\n\n`;
+    csvContent += isPickOnly ? `Order,Pokemon,Drafted By,Action\n` : `Order,Pokemon,Drafted By,Cost\n`;
 
     auctions.forEach((a, index) => {
       const winnerKey = a.winning_user_id || a.winning_guest_id || '';
       const winnerName = playersById.get(winnerKey)?.user_name || winnerKey || '-';
       const safeWinnerName = winnerName.includes(',') ? `"${winnerName.replace(/"/g, '""')}"` : winnerName;
-      if (is1v1) {
+      if (isPickOnly) {
         csvContent += `${index + 1},${a.name},${safeWinnerName},${a.action || ''}\n`;
       } else {
         csvContent += `${index + 1},${a.name},${safeWinnerName},${a.winning_bid}\n`;
@@ -763,6 +782,37 @@ const Stats: React.FC = () => {
                       }} />
                     </div>
                   </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <span 
+                      style={{ cursor: 'pointer', fontWeight: 500 }} 
+                      onClick={() => setShowBoosters(!showBoosters)}
+                    >
+                      Booster
+                    </span>
+                    <div
+                      onClick={() => setShowBoosters(!showBoosters)}
+                      style={{ 
+                        position: 'relative', 
+                        width: '40px', 
+                        height: '20px', 
+                        backgroundColor: showBoosters ? 'var(--eb-primary, #7CB946)' : '#333', 
+                        borderRadius: '20px', 
+                        cursor: 'pointer', 
+                        transition: 'background-color 0.3s ease' 
+                      }}
+                    >
+                      <div style={{ 
+                        position: 'absolute', 
+                        top: '2px', 
+                        left: showBoosters ? '22px' : '2px', 
+                        width: '16px', 
+                        height: '16px', 
+                        backgroundColor: 'white', 
+                        borderRadius: '50%', 
+                        transition: 'left 0.3s ease' 
+                      }} />
+                    </div>
+                  </div>
                 </div>
               </div>
               <div className="table-wrap">
@@ -770,6 +820,7 @@ const Stats: React.FC = () => {
                   <thead>
                     <tr>
                       <th>Date</th>
+                      <th>Type</th>
                       <th>Winner</th>
                       <th>Runner Up</th>
                       <th>Host</th>
@@ -789,6 +840,7 @@ const Stats: React.FC = () => {
                   >
                     {visibleDrafts.map((draft, index) => {
                       const shouldAnimate = index < 30;
+                      const isPickOnlyDraft = draft.draftType === '1v1' || draft.draftType === 'booster';
                       return (
                       <React.Fragment key={draft.draftId}>
                         <tr
@@ -799,7 +851,9 @@ const Stats: React.FC = () => {
                             backgroundColor:
                               draft.draftType === '1v1'
                                 ? 'rgba(33, 150, 243, 0.1)'
-                                : validDraftIds.has(draft.draftId)
+                                : draft.draftType === 'booster'
+                                  ? 'rgba(142, 95, 216, 0.1)'
+                                  : validDraftIds.has(draft.draftId)
                                   ? 'rgba(76, 175, 80, 0.1)'
                                   : undefined,
                           }}
@@ -813,6 +867,7 @@ const Stats: React.FC = () => {
                           }}
                         >
                           <td>{draft.formattedDate}</td>
+                          <td>{getDraftTypeLabel(draft.draftType)}</td>
                           <td>{draft.winner || '-'}</td>
                           <td>{draft.runnerUp || '-'}</td>
                           <td>{playersById.get(draft.hostId || '')?.user_name || '-'}</td>
@@ -834,7 +889,7 @@ const Stats: React.FC = () => {
                         </tr>
                         {expandedDraftId === draft.draftId && (
                           <tr className="draft-details-row">
-                            <td colSpan={7}>
+                            <td colSpan={8}>
                               <>
                                   <div className="draft-details-controls" style={{ display: 'flex', gap: '8px', marginBottom: '12px', padding: '10px 10px 0' }}>
                                     <button
@@ -856,7 +911,7 @@ const Stats: React.FC = () => {
                                   </div>
                                   {draftSortMode !== 'race' && (
                                     <div className="draft-details-controls" style={{ display: 'flex', gap: '8px', marginBottom: '12px', padding: '0 10px' }}>
-                                      {draft.draftType === '1v1' ? (
+                                      {isPickOnlyDraft ? (
                                         <>
                                           <button
                                             className={`tab-chip ${draftSortMode === 'user' ? 'active' : ''}`}
@@ -912,31 +967,31 @@ const Stats: React.FC = () => {
                                 }
 
                                 const renderCard = (auction: any) => {
-                                  const is1v1 = auction.draft_type === '1v1';
+                                  const isPickOnly = auction.draft_type === '1v1' || auction.draft_type === 'booster';
                                   const winnerKey = auction.winning_user_id || auction.winning_guest_id || '';
                                   const winnerName = playersById.get(winnerKey)?.user_name || winnerKey || '-';
                                   const identity = resolvePokemonIdentity(auction.name, auction.form || '');
                                   const displayName = `${identity.name}${identity.form && identity.form !== 'base' ? ` (${toLabel(identity.form)})` : ''}`;
                                   const isSelected = selectedPokemonForChart?.key === identity.key;
-                                  const actionLabel = is1v1 ? (auction.action || 'PICK') : undefined;
+                                  const actionLabel = isPickOnly ? (auction.action || 'PICK') : undefined;
 
                                   return (
                                     <div
                                       key={auction.auction_id}
                                       className={`draft-detail-card ${isSelected ? 'selected' : ''}`}
                                       title={
-                                        is1v1
+                                        isPickOnly
                                           ? `${displayName} - ${actionLabel}${winnerName && winnerName !== '-' ? ` · ${winnerName}` : ''}`
                                           : `${displayName} - $${(auction.winning_bid ?? 0).toLocaleString()} (Click to view price history)`
                                       }
                                       style={{
-                                        cursor: is1v1 ? 'default' : 'pointer',
+                                        cursor: isPickOnly ? 'default' : 'pointer',
                                         border: isSelected ? '2px solid #4caf50' : undefined,
                                         backgroundColor: getUserColor(winnerKey),
-                                        opacity: is1v1 && auction.action === 'BAN' ? 0.6 : 1,
+                                        opacity: isPickOnly && auction.action === 'BAN' ? 0.6 : 1,
                                       }}
                                       onClick={() => {
-                                        if (is1v1) return;
+                                        if (isPickOnly) return;
                                         if (isSelected) {
                                           setSelectedPokemonForChart(null);
                                         } else {
@@ -954,7 +1009,7 @@ const Stats: React.FC = () => {
                                         }}
                                       />
                                       <div className="pokemon-name">{auction.name}</div>
-                                      {is1v1 ? (
+                                      {isPickOnly ? (
                                         <>
                                           <div className="pokemon-price" style={{ fontSize: '0.75rem' }}>{actionLabel}</div>
                                           {winnerName !== '-' && <div className="pokemon-winner">{winnerName}</div>}
@@ -983,7 +1038,7 @@ const Stats: React.FC = () => {
                                 };
 
                                 const draftAuctions = (stats?.auctions ?? [])
-                                  .filter((a) => a.draft_id === draft.draftId && (a.draft_type === '1v1' || a.winning_bid !== null));
+                                  .filter((a) => a.draft_id === draft.draftId && (isPickOnlyDraft || a.winning_bid !== null));
 
                                 const renderListWithChart = (auctions: any[]) => {
                                   const selectedAuctionIndex = auctions.findIndex(a => resolvePokemonIdentity(a.name, a.form || '').key === selectedPokemonForChart?.key);
@@ -1025,7 +1080,7 @@ const Stats: React.FC = () => {
                                         const userAuctions = draftAuctions
                                           .filter(a => (a.winning_user_id || a.winning_guest_id || '') === uid)
                                           .sort((a, b) => {
-                                            if (a.draft_type === '1v1') {
+                                            if (isPickOnlyDraft) {
                                               const aBan = a.action === 'BAN';
                                               const bBan = b.action === 'BAN';
                                               if (aBan !== bBan) return aBan ? 1 : -1;
@@ -1033,12 +1088,12 @@ const Stats: React.FC = () => {
                                             }
                                             return (b.winning_bid ?? 0) - (a.winning_bid ?? 0);
                                           });
-                                        const is1v1Group = userAuctions[0]?.draft_type === '1v1';
+                                        const isPickOnlyGroup = userAuctions[0]?.draft_type === '1v1' || userAuctions[0]?.draft_type === 'booster';
                                         const picks = userAuctions.filter(a => a.action !== 'BAN');
                                         const bans = userAuctions.filter(a => a.action === 'BAN');
                                         return (
                                           <div key={uid} className="user-draft-group" style={{ marginBottom: '0.75rem' }}>
-                                            {is1v1Group ? (
+                                            {isPickOnlyGroup ? (
                                               <>
                                                 {picks.length > 0 && (
                                                   <div className="draft-details-grid">
@@ -1063,7 +1118,7 @@ const Stats: React.FC = () => {
 
                                 const finalAuctions = draftAuctions
                                   .sort((a, b) => {
-                                    if (draftSortMode === 'price' && a.draft_type !== '1v1') {
+                                    if (draftSortMode === 'price' && !isPickOnlyDraft && a.draft_type !== '1v1') {
                                       return (b.winning_bid ?? 0) - (a.winning_bid ?? 0);
                                     }
                                     return a.draft_order - b.draft_order;
@@ -1079,7 +1134,7 @@ const Stats: React.FC = () => {
                     })}
                     {visibleDrafts.length === 0 && (
                       <tr>
-                        <td colSpan={6} className="empty-cell">No draft stats available.</td>
+                        <td colSpan={8} className="empty-cell">No draft stats available.</td>
                       </tr>
                     )}
                   </tbody>
@@ -1103,7 +1158,11 @@ const Stats: React.FC = () => {
         )}
 
         {activeTab === 'hall-of-fame' && (
-          <HallOfFameStatsTab validDraftIds={validDraftIds} casual1v1DraftIds={casual1v1DraftIds} />
+          <HallOfFameStatsTab
+            validDraftIds={validDraftIds}
+            casual1v1DraftIds={casual1v1DraftIds}
+            casualBoosterDraftIds={casualBoosterIds}
+          />
         )}
 
         {activeTab === 'tier-list' && (

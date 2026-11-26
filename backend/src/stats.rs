@@ -450,7 +450,8 @@ async fn build_stats_page_data(state: &ServerState) -> Result<StatsPageResponse,
         JOIN drafts AS d ON a.draft_id = d.draft_id
         WHERE d.state = 'COMPLETED'
           AND (a.winning_bid IS NOT NULL
-               OR d.draft_type = '1v1')
+               OR d.draft_type = '1v1'
+               OR d.draft_type = 'booster')
         ORDER BY a.draft_id, a.draft_order ASC
         "#,
     )
@@ -864,6 +865,10 @@ pub struct PlayerProfileResponse {
     /// Every Pokémon identity seen in a valid draft, so the "all Pokémon"
     /// table keeps its full row set even though auctions are scoped.
     pub global_pokemon_keys: Vec<PokemonKeyRow>,
+    /// Canonical Pokémon identity key of each 1v1 opponent's Signature
+    /// Pokémon, keyed by draft id. Calculated as of that 1v1's date so later
+    /// drafts cannot change which Pokémon the achievement checks.
+    pub one_v_one_opponent_signatures: HashMap<String, String>,
 }
 
 /// Recreate the frontend's `validDraftIds` / `casualOneVOneDraftIds` sets from
@@ -1050,6 +1055,199 @@ fn compute_pool_and_price_history(
     (pool_entries, price_history)
 }
 
+/// Registered users and their linked guest accounts are the same player.
+fn primary_account_id(account: &str, primary_by_account: &HashMap<String, String>) -> String {
+    primary_by_account
+        .get(account)
+        .cloned()
+        .unwrap_or_else(|| account.to_string())
+}
+
+/// Mirror of the profile's "Signature Pokémon" card: the Pokémon with the
+/// highest draft percentage in competitive auction drafts (minimum three
+/// drafts), judged only on drafts up to and including `as_of`.
+fn signature_key_for_player(
+    all: &StatsPageResponse,
+    valid_draft_ids: &HashSet<Uuid>,
+    draft_dates: &HashMap<Uuid, String>,
+    primary_by_account: &HashMap<String, String>,
+    primary: &str,
+    as_of: &str,
+) -> Option<String> {
+    let signed_drafts: HashSet<Uuid> = all
+        .teams
+        .iter()
+        .filter(|team| team.draft_type != "1v1" && valid_draft_ids.contains(&team.draft_id))
+        .filter(|team| {
+            team.user_id
+                .as_deref()
+                .or(team.guest_id.as_deref())
+                .is_some_and(|account| primary_account_id(account, primary_by_account) == primary)
+        })
+        .filter(|team| {
+            draft_dates
+                .get(&team.draft_id)
+                .is_some_and(|date| date.as_str() <= as_of)
+        })
+        .map(|team| team.draft_id)
+        .collect();
+
+    let mut games: HashMap<String, i32> = HashMap::new();
+    let mut appearances: HashMap<String, HashSet<Uuid>> = HashMap::new();
+    let mut labels: HashMap<String, String> = HashMap::new();
+
+    for auction in &all.auctions {
+        if !signed_drafts.contains(&auction.draft_id) {
+            continue;
+        }
+        let identity = resolve_pokemon_identity(
+            &auction.name,
+            auction.form.as_deref().unwrap_or(""),
+        );
+        appearances
+            .entry(identity.key.clone())
+            .or_default()
+            .insert(auction.draft_id);
+        labels.entry(identity.key.clone()).or_insert_with(|| {
+            if identity.form.is_empty() {
+                identity.name.clone()
+            } else {
+                format!("{} ({})", identity.name, identity.form)
+            }
+        });
+
+        let won_by_player = auction
+            .winning_user_id
+            .as_deref()
+            .or(auction.winning_guest_id.as_deref())
+            .is_some_and(|account| primary_account_id(account, primary_by_account) == primary);
+        if won_by_player {
+            *games.entry(identity.key).or_default() += 1;
+        }
+    }
+
+    let mut best: Option<(i32, i32, String, String)> = None;
+    for (key, count) in games {
+        if count < 3 {
+            continue;
+        }
+        let draft_count = appearances.get(&key).map_or(0, |drafts| drafts.len()) as i32;
+        if draft_count == 0 {
+            continue;
+        }
+        let pct = ((count as f64 / draft_count as f64) * 100.0).round() as i32;
+        let label = labels.get(&key).cloned().unwrap_or_else(|| key.clone());
+        let better = best.as_ref().map_or(true, |(best_pct, best_games, best_label, _)| {
+            pct > *best_pct
+                || (pct == *best_pct
+                    && (count > *best_games
+                        || (count == *best_games && label < *best_label)))
+        });
+        if better {
+            best = Some((pct, count, label, key));
+        }
+    }
+
+    best.map(|(_, _, _, key)| key)
+}
+
+/// For every 1v1 draft the selected player joined, find the other player's
+/// signature Pokémon as of that draft's date. Casual 1v1s are included here;
+/// the frontend decides which drafts qualify for each achievement.
+fn compute_one_v_one_opponent_signatures(
+    all: &StatsPageResponse,
+    account_ids: &HashSet<String>,
+    valid_draft_ids: &HashSet<Uuid>,
+) -> HashMap<String, String> {
+    let mut primary_by_account: HashMap<String, String> = HashMap::new();
+    for player in &all.players {
+        let primary = if player.is_guest {
+            player
+                .linked_user_id
+                .clone()
+                .unwrap_or_else(|| player.user_id.clone())
+        } else {
+            player.user_id.clone()
+        };
+        primary_by_account.insert(player.user_id.clone(), primary);
+    }
+    let selected_primaries: HashSet<String> = account_ids
+        .iter()
+        .map(|account| primary_account_id(account, &primary_by_account))
+        .collect();
+
+    let mut draft_dates: HashMap<Uuid, String> = HashMap::new();
+    for auction in &all.auctions {
+        let Some(date) = auction
+            .created_at
+            .as_ref()
+            .map(|created| created.format("%Y-%m-%d").to_string())
+        else {
+            continue;
+        };
+        let entry = draft_dates.entry(auction.draft_id).or_insert_with(|| date.clone());
+        if date < *entry {
+            *entry = date;
+        }
+    }
+
+    let selected_drafts: HashSet<Uuid> = all
+        .teams
+        .iter()
+        .filter(|team| {
+            team.user_id
+                .as_deref()
+                .or(team.guest_id.as_deref())
+                .is_some_and(|account| {
+                    selected_primaries.contains(&primary_account_id(account, &primary_by_account))
+                })
+        })
+        .map(|team| team.draft_id)
+        .collect();
+
+    let mut opponents_by_draft: HashMap<Uuid, HashSet<String>> = HashMap::new();
+    for team in &all.teams {
+        if team.draft_type != "1v1" || !selected_drafts.contains(&team.draft_id) {
+            continue;
+        }
+        let Some(account) = team.user_id.as_deref().or(team.guest_id.as_deref()) else {
+            continue;
+        };
+        let primary = primary_account_id(account, &primary_by_account);
+        if selected_primaries.contains(&primary) {
+            continue;
+        }
+        opponents_by_draft
+            .entry(team.draft_id)
+            .or_default()
+            .insert(primary);
+    }
+
+    let mut signatures = HashMap::new();
+    for (draft_id, opponents) in opponents_by_draft {
+        let Some(as_of) = draft_dates.get(&draft_id) else {
+            continue;
+        };
+        let mut opponents: Vec<String> = opponents.into_iter().collect();
+        opponents.sort();
+        for opponent in opponents {
+            if let Some(key) = signature_key_for_player(
+                all,
+                valid_draft_ids,
+                &draft_dates,
+                &primary_by_account,
+                &opponent,
+                as_of,
+            ) {
+                signatures.insert(draft_id.to_string(), key);
+                break;
+            }
+        }
+    }
+
+    signatures
+}
+
 /// `GET /api/stats/player/{user_id}` — everything a single profile needs,
 /// without shipping the global stats payload to the browser.
 pub async fn get_player_profile_stats(
@@ -1074,6 +1272,9 @@ pub async fn get_player_profile_stats(
     for guest_id in linked_guest_ids {
         account_ids.insert(guest_id);
     }
+
+    let one_v_one_opponent_signatures =
+        compute_one_v_one_opponent_signatures(&all, &account_ids, &valid_draft_ids);
 
     let player_draft_ids: HashSet<Uuid> = all
         .teams
@@ -1138,6 +1339,7 @@ pub async fn get_player_profile_stats(
             .map(|id| id.to_string())
             .collect(),
         global_pokemon_keys: key_rows.into_values().collect(),
+        one_v_one_opponent_signatures,
     }))
 }
 
@@ -1265,5 +1467,126 @@ mod profile_aggregate_tests {
         assert_eq!(points[0].count, 1);
         assert_eq!(points[1].total, 3000);
         assert_eq!(points[1].count, 2);
+    }
+
+    fn stats_player(user_id: &str, is_guest: bool, linked_user_id: Option<&str>) -> StatsPlayer {
+        StatsPlayer {
+            user_id: user_id.to_string(),
+            user_name: user_id.to_string(),
+            global_name: None,
+            avatar: None,
+            is_guest,
+            linked_user_id: linked_user_id.map(str::to_string),
+            rps_wins: 0,
+            rps_losses: 0,
+        }
+    }
+
+    fn stats_team(
+        team_id: i64,
+        draft_id: Uuid,
+        draft_type: &str,
+        user_id: Option<&str>,
+        guest_id: Option<&str>,
+    ) -> StatsTeam {
+        StatsTeam {
+            team_id,
+            user_id: user_id.map(str::to_string),
+            guest_id: guest_id.map(str::to_string),
+            draft_id,
+            draft_name: String::new(),
+            host: None,
+            ranked: false,
+            draft_type: draft_type.to_string(),
+            season: 1,
+            placement: None,
+            race_placement: None,
+            has_save: false,
+            has_boss_battles: false,
+        }
+    }
+
+    fn sale(
+        auction_id: i64,
+        draft_id: Uuid,
+        name: &str,
+        winner: Option<&str>,
+        day: u32,
+    ) -> StatsAuction {
+        let mut row = auction(draft_id, name, None, 1000, day);
+        row.auction_id = auction_id;
+        row.winning_user_id = winner.map(str::to_string);
+        row
+    }
+
+    #[test]
+    fn opponent_signature_is_frozen_at_the_1v1_date() {
+        let first = Uuid::from_u128(1);
+        let second = Uuid::from_u128(2);
+        let third = Uuid::from_u128(3);
+        let one_v_one = Uuid::from_u128(4);
+        let later = Uuid::from_u128(5);
+        let mut all = empty_response();
+        all.players = vec![
+            stats_player("me", false, None),
+            stats_player("opponent", false, None),
+            stats_player("opponent-guest", true, Some("opponent")),
+        ];
+        for (team_id, draft_id) in [(1, first), (2, second), (3, third), (4, later)] {
+            all.teams.push(stats_team(team_id, draft_id, "auction", Some("opponent"), None));
+            all.teams.push(stats_team(team_id + 10, draft_id, "auction", Some("me"), None));
+        }
+        all.teams.push(stats_team(21, one_v_one, "1v1", Some("me"), None));
+        all.teams.push(stats_team(22, one_v_one, "1v1", None, Some("opponent-guest")));
+
+        // Before the 1v1 the opponent drafted Pikachu in three of three
+        // appearances, using both their account and their linked guest.
+        all.auctions.push(sale(1, first, "Pikachu", Some("opponent"), 1));
+        all.auctions.push(sale(2, second, "Pikachu", Some("opponent"), 2));
+        all.auctions.push(sale(3, third, "Pikachu", Some("opponent"), 3));
+        all.auctions.push(sale(4, later, "Pikachu", Some("opponent-guest"), 20));
+        all.auctions.push(sale(5, first, "Charizard", Some("me"), 1));
+        // A later run gives Charizard more picks, which must not rewrite the
+        // signature that applied when the 1v1 happened.
+        for i in 0..10 {
+            all.auctions.push(sale(10 + i, later, "Charizard", Some("opponent"), 20));
+        }
+        all.auctions.push(sale(30, one_v_one, "Pikachu", None, 10));
+
+        let valid: HashSet<Uuid> = [first, second, third, later].into_iter().collect();
+        let signatures = compute_one_v_one_opponent_signatures(
+            &all,
+            &HashSet::from(["me".to_string()]),
+            &valid,
+        );
+        assert_eq!(signatures.get(&one_v_one.to_string()).map(String::as_str), Some("Pikachu"));
+    }
+
+    #[test]
+    fn opponent_needs_three_drafts_for_a_signature() {
+        let first = Uuid::from_u128(1);
+        let second = Uuid::from_u128(2);
+        let one_v_one = Uuid::from_u128(3);
+        let mut all = empty_response();
+        all.players = vec![
+            stats_player("me", false, None),
+            stats_player("opponent", false, None),
+        ];
+        for (team_id, draft_id) in [(1, first), (2, second)] {
+            all.teams.push(stats_team(team_id, draft_id, "auction", Some("opponent"), None));
+            all.teams.push(stats_team(team_id + 10, draft_id, "auction", Some("me"), None));
+            all.auctions.push(sale(team_id, draft_id, "Pikachu", Some("opponent"), 1));
+        }
+        all.teams.push(stats_team(21, one_v_one, "1v1", Some("me"), None));
+        all.teams.push(stats_team(22, one_v_one, "1v1", Some("opponent"), None));
+        all.auctions.push(sale(30, one_v_one, "Pikachu", None, 5));
+
+        let valid: HashSet<Uuid> = [first, second].into_iter().collect();
+        let signatures = compute_one_v_one_opponent_signatures(
+            &all,
+            &HashSet::from(["me".to_string()]),
+            &valid,
+        );
+        assert!(signatures.is_empty());
     }
 }

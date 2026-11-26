@@ -1,6 +1,7 @@
 import axios, {AxiosError} from 'axios';
 import {
   Auction,
+  BoosterAction,
   ChatMessage,
   Draft,
   DraftLobby,
@@ -170,6 +171,16 @@ export async function oneVOneBan(draft_id: string, pokedex_id: number, form: str
 
 export async function oneVOneToggleTimer(draft_id: string): Promise<void> {
   await axios.post(`/api/drafts/${draft_id}/one-v-one/toggle-timer`);
+}
+
+// Booster draft: submit a hidden pick or ban for the current pass.
+export async function boosterSubmit(
+  draft_id: string,
+  action: BoosterAction,
+  pokedex_id: number,
+  form: string | null,
+): Promise<void> {
+  await axios.post(`/api/drafts/${draft_id}/booster/submit`, { action, pokedex_id, form });
 }
 
 // 1v1 pick-order showdown: set a provisional move, or pass null to clear it

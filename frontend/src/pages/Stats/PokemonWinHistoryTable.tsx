@@ -11,6 +11,7 @@ interface PokemonWinHistoryTableProps {
   cutoffDate?: string;
   validDraftIds: Set<string>;
   casualOneVOneDraftIds: Set<string>;
+  casualBoosterDraftIds?: Set<string>;
   runStatLineage: RunStatLineage;
 }
 
@@ -46,6 +47,7 @@ const PokemonWinHistoryTable: React.FC<PokemonWinHistoryTableProps> = ({
   cutoffDate,
   validDraftIds,
   casualOneVOneDraftIds,
+  casualBoosterDraftIds = new Set(),
   runStatLineage,
 }) => {
   const [sort, setSort] = useState<{ key: WinSortKey; direction: 'asc' | 'desc' }>({
@@ -68,6 +70,7 @@ const PokemonWinHistoryTable: React.FC<PokemonWinHistoryTableProps> = ({
       runStatLineage,
       validDraftIds,
       casualOneVOneDraftIds,
+      casualBoosterDraftIds,
     ).get(pokemonKey) ?? [];
 
     return history
@@ -81,7 +84,11 @@ const PokemonWinHistoryTable: React.FC<PokemonWinHistoryTableProps> = ({
           timestamp,
           date: entry.created_at ? new Date(entry.created_at).toLocaleDateString() : 'Unknown',
           player: (playerId && playerNames.get(playerId)) || 'Unknown',
-          type: entry.draft_type === '1v1' ? '1v1' : 'Auction',
+          type: entry.draft_type === '1v1'
+            ? '1v1'
+            : entry.draft_type === 'booster'
+              ? casualBoosterDraftIds.has(entry.draft_id) ? 'Casual Booster' : 'Booster'
+              : 'Auction',
           kos: entry.ko_count,
         } as WinRow;
       })
@@ -92,6 +99,7 @@ const PokemonWinHistoryTable: React.FC<PokemonWinHistoryTableProps> = ({
     cutoffDate,
     validDraftIds,
     casualOneVOneDraftIds,
+    casualBoosterDraftIds,
     runStatLineage,
   ]);
 

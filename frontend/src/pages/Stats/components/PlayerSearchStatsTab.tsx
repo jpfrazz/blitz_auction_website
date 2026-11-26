@@ -111,7 +111,7 @@ const PlayerSearchStatsTab: React.FC<PlayerSearchStatsTabProps> = ({
     <section className="player-search-stats-tab stats-content-grid">
       <article className="stats-panel player-search-panel">
         <h2>Player Match History</h2>
-        <div className="player-search-wrapper">
+        <div className="player-search-wrapper player-search-wrapper--directory">
           <div className="player-search-controls">
             <form className="player-search-form" onSubmit={handleSubmitSearch}>
               <div className="player-search-input-wrapper">
@@ -144,8 +144,8 @@ const PlayerSearchStatsTab: React.FC<PlayerSearchStatsTabProps> = ({
           </div>
 
           {topPlayers.length > 0 && (
-            <div className="player-search-suggestions" style={{ marginTop: '0.3rem' }}>
-              <p style={{ opacity: 0.6, fontSize: '1.2rem', marginBottom: '1rem' }}>Blitz Racers (Top Games Played)</p>
+            <div className="player-search-suggestions">
+              <p className="player-search-suggestions-title">Blitz Racers (Top Games Played)</p>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '10px' }}>
                 {topPlayers.map((player) => (
                   <button

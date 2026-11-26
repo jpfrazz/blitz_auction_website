@@ -136,6 +136,10 @@ html, body, #root {
   font-size: 1.5rem;
 }
 
+.auction-password-modal.guest-confirm-modal {
+  max-width: 760px;
+}
+
 .auction-password-modal-actions {
   display: flex;
   justify-content: center;
@@ -147,6 +151,14 @@ html, body, #root {
     padding: 1.5rem 1.5rem;
     flex: 1;
     white-space: nowrap;
+  }
+
+  .guest-confirm-modal & {
+    flex-wrap: wrap;
+
+    .button {
+      flex: 1 1 auto;
+    }
   }
 }
 

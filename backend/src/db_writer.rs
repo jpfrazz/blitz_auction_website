@@ -533,12 +533,13 @@ impl Actor {
             )
         })?;
 
-        // 1v1 drafts create their auction rows at start/finish time, not now.
-        if settings.draft_type == "1v1" {
+        // Pick/ban-only drafts create their action rows at reveal/finish time,
+        // not now.
+        if settings.draft_type == "1v1" || settings.draft_type == "booster" {
             tx.commit().await.map_err(|e| {
                 (
                     StatusCode::INTERNAL_SERVER_ERROR,
-                    format!("failed to commit 1v1 draft to db, {}", e),
+                    format!("failed to commit draft to db, {}", e),
                 )
             })?;
             return Ok(vec![]);

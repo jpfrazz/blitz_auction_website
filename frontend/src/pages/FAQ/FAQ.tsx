@@ -266,7 +266,7 @@ happening!
           <h2 className="faq-question">Can I play competitively?</h2>
           <hr />
           <p className="faq-answer">
-            Yes! The leaderboard in the header tracks Ever Grande Prix races, a seasonal competitive circuit with 
+            Yes! The leaderboard in the header tracks Ever Grande Prix races, a seasonal competitive cycle with 
 in-game rewards. Season two runs October 18th through December 23rd and is open to anyone. <a href="https://discord.com/invite/CsUSZ5UhzW" target="_blank" rel="noopener noreferrer">Join the Discord</a> to 
 participate!
           </p>

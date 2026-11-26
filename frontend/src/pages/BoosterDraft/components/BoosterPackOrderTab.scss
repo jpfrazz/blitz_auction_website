@@ -1,0 +1,39 @@
+.booster-pack-order-tab {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  min-height: 100%;
+  padding: 16px;
+}
+
+.booster-pack-order-notes {
+  position: absolute;
+  right: calc(50% + 200px);
+  top: 50%;
+  transform: translateY(-50%);
+  color: #bbb;
+  font-size: 0.95rem;
+  line-height: 1.6;
+  text-align: right;
+  white-space: nowrap;
+}
+
+.booster-pack-order-diagram {
+  width: min(100%, 360px);
+  height: auto;
+  overflow: visible;
+}
+
+.booster-pack-order-arrow {
+  stroke: rgba(255, 255, 255, 0.65);
+  stroke-width: 3;
+  stroke-linecap: round;
+}
+
+.booster-pack-order-circle {
+  stroke: rgba(0, 0, 0, 0.35);
+  stroke-width: 2;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.4));
+}
