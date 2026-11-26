@@ -539,7 +539,7 @@ export const ACHIEVEMENT_DEFINITIONS: AchievementDefinition[] = [
   {
     id: 'vanilla-gamer',
     name: 'Vanilla Gamer',
-    description: "Defeat Hoenn's 8 leaders in their original order",
+    description: "Earn Hoenn's 8 badges in their original order",
     icon: 'VanillaGamer.png',
   },
   {
@@ -771,31 +771,40 @@ function defeatedAllFrontierBrainsConsecutively(
   return false;
 }
 
+const ARCHIE_TRAINER_ID = 34;
+
 /**
- * The "vanilla" Hoenn gym order skips Viola and uses each gym's matching
- * split: Roxanne 1, Brawly 2, Wattson 3, Flannery 4, Norman 5, Winona 6,
- * Tate & Liza 7, Juan & Wallace 8.
+ * The eight badges in vanilla Hoenn order, using each gym's matching split.
+ * Viola 1 can stand in for the first badge and Archie for the eighth.
  */
-const VANILLA_GYM_SPLIT_IDS: number[] = [
-  [265, 1],  // Roxanne 1
-  [266, 2],  // Brawly 2
-  [267, 3],  // Wattson 3
-  [268, 4],  // Flannery 4
-  [269, 5],  // Norman 5
-  [270, 6],  // Winona 6
-  [271, 7],  // Tate & Liza 7
-  [272, 8],  // Juan & Wallace 8
-].map(([baseTrainerId, version]) => resolveBossTrainerId(baseTrainerId, version)!);
+const VANILLA_BADGE_WIN_IDS: ReadonlyArray<ReadonlySet<number>> = [
+  new Set([
+    resolveBossTrainerId(265, 1)!, // Roxanne 1
+    resolveBossTrainerId(855, 1)!, // Viola 1
+  ]),
+  new Set([resolveBossTrainerId(266, 2)!]), // Brawly 2
+  new Set([resolveBossTrainerId(267, 3)!]), // Wattson 3
+  new Set([resolveBossTrainerId(268, 4)!]), // Flannery 4
+  new Set([resolveBossTrainerId(269, 5)!]), // Norman 5
+  new Set([resolveBossTrainerId(270, 6)!]), // Winona 6
+  new Set([resolveBossTrainerId(271, 7)!]), // Tate & Liza 7
+  new Set([
+    resolveBossTrainerId(272, 8)!, // Juan & Wallace 8
+    resolveBossTrainerId(ARCHIE_TRAINER_ID, null)!, // Archie
+  ]),
+];
 
 /** Boss history is chronological, so look for the eight wins as an ordered subsequence. */
 function defeatedVanillaGymsInOrder(battles: BossBattleHistoryEntry[]): boolean {
-  let nextSplit = 0;
+  let nextBadge = 0;
   battles.forEach((battle) => {
-    if (nextSplit >= VANILLA_GYM_SPLIT_IDS.length || battle.is_loss) return;
+    if (nextBadge >= VANILLA_BADGE_WIN_IDS.length || battle.is_loss) return;
     const trainerId = resolveBossTrainerId(battle.trainer_id, battle.version);
-    if (trainerId === VANILLA_GYM_SPLIT_IDS[nextSplit]) nextSplit += 1;
+    if (trainerId !== null && VANILLA_BADGE_WIN_IDS[nextBadge].has(trainerId)) {
+      nextBadge += 1;
+    }
   });
-  return nextSplit === VANILLA_GYM_SPLIT_IDS.length;
+  return nextBadge === VANILLA_BADGE_WIN_IDS.length;
 }
 
 function draftYearMonth(value: string): { year: number; month: number } | null {

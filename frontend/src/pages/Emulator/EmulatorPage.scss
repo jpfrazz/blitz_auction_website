@@ -338,6 +338,11 @@
   border-bottom: 1px solid $eb-border;
   flex-wrap: wrap;
   min-height: auto; // Allow header to expand to fit content
+
+  // The flat header buttons inherit the global button glow; keep them flat.
+  button {
+    box-shadow: none;
+  }
 }
 
 .save-panel-trainer {

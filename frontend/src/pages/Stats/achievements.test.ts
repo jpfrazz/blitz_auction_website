@@ -220,7 +220,7 @@ describe('achievement definitions', () => {
     expect(ACHIEVEMENT_DEFINITIONS.find((achievement) => achievement.id === 'vanilla-gamer')).toEqual({
       id: 'vanilla-gamer',
       name: 'Vanilla Gamer',
-      description: "Defeat Hoenn's 8 leaders in their original order",
+      description: "Earn Hoenn's 8 badges in their original order",
       icon: 'VanillaGamer.png',
     });
   });
@@ -1975,7 +1975,8 @@ describe('computePlayerAchievements', () => {
 
   describe('Vanilla Gamer', () => {
     // Roxanne 1, Brawly 2, Wattson 3, Flannery 4, Norman 5, Winona 6,
-    // Tate & Liza 7, Juan & Wallace 8.
+    // Tate & Liza 7, Juan & Wallace 8. Viola 1 and Archie can substitute
+    // for the first and eighth badges respectively.
     const vanillaSplits = [265, 774, 779, 784, 789, 827, 831, 835];
     const wins = (ids: number[]): BossBattleHistoryEntry[] =>
       ids.map((trainer_id, index) => ({
@@ -2010,6 +2011,42 @@ describe('computePlayerAchievements', () => {
 
     it('awards for the eight vanilla gym wins in order without beating the game', () => {
       expect(earnedIds(context()).has('vanilla-gamer')).toBe(true);
+    });
+
+    it('accepts Viola 1 in place of Roxanne 1', () => {
+      expect(earnedIds(context({
+        ids: [855, ...vanillaSplits.slice(1)],
+      })).has('vanilla-gamer')).toBe(true);
+    });
+
+    it('accepts Archie in place of Juan & Wallace 8', () => {
+      expect(earnedIds(context({
+        ids: [...vanillaSplits.slice(0, 7), 34],
+      })).has('vanilla-gamer')).toBe(true);
+    });
+
+    it('accepts both substitutes together', () => {
+      expect(earnedIds(context({
+        ids: [855, ...vanillaSplits.slice(1, 7), 34],
+      })).has('vanilla-gamer')).toBe(true);
+    });
+
+    it('does not accept Viola 2 for the first badge', () => {
+      expect(earnedIds(context({
+        ids: [856, ...vanillaSplits.slice(1)],
+      })).has('vanilla-gamer')).toBe(false);
+    });
+
+    it('does not accept Maxie for the eighth badge', () => {
+      expect(earnedIds(context({
+        ids: [...vanillaSplits.slice(0, 7), 601],
+      })).has('vanilla-gamer')).toBe(false);
+    });
+
+    it('does not count an early Archie win as the eighth badge', () => {
+      expect(earnedIds(context({
+        ids: [34, ...vanillaSplits.slice(0, 7)],
+      })).has('vanilla-gamer')).toBe(false);
     });
 
     it('accepts versioned base gym leader ids', () => {
