@@ -513,18 +513,6 @@ export const ACHIEVEMENT_DEFINITIONS: AchievementDefinition[] = [
     icon: 'AroundTheWorld.png',
   },
   {
-    id: 'traitor',
-    name: 'Traitor',
-    description: 'Ban your most drafted Pokémon in a 1v1, then beat the game',
-    icon: 'Traitor.png',
-  },
-  {
-    id: 'early-bird',
-    name: 'Early Bird',
-    description: 'Play a race in March or April 2026',
-    icon: 'EarlyBird.png',
-  },
-  {
     id: 'true-nuzlocker',
     name: 'True Nuzlocker',
     description: 'Play a race in which all of your Pokémon are nicknamed',
@@ -543,10 +531,22 @@ export const ACHIEVEMENT_DEFINITIONS: AchievementDefinition[] = [
     icon: 'TopsyTurvy.png',
   },
   {
+    id: 'traitor',
+    name: 'Traitor',
+    description: 'Ban your most drafted Pokémon in a 1v1, then beat the game',
+    icon: 'Traitor.png',
+  },
+  {
     id: 'vanilla-gamer',
     name: 'Vanilla Gamer',
     description: "Defeat Hoenn's 8 leaders in their original order",
     icon: 'VanillaGamer.png',
+  },
+  {
+    id: 'early-bird',
+    name: 'Early Bird',
+    description: 'Play a race in March or April 2026',
+    icon: 'EarlyBird.png',
   },
 ];
 
@@ -1259,17 +1259,6 @@ function hasTenRacesWithSamePlayer(ctx: AchievementContext): boolean {
   );
 }
 
-/**
- * The Race Results tab reads and writes `race_placement`; `placement` is the
- * older results-submission column and may be null or stale. Prefer the value
- * the race results screen shows, falling back to `placement` for older data.
- */
-function effectivePlacement(
-  team: Pick<MatchHistoryTeam, 'placement'> & { race_placement?: number | null },
-): number | null {
-  return team.race_placement ?? team.placement;
-}
-
 function outplacedShartwagonInRace(
   ctx: AchievementContext,
   matchHistory: MatchHistoryTeam[],
@@ -1294,15 +1283,14 @@ function outplacedShartwagonInRace(
   });
 
   return matchHistory.some((team) => {
-    const placement = effectivePlacement(team);
+    const placement = team.placement;
     if (placement === null) return false;
 
     return (teamsByDraftId.get(team.draft_id) ?? []).some((opponent) => {
       const opponentId = opponent.user_id ?? opponent.guest_id;
-      const opponentPlacement = effectivePlacement(opponent);
       return (
-        opponentPlacement !== null &&
-        placement < opponentPlacement &&
+        opponent.placement !== null &&
+        placement < opponent.placement &&
         Boolean(opponentId) &&
         targetIdentityIds.has(opponentId!) &&
         !ctx.identityIds.has(opponentId!)

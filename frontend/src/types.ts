@@ -312,8 +312,6 @@ export interface MatchHistoryTeam {
   money_remaining: number;
   pokemon_drafted: StatsAuction[];
   placement: number | null;
-  /** Placement entered in the Race Results tab; takes precedence over placement. */
-  race_placement?: number | null;
   pre_match_mmr: number | null;
   hall_of_fame_team?: HallOfFamePokemon[] | null;
   run_stats?: RunMonStat[] | null;
@@ -334,7 +332,6 @@ export interface StatsPageTeamRow {
   money_remaining: number;
   pokemon_drafted: number;
   placement: number | null;
-  race_placement?: number | null;
   pre_match_mmr: number | null;
   updated_at: string;
   created_at: string;

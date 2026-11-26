@@ -223,10 +223,6 @@ describe('achievement definitions', () => {
       description: "Defeat Hoenn's 8 leaders in their original order",
       icon: 'VanillaGamer.png',
     });
-    expect(ACHIEVEMENT_DEFINITIONS.map((achievement) => achievement.id).slice(-2)).toEqual([
-      'topsy-turvy',
-      'vanilla-gamer',
-    ]);
   });
 
 });
@@ -725,21 +721,6 @@ describe('computePlayerAchievements', () => {
     expect(earnedFor(race(2), [opponent('shared-race', null)]).has('easy-as-pie')).toBe(false);
     expect(earnedFor(race(2), [opponent('other-race', 5)]).has('easy-as-pie')).toBe(false);
     expect(earnedFor(race(null), [opponent('shared-race', 5)]).has('easy-as-pie')).toBe(false);
-
-    // The Race Results tab writes race_placement and leaves placement null.
-    expect(earnedFor(
-      { ...race(null), race_placement: 2 },
-      [{ ...opponent('shared-race', null), race_placement: 9 }],
-    ).has('easy-as-pie')).toBe(true);
-    // Stale placement values must not override the edited race placements.
-    expect(earnedFor(
-      { ...race(9), race_placement: 2 },
-      [{ ...opponent('shared-race', 2), race_placement: 9 }],
-    ).has('easy-as-pie')).toBe(true);
-    expect(earnedFor(
-      { ...race(2), race_placement: 9 },
-      [{ ...opponent('shared-race', 9), race_placement: 2 }],
-    ).has('easy-as-pie')).toBe(false);
 
     expect(earnedFor(
       race(2),

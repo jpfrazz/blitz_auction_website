@@ -195,9 +195,7 @@ const LeaderboardPage = () => {
         });
 
         activeStats.teams.forEach(t => {
-            // placement is canonical for both season tabs; race_placement is
-            // only a transition fallback for rows written before the backfill.
-            const position = t.placement ?? t.race_placement;
+            const position = t.placement;
             if (position === null || position === undefined) return;
             if (!map.has(t.draft_id)) {
                 map.set(t.draft_id, { date: '', participants: [] });

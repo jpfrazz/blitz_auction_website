@@ -134,7 +134,6 @@ pub struct StatsTeam {
     pub draft_type: String,
     pub season: i32,
     pub placement: Option<i32>,
-    pub race_placement: Option<i32>,
     pub has_save: bool,
     /// Whether this team/draft has any boss battle rows. Cost Breakdown uses
     /// this to count only races where the Pokémon actually had a chance to win.
@@ -408,7 +407,7 @@ async fn build_stats_page_data(state: &ServerState) -> Result<StatsPageResponse,
 
     let teams =
         sqlx::query_as::<_, StatsTeam>(
-            "SELECT t.team_id, t.user_id, t.guest_id, t.draft_id, t.placement, t.race_placement,
+            "SELECT t.team_id, t.user_id, t.guest_id, t.draft_id, t.placement,
                     (t.save_data IS NOT NULL) AS has_save,
                     EXISTS (
                         SELECT 1 FROM boss_battle_history bbh
@@ -586,13 +585,13 @@ pub async fn get_season2_leaderboard(
                 COALESCE(t.user_id, g.discord_user_id) AS user_id,
                 t.draft_id,
                 (CASE
-                    WHEN COALESCE(t.placement, t.race_placement) = 1 THEN 5
-                    WHEN COALESCE(t.placement, t.race_placement) = 2 THEN 4
-                    WHEN COALESCE(t.placement, t.race_placement) = 3 THEN 3
+                    WHEN t.placement = 1 THEN 5
+                    WHEN t.placement = 2 THEN 4
+                    WHEN t.placement = 3 THEN 3
                     ELSE 0
-                 END + (rs.n - COALESCE(t.placement, t.race_placement)))::INT AS points,
-                (rs.n - COALESCE(t.placement, t.race_placement))::INT AS wins,
-                (COALESCE(t.placement, t.race_placement) - 1)::INT AS losses
+                 END + (rs.n - t.placement))::INT AS points,
+                (rs.n - t.placement)::INT AS wins,
+                (t.placement - 1)::INT AS losses
             FROM teams t
             JOIN drafts d ON d.draft_id = t.draft_id
             JOIN race_sizes rs ON rs.draft_id = t.draft_id
@@ -600,7 +599,7 @@ pub async fn get_season2_leaderboard(
             WHERE d.season = 2
               AND d.state = 'COMPLETED'
                             AND COALESCE(t.user_id, g.discord_user_id) IS NOT NULL
-              AND COALESCE(t.placement, t.race_placement) IS NOT NULL
+              AND t.placement IS NOT NULL
                         ORDER BY COALESCE(t.user_id, g.discord_user_id), t.draft_id,
                                          (t.user_id IS NULL), t.team_id
         ),
@@ -1424,7 +1423,6 @@ mod profile_aggregate_tests {
                 draft_type: "auction".to_string(),
                 season: 1,
                 placement: None,
-                race_placement: None,
                 has_save: false,
                 has_boss_battles: false,
             });
@@ -1500,7 +1498,6 @@ mod profile_aggregate_tests {
             draft_type: draft_type.to_string(),
             season: 1,
             placement: None,
-            race_placement: None,
             has_save: false,
             has_boss_battles: false,
         }

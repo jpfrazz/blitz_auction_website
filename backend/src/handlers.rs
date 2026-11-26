@@ -172,8 +172,6 @@ pub struct MatchHistoryTeam {
     pub money_remaining: i32,
     pub pokemon_drafted: Vec<MatchHistoryAuction>,
     pub placement: Option<i32>,
-    /// Placement from the Race Results tab; preferred over `placement` by the UI.
-    pub race_placement: Option<i32>,
     pub pre_match_mmr: Option<i32>,
     pub hall_of_fame_team: Option<Vec<HallOfFamePokemon>>,
     pub run_stats: Vec<RunMonStat>,
@@ -1236,7 +1234,7 @@ pub async fn get_match_history_by_user_id(
     let team_rows = sqlx::query(
         "SELECT t.team_id, t.user_id, t.guest_id, t.draft_id,
                 d.ranked, d.draft_type, (SELECT COUNT(*)::INT FROM teams team_counts WHERE team_counts.draft_id = t.draft_id) AS team_count,
-                t.money_remaining, t.placement, t.race_placement,
+                t.money_remaining, t.placement,
                 t.pre_match_mmr, t.hall_of_fame_team, t.save_data, t.updated_at, d.created_at
          FROM teams t
           JOIN drafts d ON d.draft_id = t.draft_id
@@ -1292,9 +1290,6 @@ pub async fn get_match_history_by_user_id(
             pokemon_drafted: auctions_won,
             placement: row
                 .try_get("placement")
-                .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?,
-            race_placement: row
-                .try_get("race_placement")
                 .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?,
             pre_match_mmr: row
                 .try_get("pre_match_mmr")
@@ -2752,8 +2747,6 @@ pub async fn admin_auto_fill_race_placements(
                    row_number() OVER (PARTITION BY e.draft_id ORDER BY e.finish_seconds) AS rn
             FROM earliest e JOIN no_manual nm ON nm.draft_id = e.draft_id
         )
-        -- placement is canonical; the temporary DB trigger mirrors this into
-        -- race_placement until that column is dropped.
         UPDATE teams t SET placement = ranked.rn
         FROM ranked WHERE t.team_id = ranked.team_id
         RETURNING t.draft_id
@@ -2913,16 +2906,13 @@ pub async fn get_draft_race_results(
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
 
     let teams = sqlx::query_as::<_, RaceResultTeamRow>(
-        "SELECT t.team_id, t.user_id, t.guest_id,
-                COALESCE(t.placement, t.race_placement) AS placement,
-                t.race_wipe_trainer,
+        "SELECT t.team_id, t.user_id, t.guest_id, t.placement, t.race_wipe_trainer,
                 COALESCE(u.user_name, g.user_name) AS user_name
          FROM teams t
          LEFT JOIN users u ON u.user_id = t.user_id
          LEFT JOIN guests g ON g.user_id = t.guest_id
          WHERE t.draft_id = $1
-         ORDER BY COALESCE(t.placement, t.race_placement) ASC NULLS LAST,
-                  COALESCE(u.user_name, g.user_name) ASC",
+         ORDER BY t.placement ASC NULLS LAST, COALESCE(u.user_name, g.user_name) ASC",
     )
     .bind(draft_uuid)
     .fetch_all(&state.db_pool)
