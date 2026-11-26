@@ -10,14 +10,6 @@
   background: rgba(0, 0, 0, 0.3);
   border: 2px solid var(--booster-holder-color, #9e9e9e);
   border-radius: 8px;
-  box-shadow: 0 0 0 1px var(--booster-holder-glow, transparent),
-    inset 0 0 14px var(--booster-holder-glow, transparent);
-}
-
-.booster-pack-panel.my-pack {
-  box-shadow: 0 0 0 2px var(--booster-holder-glow, transparent),
-    0 0 16px var(--booster-holder-glow, transparent),
-    inset 0 0 14px var(--booster-holder-glow, transparent);
 }
 
 .booster-pack-grid {
@@ -39,6 +31,12 @@
   border-color: var(--booster-picked-border, #2f5f8f);
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.28);
   animation: pool-pop 0.35s ease;
+}
+
+.booster-tile.booster-warded {
+  background: #3a7a5d;
+  border-color: #8ce0b3;
+  box-shadow: 0 0 0 1px rgba(140, 224, 179, 0.35), 0 1px 2px rgba(0, 0, 0, 0.28);
 }
 
 .booster-tile.booster-banned {
@@ -82,6 +80,15 @@
     filter: grayscale(100%);
     opacity: 0.55;
   }
+}
+
+.booster-tile.booster-hover-ward:hover,
+.booster-tile.booster-hover-ward-persistent {
+  cursor: pointer;
+  background: #4f9a76 !important;
+  border-color: #a5ecca !important;
+  box-shadow: 0 0 0 1px rgba(165, 236, 202, 0.4), 0 1px 2px rgba(0, 0, 0, 0.28);
+  transform: scale(1.04);
 }
 
 .booster-tile.marked.available.booster-hover-ban:hover,

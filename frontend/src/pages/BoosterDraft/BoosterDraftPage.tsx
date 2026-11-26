@@ -72,7 +72,13 @@ function mergeViewerPending(updated: Draft, previous: Draft | null, viewerId: st
           typeof oldStatus === 'object' && oldStatus !== null &&
           (('Picked' in oldStatus && oldStatus.Picked === viewerId) ||
             ('Banned' in oldStatus && oldStatus.Banned === viewerId));
-        return isMine ? { ...slot, status: oldSlot.status } : slot;
+        const isMyWard = oldSlot.warded_by === viewerId;
+        if (!isMine && !isMyWard) return slot;
+        return {
+          ...slot,
+          ...(isMine ? { status: oldSlot.status } : {}),
+          ...(isMyWard ? { warded_by: oldSlot.warded_by } : {}),
+        };
       }),
     })),
   };
@@ -182,7 +188,9 @@ const BoosterDraftPage: React.FC = () => {
       ? 'Pick'
       : booster?.bans_enabled && !mySubmission.has_banned
         ? 'Ban'
-        : null;
+        : booster?.wards_enabled && !mySubmission.has_warded
+          ? 'Ward'
+          : null;
   const canAct = draft?.draft_state === 'BIDDING' && !!myPack && !!myAction && !submitting;
 
   const orderedTeams = useMemo<Team[]>(() => {

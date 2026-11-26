@@ -340,15 +340,18 @@ impl RpsEngine {
 pub enum BoosterAction {
     Pick,
     Ban,
+    Ward,
 }
 
 /// A single pokemon in one booster pack. Until the whole table has submitted,
 /// even picked/banned statuses from previous passes stay visible while the
-/// current pass's choices are hidden in `BoosterEngine`'s pending maps.
+/// current pass's choices are hidden in `BoosterEngine`'s pending maps. Ward
+/// ownership is separate because warded pokemon remain pickable.
 #[derive(Clone, Debug, Serialize)]
 pub struct BoosterPoolSlot {
     pub pokemon: Pokemon,
     pub status: BoosterSlotStatus,
+    pub warded_by: Option<String>,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
@@ -374,6 +377,7 @@ pub struct BoosterSubmissionState {
     pub user_id: String,
     pub has_picked: bool,
     pub has_banned: bool,
+    pub has_warded: bool,
 }
 
 #[derive(Clone, Copy, Debug, Serialize, Deserialize, PartialEq, Eq)]
@@ -402,6 +406,8 @@ pub struct BoosterState {
     pub round: u32,
     pub total_rounds: u32,
     pub bans_enabled: bool,
+    /// Only the first pass offers a ward after the player's pick and ban.
+    pub wards_enabled: bool,
     pub team_size: u32,
     pub casual: bool,
     pub history: Vec<BoosterHistoryEntry>,
@@ -1482,9 +1488,12 @@ struct BoosterEngine {
     team_size: u32,
     /// A pass belongs to the first circuit, so players pick and ban.
     bans_enabled: bool,
-    /// Hidden until every player has submitted both actions for this pass.
+    /// Only the opening pass adds a ward to the pick and ban.
+    wards_enabled: bool,
+    /// Hidden until every player has submitted every action for this pass.
     pending_picks: HashMap<String, BoosterChoice>,
     pending_bans: HashMap<String, BoosterChoice>,
+    pending_wards: HashMap<String, BoosterChoice>,
     history: Vec<BoosterHistoryEntry>,
     next_order: u32,
     /// Bans are bookkeeping for the first circuit only. They are stored with
@@ -1520,6 +1529,7 @@ impl BoosterEngine {
                 user_id: user_id.clone(),
                 has_picked: self.pending_picks.contains_key(user_id),
                 has_banned: self.pending_bans.contains_key(user_id),
+                has_warded: self.pending_wards.contains_key(user_id),
             })
             .collect();
 
@@ -1539,6 +1549,16 @@ impl BoosterEngine {
                     }
                 }
             }
+            if let Some(choice) = self.pending_wards.get(viewer) {
+                if let Some(slot) = packs
+                    .get_mut(choice.pack_index)
+                    .and_then(|pack| pack.slots.get_mut(choice.slot_index))
+                {
+                    if slot.status == BoosterSlotStatus::Available {
+                        slot.warded_by = Some(viewer.to_string());
+                    }
+                }
+            }
         }
 
         BoosterState {
@@ -1548,6 +1568,7 @@ impl BoosterEngine {
             round: self.round,
             total_rounds: self.total_rounds,
             bans_enabled: self.bans_enabled,
+            wards_enabled: self.wards_enabled,
             team_size: self.team_size,
             casual: self.team_size >= 9,
             history: self.history.clone(),
@@ -1568,6 +1589,7 @@ impl BoosterEngine {
         self.player_ids.iter().all(|user_id| {
             self.pending_picks.contains_key(user_id)
                 && (!self.bans_enabled || self.pending_bans.contains_key(user_id))
+                && (!self.wards_enabled || self.pending_wards.contains_key(user_id))
         })
     }
 
@@ -1590,7 +1612,20 @@ impl BoosterEngine {
             return None;
         }
         slot.status = status;
+        slot.warded_by = None;
         Some(slot.pokemon.clone())
+    }
+
+    /// Mark an available slot as ban-proof without removing it from the pack.
+    fn ward_slot(&mut self, choice: BoosterChoice, user_id: &str) -> bool {
+        let Some(slot) = self.packs.get_mut(choice.pack_index).and_then(|pack| pack.slots.get_mut(choice.slot_index)) else {
+            return false;
+        };
+        if slot.status != BoosterSlotStatus::Available {
+            return false;
+        }
+        slot.warded_by = Some(user_id.to_string());
+        true
     }
 
     fn available_slots(&self) -> Vec<BoosterChoice> {
@@ -1611,8 +1646,17 @@ impl BoosterEngine {
         }
         self.pending_picks.clear();
         self.pending_bans.clear();
+        self.pending_wards.clear();
         self.round += 1;
         self.bans_enabled = self.round <= self.player_ids.len() as u32;
+        self.wards_enabled = self.round == 1;
+        if !self.bans_enabled {
+            for pack in &mut self.packs {
+                for slot in &mut pack.slots {
+                    slot.warded_by = None;
+                }
+            }
+        }
     }
 }
 
@@ -2220,7 +2264,8 @@ impl DraftActor {
     /// pass. Three-player packs have 14 pokemon and four-player packs have 15,
     /// and each pack is seeded with one of the 30 highest average-price Pokemon
     /// eligible for booster packs. A full circuit is one pass per player, and
-    /// the first circuit also bans one pokemon per pass. The draft runs one
+    /// the opening pass also adds a ward after each player's pick and ban. The
+    /// rest of the first circuit bans one pokemon per pass. The draft runs one
     /// pass per drafted pokemon, so 8-Pokemon teams stop after 8 passes even if
     /// that cuts a circuit short.
     async fn start_booster(&mut self) -> Result<(), AppError> {
@@ -2260,6 +2305,7 @@ impl DraftActor {
                     .map(|p| BoosterPoolSlot {
                         pokemon: clone_arc_pokemon(p),
                         status: BoosterSlotStatus::Available,
+                        warded_by: None,
                     })
                     .collect();
                 slots.sort_by(|a, b| {
@@ -2290,8 +2336,10 @@ impl DraftActor {
             total_rounds: booster_total_rounds(player_count, self.settings.booster_team_size),
             team_size: self.settings.booster_team_size,
             bans_enabled: true,
+            wards_enabled: true,
             pending_picks: HashMap::new(),
             pending_bans: HashMap::new(),
+            pending_wards: HashMap::new(),
             history: vec![],
             next_order: 1,
             next_ban_order: -1,
@@ -3136,7 +3184,15 @@ impl DraftActor {
             return Err((StatusCode::PRECONDITION_FAILED, "draft is not running".to_string()));
         }
         let user_id = user.get_user_id_string();
-        let (choice, bans_enabled, existing_pick, existing_ban) = {
+        let (
+            choice,
+            bans_enabled,
+            wards_enabled,
+            existing_pick,
+            existing_ban,
+            existing_ward,
+            warded_by,
+        ) = {
             let engine = self.booster.as_ref().ok_or((
                 StatusCode::PRECONDITION_FAILED,
                 "not a booster draft".to_string(),
@@ -3168,8 +3224,11 @@ impl DraftActor {
             (
                 BoosterChoice { pack_index, slot_index },
                 engine.bans_enabled,
+                engine.wards_enabled,
                 engine.pending_picks.get(&user_id).copied(),
                 engine.pending_bans.get(&user_id).copied(),
+                engine.pending_wards.get(&user_id).copied(),
+                engine.packs[pack_index].slots[slot_index].warded_by.clone(),
             )
         };
 
@@ -3179,6 +3238,12 @@ impl DraftActor {
                     return Err((
                         StatusCode::BAD_REQUEST,
                         "cannot pick the pokemon you banned".to_string(),
+                    ));
+                }
+                if existing_ward == Some(choice) {
+                    return Err((
+                        StatusCode::BAD_REQUEST,
+                        "cannot pick the pokemon you warded".to_string(),
                     ));
                 }
                 self.booster
@@ -3194,16 +3259,65 @@ impl DraftActor {
                         "bans are only allowed during the first cycle".to_string(),
                     ));
                 }
+                if warded_by.is_some() {
+                    return Err((
+                        StatusCode::BAD_REQUEST,
+                        "warded pokemon cannot be banned".to_string(),
+                    ));
+                }
                 if existing_pick == Some(choice) {
                     return Err((
                         StatusCode::BAD_REQUEST,
                         "cannot ban the pokemon you picked".to_string(),
                     ));
                 }
+                if existing_ward == Some(choice) {
+                    return Err((
+                        StatusCode::BAD_REQUEST,
+                        "cannot ban the pokemon you warded".to_string(),
+                    ));
+                }
                 self.booster
                     .as_mut()
                     .expect("booster engine")
                     .pending_bans
+                    .insert(user_id, choice);
+            }
+            BoosterAction::Ward => {
+                if !wards_enabled {
+                    return Err((
+                        StatusCode::PRECONDITION_FAILED,
+                        "wards are only allowed on your first pick".to_string(),
+                    ));
+                }
+                if existing_pick.is_none() || existing_ban.is_none() {
+                    return Err((
+                        StatusCode::PRECONDITION_FAILED,
+                        "pick and ban before warding".to_string(),
+                    ));
+                }
+                if existing_pick == Some(choice) {
+                    return Err((
+                        StatusCode::BAD_REQUEST,
+                        "cannot ward the pokemon you picked".to_string(),
+                    ));
+                }
+                if existing_ban == Some(choice) {
+                    return Err((
+                        StatusCode::BAD_REQUEST,
+                        "cannot ward the pokemon you banned".to_string(),
+                    ));
+                }
+                if warded_by.is_some() {
+                    return Err((
+                        StatusCode::BAD_REQUEST,
+                        "pokemon is already warded".to_string(),
+                    ));
+                }
+                self.booster
+                    .as_mut()
+                    .expect("booster engine")
+                    .pending_wards
                     .insert(user_id, choice);
             }
         }
@@ -3223,7 +3337,7 @@ impl DraftActor {
     /// to the right. Nothing here is applied until all players are ready, so
     /// no player can react to another player's hidden choice.
     async fn booster_reveal_and_pass(&mut self) {
-        let (round, bans_enabled, picks, bans) = {
+        let (round, bans_enabled, wards_enabled, picks, bans, wards) = {
             let engine = self.booster.as_ref().expect("booster engine");
             let picks = engine
                 .player_ids
@@ -3235,7 +3349,12 @@ impl DraftActor {
                 .iter()
                 .filter_map(|id| engine.pending_bans.get(id).map(|choice| (id.clone(), *choice)))
                 .collect::<Vec<_>>();
-            (engine.round, engine.bans_enabled, picks, bans)
+            let wards = engine
+                .player_ids
+                .iter()
+                .filter_map(|id| engine.pending_wards.get(id).map(|choice| (id.clone(), *choice)))
+                .collect::<Vec<_>>();
+            (engine.round, engine.bans_enabled, engine.wards_enabled, picks, bans, wards)
         };
 
         for (user_id, choice) in picks {
@@ -3286,6 +3405,13 @@ impl DraftActor {
                     player_id: Some(user_id),
                     pokemon,
                 });
+            }
+        }
+
+        if wards_enabled {
+            let engine = self.booster.as_mut().expect("booster engine");
+            for (user_id, choice) in wards {
+                engine.ward_slot(choice, &user_id);
             }
         }
 
@@ -4311,8 +4437,10 @@ mod booster_tests {
             total_rounds: booster_total_rounds(player_count, team_size),
             team_size,
             bans_enabled: true,
+            wards_enabled: true,
             pending_picks: HashMap::new(),
             pending_bans: HashMap::new(),
+            pending_wards: HashMap::new(),
             history: Vec::new(),
             next_order: 1,
             next_ban_order: -1,
@@ -4388,7 +4516,7 @@ mod booster_tests {
     }
 
     #[test]
-    fn reveal_waits_for_every_pick_and_ban() {
+    fn reveal_waits_for_every_pick_ban_and_ward() {
         let mut engine = test_engine(3, 8);
         assert!(!engine.all_submitted());
 
@@ -4412,7 +4540,26 @@ mod booster_tests {
                 },
             );
         }
+        assert!(!engine.all_submitted(), "wards are still missing");
+
+        for player in 0..3 {
+            engine.pending_wards.insert(
+                format!("p{}", player + 1),
+                BoosterChoice {
+                    pack_index: player,
+                    slot_index: 2,
+                },
+            );
+        }
         assert!(engine.all_submitted());
+
+        engine.pass_packs();
+        for player in 0..3 {
+            let id = format!("p{}", player + 1);
+            engine.pending_picks.insert(id.clone(), BoosterChoice { pack_index: player, slot_index: 0 });
+            engine.pending_bans.insert(id, BoosterChoice { pack_index: player, slot_index: 1 });
+        }
+        assert!(engine.all_submitted(), "later passes need no ward");
 
         engine.bans_enabled = false;
         engine.pending_bans.clear();
@@ -4425,7 +4572,10 @@ mod booster_tests {
         assert_eq!(engine.held_pack_index("p1"), Some(0));
         assert_eq!(engine.held_pack_index("p3"), Some(2));
 
-        for _ in 0..3 {
+        engine.pass_packs();
+        assert!(engine.bans_enabled);
+        assert!(!engine.wards_enabled, "only the first pass offers a ward");
+        for _ in 0..2 {
             engine.pass_packs();
         }
 
@@ -4434,6 +4584,40 @@ mod booster_tests {
         assert_eq!(engine.held_pack_index("p1"), Some(0));
         assert_eq!(engine.held_pack_index("p2"), Some(1));
         assert_eq!(engine.held_pack_index("p3"), Some(2));
+    }
+
+    #[test]
+    fn ward_stays_until_bans_end_but_can_be_picked() {
+        let mut engine = test_engine(3, 8);
+        for pack in &mut engine.packs {
+            pack.slots = (1..=5u32)
+                .map(|id| BoosterPoolSlot {
+                    pokemon: test_pokemon(id).as_ref().clone(),
+                    status: BoosterSlotStatus::Available,
+                    warded_by: None,
+                })
+                .collect();
+        }
+
+        let choice = BoosterChoice { pack_index: 0, slot_index: 2 };
+        assert!(engine.ward_slot(choice, "p1"));
+        assert_eq!(engine.packs[0].slots[2].warded_by.as_deref(), Some("p1"));
+        assert_eq!(engine.packs[0].slots[2].status, BoosterSlotStatus::Available);
+
+        // A ward does not block picks, and claiming the slot clears the ward.
+        let picked = engine.claim_slot(choice, BoosterSlotStatus::Picked("p2".to_string()));
+        assert!(picked.is_some());
+        assert_eq!(engine.packs[0].slots[2].warded_by, None);
+        assert!(!engine.ward_slot(choice, "p3"), "picked slots cannot be warded");
+
+        let surviving = BoosterChoice { pack_index: 1, slot_index: 2 };
+        assert!(engine.ward_slot(surviving, "p2"));
+        engine.pass_packs();
+        engine.pass_packs();
+        assert_eq!(engine.packs[1].slots[2].warded_by.as_deref(), Some("p2"));
+        engine.pass_packs();
+        assert!(!engine.bans_enabled);
+        assert_eq!(engine.packs[1].slots[2].warded_by, None);
     }
 
     #[test]

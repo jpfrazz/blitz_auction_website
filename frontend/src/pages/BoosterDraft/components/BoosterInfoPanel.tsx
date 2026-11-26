@@ -28,13 +28,16 @@ const BoosterInfoPanel: React.FC<BoosterInfoPanelProps> = ({
   const myColor = boosterPlayerColor(booster.player_ids.indexOf(currentUserId ?? ''));
   const picked = !!me?.has_picked;
   const banned = !!me?.has_banned;
+  const warded = !!me?.has_warded;
   const action: BoosterAction | null = !hasPack
     ? null
     : !picked
       ? 'Pick'
       : booster.bans_enabled && !banned
         ? 'Ban'
-        : null;
+        : booster.wards_enabled && !warded
+          ? 'Ward'
+          : null;
   const pickedCount = booster.submissions.filter((s) => s.has_picked).length;
   const bannedCount = booster.submissions.filter((s) => s.has_banned).length;
   const total = booster.player_ids.length;
@@ -69,10 +72,14 @@ const BoosterInfoPanel: React.FC<BoosterInfoPanelProps> = ({
           ? 'Your Pick'
           : action === 'Ban'
             ? 'Your Ban'
-            : hasPack
-              ? 'Waiting for all players to pick…'
-              : `Pass ${booster.round} in progress`}
+            : action === 'Ward'
+              ? 'Your Ward'
+              : hasPack
+                ? 'Waiting for all players to pick…'
+                : `Pass ${booster.round} in progress`}
       </div>
+
+      {action === 'Ward' && <div className="booster-ward-note">Make a Pokémon Ban-Proof</div>}
 
       {!booster.bans_enabled && (
         <div className="booster-casual-note">No bans after the first cycle.</div>

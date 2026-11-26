@@ -1,4 +1,4 @@
-import { boosterCycleNotes, buildBoosterPassOrder } from './BoosterPackOrderTab';
+import { BOOSTER_FIRST_PICK_NOTE, boosterCycleNotes, buildBoosterPassOrder } from './BoosterPackOrderTab';
 
 describe('buildBoosterPassOrder', () => {
   test('chains every player to the next seat and wraps back to the first', () => {
@@ -18,6 +18,10 @@ describe('buildBoosterPassOrder', () => {
 });
 
 describe('boosterCycleNotes', () => {
+  test('the first-pick note sits above the cycle notes', () => {
+    expect(BOOSTER_FIRST_PICK_NOTE).toBe('1st Pick: Pick+Ban+Ward');
+  });
+
   test('eight-Pokemon teams stop after eight passes', () => {
     expect(boosterCycleNotes(4, 8)).toEqual([
       '1st Cycle: Pick+Ban',

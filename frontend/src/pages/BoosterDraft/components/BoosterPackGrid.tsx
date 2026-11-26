@@ -136,7 +136,6 @@ const BoosterPackGrid: React.FC<BoosterPackGridProps> = ({
 
   const holderIndex = playerIds.indexOf(pack.holder_id);
   const holderColor = boosterPlayerColor(holderIndex);
-  const holderGlow = boosterColorWithAlpha(holderColor, 0.4);
 
   const sortedSlots = useMemo(
     () => orderSlotsForHolder(pack.slots, history, playerIds, pack.holder_id, pack.pack_index),
@@ -166,7 +165,6 @@ const BoosterPackGrid: React.FC<BoosterPackGridProps> = ({
 
   const panelStyle = {
     '--booster-holder-color': holderColor,
-    '--booster-holder-glow': holderGlow,
   } as React.CSSProperties;
   const gridStyle = {
     '--booster-columns': columns,
@@ -175,7 +173,7 @@ const BoosterPackGrid: React.FC<BoosterPackGridProps> = ({
 
   return (
     <section
-      className={`booster-pack-panel ${isMyPack ? 'my-pack' : ''}`}
+      className="booster-pack-panel"
       style={panelStyle}
       aria-label={`Pack ${pack.pack_index + 1}, held by player ${holderIndex + 1 || '?'}`}
     >
@@ -184,6 +182,10 @@ const BoosterPackGrid: React.FC<BoosterPackGridProps> = ({
           const status = statusClass(slot.status, playerIds, slot.pokemon, badgeByPokemon);
           const key = `${slot.pokemon.pokedex_id}-${slot.pokemon.form ?? ''}`;
           const isAvailable = slot.status === 'Available';
+          const isWarded = isAvailable && !!slot.warded_by;
+          const canSelectSlot = canAct && isAvailable &&
+            !(action === 'Ban' && isWarded) &&
+            !(action === 'Ward' && isWarded);
           const isSelected = !!selectedSlot &&
             selectedSlot.pokemon.pokedex_id === slot.pokemon.pokedex_id &&
             (selectedSlot.pokemon.form ?? '') === (slot.pokemon.form ?? '');
@@ -192,22 +194,25 @@ const BoosterPackGrid: React.FC<BoosterPackGridProps> = ({
           const tcgArt = artMode === 'tcg' ? getTcgArt(slot.pokemon, tcgArtSeed) : undefined;
           const shuffleArt = artMode === 'shuffle' ? getShuffleIcon(slot.pokemon) : undefined;
           const dizzyPortrait = dizzyPortraits[index]?.url !== portrait?.url ? dizzyPortraits[index] : null;
-          const hoverClass = canAct && isAvailable
+          const hoverClass = canSelectSlot
             ? action === 'Ban'
               ? 'booster-hover-ban'
-              : 'booster-hover-pick'
+              : action === 'Ward'
+                ? 'booster-hover-ward'
+                : 'booster-hover-pick'
             : '';
           const persistentClass = hoverClass && isSelected ? `${hoverClass}-persistent` : '';
           const classes = [
             'one-v-one-pool-square',
             'booster-tile',
             status.cls,
+            isWarded ? 'booster-warded' : '',
             portrait ? 'mystery-dungeon' : '',
             portrait?.local ? 'local-art' : '',
             tcgArt ? 'tcg-art' : '',
             shuffleArt ? 'shuffle-art' : '',
             dizzyPortrait && loadedDizzy.has(dizzyPortrait.url) ? 'has-dizzy' : '',
-            canAct && isAvailable ? 'clickable' : '',
+            canSelectSlot ? 'clickable' : '',
             isSelected ? 'selected' : '',
             isMarked ? 'marked' : '',
             hoverClass,
@@ -238,7 +243,7 @@ const BoosterPackGrid: React.FC<BoosterPackGridProps> = ({
                 className={classes}
                 style={tileStyle}
                 onClick={() => {
-                  if (canAct && isAvailable) onSelect(slot);
+                  if (canSelectSlot) onSelect(slot);
                 }}
                 onContextMenu={(event) => {
                   event.preventDefault();

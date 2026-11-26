@@ -12,6 +12,8 @@ interface PassSegment {
   to: number;
 }
 
+export const BOOSTER_FIRST_PICK_NOTE = '1st Pick: Pick+Ban+Ward';
+
 const CENTER_X = 150;
 const CENTER_Y = 115;
 const RADIUS_X = 112;
@@ -90,6 +92,7 @@ const BoosterPackOrderTab: React.FC<BoosterPackOrderTabProps> = ({ playerIds, te
   return (
     <div className="booster-pack-order-tab">
       <div className="booster-pack-order-notes">
+        <div>{BOOSTER_FIRST_PICK_NOTE}</div>
         {boosterCycleNotes(count, teamSize).map((note) => (
           <div key={note}>{note}</div>
         ))}

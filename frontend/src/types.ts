@@ -126,7 +126,7 @@ export interface RpsRoundResult {
   winner: string | null;
 }
 
-export type BoosterAction = 'Pick' | 'Ban';
+export type BoosterAction = 'Pick' | 'Ban' | 'Ward';
 export type BoosterSlotStatus =
   | 'Available'
   | { Picked: string }
@@ -136,6 +136,7 @@ export type BoosterSlotStatus =
 export interface BoosterPoolSlot {
   pokemon: Pokemon;
   status: BoosterSlotStatus;
+  warded_by?: string | null;
 }
 
 export interface BoosterPackState {
@@ -149,6 +150,7 @@ export interface BoosterSubmissionState {
   user_id: string;
   has_picked: boolean;
   has_banned: boolean;
+  has_warded: boolean;
 }
 
 export interface BoosterHistoryEntry {
@@ -166,6 +168,7 @@ export interface BoosterState {
   round: number;
   total_rounds: number;
   bans_enabled: boolean;
+  wards_enabled: boolean;
   team_size: number;
   casual: boolean;
   history: BoosterHistoryEntry[];
