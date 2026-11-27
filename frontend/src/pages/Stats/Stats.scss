@@ -655,18 +655,23 @@
     justify-content: flex-end;
   }
 
-  // Expands leftward from the gear into the empty header space, like the
-  // original filter bar, without making the header taller.
+  // Anchored beside the gear, expanding leftward into the empty header space.
+  // Keeping it absolute preserves the header height while the menu stays two
+  // stacked rows tall.
   .stats-analysis-settings {
+    position: absolute;
+    top: 50%;
+    right: 40px;
+    z-index: 20;
     display: flex;
-    flex-direction: row;
-    align-items: center;
-    gap: 12px;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 2px;
     overflow: hidden;
     max-width: 0;
-    margin-right: 0;
-    padding-top: 0.35rem;
-    padding-bottom: 0.35rem;
+    transform: translateY(-50%);
+    padding-top: 0.15rem;
+    padding-bottom: 0.15rem;
     padding-left: 0;
     padding-right: 0;
     border: 1px solid transparent;
@@ -676,15 +681,19 @@
     transition:
       max-width 0.4s cubic-bezier(0.4, 0, 0.2, 1),
       opacity 0.3s ease-in-out,
-      margin-right 0.4s cubic-bezier(0.4, 0, 0.2, 1),
       padding-left 0.4s cubic-bezier(0.4, 0, 0.2, 1),
       padding-right 0.4s cubic-bezier(0.4, 0, 0.2, 1);
     pointer-events: none;
     white-space: nowrap;
 
+    .stats-filter-input {
+      min-height: 21px;
+      padding-top: 0;
+      padding-bottom: 0;
+    }
+
     &.visible {
       max-width: 1600px;
-      margin-right: 12px;
       padding-left: 0.75rem;
       padding-right: 0.75rem;
       border-color: $eb-border;
@@ -773,14 +782,12 @@
     }
 
     .stats-analysis-settings {
-      flex-direction: column;
-      align-items: stretch;
-      max-width: none !important;
+      align-items: flex-end;
       white-space: normal;
       gap: 0.5rem !important;
-      margin-right: 0 !important;
 
       &.visible {
+        max-width: calc(100vw - 64px);
         opacity: 1;
         pointer-events: auto;
       }

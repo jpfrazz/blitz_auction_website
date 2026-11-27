@@ -139,6 +139,44 @@
   opacity: 0.75;
 }
 
+.blitz-update-delete {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  width: 2.2rem;
+  height: 2.2rem;
+  padding: 0;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  color: $eb-text-muted;
+  cursor: pointer;
+  opacity: 0.75;
+
+  svg {
+    width: 1.4rem;
+    height: 1.4rem;
+    fill: none;
+    stroke: currentColor;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    stroke-width: 1.8;
+  }
+
+  &:hover:not(:disabled),
+  &:focus-visible:not(:disabled) {
+    background: rgba(255, 155, 145, 0.12);
+    color: #ff9b91;
+    opacity: 1;
+  }
+
+  &:disabled {
+    cursor: default;
+    opacity: 0.4;
+  }
+}
+
 @media (max-width: 1024px) {
   .blitz-updates {
     margin-top: 3.5rem;

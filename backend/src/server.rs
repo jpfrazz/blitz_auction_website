@@ -359,6 +359,10 @@ impl Server {
                 "/match-requests",
                 get(match_requests::list_match_requests).post(match_requests::create_match_request),
             )
+            .route(
+                "/match-requests/{request_id}",
+                delete(match_requests::delete_match_request),
+            )
             .route("/pokemon", post(handlers::post_pokemon_data))
             .route(
                 "/pokemon_key_moves",

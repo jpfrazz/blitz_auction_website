@@ -1,27 +1,25 @@
-//! Home-page match-finding posts.
+//! Home-page race-finding posts.
 //!
-//! A signed-in user picks a mode and a time up to 48 hours ahead, and the post
-//! joins the Blitz Updates feed in every viewer's timezone. The 20-minute
-//! cooldown is enforced in Postgres so it still applies across reloads, tabs,
-//! and redeploys.
+//! A signed-in user may keep one upcoming race request at a time. Posts join
+//! the Blitz Updates feed in every viewer's timezone, and their owner can
+//! delete them from that feed. A Postgres advisory lock keeps the one-upcoming
+//! rule correct across reloads, tabs, and redeploys.
 
 use axum::{
     Json,
-    extract::{Query, State},
+    extract::{Path, Query, State},
     http::StatusCode,
 };
 use axum_login::AuthSession;
 use chrono::{DateTime, Duration, Utc};
 use serde::{Deserialize, Serialize};
-use sqlx::{FromRow, Row};
+use sqlx::FromRow;
 
 use crate::{
     AppError,
     server::ServerState,
     users::{AuthBackend, User},
 };
-
-const COOLDOWN_MINUTES: i64 = 20;
 
 #[derive(Clone, Debug, Serialize, FromRow)]
 pub struct MatchRequest {
@@ -37,12 +35,6 @@ pub struct MatchRequest {
 pub struct MatchRequestsResponse {
     pub requests: Vec<MatchRequest>,
     pub current_user_id: String,
-    pub next_allowed_at: Option<DateTime<Utc>>,
-}
-
-#[derive(Clone, Debug, Serialize)]
-pub struct CreateMatchRequestResponse {
-    pub next_allowed_at: DateTime<Utc>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -114,29 +106,9 @@ pub async fn list_match_requests(
         .map(User::get_user_id_string)
         .unwrap_or_default();
 
-    let next_allowed_at = if current_user_id.is_empty() {
-        None
-    } else {
-        sqlx::query(
-            r#"
-            SELECT created_at + interval '20 minutes' AS next_allowed_at
-            FROM match_requests
-            WHERE user_id = $1
-            ORDER BY created_at DESC, id DESC
-            LIMIT 1
-            "#,
-        )
-        .bind(&current_user_id)
-        .fetch_optional(&state.db_pool)
-        .await
-        .map_err(|error| (StatusCode::INTERNAL_SERVER_ERROR, error.to_string()))?
-        .map(|row| row.get::<DateTime<Utc>, _>("next_allowed_at"))
-    };
-
     Ok(Json(MatchRequestsResponse {
         requests,
         current_user_id,
-        next_allowed_at,
     }))
 }
 
@@ -144,7 +116,7 @@ pub async fn create_match_request(
     State(state): State<ServerState>,
     auth_session: AuthSession<AuthBackend>,
     Json(payload): Json<CreateMatchRequest>,
-) -> Result<(StatusCode, Json<CreateMatchRequestResponse>), AppError> {
+) -> Result<StatusCode, AppError> {
     let Some(user) = auth_session.user.as_ref() else {
         return Err((StatusCode::UNAUTHORIZED, "no user session".to_string()));
     };
@@ -167,41 +139,96 @@ pub async fn create_match_request(
 
     let user_id = user.get_user_id_string();
     let user_name = user.get_user_name_string();
-    let row = sqlx::query(
+
+    // Serialize the check-and-insert per user so two simultaneous posts can't
+    // both create an upcoming request.
+    let mut tx = state
+        .db_pool
+        .begin()
+        .await
+        .map_err(|error| (StatusCode::INTERNAL_SERVER_ERROR, error.to_string()))?;
+
+    sqlx::query("SELECT pg_advisory_xact_lock(hashtext($1)::bigint)")
+        .bind(&user_id)
+        .execute(&mut *tx)
+        .await
+        .map_err(|error| (StatusCode::INTERNAL_SERVER_ERROR, error.to_string()))?;
+
+    let has_upcoming: bool = sqlx::query_scalar(
         r#"
-        INSERT INTO match_requests (user_id, user_name, mode, requested_at)
-        SELECT $1, $2, $3, $4
-        WHERE NOT EXISTS (
+        SELECT EXISTS (
             SELECT 1
             FROM match_requests
             WHERE user_id = $1
-              AND created_at > now() - interval '20 minutes'
+              AND requested_at > now()
         )
-        RETURNING created_at
+        "#,
+    )
+    .bind(&user_id)
+    .fetch_one(&mut *tx)
+    .await
+    .map_err(|error| (StatusCode::INTERNAL_SERVER_ERROR, error.to_string()))?;
+
+    if has_upcoming {
+        return Err((
+            StatusCode::CONFLICT,
+            "you already have an upcoming race request; delete it before posting another".to_string(),
+        ));
+    }
+
+    sqlx::query(
+        r#"
+        INSERT INTO match_requests (user_id, user_name, mode, requested_at)
+        VALUES ($1, $2, $3, $4)
         "#,
     )
     .bind(&user_id)
     .bind(&user_name)
     .bind(mode)
     .bind(payload.requested_at)
-    .fetch_optional(&state.db_pool)
+    .execute(&mut *tx)
     .await
     .map_err(|error| (StatusCode::INTERNAL_SERVER_ERROR, error.to_string()))?;
 
-    let Some(row) = row else {
-        return Err((
-            StatusCode::TOO_MANY_REQUESTS,
-            "you can post one race request every 20 minutes".to_string(),
-        ));
+    tx.commit()
+        .await
+        .map_err(|error| (StatusCode::INTERNAL_SERVER_ERROR, error.to_string()))?;
+
+    Ok(StatusCode::CREATED)
+}
+
+pub async fn delete_match_request(
+    State(state): State<ServerState>,
+    auth_session: AuthSession<AuthBackend>,
+    Path(request_id): Path<i64>,
+) -> Result<StatusCode, AppError> {
+    let Some(user) = auth_session.user.as_ref() else {
+        return Err((StatusCode::UNAUTHORIZED, "no user session".to_string()));
     };
 
-    let created_at = row.get::<DateTime<Utc>, _>("created_at");
-    Ok((
-        StatusCode::CREATED,
-        Json(CreateMatchRequestResponse {
-            next_allowed_at: created_at + Duration::minutes(COOLDOWN_MINUTES),
-        }),
-    ))
+    if matches!(user, User::GuestUser(_)) {
+        return Err((
+            StatusCode::FORBIDDEN,
+            "log in with Discord to delete a race request".to_string(),
+        ));
+    }
+
+    let user_id = user.get_user_id_string();
+    let result = sqlx::query("DELETE FROM match_requests WHERE id = $1 AND user_id = $2")
+        .bind(request_id)
+        .bind(&user_id)
+        .execute(&state.db_pool)
+        .await
+        .map_err(|error| (StatusCode::INTERNAL_SERVER_ERROR, error.to_string()))?;
+
+    if result.rows_affected() == 0 {
+        return Err((
+            StatusCode::NOT_FOUND,
+            "race request not found".to_string(),
+        ));
+    }
+
+    Ok(StatusCode::NO_CONTENT)
 }
 
 #[cfg(test)]

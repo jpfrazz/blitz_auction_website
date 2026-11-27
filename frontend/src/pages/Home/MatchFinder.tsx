@@ -2,11 +2,17 @@ import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type { MatchRequest } from '../../types';
-import { createMatchRequest, fetchMatchRequests } from '../../shared/api/matchRequests';
+import { createMatchRequest } from '../../shared/api/matchRequests';
 import { fetchCurrentUser } from '../../shared/api/draftData';
 import './MatchFinder.scss';
 
-const MODES: MatchRequest['mode'][] = ['1v1', 'Booster', 'Draft'];
+// "Auction" is the user-facing name for the Draft race mode. The stored value
+// stays "Draft" so existing posts and the backend check constraint keep working.
+const MODES: Array<{ value: MatchRequest['mode']; label: string }> = [
+  { value: '1v1', label: '1v1' },
+  { value: 'Booster', label: 'Booster' },
+  { value: 'Draft', label: 'Auction' },
+];
 const MAX_REQUEST_HOURS = 48;
 
 const pad = (value: number): string => String(value).padStart(2, '0');
@@ -32,11 +38,6 @@ const isTimeAllowed = (value: string, now: number): boolean => {
   return Number.isFinite(time) && time >= now && time <= now + MAX_REQUEST_HOURS * 3_600_000;
 };
 
-const formatCountdown = (remainingMs: number): string => {
-  const totalSeconds = Math.ceil(remainingMs / 1000);
-  return `${Math.floor(totalSeconds / 60)}:${pad(totalSeconds % 60)}`;
-};
-
 const getErrorMessage = (error: unknown): string => {
   if (axios.isAxiosError(error)) {
     const detail = error.response?.data;
@@ -49,7 +50,6 @@ const MatchFinder: React.FC = () => {
   const queryClient = useQueryClient();
   const [mode, setMode] = useState<MatchRequest['mode']>('1v1');
   const [timeValue, setTimeValue] = useState(defaultTimeValue);
-  const [nextAllowedAtOverride, setNextAllowedAtOverride] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [now, setNow] = useState(Date.now());
 
@@ -60,35 +60,21 @@ const MatchFinder: React.FC = () => {
     retry: 1,
   });
 
-  const { data } = useQuery({
-    queryKey: ['match-requests'],
-    queryFn: () => fetchMatchRequests(1),
-    refetchInterval: 60_000,
-    staleTime: 30_000,
-    retry: 1,
-  });
-
   useEffect(() => {
-    const timer = window.setInterval(() => setNow(Date.now()), 1000);
+    const timer = window.setInterval(() => setNow(Date.now()), 30_000);
     return () => window.clearInterval(timer);
   }, []);
 
   const canPost = !!user && !user.is_guest;
-  const nextAllowedAt = nextAllowedAtOverride ?? data?.next_allowed_at ?? null;
-  const remainingMs = nextAllowedAt
-    ? Math.max(0, new Date(nextAllowedAt).getTime() - now)
-    : 0;
   const timeAllowed = isTimeAllowed(timeValue, now);
   const showTimeError = !error && !timeAllowed && !!timeValue;
-  const hasStatus = !!error || showTimeError || remainingMs > 0;
+  const hasStatus = !!error || showTimeError;
 
   const mutation = useMutation({
     mutationFn: createMatchRequest,
-    onSuccess: (response) => {
+    onSuccess: () => {
       setError(null);
-      setNextAllowedAtOverride(response.next_allowed_at);
       setTimeValue(defaultTimeValue());
-      void queryClient.invalidateQueries({ queryKey: ['match-requests'] });
       void queryClient.invalidateQueries({ queryKey: ['blitz-updates'] });
     },
     onError: (submitError) => setError(getErrorMessage(submitError)),
@@ -96,7 +82,7 @@ const MatchFinder: React.FC = () => {
 
   const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    if (!canPost || !timeAllowed || remainingMs > 0 || mutation.isPending) return;
+    if (!canPost || !timeAllowed || mutation.isPending) return;
 
     setError(null);
     mutation.mutate({
@@ -136,9 +122,9 @@ const MatchFinder: React.FC = () => {
             value={mode}
             onChange={(event) => setMode(event.target.value as MatchRequest['mode'])}
           >
-            {MODES.map((option) => (
-              <option key={option} value={option}>
-                {option}
+            {MODES.map(({ value, label }) => (
+              <option key={value} value={value}>
+                {label}
               </option>
             ))}
           </select>
@@ -156,10 +142,7 @@ const MatchFinder: React.FC = () => {
           />
         </label>
 
-        <button
-          type="submit"
-          disabled={!timeAllowed || remainingMs > 0 || mutation.isPending}
-        >
+        <button type="submit" disabled={!timeAllowed || mutation.isPending}>
           {mutation.isPending ? 'Sending…' : 'Send'}
         </button>
       </form>
@@ -170,11 +153,6 @@ const MatchFinder: React.FC = () => {
           {showTimeError && (
             <span className="match-finder-error">
               Choose a time from now through {MAX_REQUEST_HOURS} hours ahead.
-            </span>
-          )}
-          {remainingMs > 0 && (
-            <span className="match-finder-cooldown">
-              You can post again in {formatCountdown(remainingMs)}
             </span>
           )}
         </div>

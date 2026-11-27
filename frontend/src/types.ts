@@ -333,11 +333,6 @@ export interface BlitzUpdate {
 export interface MatchRequestsResponse {
   requests: MatchRequest[];
   current_user_id: string;
-  next_allowed_at: string | null;
-}
-
-export interface CreateMatchRequestResponse {
-  next_allowed_at: string;
 }
 
 export interface PokemonIvs {

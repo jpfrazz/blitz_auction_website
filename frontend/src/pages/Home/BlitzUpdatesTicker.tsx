@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type {
   AchievementUpdatePayload,
   BlitzUpdate,
@@ -8,7 +8,9 @@ import type {
   MatchRequestUpdatePayload,
   RankingMoveUpdatePayload,
 } from '../../types';
+import { deleteMatchRequest } from '../../shared/api/matchRequests';
 import { fetchBlitzUpdates } from '../../shared/api/updates';
+import { fetchCurrentUser } from '../../shared/api/draftData';
 import { getAvatarUrl } from '../../shared/utils/user';
 import MatchFinder from './MatchFinder';
 import './BlitzUpdatesTicker.scss';
@@ -44,6 +46,9 @@ const formatRelativeTime = (isoDate: string): string => {
   if (hours < 24) return `${hours}h ago`;
   return `${Math.floor(hours / 24)}d ago`;
 };
+
+// Existing posts use "Draft"; the dropdown now shows that mode as "Auction".
+const formatRaceMode = (mode: string): string => (mode === 'Draft' ? 'Auction' : mode);
 
 const formatMatchTime = (isoDate: string): string =>
   new Intl.DateTimeFormat(undefined, {
@@ -126,6 +131,15 @@ const UpdateMiniIcon: React.FC<{ name: string }> = ({ name }) => (
   />
 );
 
+const TrashIcon: React.FC = () => (
+  <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+    <path d="M4 7h16" />
+    <path d="M9 7V4h6v3" />
+    <path d="M6 7l1 13h10l1-13" />
+    <path d="M10 11v5M14 11v5" />
+  </svg>
+);
+
 const UpdateText: React.FC<{ update: BlitzUpdate }> = ({ update }) => {
   switch (update.event_type) {
     case 'draft_finished': {
@@ -175,7 +189,7 @@ const UpdateText: React.FC<{ update: BlitzUpdate }> = ({ update }) => {
       return (
         <>
           <strong>{payload.user_name}</strong> is looking to play{' '}
-          <span className="blitz-update-emphasis">{payload.mode}</span> at{' '}
+          <span className="blitz-update-emphasis">{formatRaceMode(payload.mode)}</span> at{' '}
           <span className="blitz-update-emphasis blitz-update-match-time">
             {formatMatchTime(payload.requested_at)}
           </span>
@@ -188,8 +202,19 @@ const UpdateText: React.FC<{ update: BlitzUpdate }> = ({ update }) => {
   }
 };
 
-const UpdateRow: React.FC<{ update: BlitzUpdate }> = ({ update }) => {
+const UpdateRow: React.FC<{
+  update: BlitzUpdate;
+  currentUserId: string | null;
+  deleting: boolean;
+  onDelete: (id: number) => void;
+}> = ({ update, currentUserId, deleting, onDelete }) => {
   const avatarUserId = getAvatarUserId(update);
+  const matchPayload =
+    update.event_type === 'match_request'
+      ? (update.payload as MatchRequestUpdatePayload)
+      : null;
+  const canDeleteMatch =
+    !!matchPayload && !!currentUserId && matchPayload.user_id === currentUserId;
   const isPastMatch =
     update.event_type === 'match_request' &&
     new Date(update.created_at).getTime() < Date.now();
@@ -217,6 +242,18 @@ const UpdateRow: React.FC<{ update: BlitzUpdate }> = ({ update }) => {
             </span>
           </a>
           <span className="blitz-update-time">{formatRelativeTime(update.created_at)}</span>
+          {canDeleteMatch && matchPayload && (
+            <button
+              type="button"
+              className="blitz-update-delete"
+              aria-label="Delete this race request"
+              title="Delete this race request"
+              disabled={deleting}
+              onClick={() => onDelete(matchPayload.id)}
+            >
+              <TrashIcon />
+            </button>
+          )}
         </div>
       </td>
     </tr>
@@ -224,6 +261,7 @@ const UpdateRow: React.FC<{ update: BlitzUpdate }> = ({ update }) => {
 };
 
 const BlitzUpdatesTicker: React.FC = () => {
+  const queryClient = useQueryClient();
   const { data: updates = [] } = useQuery({
     queryKey: ['blitz-updates'],
     queryFn: () => fetchBlitzUpdates(30),
@@ -231,6 +269,21 @@ const BlitzUpdatesTicker: React.FC = () => {
     staleTime: 30_000,
     retry: 1,
   });
+  const { data: currentUser } = useQuery({
+    queryKey: ['current-user'],
+    queryFn: fetchCurrentUser,
+    staleTime: 5 * 60_000,
+    retry: 1,
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: deleteMatchRequest,
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ['blitz-updates'] });
+    },
+  });
+
+  const currentUserId = currentUser && !currentUser.is_guest ? currentUser.user_id : null;
 
   return (
     <section className="blitz-updates" aria-labelledby="blitz-updates-title">
@@ -242,7 +295,13 @@ const BlitzUpdatesTicker: React.FC = () => {
           <table className="blitz-updates-table">
             <tbody>
               {updates.map((update) => (
-                <UpdateRow key={update.id} update={update} />
+                <UpdateRow
+                  key={update.id}
+                  update={update}
+                  currentUserId={currentUserId}
+                  deleting={deleteMutation.isPending}
+                  onDelete={(id) => deleteMutation.mutate(id)}
+                />
               ))}
             </tbody>
           </table>
