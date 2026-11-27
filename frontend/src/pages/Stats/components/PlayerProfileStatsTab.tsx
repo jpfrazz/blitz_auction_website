@@ -33,6 +33,7 @@ import {
   setManualAchievement,
 } from '../../../shared/api/achievements';
 import { computePlayerAchievements, PlayerAchievement } from '../achievements';
+import { reportAchievementSnapshot } from '../../../shared/api/updates';
 import { computePersonalBestSeconds, isNonCasualRace } from '../raceEligibility';
 import AchievementsPanel from './AchievementsPanel';
 import { getIconName } from '../../../utils/speciesUtils';
@@ -1057,6 +1058,35 @@ const PlayerProfileStatsTab: React.FC<PlayerProfileStatsTabProps> = ({
     profile?.price_history,
     opponentSignatureKeys,
   ]);
+
+  // Keep the persistent Blitz Updates feed in sync with computed achievements.
+  // The backend stores the first snapshot as a baseline and only emits an event
+  // for achievements that appear after it.
+  const lastReportedAchievementsRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (!selectedUserId || playerAchievements.length === 0) return;
+
+    const earnedIds = playerAchievements
+      .filter((achievement) => achievement.earned)
+      .map((achievement) => achievement.id)
+      .sort();
+    const signature = `${selectedUserId}|${earnedIds.join(',')}`;
+    if (lastReportedAchievementsRef.current === signature) return;
+    lastReportedAchievementsRef.current = signature;
+
+    void reportAchievementSnapshot({
+      user_id: selectedUserId,
+      user_name: selectedPlayer?.user_name ?? selectedPlayer?.global_name ?? undefined,
+      achievements: playerAchievements.map((achievement) => ({
+        id: achievement.id,
+        name: achievement.name,
+        icon: achievement.icon,
+        earned: achievement.earned,
+      })),
+    }).catch((error) => {
+      console.error('[PlayerProfileStatsTab] failed to report achievement snapshot:', error);
+    });
+  }, [selectedUserId, selectedPlayer, playerAchievements]);
 
   const handleToggleAchievement = async (achievement: PlayerAchievement) => {
     if (!selectedUserId || achievementSavingIds.has(achievement.id)) return;

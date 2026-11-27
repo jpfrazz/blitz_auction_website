@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import Header from '../../shared/components/Header';
 import Footer from '../../shared/components/Footer';
 import { fetchPokemonList } from '../../shared/api/pokemon';
+import BlitzUpdatesTicker from './BlitzUpdatesTicker';
 import './Home.scss';
 
 const formatPokemonName = (name: string) => {
@@ -181,6 +182,7 @@ const Home = () => {
             Once downloaded, apply the patch online using <a href="https://www.marcrobledo.com/RomPatcher.js/" target="_blank" rel="noopener noreferrer">this ROM Patcher</a>
           </div>
         </div>
+        <BlitzUpdatesTicker />
         <section className="home-discord" aria-labelledby="home-discord-title">
           <iframe
             title="Emerald Blitz Discord server"

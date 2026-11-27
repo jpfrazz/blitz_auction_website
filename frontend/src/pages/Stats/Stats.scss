@@ -655,33 +655,38 @@
     justify-content: flex-end;
   }
 
-  // The filter rows spill out beneath the header instead of growing it.
+  // Expands leftward from the gear into the empty header space, like the
+  // original filter bar, without making the header taller.
   .stats-analysis-settings {
-    position: absolute;
-    top: calc(100% + 6px);
-    right: 0;
-    z-index: 20;
     display: flex;
-    flex-direction: column;
-    align-items: flex-end;
-    gap: 6px;
+    flex-direction: row;
+    align-items: center;
+    gap: 12px;
     overflow: hidden;
-    max-height: 0;
-    padding: 0 0.75rem;
+    max-width: 0;
+    margin-right: 0;
+    padding-top: 0.35rem;
+    padding-bottom: 0.35rem;
+    padding-left: 0;
+    padding-right: 0;
     border: 1px solid transparent;
     border-radius: 6px;
     background: $eb-bg;
     opacity: 0;
     transition:
-      max-height 0.4s cubic-bezier(0.4, 0, 0.2, 1),
+      max-width 0.4s cubic-bezier(0.4, 0, 0.2, 1),
       opacity 0.3s ease-in-out,
-      padding 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+      margin-right 0.4s cubic-bezier(0.4, 0, 0.2, 1),
+      padding-left 0.4s cubic-bezier(0.4, 0, 0.2, 1),
+      padding-right 0.4s cubic-bezier(0.4, 0, 0.2, 1);
     pointer-events: none;
     white-space: nowrap;
 
     &.visible {
-      max-height: 220px;
-      padding: 0.5rem 0.75rem;
+      max-width: 1600px;
+      margin-right: 12px;
+      padding-left: 0.75rem;
+      padding-right: 0.75rem;
       border-color: $eb-border;
       box-shadow: $eb-shadow;
       opacity: 1;
@@ -693,6 +698,7 @@
     display: flex;
     align-items: center;
     gap: 12px;
+    flex-shrink: 0;
 
     & > * {
       flex-shrink: 0;
@@ -767,25 +773,21 @@
     }
 
     .stats-analysis-settings {
-      top: 100%;
-      left: 0;
-      right: 0;
-      width: auto;
-      max-height: 0;
+      flex-direction: column;
+      align-items: stretch;
+      max-width: none !important;
       white-space: normal;
       gap: 0.5rem !important;
-      align-items: stretch !important;
       margin-right: 0 !important;
 
       &.visible {
-        max-height: 420px;
         opacity: 1;
         pointer-events: auto;
       }
 
       .hof-settings-row {
         flex-wrap: wrap;
-        justify-content: flex-end;
+        justify-content: flex-start;
         gap: 0.5rem;
       }
 
@@ -846,6 +848,7 @@
 
   &:hover:not(:disabled) {
     border-color: $eb-primary;
+    color: #fff;
   }
 
   &:disabled {

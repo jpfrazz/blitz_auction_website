@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import PokemonHistoryChart from '../PokemonHistoryChart';
 import { fetchPokemonList } from '../../../shared/api/pokemon';
 import { Pokemon, StatsAuction, StatsPageResponse } from '../../../types';
@@ -10,6 +10,7 @@ import { casualBoosterDraftIds } from '../boosterHistory';
 import { resolvePokemonIdentity } from '../../../shared/utils/pokemonIdentity';
 import { buildRunStatLineage } from '../../../utils/runStatLineage';
 import { computeAverageKosByPokemonKey, computeWinOpportunitiesByPokemonKey, computeWinningPicksByPokemonKey } from '../costBreakdownKos';
+import { reportRankingSnapshot } from '../../../shared/api/updates';
 
 type SortKey = 'rank' | 'name' | 'avgWinningBid' | 'minBid' | 'maxBid' | 'priceVariance' | 'bidsWon' | 'recentMovement' | 'priceMovement' | 'avgOneVOnePick' | 'total1v1Picks' | 'pickMovement' | 'avgKOs' | 'wins' | 'winPercentage';
 
@@ -589,6 +590,31 @@ const PokemonStatsTab: React.FC<PokemonStatsTabProps> = ({
     });
     return results;
   }, [sortedAuctions, stats?.legacy, recentDraftInfo, typeLookup, oneVOnePickMap, oneVOneHistoricPickMap, avgKOsByKey, winsByKey, winOpportunitiesByKey]);
+
+  // Report the all-time ranking so the backend can detect cost-ranking moves
+  // and persist them in the Blitz Updates feed. Filtered/cutoff views are
+  // excluded because they are not the all-time ranking.
+  const lastReportedRankingsRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (cutoffDate || aggregatedPokemon.length === 0) return;
+
+    const signature = aggregatedPokemon
+      .map((pokemon) => `${pokemon.key}:${pokemon.rank}:${pokemon.avgWinningBid}`)
+      .join('|');
+    if (lastReportedRankingsRef.current === signature) return;
+    lastReportedRankingsRef.current = signature;
+
+    void reportRankingSnapshot({
+      rankings: aggregatedPokemon.map((pokemon) => ({
+        key: pokemon.key,
+        name: pokemon.name,
+        rank: pokemon.rank,
+        avg_price: pokemon.avgWinningBid,
+      })),
+    }).catch((error) => {
+      console.error('[PokemonStatsTab] failed to report ranking snapshot:', error);
+    });
+  }, [aggregatedPokemon, cutoffDate]);
 
   const pokemonSummary = useMemo<PokemonAggregate[]>(() => {
     return [...aggregatedPokemon].sort((a, b) => {

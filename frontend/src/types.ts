@@ -260,6 +260,86 @@ export interface StatsAuction {
   action: 'PICK' | 'BAN' | 'LEFTOVER' | null;
 }
 
+export interface DraftFinishedUpdatePayload {
+  draft_id: string;
+  draft_name: string;
+  draft_type: string;
+  user_id?: string;
+  user_name?: string;
+}
+
+export interface AchievementUpdatePayload {
+  user_id: string;
+  user_name: string;
+  achievement_id: string;
+  achievement_name: string;
+  achievement_icon: string;
+}
+
+export interface HallOfFameUpdatePayload {
+  user_id: string;
+  user_name: string;
+  draft_id: string;
+}
+
+export interface RankingMoveUpdatePayload {
+  key: string;
+  name: string;
+  from_rank: number;
+  to_rank: number;
+  direction: 'up' | 'down';
+  avg_price: number;
+  prev_avg_price: number;
+  price_delta: number;
+}
+
+export interface MatchRequest {
+  id: number;
+  user_id: string;
+  user_name: string;
+  mode: '1v1' | 'Booster' | 'Draft';
+  requested_at: string;
+  created_at: string;
+}
+
+export interface MatchRequestUpdatePayload {
+  id: number;
+  user_id: string;
+  user_name: string;
+  mode: MatchRequest['mode'];
+  requested_at: string;
+}
+
+export type BlitzUpdatePayload =
+  | DraftFinishedUpdatePayload
+  | AchievementUpdatePayload
+  | HallOfFameUpdatePayload
+  | RankingMoveUpdatePayload
+  | MatchRequestUpdatePayload;
+
+export interface BlitzUpdate {
+  id: number;
+  event_type:
+    | 'draft_finished'
+    | 'achievement'
+    | 'hall_of_fame'
+    | 'ranking_move'
+    | 'match_request';
+  subject_key: string;
+  payload: BlitzUpdatePayload;
+  created_at: string;
+}
+
+export interface MatchRequestsResponse {
+  requests: MatchRequest[];
+  current_user_id: string;
+  next_allowed_at: string | null;
+}
+
+export interface CreateMatchRequestResponse {
+  next_allowed_at: string;
+}
+
 export interface PokemonIvs {
   hp: number;
   atk: number;

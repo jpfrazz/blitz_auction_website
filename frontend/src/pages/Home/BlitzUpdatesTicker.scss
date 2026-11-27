@@ -1,0 +1,146 @@
+@import '../../shared/style/theme.scss';
+
+.blitz-updates {
+  align-self: stretch;
+  // `.home-main` is a flex column, so without this the section shrinks below
+  // the height of its scrollable table and the rows get clipped.
+  flex-shrink: 0;
+  box-sizing: border-box;
+  width: min(100%, 1100px);
+  margin: 5rem auto 0;
+  padding: 0.75rem 1rem;
+  border-top: 1px solid $eb-border;
+  border-bottom: 1px solid $eb-border;
+  background: linear-gradient(90deg, rgba($eb-surface, 0.75), rgba($eb-surface, 0.25));
+
+  h2 {
+    margin: 0 0 0.5rem;
+    color: $eb-text;
+    font-size: 1.6rem;
+    font-weight: 700;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+  }
+}
+
+.blitz-updates-empty {
+  color: $eb-text;
+  font-size: 1.4rem;
+}
+
+.blitz-updates-viewport {
+  width: 100%;
+  max-height: 24rem;
+  overflow: auto;
+  scrollbar-color: $eb-border transparent;
+}
+
+.blitz-updates-table {
+  width: 100%;
+  min-width: 720px;
+  border-collapse: separate;
+  border-spacing: 0 0.3rem;
+  color: $eb-text;
+  font-size: 1.4rem;
+}
+
+.blitz-update-row {
+  td {
+    padding: 0.45rem 0.8rem;
+    border: 1px solid $eb-border;
+    border-radius: 6px;
+    background: rgba(0, 0, 0, 0.3);
+    color: $eb-text;
+    line-height: 1.35;
+    vertical-align: middle;
+  }
+
+  strong {
+    color: $eb-text;
+    font-weight: 700;
+  }
+}
+
+// A match request whose requested time has passed stays in the feed, but
+// recedes so upcoming matches and fresh notifications read first.
+.blitz-update-past {
+  td {
+    opacity: 0.55;
+  }
+
+  td,
+  .blitz-update-link,
+  .blitz-update-text,
+  .blitz-update-emphasis,
+  strong {
+    color: $eb-text-muted;
+  }
+}
+
+.blitz-update-row-content {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.blitz-update-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  min-width: 0;
+  color: $eb-text;
+  text-decoration: none;
+}
+
+.blitz-update-avatar {
+  width: 2.2rem;
+  height: 2.2rem;
+  flex: 0 0 auto;
+  border-radius: 50%;
+  object-fit: cover;
+  background: $eb-surface;
+}
+
+.blitz-update-mini-icon {
+  width: 2.2rem;
+  height: 2.2rem;
+  margin-right: 0.35rem;
+  flex: 0 0 auto;
+  vertical-align: middle;
+  object-fit: contain;
+}
+
+.blitz-update-text {
+  color: $eb-text;
+  white-space: nowrap;
+}
+
+.blitz-update-name {
+  color: $eb-text;
+  white-space: nowrap;
+}
+
+.blitz-update-emphasis {
+  color: $eb-text;
+  font-weight: 700;
+}
+
+.blitz-update-match-time {
+  font-weight: 700;
+}
+
+.blitz-update-time {
+  margin-left: auto;
+  flex: 0 0 auto;
+  color: $eb-text-muted;
+  font-size: 1.2rem;
+  text-decoration: none;
+  white-space: nowrap;
+  opacity: 0.75;
+}
+
+@media (max-width: 1024px) {
+  .blitz-updates {
+    margin-top: 3.5rem;
+  }
+}

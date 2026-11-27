@@ -26,6 +26,7 @@ use crate::{
 pub struct Draft {
     pub draft_id: Uuid,
     pub draft_name: String,
+    pub draft_type: String,
     pub host: User,
     pub broadcast_tx: broadcast::Sender<ServerMessage>,
     pub pokemon: Vec<Arc<Pokemon>>,
@@ -732,6 +733,7 @@ impl Draft {
     fn new(
         draft_id: Uuid,
         draft_name: String,
+        draft_type: String,
         host: User,
         pokemon: Vec<Arc<Pokemon>>,
         actor_sender: mpsc::Sender<DraftCommand>,
@@ -741,6 +743,7 @@ impl Draft {
         Draft {
             draft_id,
             draft_name,
+            draft_type,
             host,
             pokemon,
             broadcast_tx,
@@ -832,6 +835,7 @@ impl Draft {
         let draft = Arc::new(Draft::new(
             draft_id,
             draft_name,
+            settings.draft_type.clone(),
             host.clone(),
             pokemon,
             actor_sender,
@@ -3140,6 +3144,15 @@ impl DraftActor {
         let _ = engine;
         if self.db_writer.finish_draft().await.is_ok() {
             self.draft_state = DraftState::COMPLETED;
+            crate::updates::record_draft_finished(
+                self.db_writer.pool(),
+                self.draft.draft_id,
+                &self.draft.draft_name,
+                &self.draft.draft_type,
+                &self.draft.host.get_user_id_string(),
+                &self.draft.host.get_user_name_string(),
+            )
+            .await;
         }
     }
 
@@ -3462,6 +3475,15 @@ impl DraftActor {
         }
         if self.db_writer.finish_draft().await.is_ok() {
             self.draft_state = DraftState::COMPLETED;
+            crate::updates::record_draft_finished(
+                self.db_writer.pool(),
+                self.draft.draft_id,
+                &self.draft.draft_name,
+                &self.draft.draft_type,
+                &self.draft.host.get_user_id_string(),
+                &self.draft.host.get_user_name_string(),
+            )
+            .await;
         }
     }
 
@@ -3692,6 +3714,15 @@ impl DraftActor {
             if let Ok(_) = self.db_writer.finish_draft().await {
                 self.draft_state = DraftState::COMPLETED;
                 self.broadcast();
+                crate::updates::record_draft_finished(
+                    self.db_writer.pool(),
+                    self.draft.draft_id,
+                    &self.draft.draft_name,
+                    &self.draft.draft_type,
+                    &self.draft.host.get_user_id_string(),
+                    &self.draft.host.get_user_name_string(),
+                )
+                .await;
             }
         }
 

@@ -5,7 +5,7 @@ use serde::{Deserialize, Serialize};
 use crate::{AppError, server::ServerState, users::AuthBackend};
 
 /// Keep in sync with `frontend/src/pages/Stats/achievements.ts`.
-const VALID_ACHIEVEMENT_IDS: &[&str] = &[
+pub(crate) const VALID_ACHIEVEMENT_IDS: &[&str] = &[
     "early-bird",
     "grand-prix-racer",
     "250-club",

@@ -13,12 +13,14 @@ pub mod auction;
 pub mod db_writer;
 pub mod draft;
 pub mod handlers;
+pub mod match_requests;
 pub mod messages;
 pub mod metrics;
 pub mod pokemon;
 pub mod pokemon_data_updater;
 pub mod server;
 pub mod stats;
+pub mod updates;
 pub mod users;
 
 pub fn init_auth_layer(pool: PgPool) {

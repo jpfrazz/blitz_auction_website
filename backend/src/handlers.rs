@@ -2467,6 +2467,7 @@ pub async fn update_admin_hall_of_fame_team(
 
     // The admin editor only sends names and icons. Keep the KO counts and IVs
     // that were captured with the original team so that data survives an edit.
+    let mut had_hall_of_fame_team = false;
     if let Some(existing_row) = sqlx::query("SELECT hall_of_fame_team FROM teams WHERE team_id = $1")
         .bind(team_id)
         .fetch_optional(&state.db_pool)
@@ -2476,6 +2477,7 @@ pub async fn update_admin_hall_of_fame_team(
         let existing_value: Option<serde_json::Value> = existing_row
             .try_get("hall_of_fame_team")
             .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+        had_hall_of_fame_team = existing_value.is_some();
         if let Some(existing) = existing_value
             .and_then(|v| serde_json::from_value::<Vec<HallOfFamePokemon>>(v).ok())
         {
@@ -2528,6 +2530,23 @@ pub async fn update_admin_hall_of_fame_team(
         .execute(&state.db_pool)
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    if !had_hall_of_fame_team {
+        if let Some(row) = sqlx::query("SELECT user_id, guest_id, draft_id FROM teams WHERE team_id = $1")
+            .bind(team_id)
+            .fetch_optional(&state.db_pool)
+            .await
+            .ok()
+            .flatten()
+        {
+            let user_id: Option<String> = row.get("user_id");
+            let guest_id: Option<String> = row.get("guest_id");
+            let draft_id: Uuid = row.get("draft_id");
+            if let Some(id) = user_id.or(guest_id) {
+                crate::updates::record_hall_of_fame(&state.db_pool, &id, draft_id).await;
+            }
+        }
+    }
 
     Ok(())
 }
@@ -3522,7 +3541,7 @@ pub async fn post_player_save(
                     format!("failed to serialize hall of fame team: {}", e),
                 )
             })?;
-            sqlx::query(
+            let hof_result = sqlx::query(
                 "UPDATE teams SET hall_of_fame_team = $1
                  WHERE draft_id = $2
                    AND (user_id = $3 OR guest_id = $4)
@@ -3535,6 +3554,11 @@ pub async fn post_player_save(
             .execute(&state.db_pool)
             .await
             .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, format!("db error: {}", e)))?;
+            if hof_result.rows_affected() > 0 {
+                if let Some(user_id) = user_db_id.as_ref().or(guest_db_id.as_ref()) {
+                    crate::updates::record_hall_of_fame(&state.db_pool, user_id, draft_uuid).await;
+                }
+            }
         }
     }
 

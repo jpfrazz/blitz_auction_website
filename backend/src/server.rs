@@ -1,5 +1,6 @@
 use crate::{
-    Draft, PgPool, achievements, handlers, metrics::{self, MetricsCollector}, pokemon, stats,
+    Draft, PgPool, achievements, handlers, match_requests, metrics::{self, MetricsCollector}, pokemon,
+    stats, updates,
     users::{AuthBackend, Credentials},
 };
 use axum::{
@@ -175,6 +176,9 @@ impl Server {
                 get(stats::get_player_id_by_name),
             )
             .route("/hall-of-fame-teams", get(handlers::get_hall_of_fame))
+            .route("/updates", get(updates::get_blitz_updates))
+            .route("/updates/achievements", post(updates::report_achievements))
+            .route("/updates/rankings", post(updates::report_rankings))
             .route("/avatar/{user_id}", get(handlers::get_user_avatar))
             .route(
                 "/match-history/{user_id}",
@@ -351,6 +355,10 @@ impl Server {
                 get(handlers::get_draft_chats).post(handlers::create_draft_chat),
             )
             .route("/control-bindings", get(handlers::get_control_bindings).post(handlers::save_control_bindings))
+            .route(
+                "/match-requests",
+                get(match_requests::list_match_requests).post(match_requests::create_match_request),
+            )
             .route("/pokemon", post(handlers::post_pokemon_data))
             .route(
                 "/pokemon_key_moves",
