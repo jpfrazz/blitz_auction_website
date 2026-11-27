@@ -18,7 +18,7 @@ import { resolvePokemonIdentity } from '../../shared/utils/pokemonIdentity';
 import { computeWinningPicksByPokemonKey } from './costBreakdownKos';
 import { computePersonalBestSeconds, isChampionWin, isNonCasualRace } from './raceEligibility';
 import { isOneVOneBan, oneVOneLeftoverOrders, oneVOnePickSlot } from './oneVOneHistory';
-import { isRentalPokemonName } from './rentalPool';
+import { isRentalPokemonName, isRentalSpeciesId } from './rentalPool';
 import { isActuallyNicknamed } from '../../utils/speciesUtils';
 
 export interface AchievementDefinition {
@@ -84,6 +84,7 @@ const EEVEE_POKEDEX_ID = 133;
 const WISHIWASHI_POKEDEX_ID = 746;
 const SCHOOLIN_ON_EM_MIN_KOS = 11;
 const TRUE_LOVE_SHARED_RACES = 10;
+const LOYAL_CUSTOMER_RENTALS_REQUIRED = 3;
 const DEATHLESS_START_DATE = '2026-08-10';
 const BATTLE_FRONTIER_BRAIN_IDS = new Set([806, 807, 810, 811]);
 /** Boss trainer splits grouped for display, in achievement order. */
@@ -547,6 +548,12 @@ export const ACHIEVEMENT_DEFINITIONS: AchievementDefinition[] = [
     name: 'Early Bird',
     description: 'Play a race in March or April 2026',
     icon: 'EarlyBird.png',
+  },
+  {
+    id: 'loyal-customer',
+    name: 'Loyal Customer',
+    description: 'Rent 3 Pokémon from the Slateport Black Market in a single run',
+    icon: 'LoyalCustomer.png',
   },
 ];
 
@@ -1308,6 +1315,20 @@ function outplacedShartwagonInRace(
   });
 }
 
+/**
+ * The Race Summary Pokémon column lists one row per archived rental. Count
+ * distinct rental-pool species (forms collapse to the same species), so three
+ * rows only mean three rentals when they are three different species.
+ */
+function rentedThreeRentalSpeciesInOneRace(team: MatchHistoryTeam): boolean {
+  const speciesIds = new Set<number>();
+  (team.rental_stats ?? []).forEach((rental) => {
+    if (!isRentalSpeciesId(rental.species_id)) return;
+    speciesIds.add(SPECIES_BY_ID[rental.species_id]?.baseId ?? rental.species_id);
+  });
+  return speciesIds.size >= LOYAL_CUSTOMER_RENTALS_REQUIRED;
+}
+
 /** Derive every earned achievement for a player from data already on the stats page. */
 export function computePlayerAchievements(ctx: AchievementContext): PlayerAchievement[] {
   const casualBoosterIds = ctx.casualBoosterDraftIds ?? new Set<string>();
@@ -1459,6 +1480,8 @@ export function computePlayerAchievements(ctx: AchievementContext): PlayerAchiev
     'vanilla-gamer': nonCasualMatchHistory.some((team) =>
       defeatedVanillaGymsInOrder(ctx.bossBattleHistory.get(team.team_id) ?? []),
     ),
+    // Three distinct rentals must come from one competitive run.
+    'loyal-customer': nonCasualMatchHistory.some(rentedThreeRentalSpeciesInOneRace),
     // This achievement can only be granted manually.
     'infinite-wisdom': false,
   };

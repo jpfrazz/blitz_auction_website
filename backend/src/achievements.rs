@@ -62,6 +62,7 @@ pub(crate) const VALID_ACHIEVEMENT_IDS: &[&str] = &[
     "against-all-odds",
     "topsy-turvy",
     "vanilla-gamer",
+    "loyal-customer",
 ];
 
 #[derive(Clone, Debug, Serialize, sqlx::FromRow)]

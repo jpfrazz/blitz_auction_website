@@ -3,6 +3,7 @@ import type {
   HallOfFamePokemon,
   MatchHistoryTeam,
   Pokemon,
+  RentalStat,
   RunMonStat,
   StatsAuction,
   StatsPagePlayer,
@@ -100,6 +101,19 @@ function hofMon(name: string): HallOfFamePokemon {
   return { name, icon: name.toLowerCase(), ko_count: null };
 }
 
+function rental(species_id: number, personality: number): RentalStat {
+  return {
+    species_id,
+    personality,
+    nickname: null,
+    ko_count: null,
+    total_turns: null,
+    level: 15,
+    fainted: false,
+    badge_count: 1,
+  };
+}
+
 function championWin(totalSeconds: number): BossBattleHistoryEntry {
   return {
     trainer_id: 804,
@@ -184,9 +198,9 @@ function earnedIds(context: AchievementContext): Set<string> {
 
 describe('achievement definitions', () => {
   it('has one definition per achievement with a unique id and icon', () => {
-    expect(ACHIEVEMENT_DEFINITIONS).toHaveLength(56);
-    expect(new Set(ACHIEVEMENT_DEFINITIONS.map((achievement) => achievement.id)).size).toBe(56);
-    expect(new Set(ACHIEVEMENT_DEFINITIONS.map((achievement) => achievement.icon)).size).toBe(56);
+    expect(ACHIEVEMENT_DEFINITIONS).toHaveLength(57);
+    expect(new Set(ACHIEVEMENT_DEFINITIONS.map((achievement) => achievement.id)).size).toBe(57);
+    expect(new Set(ACHIEVEMENT_DEFINITIONS.map((achievement) => achievement.icon)).size).toBe(57);
     expect(ACHIEVEMENT_DEFINITIONS.find((achievement) => achievement.id === 'around-the-world')).toEqual({
       id: 'around-the-world',
       name: 'Around the World',
@@ -222,6 +236,12 @@ describe('achievement definitions', () => {
       name: 'Vanilla Gamer',
       description: "Earn Hoenn's 8 badges in their original order",
       icon: 'VanillaGamer.png',
+    });
+    expect(ACHIEVEMENT_DEFINITIONS.find((achievement) => achievement.id === 'loyal-customer')).toEqual({
+      id: 'loyal-customer',
+      name: 'Loyal Customer',
+      description: 'Rent 3 Pokémon from the Slateport Black Market in a single run',
+      icon: 'LoyalCustomer.png',
     });
   });
 
@@ -2091,6 +2111,73 @@ describe('computePlayerAchievements', () => {
       expect(earnedIds(context({
         extraBattles: [gymSplitWin(265, 1, 5, true)],
       })).has('vanilla-gamer')).toBe(true);
+    });
+  });
+
+  describe('Loyal Customer', () => {
+    const race = (
+      teamId: number,
+      draftId: string,
+      rentals: RentalStat[] = [],
+      draftType = 'auction',
+    ) => team({ team_id: teamId, draft_id: draftId, draft_type: draftType, rental_stats: rentals });
+
+    const contextFor = (
+      teams: MatchHistoryTeam[],
+      validDraftIds = new Set(teams.filter((t) => t.draft_type === 'auction').map((t) => t.draft_id)),
+      casual1v1DraftIds = new Set<string>(),
+    ) => baseContext({ matchHistory: teams, validDraftIds, casual1v1DraftIds });
+
+    it('awards for three distinct rental species in one non-casual race', () => {
+      expect(earnedIds(contextFor([
+        race(1, 'race-1', [rental(359, 1), rental(780, 2), rental(870, 3)]),
+      ])).has('loyal-customer')).toBe(true);
+    });
+
+    it('does not count two rentals of the same species as two rentals', () => {
+      expect(earnedIds(contextFor([
+        race(1, 'race-1', [rental(359, 1), rental(359, 2), rental(780, 3)]),
+      ])).has('loyal-customer')).toBe(false);
+    });
+
+    it('collapses forms of the same species', () => {
+      expect(earnedIds(contextFor([
+        race(1, 'race-1', [rental(359, 1), rental(940, 2), rental(780, 3)]),
+      ])).has('loyal-customer')).toBe(false);
+    });
+
+    it('does not count rentals outside the rental pool', () => {
+      expect(earnedIds(contextFor([
+        race(1, 'race-1', [rental(359, 1), rental(25, 2), rental(780, 3)]),
+      ])).has('loyal-customer')).toBe(false);
+    });
+
+    it('does not combine rentals from separate races', () => {
+      expect(earnedIds(contextFor([
+        race(1, 'race-1', [rental(359, 1), rental(780, 2)]),
+        race(2, 'race-2', [rental(870, 3)]),
+      ])).has('loyal-customer')).toBe(false);
+    });
+
+    it('does not count casual auctions', () => {
+      expect(earnedIds(contextFor(
+        [race(1, 'race-1', [rental(359, 1), rental(780, 2), rental(870, 3)])],
+        new Set(),
+      )).has('loyal-customer')).toBe(false);
+    });
+
+    it('does not count casual 1v1s', () => {
+      expect(earnedIds(contextFor(
+        [race(1, 'race-1', [rental(359, 1), rental(780, 2), rental(870, 3)], '1v1')],
+        new Set(),
+        new Set(['race-1']),
+      )).has('loyal-customer')).toBe(false);
+    });
+
+    it('counts three rentals in a competitive 1v1', () => {
+      expect(earnedIds(contextFor([
+        race(1, 'race-1', [rental(359, 1), rental(780, 2), rental(870, 3)], '1v1'),
+      ])).has('loyal-customer')).toBe(true);
     });
   });
 

@@ -151,7 +151,7 @@ const UpdateText: React.FC<{ update: BlitzUpdate }> = ({ update }) => {
             <strong>{userName}</strong>&apos;s
           </span>{' '}
           {formatDraftType(payload.draft_type)} Draft just finished.{' '}
-          <span className="blitz-update-emphasis">Spectate now!</span>
+          <span className="blitz-update-emphasis">Spectate the race now!</span>
         </>
       );
     }
